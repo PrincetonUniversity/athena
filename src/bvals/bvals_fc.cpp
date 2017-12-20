@@ -293,25 +293,25 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     int ssize;
     if(nb.level==pmb->loc.level)
-      ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[nb.bufid],nb);
+      ssize=LoadFieldBoundaryBufferSameLevel(src, bd_field_.send[nb.bufid],nb);
     else if(nb.level<pmb->loc.level)
-      ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[nb.bufid],nb);
+      ssize=LoadFieldBoundaryBufferToCoarser(src, bd_field_.send[nb.bufid],nb);
     else
-      ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[nb.bufid], nb);
+      ssize=LoadFieldBoundaryBufferToFiner(src, bd_field_.send[nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // find target buffer
-      std::memcpy(pbl->pbval->field_recv_[nb.targetid],
-                  field_send_[nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->field_flag_[nb.targetid]=BNDRY_ARRIVED;
+      std::memcpy(pbl->pbval->bd_field_.recv[nb.targetid],
+                  bd_field_.send[nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->bd_field_.flag[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&req_field_send_[nb.bufid]);
+      MPI_Start(&(bd_field_.req_send[nb.bufid]));
 #endif
   }
 
@@ -379,18 +379,6 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
 #pragma simd
         for (int i=si; i<=ei; ++i)
           dst.x2f(k,j,i)=sign*buf[p++];
-      }
-    }
-    if (nb.ox2 < 0) {  // interpolate B^theta across top pole
-      for (int k=sk; k<=ek; ++k) {
-        for (int i=si; i<=ei; ++i)
-          dst.x2f(k,pmb->js,i) = 0.5 * (dst.x2f(k,pmb->js-1,i) + dst.x2f(k,pmb->js+1,i));
-      }
-    }
-    if (nb.ox2 > 0) {  // interpolate B^theta across bottom pole
-      for (int k=sk; k<=ek; ++k) {
-        for (int i=si; i<=ei; ++i)
-          dst.x2f(k,pmb->je+1,i) = 0.5 * (dst.x2f(k,pmb->je,i) + dst.x2f(k,pmb->je+2,i));
       }
     }
   }
@@ -760,10 +748,10 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
   MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
-    if(field_flag_[nb.bufid]==BNDRY_COMPLETED) continue;
-    if(field_flag_[nb.bufid]==BNDRY_WAITING) {
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
+    if(bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if(bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -772,26 +760,29 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_field_recv_[nb.bufid],&test,MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_field_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if(test==false) {
           flag=false;
           continue;
         }
-        field_flag_[nb.bufid] = BNDRY_ARRIVED;
+        bd_field_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetFieldBoundarySameLevel(dst, field_recv_[nb.bufid], nb);
+      SetFieldBoundarySameLevel(dst, bd_field_.recv[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetFieldBoundaryFromCoarser(field_recv_[nb.bufid], nb);
+      SetFieldBoundaryFromCoarser(bd_field_.recv[nb.bufid], nb);
     else
-      SetFieldBoundaryFromFiner(dst, field_recv_[nb.bufid], nb);
-    field_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetFieldBoundaryFromFiner(dst, bd_field_.recv[nb.bufid], nb);
+    bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+  if (flag
+      and (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY)) {
     PolarSingleField(dst);
+    PolarAxisFieldAverage(dst);
+  }
 
   return flag;
 }
@@ -804,42 +795,44 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_field_recv_[nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_field_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetFieldBoundarySameLevel(dst, field_recv_[nb.bufid], nb);
+      SetFieldBoundarySameLevel(dst, bd_field_.recv[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetFieldBoundaryFromCoarser(field_recv_[nb.bufid], nb);
+      SetFieldBoundaryFromCoarser(bd_field_.recv[nb.bufid], nb);
     else
-      SetFieldBoundaryFromFiner(dst, field_recv_[nb.bufid], nb);
-    field_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetFieldBoundaryFromFiner(dst, bd_field_.recv[nb.bufid], nb);
+    bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarSingleField(dst);
+    PolarAxisFieldAverage(dst);
+  }
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::PolarSingleField(FaceField &dst)
 //
-//  \brief single CPU in the azimuthal direction for the polar boundary
+//  \brief single block in the azimuthal direction for the polar boundary
 
 void BoundaryValues::PolarSingleField(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
-  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
-    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  && pmb->block_size.nx3 > 1){
+    if(block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
            exc_(k)=dst.x1f(k,j,i);
-         }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -849,9 +842,8 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
            exc_(k)=dst.x2f(k,j,i);
-         }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -861,9 +853,8 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
            exc_(k)=dst.x3f(k,j,i);
-         }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -871,21 +862,14 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
          }
        }
       }
-        /* average B2 across the pole */
-      for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-          dst.x2f(k,pmb->js,i) = 0.5*(dst.x2f(k,pmb->js-1,i)+dst.x2f(k,pmb->js+1,i));
-        }
-      }
     }
 
-    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if(block_bcs[OUTER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
-          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
             exc_(k)=dst.x1f(k,j,i);
-          }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -895,9 +879,8 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
             exc_(k)=dst.x2f(k,j,i);
-          }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -907,9 +890,8 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
             exc_(k)=dst.x3f(k,j,i);
-          }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -917,11 +899,40 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
           }
         }
       }
-         /* average B2 across the pole */
-      for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-          dst.x2f(k,pmb->je+1,i) = 0.5*(dst.x2f(k,pmb->je,i)+dst.x2f(k,pmb->je+2,i));
-        }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::PolarAxisFieldAverage(FaceField &dst)
+//
+//  \brief set theta-component of field along axis
+
+void BoundaryValues::PolarAxisFieldAverage(FaceField &dst)
+{
+  MeshBlock *pmb = pmy_block_;
+  int is = pmb->is - NGHOST;
+  int ie = pmb->ie + NGHOST;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
+  if (pmb->block_size.nx3 > 1) {
+    ks -= NGHOST;
+    ke += NGHOST;
+  }
+  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+    int j = pmb->js;
+    for (int k = ks; k <= ke; ++k) {
+      for (int i = is; i <= ie; ++i) {
+        dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
+      }
+    }
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    int j = pmb->je + 1;
+    for (int k = ks; k <= ke; ++k) {
+      for (int i = is; i <= ie; ++i) {
+        dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
       }
     }
   }

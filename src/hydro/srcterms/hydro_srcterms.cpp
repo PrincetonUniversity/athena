@@ -69,6 +69,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   if ((Omega_0_ !=0.0) && (qshear_ != 0.0)) hydro_sourceterms_defined = true;
 //JMSHI]
 
+  if(SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
+
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
   if(UserSourceTerm != NULL) hydro_sourceterms_defined = true;
 }
@@ -96,6 +98,7 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
   if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0) ConstantAcceleration(dt, flux, prim,cons);
 
   // Add new source terms here
+  if (SELF_GRAVITY_ENABLED) SelfGravity(dt, flux, prim, cons);
   // MyNewSourceTerms()
 //[JMSHI
   // shearing box source terms: tidal and Coriolis forces

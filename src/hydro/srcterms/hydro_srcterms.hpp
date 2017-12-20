@@ -46,6 +46,8 @@ public:
                            const AthenaArray<Real> &p, AthenaArray<Real> &c);
   Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
 //JMSHI]
+  void SelfGravity(const Real dt, const AthenaArray<Real> *flx,
+    const AthenaArray<Real> &p, AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
   SrcTermFunc_t UserSourceTerm;
 

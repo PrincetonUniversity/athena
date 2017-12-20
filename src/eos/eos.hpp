@@ -44,7 +44,7 @@ public:
     #endif  // !MAGNETIC_FIELDS_ENABLED
     void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
     void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
-        const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+        const AthenaArray<Real> &, int, int, int, int, int, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}
     void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
         {return;}
@@ -57,12 +57,12 @@ public:
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
       void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
-          const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+          const AthenaArray<Real> &, int, int, int, int, int, AthenaArray<Real> &,
           AthenaArray<Real> &) {return;}
     #else  // MHD: hydro defined as no-op
       void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
       void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
-          const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+          const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
           AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m);
     #endif  // !MAGNETIC_FIELDS_ENABLED
     void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
@@ -76,7 +76,7 @@ public:
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
       void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
-          const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+          const AthenaArray<Real> &, int, int, int, int, int, AthenaArray<Real> &,
           AthenaArray<Real> &) {return;}
       void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
           Real g00, Real g01, Real g11,
@@ -86,7 +86,7 @@ public:
     #else  // MHD: hydro defined as no-op
       void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
       void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
-          const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+          const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
           AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m);
       void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
           {return;}

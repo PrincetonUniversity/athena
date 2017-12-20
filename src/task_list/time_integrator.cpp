@@ -21,6 +21,7 @@
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
+#include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 //[diffusion
@@ -153,13 +154,18 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
+//    if (SELF_GRAVITY_ENABLED == 1){
+//      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
+//      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
+//    } else {
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
+//    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if(pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
-      AddTimeIntegratorTask(CLEAR_ALLRECV,AMR_FLAG);
+      AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
     } else {
-      AddTimeIntegratorTask(CLEAR_ALLRECV,NEW_DT);
+      AddTimeIntegratorTask(CLEAR_ALLBND,NEW_DT);
     }
 
   } // end of using namespace block
@@ -181,10 +187,10 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartAllReceive);
       break;
-    case (CLEAR_ALLRECV):
+    case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ClearAllReceive);
+        (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
 
     case (CALC_HYDFLX):
@@ -338,10 +344,16 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         (&TimeIntegratorTaskList::FieldDiffusion);
       break;
     //diffusion]
+    case (CORR_GFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::GravFluxCorrection);
+      break;
+
 
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddTask" << std::endl
+      msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       throw std::runtime_error(msg.str().c_str());
   }
@@ -365,7 +377,7 @@ enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::ClearAllReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int step)
 {
   pmb->pbval->ClearBoundaryAll();
   return TASK_SUCCESS;
@@ -747,13 +759,14 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-  if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
-  if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
-  if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
-  if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
-  if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
-  if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
+  if(pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
+  if(pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
+  if(pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
+  if(pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
+  if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
+  if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if(step == 1) {
     pmb->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
@@ -810,5 +823,13 @@ enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int step
   if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
 
   pmb->pmr->CheckRefinementCondition();
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int step)
+{
+  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+
+  pmb->phydro->CorrectGravityFlux();
   return TASK_SUCCESS;
 }

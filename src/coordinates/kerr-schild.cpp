@@ -207,7 +207,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len3_i1_.NewAthenaArray(ncells1+1);
     coord_width1_i1_.NewAthenaArray(ncells1);
     coord_width2_i1_.NewAthenaArray(ncells1);
-    coord_src_i1_.NewAthenaArray(ncells1);
     metric_face1_i1_.NewAthenaArray(ncells1+1);
     metric_face2_i1_.NewAthenaArray(ncells1);
     metric_face3_i1_.NewAthenaArray(ncells1);
@@ -308,9 +307,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       }
       coord_width1_i1_(i) = rm_p - rm_m + m * std::log((rm_p + r_p) / (rm_m + r_m));
       coord_width2_i1_(i) = x1v(i);
-
-      // Source terms
-      coord_src_i1_(i) = r_c;
 
       // Metric coefficients
       metric_face1_i1_(i) = r_m;
@@ -545,7 +541,6 @@ KerrSchild::~KerrSchild()
     coord_len3_i1_.DeleteAthenaArray();
     coord_width1_i1_.DeleteAthenaArray();
     coord_width2_i1_.DeleteAthenaArray();
-    coord_src_i1_.DeleteAthenaArray();
     metric_face1_i1_.DeleteAthenaArray();
     metric_face2_i1_.DeleteAthenaArray();
     metric_face3_i1_.DeleteAthenaArray();
@@ -846,26 +841,22 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->peos->GetGamma();
 
-  // Extract useful quantities that do not depend on location
+  // Extract geometric quantities that do not depend on location
   const Real &m = bh_mass_;
-  Real m2 = SQR(m);
   const Real &a = bh_spin_;
   Real a2 = SQR(a);
-  Real a3 = a * a2;
 
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
     #pragma omp parallel for schedule(static)
     for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
 
-      // Extract useful quantities that do not depend on r
+      // Extract geometric quantities that do not depend on r
       const Real &sin = coord_src_j1_(j);
-      Real sin2 = SQR(sin);
-      Real sin3 = sin * sin2;
       const Real &cos = coord_src_j2_(j);
+      Real sin2 = SQR(sin);
       Real cos2 = SQR(cos);
-      Real cos4 = SQR(cos2);
-      Real cot = cos/sin;
+      Real sincos = sin * cos;
 
       // Calculate metric coefficients
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
@@ -874,27 +865,40 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
       #pragma simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
 
-        // Extract metric coefficients
+        // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
         const Real &g_01 = g_(I01,i);
-        const Real &g_02 = 0.0;
         const Real &g_03 = g_(I03,i);
-        const Real &g_10 = g_(I01,i);
         const Real &g_11 = g_(I11,i);
-        const Real &g_12 = 0.0;
         const Real &g_13 = g_(I13,i);
-        const Real &g_20 = 0.0;
-        const Real &g_21 = 0.0;
         const Real &g_22 = g_(I22,i);
-        const Real &g_23 = 0.0;
-        const Real &g_30 = g_(I03,i);
-        const Real &g_31 = g_(I13,i);
-        const Real &g_32 = 0.0;
         const Real &g_33 = g_(I33,i);
+        const Real &g00 = gi_(I00,i);
         const Real &g01 = gi_(I01,i);
-        const Real &g02 = 0.0;
-        const Real &g03 = 0.0;
-        Real alpha = std::sqrt(-1.0/gi_(I00,i));
+        const Real &g11 = gi_(I11,i);
+        const Real &g13 = gi_(I13,i);
+        const Real &g22 = gi_(I22,i);
+        const Real &g33 = gi_(I33,i);
+        Real alpha = std::sqrt(-1.0/g00);
+        const Real &r = x1v(i);
+        Real r2_a2 = SQR(r) + a2;
+        Real delta = r2_a2 - 2.0*m * r;
+        Real sigma_sq = SQR(SQR(r) + a2 * cos2);
+        Real xi = SQR(r) - a2 * cos2;
+        Real d1_g_00 = -2.0*m * xi / sigma_sq;
+        Real d1_g_01 = -2.0*m * xi / sigma_sq;
+        Real d1_g_03 = 2.0*m * xi / sigma_sq * a * sin2;
+        Real d1_g_11 = -2.0*m * xi / sigma_sq;
+        Real d1_g_13 = 2.0*m * xi / sigma_sq * a * sin2;
+        Real d1_g_22 = 2.0 * r;
+        Real d1_g_33 = 2.0 * (r - m * xi / sigma_sq * a2 * sin2) * sin2;
+        Real d2_g_00 = 4.0*m*a2 * r / sigma_sq * sincos;
+        Real d2_g_01 = 4.0*m*a2 * r / sigma_sq * sincos;
+        Real d2_g_03 = -4.0*m*a * r * r2_a2 / sigma_sq * sincos;
+        Real d2_g_11 = 4.0*m*a2 * r / sigma_sq * sincos;
+        Real d2_g_13 = -2.0 * (1.0 + 2.0*m * r * r2_a2 / sigma_sq) * a * sincos;
+        Real d2_g_22 = -2.0*a2 * sincos;
+        Real d2_g_33 = 2.0 * (delta + 2.0*m * r * SQR(r2_a2) / sigma_sq) * sincos;
 
         // Extract primitives
         const Real &rho = prim(IDN,k,j,i);
@@ -904,167 +908,58 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         const Real &uu3 = prim(IVZ,k,j,i);
 
         // Calculate 4-velocity
-        Real tmp = g_11*uu1*uu1 + 2.0*g_12*uu1*uu2 + 2.0*g_13*uu1*uu3
-                 + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
-                 + g_33*uu3*uu3;
-        Real gamma = std::sqrt(1.0 + tmp);
+        Real uu_sq = g_11*uu1*uu1 + 2.0*g_13*uu1*uu3 + g_22*uu2*uu2 + g_33*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + uu_sq);
         Real u0 = gamma / alpha;
         Real u1 = uu1 - alpha * gamma * g01;
-        Real u2 = uu2 - alpha * gamma * g02;
-        Real u3 = uu3 - alpha * gamma * g03;
-        Real u_0 = g_00*u0 + g_01*u1 + g_02*u2 + g_03*u3;
-        Real u_1 = g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3;
-        Real u_2 = g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3;
-        Real u_3 = g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3;
+        Real u2 = uu2;
+        Real u3 = uu3;
 
         // Extract and calculate magnetic field
         Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
-        Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
         Real b_sq = 0.0;
         if (MAGNETIC_FIELDS_ENABLED) {
+          Real u_1 = g_01*u0 + g_11*u1 + g_13*u3;
+          Real u_2 = g_22*u2;
+          Real u_3 = g_03*u0 + g_13*u1 + g_33*u3;
           const Real &bb1 = bb_cc(IB1,k,j,i);
           const Real &bb2 = bb_cc(IB2,k,j,i);
           const Real &bb3 = bb_cc(IB3,k,j,i);
-          b0 =
-                g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
-              + g_20*bb2*u0 + g_21*bb2*u1 + g_22*bb2*u2 + g_23*bb2*u3
-              + g_30*bb3*u0 + g_31*bb3*u1 + g_32*bb3*u2 + g_33*bb3*u3;
+          b0 = u_1*bb1 + u_2*bb2 + u_3*bb3;
           b1 = (bb1 + b0 * u1) / u0;
           b2 = (bb2 + b0 * u2) / u0;
           b3 = (bb3 + b0 * u3) / u0;
-          b_0 = g_00*b0 + g_01*b1 + g_02*b2 + g_03*b3;
-          b_1 = g_10*b0 + g_11*b1 + g_12*b2 + g_13*b3;
-          b_2 = g_20*b0 + g_21*b1 + g_22*b2 + g_23*b3;
-          b_3 = g_30*b0 + g_31*b1 + g_32*b2 + g_33*b3;
-          b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+          Real b_0 = g_00*b0 + g_01*b1 + g_03*b3;
+          Real b_1 = g_01*b0 + g_11*b1 + g_13*b3;
+          Real b_2 = g_22*b2;
+          Real b_3 = g_03*b0 + g_13*b1 + g_33*b3;
+          b_sq = b_0*b0 + b_1*b1 + b_2*b2 + b_3*b3;
         }
 
         // Calculate stress-energy tensor
         Real wtot = rho + gamma_adi/(gamma_adi-1.0) * pgas + b_sq;
         Real ptot = pgas + 0.5*b_sq;
-        Real t0_0 = wtot*u0*u_0 - b0*b_0 + ptot;
-        Real t0_1 = wtot*u0*u_1 - b0*b_1;
-        Real t0_2 = wtot*u0*u_2 - b0*b_2;
-        Real t0_3 = wtot*u0*u_3 - b0*b_3;
-        Real t1_0 = wtot*u1*u_0 - b1*b_0;
-        Real t1_1 = wtot*u1*u_1 - b1*b_1 + ptot;
-        Real t1_2 = wtot*u1*u_2 - b1*b_2;
-        Real t1_3 = wtot*u1*u_3 - b1*b_3;
-        Real t2_0 = wtot*u2*u_0 - b2*b_0;
-        Real t2_1 = wtot*u2*u_1 - b2*b_1;
-        Real t2_2 = wtot*u2*u_2 - b2*b_2 + ptot;
-        Real t2_3 = wtot*u2*u_3 - b2*b_3;
-        Real t3_0 = wtot*u3*u_0 - b3*b_0;
-        Real t3_1 = wtot*u3*u_1 - b3*b_1;
-        Real t3_2 = wtot*u3*u_2 - b3*b_2;
-        Real t3_3 = wtot*u3*u_3 - b3*b_3 + ptot;
-
-        // Extract remaining useful quantities
-        const Real &r = coord_src_i1_(i);
-        Real r2 = SQR(r);
-        Real r3 = r * r2;
-        Real delta = r2 - 2.0*m*r + a2;
-        Real sigma = r2 + a2 * cos2;
-        Real sigma2 = SQR(sigma);
-        Real sigma3 = sigma * sigma2;
-        Real xi = r2 - a2 * cos2;
-
-        // Calculate connection coefficients
-        Real gamma0_00 = 2.0*m2*xi*r/sigma3;
-        Real gamma0_01 = m*xi/sigma2 * (1.0 + 2.0*m*r/sigma);
-        Real gamma0_02 = -2.0*m*a2*r/sigma2 * sin * cos;
-        Real gamma0_03 = -2.0*m2*a*r*xi/sigma3 * sin2;
-        Real gamma0_11 = 2.0*m*xi/sigma2 * (1.0 + m*r/sigma);
-        Real gamma0_12 = -2.0*m*a2*r/sigma2 * sin * cos;
-        Real gamma0_13 = -m*a*xi/sigma2 * (1.0 + 2.0*m*r/sigma) * sin2;
-        Real gamma0_22 = -2.0*m*r2/sigma;
-        Real gamma0_23 = 2.0*m*a3*r/sigma2 * sin3 * cos;
-        Real gamma0_33 = -2.0*m*r/sigma * (r - m*a2*xi/sigma2 * sin2) * sin2;
-        Real gamma1_00 = m*delta*xi/sigma3;
-        Real gamma1_01 = m*xi/sigma3 * (delta-sigma);
-        Real gamma1_02 = 0.0;
-        Real gamma1_03 = -m*a*delta*xi/sigma3 * sin2;
-        Real gamma1_11 = m*xi/sigma3 * (delta-2.0*sigma);
-        Real gamma1_12 = -a2/sigma * sin * cos;
-        Real gamma1_13 = a/sigma3 * (r3 * (r2+2.0*m2)
-            + a2 * (r*a2*cos4 + (2.0*r3 + m*(delta-sigma)) * cos2 - m*r2*sin2));
-        Real gamma1_22 = -r*delta/sigma;
-        Real gamma1_23 = 0.0;
-        Real gamma1_33 = -delta/sigma * (r - m*a2*xi/sigma2 * sin2) * sin2;
-        Real gamma2_00 = -2.0*m*a2*r/sigma3 * sin * cos;
-        Real gamma2_01 = -2.0*m*a2*r/sigma3 * sin * cos;
-        Real gamma2_02 = 0.0;
-        Real gamma2_03 = 2.0*m*a*r/sigma3 * (r2+a2) * sin * cos;
-        Real gamma2_11 = -2.0*m*a2*r/sigma3 * sin * cos;
-        Real gamma2_12 = r/sigma;
-        Real gamma2_13 = a/sigma * (1.0 + 2.0*m*r/sigma2 * (r2+a2)) * sin * cos;
-        Real gamma2_22 = -a2/sigma * sin * cos;
-        Real gamma2_23 = 0.0;
-        Real gamma2_33 = -1.0/sigma * (delta + 2.0*m*r/sigma2 * SQR(r2+a2)) * sin * cos;
-        Real gamma3_00 = m*a*xi/sigma3;
-        Real gamma3_01 = m*a*xi/sigma3;
-        Real gamma3_02 = -2.0*m*a*r/sigma2 * cot;
-        Real gamma3_03 = -m*a2*xi/sigma3 * sin2;
-        Real gamma3_11 = m*a*xi/sigma3;
-        Real gamma3_12 = -a/sigma2 * (2.0*m*r + sigma) * cot;
-        Real gamma3_13 = 1.0/sigma3 * (r*sigma2 - m*a2*xi * sin2);
-        Real gamma3_22 = -a*r/sigma;
-        Real gamma3_23 = 2.0*m*a2*r/sigma2 * sin * cos + cot;
-        Real gamma3_33 = a/sigma3 * (m*a2*xi * sin2 - r*sigma2) * sin2;
-        const Real &gamma0_10 = gamma0_01;
-        const Real &gamma0_20 = gamma0_02;
-        const Real &gamma0_21 = gamma0_12;
-        const Real &gamma0_30 = gamma0_03;
-        const Real &gamma0_31 = gamma0_13;
-        const Real &gamma0_32 = gamma0_23;
-        const Real &gamma1_10 = gamma1_01;
-        const Real &gamma1_20 = gamma1_02;
-        const Real &gamma1_21 = gamma1_12;
-        const Real &gamma1_30 = gamma1_03;
-        const Real &gamma1_31 = gamma1_13;
-        const Real &gamma1_32 = gamma1_23;
-        const Real &gamma2_10 = gamma2_01;
-        const Real &gamma2_20 = gamma2_02;
-        const Real &gamma2_21 = gamma2_12;
-        const Real &gamma2_30 = gamma2_03;
-        const Real &gamma2_31 = gamma2_13;
-        const Real &gamma2_32 = gamma2_23;
-        const Real &gamma3_10 = gamma3_01;
-        const Real &gamma3_20 = gamma3_02;
-        const Real &gamma3_21 = gamma3_12;
-        const Real &gamma3_30 = gamma3_03;
-        const Real &gamma3_31 = gamma3_13;
-        const Real &gamma3_32 = gamma3_23;
+        Real tt00 = wtot * u0 * u0 - b0 * b0 + ptot * g00;
+        Real tt01 = wtot * u0 * u1 - b0 * b1 + ptot * g01;
+        Real tt03 = wtot * u0 * u3 - b0 * b3;
+        Real tt11 = wtot * u1 * u1 - b1 * b1 + ptot * g11;
+        Real tt13 = wtot * u1 * u3 - b1 * b3 + ptot * g13;
+        Real tt22 = wtot * u2 * u2 - b2 * b2 + ptot * g22;
+        Real tt33 = wtot * u3 * u3 - b3 * b3 + ptot * g33;
 
         // Calculate source terms
-        Real s_0 = gamma0_00*t0_0 + gamma0_10*t1_0 + gamma0_20*t2_0 + gamma0_30*t3_0
-                 + gamma1_00*t0_1 + gamma1_10*t1_1 + gamma1_20*t2_1 + gamma1_30*t3_1
-                 + gamma2_00*t0_2 + gamma2_10*t1_2 + gamma2_20*t2_2 + gamma2_30*t3_2
-                 + gamma3_00*t0_3 + gamma3_10*t1_3 + gamma3_20*t2_3 + gamma3_30*t3_3;
-        Real s_1 = gamma0_01*t0_0 + gamma0_11*t1_0 + gamma0_21*t2_0 + gamma0_31*t3_0
-                 + gamma1_01*t0_1 + gamma1_11*t1_1 + gamma1_21*t2_1 + gamma1_31*t3_1
-                 + gamma2_01*t0_2 + gamma2_11*t1_2 + gamma2_21*t2_2 + gamma2_31*t3_2
-                 + gamma3_01*t0_3 + gamma3_11*t1_3 + gamma3_21*t2_3 + gamma3_31*t3_3;
-        Real s_2 = gamma0_02*t0_0 + gamma0_12*t1_0 + gamma0_22*t2_0 + gamma0_32*t3_0
-                 + gamma1_02*t0_1 + gamma1_12*t1_1 + gamma1_22*t2_1 + gamma1_32*t3_1
-                 + gamma2_02*t0_2 + gamma2_12*t1_2 + gamma2_22*t2_2 + gamma2_32*t3_2
-                 + gamma3_02*t0_3 + gamma3_12*t1_3 + gamma3_22*t2_3 + gamma3_32*t3_3;
-        Real s_3 = gamma0_03*t0_0 + gamma0_13*t1_0 + gamma0_23*t2_0 + gamma0_33*t3_0
-                 + gamma1_03*t0_1 + gamma1_13*t1_1 + gamma1_23*t2_1 + gamma1_33*t3_1
-                 + gamma2_03*t0_2 + gamma2_13*t1_2 + gamma2_23*t2_2 + gamma2_33*t3_2
-                 + gamma3_03*t0_3 + gamma3_13*t1_3 + gamma3_23*t2_3 + gamma3_33*t3_3;
+        Real s_1 = 0.5 * (d1_g_00*tt00 + 2.0*d1_g_01*tt01 + 2.0*d1_g_03*tt03
+            + d1_g_11*tt11 + 2.0*d1_g_13*tt13 + d1_g_22*tt22 + d1_g_33*tt33);
+        Real s_2 = 0.5 * (d2_g_00*tt00 + 2.0*d2_g_01*tt01 + 2.0*d2_g_03*tt03
+            + d2_g_11*tt11 + 2.0*d2_g_13*tt13 + d2_g_22*tt22 + d2_g_33*tt33);
 
         // Extract conserved quantities
-        Real &m_0 = cons(IEN,k,j,i);
         Real &m_1 = cons(IM1,k,j,i);
         Real &m_2 = cons(IM2,k,j,i);
-        Real &m_3 = cons(IM3,k,j,i);
 
         // Add source terms to conserved quantities
-        m_0 += dt * s_0;
         m_1 += dt * s_1;
         m_2 += dt * s_2;
-        m_3 += dt * s_3;
       }
     }
   }
@@ -1273,8 +1168,8 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
 //   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
+//   prim_l: 3D array of left primitives, using global coordinates
+//   prim_r: 3D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -1283,10 +1178,10 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
 //   expects \tilde{u}^1/\tilde{u}^2/\tilde{u}^3 in IVX/IVY/IVZ slots
 //   expects B^1 in bb1
 //   expects B^2/B^3 in IBY/IBZ slots
-//   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVX/IVY/IVZ
+//   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVX/IVY/IVZ slots
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
-//   \tilde{u}^\hat{i} = u^\hat{i}
+//   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
 void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
@@ -1310,30 +1205,28 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
     const Real &mz_3 = trans_face1_ji4_(j,i);
 
     // Extract global projected 4-velocities
-    Real uu0_l = 0.0;
-    Real uu1_l = prim_l(IVX,i);
-    Real uu2_l = prim_l(IVY,i);
-    Real uu3_l = prim_l(IVZ,i);
-    Real uu0_r = 0.0;
-    Real uu1_r = prim_r(IVX,i);
-    Real uu2_r = prim_r(IVY,i);
-    Real uu3_r = prim_r(IVZ,i);
+    Real uu1_l = prim_l(IVX,k,j,i);
+    Real uu2_l = prim_l(IVY,k,j,i);
+    Real uu3_l = prim_l(IVZ,k,j,i);
+    Real uu1_r = prim_r(IVX,k,j,i);
+    Real uu2_r = prim_r(IVY,k,j,i);
+    Real uu3_r = prim_r(IVZ,k,j,i);
 
     // Transform projected 4-velocities
-    Real uux_l = mx_0*uu0_l + mx_1*uu1_l;
-    Real uuy_l = my_2*uu2_l;
-    Real uuz_l = mz_0*uu0_l + mz_1*uu1_l + mz_3*uu3_l;
-    Real uux_r = mx_0*uu0_r + mx_1*uu1_r;
-    Real uuy_r = my_2*uu2_r;
-    Real uuz_r = mz_0*uu0_r + mz_1*uu1_r + mz_3*uu3_r;
+    Real ux_l = mx_1*uu1_l;
+    Real uy_l = my_2*uu2_l;
+    Real uz_l = mz_1*uu1_l + mz_3*uu3_l;
+    Real ux_r = mx_1*uu1_r;
+    Real uy_r = my_2*uu2_r;
+    Real uz_r = mz_1*uu1_r + mz_3*uu3_r;
 
     // Set local projected 4-velocities
-    prim_l(IVX,i) = uux_l;
-    prim_l(IVY,i) = uuy_l;
-    prim_l(IVZ,i) = uuz_l;
-    prim_r(IVX,i) = uux_r;
-    prim_r(IVY,i) = uuy_r;
-    prim_r(IVZ,i) = uuz_r;
+    prim_l(IVX,k,j,i) = ux_l;
+    prim_l(IVY,k,j,i) = uy_l;
+    prim_l(IVZ,k,j,i) = uz_l;
+    prim_r(IVX,k,j,i) = ux_r;
+    prim_r(IVY,k,j,i) = uy_r;
+    prim_r(IVZ,k,j,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1341,74 +1234,55 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = 0.0;
-      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = 0.0;
-      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
-      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
+          + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
-      Real u2_l = uu2_l - alpha * gamma_l * g02;
-      Real u3_l = uu3_l - alpha * gamma_l * g03;
-      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+      Real u2_l = uu2_l;
+      Real u3_l = uu3_l;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_13*uu1_r*uu3_r + g_22*uu2_r*uu2_r + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
-      Real u2_r = uu2_r - alpha * gamma_r * g02;
-      Real u3_r = uu3_r - alpha * gamma_r * g03;
+      Real u2_r = uu2_r;
+      Real u3_r = uu3_r;
 
       // Extract global magnetic fields
       const Real &bb1_l = bb1(k,j,i);
       const Real &bb1_r = bb1(k,j,i);
-      Real &bb2_l = prim_l(IBY,i);
-      Real &bb3_l = prim_l(IBZ,i);
-      Real &bb2_r = prim_r(IBY,i);
-      Real &bb3_r = prim_r(IBZ,i);
+      Real &bb2_l = prim_l(IBY,k,j,i);
+      Real &bb3_l = prim_l(IBZ,k,j,i);
+      Real &bb2_r = prim_r(IBY,k,j,i);
+      Real &bb3_r = prim_r(IBZ,k,j,i);
 
       // Calculate global 4-magnetic fields
-      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
+          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
-      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
+          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
       // Transform 4-velocities
-      Real ut_l = mt_0*u0_l;
-      Real ux_l = mx_0*u0_l + mx_1*u1_l;
-      Real uy_l = my_2*u2_l;
-      Real uz_l = mz_0*u0_l + mz_1*u1_l + mz_3*u3_l;
-      Real ut_r = mt_0*u0_r;
-      Real ux_r = mx_0*u0_r + mx_1*u1_r;
-      Real uy_r = my_2*u2_r;
-      Real uz_r = mz_0*u0_r + mz_1*u1_r + mz_3*u3_r;
+      Real ut_l = gamma_l;
+      Real ut_r = gamma_r;
 
       // Transform 4-magnetic fields
       Real bt_l = mt_0*b0_l;
@@ -1439,8 +1313,8 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
 //   bb2: 3D array of normal components B^2 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
+//   prim_l: 3D array of left primitives, using global coordinates
+//   prim_r: 3D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -1452,7 +1326,7 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 //   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVY/IVZ/IVX slots
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
-//   \tilde{u}^\hat{i} = u^\hat{i}
+//   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
 void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
@@ -1475,30 +1349,28 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
     const Real &mz_3 = trans_face2_ji6_(j,i);
 
     // Extract global projected 4-velocities
-    Real uu0_l = 0.0;
-    Real uu1_l = prim_l(IVX,i);
-    Real uu2_l = prim_l(IVY,i);
-    Real uu3_l = prim_l(IVZ,i);
-    Real uu0_r = 0.0;
-    Real uu1_r = prim_r(IVX,i);
-    Real uu2_r = prim_r(IVY,i);
-    Real uu3_r = prim_r(IVZ,i);
+    Real uu1_l = prim_l(IVX,k,j,i);
+    Real uu2_l = prim_l(IVY,k,j,i);
+    Real uu3_l = prim_l(IVZ,k,j,i);
+    Real uu1_r = prim_r(IVX,k,j,i);
+    Real uu2_r = prim_r(IVY,k,j,i);
+    Real uu3_r = prim_r(IVZ,k,j,i);
 
     // Transform projected 4-velocities
-    Real uux_l = mx_2*uu2_l;
-    Real uuy_l = my_3*uu3_l;
-    Real uuz_l = mz_0*uu0_l + mz_1*uu1_l + mz_3*uu3_l;
-    Real uux_r = mx_2*uu2_r;
-    Real uuy_r = my_3*uu3_r;
-    Real uuz_r = mz_0*uu0_r + mz_1*uu1_r + mz_3*uu3_r;
+    Real ux_l = mx_2*uu2_l;
+    Real uy_l = my_3*uu3_l;
+    Real uz_l = mz_1*uu1_l + mz_3*uu3_l;
+    Real ux_r = mx_2*uu2_r;
+    Real uy_r = my_3*uu3_r;
+    Real uz_r = mz_1*uu1_r + mz_3*uu3_r;
 
     // Set local projected 4-velocities
-    prim_l(IVY,i) = uux_l;
-    prim_l(IVZ,i) = uuy_l;
-    prim_l(IVX,i) = uuz_l;
-    prim_r(IVY,i) = uux_r;
-    prim_r(IVZ,i) = uuy_r;
-    prim_r(IVX,i) = uuz_r;
+    prim_l(IVY,k,j,i) = ux_l;
+    prim_l(IVZ,k,j,i) = uy_l;
+    prim_l(IVX,k,j,i) = uz_l;
+    prim_r(IVY,k,j,i) = ux_r;
+    prim_r(IVZ,k,j,i) = uy_r;
+    prim_r(IVX,k,j,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1506,74 +1378,55 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = 0.0;
-      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = 0.0;
-      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
-      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
+          + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
-      Real u2_l = uu2_l - alpha * gamma_l * g02;
-      Real u3_l = uu3_l - alpha * gamma_l * g03;
-      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+      Real u2_l = uu2_l;
+      Real u3_l = uu3_l;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_13*uu1_r*uu3_r + g_22*uu2_r*uu2_r + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
-      Real u2_r = uu2_r - alpha * gamma_r * g02;
-      Real u3_r = uu3_r - alpha * gamma_r * g03;
+      Real u2_r = uu2_r;
+      Real u3_r = uu3_r;
 
       // Extract global magnetic fields
       const Real &bb2_l = bb2(k,j,i);
       const Real &bb2_r = bb2(k,j,i);
-      Real &bb3_l = prim_l(IBY,i);
-      Real &bb1_l = prim_l(IBZ,i);
-      Real &bb3_r = prim_r(IBY,i);
-      Real &bb1_r = prim_r(IBZ,i);
+      Real &bb3_l = prim_l(IBY,k,j,i);
+      Real &bb1_l = prim_l(IBZ,k,j,i);
+      Real &bb3_r = prim_r(IBY,k,j,i);
+      Real &bb1_r = prim_r(IBZ,k,j,i);
 
       // Calculate global 4-magnetic fields
-      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
+          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
-      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
+          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
       // Transform 4-velocities
-      Real ut_l = mt_0*u0_l;
-      Real ux_l = mx_2*u2_l;
-      Real uy_l = my_3*u3_l;
-      Real uz_l = mz_0*u0_l + mz_1*u1_l + mz_3*u3_l;
-      Real ut_r = mt_0*u0_r;
-      Real ux_r = mx_2*u2_r;
-      Real uy_r = my_3*u3_r;
-      Real uz_r = mz_0*u0_r + mz_1*u1_r + mz_3*u3_r;
+      Real ut_l = gamma_l;
+      Real ut_r = gamma_r;
 
       // Transform 4-magnetic fields
       Real bt_l = mt_0*b0_l;
@@ -1604,8 +1457,8 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
 //   bb3: 3D array of normal components B^3 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
+//   prim_l: 3D array of left primitives, using global coordinates
+//   prim_r: 3D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -1617,7 +1470,7 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 //   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVZ/IVX/IVY slots
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
-//   \tilde{u}^\hat{i} = u^\hat{i}
+//   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
 void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
@@ -1640,30 +1493,28 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
     const Real &mz_2 = trans_face3_ji3_(j,i);
 
     // Extract global projected 4-velocities
-    Real uu0_l = 0.0;
-    Real uu1_l = prim_l(IVX,i);
-    Real uu2_l = prim_l(IVY,i);
-    Real uu3_l = prim_l(IVZ,i);
-    Real uu0_r = 0.0;
-    Real uu1_r = prim_r(IVX,i);
-    Real uu2_r = prim_r(IVY,i);
-    Real uu3_r = prim_r(IVZ,i);
+    Real uu1_l = prim_l(IVX,k,j,i);
+    Real uu2_l = prim_l(IVY,k,j,i);
+    Real uu3_l = prim_l(IVZ,k,j,i);
+    Real uu1_r = prim_r(IVX,k,j,i);
+    Real uu2_r = prim_r(IVY,k,j,i);
+    Real uu3_r = prim_r(IVZ,k,j,i);
 
     // Transform projected 4-velocities
-    Real uux_l = mx_3*uu3_l;
-    Real uuy_l = my_0*uu0_l + my_1*uu1_l + my_3*uu3_l;
-    Real uuz_l = mz_2*uu2_l;
-    Real uux_r = mx_3*uu3_r;
-    Real uuy_r = my_0*uu0_r + my_1*uu1_r + my_3*uu3_r;
-    Real uuz_r = mz_2*uu2_r;
+    Real ux_l = mx_3*uu3_l;
+    Real uy_l = my_1*uu1_l + my_3*uu3_l;
+    Real uz_l = mz_2*uu2_l;
+    Real ux_r = mx_3*uu3_r;
+    Real uy_r = my_1*uu1_r + my_3*uu3_r;
+    Real uz_r = mz_2*uu2_r;
 
     // Set local projected 4-velocities
-    prim_l(IVZ,i) = uux_l;
-    prim_l(IVX,i) = uuy_l;
-    prim_l(IVY,i) = uuz_l;
-    prim_r(IVZ,i) = uux_r;
-    prim_r(IVX,i) = uuy_r;
-    prim_r(IVY,i) = uuz_r;
+    prim_l(IVZ,k,j,i) = ux_l;
+    prim_l(IVX,k,j,i) = uy_l;
+    prim_l(IVY,k,j,i) = uz_l;
+    prim_r(IVZ,k,j,i) = ux_r;
+    prim_r(IVX,k,j,i) = uy_r;
+    prim_r(IVY,k,j,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1671,74 +1522,55 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = 0.0;
-      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = 0.0;
-      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
-      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
+          + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
-      Real u2_l = uu2_l - alpha * gamma_l * g02;
-      Real u3_l = uu3_l - alpha * gamma_l * g03;
-      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+      Real u2_l = uu2_l;
+      Real u3_l = uu3_l;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_13*uu1_r*uu3_r + g_22*uu2_r*uu2_r + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
-      Real u2_r = uu2_r - alpha * gamma_r * g02;
-      Real u3_r = uu3_r - alpha * gamma_r * g03;
+      Real u2_r = uu2_r;
+      Real u3_r = uu3_r;
 
       // Extract global magnetic fields
       const Real &bb3_l = bb3(k,j,i);
       const Real &bb3_r = bb3(k,j,i);
-      Real &bb1_l = prim_l(IBY,i);
-      Real &bb2_l = prim_l(IBZ,i);
-      Real &bb1_r = prim_r(IBY,i);
-      Real &bb2_r = prim_r(IBZ,i);
+      Real &bb1_l = prim_l(IBY,k,j,i);
+      Real &bb2_l = prim_l(IBZ,k,j,i);
+      Real &bb1_r = prim_r(IBY,k,j,i);
+      Real &bb2_r = prim_r(IBZ,k,j,i);
 
       // Calculate global 4-magnetic fields
-      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
+          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
-      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
+          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
       // Transform 4-velocities
-      Real ut_l = mt_0*u0_l;
-      Real ux_l = mx_3*u3_l;
-      Real uy_l = my_0*u0_l + my_1*u1_l + my_3*u3_l;
-      Real uz_l = mz_2*u2_l;
-      Real ut_r = mt_0*u0_r;
-      Real ux_r = mx_3*u3_r;
-      Real uy_r = my_0*u0_r + my_1*u1_r + my_3*u3_r;
-      Real uz_r = mz_2*u2_r;
+      Real ut_l = gamma_l;
+      Real ut_r = gamma_r;
 
       // Transform 4-magnetic fields
       Real bt_l = mt_0*b0_l;
@@ -1768,19 +1600,22 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates
+//   cons: 1D array of conserved quantities, using local coordinates
 //   bbx: 1D array of longitudinal magnetic fields, in local coordinates
-//   flux: array of fluxes in 1D, using local coordinates
+//   flux: 3D array of hydrodynamical fluxes, using local coordinates
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields), using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
+//   ey,ez: values overwritten in global coordinates
 // Notes:
 //   expects values and x-fluxes of Mx/My/Mz in IM1/IM2/IM3 slots
-//   expects values and x-fluxes of By/Bz in IBY/IBZ slots
+//   expects values and x-fluxes of By/Bz in IBY/IBZ slots and ey/ez
 //   puts r-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
-//   puts r-fluxes of B2/B3 in IBY/IBZ slots
+//   puts r-fluxes of B2/B3 in ey/ez
 
 void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
 {
   // Calculate metric coefficients
   Face1Metric(k, j, il, iu, g_, gi_);
@@ -1809,11 +1644,11 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
     Real ttx = cons(IM1,i);
     Real tty = cons(IM2,i);
     Real ttz = cons(IM3,i);
-    Real dx = flux(IDN,i);
-    Real txt = flux(IEN,i);
-    Real txx = flux(IM1,i);
-    Real txy = flux(IM2,i);
-    Real txz = flux(IM3,i);
+    Real dx = flux(IDN,k,j,i);
+    Real txt = flux(IEN,k,j,i);
+    Real txx = flux(IM1,k,j,i);
+    Real txy = flux(IM2,k,j,i);
+    Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
     Real t10 = m1_t*m0_t*ttt + m1_x*m0_t*txt;
@@ -1834,11 +1669,11 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
     const Real &g_33 = g_(I33,i);
 
     // Extract global fluxes
-    Real &d1 = flux(IDN,i);
-    Real &t1_0 = flux(IEN,i);
-    Real &t1_1 = flux(IM1,i);
-    Real &t1_2 = flux(IM2,i);
-    Real &t1_3 = flux(IM3,i);
+    Real &d1 = flux(IDN,k,j,i);
+    Real &t1_0 = flux(IEN,k,j,i);
+    Real &t1_1 = flux(IM1,k,j,i);
+    Real &t1_2 = flux(IM2,k,j,i);
+    Real &t1_3 = flux(IM3,k,j,i);
 
     // Set fluxes
     d1 = m1_t*dt + m1_x*dx;
@@ -1849,15 +1684,15 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
 
     // Transform magnetic fluxes if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-      const Real &fxt = bbx(i);
-      const Real &fyt = cons(IBY,i);
-      const Real &fzt = cons(IBZ,i);
-      Real fyx = flux(IBY,i);
-      Real fzx = flux(IBZ,i);
-      Real &f21 = flux(IBY,i);
-      Real &f31 = flux(IBZ,i);
-      f21 = m2_y*m1_t*fyt + m2_y*m1_x*fyx;
-      f31 = m3_x*m1_t*fxt + m3_z*m1_t*fzt + m3_z*m1_x*fzx;
+      Real fxt = bbx(i);
+      Real fyt = cons(IBY,i);
+      Real fzt = cons(IBZ,i);
+      Real fyx = -ey(k,j,i);
+      Real fzx = ez(k,j,i);
+      Real f21 = m2_y*m1_t*fyt + m2_y*m1_x*fyx;
+      Real f31 = m3_x*m1_t*fxt + m3_z*m1_t*fzt + m3_z*m1_x*fzx;
+      ey(k,j,i) = -f21;
+      ez(k,j,i) = f31;
     }
   }
   return;
@@ -1868,19 +1703,22 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates
+//   cons: 1D array of conserved quantities, using local coordinates
 //   bbx: 1D array of longitudinal magnetic fields, in local coordinates
-//   flux: array of fluxes in 1D, using local coordinates
+//   flux: 3D array of hydrodynamical fluxes, using local coordinates
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields), using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
+//   ey,ez: values overwritten in global coordinates
 // Notes:
 //   expects values and x-fluxes of Mx/My/Mz in IM2/IM3/IM1 slots
-//   expects values and x-fluxes of By/Bz in IBY/IBZ slots
+//   expects values and x-fluxes of By/Bz in IBY/IBZ slots and ey/ez
 //   puts theta-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
-//   puts theta-fluxes of B3/B1 in IBY/IBZ slots
+//   puts theta-fluxes of B3/B1 in ey/ez
 
 void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
 {
   // Calculate metric coefficients
   Face2Metric(k, j, il, iu, g_, gi_);
@@ -1909,11 +1747,11 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
     Real ttx = cons(IM1,i);
     Real tty = cons(IM2,i);
     Real ttz = cons(IM3,i);
-    Real dx = flux(IDN,i);
-    Real txt = flux(IEN,i);
-    Real txx = flux(IM2,i);
-    Real txy = flux(IM3,i);
-    Real txz = flux(IM1,i);
+    Real dx = flux(IDN,k,j,i);
+    Real txt = flux(IEN,k,j,i);
+    Real txx = flux(IM2,k,j,i);
+    Real txy = flux(IM3,k,j,i);
+    Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
     Real t20 = m2_x*m0_t*txt;
@@ -1934,11 +1772,11 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
     const Real &g_33 = g_(I33,i);
 
     // Extract global fluxes
-    Real &d2 = flux(IDN,i);
-    Real &t2_0 = flux(IEN,i);
-    Real &t2_1 = flux(IM1,i);
-    Real &t2_2 = flux(IM2,i);
-    Real &t2_3 = flux(IM3,i);
+    Real &d2 = flux(IDN,k,j,i);
+    Real &t2_0 = flux(IEN,k,j,i);
+    Real &t2_1 = flux(IM1,k,j,i);
+    Real &t2_2 = flux(IM2,k,j,i);
+    Real &t2_3 = flux(IM3,k,j,i);
 
     // Set fluxes
     d2 = m2_x*dx;
@@ -1950,12 +1788,12 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
     // Transform magnetic fluxes if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       Real ftx = -bbx(i);
-      Real fyx = flux(IBY,i);
-      Real fzx = flux(IBZ,i);
-      Real &f32 = flux(IBY,i);
-      Real &f12 = flux(IBZ,i);
-      f32 = m3_y*m2_x*fyx;
-      f12 = m1_t*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
+      Real fyx = -ey(k,j,i);
+      Real fzx = ez(k,j,i);
+      Real f32 = m3_y*m2_x*fyx;
+      Real f12 = m1_t*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
+      ey(k,j,i) = -f32;
+      ez(k,j,i) = f12;
     }
   }
   return;
@@ -1966,19 +1804,22 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates
+//   cons: 1D array of conserved quantities, using local coordinates
 //   bbx: 1D array of longitudinal magnetic fields, in local coordinates
-//   flux: array of fluxes in 1D, using local coordinates
+//   flux: 3D array of hydrodynamical fluxes, using local coordinates
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields), using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
+//   ey,ez: values overwritten in global coordinates
 // Notes:
 //   expects values and x-fluxes of Mx/My/Mz in IM3/IM1/IM2 slots
-//   expects values and x-fluxes of By/Bz in IBY/IBZ slots
+//   expects values and x-fluxes of By/Bz in IBY/IBZ slots and ey/ez
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
-//   puts phi-fluxes of B1/B2 in IBY/IBZ slots
+//   puts phi-fluxes of B1/B2 in ey/ez
 
 void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
 {
   // Calculate metric coefficients
   Face3Metric(k, j, il, iu, g_, gi_);
@@ -2007,11 +1848,11 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
     Real ttx = cons(IM1,i);
     Real tty = cons(IM2,i);
     Real ttz = cons(IM3,i);
-    Real dx = flux(IDN,i);
-    Real txt = flux(IEN,i);
-    Real txx = flux(IM3,i);
-    Real txy = flux(IM1,i);
-    Real txz = flux(IM2,i);
+    Real dx = flux(IDN,k,j,i);
+    Real txt = flux(IEN,k,j,i);
+    Real txx = flux(IM3,k,j,i);
+    Real txy = flux(IM1,k,j,i);
+    Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
     Real t30 = m3_x*m0_t*txt;
@@ -2032,11 +1873,11 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
     const Real &g_33 = g_(I33,i);
 
     // Extract global fluxes
-    Real &d3 = flux(IDN,i);
-    Real &t3_0 = flux(IEN,i);
-    Real &t3_1 = flux(IM1,i);
-    Real &t3_2 = flux(IM2,i);
-    Real &t3_3 = flux(IM3,i);
+    Real &d3 = flux(IDN,k,j,i);
+    Real &t3_0 = flux(IEN,k,j,i);
+    Real &t3_1 = flux(IM1,k,j,i);
+    Real &t3_2 = flux(IM2,k,j,i);
+    Real &t3_3 = flux(IM3,k,j,i);
 
     // Set fluxes
     d3 = m3_x*dx;
@@ -2048,12 +1889,12 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
     // Transform magnetic fluxes if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       Real ftx = -bbx(i);
-      Real fyx = flux(IBY,i);
-      Real fzx = flux(IBZ,i);
-      Real &f13 = flux(IBY,i);
-      Real &f23 = flux(IBZ,i);
-      f13 = m1_t*m3_x*ftx + m1_y*m3_x*fyx;
-      f23 = m2_z*m3_x*fzx;
+      Real fyx = -ey(k,j,i);
+      Real fzx = ez(k,j,i);
+      Real f13 = m1_t*m3_x*ftx + m1_y*m3_x*fyx;
+      Real f23 = m2_z*m3_x*fzx;
+      ey(k,j,i) = -f13;
+      ez(k,j,i) = f23;
     }
   }
   return;

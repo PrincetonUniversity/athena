@@ -55,7 +55,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
   x3area.InitWithShallowSlice(x3face_area_,2,tid,1);
   x3area_p1.InitWithShallowSlice(x3face_area_p1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
-  dflx.InitWithShallowSlice(flx_,2,tid,1);
+  dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
   for (int k=ks; k<=ke; ++k) {
@@ -64,6 +64,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
       for (int n=0; n<NHYDRO; ++n) {
+#pragma simd
         for (int i=is; i<=ie; ++i) {
           dflx(n,i) = (x1area(i+1) *x1flux(n,k,j,i+1) - x1area(i)*x1flux(n,k,j,i));
         }
@@ -96,6 +97,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
       // update conserved variables
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int n=0; n<NHYDRO; ++n) {
+#pragma simd
         for (int i=is; i<=ie; ++i) {
           u_out(n,k,j,i) = wght.a*u_in1(n,k,j,i) + wght.b*u_in2(n,k,j,i)
                          - wght.c*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);

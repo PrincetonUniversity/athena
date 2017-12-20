@@ -15,25 +15,6 @@
 #include "../defs.hpp"
 #include "../bvals/bvals.hpp"
 
-//--------------------------------------------------------------------------------------
-//! \struct LogicalLocation
-//  \brief stores logical location and level of meshblock
-
-typedef struct LogicalLocation {
-  long int lx1, lx2, lx3;
-  int level;
-
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
-
-  // operators useful for sorting
-  bool operator==(LogicalLocation &ll)
-    { return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3)); }
-  static bool Lesser(const LogicalLocation &left, const LogicalLocation &right)
-    { return left.level < right.level; };
-  static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
-    { return left.level > right.level; };
-
-} LogicalLocation;
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
@@ -42,6 +23,7 @@ typedef struct LogicalLocation {
 class MeshBlockTree {
   friend class Mesh;
   friend class MeshBlock;
+  friend class BoundaryBase;
 public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);

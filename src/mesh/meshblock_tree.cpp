@@ -86,7 +86,6 @@ MeshBlockTree::~MeshBlockTree()
 
 void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl)
 {
-  long int mx, my, mz;
   if (loc.level == nl) return;
 
   for(int k=0; k<=1; k++) {
@@ -167,7 +166,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
                     long int rbx, long int rby, long int rbz, int rl, int &nnew)
 {
   if(flag==false) return;
-  long int nx,ny,nz,nxmax,nymax,nzmax;
+  long int nxmax,nymax,nzmax;
   long int ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
   int xmax,ymax,zmax;
   LogicalLocation nloc;
@@ -250,7 +249,6 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
 void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl, int &ndel)
 {
-  int ec=0;
   int s2=0, e2=0, s3=0, e3=0;
   if(dim>=2) s2=-1, e2=1;
   if(dim==3) s3=-1, e3=1;

@@ -89,8 +89,10 @@ void Field::CT(FaceField &b_in1, FaceField &b_in2,
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
-    if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY || pmb->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
-    if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY || pmb->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
+    if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+     || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+    if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
+     || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);

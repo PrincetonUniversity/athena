@@ -3,11 +3,13 @@ Read Athena++ output data files.
 """
 
 # Python modules
-import numpy as np
 import re
 import struct
 import sys
 import warnings
+
+# Other Python modules
+import numpy as np
 
 #=========================================================================================
 
@@ -96,10 +98,12 @@ def tab(filename, raw=False, dimensions=None):
     if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
       headings = headings[1:2] + headings[3:4] + headings[5:]
       dimensions = 3
-    elif headings[0] == 'i' and headings[2] == 'j':
+    elif ((headings[0] == 'i' and headings[2] == 'j') or
+          (headings[0] == 'i' and headings[2] == 'k') or
+          (headings[0] == 'j' and headings[2] == 'k')):
       headings = headings[1:2] + headings[3:]
       dimensions = 2
-    elif headings[0] == 'i':
+    elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
       headings = headings[1:]
       dimensions = 1
     else:
@@ -275,7 +279,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
 
-  # Python module
+  # Load HDF5 reader
   import h5py
 
   # Prepare dictionary for results

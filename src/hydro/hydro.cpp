@@ -50,9 +50,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
   dxw_.NewAthenaArray(nthreads,ncells1);
-  wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  wl_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
+  wr_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
   x1face_area_.NewAthenaArray(nthreads,ncells1+1);
   if(pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(nthreads,ncells1);
@@ -63,21 +62,32 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
     x3face_area_p1_.NewAthenaArray(nthreads,ncells1);
   }
   cell_volume_.NewAthenaArray(nthreads,ncells1);
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
-  {
+  dflx_.NewAthenaArray((NHYDRO),ncells1);
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     bb_normal_.NewAthenaArray(ncells1);
     lambdas_p_l_.NewAthenaArray(ncells1);
     lambdas_m_l_.NewAthenaArray(ncells1);
     lambdas_p_r_.NewAthenaArray(ncells1);
     lambdas_m_r_.NewAthenaArray(ncells1);
   }
-  if (GENERAL_RELATIVITY)  // only used in GR
-  {
+  if (GENERAL_RELATIVITY) { // only used in GR
     g_.NewAthenaArray(NMETRIC,ncells1);
     gi_.NewAthenaArray(NMETRIC,ncells1);
     cons_.NewAthenaArray(NWAVE,ncells1);
   }
+  if (SELF_GRAVITY_ENABLED == 3) { // for one-time potential calcuation and correction (old Athena)
+    gflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
+    if (pmy_block->block_size.nx2 > 1) 
+      gflx[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
+    if (pmy_block->block_size.nx3 > 1) 
+      gflx[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
 
+    gflx_old[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
+    if (pmy_block->block_size.nx2 > 1) 
+      gflx_old[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
+    if (pmy_block->block_size.nx3 > 1) 
+      gflx_old[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
+  }
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 
   // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
@@ -107,7 +117,6 @@ Hydro::~Hydro()
   dxw_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
-  flx_.DeleteAthenaArray();
   x1face_area_.DeleteAthenaArray();
   if(pmy_block->block_size.nx2 > 1) {
     x2face_area_.DeleteAthenaArray();
@@ -118,6 +127,7 @@ Hydro::~Hydro()
     x3face_area_p1_.DeleteAthenaArray();
   }
   cell_volume_.DeleteAthenaArray();
+  dflx_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
   {
     bb_normal_.DeleteAthenaArray();
@@ -132,7 +142,14 @@ Hydro::~Hydro()
     gi_.DeleteAthenaArray();
     cons_.DeleteAthenaArray();
   }
-
+  if (SELF_GRAVITY_ENABLED == 3) { // for one-time potential calcuation and correction (old Athena)
+    gflx[X1DIR].DeleteAthenaArray();
+    if (pmy_block->block_size.nx2 > 1) gflx[X2DIR].DeleteAthenaArray();
+    if (pmy_block->block_size.nx3 > 1) gflx[X3DIR].DeleteAthenaArray();
+    gflx_old[X1DIR].DeleteAthenaArray();
+    if (pmy_block->block_size.nx2 > 1) gflx_old[X2DIR].DeleteAthenaArray();
+    if (pmy_block->block_size.nx3 > 1) gflx_old[X3DIR].DeleteAthenaArray();
+  }
   delete psrc;
   //[diffusion
   delete pdif;

@@ -137,8 +137,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (block_bcs[INNER_X2] == 5) jl=js+1;
-      if (block_bcs[OUTER_X2] == 5) ju=je;
+      if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
+      if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pcoord->Face2Area(k,j,is,ie,area);
         pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -195,8 +195,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
         int jl=js; int ju=je+1;
-        if (block_bcs[INNER_X2] == 5) jl=js+1;
-        if (block_bcs[OUTER_X2] == 5) ju=je;
+        if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
+        if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
         for (int j=jl; j<=ju; ++j) {
           pcoord->Face2Area(k,j,is,ie,area);
           pcoord->Edge1Length(k  ,j,is,ie,len);

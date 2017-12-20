@@ -77,7 +77,7 @@ Real Hydro::NewBlockTimeStep(void)
       pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
       if(!RELATIVISTIC_DYNAMICS) {
-//#pragma simd
+#pragma ivdep
         for (int i=is; i<=ie; ++i){
           wi[IDN]=w(IDN,k,j,i);
           wi[IVX]=w(IVX,k,j,i);

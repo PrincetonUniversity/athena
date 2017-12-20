@@ -16,6 +16,7 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/diffusion/diffusion.hpp"
 //diffusion]
+#include "../bvals/bvals.hpp"
 
 //----------------------------------------------------------------------------------------
 // Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
@@ -105,13 +106,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // correct cell face coordinates in ghost zones for reflecting boundary condition
-  if (pmy_block->block_bcs[INNER_X1] == REFLECTING_BNDRY) {
+  if (pmy_block->pbval->block_bcs[INNER_X1] == REFLECTING_BNDRY) {
     for (int i=1; i<=ng; ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
-  if (pmy_block->block_bcs[OUTER_X1] == REFLECTING_BNDRY) {
+  if (pmy_block->pbval->block_bcs[OUTER_X1] == REFLECTING_BNDRY) {
     for (int i=1; i<=ng; ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -167,15 +168,15 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
-    if (pmy_block->block_bcs[INNER_X2] == REFLECTING_BNDRY
-     || pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY) { // also polar boundary
+    if (pmy_block->pbval->block_bcs[INNER_X2] == REFLECTING_BNDRY
+     || pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(js-j) = dx2f(js+j-1);
          x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
-    if (pmy_block->block_bcs[OUTER_X2] == REFLECTING_BNDRY
-     || pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY) { // also polar boundary
+    if (pmy_block->pbval->block_bcs[OUTER_X2] == REFLECTING_BNDRY
+     || pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
          x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -238,13 +239,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
-    if (pmy_block->block_bcs[INNER_X3] == REFLECTING_BNDRY) {
+    if (pmy_block->pbval->block_bcs[INNER_X3] == REFLECTING_BNDRY) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
          x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
-    if (pmy_block->block_bcs[OUTER_X3] == REFLECTING_BNDRY) {
+    if (pmy_block->pbval->block_bcs[OUTER_X3] == REFLECTING_BNDRY) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
          x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
@@ -368,7 +369,7 @@ void Coordinates::CenterWidth3(const int k, const int j, const int il, const int
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area1 = dy dz
     Real& area_i = area(i);
@@ -380,7 +381,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area2 = dx dz
     Real& area_i = area(i);
@@ -392,7 +393,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area3 = dx dy
     Real& area_i = area(i);
@@ -459,12 +460,12 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
 bool Coordinates::IsPole(int j)
 {
-  if ((pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY
-      or pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->js) {
+  if ((pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+    || pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) && j == pmy_block->js) {
     return true;
   }
-  if ((pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY
-      or pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->je+1) {
+  if ((pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
+    || pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) && j == pmy_block->je+1) {
     return true;
   }
   return false;

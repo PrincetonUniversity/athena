@@ -63,6 +63,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 #include "outputs.hpp"
 
@@ -302,6 +303,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
+  Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
 
@@ -451,6 +453,20 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     AppendOutputDataNode(pod);
     num_vars_++;
   }
+
+  if (SELF_GRAVITY_ENABLED) {
+    if (output_params.variable.compare("phi") == 0 ||
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Phi";
+      pod->data.InitWithShallowSlice(pgrav->phi,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  } // endif (SELF_GRAVITY_ENABLED)
+
 
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
@@ -646,20 +662,21 @@ void OutputType::ClearOutputData()
 
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 {
+  bool first=true;
   OutputType* ptype = pfirst_type_;
-  MeshBlock *pmb;
-
   while (ptype != NULL) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
         (wtflag==true && ptype->output_params.file_type=="rst")) {
-
+      if(first && ptype->output_params.file_type!="hst") {
+        pm->ApplyUserWorkBeforeOutput(pin);
+        first=false;
+      }
       ptype->WriteOutputFile(pm, pin, wtflag);
     }
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -809,7 +826,6 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
-  AthenaArray<Real> *psum;
   std::stringstream str;
 
   // For each node in OutputData linked list, sum arrays containing output data
@@ -824,7 +840,6 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
     int nx3 = pdata->data.GetDim3();
     int nx2 = pdata->data.GetDim2();
     int nx1 = pdata->data.GetDim1();
-    psum = new AthenaArray<Real>;
 
     // Loop over variables and dimensions, sum over specified dimension
     if (dim == 3) {

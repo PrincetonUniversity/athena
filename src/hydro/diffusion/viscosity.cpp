@@ -188,7 +188,7 @@ Real HydroDiffusion::nuiso1(const AthenaArray<Real> &prim, const int n, const in
     Real x1 = pmb_->pcoord->x1v(i);
     Real x2 = pmb_->pcoord->x2v(j);
     Real x3 = pmb_->pcoord->x3v(k);
-    Real rad = sqrt(SQR(x1)+SQR(x2); //+SQR(x3)+SQR(0.05));// softening by 0.05
+    Real rad = sqrt(SQR(x1)+SQR(x2)); //+SQR(x3)+SQR(0.05));// softening by 0.05
     Real gamma = pmb_->peos->GetGamma();
     // 1) calc visc coef using updated prim variable (unstable)
     //Real cs2  = gamma*prim(IPR,k,j,i)/prim(IDN,k,j,i);

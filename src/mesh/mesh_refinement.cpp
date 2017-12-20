@@ -272,15 +272,25 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
       int k=(ck-pmb->cks)*2+pmb->ks;
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
-        pco->Face2Area(k,   j,  si, ei, sarea_x2_[0][0]);
-        pco->Face2Area(k+1, j,  si, ei, sarea_x2_[1][0]);
+        bool pole = pco->IsPole(j);
+        if (not pole) {
+          pco->Face2Area(k,   j,  si, ei, sarea_x2_[0][0]);
+          pco->Face2Area(k+1, j,  si, ei, sarea_x2_[1][0]);
+        } else {
+          for (int ci = csi; ci <= cei; ++ci) {
+            int i = (ci - pmb->cis) * 2 + pmb->is;
+            sarea_x2_[0][0](i) = pco->dx1f(i);
+            sarea_x2_[1][0](i) = pco->dx1f(i);
+          }
+        }
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
           Real tarea=sarea_x2_[0][0](i)+sarea_x2_[0][0](i+1)+
                      sarea_x2_[1][0](i)+sarea_x2_[1][0](i+1);
-          coarse(ck,cj,ci)=
-            (fine(k  ,j,i)*sarea_x2_[0][0](i)+fine(k  ,j,i+1)*sarea_x2_[0][0](i+1)
-            +fine(k+1,j,i)*sarea_x2_[1][0](i)+fine(k+1,j,i+1)*sarea_x2_[1][0](i+1))/tarea;
+          coarse(ck,cj,ci) =
+              (fine(k  ,j,i)*sarea_x2_[0][0](i)+fine(k  ,j,i+1)*sarea_x2_[0][0](i+1)
+              +fine(k+1,j,i)*sarea_x2_[1][0](i)+fine(k+1,j,i+1)*sarea_x2_[1][0](i+1))
+              /tarea;
         }
       }
     }
@@ -289,7 +299,15 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
     int k=pmb->ks;
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
-      pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
+      bool pole = pco->IsPole(j);
+      if (not pole) {
+        pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
+      } else {
+        for (int ci = csi; ci <= cei; ++ci) {
+          int i = (ci - pmb->cis) * 2 + pmb->is;
+          sarea_x2_[0][0](i) = pco->dx1f(i);
+        }
+      }
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=sarea_x2_[0][0](i)+sarea_x2_[0][0](i+1);
@@ -909,7 +927,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
     }
   }
   else if(pmb->block_size.nx2 > 1) {
-    int k=pmb->cks, fk=pmb->ks;
+    int fk=pmb->ks;
     for(int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
       pco->Face1Area(fk,   fj,   fsi, fei+1, sarea_x1_[0][0]);
@@ -987,7 +1005,7 @@ void MeshRefinement::CheckRefinementCondition(void)
       for(int k=ks; k<=ke; k++) {
         for(int j=js; j<=je; j++) {
           for(int i=-1; i<=1; i++)
-            if(pmb->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
+            if(pmb->pbval->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
         }
       }
       if(ec>0) refine_flag_=0;

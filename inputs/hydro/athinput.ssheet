@@ -1,7 +1,7 @@
 <comment>
-problem   = shearing wave test
+problem   = xy-shearing wave test
 reference =
-configure = --prob=ssheet
+configure = -sh --eos=isothermal --prob=ssheet
 
 <job>
 problem_id = sst   # problem ID: basename of output filenames
@@ -19,7 +19,7 @@ dt          = 500      # time increment between outputs
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
-tlim       = 2e5       # time limit
+tlim       = 1e4       # time limit
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
@@ -28,15 +28,15 @@ x1max      = 0.5       # maximum value of X1
 ix1_bc     = shear_periodic      # inner-X1 boundary flag
 ox1_bc     = shear_periodic      # outer-X1 boundary flag
 
-nx2        = 64       # Number of zones in X2-direction
+nx2        = 64        # Number of zones in X2-direction
 x2min      = -0.5      # minimum value of X2
 x2max      = 0.5       # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # outer-X2 boundary flag
 
-nx3        = 4         # Number of zones in X3-direction
-x3min      = -0.03125      # minimum value of X3
-x3max      = 0.03125       # maximum value of X3
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.03125  # minimum value of X3
+x3max      = 0.03125   # maximum value of X3
 ix3_bc     = periodic  # inner-X3 boundary flag
 ox3_bc     = periodic  # outer-X3 boundary flag
 
@@ -53,8 +53,8 @@ nwy       = 2         # wavenumber in x2
 ipert     = 1         # 0: pure shear; 1: shear wave
 Omega0    = 1e-3      # orbital freq
 qshear    = 1.5       # shear rate
+shboxcoord = 1        # 1=xy (default); 2=xz
 
 <meshblock>
-nx1 = 32
-nx2 = 32
-nx3 = 4
+nx1 = 64
+nx2 = 64

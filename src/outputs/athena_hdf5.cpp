@@ -86,7 +86,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   int max_blocks_local=pm->nblist[Globals::my_rank];
   int first_block = pm->nslist[Globals::my_rank];
   bool *active_flags = new bool [max_blocks_local];
-  bool firstcall = true;
   std::string variable = output_params.variable;
 
   for(int i=0; i<max_blocks_local; i++)
@@ -113,6 +112,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     num_variables[n_dataset++] = NHYDRO;
     if(output_params.cartesian_vector)
       num_variables[n_dataset-1] += 3;
+    if (SELF_GRAVITY_ENABLED)
+      num_variables[n_dataset-1] += 1;
     if (MAGNETIC_FIELDS_ENABLED) {
       num_variables[n_dataset++] = 3;
       if(output_params.cartesian_vector)

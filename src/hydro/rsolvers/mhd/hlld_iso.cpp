@@ -30,9 +30,10 @@ typedef struct Cons1D {
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx)
+void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -46,24 +47,26 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());
 
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
 #pragma simd
   for (int i=il; i<=iu; ++i){
 
 //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,i);
-    wli[IVX]=wl(ivx,i);
-    wli[IVY]=wl(ivy,i);
-    wli[IVZ]=wl(ivz,i);
-    wli[IBY]=wl(IBY,i);
-    wli[IBZ]=wl(IBZ,i);
+    wli[IDN]=wl(IDN,k,j,i);
+    wli[IVX]=wl(ivx,k,j,i);
+    wli[IVY]=wl(ivy,k,j,i);
+    wli[IVZ]=wl(ivz,k,j,i);
+    wli[IBY]=wl(IBY,k,j,i);
+    wli[IBZ]=wl(IBZ,k,j,i);
 
-    wri[IDN]=wr(IDN,i);
-    wri[IVX]=wr(ivx,i);
-    wri[IVY]=wr(ivy,i);
-    wri[IVZ]=wr(ivz,i);
-    wri[IBY]=wr(IBY,i);
-    wri[IBZ]=wr(IBZ,i);
+    wri[IDN]=wr(IDN,k,j,i);
+    wri[IVX]=wr(ivx,k,j,i);
+    wri[IVY]=wr(ivy,k,j,i);
+    wri[IVZ]=wr(ivz,k,j,i);
+    wri[IBY]=wr(IBY,k,j,i);
+    wri[IBZ]=wr(IBZ,k,j,i);
 
     Real bxi = bx(k,j,i);
 
@@ -233,14 +236,15 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
       flxi[IBZ] = ucst.bz*ustar - bxi*ucst.mz/ucst.d;
     }
 
-    flx(IDN,i) = flxi[IDN];
-    flx(ivx,i) = flxi[IVX];
-    flx(ivy,i) = flxi[IVY];
-    flx(ivz,i) = flxi[IVZ];
-    flx(IBY,i) = flxi[IBY];
-    flx(IBZ,i) = flxi[IBZ];
+    flx(IDN,k,j,i) = flxi[IDN];
+    flx(ivx,k,j,i) = flxi[IVX];
+    flx(ivy,k,j,i) = flxi[IVY];
+    flx(ivz,k,j,i) = flxi[IVZ];
+    ey(k,j,i) = -flxi[IBY];
+    ez(k,j,i) =  flxi[IBZ];
 
   }      
+  }}
 
   return;
 }
