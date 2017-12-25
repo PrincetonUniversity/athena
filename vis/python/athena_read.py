@@ -352,7 +352,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
           vol_func = lambda rm,rp,thetam,thetap,phim,phip: \
               (rp**3-rm**3) * abs(np.cos(thetam)-np.cos(thetap)) * (phip-phim)
       elif coord == 'kerr-schild':
-        if nx1 == 1 and nx2 == 1 and (nx3 == 3 or x3_rat == 1.0):
+        if nx1 == 1 and nx2 == 1 and (nx3 == 1 or x3_rat == 1.0):
           fast_restrict = True
         else:
           a = vol_params[0]
@@ -763,6 +763,54 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
   # Return dictionary containing requested data arrays
   return data
+
+#=========================================================================================
+
+def restrict_like(vals, levels, vols=None):
+  """Average cell values according to given mesh refinement scheme."""
+
+  # Determine maximum amount of restriction
+  nx3,nx2,nx1 = vals.shape
+  max_level = np.max(levels)
+  if nx3 > 1 and nx3 % 2**max_level != 0:
+    raise AthenaError('x3-dimension wrong size to be restricted')
+  if nx2 > 1 and nx2 % 2**max_level != 0:
+    raise AthenaError('x2-dimension wrong size to be restricted')
+  if nx1 % 2**max_level != 0:
+    raise AthenaError('x1-dimension wrong size to be restricted')
+
+  # Construct volume weighting
+  if vols is None:
+    vols = np.ones_like(vals)
+  else:
+    if vols.shape != vals.shape:
+      raise AthenaError('Array of volumes must match cell values in size')
+
+  # Restrict data
+  vals_restricted = np.copy(vals)
+  for level in range(max_level):
+    level_difference = max_level - level
+    stride = 2 ** level_difference
+    if nx3 > 1:
+      vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+      vals_sum = np.sum(np.sum(np.sum(vals_level, axis=5), axis=3), axis=1)
+      vols_sum = np.sum(np.sum(np.sum(vols_level, axis=5), axis=3), axis=1)
+      vals_level = np.repeat(np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1), stride, axis=2)
+    elif nx2 > 1:
+      vals_level = np.reshape(vals * vols, (nx2/stride, stride, nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
+      vals_sum = np.sum(np.sum(vals_level, axis=3), axis=1)
+      vols_sum = np.sum(np.sum(vols_level, axis=3), axis=1)
+      vals_level = np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
+    else:
+      vals_level = np.reshape(vals * vols, (nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx1/stride, stride))
+      vals_sum = np.sum(vals_level, axis=1)
+      vols_sum = np.sum(vols_level, axis=1)
+      vals_level = np.repeat(vals_sum / vols_sum, stride, axis=0)
+    vals_restricted = np.where(levels == level, vals_level, vals_restricted)
+  return vals_restricted
 
 #=========================================================================================
 
