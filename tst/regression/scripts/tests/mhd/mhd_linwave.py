@@ -74,8 +74,8 @@ def analyze():
     print("maximum relative error in L-going slow wave too large",data[5][13])
     return False
 
-  # check RMS error and convergence of all three waves
-  if data[1][4] > 4.0e-8:
+  # check RMS error and convergence of all four waves
+  if data[1][4] > 4.5e-8:
     print("RMS error in L-going fast wave too large",data[1][4])
     return False
   if data[1][4]/data[0][4] > 0.4:
@@ -96,7 +96,7 @@ def analyze():
     print("not converging for L-going slow wave",data[4][4],data[5][4])
     return False
 
-  if data[7][4] > 2.5e-8:
+  if data[7][4] > 275e-8:
     print("RMS error in entropy wave too large",data[7][4])
     return False
   if data[7][4]/data[6][4] > 0.4:
