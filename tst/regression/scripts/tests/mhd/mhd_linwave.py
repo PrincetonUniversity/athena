@@ -96,7 +96,7 @@ def analyze():
     print("not converging for L-going slow wave",data[4][4],data[5][4])
     return False
 
-  if data[7][4] > 275e-8:
+  if data[7][4] > 2.75e-8:
     print("RMS error in entropy wave too large",data[7][4])
     return False
   if data[7][4]/data[6][4] > 0.4:
