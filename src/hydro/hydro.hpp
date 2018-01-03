@@ -32,9 +32,11 @@ public:
 
   // data
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
-  AthenaArray<Real> u,w;      // conserved and primitive variables
-  AthenaArray<Real> u1,w1;    // conserved and primitive variables at intermediate step
-  AthenaArray<Real> flux[3];  // conserved and primitive variables
+  // conserved and primitive variables
+  AthenaArray<Real> u,w;      // time-integrator memory register #1
+  AthenaArray<Real> u1,w1;    // time-integrator memory register #2
+  AthenaArray<Real> u2;       // time-integrator memory register #3
+  AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   HydroSourceTerms *psrc;
 //[diffusion
@@ -43,11 +45,12 @@ public:
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1,
-    AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    const IntegratorWeight wght, AthenaArray<Real> &u_out);
+  void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+    AthenaArray<Real> &u_in2, const Real wght[3]);
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
+    const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-    AthenaArray<Real> &bcc, int order);
+    AthenaArray<Real> &bcc, bool first_order);
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,

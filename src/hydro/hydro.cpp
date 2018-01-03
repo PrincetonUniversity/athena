@@ -31,12 +31,16 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
+  // Allocate memory registers for primitive/conserved variables for time-integrator
   u.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
   w.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
-
-  // Allocate memory for primitive/conserved variables at intermediate-time step
   u1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+  if (integrator == "ssprk5_4")
+    // future extension may add "int nregister" to Hydro class
+    u2.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
   flux[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
   if (pmy_block->block_size.nx2 > 1)
@@ -77,15 +81,15 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   }
   if (SELF_GRAVITY_ENABLED == 3) { // for one-time potential calcuation and correction (old Athena)
     gflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
-    if (pmy_block->block_size.nx2 > 1) 
+    if (pmy_block->block_size.nx2 > 1)
       gflx[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
-    if (pmy_block->block_size.nx3 > 1) 
+    if (pmy_block->block_size.nx3 > 1)
       gflx[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
 
     gflx_old[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
-    if (pmy_block->block_size.nx2 > 1) 
+    if (pmy_block->block_size.nx2 > 1)
       gflx_old[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
-    if (pmy_block->block_size.nx3 > 1) 
+    if (pmy_block->block_size.nx3 > 1)
       gflx_old[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
   }
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
@@ -106,6 +110,8 @@ Hydro::~Hydro()
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
   w1.DeleteAthenaArray();
+  // only allocated if integrator was 3S* integrator
+  u2.DeleteAthenaArray();
 
   flux[X1DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();

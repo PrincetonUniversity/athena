@@ -56,7 +56,7 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int nx2=pmb->block_size.nx2-1;
+  int nx2=pmb->block_size.nx2-NGHOST;
 
   si=pmb->is-NGHOST; ei=pmb->is-1;
   sk=pmb->ks;        ek=pmb->ke;
@@ -81,33 +81,37 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj = pmb->je-joverlap_;
+      if(joverlap_>nx2) sj = pmb->js;
       break;
     case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if(joverlap_==0) ej = pmb->je;
+      if(joverlap_<NGHOST) ej = pmb->je;
       break;
     case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj = pmb->je;
+      if(joverlap_>nx2) sj = pmb->je-(joverlap_-nx2)+1;
       break;
     case 3:
+      // can be combined and remove the condition; check it later.
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
+      if(joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
       break;
     case 4:
       sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if(joverlap_==nx2) ej = pmb->js+joverlap_;
+      if(joverlap_>nx2) ej = pmb->je;
       break;
     case 5:
       sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      if(joverlap_==0) sj = pmb->js;
+      if(joverlap_<NGHOST) sj = pmb->js;
       break;
     case 6:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_==nx2) ej=pmb->js;
+      if(joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
       break;
     case 7:
-      sj=pmb->je-NGHOST+1; ej=pmb->je;
+      // can be combined and remove the condition; check it later.
+      sj=pmb->je-(NGHOST-1); ej=pmb->je;
+      if(joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
       break;
     default:
       std::stringstream msg;
@@ -322,7 +326,8 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int nx2=pmb->block_size.nx2-1;
+  int nx2=pmb->block_size.nx2-NGHOST;
+  int nxo=pmb->block_size.nx2-joverlap_;
 
   sk = pmb->ks; ek = pmb->ke;
   if (pmesh->mesh_size.nx3>1) ek += NGHOST, sk -= NGHOST;
@@ -345,33 +350,33 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst
   switch(nb) {
     case 0:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
-      if(joverlap_==nx2) sj=pmb->js-1;
+      if(joverlap_>nx2) sj=pmb->js-nxo;
       break;
     case 1:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
-      if(joverlap_==0)   ej=pmb->je;
+      if(joverlap_<NGHOST) ej=pmb->je+joverlap_;
       break;
     case 2:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js-1;
-      if(joverlap_==nx2) ej=pmb->js-NGHOST;
+      if(joverlap_>nx2) ej=pmb->js-nxo-1;
       break;
     case 3:
-      si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->je+1; ej=pmb->je+NGHOST;
+      si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->je+joverlap_+1; ej=pmb->je+NGHOST;
       break;
     case 4:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
-      if(joverlap_==nx2) ej=pmb->je+1;
+      if(joverlap_>nx2) ej=pmb->je+nxo;
       break;
     case 5:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-      if(joverlap_==0)   sj=pmb->js;
+      if(joverlap_<NGHOST)   sj=pmb->js-joverlap_;
       break;
     case 6:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je+1; ej=pmb->je+NGHOST;
-      if(joverlap_==nx2)   sj=pmb->je+NGHOST;
+      if(joverlap_>nx2) sj=pmb->je+nxo+1;
       break;
     case 7:
-      si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->js-1;
+      si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->js-joverlap_-1;
       break;
     default:
       std::stringstream msg;
@@ -492,7 +497,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-void BoundaryValues::FindShearBlock(const int step)
+void BoundaryValues::FindShearBlock(const Real tstep, const int step)
 //void BoundaryValues::FindShearBlock(void)
 {
   MeshBlock *pmb=pmy_block_;
@@ -515,11 +520,14 @@ void BoundaryValues::FindShearBlock(const int step)
   if (pmesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
 
   Real qomL = qshear_*Omega_0_*x1size_;
-  Real wght;
-  //(0.0,0.5,1.0) for VL2, (0.0,1.0,0.5) for RK2
-  if (step == 0) wght = 0.0;
-  else wght = wghts_[step-1];
-  Real yshear = qomL*(pmesh->time+wght*pmesh->dt);
+  //Real wght;
+  ////(0.0,0.5,1.0) for VL2, (0.0,1.0,0.5) for RK2
+  //if (step == 0) wght = 0.0;
+  //else wght = wghts_[step-1];
+  ////std::cout << "cycle " << pmesh->ncycle << "step " << step << "wght= " << wght << std::endl;
+  //Real yshear = qomL*(pmesh->time+wght*pmesh->dt);
+  //std::cout << "cycle " << pmesh->ncycle << "tstep[ " << step << "]= " << tstep << std::endl;
+  Real yshear = qomL*tstep;
   //Real yshear = qomL*(pmesh->time+pmesh->dt);
   Real deltay = fmod(yshear,x2size_);
   int joffset = (int)(deltay/pco->dx2v(js)); // this assumes uniform grid in azimuth
@@ -528,24 +536,20 @@ void BoundaryValues::FindShearBlock(const int step)
   eps_ = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
 
   if (shbb_.inner == true) { // if inner block
-    for (int n=0; n<5; n++){
+    for (int n=0; n<4; n++){
       send_inner_gid_[n]  = -1;
       send_inner_rank_[n] = -1;
       send_inner_lid_[n]  = -1;
       recv_inner_gid_[n]  = -1;
       recv_inner_rank_[n] = -1;
       recv_inner_lid_[n]  = -1;
-      if (n<4) {
-        send_innersize_hydro_[n] = 0;
-        recv_innersize_hydro_[n] = 0;
-        shbox_inner_hydro_flag_[n] = BNDRY_COMPLETED;
-      }
+      send_innersize_hydro_[n] = 0;
+      recv_innersize_hydro_[n] = 0;
+      shbox_inner_hydro_flag_[n] = BNDRY_COMPLETED;
       if (MAGNETIC_FIELDS_ENABLED) {
-        if (n<4) {
-          send_innersize_field_[n] = 0;
-          recv_innersize_field_[n] = 0;
-          shbox_inner_field_flag_[n]=BNDRY_COMPLETED;
-        }
+        send_innersize_field_[n] = 0;
+        recv_innersize_field_[n] = 0;
+        shbox_inner_field_flag_[n]=BNDRY_COMPLETED;
         send_innersize_emf_[n] = 0;
         recv_innersize_emf_[n] = 0;
         shbox_inner_emf_flag_[n]=BNDRY_COMPLETED;
@@ -563,7 +567,7 @@ void BoundaryValues::FindShearBlock(const int step)
     send_inner_gid_[1]  = shbb_.igidlist[jtmp];
     send_inner_rank_[1] = shbb_.irnklist[jtmp];
     send_inner_lid_[1]  = shbb_.ilidlist[jtmp];
-    send_innersize_hydro_[1] = je-js-joverlap_+1+NGHOST;
+    send_innersize_hydro_[1] = std::min(je-js-joverlap_+1+NGHOST,je-js+1);
     // recv [js+joverlap:je] from other
     // attach [je+1:je+NGHOST] to its right end.
     jtmp = jblock - Ngrids;
@@ -578,8 +582,7 @@ void BoundaryValues::FindShearBlock(const int step)
                                 +NGHOST*ncells3;
       recv_innersize_field_[1] = send_innersize_field_[1];
       shbox_inner_field_flag_[1] = BNDRY_WAITING;
-      send_innersize_emf_[1] = 2*send_innersize_hydro_[1]*nx3+
-                              send_innersize_hydro_[1]+nx3; //(hydro_size+1)*nx3+hydro_size*(nx3+1)
+      send_innersize_emf_[1] = send_innersize_hydro_[1]*(2*nx3+1)+nx3;//(hydro_size+1)*nx3+hydro_size*(nx3+1)
       recv_innersize_emf_[1] = send_innersize_emf_[1];
       shbox_inner_emf_flag_[1] = BNDRY_WAITING;
     }
@@ -594,7 +597,7 @@ void BoundaryValues::FindShearBlock(const int step)
       send_inner_gid_[0]  = shbb_.igidlist[jtmp];
       send_inner_rank_[0] = shbb_.irnklist[jtmp];
       send_inner_lid_[0]  = shbb_.ilidlist[jtmp];
-      send_innersize_hydro_[0] = joverlap_+NGHOST;
+      send_innersize_hydro_[0] = std::min(joverlap_+NGHOST,je-js+1);
       // recv [js-NGHOST:js+(joverlap-1)]
       // [js:js+(joverlap-1)] + [js-NGHOST:js-1] to its left end
       jtmp = jblock - (Ngrids + 1);
@@ -602,44 +605,32 @@ void BoundaryValues::FindShearBlock(const int step)
       recv_inner_gid_[0]  = shbb_.igidlist[jtmp];
       recv_inner_rank_[0] = shbb_.irnklist[jtmp];
       recv_inner_lid_[0]  = shbb_.ilidlist[jtmp];
-      recv_innersize_hydro_[0] = joverlap_+NGHOST;
+      recv_innersize_hydro_[0] = send_innersize_hydro_[0];
       shbox_inner_hydro_flag_[0] = BNDRY_WAITING; // switch on the boundary status if overlap
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_field_[0] = send_innersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1);
+        send_innersize_field_[0] = send_innersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1)+NGHOST*ncells3;
         recv_innersize_field_[0] = send_innersize_field_[0];
         shbox_inner_field_flag_[0] = BNDRY_WAITING;
-        send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1);
+        send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1)+nx3;
         recv_innersize_emf_[0] = send_innersize_emf_[0];
         shbox_inner_emf_flag_[0] = BNDRY_WAITING;
       }
-      // deal the left corner cells with send[2]
-      if (joverlap_ == (nx2-1)) { // only pass one attached corner cell
-        // send[0] sends [je-joverlap:je] now
-        // recv[0] recvs [js-1:js+(joverlap-1)] now
-        send_innersize_hydro_[0] -= 1;
-        recv_innersize_hydro_[0] -= 1;
-        if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_field_[0] = send_innersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1);
-          recv_innersize_field_[0] = send_innersize_field_[0];
-          shbox_inner_field_flag_[0] = BNDRY_WAITING;
-          send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1);
-          recv_innersize_emf_[0] = send_innersize_emf_[0];
-          shbox_inner_emf_flag_[0] = BNDRY_WAITING;
-        }
+      // deal the left boundary cells with send[2]
+      if (joverlap_ >(nx2-NGHOST)) { // only pass one attached corner cell
         // send [je:je] to Right
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         send_inner_gid_[2]  = shbb_.igidlist[jtmp];
         send_inner_rank_[2] = shbb_.irnklist[jtmp];
         send_inner_lid_[2]  = shbb_.ilidlist[jtmp];
-        send_innersize_hydro_[2] = 1;
+        send_innersize_hydro_[2] = joverlap_-(nx2-NGHOST);
         // recv [js-NGHOST:js-NGHOST] from Left
         jtmp = jblock - (Ngrids+2);
         while (jtmp < 0) jtmp += nrbx2;
         recv_inner_gid_[2]  = shbb_.igidlist[jtmp];
         recv_inner_rank_[2] = shbb_.irnklist[jtmp];
         recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
-        recv_innersize_hydro_[2] = 1;
+        recv_innersize_hydro_[2] = send_innersize_hydro_[2];
         shbox_inner_hydro_flag_[2] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
@@ -650,45 +641,33 @@ void BoundaryValues::FindShearBlock(const int step)
           shbox_inner_emf_flag_[2] = BNDRY_WAITING;
         }
       }
-      // deal the extra of EMF
-      if (joverlap_ == 1) { // has to send[4] for EMF (similar to send[3] while joverlap=0)
+      //deal with the right boundary cells with send[3]
+      if (joverlap_<NGHOST) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        send_inner_gid_[4]  = shbb_.igidlist[jtmp];
-        send_inner_rank_[4] = shbb_.irnklist[jtmp];
-        send_inner_lid_[4]  = shbb_.ilidlist[jtmp];
+        send_inner_gid_[3]  = shbb_.igidlist[jtmp];
+        send_inner_rank_[3] = shbb_.irnklist[jtmp];
+        send_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+        send_innersize_hydro_[3] = NGHOST-joverlap_;
         jtmp = jblock - (Ngrids-1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        recv_inner_gid_[4]  = shbb_.igidlist[jtmp];
-        recv_inner_rank_[4] = shbb_.irnklist[jtmp];
-        recv_inner_lid_[4]  = shbb_.ilidlist[jtmp];
+        recv_inner_gid_[3]  = shbb_.igidlist[jtmp];
+        recv_inner_rank_[3] = shbb_.irnklist[jtmp];
+        recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+        recv_innersize_hydro_[3] = send_innersize_hydro_[3];
+        shbox_inner_hydro_flag_[3] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_emf_[4] = (NGHOST-1)*(2*nx3+1);
-          recv_innersize_emf_[4] = send_innersize_emf_[4];
-          shbox_inner_emf_flag_[4] = BNDRY_WAITING;
-          send_innersize_emf_[1] = 2*nx3*nx2+nx2+nx3;
-          recv_innersize_emf_[1] = send_innersize_emf_[1];
-          shbox_inner_emf_flag_[1] = BNDRY_WAITING;
+          send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST*(NFIELD*ncells3+1);
+          recv_innersize_field_[3] = send_innersize_field_[3];
+          shbox_inner_field_flag_[3] = BNDRY_WAITING;
+          send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3+1);
+          recv_innersize_emf_[3] = send_innersize_emf_[3];
+          shbox_inner_emf_flag_[3] = BNDRY_WAITING;
         }
       }
-    } else { //joverlap_ == 0 need both send[2] and send[3]
-      // do not pass attached L/R corner cells; use send[2][3] instead.
-      // send[1] sends [js:je]
-      // recv[1] recvs [js:je]
-      send_innersize_hydro_[1] -= NGHOST;
-      recv_innersize_hydro_[1] -= NGHOST;
-      if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_field_[1] = send_innersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1)
-                              +NGHOST*ncells3;
-        recv_innersize_field_[1] = send_innersize_field_[1];
-        shbox_inner_field_flag_[1] = BNDRY_WAITING;
-        send_innersize_emf_[1] = 2*send_innersize_hydro_[1]*nx3 + send_innersize_hydro_[1]
-                            + nx3; //(hydro_size+1)*nx3+hydro_size*(nx3+1)
-        recv_innersize_emf_[1] = send_innersize_emf_[1];
-        shbox_inner_emf_flag_[1] = BNDRY_WAITING;
-      }
+    } else { //joverlap_ == 0
       // send [je-(NGHOST-1):je] to Right
       jtmp = jblock + (Ngrids+1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -696,13 +675,13 @@ void BoundaryValues::FindShearBlock(const int step)
       send_inner_rank_[2] = shbb_.irnklist[jtmp];
       send_inner_lid_[2]  = shbb_.ilidlist[jtmp];
       send_innersize_hydro_[2] = NGHOST;
-        // recv [js-NGHOST:js-NGHOST+1] from Left
+      // recv [js-NGHOST:js-NGHOST+1] from Left
       jtmp = jblock - (Ngrids+1);
       while (jtmp < 0) jtmp += nrbx2;
       recv_inner_gid_[2]  = shbb_.igidlist[jtmp];
       recv_inner_rank_[2] = shbb_.irnklist[jtmp];
       recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
-      recv_innersize_hydro_[2] = NGHOST;
+      recv_innersize_hydro_[2] = send_innersize_hydro_[2];
       shbox_inner_hydro_flag_[2] = BNDRY_WAITING;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
@@ -728,7 +707,7 @@ void BoundaryValues::FindShearBlock(const int step)
       recv_inner_gid_[3]  = shbb_.igidlist[jtmp];
       recv_inner_rank_[3] = shbb_.irnklist[jtmp];
       recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
-      recv_innersize_hydro_[3] = NGHOST;
+      recv_innersize_hydro_[3] = send_innersize_hydro_[3];
       shbox_inner_hydro_flag_[3] = BNDRY_WAITING;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST*(NFIELD*ncells3+1);
@@ -743,24 +722,20 @@ void BoundaryValues::FindShearBlock(const int step)
 
 
   if (shbb_.outer == true) { // if outer block
-    for (int n=0; n<5; n++){
+    for (int n=0; n<4; n++){
       send_outer_gid_[n]  = -1;
       send_outer_rank_[n] = -1;
       send_outer_lid_[n]  = -1;
       recv_outer_gid_[n]  = -1;
       recv_outer_rank_[n] = -1;
       recv_outer_lid_[n]  = -1;
-      if (n<4) {
-        send_outersize_hydro_[n] = 0;
-        recv_outersize_hydro_[n] = 0;
-        shbox_outer_hydro_flag_[n] = BNDRY_COMPLETED;
-      }
+      send_outersize_hydro_[n] = 0;
+      recv_outersize_hydro_[n] = 0;
+      shbox_outer_hydro_flag_[n] = BNDRY_COMPLETED;
       if (MAGNETIC_FIELDS_ENABLED) {
-        if (n<4) {
-          send_outersize_field_[n] = 0;
-          recv_outersize_field_[n] = 0;
-          shbox_outer_field_flag_[n]=BNDRY_COMPLETED;
-        }
+        send_outersize_field_[n] = 0;
+        recv_outersize_field_[n] = 0;
+        shbox_outer_field_flag_[n]=BNDRY_COMPLETED;
         send_outersize_emf_[n] = 0;
         recv_outersize_emf_[n] = 0;
         shbox_outer_emf_flag_[n]=BNDRY_COMPLETED;
@@ -776,20 +751,20 @@ void BoundaryValues::FindShearBlock(const int step)
     recv_outer_gid_[1]  = shbb_.ogidlist[jtmp];
     recv_outer_rank_[1] = shbb_.ornklist[jtmp];
     recv_outer_lid_[1]  = shbb_.olidlist[jtmp];
-    recv_outersize_hydro_[1] = je-js-joverlap_+1+NGHOST;
-      // send [js+joverlap-NGHOST:je] of the meshblock to other
+    recv_outersize_hydro_[1] = std::min(je-js-joverlap_+1+NGHOST,je-js+1);
+    // send [js+joverlap-NGHOST:je] of the meshblock to other
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
     send_outer_gid_[1]  = shbb_.ogidlist[jtmp];
     send_outer_rank_[1] = shbb_.ornklist[jtmp];
     send_outer_lid_[1]  = shbb_.olidlist[jtmp];
-    send_outersize_hydro_[1] = je-js-joverlap_+1+NGHOST;
+    send_outersize_hydro_[1] = recv_outersize_hydro_[1];
     shbox_outer_hydro_flag_[1]=BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED) {
-      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1);
+      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1)+NGHOST*ncells3;
       recv_outersize_field_[1] = send_outersize_field_[1];
       shbox_outer_field_flag_[1] = BNDRY_WAITING;
-      send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1);
+      send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1)+nx3;
       recv_outersize_emf_[1] = send_outersize_emf_[1];
       shbox_outer_emf_flag_[1] = BNDRY_WAITING;
     }
@@ -802,14 +777,14 @@ void BoundaryValues::FindShearBlock(const int step)
       recv_outer_gid_[0]  = shbb_.ogidlist[jtmp];
       recv_outer_rank_[0] = shbb_.ornklist[jtmp];
       recv_outer_lid_[0]  = shbb_.olidlist[jtmp];
-      recv_outersize_hydro_[0] = joverlap_+NGHOST;
+      recv_outersize_hydro_[0] = std::min(joverlap_+NGHOST,je-js+1);
       // send [js:js+(joverlap-1)+NGHOST] of the meshblock to other
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
       send_outer_gid_[0]  = shbb_.ogidlist[jtmp];
       send_outer_rank_[0] = shbb_.ornklist[jtmp];
       send_outer_lid_[0]  = shbb_.olidlist[jtmp];
-      send_outersize_hydro_[0] = joverlap_+NGHOST;
+      send_outersize_hydro_[0] = recv_outersize_hydro_[0];
       shbox_outer_hydro_flag_[0]=BNDRY_WAITING; // switch on the boundary status if overlap
       if (MAGNETIC_FIELDS_ENABLED) {
         send_outersize_field_[0] = send_outersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1)
@@ -820,35 +795,22 @@ void BoundaryValues::FindShearBlock(const int step)
         recv_outersize_emf_[0] = send_outersize_emf_[0];
         shbox_outer_emf_flag_[0] = BNDRY_WAITING;
       }
-      // deal the left corner cells with send[2]
-      if (joverlap_ == (nx2-1)) {
-        // send[0] sends [js:js+(joverlap-1)+NGHOST-1] now
-        // recv[0] recvs [je-(joverlap-1):je+NGHOST-1] now
-        send_outersize_hydro_[0] -= 1;
-        recv_outersize_hydro_[0] -= 1;
-        if (MAGNETIC_FIELDS_ENABLED) {
-          send_outersize_field_[0] = send_outersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1)
-                                    +NGHOST*ncells3;
-          recv_outersize_field_[0] = send_outersize_field_[0];
-          shbox_outer_field_flag_[0] = BNDRY_WAITING;
-          send_outersize_emf_[0] = send_outersize_hydro_[0]*(2*nx3+1)+nx3;
-          recv_outersize_emf_[0] = send_outersize_emf_[0];
-          shbox_outer_emf_flag_[0] = BNDRY_WAITING;
-        }
+      // deal the left boundary cells with send[2]
+      if (joverlap_>(nx2-NGHOST)) {
         // recv [je+NGHOST:je+NGHOST] from Left
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         recv_outer_gid_[2]  = shbb_.ogidlist[jtmp];
         recv_outer_rank_[2] = shbb_.ornklist[jtmp];
         recv_outer_lid_[2]  = shbb_.olidlist[jtmp];
-        recv_outersize_hydro_[2] = 1;
+        recv_outersize_hydro_[2] = joverlap_-(nx2-NGHOST);
         // send [js:js] to Right
         jtmp = jblock - (Ngrids+2);
         while (jtmp < 0) jtmp += nrbx2;
         send_outer_gid_[2]  = shbb_.ogidlist[jtmp];
         send_outer_rank_[2] = shbb_.ornklist[jtmp];
         send_outer_lid_[2]  = shbb_.olidlist[jtmp];
-        send_outersize_hydro_[2] = 1;
+        send_outersize_hydro_[2] = recv_outersize_hydro_[2];
         shbox_outer_hydro_flag_[2] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
@@ -859,43 +821,33 @@ void BoundaryValues::FindShearBlock(const int step)
           shbox_outer_emf_flag_[2] = BNDRY_WAITING;
         }
       }
-      // deal the extra of EMF
-      if (joverlap_ == 1) { // has to send[4] for EMF (similar to send[3] while joverlap=0)
+      // deal the right boundary cells
+      if (joverlap_ <NGHOST) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        recv_outer_gid_[4]  = shbb_.ogidlist[jtmp];
-        recv_outer_rank_[4] = shbb_.ornklist[jtmp];
-        recv_outer_lid_[4]  = shbb_.olidlist[jtmp];
+        recv_outer_gid_[3]  = shbb_.ogidlist[jtmp];
+        recv_outer_rank_[3] = shbb_.ornklist[jtmp];
+        recv_outer_lid_[3]  = shbb_.olidlist[jtmp];
+        recv_outersize_hydro_[3] = NGHOST-joverlap_;
         jtmp = jblock - (Ngrids-1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        send_outer_gid_[4]  = shbb_.ogidlist[jtmp];
-        send_outer_rank_[4] = shbb_.ornklist[jtmp];
-        send_outer_lid_[4]  = shbb_.olidlist[jtmp];
+        send_outer_gid_[3]  = shbb_.ogidlist[jtmp];
+        send_outer_rank_[3] = shbb_.ornklist[jtmp];
+        send_outer_lid_[3]  = shbb_.olidlist[jtmp];
+        send_outersize_hydro_[3] = recv_outersize_hydro_[3];
+        shbox_outer_hydro_flag_[3] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_outersize_emf_[4] = (NGHOST-1)*(2*nx3+1);
-          recv_outersize_emf_[4] = send_outersize_emf_[4];
-          send_outersize_emf_[1] = (2*nx3+1)*nx2;
-          recv_outersize_emf_[1] = send_outersize_emf_[1];
-          shbox_outer_emf_flag_[1] = BNDRY_WAITING;
-          shbox_outer_emf_flag_[4] = BNDRY_WAITING;
+          send_outersize_field_[3] = send_outersize_hydro_[3]*NGHOST*(NFIELD*ncells3+1);
+          recv_outersize_field_[3] = send_outersize_field_[3];
+          shbox_outer_field_flag_[3] = BNDRY_WAITING;
+          send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3+1);
+          recv_outersize_emf_[3] = send_outersize_emf_[3];
+          shbox_outer_emf_flag_[3] = BNDRY_WAITING;
         }
       }
-    } else { //joverlap_ == 0 need both send[2] and send[3]
-      // send[1] sends [js:je]
-      // recv[1] recvs [js:je]
-      send_outersize_hydro_[1] -= NGHOST;
-      recv_outersize_hydro_[1] -= NGHOST;
-      if (MAGNETIC_FIELDS_ENABLED) {
-        send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1)
-                              +NGHOST*ncells3;
-        recv_outersize_field_[1] = send_outersize_field_[1];
-        shbox_outer_field_flag_[1] = BNDRY_WAITING;
-        send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1)+nx3;
-        recv_outersize_emf_[1] = send_outersize_emf_[1];
-        shbox_outer_emf_flag_[1] = BNDRY_WAITING;
-      }
+    } else { //joverlap_ == 0
       // recv [je+1:je+NGHOST] from Left
       jtmp = jblock + (Ngrids+1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;

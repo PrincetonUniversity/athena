@@ -93,10 +93,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-      std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
-      exit(0);
-  }
+  //if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
+  //    std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
+  //    exit(0);
+  //}
 
 //  if (NON_BAROTROPIC_EOS) {
 //      std::cout << "[ssheet.cpp]: only works for isothermal eos" << std::endl;

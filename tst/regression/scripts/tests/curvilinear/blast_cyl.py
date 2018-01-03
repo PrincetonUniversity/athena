@@ -33,7 +33,7 @@ def analyze():
 
   # check blast is spherical
   if data[0][3] > 1.0:
-    print "Distortion of blast wave in cylindrical coords too large",data[0][3]
+    print("Distortion of blast wave in cylindrical coords too large",data[0][3])
     return False
 
   return True

@@ -50,8 +50,8 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
 //[JMSHI
   Real qomL = qshear_*Omega_0_*x1size_;
   AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
-  if (step == 2)
-    AthenaArray<Real> &bx1=pmb->pfield->b1.x1f;
+  //if (step == 2)
+  //  AthenaArray<Real> &bx1=pmb->pfield->b1.x1f;
 //JMSHI]
   int p=0;
   if(nb.type==NEIGHBOR_FACE) {

@@ -57,7 +57,7 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for bx2
-  int nx2=pmb->block_size.nx2-1;
+  int nx2=pmb->block_size.nx2-NGHOST;
 
   si=pmb->is-NGHOST; ei=pmb->is-1;
   sk=pmb->ks;        ek=pmb->ke;
@@ -89,44 +89,47 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj=pmb->je-joverlap_;
-      psj=sj; pej=ej;
+      if(joverlap_>nx2) sj=pmb->js;
+      psj=sj; pej=ej+1;
       break;
     case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if(joverlap_==0) ej=pmb->je;
+      if(joverlap_<NGHOST) ej=pmb->je;
       psj=sj; pej=ej+1;
       break;
     case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj=pmb->je;
+      if(joverlap_>nx2) sj=pmb->je-(joverlap_-nx2)+1;
       psj=sj; pej=ej;
       break;
     case 3:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
+      if(joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
       psj=sj+1; pej=ej+1;
       break;
     case 4:
       sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if(joverlap_==nx2) ej=pmb->js+joverlap_;
+      if(joverlap_>nx2) ej=pmb->je;
       psj=sj; pej=ej+1;
       break;
     case 5:
       sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      psj=sj; pej=ej;
-      if(joverlap_==0) {
-        sj=pmb->js;
-        psj=sj;
-        pej=ej+1;
-      }
+      if(joverlap_<NGHOST) sj=pmb->js;
+      psj=sj; pej=ej+1;
+      //if(joverlap_==0) {
+      //  sj=pmb->js;
+      //  psj=sj;
+      //  pej=ej+1;
+      //}
       break;
     case 6:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_==nx2) ej=pmb->js;
+      if(joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
       psj=sj+1; pej=ej+1;
       break;
     case 7:
-      sj=pmb->je-NGHOST+1; ej=pmb->je;
+      sj=pmb->je-(NGHOST-1); ej=pmb->je;
+      if(joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
       psj=sj; pej=ej;
       break;
     default:
@@ -330,7 +333,8 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psi,pei,psj,pej;
-  int nx2=pmb->block_size.nx2-1;
+  int nx2=pmb->block_size.nx2-NGHOST;
+  int nxo=pmb->block_size.nx2-joverlap_;
 
   sk = pmb->ks; ek = pmb->ke;
   if (pmesh->mesh_size.nx3>1) ek += NGHOST, sk -= NGHOST;
@@ -361,44 +365,45 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
   switch(nb) {
     case 0:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
-      if(joverlap_==nx2) sj=pmb->js-1;
-      psi=si; pei=ei; psj=sj; pej=ej;
+      if(joverlap_>nx2) sj=pmb->js-nxo;
+      psi=si; pei=ei; psj=sj; pej=ej+1;
       break;
     case 1:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
-      if(joverlap_==0)   ej=pmb->je;
+      if(joverlap_<NGHOST) ej=pmb->je+joverlap_;
       psi=si; pei=ei; psj=sj; pej=ej+1;
       break;
     case 2:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js-1;
-      if(joverlap_==nx2) ej=pmb->js-NGHOST;
+      if(joverlap_>nx2) ej=pmb->js-nxo-1;
       psi=si; pei=ei; psj=sj; pej=ej;
       break;
     case 3:
-      si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->je+1; ej=pmb->je+NGHOST;
+      si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->je+joverlap_+1; ej=pmb->je+NGHOST;
       psi=si; pei=ei; psj=sj+1; pej=ej+1;
       break;
     case 4:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
-      if(joverlap_==nx2) ej=pmb->je+1;
+      if(joverlap_>nx2) ej=pmb->je+nxo;
       psi=si+1; pei=ei+1; psj=sj; pej=ej+1;
       break;
     case 5:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-      psi=si+1; pei=ei+1; psj=sj; pej=ej;
-      if(joverlap_==0) {
-        sj=pmb->js;
-        psj=sj;
-        pej=ej+1;
-      }
+      if(joverlap_<NGHOST) sj=pmb->js-joverlap_;
+      psi=si+1; pei=ei+1; psj=sj; pej=ej+1;
+      //if(joverlap_==0) {
+      //  sj=pmb->js;
+      //  psj=sj;
+      //  pej=ej+1;
+      //}
       break;
     case 6:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je+1; ej=pmb->je+NGHOST;
-      if(joverlap_==nx2)   sj=pmb->je+NGHOST;
+      if(joverlap_>nx2) sj=pmb->je+nxo+1;
       psi=si+1; pei=ei+1; psj=sj+1; pej=ej+1;
       break;
     case 7:
-      si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->js-1;
+      si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->js-joverlap_-1;
       psi=si+1; pei=ei+1; psj=sj; pej=ej;
       break;
     default:

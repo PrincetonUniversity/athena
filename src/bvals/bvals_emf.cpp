@@ -57,7 +57,7 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
   //Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for e3
-  int nx2=pmb->block_size.nx2-1;
+  int nx2=pmb->block_size.nx2-NGHOST;
   sk=pmb->ks;        ek=pmb->ke;
   // --- inner boundary:
   // load [je-joverlap-(NGHOST-1):je] for send_inner[0]; nb=0
@@ -99,49 +99,42 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj=pmb->js;
+      if(joverlap_>nx2) sj=pmb->js;
       psj=sj; pej=ej;
       break;
     case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if(joverlap_<=1) ej=pmb->je;
+      if(joverlap_<NGHOST) ej=pmb->je;
       psj=sj; pej=ej+1;
       break;
     case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_==nx2) sj=pmb->je;
+      if(joverlap_>nx2) sj=pmb->je-(joverlap_-nx2)+1;
       psj=sj; pej=ej;
       break;
     case 3:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
+      if(joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
       psj=sj+1; pej=ej+1;
       break;
     case 4:
-      sj=pmb->js; ej=pmb->js;
-      psj=sj+1; pej=ej+1;
+      sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
+      if(joverlap_>nx2) ej=pmb->je;
+      psj=sj; pej=ej+1;
       break;
     case 5:
-      sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if(joverlap_==nx2) ej=pmb->je;
+      sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
+      if(joverlap_<NGHOST) sj=pmb->js;
       psj=sj; pej=ej+1;
       break;
     case 6:
-      sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      if(joverlap_<=1) sj=pmb->js;
-      psj=sj; pej=ej;
-      if(joverlap_==0) pej=ej+1;
-      break;
-    case 7:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_==nx2) ej=pmb->js;
+      if(joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
       psj=sj+1; pej=ej+1;
       break;
-    case 8:
-      sj=pmb->je-NGHOST+1; ej=pmb->je;
-      psj=sj; pej=ej;
-      break;
-    case 9:
-      sj=pmb->je; ej=pmb->je;
+    case 7:
+      sj=pmb->je-(NGHOST-1); ej=pmb->je;
+      if(joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
       psj=sj; pej=ej;
       break;
     default:
@@ -207,7 +200,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
-    for(int n=0; n<5; n++) {
+    for(int n=0; n<4; n++) {
       if(send_inner_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_inner_emf_, send_innerbuf_emf_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
@@ -239,8 +232,8 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
-    int offset = 5;
-    for(int n=0; n<5; n++) {
+    int offset = 4;
+    for(int n=0; n<4; n++) {
       if(send_outer_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_outer_emf_, send_outerbuf_emf_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
@@ -269,12 +262,12 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *bu
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej;
-  int nx2=pmb->block_size.nx2-1;
-  //AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  //AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int nx2=pmb->block_size.nx2-NGHOST;
+  int nxo=pmb->block_size.nx2-joverlap_;
+
   sk = pmb->ks; ek = pmb->ke;
-  if(nb < 5) si = pmb->is;
-  else si = pmb->ie+1;
+  //if(nb < 4) si = pmb->is;
+  //else si = pmb->ie+1;
   // --- inner boundary:
   // set [js-NGHOST:js+(joverlap-1)] with recv_inner[0]; nb=0
   // set [js-1:js+(joverlap-1)]      with recv_inner[0]; nb=0 if joverlap==nx2-1
@@ -308,49 +301,40 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *bu
   switch(nb) {
     case 0:
       sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
-      if(joverlap_==nx2) sj=pmb->js-1;
-      psj=sj; pej=ej;
+      if(joverlap_>nx2) sj=pmb->js-nxo;
+      psj=sj; pej=ej+1;
       break;
     case 1:
       sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
-      if(joverlap_<=1)   ej=pmb->je+joverlap_;
+      if(joverlap_<NGHOST) ej=pmb->je+joverlap_;
       psj=sj; pej=ej+1;
       break;
     case 2:
       sj=pmb->js-NGHOST; ej=pmb->js-1;
-      if(joverlap_==nx2) ej=pmb->js-NGHOST;
+      if(joverlap_>nx2) ej=pmb->js-nxo-1;
       psj=sj; pej=ej;
       break;
     case 3:
-      sj=pmb->je+1; ej=pmb->je+NGHOST;
+      sj=pmb->je+joverlap_+1; ej=pmb->je+NGHOST;
       psj=sj+1; pej=ej+1;
       break;
     case 4:
-      sj=pmb->je+2; ej=pmb->je+NGHOST;
-      psj=sj+1; pej=ej+1;
+      sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
+      if(joverlap_>nx2) ej=pmb->je+nxo;
+      psj=sj; pej=ej+1;
       break;
     case 5:
-      sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
-      if(joverlap_==nx2) ej=pmb->je+1;
+      sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
+      if(joverlap_<=NGHOST) sj=pmb->js-joverlap_;
       psj=sj; pej=ej+1;
       break;
     case 6:
-      sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-      if(joverlap_<=1) sj=pmb->js-joverlap_;
-      psj=sj; pej=ej;
-      if(joverlap_==0) pej+=1;
-      break;
-    case 7:
       sj=pmb->je+1; ej=pmb->je+NGHOST;
-      if(joverlap_==nx2)   sj=pmb->je+NGHOST;
+      if(joverlap_>nx2) sj=pmb->je+nxo+1;
       psj=sj+1; pej=ej+1;
       break;
-    case 8:
-      sj=pmb->js-NGHOST; ej=pmb->js-1;
-      psj=sj; pej=ej;
-      break;
-    case 9:
-      sj=pmb->js-NGHOST; ej=pmb->js-2;
+    case 7:
+      sj=pmb->js-NGHOST; ej=pmb->js-joverlap_-1;
       psj=sj; pej=ej;
       break;
     default:
@@ -394,7 +378,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
   bool flagi=true, flago=true;
 
   if(shbb_.inner == true) { // check inner boundaries
-    for(int n=0; n<5; n++) {
+    for(int n=0; n<4; n++) {
       if(shbox_inner_emf_flag_[n]==BNDRY_COMPLETED) continue;
       if(shbox_inner_emf_flag_[n]==BNDRY_WAITING) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
@@ -421,8 +405,8 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
   } // inner boundary
 
   if(shbb_.outer == true) { // check outer boundaries
-    int offset = 5;
-    for(int n=0; n<5; n++) {
+    int offset = 4;
+    for(int n=0; n<4; n++) {
       if(shbox_outer_emf_flag_[n]==BNDRY_COMPLETED) continue;
       if(shbox_outer_emf_flag_[n]==BNDRY_WAITING) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
@@ -543,10 +527,10 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work)
   int js=pmb->js, je=pmb->je;
   for(int k=ks-NGHOST; k<=ke+NGHOST; k++) {
     for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-    e2(k,j) = 0.0;
-    e3(k,j) = 0.0;
-    if(k==ke+NGHOST) e2(k+1,j) = 0.0;
-    if(j==je+NGHOST) e3(k,j+1) = 0.0;
+      e2(k,j) = 0.0;
+      e3(k,j) = 0.0;
+      if(k==ke+NGHOST) e2(k+1,j) = 0.0;
+      if(j==je+NGHOST) e3(k,j+1) = 0.0;
   }}
 
   return;

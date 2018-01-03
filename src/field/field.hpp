@@ -38,10 +38,12 @@ public:
   FieldDiffusion *pdif;
 //diffusion]
 
-  FaceField b;       // face-centered magnetic fields
-  FaceField b1;      // face-centered magnetic fields at intermediate step
-  AthenaArray<Real> bcc;  // cell-centered magnetic fields
-  AthenaArray<Real> bcc1; // cell-centered magnetic fields at intermediate step
+  // face-centered magnetic fields
+  FaceField b;       // time-integrator memory register #1
+  FaceField b1;      // time-integrator memory register #2
+  FaceField b2;      // time-integrator memory register #3
+  // cell-centered magnetic fields
+  AthenaArray<Real> bcc;  // time-integrator memory register #1
 
   EdgeField e;    // edge-centered electric fields used in CT
   FaceField wght; // weights used to integrate E to corner using GS algorithm
@@ -51,8 +53,9 @@ public:
 
   void CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
        Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
-  void CT(FaceField &b_in1, FaceField &b_in2, const IntegratorWeight w,
-    FaceField &b_out);
+  void CT(const Real wght, FaceField &b_out);
+  void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+       const Real wght[3]);
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
 private:

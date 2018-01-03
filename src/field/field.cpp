@@ -37,9 +37,16 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    // If user-requested time integrator is type 3S*, allocate additional memory registers
+    std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+    if (integrator == "ssprk5_4"){
+      // future extension may add "int nregister" to Hydro class
+      b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+      b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+      b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    }
 
     bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
-    bcc1.NewAthenaArray(NFIELD,ncells3,ncells2,ncells1);
 
     e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
     e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
@@ -85,8 +92,11 @@ Field::~Field()
   b1.x1f.DeleteAthenaArray();
   b1.x2f.DeleteAthenaArray();
   b1.x3f.DeleteAthenaArray();
+  // b2 only allocated if integrator was 3S* integrator
+  b2.x1f.DeleteAthenaArray();
+  b2.x2f.DeleteAthenaArray();
+  b2.x3f.DeleteAthenaArray();
   bcc.DeleteAthenaArray();
-  bcc1.DeleteAthenaArray();
 
   e.x1e.DeleteAthenaArray();
   e.x2e.DeleteAthenaArray();
@@ -166,4 +176,3 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
 }
   return;
 }
-

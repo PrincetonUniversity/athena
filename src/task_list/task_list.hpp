@@ -28,7 +28,10 @@ enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 //  \brief weights used in time integrator tasks
 
 struct IntegratorWeight {
-  Real a,b,c;
+  // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+  Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+  Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+  Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
 };
 
 //----------------------------------------------------------------------------------------
@@ -93,7 +96,11 @@ public:
 
   // data
   std::string integrator;
+  Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
   struct IntegratorWeight step_wghts[MAX_NSTEP];
+
+  // Track the partial dt abscissae for substepping each memory register, relative to t^n
+  Real step_dt[3];
 
   void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
 
@@ -144,6 +151,9 @@ public:
   enum TaskStatus GravReceive(MeshBlock *pmb, int step);
   enum TaskStatus GravSolve(MeshBlock *pmb, int step);
   enum TaskStatus GravFluxCorrection(MeshBlock *pmb, int step);
+
+  enum TaskStatus StartupIntegrator(MeshBlock *pmb, int step);
+  enum TaskStatus UpdateTimeStep(MeshBlock *pmb, int step);
 };
 
 
@@ -208,10 +218,8 @@ namespace HydroIntegratorTaskNames {
   const uint64_t RECV_GRAV=1LL<<43;
   const uint64_t CORR_GFLX=1LL<<44;
 
-  //[diffusion
-  const uint64_t DIFFUSE_HYD=1LL<<45;
-  const uint64_t DIFFUSE_FLD=1LL<<46;
-  //diffusion]
+  const uint64_t STARTUP_INT=1LL<<45;
+  const uint64_t UPDATE_DT=1LL<<46;
 //[JMSHI
   const uint64_t SEND_HYDSH=1LL<<47;
   const uint64_t SEND_EMFSH=1LL<<48;
@@ -220,6 +228,10 @@ namespace HydroIntegratorTaskNames {
   const uint64_t RECV_EMFSH=1LL<<51;
   const uint64_t RECV_FLDSH=1LL<<52;
   const uint64_t RMAP_EMFSH=1LL<<53;
+  //[diffusion
+  const uint64_t DIFFUSE_HYD=1LL<<54;
+  const uint64_t DIFFUSE_FLD=1LL<<55;
+  //diffusion]
 //JMSHI]
 };
 
