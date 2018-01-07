@@ -359,12 +359,13 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
-  int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
-  if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
-  if(pmb->block_size.nx3>1) cng3=cng;
   int f2d=0, f3d=0;
+  int cng, cng1, cng2, cng3;
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
+  cng=cng1=pmb->cnghost;
+  cng2=cng*f2d;
+  cng3=cng*f3d;
   int size;
   bd.nbmax=maxneighbor_;
   if(type==BNDRY_FLCOR || type==BNDRY_EMFCOR)
@@ -436,17 +437,17 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
           }
           int fsize=f2c1+f2c2+f2c3;
           int c2f1=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
           int c2f2=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
           int c2f3=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
           int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
         }
@@ -534,11 +535,14 @@ void BoundaryValues::Initialize(void)
   MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
   int tag;
+  int f2d=0, f3d=0;
   int cng, cng1, cng2, cng3;
-  int ssize, rsize;
+  if(pmb->block_size.nx2 > 1) f2d=1;
+  if(pmb->block_size.nx3 > 1) f3d=1;
   cng=cng1=pmb->cnghost;
-  cng2=(pmb->block_size.nx2>1)?cng:0;
-  cng3=(pmb->block_size.nx3>1)?cng:0;
+  cng2=cng*f2d;
+  cng3=cng*f3d;
+  int ssize, rsize;
   long int &lx1=pmb->loc.lx1;
   long int &lx2=pmb->loc.lx2;
   long int &lx3=pmb->loc.lx3;
@@ -546,9 +550,6 @@ void BoundaryValues::Initialize(void)
   myox1=((int)(lx1&1L));
   myox2=((int)(lx2&1L));
   myox3=((int)(lx3&1L));
-  int f2d=0, f3d=0;
-  if(pmb->block_size.nx2 > 1) f2d=1;
-  if(pmb->block_size.nx3 > 1) f3d=1;
 
 
   // count the number of the fine meshblocks contacting on each edge
@@ -711,15 +712,15 @@ void BoundaryValues::Initialize(void)
             if(nb.ox3!=0) f2c3=f2c3/cng*(cng+1);
           }
           fsize=f2c1+f2c2+f2c3;
-          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
-          int c2f2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
-          int c2f3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
+          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
+                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+          int c2f2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+          int c2f3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
           csize=c2f1+c2f2+c2f3;
         }
         if(nb.level==mylevel) // same
