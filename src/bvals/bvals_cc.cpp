@@ -67,7 +67,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &s
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
-  int cn=pmb->cnghost-1;
+  int cn=NGHOST-1;
 
   si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
   ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;

@@ -171,10 +171,9 @@ def tab(filename, raw=False, dimensions=None):
 def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
 
-  # Read row data
+  # Read raw data
   with open(filename, 'rb') as data_file:
     raw_data = data_file.read()
-
   raw_data_ascii = raw_data.decode('ascii', 'replace')
 
   # Skip header
@@ -199,7 +198,8 @@ def vtk(filename):
   end_of_line_index = current_index + 1
   while raw_data_ascii[end_of_line_index] != '\n':
     end_of_line_index += 1
-  face_dimensions = list(map(int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
+  face_dimensions = \
+      list(map(int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
   current_index = end_of_line_index + 1
 
   # Function for reading interface locations
@@ -276,8 +276,8 @@ def vtk(filename):
 #=========================================================================================
 
 def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
-    subsample=False, fast_restrict=False, x1_min=None, x1_max=None, x2_min=None,
-    x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
+    return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
+    x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
     face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
     center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
@@ -352,7 +352,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
           vol_func = lambda rm,rp,thetam,thetap,phim,phip: \
               (rp**3-rm**3) * abs(np.cos(thetam)-np.cos(thetap)) * (phip-phim)
       elif coord == 'kerr-schild':
-        if nx1 == 1 and nx2 == 1 and (nx3 == 3 or x3_rat == 1.0):
+        if nx1 == 1 and nx2 == 1 and (nx3 == 1 or x3_rat == 1.0):
           fast_restrict = True
         else:
           a = vol_params[0]
@@ -423,6 +423,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     var_quantities = f.attrs['VariableNames'][:]
     coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
     attr_quantities = [key for key in f.attrs]
+    other_quantities = ('Levels',)
     if not new_data:
       quantities = data.values()
     elif quantities is None:
@@ -435,8 +436,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
           error_string = 'Quantity not recognized: file does not include "{0}" but does' \
               + ' include {1}'
           raise AthenaError(error_string.format(q, possibilities))
-    quantities = [str(q) for q in quantities \
-        if q not in coord_quantities and q not in attr_quantities]
+    quantities = [str(q) for q in quantities if q not in coord_quantities \
+        and q not in attr_quantities and q not in other_quantities]
 
     # Store file attribute metadata
     for key in attr_quantities:
@@ -549,6 +550,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     if new_data:
       for q in quantities:
         data[q] = np.zeros((k_max-k_min, j_max-j_min, i_max-i_min), dtype=dtype)
+      if return_levels:
+        data['Levels'] = np.empty((k_max-k_min, j_max-j_min, i_max-i_min), dtype=np.int32)
     else:
       for q in quantities:
         data[q].fill(0.0)
@@ -720,6 +723,10 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
           loc3 = (nx3 > 1 ) * block_location[2] / s
           restricted_data[loc3,loc2,loc1] = True
 
+      # Set level information for cells in this block
+      if return_levels:
+        data['Levels'][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = block_level
+
   # Remove volume factors from restricted data
   if level < max_level and not subsample and not fast_restrict:
     for loc3 in range(lx3):
@@ -756,6 +763,54 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
   # Return dictionary containing requested data arrays
   return data
+
+#=========================================================================================
+
+def restrict_like(vals, levels, vols=None):
+  """Average cell values according to given mesh refinement scheme."""
+
+  # Determine maximum amount of restriction
+  nx3,nx2,nx1 = vals.shape
+  max_level = np.max(levels)
+  if nx3 > 1 and nx3 % 2**max_level != 0:
+    raise AthenaError('x3-dimension wrong size to be restricted')
+  if nx2 > 1 and nx2 % 2**max_level != 0:
+    raise AthenaError('x2-dimension wrong size to be restricted')
+  if nx1 % 2**max_level != 0:
+    raise AthenaError('x1-dimension wrong size to be restricted')
+
+  # Construct volume weighting
+  if vols is None:
+    vols = np.ones_like(vals)
+  else:
+    if vols.shape != vals.shape:
+      raise AthenaError('Array of volumes must match cell values in size')
+
+  # Restrict data
+  vals_restricted = np.copy(vals)
+  for level in range(max_level):
+    level_difference = max_level - level
+    stride = 2 ** level_difference
+    if nx3 > 1:
+      vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+      vals_sum = np.sum(np.sum(np.sum(vals_level, axis=5), axis=3), axis=1)
+      vols_sum = np.sum(np.sum(np.sum(vols_level, axis=5), axis=3), axis=1)
+      vals_level = np.repeat(np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1), stride, axis=2)
+    elif nx2 > 1:
+      vals_level = np.reshape(vals * vols, (nx2/stride, stride, nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
+      vals_sum = np.sum(np.sum(vals_level, axis=3), axis=1)
+      vols_sum = np.sum(np.sum(vols_level, axis=3), axis=1)
+      vals_level = np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
+    else:
+      vals_level = np.reshape(vals * vols, (nx1/stride, stride))
+      vols_level = np.reshape(vols, (nx1/stride, stride))
+      vals_sum = np.sum(vals_level, axis=1)
+      vols_sum = np.sum(vols_level, axis=1)
+      vals_level = np.repeat(vals_sum / vols_sum, stride, axis=0)
+    vals_restricted = np.where(levels == level, vals_level, vals_restricted)
+  return vals_restricted
 
 #=========================================================================================
 

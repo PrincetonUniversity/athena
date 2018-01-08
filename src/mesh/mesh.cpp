@@ -2025,7 +2025,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                 dst(nv, k, j, i)=src(nv, ck, cj, ci);
         }}}
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
-                                          is, ie, js, je, ks, ke);
+                       pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if(MAGNETIC_FIELDS_ENABLED) {
           FaceField &src=pob->pfield->b;
           FaceField &dst=pmr->coarse_b_;
@@ -2045,12 +2045,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
           }}
           pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
-                                       pob->is, ie+1, js, je, ks, ke);
+                         pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX2(dst.x2f, pmb->pfield->b.x2f,
-                                       is, ie, js, je+f2, ks, ke);
+                         pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX3(dst.x3f, pmb->pfield->b.x3f,
-                                       is, ie, js, je, ks, ke+f3);
-          pmr->ProlongateInternalField(pmb->pfield->b, is, ie, js, je, ks, ke);
+                         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
+          pmr->ProlongateInternalField(pmb->pfield->b, pob->cis, pob->cie,
+                                       pob->cjs, pob->cje, pob->cks, pob->cke);
         }
       }
     }
@@ -2151,7 +2152,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         BufferUtility::Unpack4DData(recvbuf[k], pmr->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
         pmr->ProlongateCellCenteredValues(pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
-                                          is, ie, js, je, ks, ke);
+                                   pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if(MAGNETIC_FIELDS_ENABLED) {
           BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
@@ -2160,12 +2161,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pb->pfield->b.x1f,
-                                       is, ie+1, js, je, ks, ke);
+                               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pb->pfield->b.x2f,
-                                       is, ie, js, je+f2, ks, ke);
+                               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pb->pfield->b.x3f,
-                                       is, ie, js, je, ks, ke+f3);
-          pmr->ProlongateInternalField(pb->pfield->b, is, ie, js, je, ks, ke);
+                               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
+          pmr->ProlongateInternalField(pb->pfield->b, pb->cis, pb->cie,
+                                       pb->cjs, pb->cje, pb->cks, pb->cke);
         }
         k++;
       }

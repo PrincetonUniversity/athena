@@ -105,7 +105,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
-  int cng=pmb->cnghost;
+  int cng=NGHOST;
   int p=0;
 
   // bx1
