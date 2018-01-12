@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shock_tube.cpp
-//  \brief Problem generator for shock tube problems.  
+//  \brief Problem generator for shock tube problems.
 //
 // Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
 // shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
@@ -37,9 +37,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   MeshBlock *pmb = pblock;
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
-  
+
   // Read shock direction and set array indices
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
   int im1,im2,im3,ib1,ib2,ib3;
   if (shk_dir == 1) {
     im1 = IM1; im2 = IM2; im3 = IM3;
@@ -65,14 +65,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     Real xsm = (0.60588 - 0.51594/1.4903)*tlim;
     Real xrm = (0.60588 - 1.0/sqrt(PI*1.4903))*tlim;
     Real xfm = (1.2 - 2.3305/1.08)*tlim;
+#if !EOS_TABLE_ENABLED
     Real gm1 = pmb->peos->GetGamma() - 1.0;
+#endif
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r, d0, mx, my, mz, e0, bx, by, bz;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
 
         bx = 2.0/sqrt(4.0*PI);
         if (r > xfp) {
@@ -82,7 +84,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.0;
           by = 4.0/sqrt(4.0*PI);
           bz = 2.0/sqrt(4.0*PI);
-          e0 = 1.0/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.0)
+#else
+          e0 = 1.0/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xrp) {
           d0 = 1.3090;
           mx = 0.53432*d0;
@@ -90,7 +97,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = -0.047286*d0;
           by = 5.3452/sqrt(4.0*PI);
           bz = 2.6726/sqrt(4.0*PI);
-          e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
+#else
+          e0 = 1.5844/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xsp) {
           d0 = 1.3090;
           mx = 0.53432*d0;
@@ -98,7 +110,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.17554*d0;
           by = 5.7083/sqrt(4.0*PI);
           bz = 1.7689/sqrt(4.0*PI);
-          e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
+#else
+          e0 = 1.5844/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xc) {
           d0 = 1.4735;
           mx = 0.57538*d0;
@@ -106,7 +123,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.24734*d0;
           by = 5.0074/sqrt(4.0*PI);
           bz = 1.5517/sqrt(4.0*PI);
-          e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
+#else
+          e0 = 1.9317/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xsm) {
           d0 = 1.6343;
           mx = 0.57538*d0;
@@ -114,7 +136,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.24734*d0;
           by = 5.0074/sqrt(4.0*PI);
           bz = 1.5517/sqrt(4.0*PI);
-          e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(1.9317, d0)
+#else
+          e0 = 1.9317/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xrm) {
           d0 = 1.4903;
           mx = 0.60588*d0;
@@ -122,7 +149,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.30125*d0;
           by = 5.5713/sqrt(4.0*PI);
           bz = 1.7264/sqrt(4.0*PI);
-          e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
+#else
+          e0 = 1.6558/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xfm) {
           d0 = 1.4903;
           mx = 0.60588*d0;
@@ -130,7 +162,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.55686*d0;
           by = 5.0987/sqrt(4.0*PI);
           bz = 2.8326/sqrt(4.0*PI);
-          e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
+#else
+          e0 = 1.6558/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else {
           d0 = 1.08;
           mx = 1.2*d0;
@@ -138,7 +175,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mz = 0.5*d0;
           by = 3.6/sqrt(4.0*PI);
           bz = 2.0/sqrt(4.0*PI);
-          e0 = 0.95/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+#if EOS_TABLE_ENABLED
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 0.95)
+#else
+          e0 = 0.95/gm1
+#endif
+             + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         }
 
         err[IDN] += fabs(d0 - pmb->phydro->u(IDN,k,j,i));
@@ -151,7 +193,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         err[NHYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
     }}
-  
+
   // Errors in Sod solution
   } else {
     // Positions of shock, contact, head and foot of rarefaction for Sod test
@@ -164,10 +206,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r,d0,m0,e0;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
-  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
+
         if (r > xs) {
           d0 = 0.125;
           m0 = 0.0;
@@ -254,10 +296,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
 
   // parse shock location (must be inside grid)
-  Real xshock = pin->GetReal("problem","xshock"); 
+  Real xshock = pin->GetReal("problem","xshock");
   if (shk_dir == 1 && (xshock < pmy_mesh->mesh_size.x1min ||
                        xshock > pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
@@ -318,7 +360,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+#else
+            wl[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         } else {
           phydro->u(IDN,k,j,i) = wr[IDN];
@@ -326,7 +372,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+#else
+            wr[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -344,7 +394,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+#else
+            wl[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }
       } else {
@@ -354,7 +408,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+#else
+            wr[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -373,7 +431,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+#else
+            wl[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }}
       } else {
@@ -384,7 +446,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IPR]/(peos->GetGamma() - 1.0)
+#if EOS_TABLE_ENABLED
+            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+#else
+            wr[IEN]/(peos->GetGamma() - 1.0)
+#endif
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }}
       }
