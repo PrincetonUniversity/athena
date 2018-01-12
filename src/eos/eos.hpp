@@ -13,11 +13,13 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../coordinates/coordinates.hpp" // Coordinates
+//#include "../defs.hpp"
 
 // Declarations
 class Hydro;
 class ParameterInput;
 struct FaceField;
+typedef std::string (*EosFn_t)();
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -96,7 +98,39 @@ public:
     #endif  // !MAGNETIC_FIELDS_ENABLED
   #endif  // !RELATIVISTIC_DYNAMICS
 
+  #if EOS_TABLE_ENABLED
+  EosFn_t GetEosFn;
+  void PrepEOS(ParameterInput *pin);
+  void CleanEOS();
+  void BilinearInterp(Real x, Real y, AthenaArray<Real> &out, int kOut = -1);
+  void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
+  void GetEosData(Real rho, Real var, int axis, AthenaArray<Real> &out, int kOut = -1);
+  Real GetEosDatum(Real rho, Real var, int axis, int kOut);
+  Real GetPresFromRhoEgas(Real rho, Real egas);
+  Real GetEgasFromRhoPres(Real rho, Real pres);
+  Real GetEgasFromRhoHint(Real rho, Real hint);
+  Real GetASqFromRhoEgas(Real rho, Real egas);
+  Real GetASqFromRhoPres(Real rho, Real pres);
+  Real GetASqFromRhoHint(Real rho, Real hint);
+  Real GetTempFromRhoEgas(Real rho, Real egas);
+  //Real GetGamma1FromRhoEgas(Real rho, Real egas);
+  void EnrollEosTable(EosFn_t GenEosTableFilename);
+  void EosTestLoop();
+  void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
+  int iPresEOS;
+  int iASqEOS;
+  int iTempEOS;
+  int iOffsetEOS;
+  int axisEgas;
+  int axisPres;
+  int axisHint;
+  #endif // EOS_TABLE_ENABLED
+
+#if EOS_TABLE_ENABLED
+  Real GetGamma() const {throw std::invalid_argument("GetGamma is not defined for EOS tables.");}
+#else
   Real GetGamma() const {return gamma_;}
+#endif
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
@@ -116,6 +150,17 @@ private:
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
+#if EOS_TABLE_ENABLED
+  //AthenaArray<Real> eos_rho_, eos_espec_;// eos density and specific internal energy
+  AthenaArray<Real> eos_data_;           // eos table data
+  Real logRhoMin_, logRhoMax_, rhoNorm_;
+  Real logEgasMin_, logEgasMax_, eNorm_;
+  Real rhoUnit_, eUnit_;
+  int nRho_, nEgas_, nVar_;
+  Real egasOverPres_;
+  Real EosRatios_[3];
+#endif // EOS_TABLE_ENABLED
+
 };
 
 #endif

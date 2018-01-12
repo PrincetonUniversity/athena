@@ -36,8 +36,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
+#if not EOS_TABLE_ENABLED
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real igm1 = 1.0/gm1;
+#endif
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -73,8 +75,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
+#if EOS_TABLE_ENABLED
+    el = pmy_block->peos->GetEgasFromRhoPres(wli[IDN], wli[IEN]) + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+    er = pmy_block->peos->GetEgasFromRhoPres(wri[IDN], wri[IEN]) + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+#else
     el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
     er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+#endif
     hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
@@ -82,7 +89,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
+#if EOS_TABLE_ENABLED
+    Real a = (q < 0.0) ? 0.0 : sqrt(pmy_block->peos->GetASqFromRhoHint(wroe[IDN], q * wroe[IDN]));
+#else
     Real a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
+#endif
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 

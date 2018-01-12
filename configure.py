@@ -12,6 +12,7 @@
 #   --coord=choice    use choice as the coordinate system
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
+#   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -73,6 +74,12 @@ parser.add_argument('--flux',
     default='default',
     choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
+
+# -eos_table argument
+parser.add_argument('-eos_table',
+    action='store_true',
+    default=False,
+    help='enable EOS table')
 
 # -b argument
 parser.add_argument('-b',
@@ -234,6 +241,9 @@ if args['eos'] == 'adiabatic':
   definitions['NHYDRO_VARIABLES'] = '5'
 if args['eos'] == 'isothermal':
   definitions['NHYDRO_VARIABLES'] = '4'
+
+# -eos_table argument
+definitions['EOS_TABLE_ENABLED'] = '1' if args['eos_table'] else '0'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
@@ -477,6 +487,7 @@ print('Your Athena++ distribution has now been configured with the following opt
 print('  Problem generator:       ' + args['prob'])
 print('  Coordinate system:       ' + args['coord'])
 print('  Equation of state:       ' + args['eos'])
+print('  EOS Table:               ' + ('ON' if args['eos_table'] else 'OFF'))
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
