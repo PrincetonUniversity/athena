@@ -76,11 +76,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
   shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
 
-  // enroll boundary value function pointers
-  if (shboxcoord != 1) {
-    EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
-    EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
-  }
+  //// enroll boundary value function pointers
+  //if (shboxcoord != 1) {
+  //  EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
+  //  EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
+  //}
   return;
 }
 
@@ -93,10 +93,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  //if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-  //    std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
-  //    exit(0);
-  //}
+  if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
+      std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
+      exit(0);
+  }
 
 //  if (NON_BAROTROPIC_EOS) {
 //      std::cout << "[ssheet.cpp]: only works for isothermal eos" << std::endl;
@@ -170,14 +170,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
         phydro->u(IM3,k,j,i) = 0.0;
-        if(MAGNETIC_FIELDS_ENABLED) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = 1e-5*sin(kx*x1);
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = 1e-5*sin(kx*x1);
-        }
+        //if(MAGNETIC_FIELDS_ENABLED) {
+        //    pfield->b.x1f(k,j,i) = 0.0;
+        //    pfield->b.x2f(k,j,i) = 0.0;
+        //    pfield->b.x3f(k,j,i) = 1e-5*sin(kx*x1);
+        //    if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+        //    if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
+        //    if (k==ke) pfield->b.x3f(ke+1,j,i) = 1e-5*sin(kx*x1);
+        //}
       } else if (ipert == 2) {
         // 3) epicyclic oscillation
         if (shboxcoord == 1) { // x-y shear

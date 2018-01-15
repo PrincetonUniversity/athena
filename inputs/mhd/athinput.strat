@@ -1,0 +1,66 @@
+<comment>
+problem = Stratified 3D MRI with zero-net vertical flux
+author  = Stone, Hawley, Gammie, & Balbus
+journal =
+config  = -sh -b --prob=strat --with-eos=isothermal
+
+<job>
+problem_id      = Strat      # problem ID: basename of output filenames
+
+<output1>
+file_type = rst              # Restart dump
+dt        = 6.2831853e3
+
+<output2>
+file_type = hst              # History data dump
+dt        = 6.2831853e1      # time increment between outputs
+
+<output3>
+file_type = hdf5             # VTK data dump
+variable  = prim
+dt        = 1.5707963e3      # time increment between outputs
+
+<time>
+cfl_number      = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim            = 1000000   # cycle limit
+tlim            = 1.88496e6 # time limit (300 orbits)
+
+<mesh>
+nx1        = 8         # Number of zones in X1-direction
+x1min      = -0.5      # minimum value of X1
+x1max      = 0.5       # maximum value of X1
+ix1_bc     = shear_periodic      # inner-X1 boundary flag
+ox1_bc     = shear_periodic      # outer-X1 boundary flag
+
+nx2        = 32        # Number of zones in X2-direction
+x2min      = -4.0    # minimum value of X2
+x2max      = 4.0      # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 48        # Number of zones in X3-direction
+x3min      = -6.0      # minimum value of X3
+x3max      = 6.0       # maximum value of X3
+ix3_bc     = user #periodic     # inner-X3 boundary flag
+ox3_bc     = user #periodic     # outer-X3 boundary flag
+
+num_threads = 1        # maximum number of OMP threads
+
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 7.0711e-4  # isothermal sound speed
+dfloor          = 1.e-6
+pfloor          = 5e-13
+
+<problem>
+beta            = 100        # Plasma beta
+amp             = 0.025      # dP/P <= amp
+ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz
+ipert           = 1          # 1 for random d,P, 2 for uniform Vx
+Omega0          = 0.001       # orbital freq
+qshear          = 1.5       # shear rate
+
+<meshblock>
+nx1 = 8 
+nx2 = 32 
+nx3 = 24 

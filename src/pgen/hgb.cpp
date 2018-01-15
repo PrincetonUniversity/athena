@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file hgb.cpp
 /*
  *  \brief Problem generator for 3D shearing sheet.
@@ -66,51 +56,13 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 
-#if !MAGNETIC_FIELDS_ENABLED
-#error "This problem generator requires magnetic fields"
-#endif
-
-//======================================================================================
-//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief field loop advection problem generator for 2D/3D problems.
-//======================================================================================
 
 Real Lx,Ly,Lz; // root grid size, global to share with output functions
-
-/*==============================================================================
- * PRIVATE FUNCTION PROTOTYPES:
- * ran2()          - random number generator from NR
- * UnstratifiedDisk() - tidal potential in 3D shearing box
- * expr_dV2()       - computes delta(Vy)
- * hst_*            - new history variables
- *============================================================================*/
-
 static double ran2(long int *idum);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 static Real Omega_0,qshear;
-/*
-static Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
-static Real expr_dV2(const GridS *pG, const int i, const int j, const int k);
-static Real expr_Jsq(const GridS *pG, const int i, const int j, const int k);
-static Real hst_rho_Vx_dVy(const GridS *pG,const int i,const int j,const int k);
-static Real hst_rho_dVy2(const GridS *pG,const int i, const int j, const int k);
-#ifdef ADIABATIC
-static Real hst_E_total(const GridS *pG, const int i, const int j, const int k);
-#endif
-#ifdef MHD
-static Real hst_Bx(const GridS *pG, const int i, const int j, const int k);
-static Real hst_By(const GridS *pG, const int i, const int j, const int k);
-static Real hst_Bz(const GridS *pG, const int i, const int j, const int k);
-static Real hst_BxBy(const GridS *pG, const int i, const int j, const int k);
-static Real hst_dEw2(const GridS *pG, const int i, const int j, const int k);
-static Real hst_dBy(const GridS *pG, const int i, const int j, const int k);
-#endif
-*/
-/*----------------------------------------------------------------------------*/
-
-
-
+//====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   AllocateUserHistoryOutput(2);
@@ -123,6 +75,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief mhd shearing waves and unstratified disk problem generator for
+//  3D problems.
+//======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
 
@@ -426,8 +383,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}
   }
 
-// enroll new history variables, only once
-// not implemented yet
 
   return;
 }
