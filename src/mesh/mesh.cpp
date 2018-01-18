@@ -625,6 +625,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
 
   multilevel=false;
   adaptive=false;
@@ -1225,7 +1231,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // add perturbation from turbulence
-    if(turb_flag > 0)
+    if((turb_flag > 0) && (res_flag==0))
       ptrbd->Driving();
 
     // solve gravity for the first time
