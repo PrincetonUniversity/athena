@@ -812,7 +812,6 @@ def restrict_like(vals, levels, vols=None):
     vals_restricted = np.where(levels == level, vals_level, vals_restricted)
   return vals_restricted
 
-
 #=========================================================================================
 
 def athinput(filename):
