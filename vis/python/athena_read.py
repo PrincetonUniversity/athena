@@ -815,15 +815,17 @@ def restrict_like(vals, levels, vols=None):
 #=========================================================================================
 
 def athinput(filename):
-  """Reads athinput file and returns a dictionary of dictionaries."""
+  """Read athinput file and returns a dictionary of dictionaries."""
+
   # Read data
   with open(filename, 'r') as athinput:
-    # Remove comments, extra whitespace and empty lines
+    # remove comments, extra whitespace, and empty lines
     lines = filter(None, [i.split('#')[0].strip() for i in athinput.readlines()])
   data = {}
   # split into blocks, first element will be empty
   blocks = ('\n'.join(lines)).split('<')[1:]
 
+  # Function for interpreting strings numerically
   def typecast(x):
     try:
       return int(x)
@@ -839,17 +841,18 @@ def athinput(filename):
       pass
     return x
 
+  # Function for parsing assignment based on first '='
   def parse_line(line):
     out = [i.strip() for i in line.split('=')]
     out[1] = '='.join(out[1:])
     out[1] = typecast(out[1])
     return out[:2]
 
+  # Assign values into dictionaries
   for block in blocks:
     info = filter(None, block.split('\n'))
-    key = info.pop(0)[:-1] # last character is '>'
+    key = info.pop(0)[:-1]  # last character is '>'
     data[key] = dict(map(parse_line, info))
-
   return data
 
 #=========================================================================================
