@@ -88,6 +88,7 @@ Real Lx,Ly,Lz; // root grid size, global to share with output functions
 static double ran2(long int *idum);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
+static Real hst_dBy(MeshBlock *pmb, int iout);
 static Real Omega_0,qshear;
 /*
 static Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
@@ -113,11 +114,12 @@ static Real hst_dBy(const GridS *pG, const int i, const int j, const int k);
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  AllocateUserHistoryOutput(2);
+  AllocateUserHistoryOutput(3);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
+  EnrollUserHistoryOutput(2, hst_dBy, "dBy");
 // Read problem parameters
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
+  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
   //std::cout << "[hgb.cpp]: initusermeshdata omg,qshear= " << Omega_0 << qshear << std::endl;
   return;
@@ -151,11 +153,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Compute pressure based on the EOS.
   Real den = 1.0, pres =1.0, gamma=1.0, iso_cs=1.0;
   if (NON_BAROTROPIC_EOS) {
-    Real gamma = peos->GetGamma();
-    Real pres = pin->GetReal("problem","pres");
+    gamma = peos->GetGamma();
+    pres = pin->GetReal("problem","pres");
   } else {
-    Real iso_cs =peos->GetIsoSoundSpeed();
-    Real pres = den*SQR(iso_cs);
+    iso_cs =peos->GetIsoSoundSpeed();
+    pres = den*SQR(iso_cs);
   }
 // Compute field strength based on beta.
   Real B0  = 0.0;
@@ -194,6 +196,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real x1f,x2f,x3f;
   Real rd,rp,rvx,rvy,rvz,rbx,rby,rbz;
   Real rval;
+
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
@@ -222,15 +225,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // Follow HGB: the perturbations to V/Cs are
         // (1/5)amp/sqrt(gamma)
         rval = amp*(ran2(&iseed) - 0.5);
-        rvx = 0.4*rval*sqrt(pres/den);
+        rvx = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
         SumRvx += rvx;
 
         rval = amp*(ran2(&iseed) - 0.5);
-        rvy = 0.4*rval*sqrt(pres/den);
+        rvy = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
         SumRvy += rvz;
 
         rval = amp*(ran2(&iseed) - 0.5);
-        rvz = 0.4*rval*sqrt(pres/den);
+        rvz = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
         SumRvz += rvz;
       }
       if (ipert == 2) {
@@ -555,4 +558,37 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
 
   volume.DeleteAthenaArray();
   return dvxvy;
+}
+
+static Real hst_dBy(MeshBlock *pmb, int iout)
+{
+  Real dby=0;
+  Real fkx, fky, fkz; /* Fourier kx, ky */
+  Real x1,x2,x3;
+  AthenaArray<Real> volume; // 1D array of volumes
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  volume.NewAthenaArray(ncells1);
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  AthenaArray<Real> &b = pmb->pfield->bcc;
+
+  fky = 2.0*PI/Ly;
+  fkx = -4.0*PI/Lx + qshear*Omega_0*fky*pmb->pmy_mesh->time;
+  fkz = 2.0*PI/Lz;
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      for(int i=is; i<=ie; i++) {
+          x1 = pmb->pcoord->x1v(i);
+          x2 = pmb->pcoord->x2v(j);
+          x3 = pmb->pcoord->x3v(k);
+          dby += (2.0
+               * volume(i)
+               * (b(IB2, k, j, i) - (0.2-0.15*Omega_0*pmb->pmy_mesh->time))
+               * cos(fkx*x1 + fky*x2 + fkz*x3));
+      }
+    }
+  }
+  volume.DeleteAthenaArray();
+
+  return dby;
 }
