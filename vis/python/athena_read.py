@@ -850,7 +850,7 @@ def athinput(filename):
 
   # Assign values into dictionaries
   for block in blocks:
-    info = filter(None, block.split('\n'))
+    info = list(filter(None, block.split('\n')))
     key = info.pop(0)[:-1]  # last character is '>'
     data[key] = dict(map(parse_line, info))
   return data
