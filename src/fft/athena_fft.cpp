@@ -21,7 +21,7 @@
 
 // constructor, initializes data structures and parameters
 
-FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid, 
+FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
             RegionSize msize, RegionSize bsize)
 {
   pmy_driver_ = pfd;
@@ -40,7 +40,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 
   dim_=pmy_driver_->dim_;
 
-//  norm_factor_ = 1.0/gcnt_;
+  norm_factor_ = 1.0;
 
   in_ = new AthenaFFTComplex[cnt_];
   out_ = new AthenaFFTComplex[cnt_];
@@ -216,9 +216,9 @@ void FFTBlock::ApplyKernel(int mode)
   }
   return;
 }
-   
+
 //----------------------------------------------------------------------------------------
-//! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data, 
+//! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 //                                                enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan using mesh information
 
@@ -238,10 +238,10 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data, 
+//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 1D FFT
-AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data, 
+AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
   AthenaFFTPlan *plan;
@@ -258,12 +258,12 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow, 
-//                                           AthenaFFTComplex *data, 
+//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
+//                                           AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 2D FFT
-AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow, 
-                                     AthenaFFTComplex *data, 
+AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
+                                     AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
   AthenaFFTPlan *plan;
@@ -309,12 +309,12 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow, 
-//                                           AthenaFFTComplex *data, 
+//! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
+//                                           AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 3D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
-                                     AthenaFFTComplex *data, 
+                                     AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
   AthenaFFTPlan *plan;
@@ -387,7 +387,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan)
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
-//  \brief excute in-place FFT 
+//  \brief excute in-place FFT
 
 void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
 {
@@ -402,10 +402,10 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::Execute(AthenaFFTPlan *plan, 
+//! \fn void FFTBlock::Execute(AthenaFFTPlan *plan,
 //                              AthenaFFTComplex *in_data,AthenaFFTComplex *out_data)
-//  \brief excute out-place FFT 
-void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data, 
+//  \brief excute out-place FFT
+void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
                         AthenaFFTComplex *out_data)
 {
 #ifdef FFT
@@ -419,9 +419,9 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::MpiInitialize(AthenaFFTPlan *plan, 
+//! \fn void FFTBlock::MpiInitialize(AthenaFFTPlan *plan,
 //                              AthenaFFTComplex *in_data,AthenaFFTComplex *out_data)
-//  \brief excute out-place FFT 
+//  \brief excute out-place FFT
 void FFTBlock::MpiInitialize()
 {
 #ifdef MPI_PARALLEL
@@ -430,9 +430,9 @@ void FFTBlock::MpiInitialize()
 // To achieve best performance with 2D-pencil decomposition,
 // (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
 //     one needs to permute the axes to make it fast by setting "permute0":
-//       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0 
-//       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1 
-//       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2 
+//       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0
+//       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1
+//       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2
 // (2) swap axes for input array (swap1=true)
 //     forward FFT with permute1=2 option.
 //       yz_decomp (i,j,k) --> (i,k,j) --> (j,i,k)
@@ -443,7 +443,7 @@ void FFTBlock::MpiInitialize()
 //       yz_decomp (j,i,k) --> (j,k,i) --> (i,j,k)
 //       xz_decomp (k,j,i) --> (k,i,j) --> (j,k,i)
 //       xy_decomp (i,k,j) --> (i,j,k) --> (k,i,j)
-// (4) final outcome is the same with original input before swapping. 
+// (4) final outcome is the same with original input before swapping.
 //     assign it back to original Athena array with permutation
 //
 // swap1=swap2=true; permute1=permute2=2; permute0 depends on the decomposition
@@ -465,8 +465,8 @@ void FFTBlock::MpiInitialize()
         permute0_ = 1;
       } else {
         msg << "Something wrong with " << pdim_ << "D decomposition!" << std::endl
-        << "Current MPI Configuration is " 
-        << orig_idx_->np[0] << " x " << orig_idx_->np[1] 
+        << "Current MPI Configuration is "
+        << orig_idx_->np[0] << " x " << orig_idx_->np[1]
         << " x " << orig_idx_->np[2] << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }}
@@ -487,14 +487,14 @@ void FFTBlock::MpiInitialize()
     }
     f_in_->SetLocalIndex();
 
-// set output indices of forward FFT; 
-// keep global mesh size as input, 
+// set output indices of forward FFT;
+// keep global mesh size as input,
 // reverse permutation for MPI configurations to get correct indices
     f_out_ = new AthenaFFTIndex(f_in_);
     f_out_->PermuteAxis(permute1_);
     f_out_->SetLocalIndex();
 
-// prepare backward FFT; 
+// prepare backward FFT;
 // now permute fast, mid, and slow axes twice
     b_in_ = new AthenaFFTIndex(f_out_);
     if(swap2_){
@@ -503,8 +503,8 @@ void FFTBlock::MpiInitialize()
     }
     b_in_->SetLocalIndex();
 
-// set output indices of backward FFT; 
-// keep global mesh size as input, 
+// set output indices of backward FFT;
+// keep global mesh size as input,
 // reverse permutation for MPI configurations to get correct indices
     b_out_ = new AthenaFFTIndex(b_in_);
     b_out_->PermuteAxis(permute2_);
@@ -530,7 +530,7 @@ void FFTBlock::MpiInitialize()
 #endif
 }
 
- 
+
 //---------------------------------------------------------------------------------------
 // AthenaFFTIndex class:
 AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize)
@@ -546,7 +546,7 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
   Lx[1] = msize.x2max-msize.x2min;
   Nx[1] = msize.nx2;
   np[1] = msize.nx2/bsize.nx2;
-  ip[1] = loc.lx2; 
+  ip[1] = loc.lx2;
   iloc[1]=1;
   ploc[1]=1;
   Lx[2] = msize.x3max-msize.x3min;
@@ -592,8 +592,8 @@ void AthenaFFTIndex::SetLocalIndex(){
 void AthenaFFTIndex::Swap_(int loc[],int ref_axis){
   int tmp;
   int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
-  tmp=loc[axis1]; 
-  loc[axis1]=loc[axis2]; 
+  tmp=loc[axis1];
+  loc[axis1]=loc[axis2];
   loc[axis2]=tmp;
 }
 
@@ -615,7 +615,7 @@ void AthenaFFTIndex::Permute_(int loc[], int npermute){
     loc[0]=loc[1];
     loc[1]=loc[2];
     loc[2]=tmp;
-  } 
+  }
 }
 
 void AthenaFFTIndex::PermuteAxis(int npermute){
