@@ -116,8 +116,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  Real gam1;
-
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
       std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
       exit(0);
@@ -143,7 +141,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     first_time = 0;
   }
   Real d0 = 1.0;
-  Real p0 = 1e-6;
+  Real p0 = 1e-5;
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
@@ -155,8 +153,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   B0 = sqrt((double)(2.0*p0/beta));
   std::cout << "iso_cs = " << iso_cs << std::endl;
+  std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
   std::cout << "p0     = " << p0     << std::endl;
+  std::cout << "B0     = " << B0     << std::endl;
   std::cout << "ipert  = " << ipert  << std::endl;
   std::cout << "ifield = " << ifield << std::endl;
   std::cout << "beta   = " << beta   << std::endl;
@@ -188,7 +188,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         rval = 1.0 + amp*(ran2(&iseed) - 0.5);
         if (NON_BAROTROPIC_EOS) {
           rp = rval*p0;
-          rd = pow(rval,1.0/(gam1+1.0))*d0;
+          rd = d0;
         } else {
           rd = rval*d0;
         }
@@ -197,7 +197,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         rp = p0;
         rd = d0*(1.0+0.1*sin((double)kx*x1));
         if (NON_BAROTROPIC_EOS) {
-          rvx = amp*sqrt((gam1+1.0)*p0/d0);
+          rvx = amp*sqrt((gm1+1.0)*p0/d0);
         } else {
           rvx = amp*sqrt(p0/d0);
         }
@@ -211,7 +211,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM3,ks,j,i) = rd*rvz;
       phydro->u(IM3,ks,j,i) -= rd*qshear*Omega_0*x1;
       if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,ks,j,i) = rp/gam1 +
+        phydro->u(IEN,ks,j,i) = rp/gm1 +
              0.5*(SQR(phydro->u(IM1,ks,j,i)) +
                   SQR(phydro->u(IM2,ks,j,i)) +
                   SQR(phydro->u(IM3,ks,j,i)))/rd;
