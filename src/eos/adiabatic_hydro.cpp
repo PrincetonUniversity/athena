@@ -98,7 +98,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
       // apply pressure floor, correct total energy
 #if EOS_TABLE_ENABLED
-      u_e = (w_p > pressure_floor_) ?  u_e : GetEgasFromRhoPres(w_d, w_p);
+      u_e = (w_p > pressure_floor_) ?  u_e : GetEgasFromRhoPres(w_d, pressure_floor_) + ke;
 #else
       u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke);
 #endif
