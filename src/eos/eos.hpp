@@ -159,6 +159,7 @@ private:
   int nRho_, nEgas_, nVar_;
   Real egasOverPres_;
   Real EosRatios_[3];
+  Real energy_floor_;                    // internal energy floor
 #endif // EOS_TABLE_ENABLED
 
 };

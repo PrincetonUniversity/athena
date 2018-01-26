@@ -24,14 +24,21 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro","gamma");
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
-  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
 #if EOS_TABLE_ENABLED
+  if (pin->DoesParameterExist("hydro","efloor")){
+    energy_floor_ = pin->GetReal("hydro","efloor");
+  }
+  else{
+    energy_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
+    energy_floor_ /= pin->GetOrAddReal("hydro","gamma", 2.) - 1.;
+  }
   GetEosFn = NULL;
   PrepEOS(pin);
+  pressure_floor_ = sqrt(-1);
   gamma_ = sqrt(-1);
 #else
+  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
   gamma_ = pin->GetReal("hydro","gamma");
 #endif
 }
@@ -90,19 +97,16 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_vz = u_m3*di;
 
       Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+
+      // apply pressure/energy floor, correct total energy
 #if EOS_TABLE_ENABLED
+      u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
       w_p = GetPresFromRhoEgas(w_d, u_e - ke);
 #else
       w_p = gm1*(u_e - ke);
-#endif
-
-      // apply pressure floor, correct total energy
-#if EOS_TABLE_ENABLED
-      u_e = (w_p > pressure_floor_) ?  u_e : GetEgasFromRhoPres(w_d, pressure_floor_) + ke;
-#else
       u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke);
-#endif
       w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+#endif
     }
   }}
 }
