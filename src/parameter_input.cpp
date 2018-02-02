@@ -709,6 +709,7 @@ void ParameterInput::ForwardNextTime()
   Real next_time;
   Real dt;
 
+  # TODO: make sure start_time >= mesh time
   start_time = GetOrAddReal("time", "start_time", 0);
 
   while (pb != NULL) {
