@@ -89,6 +89,8 @@ public:
   bool SetBoolean(std::string block, std::string name, bool value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
+  void RollbackNextTime();
+  void ForwardNextTime();
 
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads

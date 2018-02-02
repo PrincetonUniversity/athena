@@ -276,7 +276,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 //  are replaced (overwritten).
 
 void ParameterInput::AddParameter(InputBlock *pb, std::string name,
-     std::string value, std::string comment) {
+                                  std::string value, std::string comment) {
   InputLine *pl, *plast;
 
   // Search linked list of InputLines to see if name exists.  This also sets *plast
@@ -357,8 +357,8 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
       throw std::runtime_error(msg.str().c_str());
     }
     pl->param_value.assign(value);   // replace existing value
-    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
 
+    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
   }
 }
 
@@ -663,6 +663,81 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void ParameterInput::RollbackNextTime()
+//  \brief rollback next_time by dt for each output block
+
+void ParameterInput::RollbackNextTime()
+{
+  InputBlock *pb = pfirst_block;
+  InputLine* pl;
+  std::stringstream msg;
+  Real next_time;
+
+  while (pb != NULL) {
+    if (pb->block_name.compare(0,6,"output") == 0) {
+      pl = pb->GetPtrToLine("next_time");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]" << std::endl
+            << "Parameter name 'next_time' not found in block '" << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      next_time = (Real)atof(pl->param_value.c_str());
+      pl = pb->GetPtrToLine("dt");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]" << std::endl
+            << "Parameter name 'dt' not found in block '" << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      next_time -= (Real)atof(pl->param_value.c_str());
+      msg << next_time;
+      AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+    }
+    pb = pb->pnext;
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ParameterInput::ForwardNextTime()
+//  \brief add dt to next_time until next_time > start_time - dt for each
+//  output block
+
+void ParameterInput::ForwardNextTime()
+{
+  InputBlock *pb = pfirst_block;
+  InputLine* pl;
+  Real start_time;
+  Real next_time;
+  Real dt;
+
+  start_time = GetOrAddReal("time", "start_time", 0);
+
+  while (pb != NULL) {
+    if (pb->block_name.compare(0,6,"output") == 0) {
+      std::stringstream msg;
+      pl = pb->GetPtrToLine("next_time");
+      if (pl == NULL) {
+        next_time = start_time;
+      }
+      else {
+        next_time = (Real)atof(pl->param_value.c_str());
+      }
+      pl = pb->GetPtrToLine("dt");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]" << std::endl
+            << "Parameter name 'dt' not found in block '" << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      dt = (Real)atof(pl->param_value.c_str());
+      dt = dt * (int)((start_time - next_time) / dt);
+      if (dt > 0) next_time += dt;
+      msg << next_time;
+      AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+    }
+    pb = pb->pnext;
+  }
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParameterDump(std::ostream& os)
 //  \brief output entire InputBlock/InputLine hierarchy to specified stream
 
@@ -709,6 +784,7 @@ InputLine* InputBlock::GetPtrToLine(std::string name) {
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::StartReading(void)
 //  \brief set the readers' lock (only for OpenMP)
+
 void ParameterInput::StartReading(void) {
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&rlock_);
