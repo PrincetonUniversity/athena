@@ -15,6 +15,13 @@
 #include "../coordinates/coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
+// Slope limiter
+
+static inline Real SlopeLimiter(Real dql, Real dqr) {
+  return (2.0*dql*dqr/(dql + dqr));
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX1()
 //  \brief 
 
@@ -23,6 +30,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc, 
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+  Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
@@ -70,7 +78,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
         dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = dw2(n,i)/(dwl(n,i) + dwr(n,i));
+        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
       }
       for (int i=il-1; i<=iu; ++i){
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -86,8 +94,8 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
-        wl(n,k,j,i+1) = wc(n,i) + dwm(n,i);
-        wr(n,k,j,i  ) = wc(n,i) - dwm(n,i);
+        wl(n,k,j,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
+        wr(n,k,j,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
       }
     }
 
@@ -112,6 +120,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+  Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
@@ -160,7 +169,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 #pragma simd
       for (int i=il; i<=iu; ++i){
         dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = dw2(n,i)/(dwl(n,i) + dwr(n,i));
+        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
       }
       for (int i=il; i<=iu; ++i){
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -176,8 +185,8 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(n,k,j+1,i) = wc(n,i) + dwm(n,i);
-        wr(n,k,j  ,i) = wc(n,i) - dwm(n,i);
+        wl(n,k,j+1,i) = wc(n,i) + ((pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j))*dwm(n,i);
+        wr(n,k,j  ,i) = wc(n,i) - ((pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j))*dwm(n,i);
       }
     }
   }}
@@ -201,6 +210,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+  Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
@@ -249,7 +259,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 #pragma simd
       for (int i=il; i<=iu; ++i){
         dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = dw2(n,i)/(dwl(n,i) + dwr(n,i));
+        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
       }
       for (int i=il; i<=iu; ++i){
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -265,8 +275,8 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(n,k+1,j,i) = wc(n,i) + dwm(n,i);
-        wr(n,k  ,j,i) = wc(n,i) - dwm(n,i);
+        wl(n,k+1,j,i) = wc(n,i) + ((pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k))*dwm(n,i);
+        wr(n,k  ,j,i) = wc(n,i) - ((pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k))*dwm(n,i);
       }
     }
   }}
