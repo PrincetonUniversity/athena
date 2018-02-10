@@ -17,9 +17,11 @@
 //----------------------------------------------------------------------------------------
 // Slope limiter
 
-static inline Real SlopeLimiter(Real dql, Real dqr) {
-  return (2.0*dql*dqr/(dql + dqr));
+Real Reconstruction::Mignone(Real cf, Real cb, Real dql, Real dqr)
+{
+  return (dql*dqr*(cf*dql + cb*dqr)/(dql*dql + dqr*dqr + dql*dqr*(cf + cb - 2.0)));
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX1()
@@ -79,7 +81,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il-1; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -172,7 +174,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 #pragma simd
         for (int i=il; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -264,7 +266,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 #pragma simd
         for (int i=il; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
