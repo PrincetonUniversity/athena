@@ -16,12 +16,6 @@
 class MeshBlock;
 class ParameterInput;
 
-// Reconstruction function pointer prototype
-//typedef void (*ReconstructFunc_t) (MeshBlock *pmb,
-//  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
-//  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-//  AthenaArray<Real> &wl, AthenaArray<Real> &wr);
-
 //! \class Reconstruction
 //  \brief member functions implement various spatial reconstruction algorithms
 
@@ -43,9 +37,7 @@ public:
     const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
     AthenaArray<Real> &vect);
 
-  // reconstruction function pointers in each direction
-//  ReconstructFunc_t ReconstructFuncX1, ReconstructFuncX2, ReconstructFuncX3;
-
+  // reconstruction functions of various orders in each dimension
   static void DonorCellX1(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);

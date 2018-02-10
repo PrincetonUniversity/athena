@@ -42,54 +42,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-//***********
-  // set function pointers for reconstruction functions in each direction
-  // First-order (donor cell) reconstruction
-//  if (xorder == 1) {
-//    ReconstructFuncX1 = DonorCellX1;
-//    ReconstructFuncX2 = DonorCellX2;
-//    ReconstructFuncX3 = DonorCellX3;
-//
-//  // Second-order (piecewise linear) reconstruction
-//  } else if (xorder == 2) {
-//      ReconstructFuncX1 = PiecewiseLinearX1;
-//      ReconstructFuncX2 = PiecewiseLinearX2;
-//      ReconstructFuncX3 = PiecewiseLinearX3;
-//
-//  // Third/Fourth-order (piecewise parabolic) reconstruction
-//  } else if (xorder == 3 || xorder == 4) {
-//    if (NGHOST < 3) {
-//      std:: stringstream msg;
-//      msg << "### FATAL ERROR in function [Reconstruction constructor]" << std::endl
-//          << "spatial order xorder= " << xorder << " requires NGHOST >=3" << std::endl;
-//      throw std::runtime_error(msg.str().c_str());
-//    }
-//
-//    if (pmb->block_size.x1rat == 1.0) {
-//      ReconstructFuncX1 = PPMUniformX1;
-//    } else {
-//      ReconstructFuncX1 = PPMX1;
-//    }
-//
-//    if (pmb->block_size.x2rat == 1.0) {
-//      ReconstructFuncX2 = PPMUniformX2;
-//    } else {
-//      ReconstructFuncX2 = PPMX2;
-//    }
-//
-//    if (pmb->block_size.x3rat == 1.0) {
-//      ReconstructFuncX3 = PPMUniformX3;
-//    } else {
-//      ReconstructFuncX3 = PPMX3;
-//    }
-//  // Error; unknown order
-//  } else {
-//    std:: stringstream msg;
-//    msg << "### FATAL ERROR in function [Reconstruction constructor]" << std::endl
-//        << "spatial order xorder= " << xorder << " not supported" << std::endl;
-//    throw std::runtime_error(msg.str().c_str());
-//  }
-
   // Allocate memory for scratch arrays
 //  int ncells1 = ((pmy_block->ie)-(pmy_block->is) + 1) + 2*(NGHOST);
 //  dwl_.NewAthenaArray(NWAVE,ncells1);

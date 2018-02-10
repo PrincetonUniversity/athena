@@ -15,15 +15,6 @@
 #include "../coordinates/coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-// Slope limiter
-
-Real Reconstruction::Mignone(Real cf, Real cb, Real dql, Real dqr)
-{
-  return (dql*dqr*(cf*dql + cb*dqr)/(dql*dql + dqr*dqr + dql*dqr*(cf + cb - 2.0)));
-}
-
-
-//----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX1()
 //  \brief 
 
@@ -75,13 +66,29 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwr);
     }
 
-    //  Apply van Leer limiter for uniform grid
+    // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
+        }
+        for (int i=il-1; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
+
+    // Apply Mignone limiter for non-uniform grid
+    } else {
+      for (int n=0; n<(NWAVE); ++n) {
+#pragma simd
+        for (int i=il-1; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
+          Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
+          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
         }
         for (int i=il-1; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
@@ -168,7 +175,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
     }
 
-    //  Apply van Leer limiter for uniform grid
+    // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
@@ -177,6 +184,22 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
+
+    // Apply Mignone limiter for non-uniform grid
+    } else {
+      for (int n=0; n<(NWAVE); ++n) {
+#pragma simd
+        for (int i=il-1; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
+          Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
+          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
+        }
+        for (int i=il-1; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -260,7 +283,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
 
 
-    //  Apply van Leer limiter for uniform grid
+    // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
@@ -269,6 +292,22 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
+
+    // Apply Mignone limiter for non-uniform grid
+    } else {
+      for (int n=0; n<(NWAVE); ++n) {
+#pragma simd
+        for (int i=il-1; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
+          Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
+          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
+        }
+        for (int i=il-1; i<=iu; ++i){
           if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
