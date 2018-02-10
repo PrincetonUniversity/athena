@@ -88,7 +88,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   if (first_order) {
     pmb->precon->DonorCellX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
   } else {
-    pmb->precon->ReconstructFuncX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
+    pmb->precon->PiecewiseLinearX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
   }
 
   // compute fluxes, store directly into 3D arrays
@@ -131,7 +131,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     if (first_order) {
       pmb->precon->DonorCellX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
     } else {
-      pmb->precon->ReconstructFuncX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
+      pmb->precon->PiecewiseLinearX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays
@@ -170,7 +170,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     if (first_order) {
       pmb->precon->DonorCellX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     } else {
-      pmb->precon->ReconstructFuncX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
+      pmb->precon->PiecewiseLinearX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays

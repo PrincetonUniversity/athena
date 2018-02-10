@@ -73,15 +73,17 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwr);
     }
 
-    //  Apply van Leer limiter
-    for (int n=0; n<(NWAVE); ++n) {
+    //  Apply van Leer limiter for uniform grid
+    if (pmb->block_size.x1rat == 1.0) {
+      for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
-      for (int i=il-1; i<=iu; ++i){
-        dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
-      }
-      for (int i=il-1; i<=iu; ++i){
-        if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il-1; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+        }
+        for (int i=il-1; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
       }
     }
 
@@ -164,15 +166,17 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
     }
 
-    //  Apply van Leer limiter
-    for (int n=0; n<(NWAVE); ++n) {
+    //  Apply van Leer limiter for uniform grid
+    if (pmb->block_size.x1rat == 1.0) {
+      for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
-      for (int i=il; i<=iu; ++i){
-        dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
-      }
-      for (int i=il; i<=iu; ++i){
-        if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+        }
+        for (int i=il; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
       }
     }
 
@@ -254,15 +258,17 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
 
 
-    //  Apply van Leer limiter
-    for (int n=0; n<(NWAVE); ++n) {
+    //  Apply van Leer limiter for uniform grid
+    if (pmb->block_size.x1rat == 1.0) {
+      for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
-      for (int i=il; i<=iu; ++i){
-        dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
-      }
-      for (int i=il; i<=iu; ++i){
-        if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i){
+          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = SlopeLimiter(dwl(n,i),dwr(n,i));
+        }
+        for (int i=il; i<=iu; ++i){
+          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+        }
       }
     }
 
