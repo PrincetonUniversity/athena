@@ -454,7 +454,8 @@ void StratInnerX3(MeshBlock *pmb, Coordinates *pco,
     int je, int ks, int ke)
 {
 
-  /* Copy field components from last physical zone */
+  /* Copy field components from last physical zone
+   * zero slope boundary for B field*/
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=NGHOST; k++) {
       for (int j=js; j<=je; j++) {
@@ -482,7 +483,7 @@ void StratInnerX3(MeshBlock *pmb, Coordinates *pco,
   for (int k=1; k<=NGHOST; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        Real x3 = pco->x3v(k);
+        Real x3 = pco->x3v(ks-k);
         Real x3b = pco->x3v(ks);
         Real den = prim(IDN,ks,j,i);
         /* First calculate the effective gas temperature
