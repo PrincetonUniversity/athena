@@ -486,8 +486,8 @@ void StratInnerX3(MeshBlock *pmb, Coordinates *pco,
         Real x3 = pco->x3v(ks-k);
         Real x3b = pco->x3v(ks);
         Real den = prim(IDN,ks,j,i);
-        /* First calculate the effective gas temperature
-         * in the last physical zone */
+        /* First calculate the effective gas temperature (Tks=cs^2)
+         * in the last physical zone. If isothermal, use H=1 */
         Real Tks = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
           Real pressks = prim(IPR,ks,j,i);
@@ -562,8 +562,8 @@ void StratOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
         Real x3 = pco->x3v(ke+k);
         Real x3b = pco->x3v(ke);
         Real den = prim(IDN,ke,j,i);
-        /* First calculate the effective gas temperature 
-         * in the last physical zone */
+        /* First calculate the effective gas temperature (Tks=cs^2)
+         * in the last physical zone. If isothermal, use H=1 */
         Real Tke = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
           Real presske = prim(IPR,ke,j,i);
