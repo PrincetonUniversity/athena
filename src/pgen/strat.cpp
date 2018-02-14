@@ -52,11 +52,12 @@ static double ran2(long int *idum);
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
               AthenaArray<Real> &cons);
-void StratInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, 
+void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
+                  AthenaArray<Real> &a, 
                   FaceField &b, Real time, Real dt,
                   int is, int ie, int js, int je, int ks, int ke);
-
-void StratOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
+                  AthenaArray<Real> &a,
                   FaceField &b, Real time, Real dt, 
                   int is, int ie, int js, int je, int ks, int ke);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
@@ -71,9 +72,9 @@ static Real dfloor,pfloor;
 //====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  AllocateUserHistoryOutput(2);
-  EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
-  EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
+  //AllocateUserHistoryOutput(2);
+  //EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
+  //EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
 // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
@@ -84,10 +85,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 // enroll user-defined boundary conditions
   if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
-      EnrollUserBoundaryFunction(INNER_X3, StratInnerX3);
+      EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
   }
   if(mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
-      EnrollUserBoundaryFunction(OUTER_X3, StratOuterX3);
+      EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
   }
 
   return;
@@ -160,6 +161,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   //Compute field strength based on beta.
   if (MAGNETIC_FIELDS_ENABLED) {
     B0 = sqrt((double)(2.0*pres/beta));
+    std::cout << "B0=" << B0 << std::endl;
   }
 
   // With viscosity and/or resistivity, read eta_Ohm and nu_V
@@ -423,14 +425,27 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
               AthenaArray<Real> &cons)
 {
+  Real fsmooth, xi, sign;
+  Real Lz = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
+  Real z0 = Lz/2.0;
+  Real lambda = 0.1 / z0;
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real den = prim(IDN,k,j,i);
         Real x3 = pmb->pcoord->x3v(k);
-        cons(IM3,k,j,i) -= dt*den*SQR(Omega_0)*x3;
+        //smoothing function
+        if (x3 >= 0) {
+          sign = -1.0;
+        } else {
+          sign = 1.0;
+        }
+        xi = z0/x3;
+        fsmooth = SQR( sqrt( SQR(xi+sign) + SQR(xi*lambda) ) + xi*sign );
+        //multiply gravitational potential by smoothing function
+        cons(IM3,k,j,i) -= dt*den*SQR(Omega_0)*x3*fsmooth;
         if (NON_BAROTROPIC_EOS) {
-          cons(IEN,k,j,i) -= dt*den*SQR(Omega_0)*prim(IVZ,k,j,i)*x3;
+          cons(IEN,k,j,i) -= dt*den*SQR(Omega_0)*prim(IVZ,k,j,i)*x3*fsmooth;
         }
       }
     }
@@ -448,7 +463,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
  //  flow.  All other variables are extrapolated into the
  //  ghost zones with zero slope.
 
-void StratInnerX3(MeshBlock *pmb, Coordinates *pco,
+void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     AthenaArray<Real> &prim, FaceField &b,
     Real time, Real dt, int is, int ie, int js,
     int je, int ks, int ke)
@@ -527,7 +542,8 @@ void StratInnerX3(MeshBlock *pmb, Coordinates *pco,
  // case of the last upper physical zone having an inward
  // flow.  All other variables are extrapolated into the
  // ghost zones with zero slope.
-void StratOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
+                  AthenaArray<Real> &prim,
                   FaceField &b, Real time, Real dt,
                   int is, int ie, int js, int je, int ks, int ke)
 {
@@ -591,7 +607,6 @@ void StratOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
   }
   return;
 }
-
 
 static Real hst_BxBy(MeshBlock *pmb, int iout)
 {
