@@ -73,8 +73,8 @@ static Real dfloor,pfloor;
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   //AllocateUserHistoryOutput(2);
-  //EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
-  //EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
+  EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
+  EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
 // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
