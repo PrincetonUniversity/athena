@@ -6,6 +6,9 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
+// needed for vector of pointers in DoTaskListOneSubstep()
+#include <vector>
+
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../globals.hpp"
@@ -73,20 +76,38 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
 void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 {
   MeshBlock *pmb = pmesh->pblock;
-  int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
   // initialize counters stored in each MeshBlock
   while (pmb != NULL)  {
     pmb->tasks.Reset(ntasks);
     pmb=pmb->next;
   }
 
+  // initialize a vector of MeshBlock pointers
+  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+  std::vector<MeshBlock*> pmb_array(nmb);
+  pmb = pmesh->pblock;
+  for (int i=0; i<nmb; ++i) {
+    pmb_array[i] = pmb;
+    pmb=pmb->next;
+  }
+
+  int nmb_left = nmb;
+  int nthreads = pmesh->GetNumMeshThreads();
+
   // cycle through all MeshBlocks and perform all tasks possible
   while(nmb_left > 0) {
-    pmb = pmesh->pblock;
-    while (pmb != NULL)  {
-      if (DoAllAvailableTasks(pmb,step,pmb->tasks) == TL_COMPLETE) nmb_left--;
-      pmb=pmb->next;
+
+#pragma omp parallel shared(nmb_left) num_threads(nthreads)
+{
+    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+    for (int i=0; i<nmb; ++i){
+      if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {
+        nmb_left--;
+      }
     }
+}
+
   }
+
   return;
 }

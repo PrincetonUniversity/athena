@@ -49,14 +49,9 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
     return;
   }
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
-
 //---- 2-D/3-D update:
   // E3=-(v X B)=VyBx-VxBy
   for (int k=ks; k<=ke; ++k) {
-#pragma omp for schedule(static)
   for (int j=js-1; j<=je+1; ++j) {
 
 #if GENERAL_RELATIVITY==1
@@ -97,7 +92,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 
   // integrate E3 to corner using SG07
   for (int k=ks; k<=ke; ++k) {
-#pragma omp for schedule(static)
   for (int j=js; j<=je+1; ++j) {
 #pragma simd
     for (int i=is; i<=ie+1; ++i) {
@@ -120,13 +114,11 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 
   // for 2D: copy E1 and E2 to edges and return
   if (pmb->block_size.nx3 == 1) {
-#pragma omp for schedule(static)
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie+1; ++i) {
       e2(ks  ,j,i) = e2_x1f(ks,j,i);
       e2(ke+1,j,i) = e2_x1f(ks,j,i);
     }}
-#pragma omp for schedule(static)
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
       e1(ks  ,j,i) = e1_x2f(ks,j,i);
@@ -137,7 +129,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 //---- 3-D update:
     // integrate E1 to corners using GS07 (E3 already done above)
     // E1=-(v X B)=VzBy-VyBz
-#pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js-1; j<=je+1; ++j) {
 
@@ -177,7 +168,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 
     }}
 
-#pragma omp for schedule(static)
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je+1; ++j) {
 #pragma simd
@@ -201,7 +191,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 
     // integrate E2 to corners using GS07 (E3 already done above)
     // E2=-(v X B)=VxBz-VzBx
-#pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
 
@@ -241,7 +230,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 
     }}
 
-#pragma omp for schedule(static)
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
 #pragma simd
@@ -263,7 +251,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
       }
     }}
   }
-} // end of omp parallel region
 
   return;
 }

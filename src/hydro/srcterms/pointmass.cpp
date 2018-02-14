@@ -22,7 +22,6 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
 {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {

@@ -848,7 +848,6 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
-    #pragma omp parallel for schedule(static)
     for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
 
       // Extract geometric quantities that do not depend on r

@@ -53,11 +53,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,is,ie,js,je,ks,ke);
 
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
   for (int j=js; j<=je; ++j){
 #pragma simd
     for (int i=is; i<=ie; ++i){
@@ -95,7 +91,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
     }
   }}
-}
 
   return;
 }
@@ -113,11 +108,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
   for (int j=js; j<=je; ++j){
 #pragma simd
     for (int i=is; i<=ie; ++i){
@@ -145,7 +136,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
             + (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
     }
   }}
-}
+
   return;
 }
 

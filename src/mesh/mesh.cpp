@@ -46,10 +46,6 @@
 #include <mpi.h>
 #endif
 
-#ifdef OPENMP_PARALLEL
-#include <omp.h>
-#endif
-
 //----------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 

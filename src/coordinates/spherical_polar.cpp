@@ -391,7 +391,6 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
 #pragma simd
       for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {

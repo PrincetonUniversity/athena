@@ -56,19 +56,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     e2x3.InitWithShallowCopy(pmb->pfield->e2_x3f);
   }
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
-
-  AthenaArray<Real> wl, wr;
+  AthenaArray<Real> wl, wr, dxw;
   wl.InitWithShallowCopy(wl_);
   wr.InitWithShallowCopy(wr_);
-  AthenaArray<Real> dxw;
-  dxw.InitWithShallowSlice(dxw_,2,tid,1);
+  dxw.InitWithShallowCopy(dxw_);
 
 //----------------------------------------------------------------------------------------
 // i-direction
@@ -99,7 +90,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
 
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
@@ -142,7 +132,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
       for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
         pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
 #pragma simd
@@ -180,7 +169,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma omp for schedule(static)
       for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
         pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
@@ -194,8 +182,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       }}
     }
   }
-
-} // end of omp parallel region
 
   if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 

@@ -337,20 +337,13 @@ void Hydro::CorrectGravityFlux(void)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
-  x1area.InitWithShallowSlice(x1face_area_,2,tid,1);
-  x2area.InitWithShallowSlice(x2face_area_,2,tid,1);
-  x2area_p1.InitWithShallowSlice(x2face_area_p1_,2,tid,1);
-  x3area.InitWithShallowSlice(x3face_area_,2,tid,1);
-  x3area_p1.InitWithShallowSlice(x3face_area_p1_,2,tid,1);
-  vol.InitWithShallowSlice(cell_volume_,2,tid,1);
+  x1area.InitWithShallowCopy(x1face_area_);
+  x2area.InitWithShallowCopy(x2face_area_);
+  x2area_p1.InitWithShallowCopy(x2face_area_p1_);
+  x3area.InitWithShallowCopy(x3face_area_);
+  x3area_p1.InitWithShallowCopy(x3face_area_p1_);
+  vol.InitWithShallowCopy(cell_volume_);
   dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
@@ -401,6 +394,5 @@ void Hydro::CorrectGravityFlux(void)
     }
   }
 
-} // end of omp parallel region
   return;
 }

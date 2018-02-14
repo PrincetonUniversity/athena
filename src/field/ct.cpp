@@ -37,22 +37,14 @@ void Field::CT(const Real wght, FaceField &b_out)
   e2.InitWithShallowCopy(pmb->pfield->e.x2e);
   e3.InitWithShallowCopy(pmb->pfield->e.x3e);
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> area,len,len_p1;
-  area.InitWithShallowSlice(face_area_,2,tid,1);
-  len.InitWithShallowSlice(edge_length_,2,tid,1);
-  len_p1.InitWithShallowSlice(edge_length_p1_,2,tid,1);
+  area.InitWithShallowCopy(face_area_);
+  len.InitWithShallowCopy(edge_length_);
+  len_p1.InitWithShallowCopy(edge_length_p1_);
 
 //---- update B1
 
   for (int k=ks; k<=ke; ++k) {
-#pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
 
     // add curl(E) in 2D and 3D problem
@@ -87,7 +79,6 @@ void Field::CT(const Real wght, FaceField &b_out)
      || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
     if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
      || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
-#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
       pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -111,7 +102,6 @@ void Field::CT(const Real wght, FaceField &b_out)
 //---- update B3 (curl terms in 1D and 2D problems)
 
   for (int k=ks; k<=ke+1; ++k) {
-#pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
     pmb->pcoord->Face3Area(k,j,is,ie,area);
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
@@ -130,8 +120,6 @@ void Field::CT(const Real wght, FaceField &b_out)
       }
     }
   }}
-
-} // end of OMP parallel region
 
   return;
 }
