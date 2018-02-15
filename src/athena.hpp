@@ -13,10 +13,16 @@
 #include <math.h>
 
 // typedefs that allow code to run with either floats or doubles
-typedef float Real;
-
-#ifdef MPI_PARALLEL
-#define MPI_ATHENA_REAL MPI_DOUBLE
+#if SINGLE_PRECISION_ENABLED
+  typedef float Real;
+  #ifdef MPI_PARALLEL
+  #define MPI_ATHENA_REAL MPI_FLOAT
+  #endif
+#else
+  typedef double Real;
+  #ifdef MPI_PARALLEL
+  #define MPI_ATHENA_REAL MPI_DOUBLE
+  #endif
 #endif
 
 class MeshBlock;

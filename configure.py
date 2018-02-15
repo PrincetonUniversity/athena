@@ -17,6 +17,7 @@
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
@@ -103,6 +104,12 @@ parser.add_argument('-debug',
     action='store_true',
     default=False,
     help='enable debug flags; override other compiler options')
+
+# -float argument
+parser.add_argument('-float',
+    action='store_true',
+    default=False,
+    help='enable single precision')
 
 # -mpi argument
 parser.add_argument('-mpi',
@@ -333,6 +340,13 @@ if args['cxx'] == 'clang++':
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
+# -float argument
+if args['float']:
+  definitions['SINGLE_PRECISION_ENABLED'] = '1'
+else:
+  definitions['SINGLE_PRECISION_ENABLED'] = '0'
+
+
 # -debug argument
 if args['debug']:
   definitions['DEBUG'] = 'DEBUG'
@@ -486,6 +500,7 @@ print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
+print('  Precision:               ' + ('single' if args['float'] else 'double'))
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))

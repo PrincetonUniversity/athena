@@ -58,6 +58,11 @@ void ShowConfig(void)
   } else {
     std::cout<<"  General Relativity:         OFF" << std::endl;
   }
+  if (SINGLE_PRECISION_ENABLED) {
+    std::cout<<"  Floating point precision:   single" << std::endl;
+  } else {
+    std::cout<<"  Floating point precision:   double" << std::endl;
+  }
 #ifdef MPI_PARALLEL
   std::cout<<"  MPI parallelism:            ON" << std::endl;
 #else
