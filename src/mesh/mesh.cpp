@@ -1430,6 +1430,13 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
               << "This will cause a poor load balance." << std::endl;
   }
 #endif
+  if((Globals::nranks)*(num_mesh_threads_) > nb) {
+    msg << "### FATAL ERROR in LoadBalance" << std::endl
+        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
+        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   return;
 }
 
