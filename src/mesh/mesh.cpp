@@ -1004,7 +1004,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt,2.0*dt);
+  dt=std::min(min_dt,(Real)(2.0)*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;

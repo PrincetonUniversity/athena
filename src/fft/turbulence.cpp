@@ -299,7 +299,7 @@ void TurbulenceDriver::Perturb(Real dt){
     std::cout << "decaying turbulence with " << de << std::endl;
   }
   aa = 0.5*m[0];
-  aa = std::max(aa,1.0e-20);
+  aa = std::max(aa,(Real)1.0e-20);
   b = m[1];
   c = -de/dvol;
   if(b >= 0.0)

@@ -176,7 +176,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   
         Real d1 = d0 + amp*sn*rem[0][wave_flag];
         l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-        max_err[IDN] = std::max(fabs(d1 - pmb->phydro->u(IDN,k,j,i)),max_err[IDN]);
+        max_err[IDN] = std::max((Real)fabs(d1 - pmb->phydro->u(IDN,k,j,i)),max_err[IDN]);
   
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
         Real my = amp*sn*rem[2][wave_flag];
@@ -187,9 +187,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
         l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
         l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-        max_err[IM1] = std::max(fabs(m1 - pmb->phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(m2 - pmb->phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(m3 - pmb->phydro->u(IM3,k,j,i)),max_err[IM3]);
+        max_err[IM1] = std::max((Real)fabs(m1 - pmb->phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max((Real)fabs(m2 - pmb->phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max((Real)fabs(m3 - pmb->phydro->u(IM3,k,j,i)),max_err[IM3]);
   
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
@@ -197,7 +197,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
             e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
           }
           l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-          max_err[IEN] = std::max(fabs(e0 - pmb->phydro->u(IEN,k,j,i)),max_err[IEN]);
+          max_err[IEN] = std::max((Real)fabs(e0-pmb->phydro->u(IEN,k,j,i)),max_err[IEN]);
         }
 
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -533,13 +533,13 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       ct2 = bt_starsq/d;
       tsum = vaxsq + ct2 + twid_asq;
       tdif = vaxsq + ct2 - twid_asq;
-      cf2_cs2 = sqrt((double)(tdif*tdif + 4.0*twid_asq*ct2));
+      cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
       cfsq = 0.5*(tsum + cf2_cs2);
-      cf = sqrt((double)cfsq);
+      cf = sqrt(cfsq);
 
       cssq = twid_asq*vaxsq/cfsq;
-      cs = sqrt((double)cssq);
+      cs = sqrt(cssq);
 
       // Compute beta(s) (eqs. A17, B20, B28)
       bt = sqrt(btsq);
@@ -753,13 +753,13 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       ct2 = bt_starsq*di;
       tsum = vaxsq + ct2 + twid_csq;
       tdif = vaxsq + ct2 - twid_csq;
-      cf2_cs2 = sqrt((double)(tdif*tdif + 4.0*twid_csq*ct2));
+      cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
     
       cfsq = 0.5*(tsum + cf2_cs2);
-      cf = sqrt((double)cfsq);
+      cf = sqrt(cfsq);
     
       cssq = twid_csq*vaxsq/cfsq;
-      cs = sqrt((double)cssq);
+      cs = sqrt(cssq);
   
       // Compute beta's (eqs. A17, B28, B40)
       bt = sqrt(btsq);

@@ -13,7 +13,8 @@
 #include <math.h>
 
 // typedefs that allow code to run with either floats or doubles
-typedef double Real;
+typedef float Real;
+
 #ifdef MPI_PARALLEL
 #define MPI_ATHENA_REAL MPI_DOUBLE
 #endif

@@ -97,8 +97,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int i=is; i<=ie+1; ++i){
         Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
                       / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-        Real tmp_min = std::min(0.5,v_over_c);
-        w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+        Real tmp_min = std::min((Real)0.5,v_over_c);
+        w_x1f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
       }
     }}
   }
@@ -138,8 +138,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(0.5,v_over_c);
-          w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+          Real tmp_min = std::min((Real)0.5,v_over_c);
+          w_x2f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
         }
       }}
     }
@@ -176,8 +176,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(0.5,v_over_c);
-          w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+          Real tmp_min = std::min((Real)0.5,v_over_c);
+          w_x3f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
         }
       }}
     }
