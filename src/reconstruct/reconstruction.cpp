@@ -42,22 +42,24 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // Allocate memory for scratch arrays
-//  int ncells1 = ((pmy_block->ie)-(pmy_block->is) + 1) + 2*(NGHOST);
-//  dwl_.NewAthenaArray(NWAVE,ncells1);
-//  dwr_.NewAthenaArray(NWAVE,ncells1);
-//  dw2_.NewAthenaArray(NWAVE,ncells1);
-//  dwm_.NewAthenaArray(NWAVE,ncells1);
-//  wc_.NewAthenaArray(NWAVE,ncells1);
+  // Allocate memory for scratch arrays used in PLM and PPM
+  int ncells1 = ((pmy_block_->ie)-(pmy_block_->is) + 1) + 2*(NGHOST);
+  bx_.NewAthenaArray(ncells1);
+  dwl_.NewAthenaArray(NWAVE,ncells1);
+  dwr_.NewAthenaArray(NWAVE,ncells1);
+  dw2_.NewAthenaArray(NWAVE,ncells1);
+  dwm_.NewAthenaArray(NWAVE,ncells1);
+  wc_.NewAthenaArray(NWAVE,ncells1);
 }
 
 // destructor
 
 Reconstruction::~Reconstruction()
 {
-//  dwl_.DeleteAthenaArray();
-//  dwr_.DeleteAthenaArray();
-//  dw2_.DeleteAthenaArray();
-//  dwm_.DeleteAthenaArray();
-//  wc_.DeleteAthenaArray();
+  bx_.DeleteAthenaArray();
+  dwl_.DeleteAthenaArray();
+  dwr_.DeleteAthenaArray();
+  dw2_.DeleteAthenaArray();
+  dwm_.DeleteAthenaArray();
+  wc_.DeleteAthenaArray();
 }

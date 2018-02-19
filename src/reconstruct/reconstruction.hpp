@@ -50,15 +50,15 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX1(MeshBlock *pmb, const int kl, const int ku,
+  void PiecewiseLinearX1(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX2(MeshBlock *pmb, const int kl, const int ku,
+  void PiecewiseLinearX2(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX3(MeshBlock *pmb, const int kl, const int ku,
+  void PiecewiseLinearX3(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
@@ -89,7 +89,8 @@ public:
 private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
-  // 1D scratch arrays used in PPM reconstruction functions
+  // 1D scratch arrays used in PLM and PPM reconstruction functions
+  AthenaArray<Real> bx_;
   AthenaArray<Real> dph_, dph_p1_;
   AthenaArray<Real> qplus_, qminus_;
   AthenaArray<Real> dqf_plus_, dqf_minus_, d2qf_;

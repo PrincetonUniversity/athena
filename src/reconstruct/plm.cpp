@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file plm-uniform.cpp
-//  \brief  piecewise linear reconstruction for a uniform mesh
+//  \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
 
 // Athena++ headers
 #include "reconstruction.hpp"
@@ -15,7 +15,7 @@
 #include "../coordinates/coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::ReconstructionFuncX1()
+//! \fn Reconstruction::PiecewiseLinearX1()
 //  \brief 
 
 void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
@@ -25,13 +25,19 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 {
   Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-  int ncells1 = (iu-il+1) + 2*(NGHOST);
-  dwl.NewAthenaArray(NWAVE,ncells1);
-  dwr.NewAthenaArray(NWAVE,ncells1);
-  dw2.NewAthenaArray(NWAVE,ncells1);
-  dwm.NewAthenaArray(NWAVE,ncells1);
-  wc.NewAthenaArray(NWAVE,ncells1);
-  bx.NewAthenaArray(ncells1);
+//  int ncells1 = (iu-il+1) + 2*(NGHOST);
+//  dwl.NewAthenaArray(NWAVE,ncells1);
+//  dwr.NewAthenaArray(NWAVE,ncells1);
+//  dw2.NewAthenaArray(NWAVE,ncells1);
+//  dwm.NewAthenaArray(NWAVE,ncells1);
+//  wc.NewAthenaArray(NWAVE,ncells1);
+//  bx.NewAthenaArray(ncells1);
+  dwl.InitWithShallowCopy(dwl_);
+  dwr.InitWithShallowCopy(dwr_);
+  dw2.InitWithShallowCopy(dw2_);
+  dwm.InitWithShallowCopy(dwm_);
+  wc.InitWithShallowCopy(wc_);
+  bx.InitWithShallowCopy(bx_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -112,18 +118,18 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
   }}
 
-  dwl.DeleteAthenaArray();
-  dwr.DeleteAthenaArray();
-  dw2.DeleteAthenaArray();
-  dwm.DeleteAthenaArray();
-  wc.DeleteAthenaArray();
-  bx.DeleteAthenaArray();
+//  dwl.DeleteAthenaArray();
+//  dwr.DeleteAthenaArray();
+//  dw2.DeleteAthenaArray();
+//  dwm.DeleteAthenaArray();
+//  wc.DeleteAthenaArray();
+//  bx.DeleteAthenaArray();
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::ReconstructionFuncX2()
+//! \fn Reconstruction::PiecewiseLinearX2()
 //  \brief 
 
 void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
@@ -133,13 +139,19 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 {
   Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-  int ncells1 = (iu-il+1) + 2*(NGHOST);
-  dwl.NewAthenaArray(NWAVE,ncells1);
-  dwr.NewAthenaArray(NWAVE,ncells1);
-  dw2.NewAthenaArray(NWAVE,ncells1);
-  dwm.NewAthenaArray(NWAVE,ncells1);
-  wc.NewAthenaArray(NWAVE,ncells1);
-  bx.NewAthenaArray(ncells1);
+//  int ncells1 = (iu-il+1) + 2*(NGHOST);
+//  dwl.NewAthenaArray(NWAVE,ncells1);
+//  dwr.NewAthenaArray(NWAVE,ncells1);
+//  dw2.NewAthenaArray(NWAVE,ncells1);
+//  dwm.NewAthenaArray(NWAVE,ncells1);
+//  wc.NewAthenaArray(NWAVE,ncells1);
+//  bx.NewAthenaArray(ncells1);
+  dwl.InitWithShallowCopy(dwl_);
+  dwr.InitWithShallowCopy(dwr_);
+  dw2.InitWithShallowCopy(dw2_);
+  dwm.InitWithShallowCopy(dwm_);
+  wc.InitWithShallowCopy(wc_);
+  bx.InitWithShallowCopy(bx_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl-1; j<=ju; ++j){
@@ -220,18 +232,18 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
   }}
 
-  dwl.DeleteAthenaArray();
-  dwr.DeleteAthenaArray();
-  dw2.DeleteAthenaArray();
-  dwm.DeleteAthenaArray();
-  wc.DeleteAthenaArray();
-  bx.DeleteAthenaArray();
+//  dwl.DeleteAthenaArray();
+//  dwr.DeleteAthenaArray();
+//  dw2.DeleteAthenaArray();
+//  dwm.DeleteAthenaArray();
+//  wc.DeleteAthenaArray();
+//  bx.DeleteAthenaArray();
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::ReconstructionFuncX3()
+//! \fn Reconstruction::PiecewiseLinearX3()
 //  \brief 
 
 void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
@@ -241,13 +253,19 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 {
   Coordinates *pco = pmb->pcoord;
   AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-  int ncells1 = (iu-il+1) + 2*(NGHOST);
-  dwl.NewAthenaArray(NWAVE,ncells1);
-  dwr.NewAthenaArray(NWAVE,ncells1);
-  dw2.NewAthenaArray(NWAVE,ncells1);
-  dwm.NewAthenaArray(NWAVE,ncells1);
-  wc.NewAthenaArray(NWAVE,ncells1);
-  bx.NewAthenaArray(ncells1);
+//  int ncells1 = (iu-il+1) + 2*(NGHOST);
+//  dwl.NewAthenaArray(NWAVE,ncells1);
+//  dwr.NewAthenaArray(NWAVE,ncells1);
+//  dw2.NewAthenaArray(NWAVE,ncells1);
+//  dwm.NewAthenaArray(NWAVE,ncells1);
+//  wc.NewAthenaArray(NWAVE,ncells1);
+//  bx.NewAthenaArray(ncells1);
+  dwl.InitWithShallowCopy(dwl_);
+  dwr.InitWithShallowCopy(dwr_);
+  dw2.InitWithShallowCopy(dw2_);
+  dwm.InitWithShallowCopy(dwm_);
+  wc.InitWithShallowCopy(wc_);
+  bx.InitWithShallowCopy(bx_);
 
   for (int k=kl-1; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -328,12 +346,12 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
   }}
 
-  dwl.DeleteAthenaArray();
-  dwr.DeleteAthenaArray();
-  dw2.DeleteAthenaArray();
-  dwm.DeleteAthenaArray();
-  wc.DeleteAthenaArray();
-  bx.DeleteAthenaArray();
+//  dwl.DeleteAthenaArray();
+//  dwr.DeleteAthenaArray();
+//  dw2.DeleteAthenaArray();
+//  dwm.DeleteAthenaArray();
+//  wc.DeleteAthenaArray();
+//  bx.DeleteAthenaArray();
 
   return;
 }
