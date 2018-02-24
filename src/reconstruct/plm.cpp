@@ -24,20 +24,14 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-//  int ncells1 = (iu-il+1) + 2*(NGHOST);
-//  dwl.NewAthenaArray(NWAVE,ncells1);
-//  dwr.NewAthenaArray(NWAVE,ncells1);
-//  dw2.NewAthenaArray(NWAVE,ncells1);
-//  dwm.NewAthenaArray(NWAVE,ncells1);
-//  wc.NewAthenaArray(NWAVE,ncells1);
-//  bx.NewAthenaArray(ncells1);
-  dwl.InitWithShallowCopy(dwl_);
-  dwr.InitWithShallowCopy(dwr_);
-  dw2.InitWithShallowCopy(dw2_);
-  dwm.InitWithShallowCopy(dwm_);
-  wc.InitWithShallowCopy(wc_);
-  bx.InitWithShallowCopy(bx_);
+  // shallow copies of scratch arrays used below
+  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
+  wc.InitWithShallowCopy(pmb->precon->wc_);
+  bx.InitWithShallowCopy(pmb->precon->bx_);
+  dwl.InitWithShallowCopy(pmb->precon->dwl_);
+  dwr.InitWithShallowCopy(pmb->precon->dwr_);
+  dwm.InitWithShallowCopy(pmb->precon->dwm_);
+  dw2.InitWithShallowCopy(pmb->precon->dw2_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -77,11 +71,11 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
+          dw2(i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il-1; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -90,14 +84,14 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
           Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
-          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
-            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
+          dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il-1; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }
@@ -118,13 +112,6 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
   }}
 
-//  dwl.DeleteAthenaArray();
-//  dwr.DeleteAthenaArray();
-//  dw2.DeleteAthenaArray();
-//  dwm.DeleteAthenaArray();
-//  wc.DeleteAthenaArray();
-//  bx.DeleteAthenaArray();
-
   return;
 }
 
@@ -138,20 +125,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-//  int ncells1 = (iu-il+1) + 2*(NGHOST);
-//  dwl.NewAthenaArray(NWAVE,ncells1);
-//  dwr.NewAthenaArray(NWAVE,ncells1);
-//  dw2.NewAthenaArray(NWAVE,ncells1);
-//  dwm.NewAthenaArray(NWAVE,ncells1);
-//  wc.NewAthenaArray(NWAVE,ncells1);
-//  bx.NewAthenaArray(ncells1);
-  dwl.InitWithShallowCopy(dwl_);
-  dwr.InitWithShallowCopy(dwr_);
-  dw2.InitWithShallowCopy(dw2_);
-  dwm.InitWithShallowCopy(dwm_);
-  wc.InitWithShallowCopy(wc_);
-  bx.InitWithShallowCopy(bx_);
+  // shallow copies of scratch arrays used below
+  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
+  wc.InitWithShallowCopy(pmb->precon->wc_);
+  bx.InitWithShallowCopy(pmb->precon->bx_);
+  dwl.InitWithShallowCopy(pmb->precon->dwl_);
+  dwr.InitWithShallowCopy(pmb->precon->dwr_);
+  dwm.InitWithShallowCopy(pmb->precon->dwm_);
+  dw2.InitWithShallowCopy(pmb->precon->dw2_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl-1; j<=ju; ++j){
@@ -192,11 +173,11 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
+          dw2(i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -205,14 +186,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
           Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
-          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
-            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
+          dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il-1; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }
@@ -232,13 +213,6 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
   }}
 
-//  dwl.DeleteAthenaArray();
-//  dwr.DeleteAthenaArray();
-//  dw2.DeleteAthenaArray();
-//  dwm.DeleteAthenaArray();
-//  wc.DeleteAthenaArray();
-//  bx.DeleteAthenaArray();
-
   return;
 }
 
@@ -252,20 +226,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-//  int ncells1 = (iu-il+1) + 2*(NGHOST);
-//  dwl.NewAthenaArray(NWAVE,ncells1);
-//  dwr.NewAthenaArray(NWAVE,ncells1);
-//  dw2.NewAthenaArray(NWAVE,ncells1);
-//  dwm.NewAthenaArray(NWAVE,ncells1);
-//  wc.NewAthenaArray(NWAVE,ncells1);
-//  bx.NewAthenaArray(ncells1);
-  dwl.InitWithShallowCopy(dwl_);
-  dwr.InitWithShallowCopy(dwr_);
-  dw2.InitWithShallowCopy(dw2_);
-  dwm.InitWithShallowCopy(dwm_);
-  wc.InitWithShallowCopy(wc_);
-  bx.InitWithShallowCopy(bx_);
+  // shallow copies of scratch arrays used below
+  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
+  wc.InitWithShallowCopy(pmb->precon->wc_);
+  bx.InitWithShallowCopy(pmb->precon->bx_);
+  dwl.InitWithShallowCopy(pmb->precon->dwl_);
+  dwr.InitWithShallowCopy(pmb->precon->dwr_);
+  dwm.InitWithShallowCopy(pmb->precon->dwm_);
+  dw2.InitWithShallowCopy(pmb->precon->dw2_);
 
   for (int k=kl-1; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -306,11 +274,11 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
-          dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
+          dw2(i) = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -319,14 +287,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
-          dw2(n,i) = dwl(n,i)*dwr(n,i);
+          dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
           Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
-          dwm(n,i) = (dw2(n,i)*(cf*dwl(n,i) + cb*dwr(n,i))/
-            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(n,i)*(cf + cb - 2.0)));
+          dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
+            (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il-1; i<=iu; ++i){
-          if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
+          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }
@@ -345,13 +313,6 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       }
     }
   }}
-
-//  dwl.DeleteAthenaArray();
-//  dwr.DeleteAthenaArray();
-//  dw2.DeleteAthenaArray();
-//  dwm.DeleteAthenaArray();
-//  wc.DeleteAthenaArray();
-//  bx.DeleteAthenaArray();
 
   return;
 }

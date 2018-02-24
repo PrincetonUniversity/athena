@@ -50,15 +50,15 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  void PiecewiseLinearX1(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseLinearX1(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  void PiecewiseLinearX2(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseLinearX2(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  void PiecewiseLinearX3(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseLinearX3(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
