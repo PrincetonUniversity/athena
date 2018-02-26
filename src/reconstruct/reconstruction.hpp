@@ -24,12 +24,16 @@ public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
   ~Reconstruction();
 
+  // data
   // order and type of reconstruction algorithm
-  int xorder;
-  bool characteristic_reconstruction;
+  int xorder;   // order of hydro reconstruction
+  bool characteristic_reconstruction;  // TRUE for characteristic recon
+  AthenaArray<Real> c1i,c2i,c3i,c4i,c5i,c6i;  // coefficients for PPM in x1
+  AthenaArray<Real> c1j,c2j,c3j,c4j,c5j,c6j;  // coefficients for PPM in x2
+  AthenaArray<Real> c1k,c2k,c3k,c4k,c5k,c6k;  // coefficients for PPM in x3
 
-  // functions to perform linear transformations of vectors between primitive and
-  // characteristic variables
+  // functions
+  // linear transformations of vectors between primitive and characteristic variables
   static void LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
     AthenaArray<Real> &vect);
@@ -62,42 +66,26 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PPMX1(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseParabolicX1(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PPMX2(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseParabolicX2(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PPMX3(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
-
-  static void PPMUniformX1(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
-
-  static void PPMUniformX2(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
-
-  static void PPMUniformX3(MeshBlock *pmb, const int kl, const int ku,
+  static void PiecewiseParabolicX3(MeshBlock *pmb, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
-  // 1D scratch arrays used in PLM and PPM reconstruction functions
-  AthenaArray<Real> bx_;
-  AthenaArray<Real> dph_, dph_p1_;
-  AthenaArray<Real> qplus_, qminus_;
-  AthenaArray<Real> dqf_plus_, dqf_minus_, d2qf_;
-  AthenaArray<Real> d2qc_m1_, d2qc_, d2qc_p1_;
-
-  // 2D scratch arrays used in PLM functions
-  AthenaArray<Real> dwl_,dwr_,wc_,dw2_,dwm_;
-
+  // scratch arrays used in PLM and PPM reconstruction functions
+  AthenaArray<Real> scr01_i_,scr02_i_,scr03_i_,scr04_i_,scr05_i_;
+  AthenaArray<Real> scr06_i_,scr07_i_,scr08_i_,scr09_i_,scr10_i_;
+  AthenaArray<Real> scr11_i_,scr12_i_,scr13_i_,scr14_i_;
+  AthenaArray<Real> scr1_ni_, scr2_ni_, scr3_ni_, scr4_ni_, scr5_ni_;
+  AthenaArray<Real> scr6_ni_, scr7_ni_, scr8_ni_;
 };
 #endif // RECONSTRUCTION_HPP

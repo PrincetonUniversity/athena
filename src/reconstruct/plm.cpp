@@ -24,14 +24,14 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  // shallow copies of scratch arrays used below
-  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
-  wc.InitWithShallowCopy(pmb->precon->wc_);
-  bx.InitWithShallowCopy(pmb->precon->bx_);
-  dwl.InitWithShallowCopy(pmb->precon->dwl_);
-  dwr.InitWithShallowCopy(pmb->precon->dwr_);
-  dwm.InitWithShallowCopy(pmb->precon->dwm_);
-  dw2.InitWithShallowCopy(pmb->precon->dw2_);
+  // set work arrays to shallow copies of scratch arrays
+  AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
+  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
+  dw2.InitWithShallowCopy(pmb->precon->scr02_i_);
+  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
+  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
+  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
+  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -47,10 +47,13 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
+        bx(i) = bcc(IB1,k,j,i);
+      }
+#pragma simd
+      for (int i=il-1; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
         wc(IBY,i) = bcc(IB2,k,j,i);
-        bx(i) = bcc(IB1,k,j,i);
       }
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
@@ -125,14 +128,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  // shallow copies of scratch arrays used below
-  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
-  wc.InitWithShallowCopy(pmb->precon->wc_);
-  bx.InitWithShallowCopy(pmb->precon->bx_);
-  dwl.InitWithShallowCopy(pmb->precon->dwl_);
-  dwr.InitWithShallowCopy(pmb->precon->dwr_);
-  dwm.InitWithShallowCopy(pmb->precon->dwm_);
-  dw2.InitWithShallowCopy(pmb->precon->dw2_);
+  // set work arrays to shallow copies of scratch arrays
+  AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
+  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
+  dw2.InitWithShallowCopy(pmb->precon->scr02_i_);
+  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
+  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
+  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
+  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl-1; j<=ju; ++j){
@@ -149,10 +152,13 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
+        bx(i) = bcc(IB2,k,j,i);
+      }  
+#pragma simd
+      for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
         wc(IBY,i) = bcc(IB3,k,j,i);
-        bx(i) = bcc(IB2,k,j,i);
       }  
 #pragma simd
       for (int i=il; i<=iu; ++i){
@@ -226,14 +232,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
-  // shallow copies of scratch arrays used below
-  AthenaArray<Real> wc,bx,dwl,dwr,dwm,dw2;
-  wc.InitWithShallowCopy(pmb->precon->wc_);
-  bx.InitWithShallowCopy(pmb->precon->bx_);
-  dwl.InitWithShallowCopy(pmb->precon->dwl_);
-  dwr.InitWithShallowCopy(pmb->precon->dwr_);
-  dwm.InitWithShallowCopy(pmb->precon->dwm_);
-  dw2.InitWithShallowCopy(pmb->precon->dw2_);
+  // set work arrays to shallow copies of scratch arrays
+  AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
+  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
+  dw2.InitWithShallowCopy(pmb->precon->scr02_i_);
+  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
+  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
+  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
+  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
 
   for (int k=kl-1; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -249,10 +255,13 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
+        bx(i) = bcc(IB3,k,j,i);
+      }  
+#pragma simd
+      for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
         wc(IBY,i) = bcc(IB1,k,j,i);
-        bx(i) = bcc(IB3,k,j,i);
       }  
 #pragma simd
       for (int i=il; i<=iu; ++i){

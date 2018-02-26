@@ -30,7 +30,7 @@
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-                            AthenaArray<Real> &bcc, bool first_order)
+                            AthenaArray<Real> &bcc, int order)
 {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
@@ -76,10 +76,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
   // reconstruct L/R states
-  if (first_order) {
+  if (order == 1) {
     pmb->precon->DonorCellX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
-  } else {
+  } else if (order == 2) {
     pmb->precon->PiecewiseLinearX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
+  } else {
+    pmb->precon->PiecewiseParabolicX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
   }
 
   // compute fluxes, store directly into 3D arrays
@@ -118,10 +120,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     }
 
     // reconstruct L/R states at j
-    if (first_order) {
+    if (order == 1) {
       pmb->precon->DonorCellX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
-    } else {
+    } else if (order == 2) {
       pmb->precon->PiecewiseLinearX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
+    } else {
+      pmb->precon->PiecewiseParabolicX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays
@@ -156,10 +160,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
     // reconstruct L/R states at k
-    if (first_order) {
+    if (order == 1) {
       pmb->precon->DonorCellX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
-    } else {
+    } else if (order == 2){
       pmb->precon->PiecewiseLinearX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
+    } else {
+      pmb->precon->PiecewiseParabolicX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays

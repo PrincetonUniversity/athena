@@ -33,12 +33,12 @@
 //  \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
 //         Colella-Sekora extremum-preserving limiting over [kl,ku][jl,ju][il,iu]
 
+#ifdef NO_COMPILE
 void Reconstruction::PPMUniformX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-#ifdef NO_COMPILE
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
   Real qa,qb,qc,qd,qe,rho;
@@ -171,7 +171,6 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
   dqf_minus.DeleteAthenaArray();
   d2qf.DeleteAthenaArray();
   d2qc.DeleteAthenaArray();
-#endif
   return;
 }
 
@@ -185,7 +184,6 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-#ifdef NO_COMPILE
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
   Real qa,qb,qc,qd,qe,rho;
@@ -370,7 +368,6 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
   d2qc_jm1.DeleteAthenaArray();
   d2qc.DeleteAthenaArray();
   d2qc_jp1.DeleteAthenaArray();
-#endif
   return;
 }
 
@@ -384,7 +381,6 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-#ifdef NO_COMPILE
   // CS08 constant used in second derivative limiter
   Real C2 = 1.25; // >1 , independent of h
   Real qa,qb,qc,qd,qe,rho;
@@ -568,6 +564,6 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
   d2qc_km1.DeleteAthenaArray();
   d2qc.DeleteAthenaArray();
   d2qc_kp1.DeleteAthenaArray();
-#endif
   return;
 }
+#endif

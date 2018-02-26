@@ -20,6 +20,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../reconstruct/reconstruction.hpp"
 #include "../bvals/bvals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
@@ -442,11 +443,11 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   Field *pfield=pmb->pfield;
   if (step <= nsub_steps) {
     if((step == 1) && (integrator == "vl2")) {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       return TASK_NEXT;
     }
     else {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, false);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
       return TASK_NEXT;
     }
   }
