@@ -23,7 +23,7 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real den = prim(IDN,k,j,i);
         Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);

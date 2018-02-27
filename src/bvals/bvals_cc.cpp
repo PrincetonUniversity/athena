@@ -213,7 +213,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
       if(flip!=NULL) sign =flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
           for (int i=si; i<=ei; ++i)
             dst(n,k,j,i) = sign * buf[p++];
         }
@@ -271,7 +271,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
       if(flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
           for (int i=si; i<=ei; ++i)
             cbuf(n,k,j,i) = sign * buf[p++];
         }
@@ -341,7 +341,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
       if(flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
           for (int i=si; i<=ei; ++i)
             dst(n,k,j,i) = sign * buf[p++];
         }

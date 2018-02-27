@@ -93,7 +93,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int j=jl; j<=ju; ++j){
 
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i){
         Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
                       / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
@@ -134,7 +134,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int k=kl; k<=ku; ++k){
       for (int j=js; j<=je+1; ++j){
         pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
@@ -172,7 +172,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
         pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));

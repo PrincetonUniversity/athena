@@ -62,7 +62,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       }
 
       // Go through each interface
-      #pragma simd
+      #pragma omp simd
       for (int i = il; i <= iu; ++i) {
 
         // Extract metric

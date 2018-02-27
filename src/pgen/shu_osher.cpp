@@ -46,7 +46,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie; ++i) {
 
       if (pcoord->x1v(i) < -0.8) {

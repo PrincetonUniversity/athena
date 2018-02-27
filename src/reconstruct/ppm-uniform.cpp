@@ -59,7 +59,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
 
 //--- Step 1. ----------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{i-1/2} using PPM for uniform mesh (CW eq 1.6)
-#pragma simd
+#pragma omp simd
     for (int i=il-1; i<=(iu+1); ++i) {
       dph(i) = (7.0*(q(nin,k,j,i-1)+q(nin,k,j,i)) - (q(nin,k,j,i+1)+q(nin,k,j,i-2)))/12.0;
       d2qc(i) = q(nin,k,j,i-1) - 2.0*q(nin,k,j,i) + q(nin,k,j,i+1); //(CD eq 85a) (no 1/2)
@@ -67,7 +67,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
     d2qc(il-2) = q(nin,k,j,il-3) - 2.0*q(nin,k,j,il-2) + q(nin,k,j,il-1);
 
     // Limit interpolated interface states as in CD section 4.3.1
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
     for (int i=il-1; i<=(iu+1); ++i) {
       qa = dph(i) - q(nin,k,j,i-1); // (CD eq 84a)
       qb = q(nin,k,j,i) - dph(i);   // (CD eq 84b)
@@ -82,7 +82,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
         dph(i) = 0.5*(q(nin,k,j,i-1)+q(nin,k,j,i)) - qd/6.0;
       }
     }
-#pragma simd
+#pragma omp simd
     for (int i=il-1; i<=iu; ++i) {
       qminus(i) = dph(i  );
       qplus(i) =  dph(i+1 );
@@ -90,7 +90,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
 
 //--- Step 2. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
     for (int i=il-1; i<=iu; ++i) {
       dqf_minus(i) = q(nin,k,j,i) - qminus(i); // (CS eq 25)
       dqf_plus(i)  = qplus(i) - q(nin,k,j,i);
@@ -99,7 +99,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Apply CS limiters to parabolic interpolant
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
     for (int i=il-1; i<=iu; ++i) {
       qa = dqf_minus(i)*dqf_plus(i);
       qb = (q(nin,k,j,i+1) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k,j,i-1));
@@ -156,7 +156,7 @@ void Reconstruction::PPMUniformX1(MeshBlock *pmb,
 //--- Step 4. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [il,iu]
-#pragma simd
+#pragma omp simd
     for (int i=il-1; i<=iu; ++i) {
       ql(nout,k,j,i+1) = qplus(i);
       qr(nout,k,j,i  ) = qminus(i);
@@ -211,7 +211,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 // Reconstruct interface averages <a>_{j-1/2} at j=jl-1 (CW eq 1.6)
 
     // initialize interface states along 1-D vector at j=jl-1
-#pragma simd
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       dph(i) = ( 7.0*(q(nin,k,jl-2,i) + q(nin,k,jl-1,i)) -
                      (q(nin,k,jl  ,i) + q(nin,k,jl-3,i)) )/12.0;
@@ -221,7 +221,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
     }
 
     // Limit interpolated interface states at j=jl-1 as in CD section 4.3.1
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
     for (int i=il; i<=iu; ++i) {
       qa = dph(i) - q(nin,k,jl-2,i); // (CD eq 84a)
       qb = q(nin,k,jl-1,i) - dph(i);   // (CD eq 84b)
@@ -242,7 +242,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 
 //--- Step 1b. ---------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{j-1/2} at j=j+1 (CW eq 1.6)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dph_jp1(i) = ( 7.0*(q(nin,k,j  ,i) + q(nin,k,j+1,i)) -
                            (q(nin,k,j+2,i) + q(nin,k,j-1,i)) )/12.0;
@@ -250,7 +250,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
       }
 
       // Limit interpolated interface states at j=j+1 as in CD section 4.3.1
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
       for (int i=il; i<=iu; ++i) {
         qa = dph_jp1(i) - q(nin,k,j,i); // (CD eq 84a)
         qb = q(nin,k,j+1,i) - dph_jp1(i); // (CD eq 84b)
@@ -267,7 +267,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
       }
 
       // Initialize cell-indexed interface states / parabolic coefficients
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         qminus(i) = dph(i);       // value at j
         qplus(i)  = dph_jp1(i);   // value at j+1
@@ -275,7 +275,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 
 //--- Step 2. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dqf_minus(i) = q(nin,k,j,i) - qminus(i);
         dqf_plus(i) = qplus(i) - q(nin,k,j,i);
@@ -284,7 +284,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Apply CS limiters to parabolic interpolant
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
       for (int i=il; i<=iu; ++i) {
         qa = dqf_minus(i)*dqf_plus(i);
         qb = (q(nin,k,j+1,i) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k,j-1,i));
@@ -341,7 +341,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 //--- Step 4. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [jl,ju]
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         ql(nout,k,j+1,i) = qplus(i);
         qr(nout,k,j  ,i) = qminus(i);
@@ -349,7 +349,7 @@ void Reconstruction::PPMUniformX2(MeshBlock *pmb,
 
       // Copy 1D temporary arrays for next value of j unless j-loop finished
       if (j < ju) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           dph(i) = dph_jp1(i);
           d2qc_jm1(i) = d2qc    (i);
@@ -410,7 +410,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 // Reconstruct interface averages <a>_{k-1/2} at k=kl-1 (CW eq 1.6)
 
     // initialize interface states along 1-D vector at k=kl-1
-#pragma simd
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       dph(i) = ( 7.0*(q(nin,kl-2,j,i) + q(nin,kl-1,j,i)) -
                      (q(nin,kl  ,j,i) + q(nin,kl-3,j,i)) )/12.0;
@@ -420,7 +420,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
     }
 
     // Limit interpolated interface states at k=kl-1 as in CD section 4.3.1
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
     for (int i=il; i<=iu; ++i) {
       qa = dph(i) - q(nin,kl-2,j,i);   // (CD eq 84a)
       qb = q(nin,kl-1,j,i) - dph(i);   // (CD eq 84b)
@@ -441,7 +441,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 
 //--- Step 1b. ---------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{k-1/2} at k=k+1 (CW eq 1.6)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dph_kp1(i) = ( 7.0*(q(nin,k  ,j,i) + q(nin,k+1,j,i)) -
                            (q(nin,k+2,j,i) + q(nin,k-1,j,i)) )/12.0;
@@ -449,7 +449,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
       }
 
       // Limit interpolated interface states at k=k+1 as in CD section 4.3.1
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
       for (int i=il; i<=iu; ++i) {
         qa = dph_kp1(i) - q(nin,k,j,i);   // (CD eq 84a)
         qb = q(nin,k+1,j,i) - dph_kp1(i); // (CD eq 84b)
@@ -473,7 +473,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 
 //--- Step 2. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dqf_minus(i) = q(nin,k,j,i) - qminus(i);
         dqf_plus(i) = qplus(i) - q(nin,k,j,i);
@@ -482,7 +482,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Apply CS limiters to parabolic interpolant
-    // #pragma simd // poor vectorization efficiency
+    // #pragma omp simd // poor vectorization efficiency
       for (int i=il; i<=iu; ++i) {
         qa = dqf_minus(i)*dqf_plus(i);
         qb = (q(nin,k+1,j,i) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k-1,j,i));
@@ -539,7 +539,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 //--- Step 4. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [jl,ju]
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         ql(nout,k+1,j,i) = qplus(i);
         qr(nout,k  ,j,i) = qminus(i);
@@ -547,7 +547,7 @@ void Reconstruction::PPMUniformX3(MeshBlock *pmb,
 
       // Copy 1D temporary arrays for next value of k unless k-loop finished
       if (k < ku) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           dph(i) = dph_kp1(i);
           d2qc_km1(i) = d2qc    (i);

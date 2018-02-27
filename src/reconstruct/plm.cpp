@@ -37,7 +37,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j){
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         dwl(n,i) = (w(n,k,j,i  ) - w(n,k,j,i-1));
         dwr(n,i) = (w(n,k,j,i+1) - w(n,k,j,i  ));
@@ -45,14 +45,14 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
         wc(IBY,i) = bcc(IB2,k,j,i);
         bx(i) = bcc(IB1,k,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB3,k,j,i  ) - bcc(IB3,k,j,i-1));
         dwr(IBZ,i) = (bcc(IB3,k,j,i+1) - bcc(IB3,k,j,i  ));
@@ -69,7 +69,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
@@ -82,7 +82,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
@@ -103,7 +103,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
     // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         wl(n,k,j,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
         wr(n,k,j,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
@@ -145,7 +145,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   for (int j=jl-1; j<=ju; ++j){
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(n,i) = (w(n,k,j  ,i) - w(n,k,j-1,i));
         dwr(n,i) = (w(n,k,j+1,i) - w(n,k,j  ,i));
@@ -154,14 +154,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
         wc(IBY,i) = bcc(IB3,k,j,i);
         bx(i) = bcc(IB2,k,j,i);
       }  
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
         dwr(IBZ,i) = (bcc(IB1,k,j+1,i) - bcc(IB1,k,j  ,i));
@@ -178,7 +178,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
@@ -191,7 +191,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
@@ -212,7 +212,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 
     // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wl(n,k,j+1,i) = wc(n,i) + ((pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j))*dwm(n,i);
         wr(n,k,j  ,i) = wc(n,i) - ((pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j))*dwm(n,i);
@@ -253,7 +253,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j){
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(n,i) = (w(n,k  ,j,i) - w(n,k-1,j,i));
         dwr(n,i) = (w(n,k+1,j,i) - w(n,k  ,j,i));
@@ -261,14 +261,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
         wc(IBY,i) = bcc(IB1,k,j,i);
         bx(i) = bcc(IB3,k,j,i);
       }  
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB2,k  ,j,i) - bcc(IB2,k-1,j,i));
         dwr(IBZ,i) = (bcc(IB2,k+1,j,i) - bcc(IB2,k  ,j,i));
@@ -286,7 +286,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->block_size.x1rat == 1.0) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(n,i)/(dwl(n,i) + dwr(n,i));
@@ -299,7 +299,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu; ++i){
           dw2(n,i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
@@ -320,7 +320,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
     // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wl(n,k+1,j,i) = wc(n,i) + ((pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k))*dwm(n,i);
         wr(n,k  ,j,i) = wc(n,i) - ((pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k))*dwm(n,i);
