@@ -307,7 +307,7 @@ void TurbulenceDriver::Perturb(Real dt){
   else
     s = (-b + std::sqrt(b*b - 4.0*aa*c))/(2.0*aa);
 
-  //  if (std::isnan(s)) std::cout << "[perturb]: s is NaN!" << std::endl;
+  if (std::isnan(s)) std::cout << "[perturb]: s is NaN!" << std::endl;
 
   // Apply momentum pertubations
   for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
