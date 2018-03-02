@@ -336,84 +336,287 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-#ifdef NO_COMPILE
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
-  int ncells1 = (iu-il+1) + 2*(NGHOST);
-  dwl.NewAthenaArray(NWAVE,ncells1);
-  dwr.NewAthenaArray(NWAVE,ncells1);
-  dw2.NewAthenaArray(NWAVE,ncells1);
-  dwm.NewAthenaArray(NWAVE,ncells1);
-  wc.NewAthenaArray(NWAVE,ncells1);
-  bx.NewAthenaArray(ncells1);
+  Reconstruction* prec = pmb->precon;
+  // CS08 constant used in second derivative limiter, >1 , independent of h
+  const Real C2 = 1.25;
+
+  // set work arrays used for primitive/characterstic cell-averages to scratch
+  AthenaArray<Real> bx,wc,q_jm2,q_jm1,q,q_jp1,q_jp2,qr_jmh,ql_jph;
+  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
+  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
+  q_jm2.InitWithShallowCopy(pmb->precon->scr2_ni_);
+  q_jm1.InitWithShallowCopy(pmb->precon->scr3_ni_);
+  q.InitWithShallowCopy(pmb->precon->scr4_ni_);
+  q_jp1.InitWithShallowCopy(pmb->precon->scr5_ni_);
+  q_jp2.InitWithShallowCopy(pmb->precon->scr6_ni_);
+  qr_jmh.InitWithShallowCopy(pmb->precon->scr7_ni_);
+  ql_jph.InitWithShallowCopy(pmb->precon->scr8_ni_);
+
+  // set work PPM work arrays to shallow copies of scratch arrays:
+  AthenaArray<Real> dd,dd_jm1,dd_jp1,dph,dph_jp1;
+  dd.InitWithShallowCopy(pmb->precon->scr02_i_);
+  dd_jm1.InitWithShallowCopy(pmb->precon->scr03_i_);
+  dd_jp1.InitWithShallowCopy(pmb->precon->scr04_i_);
+  dph.InitWithShallowCopy(pmb->precon->scr05_i_);
+  dph_jp1.InitWithShallowCopy(pmb->precon->scr06_i_);
+
+  AthenaArray<Real> d2qc_jm1,d2qc,d2qc_jp1,d2qf;
+  d2qc_jm1.InitWithShallowCopy(pmb->precon->scr07_i_);
+  d2qc.InitWithShallowCopy(pmb->precon->scr08_i_);
+  d2qc_jp1.InitWithShallowCopy(pmb->precon->scr09_i_);
+  d2qf.InitWithShallowCopy(pmb->precon->scr10_i_);
+
+  AthenaArray<Real> qplus,qminus,dqf_plus,dqf_minus;
+  qplus.InitWithShallowCopy(pmb->precon->scr11_i_);
+  qminus.InitWithShallowCopy(pmb->precon->scr12_i_);
+  dqf_plus.InitWithShallowCopy(pmb->precon->scr13_i_);
+  dqf_minus.InitWithShallowCopy(pmb->precon->scr14_i_);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl-1; j<=ju; ++j){
-    // compute L/R slopes for each variable
+    // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        dwl(n,i) = (w(n,k,j  ,i) - w(n,k,j-1,i));
-        dwr(n,i) = (w(n,k,j+1,i) - w(n,k,j  ,i));
         wc(n,i) = w(n,k,j,i);
+        q    (n,i) = w(n,k,j  ,i);
+        q_jm2(n,i) = w(n,k,j-2,i);
+        q_jm1(n,i) = w(n,k,j-1,i);
+        q_jp1(n,i) = w(n,k,j+1,i);
+        q_jp2(n,i) = w(n,k,j+2,i);
       }
     }
-
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
-        dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
-        wc(IBY,i) = bcc(IB3,k,j,i);
         bx(i) = bcc(IB2,k,j,i);
       }
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
-        dwr(IBZ,i) = (bcc(IB1,k,j+1,i) - bcc(IB1,k,j  ,i));
-        wc(IBZ,i) = bcc(IB1,k,j,i);
+        wc(IBY,i) = bcc(IB3,k,j,i);
+        q    (IBY,i) = bcc(IB3,k,j  ,i);
+        q_jm2(IBY,i) = bcc(IB3,k,j-2,i);
+        q_jm1(IBY,i) = bcc(IB3,k,j-1,i);
+        q_jp1(IBY,i) = bcc(IB3,k,j+1,i);
+        q_jp2(IBY,i) = bcc(IB3,k,j+2,i);
       }
-    }
-
-    // Project slopes to characteristic variables, if necessary
-    if (pmb->precon->characteristic_reconstruction) {
-      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwl);
-      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
-    }
-
-    //  Apply van Leer limiter
-    for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        dw2(n,i) = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = 0.0;
-        if (dw2(n,i) > 0.0) {
-          dwm(n,i) = dw2(n,i)/(dwl(n,i) + dwr(n,i));
-        }
+        wc(IBZ,i) = bcc(IB1,k,j,i);
+        q    (IBZ,i) = bcc(IB1,k,j  ,i);
+        q_jm2(IBZ,i) = bcc(IB1,k,j-2,i);
+        q_jm1(IBZ,i) = bcc(IB1,k,j-1,i);
+        q_jp1(IBZ,i) = bcc(IB1,k,j+1,i);
+        q_jp2(IBZ,i) = bcc(IB1,k,j+2,i);
       }
     }
+
+    // Project cell-averages to characteristic variables, if necessary
+    if (pmb->precon->characteristic_reconstruction) {
+      // equivalent to looping from il-3 to iu+2 for primitive reconstruction
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm2);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm1);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jp1);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jp2);
+    }
+
+//--- Step 1. ----------------------------------------------------------------------------
+// Reconstruct interface averages <a>_{j-1/2} and <a>_{j+1/2}
+    for (int n=0; n<(NWAVE); ++n) {
+
+      // Compute average slope in j-1, j, j+1 zones
+      for (int i=il; i<=iu; ++i){
+        Real qa = (q(n,i) - q_jm1(n,i));
+        Real qb = (q_jp1(n,i) - q(n,i));
+        dd_jm1(i) = prec->c1j(j-1)*qa + prec->c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
+        dd    (i) = prec->c1j(j  )*qb + prec->c2j(j  )*qa;
+        dd_jp1(i) = prec->c1j(j+1)*(q_jp2(n,i) - q_jp1(n,i)) + prec->c2j(j+1)*qb;
+      }
+      // Approximate interface average at j-1/2 and j+1/2 using PPM (CW eq 1.6)
+      for (int i=il; i<=iu; ++i) {
+        dph(i)= prec->c3j(j)*q_jm1(n,i) + prec->c4j(j)*q(n,i) +
+                prec->c5j(j)*dd_jm1(i) + prec->c6j(j)*dd(i);
+        dph_jp1(i)= prec->c3j(j+1)*q(n,i) + prec->c4j(j+1)*q_jp1(n,i) +
+                    prec->c5j(j+1)*dd(i) + prec->c6j(j+1)*dd_jp1(i);
+      }
+
+//--- Step 2a. ---------------------------------------------------------------------------
+      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
+      if (pmb->block_size.x2rat == 1.0) {
+        // approximate second derivative at interfaces for smooth extrema preservation
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          d2qc_jm1(i) = q_jm2(n,i) - 2.0*q_jm1(n,i) + q    (n,i);
+          d2qc    (i) = q_jm1(n,i) - 2.0*q    (n,i) + q_jp1(n,i); //(CD eq 85a) (no 1/2)
+          d2qc_jp1(i) = q    (n,i) - 2.0*q_jp1(n,i) + q_jp2(n,i);
+        }
+
+        // j-1/2
+        // #pragma simd // poor vectorization efficiency
+        for (int i=il; i<=iu; ++i) {
+          Real qa = dph(i) - q_jm1(n,i); // (CD eq 84a)
+          Real qb = q(n,i) - dph(i);     // (CD eq 84b)
+          if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
+            qa = 3.0*(q_jm1(n,i) - 2.0*dph(i) + q(n,i));  // (CD eq 85b)
+            qb = d2qc_jm1(i);    // (CD eq 85a) (no 1/2)
+            Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
+            Real qd = 0.0;
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+              qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+            }
+            dph(i) = 0.5*(q_jm1(n,i)+q(n,i)) - qd/6.0;
+          }
+        }
+        // j+1/2
+        // #pragma simd // poor vectorization efficiency
+        for (int i=il; i<=iu; ++i) {
+          Real qa = dph_jp1(i) - q(n,i);       // (CD eq 84a)
+          Real qb = q_jp1(n,i) - dph_jp1(i);   // (CD eq 84b)
+          if (qa*qb < 0.0) { // Local extrema detected at i+1/2 face
+            qa = 3.0*(q(n,i) - 2.0*dph_jp1(i) + q_jp1(n,i));  // (CD eq 85b)
+            qb = d2qc(i);            // (CD eq 85a) (no 1/2)
+            Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
+            Real qd = 0.0;
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+              qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+            }
+            dph_jp1(i) = 0.5*(q(n,i)+q_jp1(n,i)) - qd/6.0;
+          }
+        }
+
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_jp1(i)); // a6 coefficient * -2
+        }
+
+//--- Step 2b. ---------------------------------------------------------------------------
+      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      } else {
+        for (int i=il; i<=iu; ++i) {
+          dph    (i) = std::min(dph    (i), std::max(q(n,i),q_jm1(n,i)));
+          dph_jp1(i) = std::min(dph_jp1(i), std::max(q(n,i),q_jp1(n,i)));
+
+          dph    (i) = std::max(dph    (i), std::min(q(n,i),q_jm1(n,i)));
+          dph_jp1(i) = std::max(dph_jp1(i), std::min(q(n,i),q_jp1(n,i)));
+        }
+      }
+
+      // Cache Riemann states for both non-/uniform limiters
+#pragma simd
+      for (int i=il; i<=iu; ++i) {
+        qminus(i) = dph(i  );
+        qplus(i) =  dph_jp1(i );
+      }
+
+//--- Step 3. ----------------------------------------------------------------------------
+// Compute cell-centered difference stencils (MC section 2.4.1)
+#pragma simd
+      for (int i=il; i<=iu; ++i) {
+        dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
+        dqf_plus(i)  = qplus(i) - q(n,i);
+      }
+
+//--- Step 4a. ---------------------------------------------------------------------------
+      // For uniform mesh: apply CS limiters to parabolic interpolant
+      if (pmb->block_size.x2rat == 1.0) {
+        // #pragma simd // poor vectorization efficiency
+        for (int i=il; i<=iu; ++i) {
+          Real qa = dqf_minus(i)*dqf_plus(i);
+          Real qb = (q_jp1(n,i) - q(n,i))*(q(n,i) - q_jm1(n,i));
+
+          // Check for local extrema
+          if (qa <= 0.0 || qb <= 0.0 ) {
+            // Check if extrema is smooth
+            qa = d2qc_jm1(i);
+            qb = d2qc(i);
+            Real qc = d2qc_jp1(i);
+            Real qd = d2qf(i);
+            Real qe = 0.0;
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
+              // Extrema is smooth
+              qe = SIGN(qd)* std::min(std::min(C2*fabs(qa),C2*fabs(qb)),
+                                      std::min(C2*fabs(qc),fabs(qd))); // (CS eq 22)
+            }
+
+            // Check if 2nd derivative is close to roundoff error
+            qa = std::max(fabs(q_jm1(n,i)),fabs(q_jm2(n,i)));
+            qb = std::max(std::max(fabs(q(n,i)),fabs(q_jp1(n,i))), fabs(q_jp2(n,i)));
+
+            Real rho = 0.0;
+            if (fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+              // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
+              rho = qe/qd;
+            }
+
+            // Check if relative change in limited 2nd deriv is > roundoff
+            if (rho <= (1.0 - (1.0e-12))) {
+              // Limit smooth extrema
+              qminus(i) = q(n,i) - rho*dqf_minus(i); // (CS eq 23)
+              qplus(i) = q(n,i) + rho*dqf_plus(i);
+            }
+
+          // No extrema detected
+          } else {
+            // Overshoot j-1/2,R / j,(-) state
+            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            }
+            // Overshoot j+1/2,L / j,(+) state
+            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            }
+          }
+        }
+
+//--- Step 4b. ---------------------------------------------------------------------------
+      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
+      // Note Mignone limiter does not check for cell-averaged extrema:
+      } else {
+        for (int i=il; i<=iu; ++i) {
+          Real qa = dqf_minus(i)*dqf_plus(i);
+          if (qa <= 0.0) { // Local extrema detected
+            qminus(i) = q(n,i);
+            qplus(i) = q(n,i);
+          } else { // No extrema detected
+            // Overshoot j-1/2,R / j,(-) state
+            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            }
+            // Overshoot j+1/2,L / j,(+) state
+            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            }
+          }
+        }
+      }
+
+//--- Step 5. ----------------------------------------------------------------------------
+// Convert limited cell-centered values to interface-centered L/R Riemann states
+// both L/R values defined over [il,iu]
+#pragma simd
+      for (int i=il; i<=iu; ++i) {
+        ql_jph(n,i ) = qplus(i);
+        qr_jmh(n,i ) = qminus(i);
+      }
+    } // end char PPM loop over NWAVE
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,dwm);
+      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,ql_jph);
+      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,qr_jmh);
     }
 
-    // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
+    // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(n,k,j+1,i) = wc(n,i) + dwm(n,i);
-        wr(n,k,j  ,i) = wc(n,i) - dwm(n,i);
+        wl(n,k,j+1,i) = ql_jph(n,i);
+        wr(n,k,j  ,i) = qr_jmh(n,i);
       }
     }
   }}
 
-  dwl.DeleteAthenaArray();
-  dwr.DeleteAthenaArray();
-  dw2.DeleteAthenaArray();
-  dwm.DeleteAthenaArray();
-  wc.DeleteAthenaArray();
-  bx.DeleteAthenaArray();
-#endif
   return;
 }
 
