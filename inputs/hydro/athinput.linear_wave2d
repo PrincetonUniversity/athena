@@ -11,9 +11,9 @@ file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs
 
 <output2>
-file_type   = vtk      # Binary data dump
-variable    = prim     # variables to be output
-dt          = 0.01     # time increment between outputs
+file_type  = vtk       # VTK data dump
+variable   = prim      # variables to be output
+dt         = 0.01      # time increment between outputs
 
 <time>
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
