@@ -9,9 +9,10 @@
 # The following options are implememted:
 #   -h  --help        help message
 #   --prob=name       use src/pgen/name.cpp as the problem generator
-#   --coord=choice    use choice as the coordinate system
-#   --eos=choice      use choice as the equation of state
-#   --flux=choice     use choice as the Riemann solver
+#   --coord=xxx       use xxx as the coordinate system
+#   --eos=xxx         use xxx as the equation of state
+#   --flux=xxx        use xxx as the Riemann solver
+#   --nghost=xxx      set NGHOST=xxx
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -24,8 +25,8 @@
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --grav=choice     use choice as the self-gravity solver
-#   --cxx=choice      use choice as the C++ compiler
+#   --grav=xxx        use xxx as the self-gravity solver
+#   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -74,6 +75,11 @@ parser.add_argument('--flux',
     default='default',
     choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
+
+# --nghost=[value] argument
+parser.add_argument('--nghost',
+    default='2',
+    help='set number of ghost zones')
 
 # -b argument
 parser.add_argument('-b',
@@ -244,6 +250,9 @@ if args['eos'] == 'isothermal':
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
+
+# --nghost=[value] argument
+definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined

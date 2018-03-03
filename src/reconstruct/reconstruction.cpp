@@ -47,6 +47,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
+  // check that there are the necessary number of ghost zones
+  if (xorder == 3 && (NGHOST) < 3) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+        << "xorder=" << xorder << " (PPM) reconstruction selected, but nghost=" <<
+        NGHOST << std::endl << "Reconfigure with --nghost=XXX with XXX > 2" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   // Allocate memory for scratch arrays used in PLM and PPM
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   scr01_i_.NewAthenaArray(ncells1);
