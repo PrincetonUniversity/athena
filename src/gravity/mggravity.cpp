@@ -119,7 +119,7 @@ void MGGravityDriver::Solve(int step)
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if(pmb!=NULL) {
-      pmggrav->RetrieveResult(pmb->pgrav->phi,0,2);
+      pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho=mean_rho;
     }
 //    else { // on another process
