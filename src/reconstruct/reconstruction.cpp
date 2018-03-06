@@ -97,7 +97,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
     // coeffiencients in x1 for uniform Cartesian mesh
     if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
-#pragma simd
+#pragma omp simd
       for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i){
         c1i(i) = 0.5;
         c2i(i) = 0.5;
@@ -110,7 +110,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     // coeffcients in x1 for non-uniform or cuvilinear mesh
     // (unnecessary work in case of uniform curvilinear mesh)
     } else {
-#pragma simd
+#pragma omp simd
       for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i){
         Real& dx_im1 = pmb->pcoord->dx1f(i-1);
         Real& dx_i   = pmb->pcoord->dx1f(i  );
@@ -182,7 +182,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
       // coeffiencients in x2 for uniform Cartesian mesh
       if (pmb->block_size.x2rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
-#pragma simd
+#pragma omp simd
         for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j){
           c1j(j) = 0.5;
           c2j(j) = 0.5;
@@ -195,7 +195,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // coeffcients in x2 for non-uniform or cuvilinear mesh
       // (unnecessary work in case of uniform curvilinear mesh)
       } else {
-#pragma simd
+#pragma omp simd
         for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j){
           Real& dx_jm1 = pmb->pcoord->dx2f(j-1);
           Real& dx_j   = pmb->pcoord->dx2f(j  );
@@ -268,7 +268,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
       // coeffiencients in x3 for uniform Cartesian mesh
       if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
-#pragma simd
+#pragma omp simd
         for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k){
           c1k(k) = 0.5;
           c2k(k) = 0.5;
@@ -281,7 +281,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // coeffcients in x3 for non-uniform or cuvilinear mesh
       // (unnecessary work in case of uniform curvilinear mesh)
       } else {
-#pragma simd
+#pragma omp simd
         for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k){
           Real& dx_km1 = pmb->pcoord->dx3f(k-1);
           Real& dx_k   = pmb->pcoord->dx3f(k  );
