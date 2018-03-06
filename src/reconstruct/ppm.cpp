@@ -276,7 +276,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
 //--- Step 4b. ---------------------------------------------------------------------------
       // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il-1; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -285,12 +285,12 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
             qplus(i) = q(n,i);
           } else { // No extrema detected
             // Overshoot i-1/2,R / i,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_i(i)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_i(i)*dqf_plus(i);
             }
             // Overshoot i+1/2,L / i,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_i(i)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_i(i)*dqf_minus(i);
             }
           }
         }
@@ -569,7 +569,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
 //--- Step 4b. ---------------------------------------------------------------------------
       // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -578,12 +578,12 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
             qplus(i) = q(n,i);
           } else { // No extrema detected
             // Overshoot j-1/2,R / j,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_j(j)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_j(j)*dqf_plus(i);
             }
             // Overshoot j+1/2,L / j,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_j(j)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_j(j)*dqf_minus(i);
             }
           }
         }
@@ -862,7 +862,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
 //--- Step 4b. ---------------------------------------------------------------------------
       // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -871,12 +871,12 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
             qplus(i) = q(n,i);
           } else { // No extrema detected
             // Overshoot k-1/2,R / k,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_k(k)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_k(k)*dqf_plus(i);
             }
             // Overshoot k+1/2,L / k,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_k(k)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_k(k)*dqf_minus(i);
             }
           }
         }
