@@ -379,25 +379,23 @@ Reconstruction::~Reconstruction()
     c6i.DeleteAthenaArray();
     hplus_ratio_i.DeleteAthenaArray();
     hminus_ratio_i.DeleteAthenaArray();
-    if (pmy_block_->block_size.nx2 > 1) {
-      c1j.DeleteAthenaArray();
-      c2j.DeleteAthenaArray();
-      c3j.DeleteAthenaArray();
-      c4j.DeleteAthenaArray();
-      c5j.DeleteAthenaArray();
-      c6j.DeleteAthenaArray();
-      hplus_ratio_j.DeleteAthenaArray();
-      hminus_ratio_j.DeleteAthenaArray();
-    }
-    if (pmy_block_->block_size.nx3 > 1) {
-      c1k.DeleteAthenaArray();
-      c2k.DeleteAthenaArray();
-      c3k.DeleteAthenaArray();
-      c4k.DeleteAthenaArray();
-      c5k.DeleteAthenaArray();
-      c6k.DeleteAthenaArray();
-      hplus_ratio_k.DeleteAthenaArray();
-      hminus_ratio_k.DeleteAthenaArray();
-    }
+
+    c1j.DeleteAthenaArray();
+    c2j.DeleteAthenaArray();
+    c3j.DeleteAthenaArray();
+    c4j.DeleteAthenaArray();
+    c5j.DeleteAthenaArray();
+    c6j.DeleteAthenaArray();
+    hplus_ratio_j.DeleteAthenaArray();
+    hminus_ratio_j.DeleteAthenaArray();
+
+    c1k.DeleteAthenaArray();
+    c2k.DeleteAthenaArray();
+    c3k.DeleteAthenaArray();
+    c4k.DeleteAthenaArray();
+    c5k.DeleteAthenaArray();
+    c6k.DeleteAthenaArray();
+    hplus_ratio_k.DeleteAthenaArray();
+    hminus_ratio_k.DeleteAthenaArray();
   }
 }
