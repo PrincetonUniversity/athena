@@ -147,8 +147,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x1rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma simd
         for (int i=il-1; i<=iu+1; ++i) {
@@ -196,7 +196,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il-1; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_im1(n,i)));
@@ -223,8 +223,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x1rat == 1.0) {
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
         // #pragma simd // poor vectorization efficiency
         for (int i=il-1; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -275,7 +275,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
       // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il-1; i<=iu; ++i) {
@@ -440,8 +440,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x2rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->block_size.x2rat == 1.0  && COORDINATE_SYSTEM == "cartesian") {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma simd
         for (int i=il; i<=iu; ++i) {
@@ -489,7 +489,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_jm1(n,i)));
@@ -516,8 +516,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x2rat == 1.0) {
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->block_size.x2rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
         // #pragma simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -568,7 +568,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
       // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {
@@ -733,8 +733,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x3rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma simd
         for (int i=il; i<=iu; ++i) {
@@ -782,7 +782,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_km1(n,i)));
@@ -809,8 +809,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x3rat == 1.0) {
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
         // #pragma simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -861,7 +861,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
       // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {

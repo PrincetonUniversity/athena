@@ -95,8 +95,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     hplus_ratio_i.NewAthenaArray(ncells1);
     hminus_ratio_i.NewAthenaArray(ncells1);
 
-    // coeffiencients in x1 for uniform mesh
-    if (pmb->block_size.x1rat == 1.0) {
+    // coeffiencients in x1 for uniform Cartesian mesh
+    if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
 #pragma simd
       for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i){
         c1i(i) = 0.5;
@@ -107,7 +107,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
         c6i(i) = -1.0/6.0;
       }
 
-    // coeffcients in x1 for non-uniform mesh
+    // coeffcients in x1 for non-uniform or cuvilinear mesh
+    // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma simd
       for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i){
@@ -179,8 +180,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       hplus_ratio_j.NewAthenaArray(ncells2);
       hminus_ratio_j.NewAthenaArray(ncells2);
 
-      // coeffiencients in x2 for uniform mesh
-      if (pmb->block_size.x2rat == 1.0) {
+      // coeffiencients in x2 for uniform Cartesian mesh
+      if (pmb->block_size.x2rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
 #pragma simd
         for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j){
           c1j(j) = 0.5;
@@ -191,7 +192,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
           c6j(j) = -1.0/6.0;
         }
 
-      // coeffcients in x2 for non-uniform mesh
+      // coeffcients in x2 for non-uniform or cuvilinear mesh
+      // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma simd
         for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j){
@@ -264,8 +266,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       hplus_ratio_k.NewAthenaArray(ncells3);
       hminus_ratio_k.NewAthenaArray(ncells3);
 
-      // coeffiencients in x3 for uniform mesh
-      if (pmb->block_size.x3rat == 1.0) {
+      // coeffiencients in x3 for uniform Cartesian mesh
+      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
 #pragma simd
         for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k){
           c1k(k) = 0.5;
@@ -276,7 +278,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
           c6k(k) = -1.0/6.0;
         }
 
-      // coeffcients in x3 for non-uniform mesh
+      // coeffcients in x3 for non-uniform or cuvilinear mesh
+      // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma simd
         for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k){
