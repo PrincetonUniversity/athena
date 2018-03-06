@@ -437,8 +437,8 @@ if args['fft']:
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
   if args['hdf5_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
-    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['hdf5_path']
+    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['hdf5_path']
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
