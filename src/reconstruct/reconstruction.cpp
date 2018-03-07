@@ -27,6 +27,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
   // read and set type of spatial reconstruction
   characteristic_reconstruction = false;
+  uniform_limiter = true;
   std::string input_recon = pin->GetOrAddString("time","xorder","2");
   if (input_recon == "1") {
     xorder = 1;
