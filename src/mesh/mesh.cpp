@@ -1031,9 +1031,27 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg)
 {
   std::stringstream msg;
-  if(dir<0 || dir>3) {
+  if(dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X1DIR && mesh_size.x1rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x1rat = " << mesh_size.x1rat <<
+        " must be negative for user-defined mesh generator in X1DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X2DIR && mesh_size.x2rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x2rat = " << mesh_size.x2rat <<
+        " must be negative for user-defined mesh generator in X2DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X3DIR && mesh_size.x3rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x3rat = " << mesh_size.x3rat <<
+        " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   use_meshgen_fn_[dir]=true;
