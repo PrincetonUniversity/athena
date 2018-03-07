@@ -156,25 +156,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh","x2rat",1.0);
   block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
 
-  if (std::abs(mesh_size.x1rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x1rat <= 1.1, x1rat="
-        << mesh_size.x1rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x2rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x2rat <= 1.1, x2rat="
-        << mesh_size.x2rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x3rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x3rat <= 1.1, x3rat="
-        << mesh_size.x3rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-
   // read BC flags for each of the 6 boundaries in turn.
   mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
   mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
