@@ -148,7 +148,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
 //--- Step 2a. ---------------------------------------------------------------------------
       // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-      if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il-1; i<=iu+1; ++i) {
@@ -224,7 +224,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
 //--- Step 4a. ---------------------------------------------------------------------------
       // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // #pragma omp simd // poor vectorization efficiency
         for (int i=il-1; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -441,7 +441,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
 //--- Step 2a. ---------------------------------------------------------------------------
       // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-      if (pmb->block_size.x2rat == 1.0  && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -517,7 +517,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
 //--- Step 4a. ---------------------------------------------------------------------------
       // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x2rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -734,7 +734,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
 //--- Step 2a. ---------------------------------------------------------------------------
       // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -810,7 +810,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
 //--- Step 4a. ---------------------------------------------------------------------------
       // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->precon->uniform_limiter) {
         // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);

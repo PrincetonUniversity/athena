@@ -28,6 +28,7 @@ public:
   // order and type of reconstruction algorithm
   int xorder;   // order of hydro reconstruction
   bool characteristic_reconstruction;  // TRUE for characteristic recon
+  bool uniform_limiter; // TRUE to use the PLM or PPM limiter option w/o coordinate terms
   AthenaArray<Real> c1i,c2i,c3i,c4i,c5i,c6i;  // coefficients for PPM in x1
   AthenaArray<Real> hplus_ratio_i, hminus_ratio_i; // for curvilinear PPMx1
   AthenaArray<Real> c1j,c2j,c3j,c4j,c5j,c6j;  // coefficients for PPM in x2
