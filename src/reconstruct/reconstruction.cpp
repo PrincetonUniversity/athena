@@ -27,7 +27,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
   // read and set type of spatial reconstruction
   characteristic_reconstruction = false;
-  uniform_limiter = true;
+  uniform_limiter[0] = true;
+  uniform_limiter[1] = true;
+  uniform_limiter[2] = true;
   std::string input_recon = pin->GetOrAddString("time","xorder","2");
   if (input_recon == "1") {
     xorder = 1;
@@ -56,6 +58,24 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
         NGHOST << std::endl << "Reconfigure with --nghost=XXX with XXX > 2" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+
+  // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
+  if ((COORDINATE_SYSTEM == "cylindrical") || (COORDINATE_SYSTEM == "spherical_polar")) {
+    // curvilinear: all directions, regardless of non/uniformity
+    uniform_limiter[0]=false;
+    uniform_limiter[1]=false;
+    uniform_limiter[2]=false;
+  }
+  // nonuniform geometric spacing or user-defined MeshGenerator, for all coordinate
+  // systems, use nonuniform limiter (non-curvilinear will default to Cartesian factors)
+  if (pmb->block_size.x1rat != 1.0)
+    uniform_limiter[0]=false;
+  if (pmb->block_size.x2rat != 1.0)
+    uniform_limiter[1]=false;
+  if (pmb->block_size.x3rat != 1.0)
+    uniform_limiter[2]=false;
+  // uniform cartesian,minkowski,sinusoidal,tilted,schwarzschild,kerr-schild,gr_user
+  // will use first PLM/PPM limiter without any coordinate terms
 
   // Allocate memory for scratch arrays used in PLM and PPM
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
@@ -97,7 +117,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     hminus_ratio_i.NewAthenaArray(ncells1);
 
     // coeffiencients in x1 for uniform Cartesian mesh
-    if (pmb->block_size.x1rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+    if (uniform_limiter[0]){
 #pragma omp simd
       for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i){
         c1i(i) = 0.5;
@@ -183,7 +203,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       hminus_ratio_j.NewAthenaArray(ncells2);
 
       // coeffiencients in x2 for uniform Cartesian mesh
-      if (pmb->block_size.x2rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (uniform_limiter[1]) {
 #pragma omp simd
         for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j){
           c1j(j) = 0.5;
@@ -261,7 +281,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       hminus_ratio_k.NewAthenaArray(ncells3);
 
       // coeffiencients in x3 for uniform Cartesian mesh
-      if (pmb->block_size.x3rat == 1.0 && COORDINATE_SYSTEM == "cartesian") {
+      if (uniform_limiter[2]) {
 #pragma omp simd
         for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k){
           c1k(k) = 0.5;
