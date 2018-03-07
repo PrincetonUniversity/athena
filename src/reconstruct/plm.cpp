@@ -70,7 +70,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     }
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->precon->uniform_limiter[0]) {
+    if (pmb->precon->uniform_limiter[X1DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il-1; i<=iu; ++i){
@@ -175,7 +175,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->precon->uniform_limiter[1]) {
+    if (pmb->precon->uniform_limiter[X2DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il; i<=iu; ++i){
@@ -279,7 +279,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->precon->uniform_limiter[2]) {
+    if (pmb->precon->uniform_limiter[X3DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
         for (int i=il; i<=iu; ++i){
