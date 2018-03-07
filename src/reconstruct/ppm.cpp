@@ -870,6 +870,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
             qminus(i) = q(n,i);
             qplus(i) = q(n,i);
           } else { // No extrema detected
+            // could delete hplus_ratio_k() arrays for curvilinear PPMx3
             // Overshoot k-1/2,R / k,(-) state
             if (fabs(dqf_minus(i)) >= prec->hplus_ratio_k(k)*fabs(dqf_plus(i))) {
               qminus(i) = q(n,i) - prec->hplus_ratio_k(k)*dqf_plus(i);

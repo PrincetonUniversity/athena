@@ -134,36 +134,37 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       }
       // Compute curvilinear geometric factors for limiter (Mignone eq 48)
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i){
-        Real h_plus, h_minus;
-        Real& dx_i   = pmb->pcoord->dx1f(i);
-        Real& xv_i   = pmb->pcoord->x1v(i);
-        if (COORDINATE_SYSTEM == "cartesian") {
-          // h_plus = 3.0;
-          // h_minus = 3.0;
-          // Ratios are both =2 for Cartesian coords, as in original PPM overshoot limiter
-          hplus_ratio_i(i) = 2.0;
-          hminus_ratio_i(i) = 2.0;
-        }
-        else {
+        if ((COORDINATE_SYSTEM == "cylindrical") ||
+            (COORDINATE_SYSTEM == "spherical_polar")) {
+          Real h_plus, h_minus;
+          Real& dx_i   = pmb->pcoord->dx1f(i);
+          Real& xv_i   = pmb->pcoord->x1v(i);
           if (COORDINATE_SYSTEM == "cylindrical") {
-            // radial coordinate
+            // cylindrical radial coordinate
             h_plus = 3.0 + dx_i/(2.0*xv_i);
             h_minus = 3.0 - dx_i/(2.0*xv_i);
           }
           else if (COORDINATE_SYSTEM == "spherical_polar"){
-            // radial coordinate
+            // spherical radial coordinate
             h_plus = 3.0 + (2.0*dx_i*(10.0*xv_i + dx_i))/(20.0*SQR(xv_i) + SQR(dx_i));
             h_minus = 3.0 + (2.0*dx_i*(-10.0*xv_i + dx_i))/(20.0*SQR(xv_i) + SQR(dx_i));
           }
-          else {
-            std:: stringstream msg;
-            msg << "### FATAL ERROR in function [Reconstruction constructor]"
-                << std::endl << "unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM
-                << " for PPM limiter" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-          }
+          // else {
+          //   std:: stringstream msg;
+          //   msg << "### FATAL ERROR in function [Reconstruction constructor]"
+          //       << std::endl << "unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM
+          //       << " for PPM limiter" << std::endl;
+          //   throw std::runtime_error(msg.str().c_str());
+          // }
           hplus_ratio_i(i) = (h_plus + 1.0)/(h_minus - 1.0);
           hminus_ratio_i(i) = (h_minus + 1.0)/(h_plus - 1.0);
+        }
+        else { // Cartesian, SR, GR
+          // h_plus = 3.0;
+          // h_minus = 3.0;
+          // Ratios are = 2 for Cartesian coords, as in original PPM overshoot limiter
+          hplus_ratio_i(i) = 2.0;
+          hminus_ratio_i(i) = 2.0;
         }
       }
     }
@@ -219,36 +220,28 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
         for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j){
-          Real h_plus, h_minus;
-          Real& dx_j   = pmb->pcoord->dx2f(j);
-          Real& xv_j   = pmb->pcoord->x2v(j);
-          if (COORDINATE_SYSTEM == "cartesian") {
-            // h_plus = 3.0;
-            // h_minus = 3.0;
-            // Ratios are both =2 for Cartesian coords, as in orig PPM overshoot limiter
-            hplus_ratio_j(j) = 2.0;
-            hminus_ratio_j(j) = 2.0;
-          }
-          else {
-            if (COORDINATE_SYSTEM == "cylindrical") {
-              // radial coordinate
-              h_plus = 3.0 + dx_j/(2.0*xv_j);
-              h_minus = 3.0 - dx_j/(2.0*xv_j);
-            }
-            else if (COORDINATE_SYSTEM == "spherical_polar"){
-              // radial coordinate
-              h_plus = 3.0 + (2.0*dx_j*(10.0*xv_j + dx_j))/(20.0*SQR(xv_j) + SQR(dx_j));
-              h_minus = 3.0 + (2.0*dx_j*(-10.0*xv_j + dx_j))/(20.0*SQR(xv_j) + SQR(dx_j));
-            }
-            else {
-              std:: stringstream msg;
-              msg << "### FATAL ERROR in function [Reconstruction constructor]"
-                  << std::endl << "unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM
-                  << " for PPM limiter" << std::endl;
-              throw std::runtime_error(msg.str().c_str());
-            }
+          // corrections to PPMx2 only for spherical polar coordinates
+          if (COORDINATE_SYSTEM == "spherical_polar") {
+            // x2 = theta polar coordinate adjustment
+            Real h_plus, h_minus;
+            Real& dx_j   = pmb->pcoord->dx2f(j);
+            Real& xf_j   = pmb->pcoord->x2f(j);
+            Real& xf_jp1   = pmb->pcoord->x2f(j+1);
+            Real dmu = cos(xf_j) - cos(xf_jp1);
+            Real dmu_tilde = sin(xf_j) - sin(xf_jp1);
+            h_plus = (dx_j*(dmu_tilde + dx_j*cos(xf_jp1)))/(
+                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
+            h_minus = -(dx_j*(dmu_tilde + dx_j*cos(xf_j)))/(
+                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
             hplus_ratio_j(j) = (h_plus + 1.0)/(h_minus - 1.0);
             hminus_ratio_j(j) = (h_minus + 1.0)/(h_plus - 1.0);
+          }
+          else {
+            // h_plus = 3.0;
+            // h_minus = 3.0;
+            // Ratios are both = 2, as in orig PPM overshoot limiter
+            hplus_ratio_j(j) = 2.0;
+            hminus_ratio_j(j) = 2.0;
           }
         }
       }
@@ -304,38 +297,13 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
           }
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
+        // No corrections in x3 for the built-in Newtonian coordinate systems
         for (int k=(pmb->ks)-1; k<=(pmb->ke)+1; ++k){
-          Real h_plus, h_minus;
-          Real& dx_k   = pmb->pcoord->dx2f(k);
-          Real& xv_k   = pmb->pcoord->x2v(k);
-          if (COORDINATE_SYSTEM == "cartesian") {
-            // h_plus = 3.0;
-            // h_minus = 3.0;
-            // Ratios are both =2 for Cartesian coords, as in orig PPM overshoot limiter
-            hplus_ratio_k(k) = 2.0;
-            hminus_ratio_k(k) = 2.0;
-          }
-          else {
-            if (COORDINATE_SYSTEM == "cylindrical") {
-              // radial coordinate
-              h_plus = 3.0 + dx_k/(2.0*xv_k);
-              h_minus = 3.0 - dx_k/(2.0*xv_k);
-            }
-            else if (COORDINATE_SYSTEM == "spherical_polar"){
-              // radial coordinate
-              h_plus = 3.0 + (2.0*dx_k*(10.0*xv_k + dx_k))/(20.0*SQR(xv_k) + SQR(dx_k));
-              h_minus = 3.0 + (2.0*dx_k*(-10.0*xv_k + dx_k))/(20.0*SQR(xv_k) + SQR(dx_k));
-            }
-            else {
-              std:: stringstream msg;
-              msg << "### FATAL ERROR in function [Reconstruction constructor]"
-                  << std::endl << "unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM
-                  << " for PPM limiter" << std::endl;
-              throw std::runtime_error(msg.str().c_str());
-            }
-            hplus_ratio_k(k) = (h_plus + 1.0)/(h_minus - 1.0);
-            hminus_ratio_k(k) = (h_minus + 1.0)/(h_plus - 1.0);
-          }
+          // h_plus = 3.0;
+          // h_minus = 3.0;
+          // Ratios are both = 2 for Cartesian and all curviliniear coords
+          hplus_ratio_k(k) = 2.0;
+          hminus_ratio_k(k) = 2.0;
         }
       }
     }
