@@ -183,14 +183,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // (1/5)amp/sqrt(gamma)
         rval = amp*(ran2(&iseed) - 0.5);
         rvx = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
+        //rvx = 0.4*rval*sqrt(pres/den);
         SumRvx += rvx;
 
         rval = amp*(ran2(&iseed) - 0.5);
         rvy = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
-        SumRvy += rvz;
+        //rvy = 0.4*rval*sqrt(pres/den);
+        SumRvy += rvy;
 
         rval = amp*(ran2(&iseed) - 0.5);
         rvz = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
+        //rvz = 0.4*rval*sqrt(pres/den);
         SumRvz += rvz;
       }
       if (ipert == 2) {
