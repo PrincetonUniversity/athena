@@ -30,7 +30,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
 // acceleration in 1-direction
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real dx1 = pmb->pcoord->dx1v(i);
           Real dx2 = pmb->pcoord->dx2v(j);
@@ -50,7 +50,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
       // acceleration in 2-direction
       for (int k=pmb->ks; k<=pmb->ke; ++k) {
         for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real dx1 = pmb->pcoord->dx1v(i);
             Real dx2 = pmb->pcoord->dx2v(j);
@@ -70,7 +70,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
       // acceleration in 3-direction
       for (int k=pmb->ks; k<=pmb->ke; ++k) {
         for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real dx1 = pmb->pcoord->dx1v(i);
             Real dx2 = pmb->pcoord->dx2v(j);

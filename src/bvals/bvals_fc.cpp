@@ -350,7 +350,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x1f(k,j,i)=sign*buf[p++];
       }
@@ -376,7 +376,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x2f(k,j,i)=sign*buf[p++];
       }
@@ -385,7 +385,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
   else
     BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
-#pragma simd
+#pragma omp simd
     for (int i=si; i<=ei; ++i)
       dst.x2f(sk,sj+1,i)=dst.x2f(sk,sj,i);
   }
@@ -407,7 +407,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x3f(k,j,i)=sign*buf[p++];
       }
@@ -417,7 +417,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=si; i<=ei; ++i)
         dst.x3f(sk+1,j,i)=dst.x3f(sk,j,i);
     }
@@ -470,7 +470,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
       }
@@ -502,7 +502,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
       }
@@ -511,7 +511,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else {
     BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
     if(pmb->block_size.nx2 == 1) { // 1D
-#pragma simd
+#pragma omp simd
       for (int i=si; i<=ei; ++i)
         pmr->coarse_b_.x2f(sk,sj+1,i) = pmr->coarse_b_.x2f(sk,sj,i);
     }
@@ -542,7 +542,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
       }
@@ -621,7 +621,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x1f(k,j,i) = sign*buf[p++];
       }
@@ -664,7 +664,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x2f(k,j,i) = sign*buf[p++];
       }
@@ -673,7 +673,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   else
     BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
-#pragma simd
+#pragma omp simd
     for (int i=si; i<=ei; ++i)
       dst.x2f(sk,sj+1,i)=dst.x2f(sk,sj,i);
   }
@@ -720,7 +720,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
     Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-#pragma simd
+#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst.x3f(k,j,i) = sign*buf[p++];
       }
@@ -730,7 +730,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=si; i<=ei; ++i)
         dst.x3f(sk+1,j,i)=dst.x3f(sk,j,i);
     }

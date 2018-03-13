@@ -50,7 +50,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
@@ -98,10 +98,10 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  #pragma simd
+  #pragma omp simd
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
-    //#pragma simd
+    //#pragma omp simd
     #pragma novector
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);

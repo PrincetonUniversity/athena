@@ -142,7 +142,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
-#pragma simd
+#pragma omp simd
     for (int i=il-ng; i<=iu+ng; ++i){
       Real rm = x1f(i  );
       Real rp = x1f(i+1);
@@ -166,7 +166,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_area1_i_(iu+ng+1) = x1f(iu+ng+1)*x1f(iu+ng+1);
 
     if (pmb->block_size.nx2 > 1) {
-#pragma simd
+#pragma omp simd
       for (int j=jl-ng; j<=ju+ng; ++j){
         Real sm = fabs(sin(x2f(j  )));
         Real sp = fabs(sin(x2f(j+1)));
@@ -247,7 +247,7 @@ SphericalPolar::~SphericalPolar()
 void SphericalPolar::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // length2 = r d(theta)
     len(i) = x1f(i)*dx2f(j);
@@ -260,7 +260,7 @@ void SphericalPolar::Edge2Length(const int k, const int j, const int il, const i
 void SphericalPolar::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // length3 = r sin(theta) d(phi)
     len(i) = x1f(i)*coord_area2_j_(j)*dx3f(k);
@@ -287,7 +287,7 @@ Real SphericalPolar::GetEdge3Length(const int k, const int j, const int i)
 void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx2)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx2(i) = x1v(i)*dx2f(j);
   }
@@ -297,7 +297,7 @@ void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const 
 void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx3)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
   }
@@ -310,7 +310,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
 void SphericalPolar::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
     area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k); 
@@ -321,7 +321,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
 void SphericalPolar::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
     area(i) = coord_area2_i_(i)*coord_area2_j_(j)*dx3f(k);
@@ -332,7 +332,7 @@ void SphericalPolar::Face2Area(const int k, const int j, const int il, const int
 void SphericalPolar::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area3 = dr r dtheta = d(r^2/2) dtheta
     area(i) = coord_area3_i_(i)*dx2f(j);
@@ -364,7 +364,7 @@ Real SphericalPolar::GetFace3Area(const int k, const int j, const int i)
 void SphericalPolar::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
     vol(i) = coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
@@ -392,7 +392,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
         // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
         Real m_ii = prim(IDN,k,j,i)*(SQR(prim(IM2,k,j,i)) + SQR(prim(IM3,k,j,i)));

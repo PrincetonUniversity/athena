@@ -31,11 +31,11 @@
 TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
  : FFTDriver(pm, pin)
 {
-  
-  rseed = pin->GetOrAddInteger("problem","rseed",-1); // seed for random number. 
 
-  nlow = pin->GetOrAddInteger("problem","nlow",0); // cut-off wavenumber 
-  nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2); // cut-off wavenumber 
+  rseed = pin->GetOrAddInteger("problem","rseed",-1); // seed for random number.
+
+  nlow = pin->GetOrAddInteger("problem","nlow",0); // cut-off wavenumber
+  nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2); // cut-off wavenumber
   expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
   dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
   dtdrive = pin->GetReal("problem","dtdrive"); // driving interval
@@ -136,7 +136,7 @@ void TurbulenceDriver::Generate(void)
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp)
-//  \brief Generate Power spectrum in Fourier space with power-law 
+//  \brief Generate Power spectrum in Fourier space with power-law
 
 void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
   int i,j,k;
@@ -145,10 +145,10 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
   int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
-// set random amplitudes with gaussian deviation 
-  for(k=0;k<knx3;k++){ 
-    for(j=0;j<knx2;j++){ 
-      for(i=0;i<knx1;i++){ 
+// set random amplitudes with gaussian deviation
+  for(k=0;k<knx3;k++){
+    for(j=0;j<knx2;j++){
+      for(i=0;i<knx1;i++){
         q1=ran2(&rseed);
         q2=ran2(&rseed);
         q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
@@ -160,21 +160,21 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
     }
   }
 
-// set power spectrum: only power-law 
-  for(k=0;k<knx3;k++){ 
-    for(j=0;j<knx2;j++){ 
-      for(i=0;i<knx1;i++){ 
+// set power spectrum: only power-law
+  for(k=0;k<knx3;k++){
+    for(j=0;j<knx2;j++){
+      for(i=0;i<knx1;i++){
         Real nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
         Real ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
         Real nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
-        Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz); 
+        Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
         Real kx=nx*pfb->dkx[0];
         Real ky=ny*pfb->dkx[1];
         Real kz=nz*pfb->dkx[2];
-        Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz); 
+        Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
         long int gidx = pfb->GetGlobalIndex(i,j,k);
-        if(gidx == 0){ 
+        if(gidx == 0){
           pcoeff = 0.0;
         } else {
           if ((nmag > nlow) && (nmag < nhigh)) {
@@ -229,16 +229,16 @@ void TurbulenceDriver::Perturb(Real dt){
   }
 
 #ifdef MPI_PARALLEL
-// Sum the perturbations over all processors 
+// Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
-    msg << "[normalize]: MPI_Allreduce error = " 
+    msg << "[normalize]: MPI_Allreduce error = "
 	<< mpierr << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   // Ask Changgoo about this
   for (int n=0;n<4;n++) m[n]=gm[n];
-#endif // MPI_PARALLEL 
+#endif // MPI_PARALLEL
 
   for(int nb=0;nb<nmb;nb++){
     for(int k=ks;k<=ke;k++){
@@ -252,7 +252,7 @@ void TurbulenceDriver::Perturb(Real dt){
     }
   }
 
-  // Calculate unscaled energy of perturbations 
+  // Calculate unscaled energy of perturbations
   m[0] = 0.0;
   m[1] = 0.0;
   for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
@@ -277,24 +277,24 @@ void TurbulenceDriver::Perturb(Real dt){
   }
 
 #ifdef MPI_PARALLEL
-  // Sum the perturbations over all processors 
+  // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
-    msg << "[normalize]: MPI_Allreduce error = " 
+    msg << "[normalize]: MPI_Allreduce error = "
 	<< mpierr << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   //  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
   m[0] = gm[0];  m[1] = gm[1];
-#endif // MPI_PARALLEL 
+#endif // MPI_PARALLEL
 
-  // Rescale to give the correct energy injection rate 
+  // Rescale to give the correct energy injection rate
   if (pm->turb_flag == 2) {
-    // driven turbulence 
+    // driven turbulence
     de = dedt*dt;
     std::cout << "driven turbulence with " << de << std::endl;
   } else {
-    // decaying turbulence (all in one shot) 
+    // decaying turbulence (all in one shot)
     de = dedt;
     std::cout << "decaying turbulence with " << de << std::endl;
   }
@@ -309,7 +309,7 @@ void TurbulenceDriver::Perturb(Real dt){
 
   if (std::isnan(s)) std::cout << "[perturb]: s is NaN!" << std::endl;
 
-  // Apply momentum pertubations 
+  // Apply momentum pertubations
   for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if(pmb != NULL){
@@ -325,7 +325,7 @@ void TurbulenceDriver::Perturb(Real dt){
             M3 = pmb->phydro->u(IM3,k,j,i);
 
             if (NON_BAROTROPIC_EOS) {
-              pmb->phydro->u(IEN,k,j,i) += s*(M1*v1+M2*v2+M3*v3) 
+              pmb->phydro->u(IEN,k,j,i) += s*(M1*v1+M2*v2+M3*v3)
                                          + 0.5*s*s*den*(SQR(v1)+SQR(v2)+SQR(v3));
             }
             pmb->phydro->u(IM1,k,j,i) += s*den*v1;
@@ -349,5 +349,3 @@ long int TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 {
   return (double)((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
 }
-
-

@@ -123,7 +123,7 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
   for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je; ++j){
     // calc cell centered fields first
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         const Real& b1_i   = bf.x1f(k,j,i  );
         const Real& b1_ip1 = bf.x1f(k,j,i+1);

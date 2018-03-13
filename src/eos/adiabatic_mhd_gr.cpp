@@ -561,7 +561,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
-      #pragma simd
+      #pragma omp simd
       for (int i = is; i <= ie; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }
@@ -674,7 +674,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract primitives

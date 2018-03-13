@@ -363,7 +363,7 @@ void Hydro::CorrectGravityFlux(void)
         pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
         pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
         for (int n=IM1; n<=IM3; ++n) {
-#pragma simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += x2area_p1(i)*(x2gflx(n,k,j+1,i)-x2gflx_old(n,k,j+1,i))
                        - x2area(i)*(x2gflx(n,k,j,i)-x2gflx_old(n,k,j,i));
@@ -376,7 +376,7 @@ void Hydro::CorrectGravityFlux(void)
         pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );
         pmb->pcoord->Face3Area(k+1,j,is,ie,x3area_p1);
         for (int n=IM1; n<=IM3; ++n) {
-#pragma simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += x3area_p1(i)*(x3gflx(n,k+1,j,i)-x3gflx_old(n,k+1,j,i))
                        - x3area(i)*(x3gflx(n,k,j,i)-x3gflx_old(n,k,j,i));

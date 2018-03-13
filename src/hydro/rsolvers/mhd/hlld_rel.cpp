@@ -149,7 +149,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
   }
   #else  // SR; need to populate 1D normal B array
   {
-    #pragma simd
+    #pragma omp simd
     for (int i = il; i <= iu; ++i) {
       bb_normal(i) = bb(k,j,i);
     }
@@ -171,7 +171,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Go through each interface
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract left primitives
@@ -918,7 +918,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract metric
