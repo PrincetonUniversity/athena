@@ -206,7 +206,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 	}
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
-        max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
+        max_err[IDN] = std::max((Real)fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
         Real m = -den*(omega/kwave)*amp*coskx*sinot;
         Real m1 = m*cos_a3*cos_a2;
@@ -216,13 +216,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IM1] += fabs(m1-phydro->u(IM1,k,j,i));
         l1_err[IM2] += fabs(m2-phydro->u(IM2,k,j,i));
         l1_err[IM3] += fabs(m3-phydro->u(IM3,k,j,i));
-        max_err[IM1] = std::max(fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
+        max_err[IM1] = std::max((Real)fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max((Real)fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max((Real)fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0*(1 + gam*amp*sinkx*cosot);///gm1 + 0.5*m*m/den;
           l1_err[IEN] += fabs(e0 - phydro->w(IEN,k,j,i));
-          max_err[IEN] = std::max(fabs(e0 - phydro->w(IEN,k,j,i)),max_err[IEN]);
+          max_err[IEN] = std::max((Real)fabs(e0 - phydro->w(IEN,k,j,i)),max_err[IEN]);
         }
       }
     }}
