@@ -1,5 +1,5 @@
 # Regression test for self-gravity based on linear Jeans instability
-# FFT gravity + no MPI
+# MG gravity + no MPI
 # Runs a linear convergence test checks L1 errors (which
 # are computed by the executable automatically and stored in the temporary file
 # jeans-errors.dat)
