@@ -338,7 +338,7 @@ if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
