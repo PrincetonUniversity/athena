@@ -1,9 +1,9 @@
 # Regression test for self-gravity based on linear Jeans instability
-# FFT gravity + no MPI
-# Runs a linear convergence test checks L1 errors (which
-# are computed by the executable automatically and stored in the temporary file
+# using FFT gravity + no MPI
+
+# Runs a 3D linear Jeans convergence test and checks L1 errors (which are
+# computed by the executable automatically and stored in the temporary file
 # jeans-errors.dat)
-# Roughly 15 second test
 
 # Modules
 import numpy as np
@@ -16,8 +16,6 @@ sys.path.insert(0, '../../vis/python')
 # Prepare Athena++
 def prepare():
   athena.configure('fft',
-#                   'mpi',
-#                   'omp',
       prob='jeans',
       grav='fft'
       )
@@ -41,11 +39,8 @@ def run():
     arguments[1] = 'mesh/nx2='+str(res)
     arguments[2] = 'mesh/nx3='+str(res)
     return arguments
-  #16 might not be good enough
   athena.run('hydro/athinput.jeans_3d', arg_res(32))
   athena.run('hydro/athinput.jeans_3d', arg_res(64))
-  #128 might be too expensive
-  #athena.run('hydro/athinput.jeans_3d', arg_res(128))
 
 # Analyze outputs
 def analyze():
@@ -60,22 +55,26 @@ def analyze():
       data.append([float(val) for val in line.split()])
   print(data)
   result = True
-  #error
+  # error
   for i in range(len(data)):
     if data[i][4] > 1.e-7:
-      print("FFT Gravity Linear Jeans instability error is too large:",32*2**i)
+      print("FFT Gravity Linear Jeans instability error is too large:",
+            data[i][4])
       result = False
-  #compute overall convergence slope
+  # compute overall convergence slope
   gslope = np.log(data[len(data)-1][4]/data[0][4])/np.log(4.0)
-  #convergence to 2nd order, doubling resolution should decrease error by 4.0
+  err_tol = 1.5
+  warn_tol = 1.1
+  # 2nd order convergence: doubling resolution should decrease error by 4.0
   for i in range(len(data)-1):
-    if data[i+1][4] > (1.5*data[i][4]/(4.0)):
-      slope = np.log(data[i+1][4]/data[i][4])/np.log(2.0)
+    slope = np.log(data[i+1][4]/data[i][4])/np.log(2.0)
+    if data[i+1][4] > (err_tol*data[i][4]/(4.0)):
       print("Linear Jeans instability error is not converging at 2nd order")
-      print("Order estimate:",slope,gslope)
+      print("Error tolerance:", err_tol)
+      print("Order estimate:", slope, gslope)
       result = False
-    elif data[i+1][4] > (1.1*data[i][4]/(4.0)):
-      print("WARNING: Linear Jeans instability error is not converging at 2nd order within 1.1")
-  
+    elif data[i+1][4] > (warn_tol*data[i][4]/(4.0)):
+      print("WARNING: Linear Jeans instability error is converging slowly")
+      print("Error tolerance:", warn_tol)
+      print("Order estimate:", slope, gslope)
   return result
-
