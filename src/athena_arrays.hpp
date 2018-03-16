@@ -32,7 +32,10 @@ public:
   void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
   void DeleteAthenaArray();
 
-  // functions to get array dimensions 
+  // public function to (shallow) swap pointers
+  void SwapAthenaArray(AthenaArray<T>& array2);
+
+  // functions to get array dimensions
   int GetDim1() const { return nx1_; }
   int GetDim2() const { return nx2_; }
   int GetDim3() const { return nx3_; }
@@ -295,6 +298,22 @@ void AthenaArray<T>::DeleteAthenaArray()
     pdata_ = NULL;
     scopy_ = true;
   }
-} 
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::SwapAthenaArray()
+//  \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
+// Does not allocate memory for either AthenArray
+// THIS REQUIRES DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED AND HAVE THE SAME
+// SIZES (does not explicitly check either condition)
+
+template<typename T>
+void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
+  // scopy_ is essentially only tracked for correctness of delete[] in DeleteAthenaArray()
+  // cache array1 data ptr
+  T* tmp_pdata_ = pdata_;
+  pdata_ = array2.pdata_;
+  array2.pdata_ = tmp_pdata_;
+}
 
 #endif // ATHENA_ARRAYS_HPP
