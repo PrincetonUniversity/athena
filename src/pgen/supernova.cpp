@@ -47,6 +47,8 @@ int nbomb;   //number of grid point where the energy is injected
 Real global_M_enc; // set the mass to mass interior to inner boundary
 Real last_dt;
 
+Real G; //gravitational constant
+
 //constants
 Real m_amu = 1.67377e-24;
 Real m_p = 1.6726e-24;
@@ -65,24 +67,12 @@ void Outflow_X2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFiel
 
 
 
-void thermal_bomb(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
-             const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
+// void thermal_bomb(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
+//              const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+// {
 
-    Real volume;
-    for (int k=pmb->ks; k<=pmb->ke; ++k) {
-        for (int j=pmb->js; j<=pmb->je; ++j) {
-            for (int i=pmb->is; i<=pmb->is+nbomb; ++i) {
-                if (time <= tbomb)
-                {
-                volume = pmb->pcoord->GetCellVolume(k, j, i);
-                std::cout << cons(IEN,k,j,i) << "," << dt*efin/(volume*tbomb*nbomb) << '\n';
-                cons(IEN,k,j,i) += dt*efin/(volume*tbomb*nbomb);
-                }
-            }
-        }
-    }
-}
+
+// }
 
 
 void Newtonian( MeshBlock *pmb, const Real time, const Real dt,
@@ -121,6 +111,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
     
     mdot = pin->GetReal("problem","mdot");
+    G = pin->GetReal("problem","G");
     
     int number_of_lines = 0;
     std::string line;
@@ -245,8 +236,9 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
         Real rho = phydro->u(IDN,k,j,i);
         Real rr = pcoord->x1f(i+1); //right face radial coordinate
         Real rl = pcoord->x1f(i); //left face radial coordinate
+        Real rsq = pcoord->x1v(i) * pcoord->x1v(i);
  
-        Real DeltaVol = pcoord->GetCellVolume(k, j, i);
+        Real DeltaVol = 4. * PI * rsq * pcoord->dx1v(i);
         Real DeltaM = rho * DeltaVol;
         Real phil = -G * M_enc/rl;
         Real phir = -G * (M_enc+DeltaM)/rr;
@@ -254,8 +246,6 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
          
         //                                dPhi / dr
         Real src = - last_dt * rho * G * M_enc / (pcoord->x1v(i)*pcoord->x1v(i));
-        phydro->u(IM1,k,j,i) += src;
-        phydro->u(IEN,k,j,i) += src * phydro->u(IVX,k,j,i);
 
         user_out_var(0,k,j,i) = G * M_enc / (pcoord->x1v(i)*pcoord->x1v(i));
         user_out_var(1,k,j,i) = M_enc;
@@ -272,7 +262,6 @@ void Newtonian(MeshBlock *pmb, const Real time, const Real dt,
   const AthenaArray<Real> &prim, 
   const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
-  Real G = 6.67428e-8;
   last_dt = dt;
 
   Real M_enc = global_M_enc;
@@ -284,15 +273,17 @@ void Newtonian(MeshBlock *pmb, const Real time, const Real dt,
         Real rho = prim(IDN,k,j,i);
         Real rr = pmb->pcoord->x1f(i+1); //right face radial coordinate
         Real rl = pmb->pcoord->x1f(i); //left face radial coordinate
- 
-        Real DeltaVol = pmb->pcoord->GetCellVolume(k, j, i);
+        Real rsq = pmb->pcoord->x1v(i) * pmb->pcoord->x1v(i);
+        Real DeltaVol = 4. * PI * rsq * pmb->pcoord->dx1v(i);
+
+            //pmb->pcoord->GetCellVolume(k, j, i);
         Real DeltaM = rho * DeltaVol;
         // Real phil = -G * M_enc/rl;
         // Real phir = -G * (M_enc+DeltaM)/rr;
         M_enc += DeltaM;
          
         //                                dPhi / dr
-        Real src = - dt * rho * G * M_enc / (pmb->pcoord->x1v(i)*pmb->pcoord->x1v(i));
+        Real src = - dt * rho * G * M_enc / rsq;
         cons(IM1,k,j,i) += src;
         cons(IEN,k,j,i) += src * prim(IVX,k,j,i);
 
@@ -302,6 +293,20 @@ void Newtonian(MeshBlock *pmb, const Real time, const Real dt,
       }
     }
   }
+
+    Real volume;
+    for (int k=pmb->ks; k<=pmb->ke; ++k) {
+        for (int j=pmb->js; j<=pmb->je; ++j) {
+            for (int i=pmb->is; i<=pmb->is+nbomb; ++i) {
+                if (time <= tbomb)
+                {
+                volume = pmb->pcoord->GetCellVolume(k, j, i);
+                std::cout << cons(IEN,k,j,i) << "," << dt*efin/(volume*tbomb*nbomb) << '\n';
+                cons(IEN,k,j,i) += dt*efin/(volume*tbomb*nbomb);
+                }
+            }
+        }
+    }
 
 }
 

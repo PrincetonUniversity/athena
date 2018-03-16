@@ -65,7 +65,7 @@ pfloor          = 1.0e-12
 profile = s13.0_profile.dat 
 
 nbomb = 20        #number of gridpoints of the bomb
-efin       = 1.0e51    #total energy of the bomb
+efin       = 1.0e10    #total energy of the bomb
 tbomb       = 1.0       #duration of the bomb
 mdot        = 0.1       #mass loss in 1e-5 msol/yr
 M_enc       = 9.160468279766762e+33
