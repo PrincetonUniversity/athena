@@ -337,20 +337,13 @@ void Hydro::CorrectGravityFlux(void)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
-  x1area.InitWithShallowSlice(x1face_area_,2,tid,1);
-  x2area.InitWithShallowSlice(x2face_area_,2,tid,1);
-  x2area_p1.InitWithShallowSlice(x2face_area_p1_,2,tid,1);
-  x3area.InitWithShallowSlice(x3face_area_,2,tid,1);
-  x3area_p1.InitWithShallowSlice(x3face_area_p1_,2,tid,1);
-  vol.InitWithShallowSlice(cell_volume_,2,tid,1);
+  x1area.InitWithShallowCopy(x1face_area_);
+  x2area.InitWithShallowCopy(x2face_area_);
+  x2area_p1.InitWithShallowCopy(x2face_area_p1_);
+  x3area.InitWithShallowCopy(x3face_area_);
+  x3area_p1.InitWithShallowCopy(x3face_area_p1_);
+  vol.InitWithShallowCopy(cell_volume_);
   dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
@@ -370,7 +363,7 @@ void Hydro::CorrectGravityFlux(void)
         pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
         pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
         for (int n=IM1; n<=IM3; ++n) {
-#pragma simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += x2area_p1(i)*(x2gflx(n,k,j+1,i)-x2gflx_old(n,k,j+1,i))
                        - x2area(i)*(x2gflx(n,k,j,i)-x2gflx_old(n,k,j,i));
@@ -383,7 +376,7 @@ void Hydro::CorrectGravityFlux(void)
         pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );
         pmb->pcoord->Face3Area(k+1,j,is,ie,x3area_p1);
         for (int n=IM1; n<=IM3; ++n) {
-#pragma simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += x3area_p1(i)*(x3gflx(n,k+1,j,i)-x3gflx_old(n,k+1,j,i))
                        - x3area(i)*(x3gflx(n,k,j,i)-x3gflx_old(n,k,j,i));
@@ -401,6 +394,5 @@ void Hydro::CorrectGravityFlux(void)
     }
   }
 
-} // end of omp parallel region
   return;
 }

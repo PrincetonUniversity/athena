@@ -276,7 +276,7 @@ Coordinates::~Coordinates()
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     len(i) = dx1f(i);
   }
@@ -288,7 +288,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     len(i) = dx2f(j);
   }
@@ -300,7 +300,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     len(i) = dx3f(k);
   }
@@ -332,7 +332,7 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
 void Coordinates::CenterWidth1(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx1)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx1(i) = dx1f(i);
   }
@@ -342,7 +342,7 @@ void Coordinates::CenterWidth1(const int k, const int j, const int il, const int
 void Coordinates::CenterWidth2(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx2)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx2(i) = dx2f(j);
   }
@@ -352,7 +352,7 @@ void Coordinates::CenterWidth2(const int k, const int j, const int il, const int
 void Coordinates::CenterWidth3(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx3)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx3(i) = dx3f(k);
   }
@@ -422,7 +422,7 @@ Real Coordinates::GetFace3Area(const int k, const int j, const int i)
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // volume = dx dy dz
     Real& vol_i = vol(i);

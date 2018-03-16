@@ -29,9 +29,8 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
     Real phic, phir, phil;
 // acceleration in 1-direction
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
       for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real dx1 = pmb->pcoord->dx1v(i);
           Real dx2 = pmb->pcoord->dx2v(j);
@@ -41,7 +40,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
           phil = 0.5*(pgrav->phi(k,j,i-1)+pgrav->phi(k,j,i  ));
           phir = 0.5*(pgrav->phi(k,j,i  )+pgrav->phi(k,j,i+1));
           // Update momenta and energy with d/dx1 terms
-          cons(IEN,k,j,i) -= 0.5*dtodx1*(flux[X1DIR](IDN,k,j,i  )*(phic - phil) + 
+          cons(IEN,k,j,i) -= dtodx1*(flux[X1DIR](IDN,k,j,i  )*(phic - phil) + 
                                          flux[X1DIR](IDN,k,j,i+1)*(phir - phic));
         }
       }
@@ -50,9 +49,8 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
     if (pmb->block_size.nx2 > 1) {
       // acceleration in 2-direction
       for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
         for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real dx1 = pmb->pcoord->dx1v(i);
             Real dx2 = pmb->pcoord->dx2v(j);
@@ -61,7 +59,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
             phic = pgrav->phi(k,j,i);
             phil = 0.5*(pgrav->phi(k,j-1,i)+pgrav->phi(k,j  ,i));
             phir = 0.5*(pgrav->phi(k,j  ,i)+pgrav->phi(k,j+1,i));
-            cons(IEN,k,j,i) -= 0.5*dtodx2*(flux[X2DIR](IDN,k,j  ,i)*(phic - phil) + 
+            cons(IEN,k,j,i) -= dtodx2*(flux[X2DIR](IDN,k,j  ,i)*(phic - phil) + 
                                            flux[X2DIR](IDN,k,j+1,i)*(phir - phic));
           }
         }
@@ -71,9 +69,8 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
     if (pmb->block_size.nx3 > 1) {
       // acceleration in 3-direction
       for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
         for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real dx1 = pmb->pcoord->dx1v(i);
             Real dx2 = pmb->pcoord->dx2v(j);
@@ -82,7 +79,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
             phic = pgrav->phi(k,j,i);
             phil = 0.5*(pgrav->phi(k-1,j,i)+pgrav->phi(k  ,j,i));
             phir = 0.5*(pgrav->phi(k  ,j,i)+pgrav->phi(k+1,j,i));
-            cons(IEN,k,j,i) -= 0.5*dtodx3*(flux[X3DIR](IDN,k  ,j,i)*(phic - phil) + 
+            cons(IEN,k,j,i) -= dtodx3*(flux[X3DIR](IDN,k  ,j,i)*(phic - phil) + 
                                            flux[X3DIR](IDN,k+1,j,i)*(phir - phic));
           }
         }

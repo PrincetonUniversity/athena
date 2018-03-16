@@ -311,7 +311,15 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
         if len(set(other_locations)) == len(other_locations):  # effective slice
           nx_vals.append(1)
         else:  # nontrivial sum
-          nx_vals.append(2**level)
+          num_blocks_this_dim = 0
+          for level_this_dim,loc_this_dim in zip(levels, logical_locations[:,d]):
+            if level_this_dim <= level:
+              num_blocks_this_dim = max(num_blocks_this_dim, \
+                  (loc_this_dim + 1) * 2 ** (level - level_this_dim))
+            else:
+              num_blocks_this_dim = max(num_blocks_this_dim, \
+                  (loc_this_dim + 1) / 2 ** (level_this_dim - level))
+          nx_vals.append(num_blocks_this_dim)
       elif block_size[d] == 1:  # singleton dimension
         nx_vals.append(1)
       else:  # normal case
@@ -792,17 +800,21 @@ def restrict_like(vals, levels, vols=None):
     level_difference = max_level - level
     stride = 2 ** level_difference
     if nx3 > 1:
-      vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
-      vols_level = np.reshape(vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+      vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride, \
+          nx1/stride, stride))
+      vols_level = \
+          np.reshape(vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
       vals_sum = np.sum(np.sum(np.sum(vals_level, axis=5), axis=3), axis=1)
       vols_sum = np.sum(np.sum(np.sum(vols_level, axis=5), axis=3), axis=1)
-      vals_level = np.repeat(np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1), stride, axis=2)
+      vals_level = np.repeat(np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), \
+          stride, axis=1), stride, axis=2)
     elif nx2 > 1:
       vals_level = np.reshape(vals * vols, (nx2/stride, stride, nx1/stride, stride))
       vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
       vals_sum = np.sum(np.sum(vals_level, axis=3), axis=1)
       vols_sum = np.sum(np.sum(vols_level, axis=3), axis=1)
-      vals_level = np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
+      vals_level = \
+          np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
     else:
       vals_level = np.reshape(vals * vols, (nx1/stride, stride))
       vols_level = np.reshape(vols, (nx1/stride, stride))

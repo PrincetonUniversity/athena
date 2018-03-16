@@ -9,23 +9,25 @@
 # The following options are implememted:
 #   -h  --help        help message
 #   --prob=name       use src/pgen/name.cpp as the problem generator
-#   --coord=choice    use choice as the coordinate system
-#   --eos=choice      use choice as the equation of state
-#   --flux=choice     use choice as the Riemann solver
+#   --coord=xxx       use xxx as the coordinate system
+#   --eos=xxx         use xxx as the equation of state
+#   --flux=xxx        use xxx as the Riemann solver
+#   --nghost=xxx      set NGHOST=xxx
 #   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --grav=choice     use choice as the self-gravity solver
-#   --cxx=choice      use choice as the C++ compiler
+#   --grav=xxx        use xxx as the self-gravity solver
+#   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -81,6 +83,11 @@ parser.add_argument('-eos_table',
     default=False,
     help='enable EOS table')
 
+# --nghost=[value] argument
+parser.add_argument('--nghost',
+    default='2',
+    help='set number of ghost zones')
+
 # -b argument
 parser.add_argument('-b',
     action='store_true',
@@ -110,6 +117,12 @@ parser.add_argument('-debug',
     action='store_true',
     default=False,
     help='enable debug flags; override other compiler options')
+
+# -float argument
+parser.add_argument('-float',
+    action='store_true',
+    default=False,
+    help='enable single precision')
 
 # -mpi argument
 parser.add_argument('-mpi',
@@ -208,10 +221,11 @@ if args['s'] and args['g']:
 if args['t'] and not args['g']:
   raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR')
 if args['g'] and not args['t'] and args['flux'] not in ('llf','hlle'):
-  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for ' + args['flux'])
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for {0}'\
+      .format(args['flux']))
 if args['g'] and args['coord'] in ('cartesian','cylindrical','spherical_polar'):
-  raise SystemExit('### CONFIGURE ERROR: ' \
-      + 'GR cannot be used with ' + args['coord'] + ' coordinates')
+  raise SystemExit('### CONFIGURE ERROR: GR cannot be used with {0} coordinates'\
+      .format(args['coord']))
 if not args['g'] and args['coord'] not in ('cartesian','cylindrical','spherical_polar'):
   raise SystemExit('### CONFIGURE ERROR: ' \
       + args['coord'] + ' coordinates only apply to GR')
@@ -247,6 +261,9 @@ definitions['EOS_TABLE_ENABLED'] = '1' if args['eos_table'] else '0'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
+
+# --nghost=[value] argument
+definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -298,7 +315,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -331,7 +348,7 @@ if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -342,6 +359,13 @@ if args['cxx'] == 'clang++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+
+# -float argument
+if args['float']:
+  definitions['SINGLE_PRECISION_ENABLED'] = '1'
+else:
+  definitions['SINGLE_PRECISION_ENABLED'] = '0'
+
 
 # -debug argument
 if args['debug']:
@@ -360,7 +384,8 @@ else:
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' \
+      or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -412,8 +437,8 @@ if args['fft']:
   definitions['FFT_ENABLED'] = '1'
   definitions['FFT_DEFINE'] = 'FFT'
   if args['fftw_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
-    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(args['fftw_path'])
+    makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['fftw_path'])
   if args['omp']:
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
   if args['mpi']:
@@ -424,9 +449,10 @@ if args['fft']:
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
   if args['hdf5_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
-    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(args['hdf5_path'])
+    makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' \
+      or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
@@ -497,6 +523,7 @@ print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
+print('  Precision:               ' + ('single' if args['float'] else 'double'))
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))

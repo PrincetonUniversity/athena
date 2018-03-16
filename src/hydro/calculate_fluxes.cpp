@@ -30,7 +30,7 @@
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-                            AthenaArray<Real> &bcc, bool first_order)
+                            AthenaArray<Real> &bcc, int order)
 {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
@@ -56,19 +56,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     e2x3.InitWithShallowCopy(pmb->pfield->e2_x3f);
   }
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
-
-  AthenaArray<Real> wl, wr;
+  AthenaArray<Real> wl, wr, dxw;
   wl.InitWithShallowCopy(wl_);
   wr.InitWithShallowCopy(wr_);
-  AthenaArray<Real> dxw;
-  dxw.InitWithShallowSlice(dxw_,2,tid,1);
+  dxw.InitWithShallowCopy(dxw_);
 
 //----------------------------------------------------------------------------------------
 // i-direction
@@ -85,30 +76,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
   // reconstruct L/R states
-  if (first_order) {
-    pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
-    pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
-    pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
-    pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
-    if (NON_BAROTROPIC_EOS) {
-      pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB2,IBY,wl,wr);
-      pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB3,IBZ,wl,wr);
-    }
+  if (order == 1) {
+    pmb->precon->DonorCellX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
+  } else if (order == 2) {
+    pmb->precon->PiecewiseLinearX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
   } else {
-    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
-    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
-    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
-    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
-    if (NON_BAROTROPIC_EOS) {
-      pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB2,IBY,wl,wr);
-      pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB3,IBZ,wl,wr);
-    }
+    pmb->precon->PiecewiseParabolicX1(pmb,kl,ku,jl,ju,is,ie+1,w,bcc,wl,wr);
   }
 
   // compute fluxes, store directly into 3D arrays
@@ -119,16 +92,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
 
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i){
         Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
                       / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-        Real tmp_min = std::min(0.5,v_over_c);
-        w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+        Real tmp_min = std::min((Real)0.5,v_over_c);
+        w_x1f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
       }
     }}
   }
@@ -148,30 +120,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     }
 
     // reconstruct L/R states at j
-    if (first_order) {
-      pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
-      if (NON_BAROTROPIC_EOS) {
-        pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB3,IBY,wl,wr);
-        pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB1,IBZ,wl,wr);
-      }
+    if (order == 1) {
+      pmb->precon->DonorCellX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
+    } else if (order == 2) {
+      pmb->precon->PiecewiseLinearX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
     } else {
-      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
-      if (NON_BAROTROPIC_EOS) {
-        pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB3,IBY,wl,wr);
-        pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB1,IBZ,wl,wr);
-      }
+      pmb->precon->PiecewiseParabolicX2(pmb,kl,ku,js,je+1,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays
@@ -182,15 +136,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
       for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
         pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(0.5,v_over_c);
-          w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+          Real tmp_min = std::min((Real)0.5,v_over_c);
+          w_x2f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
         }
       }}
     }
@@ -207,30 +160,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
     // reconstruct L/R states at k
-    if (first_order) {
-      pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
-      if (NON_BAROTROPIC_EOS) {
-        pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB1,IBY,wl,wr);
-        pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB2,IBZ,wl,wr);
-      }
+    if (order == 1) {
+      pmb->precon->DonorCellX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
+    } else if (order == 2){
+      pmb->precon->PiecewiseLinearX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     } else {
-      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
-      if (NON_BAROTROPIC_EOS) {
-        pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB1,IBY,wl,wr);
-        pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB2,IBZ,wl,wr);
-      }
+      pmb->precon->PiecewiseParabolicX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     }
 
     // compute fluxes, store directly into 3D arrays
@@ -240,22 +175,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma omp for schedule(static)
       for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
         pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(0.5,v_over_c);
-          w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+          Real tmp_min = std::min((Real)0.5,v_over_c);
+          w_x3f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
         }
       }}
     }
   }
-
-} // end of omp parallel region
 
   if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 

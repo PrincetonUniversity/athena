@@ -101,7 +101,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
-      #pragma simd
+      #pragma omp simd
       for (int i = is; i <= ie; ++i) {
 
         // Extract metric
@@ -274,7 +274,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
-      #pragma simd
+      #pragma omp simd
       for (int i = is; i <= ie; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
       }

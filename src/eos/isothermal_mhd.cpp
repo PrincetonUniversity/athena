@@ -53,7 +53,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   // Convert to Primitives
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);
@@ -91,13 +91,9 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
   for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
@@ -119,7 +115,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m3 = w_vz*w_d;
     }
   }}
-}
+
   return;
 }
 

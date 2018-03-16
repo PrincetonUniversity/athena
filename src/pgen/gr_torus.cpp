@@ -362,7 +362,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
                 a_phi_edges(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -383,7 +383,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
                 a_phi_cells(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -441,7 +441,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 }
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
                 Real a_varphi = std::pow(r_vals[p], potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
                 Real dvarphi_dtheta = -sin_psi * sin_phi / SQR(sin_vartheta);
@@ -1371,7 +1371,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
       for (int i = is-NGHOST; i <= is-1; ++i) {
         prim(IDN,k,j,i) = prim(IDN,k,j,is);
         prim(IEN,k,j,i) = prim(IEN,k,j,is);
-        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), 0.0);
+        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), (Real)0.0);
         prim(IM2,k,j,i) = prim(IM2,k,j,is);
         prim(IM3,k,j,i) = prim(IM3,k,j,is);
       }
@@ -1833,7 +1833,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     if (field_config == "vertical") {
       break;
     }
-    Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+    Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
     a_varphi_vals[p] =
         std::pow(r_vals[p], potential_r_pow) * std::pow(rho_cutoff, potential_rho_pow);
     if (a_varphi_vals[p] == 0.0) {

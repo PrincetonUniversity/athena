@@ -129,7 +129,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
-#pragma simd
+#pragma omp simd
     for (int i=il-ng; i<=iu+ng; ++i){
       Real rm = x1f(i  );
       Real rp = x1f(i+1);
@@ -144,7 +144,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // Rf_{i}/R_{i}/Rf_{i}^2
       phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
     }
-#pragma simd
+#pragma omp simd
     for (int i=il-ng; i<=iu+(ng-1); ++i){
        // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
@@ -189,7 +189,7 @@ Cylindrical::~Cylindrical()
 void Cylindrical::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &len)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     len(i) = x1f(i)*dx2f(j);
   }
@@ -210,7 +210,7 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
 void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx2)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     dx2(i) = x1v(i)*dx2f(j);
   }
@@ -223,7 +223,7 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
 void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area1 = r dphi dz 
     area(i) = x1f(i)*dx2f(j)*dx3f(k);
@@ -234,7 +234,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
 void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area3 = dr r dphi = d(r^2/2) dphi
     area(i) = coord_area3_i_(i)*dx2f(j);
@@ -263,7 +263,7 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i)
 void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-#pragma simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i){
     // volume = dr dz r dphi = d(r^2/2) dphi dz
     vol(i) = coord_vol_i_(i)*dx2f(j)*dx3f(k);
@@ -288,9 +288,8 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
         // src_1 = <M_{phi phi}><1/r>
         Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);

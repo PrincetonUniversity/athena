@@ -53,7 +53,6 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
-static Real gm1;
 static Real grav_acc;
 
 //========================================================================================
@@ -87,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   long int iseed = -1;
   Real gamma = peos->GetGamma();
-  gm1 = gamma - 1.0;
+  Real gm1 = gamma - 1.0;
   
   Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);
   Real ky = 2.0*(PI)/(pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min);
@@ -236,18 +235,18 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
       if (n==(IVY)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IVY,k,js-j,i) = -prim(IVY,k,js+j-1,i);  // reflect 2-velocity
         }
       } else if (n==(IPR)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i) 
-             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,k,js-j,i) = prim(n,k,js+j-1,i);
         }
@@ -259,7 +258,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(js-j),i) =  b.x1f(k,(js+j-1),i);
       }
@@ -267,7 +266,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,(js-j),i) = -b.x2f(k,(js+j  ),i);  // reflect 2-field
       }
@@ -275,7 +274,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(js-j),i) =  b.x3f(k,(js+j-1),i);
       }
@@ -296,18 +295,18 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
       if (n==(IVY)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IVY,k,je+j,i) = -prim(IVY,k,je-j+1,i);  // reflect 2-velocity
         }
       } else if (n==(IPR)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i) 
-             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,k,je+j,i) = prim(n,k,je-j+1,i);
         }
@@ -319,7 +318,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(je+j  ),i) =  b.x1f(k,(je-j+1),i);
       }
@@ -327,7 +326,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,(je+j+1),i) = -b.x2f(k,(je-j+1),i);  // reflect 2-field
       }
@@ -335,7 +334,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(je+j  ),i) =  b.x3f(k,(je-j+1),i);
       }
@@ -356,18 +355,18 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
       if (n==(IVZ)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IVZ,ks-k,j,i) = -prim(IVZ,ks+k-1,j,i);  // reflect 3-vel
         }
       } else if (n==(IPR)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i) 
              - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,ks-k,j,i) = prim(n,ks+k-1,j,i);
         }
@@ -379,7 +378,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f((ks-k),j,i) =  b.x1f((ks+k-1),j,i);
       }
@@ -387,7 +386,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x2f((ks-k),j,i) =  b.x2f((ks+k-1),j,i);
       }
@@ -395,7 +394,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f((ks-k),j,i) = -b.x3f((ks+k  ),j,i);  // reflect 3-field
       }
@@ -416,18 +415,18 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
       if (n==(IVZ)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IVZ,ke+k,j,i) = -prim(IVZ,ke-k+1,j,i);  // reflect 3-vel
         }
       } else if (n==(IPR)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,ke+k,j,i) = prim(IPR,ke-k+1,j,i)
              + prim(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,ke+k,j,i) = prim(n,ke-k+1,j,i);
         }
@@ -439,7 +438,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f((ke+k  ),j,i) =  b.x1f((ke-k+1),j,i);
       }
@@ -447,7 +446,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x2f((ke+k  ),j,i) =  b.x2f((ke-k+1),j,i);
       }
@@ -455,7 +454,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f((ke+k+1),j,i) = -b.x3f((ke-k+1),j,i);  // reflect 3-field
       }

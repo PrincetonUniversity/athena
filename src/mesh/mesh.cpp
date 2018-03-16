@@ -46,10 +46,6 @@
 #include <mpi.h>
 #endif
 
-#ifdef OPENMP_PARALLEL
-#include <omp.h>
-#endif
-
 //----------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 
@@ -159,25 +155,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh","x1rat",1.0);
   block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh","x2rat",1.0);
   block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
-
-  if (std::abs(mesh_size.x1rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x1rat <= 1.1, x1rat="
-        << mesh_size.x1rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x2rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x2rat <= 1.1, x2rat="
-        << mesh_size.x2rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x3rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x3rat <= 1.1, x3rat="
-        << mesh_size.x3rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   // read BC flags for each of the 6 boundaries in turn.
   mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
@@ -1008,7 +985,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt,2.0*dt);
+  dt=std::min(min_dt,(Real)(2.0)*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
@@ -1054,9 +1031,27 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg)
 {
   std::stringstream msg;
-  if(dir<0 || dir>3) {
+  if(dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X1DIR && mesh_size.x1rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x1rat = " << mesh_size.x1rat <<
+        " must be negative for user-defined mesh generator in X1DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X2DIR && mesh_size.x2rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x2rat = " << mesh_size.x2rat <<
+        " must be negative for user-defined mesh generator in X2DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X3DIR && mesh_size.x3rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x3rat = " << mesh_size.x3rat <<
+        " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   use_meshgen_fn_[dir]=true;
@@ -1434,6 +1429,13 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
               << "This will cause a poor load balance." << std::endl;
   }
 #endif
+  if((Globals::nranks)*(num_mesh_threads_) > nb) {
+    msg << "### FATAL ERROR in LoadBalance" << std::endl
+        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
+        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   return;
 }
 
