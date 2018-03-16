@@ -779,7 +779,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
     }
     // 2nd registers, including u1, need to be initialized to 0
-    ph->u1 = ph->u;
+    // ph->u1 = ph->u;
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = 0.0;
