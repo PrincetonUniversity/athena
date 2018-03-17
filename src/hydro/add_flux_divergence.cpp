@@ -143,7 +143,7 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
       }
     }
     else { // do not dereference u_in1
-      if (wght[1] != 0.0) {
+      if (wght[0] != 0.0) {
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=ks; k<=ke; ++k) {
             for (int j=js; j<=je; ++j) {
