@@ -677,10 +677,14 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
     // Cache w from previous substep in w1 via AthenaArray deep copy
     // For the second order integrators, this uses t^n and then t^{n+1/2}
     // or t^{n+1} abscissae for the prim_old initial guess in Newton-Raphson solver
-    phydro->w1 = phydro->w;
-    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                    phydro->w, pfield->bcc, pmb->pcoord,
+    AthenaArray<Real> w_old, w_out;
+    w_old.InitWithShallowCopy(phydro->w);
+    w_out.InitWithShallowCopy(phydro->w1);
+    pmb->peos->ConservedToPrimitive(phydro->u, w_old, pfield->b,
+                                    w_out, pfield->bcc, pmb->pcoord,
                                     is, ie, js, je, ks, ke);
+    // swap pointers so that w contains the w_out
+    phydro->w.SwapAthenaArray(phydro->w1);
   }
   else {
     return TASK_FAIL;
