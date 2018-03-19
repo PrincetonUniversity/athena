@@ -772,17 +772,14 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       // pf->b2.x2f = pf->b.x2f;
       // pf->b2.x3f = pf->b.x3f;
 
-      // 2nd registers, including u1, need to be initialized to 0
-      pf->b1.x1f = pf->b.x1f;
-      pf->b1.x2f = pf->b.x2f;
-      pf->b1.x3f = pf->b.x3f;
+      // 2nd set of registers, including b1, need to be initialized to 0
       Real ave_wghts[3];
       ave_wghts[0] = 0.0;
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
     }
-    // 2nd registers, including u1, need to be initialized to 0 each cycle
+    // 2nd set of registers, including u1, need to be initialized to 0 each cycle
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = 0.0;
