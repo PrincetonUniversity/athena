@@ -674,16 +674,16 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if (step <= nsub_steps) {
-    // Cache w from previous substep in w1 via AthenaArray deep copy
-    // For the second order integrators, this uses t^n and then t^{n+1/2}
-    // or t^{n+1} abscissae for the prim_old initial guess in Newton-Raphson solver
-    AthenaArray<Real> w_old, w_out;
-    w_old.InitWithShallowCopy(phydro->w);
-    w_out.InitWithShallowCopy(phydro->w1);
-    pmb->peos->ConservedToPrimitive(phydro->u, w_old, pfield->b,
-                                    w_out, pfield->bcc, pmb->pcoord,
+    // At beginning of this task, phydro->w contains previous substep W(U) output
+    // and phydro->w1 is used as a register to store the current substep output.
+    // For the second order integrators VL2 and RK2, the prim_old initial guess for the
+    // Newton-Raphson solver in GR EOS uses the following abscissae:
+    // step=1: W at t^n and
+    // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
+    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
+                                    phydro->w1, pfield->bcc, pmb->pcoord,
                                     is, ie, js, je, ks, ke);
-    // swap pointers so that w contains the w_out
+    // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
   }
   else {
