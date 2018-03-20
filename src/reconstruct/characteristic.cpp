@@ -36,7 +36,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
@@ -117,7 +117,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
@@ -195,7 +195,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
     // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IEN,i)/w(IDN,i);
         Real a   = sqrt(asq);
@@ -217,7 +217,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
     // Isothermal hydrodynamics ----------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Compute vector-R_matrix product using matrix elements from eq. A3
         Real v_0 = vect(0,i) + vect(3,i);
@@ -258,7 +258,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
@@ -345,7 +345,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
@@ -428,7 +428,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IEN,i)/w(IDN,i);
         Real a   = sqrt(asq);
@@ -450,7 +450,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     // Isothermal hydrodynamics ----------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Compute L_matrix-vector product using matrix elements from eq. A7
         Real v_0 = 0.5*(vect(IDN,i) - w(IDN,i)*vect(ivx,i)/iso_cs);

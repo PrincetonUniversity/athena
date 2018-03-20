@@ -214,10 +214,11 @@ if args['s'] and args['g']:
 if args['t'] and not args['g']:
   raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR')
 if args['g'] and not args['t'] and args['flux'] not in ('llf','hlle'):
-  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for ' + args['flux'])
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for {0}'\
+      .format(args['flux']))
 if args['g'] and args['coord'] in ('cartesian','cylindrical','spherical_polar'):
-  raise SystemExit('### CONFIGURE ERROR: ' \
-      + 'GR cannot be used with ' + args['coord'] + ' coordinates')
+  raise SystemExit('### CONFIGURE ERROR: GR cannot be used with {0} coordinates'\
+      .format(args['coord']))
 if not args['g'] and args['coord'] not in ('cartesian','cylindrical','spherical_polar'):
   raise SystemExit('### CONFIGURE ERROR: ' \
       + args['coord'] + ' coordinates only apply to GR')
@@ -304,7 +305,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -337,7 +338,7 @@ if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -373,7 +374,8 @@ else:
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' \
+      or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -425,8 +427,8 @@ if args['fft']:
   definitions['FFT_ENABLED'] = '1'
   definitions['FFT_DEFINE'] = 'FFT'
   if args['fftw_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
-    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(args['fftw_path'])
+    makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['fftw_path'])
   if args['omp']:
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
   if args['mpi']:
@@ -437,9 +439,10 @@ if args['fft']:
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
   if args['hdf5_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
-    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(args['hdf5_path'])
+    makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' \
+      or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
