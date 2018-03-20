@@ -82,7 +82,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j){
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k,j,i  );
@@ -93,11 +93,11 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         bx(i) = bcc(IB1,k,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         wc(IBY,i) = bcc(IB2,k,j,i);
         q    (IBY,i) = bcc(IB2,k,j,i  );
@@ -106,7 +106,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         q_ip1(IBY,i) = bcc(IB2,k,j,i+1);
         q_ip2(IBY,i) = bcc(IB2,k,j,i+2);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         wc(IBZ,i) = bcc(IB3,k,j,i);
         q    (IBZ,i) = bcc(IB3,k,j,i  );
@@ -147,10 +147,10 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x1rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->precon->uniform_limiter[X1DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu+1; ++i) {
           d2qc_im1(i) = q_im2(n,i) - 2.0*q_im1(n,i) + q    (n,i);
           d2qc    (i) = q_im1(n,i) - 2.0*q    (n,i) + q_ip1(n,i); //(CD eq 85a) (no 1/2)
@@ -158,7 +158,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         }
 
         // i-1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il-1; i<=(iu+1); ++i) {
           Real qa = dph(i) - q_im1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
@@ -174,7 +174,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
           }
         }
         // i+1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il-1; i<=(iu+1); ++i) {
           Real qa = dph_ip1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_ip1(n,i) - dph_ip1(i);   // (CD eq 84b)
@@ -190,13 +190,13 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
           }
         }
 
-#pragma simd
+#pragma omp simd
         for (int i=il-1; i<=iu; ++i) {
           d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_ip1(i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il-1; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_im1(n,i)));
@@ -208,7 +208,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
 
       // Cache Riemann states for both non-/uniform limiters
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         qminus(i) = dph(i  );
         qplus(i) =  dph_ip1(i );
@@ -216,16 +216,16 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
         dqf_plus(i)  = qplus(i) - q(n,i);
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x1rat == 1.0) {
-        // #pragma simd // poor vectorization efficiency
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->precon->uniform_limiter[X1DIR]) {
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il-1; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
           Real qb = (q_ip1(n,i) - q(n,i))*(q(n,i) - q_im1(n,i));
@@ -275,8 +275,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il-1; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -285,12 +285,12 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
             qplus(i) = q(n,i);
           } else { // No extrema detected
             // Overshoot i-1/2,R / i,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_i(i)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_i(i)*dqf_plus(i);
             }
             // Overshoot i+1/2,L / i,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_i(i)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_i(i)*dqf_minus(i);
             }
           }
         }
@@ -299,7 +299,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 //--- Step 5. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [il,iu]
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         ql_iph(n,i ) = qplus(i);
         qr_imh(n,i ) = qminus(i);
@@ -314,7 +314,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
     // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         wl(n,k,j,i+1) = ql_iph(n,i);
         wr(n,k,j,i  ) = qr_imh(n,i);
@@ -375,7 +375,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
   for (int j=jl-1; j<=ju; ++j){
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k,j  ,i);
@@ -386,11 +386,11 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         bx(i) = bcc(IB2,k,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(IBY,i) = bcc(IB3,k,j,i);
         q    (IBY,i) = bcc(IB3,k,j  ,i);
@@ -399,7 +399,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         q_jp1(IBY,i) = bcc(IB3,k,j+1,i);
         q_jp2(IBY,i) = bcc(IB3,k,j+2,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(IBZ,i) = bcc(IB1,k,j,i);
         q    (IBZ,i) = bcc(IB1,k,j  ,i);
@@ -440,10 +440,10 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x2rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->precon->uniform_limiter[X2DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           d2qc_jm1(i) = q_jm2(n,i) - 2.0*q_jm1(n,i) + q    (n,i);
           d2qc    (i) = q_jm1(n,i) - 2.0*q    (n,i) + q_jp1(n,i); //(CD eq 85a) (no 1/2)
@@ -451,7 +451,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         }
 
         // j-1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dph(i) - q_jm1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
@@ -467,7 +467,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
           }
         }
         // j+1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dph_jp1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_jp1(n,i) - dph_jp1(i);   // (CD eq 84b)
@@ -483,13 +483,13 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
           }
         }
 
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_jp1(i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_jm1(n,i)));
@@ -501,7 +501,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
 
       // Cache Riemann states for both non-/uniform limiters
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         qminus(i) = dph(i  );
         qplus(i) =  dph_jp1(i );
@@ -509,16 +509,16 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
         dqf_plus(i)  = qplus(i) - q(n,i);
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x2rat == 1.0) {
-        // #pragma simd // poor vectorization efficiency
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->precon->uniform_limiter[X2DIR]) {
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
           Real qb = (q_jp1(n,i) - q(n,i))*(q(n,i) - q_jm1(n,i));
@@ -568,8 +568,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -578,12 +578,12 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
             qplus(i) = q(n,i);
           } else { // No extrema detected
             // Overshoot j-1/2,R / j,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_j(j)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_j(j)*dqf_plus(i);
             }
             // Overshoot j+1/2,L / j,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_j(j)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_j(j)*dqf_minus(i);
             }
           }
         }
@@ -592,7 +592,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 //--- Step 5. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [il,iu]
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         ql_jph(n,i ) = qplus(i);
         qr_jmh(n,i ) = qminus(i);
@@ -607,7 +607,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
     // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wl(n,k,j+1,i) = ql_jph(n,i);
         wr(n,k,j  ,i) = qr_jmh(n,i);
@@ -668,7 +668,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j){
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k  ,j,i);
@@ -679,11 +679,11 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         bx(i) = bcc(IB3,k,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(IBY,i) = bcc(IB1,k,j,i);
         q    (IBY,i) = bcc(IB1,k  ,j,i);
@@ -692,7 +692,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         q_kp1(IBY,i) = bcc(IB1,k+1,j,i);
         q_kp2(IBY,i) = bcc(IB1,k+2,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wc(IBZ,i) = bcc(IB2,k,j,i);
         q    (IBZ,i) = bcc(IB2,k  ,j,i);
@@ -733,10 +733,10 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
-      // For a uniform grid, limit interpolated interface states as in CD section 4.3.1
-      if (pmb->block_size.x3rat == 1.0) {
+      // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+      if (pmb->precon->uniform_limiter[X3DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           d2qc_km1(i) = q_km2(n,i) - 2.0*q_km1(n,i) + q    (n,i);
           d2qc    (i) = q_km1(n,i) - 2.0*q    (n,i) + q_kp1(n,i); //(CD eq 85a) (no 1/2)
@@ -744,7 +744,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         }
 
         // k-1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dph(i) - q_km1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
@@ -760,7 +760,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
           }
         }
         // k+1/2
-        // #pragma simd // poor vectorization efficiency
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dph_kp1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_kp1(n,i) - dph_kp1(i);   // (CD eq 84b)
@@ -776,13 +776,13 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
           }
         }
 
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_kp1(i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
-      // For a non-uniform grid, apply strict monotonicity constraints (Mignone eq 45)
+      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
       } else {
         for (int i=il; i<=iu; ++i) {
           dph    (i) = std::min(dph    (i), std::max(q(n,i),q_km1(n,i)));
@@ -794,7 +794,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
 
       // Cache Riemann states for both non-/uniform limiters
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         qminus(i) = dph(i  );
         qplus(i) =  dph_kp1(i );
@@ -802,16 +802,16 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
 //--- Step 3. ----------------------------------------------------------------------------
 // Compute cell-centered difference stencils (MC section 2.4.1)
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
         dqf_plus(i)  = qplus(i) - q(n,i);
       }
 
 //--- Step 4a. ---------------------------------------------------------------------------
-      // For uniform mesh: apply CS limiters to parabolic interpolant
-      if (pmb->block_size.x3rat == 1.0) {
-        // #pragma simd // poor vectorization efficiency
+      // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+      if (pmb->precon->uniform_limiter[X3DIR]) {
+        // #pragma omp simd // poor vectorization efficiency
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
           Real qb = (q_kp1(n,i) - q(n,i))*(q(n,i) - q_km1(n,i));
@@ -861,8 +861,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         }
 
 //--- Step 4b. ---------------------------------------------------------------------------
-      // For non-uniform mesh: apply Mignone limiters to parabolic interpolant
-      // Note Mignone limiter does not check for cell-averaged extrema:
+      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
+      // Note, the Mignone limiter does not check for cell-averaged extrema:
       } else {
         for (int i=il; i<=iu; ++i) {
           Real qa = dqf_minus(i)*dqf_plus(i);
@@ -870,13 +870,14 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
             qminus(i) = q(n,i);
             qplus(i) = q(n,i);
           } else { // No extrema detected
+            // could delete hplus_ratio_k() arrays for curvilinear PPMx3
             // Overshoot k-1/2,R / k,(-) state
-            if (fabs(dqf_minus(i)) >= 2.0*fabs(dqf_plus(i))) {
-              qminus(i) = q(n,i) - 2.0*dqf_plus(i);
+            if (fabs(dqf_minus(i)) >= prec->hplus_ratio_k(k)*fabs(dqf_plus(i))) {
+              qminus(i) = q(n,i) - prec->hplus_ratio_k(k)*dqf_plus(i);
             }
             // Overshoot k+1/2,L / k,(+) state
-            if (fabs(dqf_plus(i)) >= 2.0*fabs(dqf_minus(i))) {
-              qplus(i) = q(n,i) + 2.0*dqf_minus(i);
+            if (fabs(dqf_plus(i)) >= prec->hminus_ratio_k(k)*fabs(dqf_minus(i))) {
+              qplus(i) = q(n,i) + prec->hminus_ratio_k(k)*dqf_minus(i);
             }
           }
         }
@@ -885,7 +886,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 //--- Step 5. ----------------------------------------------------------------------------
 // Convert limited cell-centered values to interface-centered L/R Riemann states
 // both L/R values defined over [il,iu]
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         ql_kph(n,i ) = qplus(i);
         qr_kmh(n,i ) = qminus(i);
@@ -900,7 +901,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
     // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         wl(n,k+1,j,i) = ql_kph(n,i);
         wr(n,k  ,j,i) = qr_kmh(n,i);

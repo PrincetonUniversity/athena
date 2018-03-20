@@ -16,11 +16,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
-  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc, 
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   Coordinates *pco = pmb->pcoord;
@@ -49,7 +49,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int i=il-1; i<=iu; ++i){
         bx(i) = bcc(IB1,k,j,i);
       }
-#pragma simd
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
@@ -70,7 +70,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     }
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->block_size.x1rat == 1.0) {
+    if (pmb->precon->uniform_limiter[X1DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
         for (int i=il-1; i<=iu; ++i){
@@ -120,7 +120,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX2()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
@@ -153,13 +153,13 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
         bx(i) = bcc(IB2,k,j,i);
-      }  
+      }
 #pragma simd
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
         wc(IBY,i) = bcc(IB3,k,j,i);
-      }  
+  
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
@@ -175,7 +175,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->block_size.x1rat == 1.0) {
+    if (pmb->precon->uniform_limiter[X2DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i){
@@ -224,7 +224,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX3()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
@@ -256,13 +256,12 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
         bx(i) = bcc(IB3,k,j,i);
-      }  
-#pragma simd
+      }
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
         wc(IBY,i) = bcc(IB1,k,j,i);
-      }  
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB2,k  ,j,i) - bcc(IB2,k-1,j,i));
@@ -279,7 +278,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
 
     // Apply van Leer limiter for uniform grid
-    if (pmb->block_size.x1rat == 1.0) {
+    if (pmb->precon->uniform_limiter[X3DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i){
