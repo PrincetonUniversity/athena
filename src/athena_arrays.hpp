@@ -32,7 +32,7 @@ public:
   void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
   void DeleteAthenaArray();
 
-  // public function to (shallow) swap pointers
+  // public function to (shallow) swap data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
 
   // functions to get array dimensions
