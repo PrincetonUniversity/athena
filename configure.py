@@ -298,7 +298,7 @@ if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = 'g++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc':
