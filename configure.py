@@ -313,7 +313,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline' \
-                                       + '-qopenmp-simd -qopt-zmm-usage=high'
+                                       + ' -qopenmp-simd -qopt-zmm-usage=high'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
