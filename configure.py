@@ -161,7 +161,7 @@ parser.add_argument('--hdf5_path',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc','cray','bgxl','icc-phi','clang++'],
+    choices=['g++','g++-simd','icc','cray','bgxl','icc-phi','clang++'],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
@@ -298,6 +298,13 @@ if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = 'g++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'g++-simd':
+  definitions['COMPILER_CHOICE'] = 'g++-simd' # gcc version > 4.9
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
@@ -361,7 +368,7 @@ else:
 # -debug argument
 if args['debug']:
   definitions['DEBUG'] = 'DEBUG'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc':
+  if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] = '-O0 -g'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -376,7 +383,7 @@ else:
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' \
-      or args['cxx'] == 'clang++':
+     or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -388,7 +395,7 @@ else:
 # -omp argument
 if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
     makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
