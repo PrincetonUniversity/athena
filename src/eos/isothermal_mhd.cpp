@@ -105,10 +105,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       const Real& w_vy = prim(IVY,k,j,i);
       const Real& w_vz = prim(IVZ,k,j,i);
 
-      const Real& bcc1 = bc(IB1,k,j,i);
-      const Real& bcc2 = bc(IB2,k,j,i);
-      const Real& bcc3 = bc(IB3,k,j,i);
-
       u_d = w_d;
       u_m1 = w_vx*w_d;
       u_m2 = w_vy*w_d;
