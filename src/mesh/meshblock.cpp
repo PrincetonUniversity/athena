@@ -200,8 +200,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pgbval = new GravityBoundaryValues(this,input_bcs);
   }
 
-  precon = new Reconstruction(this, pin);
-
   // Coordinates
   if (COORDINATE_SYSTEM == "cartesian") {
     pcoord = new Cartesian(this, pin, false);
@@ -218,6 +216,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   } else if (COORDINATE_SYSTEM == "gr_user") {
     pcoord = new GRUser(this, pin, false);
   }
+
+  // Reconstruction (constructor may implicitly depend on Coordinates)
+  precon = new Reconstruction(this, pin);
 
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
