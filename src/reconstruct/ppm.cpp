@@ -312,7 +312,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,qr_imh);
     }
 
-    // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
+    // compute ql_(i+1/2) and qr_(i-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il-1; i<=iu; ++i){
@@ -605,7 +605,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,qr_jmh);
     }
 
-    // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
+    // compute ql_(j+1/2) and qr_(j-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
@@ -899,7 +899,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,qr_kmh);
     }
 
-    // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
+    // compute ql_(k+1/2) and qr_(k-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
