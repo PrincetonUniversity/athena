@@ -33,6 +33,8 @@ public:
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,
        int il, int iu, int jl, int ju, int kl, int ku);
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+    int il, int iu, int jl, int ju, int kl, int ku);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
