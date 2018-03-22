@@ -78,9 +78,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
 
   // Go through cells
-  for (int k = ks; k <= ke; k++) {
-    for (int j = js; j <= je; j++) {
-      #pragma omp simd
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
@@ -202,7 +202,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   // Go through all cells
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-      #pragma omp simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
 
         // Extract primitives and magnetic fields
@@ -283,8 +283,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
 
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
