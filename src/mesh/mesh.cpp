@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <stdlib.h>
 #include <string.h>  // memcpy
+#include <vector>
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -1207,21 +1208,28 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 
 void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
-  MeshBlock *pmb;
-  Hydro *phydro;
-  Field *pfield;
-  BoundaryValues *pbval;
-  std::stringstream msg;
-  int inb=nbtotal;
-
   bool iflag=true;
+  int inb=nbtotal;
+  int nthreads=GetNumMeshThreads();
+  int nmb=GetNumMeshBlocksThisRank(Globals::my_rank);
+  std::vector<MeshBlock*> pmb_array(nmb);
+
   do {
+    // initialize a vector of MeshBlock pointers
+    nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
+    if(nmb!=pmb_array.size()) pmb_array.resize(nmb);
+    MeshBlock *pmbl = pblock;
+    for (int i=0; i<nmb; ++i) {
+      pmb_array[i] = pmbl;
+      pmbl=pmbl->next;
+    }
+
     if(res_flag==0) {
-      pmb = pblock;
-      while (pmb != NULL)  {
+#pragma omp parallel for num_threads(nthreads)
+      for (int i=0; i<nmb; ++i) {
+        MeshBlock *pmb=pmb_array[i];
         pmb->ProblemGenerator(pin);
         pmb->pbval->CheckBoundary();
-        pmb=pmb->next;
       }
     }
 
@@ -1235,76 +1243,69 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     else if(SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
+#pragma omp parallel num_threads(nthreads)
+{
+    MeshBlock *pmb;
+    Hydro *phydro;
+    Field *pfield;
+    BoundaryValues *pbval;
+
     // prepare to receive conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
+#pragma omp for private(pmb)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i];
       pmb->pbval->Initialize();
       pmb->pbval->StartReceivingForInit(true);
-      pmb=pmb->next;
     }
 
     // send conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pfield=pmb->pfield;
-        pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
-      }
-      pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED)
+        pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
     }
 
     // wait to receive conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pbval=pmb->pbval;
-      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pfield=pmb->pfield;
-        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      }
-      pmb->pbval->ClearBoundaryForInit(true);
-      pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED)
+        pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+      pbval->ClearBoundaryForInit(true);
     }
 
     // With AMR/SMR GR send primitives to enable cons->prim before prolongation
     if (GENERAL_RELATIVITY && multilevel) {
 
       // prepare to receive primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        pmb->pbval->StartReceivingForInit(false);
-        pmb=pmb->next;
+#pragma omp for
+      for (int i=0; i<nmb; ++i) {
+        pmb_array[i]->pbval->StartReceivingForInit(false);
       }
 
       // send primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->w, HYDRO_PRIM);
-        pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
       }
 
       // wait to receive AMR/SMR GR primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pfield=pmb->pfield;
-        pbval=pmb->pbval;
-        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->w, HYDRO_PRIM);
-        pmb->pbval->ClearBoundaryForInit(false);
-        pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->w, HYDRO_PRIM);
+        pbval->ClearBoundaryForInit(false);
       }
     }
 
     // Now do prolongation, compute primitives, apply BCs
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pfield=pmb->pfield;
-      pbval=pmb->pbval;
+#pragma omp for private(pmb,pbval,phydro,pfield)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     time, 0.0);
@@ -1325,17 +1326,19 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
                                       is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
-      pmb=pmb->next;
     }
+
+    if((res_flag==0) && (adaptive==true)) {
+#pragma omp for
+      for (int i=0; i<nmb; ++i) {
+        pmb_array[i]->pmr->CheckRefinementCondition();
+      }
+    }
+} // omp parallel
 
     if((res_flag==0) && (adaptive==true)) {
       iflag=false;
       int onb=nbtotal;
-      pmb = pblock;
-      while (pmb != NULL)  {
-        pmb->pmr->CheckRefinementCondition();
-        pmb=pmb->next;
-      }
       AdaptiveMeshRefinement(pin);
       if(nbtotal==onb) iflag=true;
       else if(nbtotal < onb && Globals::my_rank==0) {
@@ -1352,11 +1355,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   } while(iflag==false);
 
   // calculate the first time step
-  pmb = pblock;
-  while (pmb != NULL)  {
-    pmb->phydro->NewBlockTimeStep();
-    pmb=pmb->next;
+#pragma omp parallel for num_threads(nthreads)
+  for (int i=0; i<nmb; ++i) {
+    pmb_array[i]->phydro->NewBlockTimeStep();
   }
+
   NewTimeStep();
   return;
 }
