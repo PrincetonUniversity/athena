@@ -62,7 +62,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& w_vx = prim(IVX,k,j,i);
       Real& w_vy = prim(IVY,k,j,i);
       Real& w_vz = prim(IVZ,k,j,i);
-      Real& w_p  = prim(IEN,k,j,i);
+      Real& w_p  = prim(IPR,k,j,i);
 
       // apply density floor, without changing momentum or energy
       u_d = (u_d > density_floor_) ?  u_d : density_floor_;
@@ -114,7 +114,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       const Real& w_vx = prim(IVX,k,j,i);
       const Real& w_vy = prim(IVY,k,j,i);
       const Real& w_vz = prim(IVZ,k,j,i);
-      const Real& w_p  = prim(IEN,k,j,i);
+      const Real& w_p  = prim(IPR,k,j,i);
 
       u_d = w_d;
       u_m1 = w_vx*w_d;
