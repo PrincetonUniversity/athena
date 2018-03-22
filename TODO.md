@@ -22,3 +22,7 @@
     - Maybe pure H EOS
 
 - Look into Flash type Riemann approximations to reduce EOS calls
+
+- Clean up energy vs pressure floors in general_hydro.cpp
+
+- In general_hydro.cpp in EquationOfState::ConservedToPrimitive the energy floor constraint may need to be modified
