@@ -163,3 +163,29 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
   Real tmp = vaxsq + ct2 - asq;
   return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2)));
 }
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int il, int iu, int jl, int ju, int kl, int ku)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+                     int il, int iu, int jl, int ju, int kl, int ku)
+{
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        Real& w_d  = prim(IDN,k,j,i);
+        Real& w_p  = prim(IPR,k,j,i);
+
+        // apply density floor
+        w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+        // apply pressure floor
+        w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+      }
+    }
+  }
+  return;
+}
