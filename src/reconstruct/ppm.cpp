@@ -617,6 +617,10 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         wr(n,k,j  ,i) = qr_jmh(n,i);
       }
     }
+    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
+    pmb->peos->ApplyPrimitiveFloors(wl, il, iu, j+1, j+1, k, k);
+    pmb->peos->ApplyPrimitiveFloors(wr, il, iu, j, j, k, k);
+
   }}
 
   return;
@@ -911,6 +915,9 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         wr(n,k  ,j,i) = qr_kmh(n,i);
       }
     }
+    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
+    pmb->peos->ApplyPrimitiveFloors(wl, il, iu, j, j, k+1, k+1);
+    pmb->peos->ApplyPrimitiveFloors(wr, il, iu, j, j, k, k);
   }}
 
   return;
