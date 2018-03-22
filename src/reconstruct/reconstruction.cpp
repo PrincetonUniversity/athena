@@ -38,10 +38,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   } else if (input_recon == "2c") {
     xorder = 2;
     characteristic_reconstruction = true;
-  } else if (input_recon == "3") {
-    xorder = 3;
-  } else if (input_recon == "3c") {
-    xorder = 3;
+  } else if ((input_recon == "3") || (input_recon == "4")) {
+    xorder = 4;
+  } else if ((input_recon == "3c") || (input_recon == "4c")) {
+    xorder = 4;
     characteristic_reconstruction = true;
   } else {
     std::stringstream msg;
@@ -50,13 +50,19 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // check that there are the necessary number of ghost zones
-  if (xorder == 3 && (NGHOST) < 3) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-        << "xorder=" << xorder << " (PPM) reconstruction selected, but nghost=" <<
-        NGHOST << std::endl << "Reconfigure with --nghost=XXX with XXX > 2" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+  // check that there are the necessary number of ghost zones for PPM
+  if (xorder == 4) {
+    int req_nghost = 3;
+    if (MAGNETIC_FIELDS_ENABLED)
+      req_nghost += 1;
+    if (NGHOST < req_nghost) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "xorder=" << input_recon <<
+          " (PPM) reconstruction selected, but nghost=" << NGHOST << std::endl
+          << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
@@ -87,7 +93,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   scr3_ni_.NewAthenaArray(NWAVE,ncells1);
   scr4_ni_.NewAthenaArray(NWAVE,ncells1);
 
-  if (xorder == 3){
+  if (xorder == 4){
     scr03_i_.NewAthenaArray(ncells1);
     scr04_i_.NewAthenaArray(ncells1);
     scr05_i_.NewAthenaArray(ncells1);
@@ -344,50 +350,49 @@ Reconstruction::~Reconstruction()
   scr3_ni_.DeleteAthenaArray();
   scr4_ni_.DeleteAthenaArray();
 
-  if (xorder == 3){
-    scr03_i_.DeleteAthenaArray();
-    scr04_i_.DeleteAthenaArray();
-    scr05_i_.DeleteAthenaArray();
-    scr06_i_.DeleteAthenaArray();
-    scr07_i_.DeleteAthenaArray();
-    scr08_i_.DeleteAthenaArray();
-    scr09_i_.DeleteAthenaArray();
-    scr10_i_.DeleteAthenaArray();
-    scr11_i_.DeleteAthenaArray();
-    scr12_i_.DeleteAthenaArray();
-    scr13_i_.DeleteAthenaArray();
-    scr14_i_.DeleteAthenaArray();
 
-    scr5_ni_.DeleteAthenaArray();
-    scr6_ni_.DeleteAthenaArray();
-    scr7_ni_.DeleteAthenaArray();
-    scr8_ni_.DeleteAthenaArray();
+  scr03_i_.DeleteAthenaArray();
+  scr04_i_.DeleteAthenaArray();
+  scr05_i_.DeleteAthenaArray();
+  scr06_i_.DeleteAthenaArray();
+  scr07_i_.DeleteAthenaArray();
+  scr08_i_.DeleteAthenaArray();
+  scr09_i_.DeleteAthenaArray();
+  scr10_i_.DeleteAthenaArray();
+  scr11_i_.DeleteAthenaArray();
+  scr12_i_.DeleteAthenaArray();
+  scr13_i_.DeleteAthenaArray();
+  scr14_i_.DeleteAthenaArray();
 
-    c1i.DeleteAthenaArray();
-    c2i.DeleteAthenaArray();
-    c3i.DeleteAthenaArray();
-    c4i.DeleteAthenaArray();
-    c5i.DeleteAthenaArray();
-    c6i.DeleteAthenaArray();
-    hplus_ratio_i.DeleteAthenaArray();
-    hminus_ratio_i.DeleteAthenaArray();
+  scr5_ni_.DeleteAthenaArray();
+  scr6_ni_.DeleteAthenaArray();
+  scr7_ni_.DeleteAthenaArray();
+  scr8_ni_.DeleteAthenaArray();
 
-    c1j.DeleteAthenaArray();
-    c2j.DeleteAthenaArray();
-    c3j.DeleteAthenaArray();
-    c4j.DeleteAthenaArray();
-    c5j.DeleteAthenaArray();
-    c6j.DeleteAthenaArray();
-    hplus_ratio_j.DeleteAthenaArray();
-    hminus_ratio_j.DeleteAthenaArray();
+  c1i.DeleteAthenaArray();
+  c2i.DeleteAthenaArray();
+  c3i.DeleteAthenaArray();
+  c4i.DeleteAthenaArray();
+  c5i.DeleteAthenaArray();
+  c6i.DeleteAthenaArray();
+  hplus_ratio_i.DeleteAthenaArray();
+  hminus_ratio_i.DeleteAthenaArray();
 
-    c1k.DeleteAthenaArray();
-    c2k.DeleteAthenaArray();
-    c3k.DeleteAthenaArray();
-    c4k.DeleteAthenaArray();
-    c5k.DeleteAthenaArray();
-    c6k.DeleteAthenaArray();
-    hplus_ratio_k.DeleteAthenaArray();
-    hminus_ratio_k.DeleteAthenaArray();
-  }
+  c1j.DeleteAthenaArray();
+  c2j.DeleteAthenaArray();
+  c3j.DeleteAthenaArray();
+  c4j.DeleteAthenaArray();
+  c5j.DeleteAthenaArray();
+  c6j.DeleteAthenaArray();
+  hplus_ratio_j.DeleteAthenaArray();
+  hminus_ratio_j.DeleteAthenaArray();
+
+  c1k.DeleteAthenaArray();
+  c2k.DeleteAthenaArray();
+  c3k.DeleteAthenaArray();
+  c4k.DeleteAthenaArray();
+  c5k.DeleteAthenaArray();
+  c6k.DeleteAthenaArray();
+  hplus_ratio_k.DeleteAthenaArray();
+  hminus_ratio_k.DeleteAthenaArray();
 }
