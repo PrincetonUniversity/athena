@@ -133,5 +133,5 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 {
-  return sqrt(gamma_*prim[IEN]/prim[IDN]);
+  return sqrt(gamma_*prim[IPR]/prim[IDN]);
 }
