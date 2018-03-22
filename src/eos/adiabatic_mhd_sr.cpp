@@ -56,7 +56,7 @@ EquationOfState::~EquationOfState() {}
 //   prim_old: primitive quantities from previous half timestep (not used)
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
@@ -66,8 +66,8 @@ EquationOfState::~EquationOfState() {}
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
-    int ke)
+    AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
+    int ku)
 {
   // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
@@ -75,13 +75,13 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real max_velocity = std::sqrt(v_sq_max);
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js, je, ks, ke);
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
 
   // Go through cells
   for (int k = ks; k <= ke; k++) {
     for (int j = js; j <= je; j++) {
       #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
         Real &dd = cons(IDN,k,j,i);
@@ -188,22 +188,22 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   prim: 3D array of primitives
 //   bc: 3D array of cell-centered magnetic fields
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int is,
-     int ie, int js, int je, int ks, int ke)
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+     int iu, int jl, int ju, int kl, int ku)
 {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
 
         // Extract primitives and magnetic fields
         const Real &rho = prim(IDN,k,j,i);

@@ -29,10 +29,10 @@ public:
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const FaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
-    Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,
-       int is, int ie, int js, int je, int ks, int ke);
+       int il, int iu, int jl, int ju, int kl, int ku);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op

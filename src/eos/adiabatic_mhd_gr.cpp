@@ -24,7 +24,7 @@
 // Declarations
 static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int is, int ie, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
+    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
 static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
@@ -86,15 +86,15 @@ EquationOfState::~EquationOfState()
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
-    int ke)
+    AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
+    int ku)
 {
   // Parameters
   const Real mm_sq_ee_sq_max = 1.0 - 1.0e-12;  // max. of squared momentum over energy
@@ -103,21 +103,21 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real &gamma_adi = gamma_;
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js, je, ks, ke);
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
 
   // Go through all rows
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 
       // Calculate metric
-      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      pco->CellMetric(k, j, il, iu, g_, g_inv_);
 
       // Cast problem into normal frame
-      CalculateNormalConserved(cons, bb_cc, g_, g_inv_, k, j, is, ie, normal_dd_,
+      CalculateNormalConserved(cons, bb_cc, g_, g_inv_, k, j, il, iu, normal_dd_,
           normal_ee_, normal_mm_, normal_bb_, normal_tt_);
 
       // Go through cells
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
 
         // Set flag indicating conserved values need adjusting at end
         bool fixed = false;
@@ -292,7 +292,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   cons: conserved quantities rho u^0, T^0_\mu
 //   bb: cell-centered magnetic field B^i
 //   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,is,ie: indices and index bounds of 1D array to use
+//   k,j,il,iu: indices and index bounds of 1D array to use
 // Outputs:
 //   dd: normal density D
 //   ee: normal energy E
@@ -310,11 +310,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int is, int ie, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
+    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt)
 {
   // Go through row
-  for (int i = is; i <= ie; ++i) {
+  for (int i=il; i<=iu; ++i) {
 
     // Extract metric
     const Real &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
@@ -547,7 +547,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: conserved variables
 // Notes:
@@ -556,13 +556,13 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
+     int il, int iu, int jl, int ju, int kl, int ku)
 {
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      pco->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }
     }
