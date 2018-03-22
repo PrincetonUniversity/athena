@@ -51,12 +51,18 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   }
 
   // check that there are the necessary number of ghost zones for PPM
-  if (xorder == 4 && (NGHOST) < 3) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-        << "xorder=" << xorder << " (PPM) reconstruction selected, but nghost=" <<
-        NGHOST << std::endl << "Reconfigure with --nghost=XXX with XXX > 2" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+  if (xorder == 4) {
+    int req_nghost = 3;
+    if (MAGNETIC_FIELDS_ENABLED)
+      req_nghost += 1;
+    if (NGHOST < req_nghost) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "xorder=" << input_recon <<
+          " (PPM) reconstruction selected, but nghost=" << NGHOST << std::endl
+          << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
