@@ -67,7 +67,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& w_vx = prim(IVX,k,j,i);
       Real& w_vy = prim(IVY,k,j,i);
       Real& w_vz = prim(IVZ,k,j,i);
-      Real& w_p  = prim(IEN,k,j,i);
+      Real& w_p  = prim(IPR,k,j,i);
 
       // apply density floor, without changing momentum or energy
       u_d = (u_d > density_floor_) ?  u_d : density_floor_;
@@ -122,7 +122,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       const Real& w_vx = prim(IVX,k,j,i);
       const Real& w_vy = prim(IVY,k,j,i);
       const Real& w_vz = prim(IVZ,k,j,i);
-      const Real& w_p  = prim(IEN,k,j,i);
+      const Real& w_p  = prim(IPR,k,j,i);
 
       const Real& bcc1 = bc(IB1,k,j,i);
       const Real& bcc2 = bc(IB2,k,j,i);
@@ -146,17 +146,17 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 {
-  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
+  return sqrt(GetGamma()*prim[IPR]/prim[IDN]);
 }
 
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
-// Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
+// Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
-  Real asq = GetGamma()*prim[IEN]/prim[IDN];
+  Real asq = GetGamma()*prim[IPR]/prim[IDN];
   Real vaxsq = bx*bx/prim[IDN];
   Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ])/prim[IDN];
   Real qsq = vaxsq + ct2 + asq;
