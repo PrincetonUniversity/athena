@@ -97,7 +97,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       // apply pressure/energy floor, correct total energy
 #if EOS_TABLE_ENABLED
       u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
-      w_p = GetPresFromRhoEgas(w_d, u_e - ke);
+      w_p = GetEosData(u_d, u_e - ke, axisEgas, iPresEOS) * (u_e - ke);
 #else
       w_p = gm1*(u_e - ke);
       u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke);
@@ -148,7 +148,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m2 = w_vy*w_d;
       u_m3 = w_vz*w_d;
 #if EOS_TABLE_ENABLED
-      u_e = GetEgasFromRhoPres(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+      u_e = GetEosData(u_d, w_p, axisPres, iPresEOS) * w_p + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
 #else
       u_e = w_p*igm1 + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
 #endif

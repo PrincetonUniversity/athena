@@ -21,7 +21,7 @@
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp" 
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../fft/athena_fft.hpp"
@@ -57,7 +57,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   nuser_out_var = 0;
   nreal_user_meshblock_data_ = 0;
-  nint_user_meshblock_data_ = 0; 
+  nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
 
@@ -91,7 +91,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // construct objects stored in MeshBlock class.  Note in particular that the initial
   // conditions for the simulation are set in problem generator called from main, not
   // in the Hydro constructor
- 
+
   // mesh-related objects
 
   // Boundary
@@ -131,6 +131,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
+  #if EOS_TABLE_ENABLED
+    peos->QueryEnrolled();
+  #endif
 
   return;
 }
@@ -155,7 +158,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   nuser_out_var = 0;
   nreal_user_meshblock_data_ = 0;
-  nint_user_meshblock_data_ = 0; 
+  nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
   is = NGHOST;
@@ -222,6 +225,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   InitUserMeshBlockData(pin);
+#if EOS_TABLE_ENABLED
+  peos->QueryEnrolled();
+#endif
 
   int os=0;
   // load hydro and field data
@@ -407,4 +413,3 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
   return size;
 }
-

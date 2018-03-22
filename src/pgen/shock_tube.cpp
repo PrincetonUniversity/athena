@@ -85,6 +85,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 4.0/sqrt(4.0*PI);
           bz = 2.0/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 0 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.0) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.0)
 #else
           e0 = 1.0/gm1
@@ -98,6 +99,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.3452/sqrt(4.0*PI);
           bz = 2.6726/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 1 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
 #else
           e0 = 1.5844/gm1
@@ -111,6 +113,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.7083/sqrt(4.0*PI);
           bz = 1.7689/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 2 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
 #else
           e0 = 1.5844/gm1
@@ -124,6 +127,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.0074/sqrt(4.0*PI);
           bz = 1.5517/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 3 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
 #else
           e0 = 1.9317/gm1
@@ -137,7 +141,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.0074/sqrt(4.0*PI);
           bz = 1.5517/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          e0 = pmb->peos->GetEgasFromRhoPres(1.9317, d0)
+          std::cout << 4 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
+          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
 #else
           e0 = 1.9317/gm1
 #endif
@@ -150,6 +155,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.5713/sqrt(4.0*PI);
           bz = 1.7264/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 5 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
 #else
           e0 = 1.6558/gm1
@@ -163,6 +169,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 5.0987/sqrt(4.0*PI);
           bz = 2.8326/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 6 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
 #else
           e0 = 1.6558/gm1
@@ -176,6 +183,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           by = 3.6/sqrt(4.0*PI);
           bz = 2.0/sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
+          std::cout << 7 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 0.95) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 0.95)
 #else
           e0 = 0.95/gm1

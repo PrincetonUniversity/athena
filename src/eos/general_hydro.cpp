@@ -25,9 +25,14 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
+  SimplePres_ = NULL;
+  SimpleEgas_ = NULL;
+  AsqFromPres_ = NULL;
+  AsqFromHint_ = NULL;
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  // MSBC: tweak floor
   if (pin->DoesParameterExist("hydro","efloor")){
-    energy_floor_ = pin->GetReal("hydro","efloor");
+    energy_floor_ = pin->GetReal("hydro","efloor") * 1.5;
   }
   else{
     energy_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
@@ -43,7 +48,24 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 
 EquationOfState::~EquationOfState()
 {
+  #if EOS_TABLE_ENABLED
   CleanEOS();
+  #endif
+}
+
+// Enroll user EOS functions
+void EquationOfState::EnrollSimplePres(SimpleEosFun_t func){SimplePres_ = func;}
+void EquationOfState::EnrollSimpleEgas(SimpleEosFun_t func){SimpleEgas_ = func;}
+void EquationOfState::EnrollSimpleAsq(SimpleEosFun_t func){AsqFromPres_ = func;}
+void EquationOfState::EnrollAsqFromHint(SimpleEosFun_t func){AsqFromHint_ = func;}
+
+// Ensure user EOS functions are set
+int EquationOfState::QueryEnrolled(){
+  if (SimplePres_==NULL) throw std::runtime_error("Eos function 'SimplePres_' unset. This is usually set in 'InitUserMeshBlockData'");
+  if (SimpleEgas_==NULL) throw std::runtime_error("Eos function 'SimpleEgas_' unset. This is usually set in 'InitUserMeshBlockData'");
+  if (AsqFromPres_==NULL) throw std::runtime_error("Eos function 'AsqFromPres_' unset. This is usually set in 'InitUserMeshBlockData'");
+  if (AsqFromHint_==NULL) throw std::runtime_error("Eos function 'AsqFromHint_' unset. This is usually set in 'InitUserMeshBlockData'");
+  return 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -55,15 +77,11 @@ EquationOfState::~EquationOfState()
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
-{
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
+  AthenaArray<Real> &bcc, Coordinates *pco, int is,int ie, int js,int je, int ks,int ke)
 {
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
   for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
@@ -88,12 +106,12 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
       Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
 
-      // apply energy floor, get pressure
+      // apply pressure/energy floor, correct total energy
       u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
-      w_p = GetPresFromRhoEgas(w_d, u_e - ke);
+      // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point
+      w_p = (*SimplePres_)(u_d, u_e - ke, this);
     }
   }}
-}
 
   return;
 }
@@ -109,14 +127,10 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-  //#pragma omp parallel default(shared) num_threads(nthreads)
-{
-  #pragma simd
+  #pragma omp simd
   for (int k=ks; k<=ke; ++k){
-    //#pragma omp for schedule(dynamic)
   for (int j=js; j<=je; ++j){
-    //#pragma simd
+    //#pragma omp simd
     #pragma novector
     for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
@@ -135,10 +149,10 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m1 = w_vx*w_d;
       u_m2 = w_vy*w_d;
       u_m3 = w_vz*w_d;
-      u_e = GetEgasFromRhoPres(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+      u_e = (*SimpleEgas_)(u_d, w_p, this);
     }
   }}
-}
+
   return;
 }
 
@@ -148,6 +162,18 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 {
-  return sqrt(GetASqFromRhoPres(prim[IDN], prim[IEN]));
+  return sqrt(GetEosData(prim[IDN], prim[IEN], axisPres, iASqEOS) * prim[IEN] / prim[IDN]);
 }
-#endif //EOS_TABLE_ENABLED
+#endif
+
+//----------------------------------------------------------------------------------------
+// \!fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
+// \brief returns adiabatic sound speed squared given a density and specific enthalpy
+
+Real EquationOfState::RiemannAsq(Real rho, Real hint){
+  return (*AsqFromHint_)(rho, hint * rho, this);
+}
+
+Real EquationOfState::GetEgasFromRhoPres(Real rho, Real pres){
+  return (*SimpleEgas_)(rho, pres, this);
+}

@@ -91,7 +91,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
 #if EOS_TABLE_ENABLED
-    Real a = (q < 0.0) ? 0.0 : sqrt(pmy_block->peos->GetASqFromRhoHint(wroe[IDN], q * wroe[IDN]));
+    Real a = (q < 0.0) ? 0.0 : sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
 #else
     Real a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
 #endif
