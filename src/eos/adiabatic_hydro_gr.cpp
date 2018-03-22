@@ -106,10 +106,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract metric
         const Real
-            &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
-            &g_10 = g_(I01,i), &g_11 = g_(I11,i), &g_12 = g_(I12,i), &g_13 = g_(I13,i),
-            &g_20 = g_(I02,i), &g_21 = g_(I12,i), &g_22 = g_(I22,i), &g_23 = g_(I23,i),
-            &g_30 = g_(I03,i), &g_31 = g_(I13,i), &g_32 = g_(I23,i), &g_33 = g_(I33,i);
+            // unused:
+            //&g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
+            // &g_10 = g_(I01,i);
+            // &g_20 = g_(I02,i), &g_21 = g_(I12,i);
+            // &g_30 = g_(I03,i), &g_31 = g_(I13,i), &g_32 = g_(I23,i);
+            &g_11 = g_(I11,i), &g_12 = g_(I12,i), &g_13 = g_(I13,i),
+            &g_22 = g_(I22,i), &g_23 = g_(I23,i),
+            &g_33 = g_(I33,i);
         const Real &g00 = g_inv_(I00,i), &g01 = g_inv_(I01,i), &g02 = g_inv_(I02,i),
                    &g03 = g_inv_(I03,i), &g10 = g_inv_(I01,i), &g11 = g_inv_(I11,i),
                    &g12 = g_inv_(I12,i), &g13 = g_inv_(I13,i), &g20 = g_inv_(I02,i),
@@ -189,7 +193,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           gamma_rel = 1.0;
           gamma_sq = SQR(gamma_rel);
         }
-        Real u0 = gamma_rel/alpha;  // (N 21)
+        // unused:
+        // Real u0 = gamma_rel/alpha;  // (N 21)
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
