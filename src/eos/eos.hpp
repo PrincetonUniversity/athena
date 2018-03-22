@@ -9,6 +9,9 @@
 //  \brief defines class EquationOfState
 //  Contains data and functions that implement the equation of state
 
+// C++ headers
+#include <stdexcept> // std::invalid_argument
+
 // Athena headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
@@ -20,6 +23,8 @@ class Hydro;
 class ParameterInput;
 struct FaceField;
 typedef std::string (*EosFn_t)();
+typedef Real (*SimpleEosFun_t)(Real dens, Real egas, EquationOfState* peos);
+
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -102,19 +107,18 @@ public:
   EosFn_t GetEosFn;
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
-  void BilinearInterp(Real x, Real y, AthenaArray<Real> &out, int kOut = -1);
+  Real BilinearInterp(Real x, Real y, int var);
   void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
-  void GetEosData(Real rho, Real var, int axis, AthenaArray<Real> &out, int kOut = -1);
-  Real GetEosDatum(Real rho, Real var, int axis, int kOut);
-  Real GetPresFromRhoEgas(Real rho, Real egas);
-  Real GetEgasFromRhoPres(Real rho, Real pres);
-  Real GetEgasFromRhoHint(Real rho, Real hint);
-  Real GetASqFromRhoEgas(Real rho, Real egas);
-  Real GetASqFromRhoPres(Real rho, Real pres);
-  Real GetASqFromRhoHint(Real rho, Real hint);
-  Real GetTempFromRhoEgas(Real rho, Real egas);
+  Real GetEosData(Real rho, Real var, int axis, int kOut);
   //Real GetGamma1FromRhoEgas(Real rho, Real egas);
   void EnrollEosTable(EosFn_t GenEosTableFilename);
+  void EnrollSimplePres(SimpleEosFun_t func);
+  void EnrollSimpleEgas(SimpleEosFun_t func);
+  void EnrollSimpleAsq(SimpleEosFun_t func);
+  void EnrollAsqFromHint(SimpleEosFun_t func);
+  int QueryEnrolled();
+  Real RiemannAsq(Real rho, Real hint);
+  Real GetEgasFromRhoPres(Real rho, Real pres);
   void EosTestLoop();
   void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
   int iPresEOS;
@@ -160,6 +164,10 @@ private:
   Real egasOverPres_;
   Real EosRatios_[3];
   Real energy_floor_;                    // internal energy floor
+  SimpleEosFun_t SimplePres_;
+  SimpleEosFun_t SimpleEgas_;
+  SimpleEosFun_t AsqFromPres_;
+  SimpleEosFun_t AsqFromHint_;
 #endif // EOS_TABLE_ENABLED
 
 };

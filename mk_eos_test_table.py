@@ -1,16 +1,15 @@
 #! /usr/bin/env python
 
 import numpy as np
-import sys
 
-def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5, ftype='float32', sdim=0):
+def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5, ftype='float64', sdim=0):
   if fn is None:
     fn = 'eos_tables.data'
-  dlim = np.atleast_1d(dlim).astype(ftype)
-  elim = np.atleast_1d(elim).astype(ftype)
+  dlim = np.atleast_1d(dlim)#.astype(ftype)
+  elim = np.atleast_1d(elim)#.astype(ftype)
   nd = np.array(varlist[0].shape[0], 'int32')
   ne = np.array(varlist[0].shape[1], 'int32')
-  eOp = np.array(eOp, ftype)
+  eOp = np.array(eOp)#, ftype)
   with open(fn, 'wb') as f:
     nd.tofile(f)
     dlim.tofile(f)
@@ -30,21 +29,22 @@ def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5, ftype='float3
 
 
 def mk_ideal(gamma=5./3., n=2, fn=None, mu=.6, R=None):
-  dlim = np.linspace(-24., 0., n)
-  elim = np.linspace(8., 16., n)
+  dlim = np.linspace(-24., 4., n)
+  elim = np.linspace(-10., 20., n)
   if R is None:
-    R = 1.3807e-16 / (mu * 1.660538921e-24)
-  Rinv = 1. / R
+    Rinv = mu * 1.660538921e-24 / 1.3807e-16
+  else:
+    Rinv = 1. / R
 
   e, d = np.meshgrid(1e1**elim, 1e1**dlim)
   eint = e * d
   g = gamma
   gm1 = g - 1.
 
-  p = (g - 1.) * eint
-  h = eint + p
-  asq = g * (g - 1.) * e
-  T = p /(d * R)
+  #p = gm1 * eint
+  #h = eint + p
+  #asq = g * gm1 * e
+  #T = p /(d * R)
 
   varlist = [gm1, g * gm1, gm1 * Rinv, 1. / gm1, g, Rinv, 1. / g, gm1, gm1 / g * Rinv]
   varlist = [np.ones(e.shape) * i for i in varlist]

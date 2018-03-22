@@ -68,7 +68,7 @@ parser.add_argument('--coord',
 # --eos=[name] argument
 parser.add_argument('--eos',
     default='adiabatic',
-    choices=['adiabatic','isothermal'],
+    choices=['adiabatic','isothermal', 'general'],
     help='select equation of state')
 
 # --flux=[name] argument
@@ -194,6 +194,8 @@ parser.add_argument('--lib',
 args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments ---------------------------------------------
+if args['eos'] == 'general':
+    args['eos_table'] = True
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro or any GR
 if args['flux'] == 'default':
@@ -248,16 +250,18 @@ definitions['PROBLEM'] = makefile_options['PROBLEM_FILE'] = args['prob']
 definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['coord']
 
 # --eos=[name] argument
-definitions['NON_BAROTROPIC_EOS'] = '1' if args['eos'] == 'adiabatic' else '0'
+definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
-if args['eos'] == 'adiabatic':
+if args['eos'] == 'adiabatic' or args['eos'] == 'general':
   definitions['NHYDRO_VARIABLES'] = '5'
 if args['eos'] == 'isothermal':
   definitions['NHYDRO_VARIABLES'] = '4'
 
 # -eos_table argument
-definitions['EOS_TABLE_ENABLED'] = '1' if args['eos_table'] else '0'
+definitions['EOS_TABLE_ENABLED'] = '0'
+if args['eos_table'] or args['eos'] == 'general':
+    definitions['EOS_TABLE_ENABLED'] = '1'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
@@ -274,7 +278,7 @@ if args['b']:
   makefile_options['RSOLVER_DIR'] = 'mhd/'
   if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
     makefile_options['RSOLVER_FILE'] += '_mhd'
-  if args['eos'] == 'adiabatic':
+  if args['eos'] == 'adiabatic' or args['eos'] == 'general':
     definitions['NWAVE_VALUE'] = '7'
   else:
     definitions['NWAVE_VALUE'] = '6'
@@ -285,7 +289,7 @@ else:
   makefile_options['EOS_FILE'] += '_hydro'
   definitions['NFIELD_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
-  if args['eos'] == 'adiabatic':
+  if args['eos'] == 'adiabatic' or args['eos'] == 'general':
     definitions['NWAVE_VALUE'] = '5'
   else:
     definitions['NWAVE_VALUE'] = '4'
