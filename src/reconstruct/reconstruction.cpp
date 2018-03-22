@@ -38,9 +38,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   } else if (input_recon == "2c") {
     xorder = 2;
     characteristic_reconstruction = true;
-  } else if (input_recon == "3") {
+  } else if ((input_recon == "3") || (input_recon == "4")) {
     xorder = 4;
-  } else if (input_recon == "3c") {
+  } else if ((input_recon == "3c") || (input_recon == "4c")) {
     xorder = 4;
     characteristic_reconstruction = true;
   } else {
