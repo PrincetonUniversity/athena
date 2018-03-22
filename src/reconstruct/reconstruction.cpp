@@ -39,9 +39,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     xorder = 2;
     characteristic_reconstruction = true;
   } else if (input_recon == "3") {
-    xorder = 3;
+    xorder = 4;
   } else if (input_recon == "3c") {
-    xorder = 3;
+    xorder = 4;
     characteristic_reconstruction = true;
   } else {
     std::stringstream msg;
@@ -50,8 +50,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // check that there are the necessary number of ghost zones
-  if (xorder == 3 && (NGHOST) < 3) {
+  // check that there are the necessary number of ghost zones for PPM
+  if (xorder == 4 && (NGHOST) < 3) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
         << "xorder=" << xorder << " (PPM) reconstruction selected, but nghost=" <<
@@ -87,7 +87,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   scr3_ni_.NewAthenaArray(NWAVE,ncells1);
   scr4_ni_.NewAthenaArray(NWAVE,ncells1);
 
-  if (xorder == 3){
+  if (xorder == 4){
     scr03_i_.NewAthenaArray(ncells1);
     scr04_i_.NewAthenaArray(ncells1);
     scr05_i_.NewAthenaArray(ncells1);
@@ -344,7 +344,7 @@ Reconstruction::~Reconstruction()
   scr3_ni_.DeleteAthenaArray();
   scr4_ni_.DeleteAthenaArray();
 
-  if (xorder == 3){
+  if (xorder == 4){
     scr03_i_.DeleteAthenaArray();
     scr04_i_.DeleteAthenaArray();
     scr05_i_.DeleteAthenaArray();
