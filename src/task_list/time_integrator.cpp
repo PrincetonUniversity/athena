@@ -674,13 +674,17 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if (step <= nsub_steps) {
-    // Cache w from previous substep in w1 via AthenaArray deep copy
-    // For the second order integrators, this uses t^n and then t^{n+1/2}
-    // or t^{n+1} abscissae for the prim_old initial guess in Newton-Raphson solver
-    phydro->w1 = phydro->w;
-    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                    phydro->w, pfield->bcc, pmb->pcoord,
+    // At beginning of this task, phydro->w contains previous substep W(U) output
+    // and phydro->w1 is used as a register to store the current substep output.
+    // For the second order integrators VL2 and RK2, the prim_old initial guess for the
+    // Newton-Raphson solver in GR EOS uses the following abscissae:
+    // step=1: W at t^n and
+    // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
+    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
+                                    phydro->w1, pfield->bcc, pmb->pcoord,
                                     is, ie, js, je, ks, ke);
+    // swap AthenaArray data pointers so that w now contains the updated w_out
+    phydro->w.SwapAthenaArray(phydro->w1);
   }
   else {
     return TASK_FAIL;
@@ -768,18 +772,14 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       // pf->b2.x2f = pf->b.x2f;
       // pf->b2.x3f = pf->b.x3f;
 
-      // 2nd registers, including u1, need to be initialized to 0
-      pf->b1.x1f = pf->b.x1f;
-      pf->b1.x2f = pf->b.x2f;
-      pf->b1.x3f = pf->b.x3f;
+      // 2nd set of registers, including b1, need to be initialized to 0
       Real ave_wghts[3];
       ave_wghts[0] = 0.0;
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
     }
-    // 2nd registers, including u1, need to be initialized to 0
-    ph->u1 = ph->u;
+    // 2nd set of registers, including u1, need to be initialized to 0 each cycle
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = 0.0;

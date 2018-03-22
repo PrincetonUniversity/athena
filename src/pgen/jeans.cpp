@@ -102,6 +102,19 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
     SetGravityThreshold(eps);
   }
+
+  if(Globals::my_rank==0) {
+    //moved print statements here from Meshblock::ProblemGenerator
+    std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
+    std::cout << "lambda " << lambda << std::endl;
+    std::cout << "period " << (2*PI/omega) << std::endl;
+    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
+    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+  }
+
+
+
+
   return;
 }
 
@@ -124,6 +137,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
     phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*sin(pcoord->x1v(i)*kwave));
 
+    //when unstable initial v omega/kwave*amp*coskx
+    //when stable initial v 0
     Real m = (omega2 < 0) ? d0*(omega/kwave)*amp*coskx:0.0;
 
     phydro->u(IM1,k,j,i) = m*cos_a3*cos_a2;
@@ -137,14 +152,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
     }
   }}}
-
-  if(Globals::my_rank==0) {
-    std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
-    std::cout << "lambda " << lambda << std::endl;
-    std::cout << "period " << (2*PI/omega) << std::endl;
-    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
-    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
-  }
 
 //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
@@ -188,7 +195,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
 	if (omega2 < 0) {
-	  sinot = exp(omega*tlim);//time dependent factor of vel
+	  sinot = -exp(omega*tlim);//time dependent factor of vel
+	  //unstable case v = amp*omega/k * coskx * e^omega*t
+	  //minus sign counters minus sign in m
 	  cosot = exp(omega*tlim);//time dependent factor of rho
 	} 
 	else {

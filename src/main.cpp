@@ -69,16 +69,34 @@ int main(int argc, char *argv[])
 // Initialize MPI environment, if necessary
 
 #ifdef MPI_PARALLEL
+#ifdef OPENMP_PARALLEL
+  int mpiprv;
+  if(MPI_SUCCESS != MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpiprv)) {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI Initialization failed." << std::endl;
+    return(0);
+  }
+  if(mpiprv != MPI_THREAD_MULTIPLE) {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI_THREAD_MULTIPLE must be supported for the hybrid parallelzation. " 
+              << MPI_THREAD_MULTIPLE << " : " << mpiprv
+              << std::endl;
+    MPI_Finalize();
+    return(0);
+  }
+#else
   if(MPI_SUCCESS != MPI_Init(&argc, &argv)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI Initialization failed." << std::endl;
     return(0);
   }
+#endif
 
   // Get process id (rank) in MPI_COMM_WORLD
   if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &(Globals::my_rank))) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
+    MPI_Finalize();
     return(0);
   }
 
@@ -86,6 +104,7 @@ int main(int argc, char *argv[])
   if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &Globals::nranks)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_size failed." << std::endl;
+    MPI_Finalize();
     return(0);
   }
 #else

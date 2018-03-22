@@ -32,7 +32,10 @@ public:
   void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
   void DeleteAthenaArray();
 
-  // functions to get array dimensions 
+  // public function to (shallow) swap data pointers of two equally-sized arrays
+  void SwapAthenaArray(AthenaArray<T>& array2);
+
+  // functions to get array dimensions
   int GetDim1() const { return nx1_; }
   int GetDim2() const { return nx2_; }
   int GetDim3() const { return nx3_; }
@@ -48,27 +51,27 @@ public:
   const T *data() const	{ return pdata_; }
 
   // overload operator() to access 1d-5d data
-  T &operator() (const int n) { 
+  T &operator() (const int n) {
     return pdata_[n]; }
-  T operator() (const int n) const { 
+  T operator() (const int n) const {
     return pdata_[n]; }
 
-  T &operator() (const int n, const int i) { 
+  T &operator() (const int n, const int i) {
     return pdata_[i + nx1_*n]; }
-  T operator() (const int n, const int i) const { 
+  T operator() (const int n, const int i) const {
     return pdata_[i + nx1_*n]; }
 
-  T &operator() (const int n, const int j, const int i) { 
+  T &operator() (const int n, const int j, const int i) {
     return pdata_[i + nx1_*(j + nx2_*n)]; }
-  T operator() (const int n, const int j, const int i) const { 
+  T operator() (const int n, const int j, const int i) const {
     return pdata_[i + nx1_*(j + nx2_*n)]; }
 
-  T &operator() (const int n, const int k, const int j, const int i) { 
+  T &operator() (const int n, const int k, const int j, const int i) {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
-  T operator() (const int n, const int k, const int j, const int i) const { 
+  T operator() (const int n, const int k, const int j, const int i) const {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
 
-  T &operator() (const int m, const int n, const int k, const int j, const int i) { 
+  T &operator() (const int m, const int n, const int k, const int j, const int i) {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
   T operator() (const int m, const int n, const int k, const int j, const int i) const {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
@@ -114,7 +117,7 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
     pdata_ = new T[size]; // allocate memory for array data
     for (std::size_t i=0; i<size; ++i) {
       pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new memory
-    } 
+    }
     scopy_=false;
   }
 }
@@ -128,7 +131,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
-    } 
+    }
     scopy_=false;
   }
   return *this;
@@ -202,7 +205,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::NewAthenaArray()
 //  \brief allocate new 1D array with elements initialized to zero.
 
 template<typename T>
@@ -216,9 +219,9 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx5_ = 1;
   pdata_ = new T[nx1](); // allocate memory and initialize to zero
 }
- 
+
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::NewAthenaArray()
 //  \brief 2d data allocation
 
 template<typename T>
@@ -232,9 +235,9 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
   nx5_ = 1;
   pdata_ = new T[nx1*nx2](); // allocate memory and initialize to zero
 }
- 
+
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::NewAthenaArray()
 //  \brief 3d data allocation
 
 template<typename T>
@@ -248,9 +251,9 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
   nx5_ = 1;
   pdata_ = new T[nx1*nx2*nx3](); // allocate memory and initialize to zero
 }
- 
+
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::NewAthenaArray()
 //  \brief 4d data allocation
 
 template<typename T>
@@ -266,7 +269,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::NewAthenaArray()
 //  \brief 5d data allocation
 
 template<typename T>
@@ -282,7 +285,7 @@ void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn AthenaArray::DeleteAthenaArray()
 //  \brief  free memory allocated for data array
 
 template<typename T>
@@ -295,6 +298,22 @@ void AthenaArray<T>::DeleteAthenaArray()
     pdata_ = NULL;
     scopy_ = true;
   }
-} 
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::SwapAthenaArray()
+//  \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
+// Does not allocate memory for either AthenArray
+// THIS REQUIRES DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED AND HAVE THE SAME
+// SIZES (does not explicitly check either condition)
+
+template<typename T>
+void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
+  // scopy_ is essentially only tracked for correctness of delete[] in DeleteAthenaArray()
+  // cache array1 data ptr
+  T* tmp_pdata_ = pdata_;
+  pdata_ = array2.pdata_;
+  array2.pdata_ = tmp_pdata_;
+}
 
 #endif // ATHENA_ARRAYS_HPP
