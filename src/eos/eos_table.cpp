@@ -25,10 +25,8 @@
 #include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
-//#include "../hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -170,18 +168,14 @@ Real EquationOfState::BilinearInterp(Real x, Real y, int var)
   {
     yil = 0;
 #ifdef EOSDEBUG0
-    //printf("WARNING!\nY value off table, extrapolating.\n");
-    std::cout << "WARNING!\nY value off table, extrapolating. " << y <<"\n";
-    if ( y != y ) throw std::runtime_error("Meh");
+    printf("WARNING!\nY value off table, extrapolating.\n");
 #endif
   }
   else if (yil >= ny - 1)
   {
     yil = ny - 2;
 #ifdef EOSDEBUG0
-    //printf("WARNING!\nY value off table, extrapolating.\n");
-    std::cout << "WARNING!\nY value off table, extrapolating. " << y <<"\n";
-    if ( y != y ) throw std::runtime_error("Meh");
+    printf("WARNING!\nY value off table, extrapolating.\n");
 #endif
   }
   yrl = 1 + yil - y;  /* residual lower */
@@ -268,7 +262,6 @@ void EquationOfState::EosTestLoop()
     std::cin >> egas;
   }
   data.DeleteAthenaArray();
-  //throw std::runtime_error("Meh");
 }
 
 #endif

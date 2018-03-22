@@ -59,11 +59,12 @@ void EquationOfState::EnrollSimpleEgas(SimpleEosFun_t func){SimpleEgas_ = func;}
 void EquationOfState::EnrollSimpleAsq(SimpleEosFun_t func){AsqFromPres_ = func;}
 void EquationOfState::EnrollAsqFromHint(SimpleEosFun_t func){AsqFromHint_ = func;}
 
+// Ensure user EOS functions are set
 int EquationOfState::QueryEnrolled(){
   if (SimplePres_==NULL) throw std::runtime_error("Eos function 'SimplePres_' unset. This is usually set in 'InitUserMeshBlockData'");
   if (SimpleEgas_==NULL) throw std::runtime_error("Eos function 'SimpleEgas_' unset. This is usually set in 'InitUserMeshBlockData'");
-  if (AsqFromPres_==NULL) throw std::runtime_error("Eos function 'SimpleAsq_' unset. This is usually set in 'InitUserMeshBlockData'");
-  if (AsqFromHint_==NULL) throw std::runtime_error("Eos function 'RoeAsq_' unset. This is usually set in 'InitUserMeshBlockData'");
+  if (AsqFromPres_==NULL) throw std::runtime_error("Eos function 'AsqFromPres_' unset. This is usually set in 'InitUserMeshBlockData'");
+  if (AsqFromHint_==NULL) throw std::runtime_error("Eos function 'AsqFromHint_' unset. This is usually set in 'InitUserMeshBlockData'");
   return 0;
 }
 
@@ -106,12 +107,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
 
       // apply pressure/energy floor, correct total energy
-      //Real egas = (u_e - ke > energy_floor_) ?  u_e - ke : energy_floor_;
       u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
-      //if (egas <= 0.) std::runtime_error("Zero energy");
-      //std::cout << "egas: " << egas << ", e floor: " << energy_floor_ << "\n";
-      //w_p = GetEosData(u_d, egas, axisEgas, iPresEOS) * egas;
-      //w_p = (*SimplePres_)(u_d, egas, this);
+      // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point
       w_p = (*SimplePres_)(u_d, u_e - ke, this);
     }
   }}
@@ -152,8 +149,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m1 = w_vx*w_d;
       u_m2 = w_vy*w_d;
       u_m3 = w_vz*w_d;
-      //u_e = GetEgasFromRhoPres(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
-      //u_e = GetEosData(u_d, w_p, axisPres, iPresEOS) * w_p + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
       u_e = (*SimpleEgas_)(u_d, w_p, this);
     }
   }}
