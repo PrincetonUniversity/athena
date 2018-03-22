@@ -2,8 +2,8 @@
 
 - Create InterpolatedTable class (based off of eos_table.cpp)
   - Make EosTable a child class of this class
-  - Move most of the `#if EOS_TABLE_ENABLED` additions here
-  - Give EOS class an attribute which is a pointer to an EosTable if G
+  - Move most of the `#if EOS_TABLE_ENABLED` additions in eos.hpp to EosTable
+  - Give EOS class an attribute which is a pointer to an EosTable
 
 - Make `GENERAL_EOS_ENABLED` flag to replace most of the `EOS_TABLE_ENABLED` flags
   - If needed have distinct `EOS_TABLE_ENABLED` flags (i.e. separate from above flag)
