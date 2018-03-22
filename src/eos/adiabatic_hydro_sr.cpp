@@ -93,10 +93,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   prim_copy.InitWithShallowCopy(prim);
 
   // Go through cells
-  for (int k = ks; k <= ke; k++) {
-    for (int j = js; j <= je; j++) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       #pragma omp simd
-      for (int i = is; i <= ie; i++) {
+      for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
         Real &d = cons_copy(IDN,k,j,i);
