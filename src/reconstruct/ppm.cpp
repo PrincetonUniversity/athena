@@ -31,6 +31,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseParabolicX1()
@@ -320,6 +321,9 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         wr(n,k,j,i  ) = qr_imh(n,i);
       }
     }
+    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
+    pmb->peos->ApplyPrimitiveFloors(wl, il, iu+1, j, j, k, k);
+    pmb->peos->ApplyPrimitiveFloors(wr, il-1, iu, j, j, k, k);
   }}
 
   return;
