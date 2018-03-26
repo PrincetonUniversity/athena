@@ -503,3 +503,41 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
   return 1.0 - dpgas_dw + 0.5*bb_sq * dv_sq_dw + ss_sq/w_cu;
 }
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int il, int iu, int jl, int ju, int kl, int ku)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+                     int il, int iu, int jl, int ju, int kl, int ku)
+{
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        Real& w_d  = prim(IDN,k,j,i);
+        Real& w_p  = prim(IPR,k,j,i);
+
+        // Eventually, may want to check that small field errors don't overwhelm gas floor
+        // Real density_floor_local = density_floor_;
+        // if (sigma_max_ > 0.0) {
+        //   density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+        // }
+        // Real pressure_floor_local = pressure_floor_;
+        // if (beta_min_ > 0.0) {
+        //   pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+        // }
+        // w_d = (w_d > density_floor_local) ?  w_d : density_floor_local;
+        // w_p = (w_p > pressure_floor_local) ?  w_p : pressure_floor_local;
+
+        // apply density floor
+        w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+        // apply pressure floor
+        w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+      }
+    }
+  }
+  return;
+}
