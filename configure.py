@@ -305,7 +305,8 @@ if args['cxx'] == 'g++-simd':
   definitions['COMPILER_CHOICE'] = 'g++-simd' # gcc version > 4.9
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd -fwhole-program' \
+                                       + ' -march=skylake-avx512 -flto'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc':
