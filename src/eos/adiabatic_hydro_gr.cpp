@@ -148,7 +148,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract old primitives
         const Real &rho_old = prim_old(IDN,k,j,i);
-        const Real &pgas_old = prim_old(IEN,k,j,i);
+        const Real &pgas_old = prim_old(IPR,k,j,i);
         const Real &uu1_old = prim_old(IVX,k,j,i);
         const Real &uu2_old = prim_old(IVY,k,j,i);
         const Real &uu3_old = prim_old(IVZ,k,j,i);
@@ -198,7 +198,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
+        Real &pgas = prim(IPR,k,j,i);
         Real &uu1 = prim(IVX,k,j,i);
         Real &uu2 = prim(IVY,k,j,i);
         Real &uu3 = prim(IVZ,k,j,i);
@@ -305,7 +305,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 {
   // Extract primitives
   const Real &rho = prim(IDN,k,j,i);
-  const Real &pgas = prim(IEN,k,j,i);
+  const Real &pgas = prim(IPR,k,j,i);
   const Real &uu1 = prim(IVX,k,j,i);
   const Real &uu2 = prim(IVY,k,j,i);
   const Real &uu3 = prim(IVZ,k,j,i);

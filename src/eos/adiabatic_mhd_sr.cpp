@@ -124,7 +124,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
+        Real &pgas = prim(IPR,k,j,i);
         Real &vx = prim(IVX,k,j,i);
         Real &vy = prim(IVY,k,j,i);
         Real &vz = prim(IVZ,k,j,i);
@@ -207,7 +207,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
         // Extract primitives and magnetic fields
         const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
+        const Real &pgas = prim(IPR,k,j,i);
         const Real &v1 = prim(IVX,k,j,i);
         const Real &v2 = prim(IVY,k,j,i);
         const Real &v3 = prim(IVZ,k,j,i);
@@ -288,7 +288,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
-    const Real &pgas = prim(IEN,k,j,i);
+    const Real &pgas = prim(IPR,k,j,i);
     const Real &vx = prim(ivx,k,j,i);
     const Real &vy = prim(ivy,k,j,i);
     const Real &vz = prim(ivz,k,j,i);
