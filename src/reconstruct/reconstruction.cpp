@@ -93,7 +93,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
   scr3_ni_.NewAthenaArray(NWAVE,ncells1);
   scr4_ni_.NewAthenaArray(NWAVE,ncells1);
 
-  if (xorder == 4){
+  if (xorder == 4) {
     scr03_i_.NewAthenaArray(ncells1);
     scr04_i_.NewAthenaArray(ncells1);
     scr05_i_.NewAthenaArray(ncells1);
@@ -123,9 +123,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     hminus_ratio_i.NewAthenaArray(ncells1);
 
     // coeffiencients in x1 for uniform Cartesian mesh
-    if (uniform_limiter[0]){
+    if (uniform_limiter[0]) {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i){
+      for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i) {
         c1i(i) = 0.5;
         c2i(i) = 0.5;
         c3i(i) = 0.5;
@@ -138,7 +138,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i){
+      for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i) {
         Real& dx_im1 = pmb->pcoord->dx1f(i-1);
         Real& dx_i   = pmb->pcoord->dx1f(i  );
         Real& dx_ip1 = pmb->pcoord->dx1f(i+1);
@@ -160,7 +160,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
         }
       }
       // Compute curvilinear geometric factors for limiter (Mignone eq 48)
-      for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i){
+      for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
         if ((COORDINATE_SYSTEM == "cylindrical") ||
             (COORDINATE_SYSTEM == "spherical_polar")) {
           Real h_plus, h_minus;
@@ -170,23 +170,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
             // cylindrical radial coordinate
             h_plus = 3.0 + dx_i/(2.0*xv_i);
             h_minus = 3.0 - dx_i/(2.0*xv_i);
-          }
-          else if (COORDINATE_SYSTEM == "spherical_polar"){
+          } else {
             // spherical radial coordinate
             h_plus = 3.0 + (2.0*dx_i*(10.0*xv_i + dx_i))/(20.0*SQR(xv_i) + SQR(dx_i));
             h_minus = 3.0 + (2.0*dx_i*(-10.0*xv_i + dx_i))/(20.0*SQR(xv_i) + SQR(dx_i));
           }
-          // else {
-          //   std:: stringstream msg;
-          //   msg << "### FATAL ERROR in function [Reconstruction constructor]"
-          //       << std::endl << "unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM
-          //       << " for PPM limiter" << std::endl;
-          //   throw std::runtime_error(msg.str().c_str());
-          // }
           hplus_ratio_i(i) = (h_plus + 1.0)/(h_minus - 1.0);
           hminus_ratio_i(i) = (h_minus + 1.0)/(h_plus - 1.0);
-        }
-        else { // Cartesian, SR, GR
+        } else { // Cartesian, SR, GR
           // h_plus = 3.0;
           // h_minus = 3.0;
           // Ratios are = 2 for Cartesian coords, as in original PPM overshoot limiter
@@ -211,7 +202,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // coeffiencients in x2 for uniform Cartesian mesh
       if (uniform_limiter[1]) {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j){
+        for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j) {
           c1j(j) = 0.5;
           c2j(j) = 0.5;
           c3j(j) = 0.5;
@@ -224,7 +215,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j){
+        for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j) {
           Real& dx_jm1 = pmb->pcoord->dx2f(j-1);
           Real& dx_j   = pmb->pcoord->dx2f(j  );
           Real& dx_jp1 = pmb->pcoord->dx2f(j+1);
@@ -246,7 +237,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
           }
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
-        for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j){
+        for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j) {
           // corrections to PPMx2 only for spherical polar coordinates
           if (COORDINATE_SYSTEM == "spherical_polar") {
             // x2 = theta polar coordinate adjustment
@@ -262,8 +253,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
                 dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
             hplus_ratio_j(j) = (h_plus + 1.0)/(h_minus - 1.0);
             hminus_ratio_j(j) = (h_minus + 1.0)/(h_plus - 1.0);
-          }
-          else {
+          } else {
             // h_plus = 3.0;
             // h_minus = 3.0;
             // Ratios are both = 2, as in orig PPM overshoot limiter
@@ -289,7 +279,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // coeffiencients in x3 for uniform Cartesian mesh
       if (uniform_limiter[2]) {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k){
+        for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k) {
           c1k(k) = 0.5;
           c2k(k) = 0.5;
           c3k(k) = 0.5;
@@ -302,7 +292,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k){
+        for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k) {
           Real& dx_km1 = pmb->pcoord->dx3f(k-1);
           Real& dx_k   = pmb->pcoord->dx3f(k  );
           Real& dx_kp1 = pmb->pcoord->dx3f(k+1);
@@ -325,7 +315,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
         // No corrections in x3 for the built-in Newtonian coordinate systems
-        for (int k=(pmb->ks)-1; k<=(pmb->ke)+1; ++k){
+        for (int k=(pmb->ks)-1; k<=(pmb->ke)+1; ++k) {
           // h_plus = 3.0;
           // h_minus = 3.0;
           // Ratios are both = 2 for Cartesian and all curviliniear coords
@@ -349,7 +339,6 @@ Reconstruction::~Reconstruction()
   scr2_ni_.DeleteAthenaArray();
   scr3_ni_.DeleteAthenaArray();
   scr4_ni_.DeleteAthenaArray();
-
 
   scr03_i_.DeleteAthenaArray();
   scr04_i_.DeleteAthenaArray();
