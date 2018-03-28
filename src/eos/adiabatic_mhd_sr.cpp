@@ -506,38 +506,29 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int il, int iu, int jl, int ju, int kl, int ku)
+//           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-                     int il, int iu, int jl, int ju, int kl, int ku)
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
 {
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        Real& w_d  = prim(IDN,k,j,i);
-        Real& w_p  = prim(IPR,k,j,i);
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+  // Eventually, may want to check that small field errors don't overwhelm gas floor
+  // Real density_floor_local = density_floor_;
+  // if (sigma_max_ > 0.0) {
+  //   density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+  // }
+  // Real pressure_floor_local = pressure_floor_;
+  // if (beta_min_ > 0.0) {
+  //   pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+  // }
+  // w_d = (w_d > density_floor_local) ?  w_d : density_floor_local;
+  // w_p = (w_p > pressure_floor_local) ?  w_p : pressure_floor_local;
 
-        // Eventually, may want to check that small field errors don't overwhelm gas floor
-        // Real density_floor_local = density_floor_;
-        // if (sigma_max_ > 0.0) {
-        //   density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
-        // }
-        // Real pressure_floor_local = pressure_floor_;
-        // if (beta_min_ > 0.0) {
-        //   pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
-        // }
-        // w_d = (w_d > density_floor_local) ?  w_d : density_floor_local;
-        // w_p = (w_p > pressure_floor_local) ?  w_p : pressure_floor_local;
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
 
-        // apply density floor
-        w_d = (w_d > density_floor_) ?  w_d : density_floor_;
-
-        // apply pressure floor
-        w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
-      }
-    }
-  }
   return;
 }

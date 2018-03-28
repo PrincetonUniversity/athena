@@ -464,27 +464,18 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi)
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int il, int iu, int jl, int ju, int kl, int ku)
+//           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-                     int il, int iu, int jl, int ju, int kl, int ku)
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
 {
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        Real& w_d  = prim(IDN,k,j,i);
-        Real& w_p  = prim(IPR,k,j,i);
-        // Not applying position-dependent floors here in GR, nor using rho_min
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+  // Not applying position-dependent floors here in GR, nor using rho_min
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
 
-        // apply density floor
-        w_d = (w_d > density_floor_) ?  w_d : density_floor_;
-
-        // apply pressure floor
-        w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
-      }
-    }
-  }
   return;
 }

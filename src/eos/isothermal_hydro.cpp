@@ -117,22 +117,15 @@ Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int il, int iu, int jl, int ju, int kl, int ku)
+//           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-                     int il, int iu, int jl, int ju, int kl, int ku)
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
 {
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        Real& w_d  = prim(IDN,k,j,i);
+  Real& w_d  = prim(IDN,k,j,i);
 
-        // apply density floor
-        w_d = (w_d > density_floor_) ?  w_d : density_floor_;
-      }
-    }
-  }
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
   return;
 }
