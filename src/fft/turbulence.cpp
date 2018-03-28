@@ -347,5 +347,5 @@ void TurbulenceDriver::Perturb(Real dt){
 
 long int TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 {
-  return (double)((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
+  return ((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
 }
