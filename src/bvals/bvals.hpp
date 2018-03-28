@@ -32,7 +32,7 @@ struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
+enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
@@ -61,8 +61,8 @@ typedef struct NeighborBlock {
   bool polar; // flag indicating boundary is across a pole
 
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
-    fid(FACE_UNDEF), polar(false) {};
+                    fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
+                    type(NEIGHBOR_NONE), fid(FACE_UNDEF), polar(false) {}
 
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
@@ -195,7 +195,7 @@ public:
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
 
   int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
