@@ -317,13 +317,13 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
         wl(n,k,j,i+1) = ql_iph(n,i);
         wr(n,k,j,i  ) = qr_imh(n,i);
       }
     }
-    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
-    pmb->peos->ApplyPrimitiveFloors(wl, il, iu+1, j, j, k, k);
-    pmb->peos->ApplyPrimitiveFloors(wr, il-1, iu, j, j, k, k);
   }}
 
   return;
@@ -613,14 +613,13 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
         wl(n,k,j+1,i) = ql_jph(n,i);
         wr(n,k,j  ,i) = qr_jmh(n,i);
       }
     }
-    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
-    pmb->peos->ApplyPrimitiveFloors(wl, il, iu, j+1, j+1, k, k);
-    pmb->peos->ApplyPrimitiveFloors(wr, il, iu, j, j, k, k);
-
   }}
 
   return;
@@ -911,13 +910,13 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
         wl(n,k+1,j,i) = ql_kph(n,i);
         wr(n,k  ,j,i) = qr_kmh(n,i);
       }
     }
-    // Reapply EOS floors to both L/R reconstructed primitive states along x1 slice
-    pmb->peos->ApplyPrimitiveFloors(wl, il, iu, j, j, k+1, k+1);
-    pmb->peos->ApplyPrimitiveFloors(wr, il, iu, j, j, k, k);
   }}
 
   return;
