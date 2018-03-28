@@ -103,7 +103,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Construct initial guess for enthalpy W (cf. MM A26-A27)
         Real a1 = 4.0/3.0 * (bb_sq - ee);
-        Real a0 = 1.0/3.0 * (m_sq + bb_sq * (bb_sq - 2.0*ee));
+        Real a0 = ONE_3RD * (m_sq + bb_sq * (bb_sq - 2.0*ee));
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
