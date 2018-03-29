@@ -124,7 +124,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
-  // Reconstruction (constructor may implicitly depend on Coordinates)
+  // Reconstruction (constructor may implicitly depend on Coordinates, and PPM variable
+  // floors depend on EOS)
   precon = new Reconstruction(this, pin);
 
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
