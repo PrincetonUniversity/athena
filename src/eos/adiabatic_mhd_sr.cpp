@@ -56,7 +56,7 @@ EquationOfState::~EquationOfState() {}
 //   prim_old: primitive quantities from previous half timestep (not used)
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
@@ -66,8 +66,8 @@ EquationOfState::~EquationOfState() {}
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
-    int ke)
+    AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
+    int ku)
 {
   // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
@@ -75,13 +75,13 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real max_velocity = std::sqrt(v_sq_max);
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js, je, ks, ke);
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
 
   // Go through cells
-  for (int k = ks; k <= ke; k++) {
-    for (int j = js; j <= je; j++) {
-      #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
         Real &dd = cons(IDN,k,j,i);
@@ -124,7 +124,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
+        Real &pgas = prim(IPR,k,j,i);
         Real &vx = prim(IVX,k,j,i);
         Real &vy = prim(IVY,k,j,i);
         Real &vz = prim(IVZ,k,j,i);
@@ -188,26 +188,26 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   prim: 3D array of primitives
 //   bc: 3D array of cell-centered magnetic fields
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int is,
-     int ie, int js, int je, int ks, int ke)
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+     int iu, int jl, int ju, int kl, int ku)
 {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
 
         // Extract primitives and magnetic fields
         const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
+        const Real &pgas = prim(IPR,k,j,i);
         const Real &v1 = prim(IVX,k,j,i);
         const Real &v2 = prim(IVY,k,j,i);
         const Real &v3 = prim(IVZ,k,j,i);
@@ -283,12 +283,12 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
 
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
-    const Real &pgas = prim(IEN,k,j,i);
+    const Real &pgas = prim(IPR,k,j,i);
     const Real &vx = prim(ivx,k,j,i);
     const Real &vy = prim(ivy,k,j,i);
     const Real &vz = prim(ivz,k,j,i);
@@ -502,4 +502,33 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
   Real dpgas_drho = 0.0;                                              // (MM A18)
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
   return 1.0 - dpgas_dw + 0.5*bb_sq * dv_sq_dw + ss_sq/w_cu;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
+{
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+  // Eventually, may want to check that small field errors don't overwhelm gas floor
+  // Real density_floor_local = density_floor_;
+  // if (sigma_max_ > 0.0) {
+  //   density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+  // }
+  // Real pressure_floor_local = pressure_floor_;
+  // if (beta_min_ > 0.0) {
+  //   pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+  // }
+  // w_d = (w_d > density_floor_local) ?  w_d : density_floor_local;
+  // w_p = (w_p > pressure_floor_local) ?  w_p : pressure_floor_local;
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+
+  return;
 }

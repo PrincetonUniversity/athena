@@ -105,8 +105,8 @@ def tab(filename, raw=False, dimensions=None):
     if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
       headings = headings[1:2] + headings[3:4] + headings[5:]
       dimensions = 3
-    elif (headings[0] == 'i' and headings[2] == 'j') or
-         (headings[0] == 'i' and headings[2] == 'k') or
+    elif (headings[0] == 'i' and headings[2] == 'j') or \
+         (headings[0] == 'i' and headings[2] == 'k') or \
          (headings[0] == 'j' and headings[2] == 'k'):
       headings = headings[1:2] + headings[3:]
       dimensions = 2
@@ -522,7 +522,7 @@ class athdf(dict):
         else:
           xmin = f.attrs['RootGridX'+repr(d)][0]
           xmax = f.attrs['RootGridX'+repr(d)][1]
-          xrat_root = f.attrs['RootGridX'+repr(d)][2]
+          xrat_root = f.attrs['RootGridX' + repr(d)][2]
           if xrat_root == -1.0 and face_func is None:
             raise AthenaError('Must specify user-defined face_func_{0}'.format(d))
           elif face_func is not None:

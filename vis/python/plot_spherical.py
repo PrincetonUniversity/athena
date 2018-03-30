@@ -59,15 +59,12 @@ def main(**kwargs):
     else:
       quantities.append(kwargs['stream']+'2')
 
-  # Determine if grid is compressed in theta
-  if kwargs['theta_compression'] is not None:
-    h = kwargs['theta_compression']
-    def theta_func(xmin, xmax, _, nf):
-      x2_vals = np.linspace(xmin, xmax, nf)
-      theta_vals = x2_vals + (1.0-h)/2.0 * np.sin(2.0*x2_vals)
-      return theta_vals
-  else:
-    theta_func = None
+  # Define grid compression in theta-direction
+  h = kwargs['theta_compression'] if kwargs['theta_compression'] is not None else 1.0
+  def theta_func(xmin, xmax, _, nf):
+    x2_vals = np.linspace(xmin, xmax, nf)
+    theta_vals = x2_vals + (1.0-h)/2.0 * np.sin(2.0*x2_vals)
+    return theta_vals
 
   # Read data
   data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level, \

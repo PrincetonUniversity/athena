@@ -19,6 +19,12 @@
 // Athena++ headers
 #include "athena.hpp"
 #include "outputs/io_wrapper.hpp"
+#include "defs.hpp"
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 //----------------------------------------------------------------------------------------
 //! \struct InputLine
@@ -93,5 +99,17 @@ private:
        std::string& value, std::string& comment);
   void AddParameter(InputBlock *pib, std::string name, std::string value,
        std::string comment);
+
+  // thread safety
+#ifdef OPENMP_PARALLEL
+  omp_lock_t rlock_, wlock_;
+  int reading_;
+#endif
+
+  void StartReading(void);
+  void EndReading(void);
+  void StartWriting(void);
+  void EndWriting(void);
+
 };
 #endif
