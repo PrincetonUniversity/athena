@@ -105,9 +105,9 @@ def tab(filename, raw=False, dimensions=None):
     if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
       headings = headings[1:2] + headings[3:4] + headings[5:]
       dimensions = 3
-    elif ((headings[0] == 'i' and headings[2] == 'j') or
-          (headings[0] == 'i' and headings[2] == 'k') or
-          (headings[0] == 'j' and headings[2] == 'k')):
+    elif (headings[0] == 'i' and headings[2] == 'j') or
+         (headings[0] == 'i' and headings[2] == 'k') or
+         (headings[0] == 'j' and headings[2] == 'k'):
       headings = headings[1:2] + headings[3:]
       dimensions = 2
     elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
@@ -523,9 +523,11 @@ class athdf(dict):
           xmin = f.attrs['RootGridX'+repr(d)][0]
           xmax = f.attrs['RootGridX'+repr(d)][1]
           xrat_root = f.attrs['RootGridX'+repr(d)][2]
-          if (face_func is not None):
+          if xrat_root == -1.0 and face_func is None:
+            raise AthenaError('Must specify user-defined face_func_{0}'.format(d))
+          elif face_func is not None:
             self['x' + repr(d) + 'f'] = face_func(xmin, xmax, xrat_root, nx + 1)
-          elif (xrat_root == 1.0):
+          elif xrat_root == 1.0:
             self['x' + repr(d) + 'f'] = np.linspace(xmin, xmax, nx + 1)
           else:
             xrat = xrat_root ** (1.0 / 2 ** self.level)
