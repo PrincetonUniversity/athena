@@ -197,14 +197,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     } else {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
           Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -306,14 +306,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     } else {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
           Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
