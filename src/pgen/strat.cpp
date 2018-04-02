@@ -15,16 +15,18 @@
  * Several different field configurations and perturbations are possible:
  *  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
  *  ifield = 2 - uniform Bz
- *  ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
- *  ifield = 4 - uniform By, but only for |z|<2
- *  ifield = 5 - By with constant \beta versus z
- *  ifield = 6 - zero field everywhere
+ *  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
+ *  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+ *  ifield = 5 - uniform By, but only for |z|<2
+ *  ifield = 6 - By with constant \beta versus z
+ *  ifield = 7 - zero field everywhere
  *
  * - ipert = 1 - random perturbations to P and V [default, used by HGB]
  *
  * Code must be configured using -sh
  *
- * REFERENCE: Stone, J., Hawley, J. & Balbus, S. A., ApJ 463, 656-673 (1996)
+ * REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
+ * (1996)
  *            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)	      */
 /*============================================================================*/
 
@@ -53,12 +55,12 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
               AthenaArray<Real> &cons);
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
-                  AthenaArray<Real> &a, 
+                  AthenaArray<Real> &a,
                   FaceField &b, Real time, Real dt,
                   int is, int ie, int js, int je, int ks, int ke);
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &a,
-                  FaceField &b, Real time, Real dt, 
+                  FaceField &b, Real time, Real dt,
                   int is, int ie, int js, int je, int ks, int ke);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
@@ -136,7 +138,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real gam = peos->GetGamma();
 
   if (pmy_mesh->mesh_size.nx3 == 1){
-    std::cout << "[strat.cpp]: Strat only works on a 3D grid" 
+    std::cout << "[strat.cpp]: Strat only works on a 3D grid"
       << std::endl;
   }
 
@@ -177,7 +179,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         x3f = pcoord->x3f(k);
 
         //Initialize perturbations
-        // ipert = 1 - random perturbations to P/d and V 
+        // ipert = 1 - random perturbations to P/d and V
         // [default, used by HGB]
         if (ipert == 1) {
           rval = amp*(ran2(&iseed) - 0.5);
@@ -224,10 +226,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
         //  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
         //  ifield = 2 - uniform Bz
-        //  ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
-        //  ifield = 4 - uniform By, but only for |z|<2
-        //  ifield = 5 - By with constant \beta versus z
-        //  ifield = 6 - zero field everywhere
+        //  ifield = 3 - Bz(1+0.5*sin(kx*x1))
+        //  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+        //  ifield = 5 - uniform By, but only for |z|<2
+        //  ifield = 6 - By with constant \beta versus z
+        //  ifield = 7 - zero field everywhere
         if (MAGNETIC_FIELDS_ENABLED) {
           if (ifield == 1) {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -247,13 +250,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           }
           if (ifield == 3) {
             pfield->b.x1f(k,j,i) = 0.0;
+            pfield->b.x2f(k,j,i) = 0.0;
+            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+            if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+          }
+          if (ifield == 4) {
+            pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = B0*(cos((double)kx*x1));
             pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos((double)kx*x1));
             if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
           }
-          if (ifield == 4 && fabs(x3) < 2.0) {
+          if (ifield == 5 && fabs(x3) < 2.0) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = B0;
             pfield->b.x3f(k,j,i) = 0.0;
@@ -261,7 +272,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             if (j==je) pfield->b.x2f(k,je+1,i) = B0;
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
-          if (ifield == 5) {
+          if (ifield == 6) {
             /* net toroidal field with constant \beta with height */
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = sqrt(den*exp(-x3*x3)*SQR(Omega_0)/beta);
@@ -271,7 +282,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                                                     SQR(Omega_0)/beta);
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
-          if (ifield == 6) {
+          if (ifield == 7) {
             /* zero field everywhere */
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
@@ -453,7 +464,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
   return;
 }
 
- //Here is the lower z outflow boundary.
+ //  Here is the lower z outflow boundary.
  //  The basic idea is that the pressure and density
  //  are exponentially extrapolated in the ghost zones
  //  assuming a constant temperature there (i.e., an
@@ -513,7 +524,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
          * assuming a constant temperature in the ghost zones */
         prim(IDN,ks-k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
                                 (2.0*Tks/SQR(Omega_0)));
-        /* Copy the velocities, but not the momenta --- 
+        /* Copy the velocities, but not the momenta ---
          * important because of the density extrapolation above */
         prim(IVX,ks-k,j,i) = prim(IVX,ks,j,i);
         prim(IVY,ks-k,j,i) = prim(IVY,ks,j,i);
@@ -533,7 +544,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 
 }
 
- //Here is the upper z outflow boundary.
+ // Here is the upper z outflow boundary.
  // The basic idea is that the pressure and density
  // are exponentially extrapolated in the ghost zones
  // assuming a constant temperature there (i.e., an
@@ -586,11 +597,11 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
           presske = std::max(presske,pfloor);
           Real Tke = presske/den;
         }
-        /* Now extrapolate the density to balance gravity 
+        /* Now extrapolate the density to balance gravity
          * assuming a constant temperature in the ghost zones */
         prim(IDN,ke+k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
                                (2.0*Tke/SQR(Omega_0)));
-        /* Copy the velocities, but not the momenta --- 
+        /* Copy the velocities, but not the momenta ---
          * important because of the density extrapolation above */
         prim(IVX,ke+k,j,i) = prim(IVX,ke,j,i);
         prim(IVY,ke+k,j,i) = prim(IVY,ke,j,i);
