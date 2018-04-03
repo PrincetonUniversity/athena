@@ -31,6 +31,7 @@
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
+#   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
 #-----------------------------------------------------------------------------------------
@@ -177,6 +178,11 @@ parser.add_argument('--cxx',
 parser.add_argument('--ccmd',
     default=None,
     help='override for command to use to call C++ compiler')
+
+# --cflag=[string] argument
+parser.add_argument('--cflag',
+    default=None,
+    help='additional string of flags to append to compiler/linker calls')
 
 # --include=[name] arguments
 parser.add_argument('--include',
@@ -488,6 +494,10 @@ else:
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
+# --cflag=[string] argument
+if args['cflag'] is not None:
+  makefile_options['COMPILER_FLAGS'] += ' '+args['cflag']
 
 # --include=[name] arguments
 for include_path in args['include']:
