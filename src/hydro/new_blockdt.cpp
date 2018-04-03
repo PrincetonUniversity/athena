@@ -52,26 +52,15 @@ Real Hydro::NewBlockTimeStep(void)
     b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
   }
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-  Real *pthread_min_dt;
-  pthread_min_dt = new Real [nthreads];
-
-  for (int n=0; n<nthreads; ++n) pthread_min_dt[n] = (FLT_MAX);
-
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> dt1, dt2, dt3;
-  dt1.InitWithShallowSlice(dt1_,2,tid,1);
-  dt2.InitWithShallowSlice(dt2_,2,tid,1);
-  dt3.InitWithShallowSlice(dt3_,2,tid,1);
+  dt1.InitWithShallowCopy(dt1_);
+  dt2.InitWithShallowCopy(dt2_);
+  dt3.InitWithShallowCopy(dt3_);
   Real wi[(NWAVE)];
 
-  for (int k=ks; k<=ke; ++k){
+  Real min_dt = (FLT_MAX);
 
-#pragma omp for schedule(static)
+  for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je; ++j){
       pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
@@ -131,14 +120,14 @@ Real Hydro::NewBlockTimeStep(void)
       // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i){
         Real& dt_1 = dt1(i);
-        pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
+        min_dt = std::min(min_dt,dt_1);
       }
 
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_2 = dt2(i);
-          pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_2);
+          min_dt = std::min(min_dt,dt_2);
         }
       }
 
@@ -146,25 +135,18 @@ Real Hydro::NewBlockTimeStep(void)
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_3 = dt3(i);
-          pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_3);
+          min_dt = std::min(min_dt,dt_3);
         }
       }
 
     }
   }
 
-} // end of omp parallel region
-
-  // compute minimum across all threads
-  Real min_dt = pthread_min_dt[0];
-  for (int n=1; n<nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
-
   min_dt *= pmb->pmy_mesh->cfl_number;
 
-  if(UserTimeStep_!=NULL)
+  if(UserTimeStep_!=NULL) {
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
-
-  delete[] pthread_min_dt;
+  }
 
   pmb->new_block_dt=min_dt;
   return min_dt;

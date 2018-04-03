@@ -20,6 +20,7 @@ cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
 tlim       = 5.0       # time limit
 integrator = vl2       # time integration algorithm
+xorder     = 2         # spatial order of reconstruction
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
@@ -101,7 +102,7 @@ gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed
 
 <problem>
-compute_error = false # set value to 'true' to compute L1 error compared to initial data
+compute_error = true  # when 'true' outputs L1 error compared to initial data
 wave_flag = 0         # Wave family number (0 - 4 for adiabatic hydro)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity

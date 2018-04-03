@@ -124,6 +124,8 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
   int gflag;
+  // Track the partial dt abscissae for substepping each memory register, relative to t^n
+  Real step_dt[3];
 
   // user output variables for analysis
   int nuser_out_var;

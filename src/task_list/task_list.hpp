@@ -99,9 +99,6 @@ public:
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
   struct IntegratorWeight step_wghts[MAX_NSTEP];
 
-  // Track the partial dt abscissae for substepping each memory register, relative to t^n
-  Real step_dt[3];
-
   void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
 
   // functions

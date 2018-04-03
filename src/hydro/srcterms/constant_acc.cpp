@@ -25,9 +25,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
   // acceleration in 1-direction
   if (g1_!=0.0) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real src = dt*prim(IDN,k,j,i)*g1_;
         cons(IM1,k,j,i) += src;
@@ -39,9 +38,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
   // acceleration in 2-direction
   if (g2_!=0.0) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real src = dt*prim(IDN,k,j,i)*g2_;
           cons(IM2,k,j,i) += src;
@@ -53,9 +51,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
   // acceleration in 3-direction
   if (g3_!=0.0) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
     for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real src = dt*prim(IDN,k,j,i)*g3_;
           cons(IM3,k,j,i) += src;

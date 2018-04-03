@@ -90,8 +90,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       // x-positions of shock at top and bottom of cell
-      Real shock_xpos_btm = 0.1666666666 + pcoord->x1f(j  )/sqrt((double)3.0);
-      Real shock_xpos_top = 0.1666666666 + pcoord->x1f(j+1)/sqrt((double)3.0);
+      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt((double)3.0);
+      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt((double)3.0);
+      phydro->u(IM3,ks,j,i) = 0.0;
+
       if (pcoord->x1f(i) > shock_xpos_top) {
         // upstream conditions
         phydro->u(IDN,ks,j,i) = 1.4;
@@ -166,6 +168,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
       prim(IDN,ks,j,is-i) = d0;
       prim(IVX,ks,j,is-i) = u0;
       prim(IVY,ks,j,is-i) = v0;
+      prim(IVZ,ks,j,is-i) = 0.0;
       prim(IPR,ks,j,is-i) = p0;
     }
   }
@@ -194,12 +197,14 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
         prim(IDN,ks,js-j,i) = d0;
         prim(IVX,ks,js-j,i) = u0;
         prim(IVY,ks,js-j,i) = v0;
+        prim(IVZ,ks,js-j,i) = 0.0;
         prim(IPR,ks,js-j,i) = p0;
       } else {
         // reflected
         prim(IDN,ks,js-j,i) = prim(IDN,ks,js+(j-1),i);
         prim(IVX,ks,js-j,i) = prim(IVX,ks,js+(j-1),i);
         prim(IVY,ks,js-j,i) = -prim(IVY,ks,js+(j-1),i);
+        prim(IVZ,ks,js-j,i) = 0.0;
         prim(IPR,ks,js-j,i) = prim(IPR,ks,js+(j-1),i);
       }
     }
@@ -232,12 +237,14 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
         prim(IDN,ks,je+j,i) = d0;
         prim(IVX,ks,je+j,i) = u0;
         prim(IVY,ks,je+j,i) = v0;
+        prim(IVZ,ks,je+j,i) = 0.0;
         prim(IPR,ks,je+j,i) = p0;
       } else {
         // fixed at upstream state
         prim(IDN,ks,je+j,i) = 1.4;
         prim(IVX,ks,je+j,i) = 0.0;
         prim(IVY,ks,je+j,i) = 0.0;
+        prim(IVZ,ks,je+j,i) = 0.0;
         prim(IPR,ks,je+j,i) = p1;
       }
     }

@@ -45,9 +45,8 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
   if (COORDINATE_SYSTEM == "cylindrical" ||
       COORDINATE_SYSTEM == "spherical_polar") {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-  #pragma omp parallel for schedule(static)
       for (int j=pmb->js; j<=pmb->je; ++j) {
-  #pragma simd
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den = prim(IDN,k,j,i);
           Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
@@ -56,13 +55,11 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
             dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
                    +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
         }
-      }
-    }
+    }}
   } else if (COORDINATE_SYSTEM == "cartesian") {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
-  #pragma omp parallel for schedule(static)
       for (int j=pmb->js; j<=pmb->je; ++j) {
-  #pragma simd
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den = prim(IDN,k,j,i);
           Real x1  = pmb->pcoord->x1v(i);
@@ -75,11 +72,14 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
           cons(IM2,k,j,i) -= src*x2;
           cons(IM3,k,j,i) -= src*x3;
           if (NON_BAROTROPIC_EOS) {
-            cons(IEN,k,j,i) -= 0.5*dt*dpt*x1*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
+            cons(IEN,k,j,i) -= 0.5*dt*dpt*x1*(flux[X1DIR](IDN,k,j,i)+
+                                              flux[X1DIR](IDN,k,j,i+1));
             if (pmb->block_size.nx2 > 1)
-              cons(IEN,k,j,i) -= 0.5*dt*dpt*x2*(flux[X2DIR](IDN,k,j,i)+flux[X2DIR](IDN,k,j+1,i));
+              cons(IEN,k,j,i) -= 0.5*dt*dpt*x2*(flux[X2DIR](IDN,k,j,i)+
+                                                flux[X2DIR](IDN,k,j+1,i));
             if (pmb->block_size.nx3 > 1)
-              cons(IEN,k,j,i) -= 0.5*dt*dpt*x3*(flux[X3DIR](IDN,k,j,i)+flux[X3DIR](IDN,k+1,j,i));
+              cons(IEN,k,j,i) -= 0.5*dt*dpt*x3*(flux[X3DIR](IDN,k,j,i)+
+                                                flux[X3DIR](IDN,k+1,j,i));
           }
           //Real src = dt*den*gm_/SQR(rad)/rad;
           //cons(IM1,k,j,i) -= src*x1;
@@ -92,7 +92,7 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms::PointMass" << std::endl
           << "The point source gravity works only in spherical polar coordinates "
-          << ", 2D cylindrical coordinates or cartesian coordinates." << std::endl;
+          << ", cylindrical coordinates or cartesian coordinates." << std::endl;
       throw std::runtime_error(msg.str().c_str());
 
   }

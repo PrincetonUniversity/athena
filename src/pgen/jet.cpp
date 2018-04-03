@@ -150,7 +150,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   if (MAGNETIC_FIELDS_ENABLED) {
     for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
       for(int i=1; i<=(NGHOST); ++i){
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){
@@ -163,7 +163,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){
@@ -176,7 +176,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){

@@ -36,7 +36,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real p_out = pin->GetReal("problem","p_out");
 
   Real gm1 = peos->GetGamma() - 1.0;
+
+  // to make sure the ICs are symmetric, set y0 to be in between cell centers
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
+  for (int j=js; j<=je; j++) {
+    if (pcoord->x2v(j) > y0) {
+      y0 = pcoord->x2f(j);
+      break;
+    }
+  }
 
   // Set initial conditions
   for (int k=ks; k<=ke; k++) {

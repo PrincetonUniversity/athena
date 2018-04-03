@@ -22,6 +22,30 @@
 #include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
 
+#include <algorithm>  // min, max
+#include <cmath>
+
+
+Real vflow;
+int RefinementCondition(MeshBlock *pmb);
+
+//========================================================================================
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
+//========================================================================================
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  if(adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
+  vflow = pin->GetReal("problem","vflow");
+
+  return;
+}
+
+
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Kelvin-Helmholz test
@@ -34,7 +58,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");
-  Real vflow = pin->GetReal("problem","vflow");
   Real drat = pin->GetReal("problem","drat");
   Real amp = pin->GetReal("problem","amp");
 
@@ -64,7 +87,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //--- iprob=2. Two uniform density flows with single mode pert., based on Ryu&Jones.
 
   if (iprob == 2) {
-    Real a = 0.05;
+    Real a = 0.02;
     Real sigma = 0.2;
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
@@ -104,6 +127,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}}
   }
 
+//--- iprob=4.  Two uniform streams moving at +/- vflow, single mode
+  if (iprob == 4) {
+    Real a = 0.02;
+    Real sigma = 0.2;
+    for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+    for (int i=is; i<=ie; i++) {
+      phydro->u(IDN,k,j,i) = (1.5-0.5*tanh((pcoord->x2v(j))/a));
+      phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*tanh((pcoord->x2v(j))/a);
+      phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*amp*cos(2.0*PI*pcoord->x1v(i))
+                            *exp(-(SQR(pcoord->x2v(j)))/SQR(sigma));
+      phydro->u(IM3,k,j,i) = 0.0;
+      if (NON_BAROTROPIC_EOS) {
+        phydro->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+      }
+    }}}
+  }
+
   // initialize interface B, same for all iprob
   if (MAGNETIC_FIELDS_ENABLED) {
     Real b0 = pin->GetReal("problem","b0");
@@ -132,4 +174,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   return;
+}
+
+
+// refinement condition: velocity gradient
+int RefinementCondition(MeshBlock *pmb)
+{
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real vgmax=0.0;
+  for(int k=pmb->ks; k<=pmb->ke; k++) {
+    for(int j=pmb->js; j<=pmb->je; j++) {
+      for(int i=pmb->is; i<=pmb->ie; i++) {
+        Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
+        Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
+        if(vgy > vgmax) vgmax=vgy;
+        if(vgx > vgmax) vgmax=vgx;
+      }
+    }
+  }
+  if(vgmax > 0.01) return 1;
+  return -1;
 }

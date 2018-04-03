@@ -66,10 +66,9 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     // Allocate memory for scratch vectors
     cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
-    int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-    face_area_.NewAthenaArray(nthreads,ncells1);
-    edge_length_.NewAthenaArray(nthreads,ncells1);
-    edge_length_p1_.NewAthenaArray(nthreads,ncells1);
+    face_area_.NewAthenaArray(ncells1);
+    edge_length_.NewAthenaArray(ncells1);
+    edge_length_p1_.NewAthenaArray(ncells1);
     if (GENERAL_RELATIVITY) {
       g_.NewAthenaArray(NMETRIC,ncells1);
       gi_.NewAthenaArray(NMETRIC,ncells1);
@@ -128,14 +127,10 @@ Field::~Field()
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
     for (int j=js; j<=je; ++j){
     // calc cell centered fields first
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         const Real& b1_i   = bf.x1f(k,j,i  );
         const Real& b1_ip1 = bf.x1f(k,j,i+1);
@@ -173,6 +168,5 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
       }
     }
   }
-}
   return;
 }

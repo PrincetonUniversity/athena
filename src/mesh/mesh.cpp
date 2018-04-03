@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <stdlib.h>
 #include <string.h>  // memcpy
+#include <vector>
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -44,10 +45,6 @@
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-#endif
-
-#ifdef OPENMP_PARALLEL
-#include <omp.h>
 #endif
 
 //----------------------------------------------------------------------------------------
@@ -159,25 +156,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh","x1rat",1.0);
   block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh","x2rat",1.0);
   block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
-
-  if (std::abs(mesh_size.x1rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x1rat <= 1.1, x1rat="
-        << mesh_size.x1rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x2rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x2rat <= 1.1, x2rat="
-        << mesh_size.x2rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (std::abs(mesh_size.x3rat - 1.0) > 0.1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x3rat <= 1.1, x3rat="
-        << mesh_size.x3rat << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   // read BC flags for each of the 6 boundaries in turn.
   mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
@@ -625,6 +603,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
 
   multilevel=false;
   adaptive=false;
@@ -1002,7 +986,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt,2.0*dt);
+  dt=std::min(min_dt,(Real)(2.0)*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
@@ -1048,9 +1032,27 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg)
 {
   std::stringstream msg;
-  if(dir<0 || dir>3) {
+  if(dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X1DIR && mesh_size.x1rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x1rat = " << mesh_size.x1rat <<
+        " must be negative for user-defined mesh generator in X1DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X2DIR && mesh_size.x2rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x2rat = " << mesh_size.x2rat <<
+        " must be negative for user-defined mesh generator in X2DIR " << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (dir == X3DIR && mesh_size.x3rat > 0.0) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "x3rat = " << mesh_size.x3rat <<
+        " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   use_meshgen_fn_[dir]=true;
@@ -1206,26 +1208,33 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 
 void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
-  MeshBlock *pmb;
-  Hydro *phydro;
-  Field *pfield;
-  BoundaryValues *pbval;
-  std::stringstream msg;
-  int inb=nbtotal;
-
   bool iflag=true;
+  int inb=nbtotal;
+  int nthreads=GetNumMeshThreads();
+  int nmb=GetNumMeshBlocksThisRank(Globals::my_rank);
+  std::vector<MeshBlock*> pmb_array(nmb);
+
   do {
+    // initialize a vector of MeshBlock pointers
+    nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
+    if(nmb!=pmb_array.size()) pmb_array.resize(nmb);
+    MeshBlock *pmbl = pblock;
+    for (int i=0; i<nmb; ++i) {
+      pmb_array[i] = pmbl;
+      pmbl=pmbl->next;
+    }
+
     if(res_flag==0) {
-      pmb = pblock;
-      while (pmb != NULL)  {
+#pragma omp parallel for num_threads(nthreads)
+      for (int i=0; i<nmb; ++i) {
+        MeshBlock *pmb=pmb_array[i];
         pmb->ProblemGenerator(pin);
         pmb->pbval->CheckBoundary();
-        pmb=pmb->next;
       }
     }
 
     // add perturbation from turbulence
-    if(turb_flag > 0)
+    if((turb_flag > 0) && (res_flag==0))
       ptrbd->Driving();
 
     // solve gravity for the first time
@@ -1234,81 +1243,93 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     else if(SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
+#pragma omp parallel num_threads(nthreads)
+{
+    MeshBlock *pmb;
+    Hydro *phydro;
+    Field *pfield;
+    BoundaryValues *pbval;
+
     // prepare to receive conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
+#pragma omp for private(pmb)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i];
       pmb->pbval->Initialize();
       pmb->pbval->StartReceivingForInit(true);
-      pmb=pmb->next;
     }
 
     // send conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pfield=pmb->pfield;
-        pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
-      }
-      pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED)
+        pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
     }
 
     // wait to receive conserved variables
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pbval=pmb->pbval;
-      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        pfield=pmb->pfield;
-        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      }
+//<<<<<<< HEAD
+//    pmb = pblock;
+//    while (pmb != NULL)  {
+//      phydro=pmb->phydro;
+//      pbval=pmb->pbval;
+//      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
+//      if (MAGNETIC_FIELDS_ENABLED) {
+//        pfield=pmb->pfield;
+//        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
+//      }
+////[JMSHI   send and receive shearingbox boundary conditions
+//      if (SHEARING_BOX)
+//        pbval->SendHydroShearingboxBoundaryBuffersForInit(phydro->u, true);
+//        //pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
+////JMSHI]
+//      pmb->pbval->ClearBoundaryForInit(true);
+//      pmb=pmb->next;
+//=======
+#pragma omp for private(pmb,pbval)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED)
+        pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
 //[JMSHI   send and receive shearingbox boundary conditions
       if (SHEARING_BOX)
-        pbval->SendHydroShearingboxBoundaryBuffersForInit(phydro->u, true);
+        pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
         //pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
 //JMSHI]
-      pmb->pbval->ClearBoundaryForInit(true);
-      pmb=pmb->next;
+      pbval->ClearBoundaryForInit(true);
+//>>>>>>> master
     }
 
     // With AMR/SMR GR send primitives to enable cons->prim before prolongation
     if (GENERAL_RELATIVITY && multilevel) {
 
       // prepare to receive primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        pmb->pbval->StartReceivingForInit(false);
-        pmb=pmb->next;
+#pragma omp for
+      for (int i=0; i<nmb; ++i) {
+        pmb_array[i]->pbval->StartReceivingForInit(false);
       }
 
       // send primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->w, HYDRO_PRIM);
-        pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
       }
 
       // wait to receive AMR/SMR GR primitives
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pfield=pmb->pfield;
-        pbval=pmb->pbval;
-        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->w, HYDRO_PRIM);
-        pmb->pbval->ClearBoundaryForInit(false);
-        pmb=pmb->next;
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->w, HYDRO_PRIM);
+        pbval->ClearBoundaryForInit(false);
       }
     }
 
     // Now do prolongation, compute primitives, apply BCs
-    pmb = pblock;
-    while (pmb != NULL)  {
-      phydro=pmb->phydro;
-      pfield=pmb->pfield;
-      pbval=pmb->pbval;
+#pragma omp for private(pmb,pbval,phydro,pfield)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     time, 0.0);
@@ -1329,17 +1350,19 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
                                       is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
-      pmb=pmb->next;
     }
+
+    if((res_flag==0) && (adaptive==true)) {
+#pragma omp for
+      for (int i=0; i<nmb; ++i) {
+        pmb_array[i]->pmr->CheckRefinementCondition();
+      }
+    }
+} // omp parallel
 
     if((res_flag==0) && (adaptive==true)) {
       iflag=false;
       int onb=nbtotal;
-      pmb = pblock;
-      while (pmb != NULL)  {
-        pmb->pmr->CheckRefinementCondition();
-        pmb=pmb->next;
-      }
       AdaptiveMeshRefinement(pin);
       if(nbtotal==onb) iflag=true;
       else if(nbtotal < onb && Globals::my_rank==0) {
@@ -1356,11 +1379,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   } while(iflag==false);
 
   // calculate the first time step
-  pmb = pblock;
-  while (pmb != NULL)  {
-    pmb->phydro->NewBlockTimeStep();
-    pmb=pmb->next;
+#pragma omp parallel for num_threads(nthreads)
+  for (int i=0; i<nmb; ++i) {
+    pmb_array[i]->phydro->NewBlockTimeStep();
   }
+
   NewTimeStep();
   return;
 }
@@ -1433,6 +1456,13 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
               << "This will cause a poor load balance." << std::endl;
   }
 #endif
+  if((Globals::nranks)*(num_mesh_threads_) > nb) {
+    msg << "### FATAL ERROR in LoadBalance" << std::endl
+        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
+        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   return;
 }
 
@@ -2030,7 +2060,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                 dst(nv, k, j, i)=src(nv, ck, cj, ci);
         }}}
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
-                                          is, ie, js, je, ks, ke);
+                       pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if(MAGNETIC_FIELDS_ENABLED) {
           FaceField &src=pob->pfield->b;
           FaceField &dst=pmr->coarse_b_;
@@ -2050,12 +2080,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
           }}
           pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
-                                       pob->is, ie+1, js, je, ks, ke);
+                         pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX2(dst.x2f, pmb->pfield->b.x2f,
-                                       is, ie, js, je+f2, ks, ke);
+                         pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX3(dst.x3f, pmb->pfield->b.x3f,
-                                       is, ie, js, je, ks, ke+f3);
-          pmr->ProlongateInternalField(pmb->pfield->b, is, ie, js, je, ks, ke);
+                         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
+          pmr->ProlongateInternalField(pmb->pfield->b, pob->cis, pob->cie,
+                                       pob->cjs, pob->cje, pob->cks, pob->cke);
         }
       }
     }
@@ -2156,7 +2187,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         BufferUtility::Unpack4DData(recvbuf[k], pmr->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
         pmr->ProlongateCellCenteredValues(pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
-                                          is, ie, js, je, ks, ke);
+                                   pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if(MAGNETIC_FIELDS_ENABLED) {
           BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
@@ -2165,12 +2196,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pb->pfield->b.x1f,
-                                       is, ie+1, js, je, ks, ke);
+                               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pb->pfield->b.x2f,
-                                       is, ie, js, je+f2, ks, ke);
+                               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pb->pfield->b.x3f,
-                                       is, ie, js, je, ks, ke+f3);
-          pmr->ProlongateInternalField(pb->pfield->b, is, ie, js, je, ks, ke);
+                               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
+          pmr->ProlongateInternalField(pb->pfield->b, pb->cis, pb->cie,
+                                       pb->cjs, pb->cje, pb->cks, pb->cke);
         }
         k++;
       }

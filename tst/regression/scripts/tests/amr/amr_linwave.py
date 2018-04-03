@@ -40,7 +40,7 @@ def analyze():
   if data[0][4] > 2.0e-8:
     print("RMS error in L-going fast wave too large",data[0][4])
     return False
-  if data[0][13] > 4.0:
+  if data[0][13] > 5.5:
     print("maximum relative error in L-going fast wave too large",data[0][13])
     return False
 

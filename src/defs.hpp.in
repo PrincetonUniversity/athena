@@ -51,6 +51,9 @@
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
+// floating point single precision option
+#define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
+
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
 
@@ -71,7 +74,7 @@
 #define NHYDRO @NHYDRO_VARIABLES@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
-#define NGHOST 2
+#define NGHOST @NUMBER_GHOST_CELLS@
 #define MAX_NSTEP 4
 
 //----------------------------------------------------------------------------------------

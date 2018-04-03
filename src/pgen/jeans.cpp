@@ -102,6 +102,19 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
     SetGravityThreshold(eps);
   }
+
+  if(Globals::my_rank==0) {
+    //moved print statements here from Meshblock::ProblemGenerator
+    std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
+    std::cout << "lambda " << lambda << std::endl;
+    std::cout << "period " << (2*PI/omega) << std::endl;
+    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
+    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+  }
+
+
+
+
   return;
 }
 
@@ -124,6 +137,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
     phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*sin(pcoord->x1v(i)*kwave));
 
+    //when unstable initial v omega/kwave*amp*coskx
+    //when stable initial v 0
     Real m = (omega2 < 0) ? d0*(omega/kwave)*amp*coskx:0.0;
 
     phydro->u(IM1,k,j,i) = m*cos_a3*cos_a2;
@@ -137,14 +152,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
     }
   }}}
-
-  if(Globals::my_rank==0) {
-    std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
-    std::cout << "lambda " << lambda << std::endl;
-    std::cout << "period " << (2*PI/omega) << std::endl;
-    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
-    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
-  }
 
 //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
@@ -188,7 +195,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
 	if (omega2 < 0) {
-	  sinot = exp(omega*tlim);//time dependent factor of vel
+	  sinot = -exp(omega*tlim);//time dependent factor of vel
+	  //unstable case v = amp*omega/k * coskx * e^omega*t
+	  //minus sign counters minus sign in m
 	  cosot = exp(omega*tlim);//time dependent factor of rho
 	} 
 	else {
@@ -197,7 +206,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 	}
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
-        max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
+        max_err[IDN] = std::max((Real)fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
         Real m = -den*(omega/kwave)*amp*coskx*sinot;
         Real m1 = m*cos_a3*cos_a2;
@@ -207,13 +216,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IM1] += fabs(m1-phydro->u(IM1,k,j,i));
         l1_err[IM2] += fabs(m2-phydro->u(IM2,k,j,i));
         l1_err[IM3] += fabs(m3-phydro->u(IM3,k,j,i));
-        max_err[IM1] = std::max(fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
+        max_err[IM1] = std::max((Real)fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max((Real)fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max((Real)fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0*(1 + gam*amp*sinkx*cosot);///gm1 + 0.5*m*m/den;
           l1_err[IEN] += fabs(e0 - phydro->w(IEN,k,j,i));
-          max_err[IEN] = std::max(fabs(e0 - phydro->w(IEN,k,j,i)),max_err[IEN]);
+          max_err[IEN] = std::max((Real)fabs(e0 - phydro->w(IEN,k,j,i)),max_err[IEN]);
         }
       }
     }}

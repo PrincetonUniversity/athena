@@ -39,22 +39,22 @@ EquationOfState::~EquationOfState()
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //    const AthenaArray<Real> &prim_old, const FaceField &b,
 //    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//    int is, int ie, int js, int je, int ks, int ke);
+//    int il, int iu, int jl, int ju, int kl, int ku);
 // \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc, Coordinates *pco,
-    int is, int ie, int js, int je, int ks, int ke)
+    int il, int iu, int jl, int ju, int kl, int ku)
 {
-  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,is,ie,js,je,ks,ke);
+  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   // Convert to Primitives
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
-#pragma simd
-    for (int i=is; i<=ie; ++i){
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);
       Real& u_m2 = cons(IVY,k,j,i);
@@ -83,22 +83,18 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke);
+//           int il, int iu, int jl, int ju, int kl, int ku);
 // \brief Converts primitive variables into conservative variables
 //        Note that this function assumes cell-centered fields are already calculated
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
+     int il, int iu, int jl, int ju, int kl, int ku)
 {
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
-  for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
-  for (int j=js; j<=je; ++j){
-#pragma simd
-    for (int i=is; i<=ie; ++i){
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -109,17 +105,13 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       const Real& w_vy = prim(IVY,k,j,i);
       const Real& w_vz = prim(IVZ,k,j,i);
 
-      const Real& bcc1 = bc(IB1,k,j,i);
-      const Real& bcc2 = bc(IB2,k,j,i);
-      const Real& bcc3 = bc(IB3,k,j,i);
-
       u_d = w_d;
       u_m1 = w_vx*w_d;
       u_m2 = w_vy*w_d;
       u_m3 = w_vz*w_d;
     }
   }}
-}
+
   return;
 }
 
@@ -145,4 +137,19 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
   Real qsq = vaxsq + ct2 + asq;
   Real tmp = vaxsq + ct2 - asq;
   return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2)));
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density floor to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
+{
+  Real& w_d  = prim(IDN,k,j,i);
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+  return;
 }

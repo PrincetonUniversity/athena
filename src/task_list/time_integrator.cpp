@@ -20,6 +20,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../reconstruct/reconstruction.hpp"
 #include "../bvals/bvals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
@@ -201,10 +202,6 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   }
   // Save to Mesh class
   pm->cfl_number = cfl_number;
-  // Initialize the dt abscissae of each memory register to beginning of interval, t^n
-  step_dt[0]= 0.0;
-  step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
-  step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace HydroIntegratorTaskNames;
@@ -230,7 +227,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(UPDATE_DT,SRCTERM_HYD);
-    AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
+    AddTimeIntegratorTask(SEND_HYD,UPDATE_DT);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 //[JMSHI
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
@@ -545,11 +542,11 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 
   if (step <= nsub_steps) {
     if((step == 1) && (integrator == "vl2")) {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       return TASK_NEXT;
     }
     else {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, false);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
       return TASK_NEXT;
     }
   }
@@ -668,8 +665,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 
   if (step <= nsub_steps) {
     // Time at beginning of step for u()
-    Real time=pmb->pmy_mesh->time + step_dt[0];
-    //std::cout << "[HydroSrc] at step= "<< step << " time=pmesh->time+step_dt[0]="<< time << std::endl;
+    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
     // Scaled coefficient for RHS update
     Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
     ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u);
@@ -855,12 +851,14 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step)
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
-  Real dt;
 
   if (step <= nsub_steps) {
-    dt = step_dt[0];
+    // Time at the end of step for u()
+    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
+    // Scaled coefficient for RHS time-advance in substep
+    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                pmb->pmy_mesh->time+dt, dt);
+                                time, dt);
   } else {
     return TASK_FAIL;
   }
@@ -882,13 +880,17 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if (step <= nsub_steps) {
-    // Cache w from previous substep in w1 via AthenaArray deep copy
-    // For the second order integrators, this uses t^n and then t^{n+1/2}
-    // or t^{n+1} abscissae for the prim_old initial guess in Newton-Raphson solver
-    phydro->w1 = phydro->w;
-    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                    phydro->w, pfield->bcc, pmb->pcoord,
+    // At beginning of this task, phydro->w contains previous substep W(U) output
+    // and phydro->w1 is used as a register to store the current substep output.
+    // For the second order integrators VL2 and RK2, the prim_old initial guess for the
+    // Newton-Raphson solver in GR EOS uses the following abscissae:
+    // step=1: W at t^n and
+    // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
+    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
+                                    phydro->w1, pfield->bcc, pmb->pcoord,
                                     is, ie, js, je, ks, ke);
+    // swap AthenaArray data pointers so that w now contains the updated w_out
+    phydro->w.SwapAthenaArray(phydro->w1);
   }
   else {
     return TASK_FAIL;
@@ -902,13 +904,19 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int ste
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
-  Real dt;
 
   if (step <= nsub_steps) {
-    dt = step_dt[0];
-    //std::cout << "[PHYBC] pmesh->time= "<< pmb->pmy_mesh->time << "step_dt[0]=" << dt << std::endl;
+//<<<<<<< HEAD
+//    dt = step_dt[0];
+//    //std::cout << "[PHYBC] pmesh->time= "<< pmb->pmy_mesh->time << "step_dt[0]=" << dt << std::endl;
+//=======
+    // Time at the end of step for u()
+    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
+    // Scaled coefficient for RHS time-advance in substep
+    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
+//>>>>>>> master
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                   pmb->pmy_mesh->time+dt, dt);
+                                   time, dt);
   }
   else {
     return TASK_FAIL;
@@ -956,6 +964,12 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     return TASK_SUCCESS;
   }
   else {
+    // For each Meshblock, initialize the dt abscissae of each memory register u()
+    // to correspond to the beginning of the interval [t^n, t^{n+1}]
+    pmb->step_dt[0]= 0.0;
+    pmb->step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
+    pmb->step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
+
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
     // (if using a 3S* time-integrator)
@@ -969,18 +983,14 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       // pf->b2.x2f = pf->b.x2f;
       // pf->b2.x3f = pf->b.x3f;
 
-      // 2nd registers, including u1, need to be initialized to 0
-      pf->b1.x1f = pf->b.x1f;
-      pf->b1.x2f = pf->b.x2f;
-      pf->b1.x3f = pf->b.x3f;
+      // 2nd set of registers, including b1, need to be initialized to 0
       Real ave_wghts[3];
       ave_wghts[0] = 0.0;
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
     }
-    // 2nd registers, including u1, need to be initialized to 0
-    ph->u1 = ph->u;
+    // 2nd set of registers, including u1, need to be initialized to 0 each cycle
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = 0.0;
@@ -998,18 +1008,17 @@ enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step)
     Real dt, dt1, dt2;
     const IntegratorWeight w = step_wghts[step-1];
     // u1 = u1 + delta*u
-    dt1 = step_dt[1] + w.delta*step_dt[0];
+    dt1 = pmb->step_dt[1] + w.delta*pmb->step_dt[0];
     // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-    dt = w.gamma_1*step_dt[0] +
+    dt = w.gamma_1*pmb->step_dt[0] +
         w.gamma_2*dt1 +
-        w.gamma_3*step_dt[2] +
+        w.gamma_3*pmb->step_dt[2] +
         w.beta*pmb->pmy_mesh->dt;
     // u2 = u^n
     dt2 = 0.0;
-
-    step_dt[0]= dt;
-    step_dt[1]= dt1;
-    step_dt[2]= dt2;
+    pmb->step_dt[0]= dt;
+    pmb->step_dt[1]= dt1;
+    pmb->step_dt[2]= dt2;
     return TASK_SUCCESS;
   }
   else {
