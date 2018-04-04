@@ -28,10 +28,8 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string)
     return USER_BNDRY;
   } else if (input_string == "periodic") {
     return PERIODIC_BNDRY;
-//[JMSHI
   } else if (input_string == "shear_periodic") {
     return SHEAR_PERIODIC_BNDRY;
-//JMSHI]
   } else if (input_string == "polar") {
     return POLAR_BNDRY;
   } else if (input_string == "polar_wedge") {

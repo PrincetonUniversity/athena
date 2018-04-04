@@ -1268,37 +1268,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // wait to receive conserved variables
-//<<<<<<< HEAD
-//    pmb = pblock;
-//    while (pmb != NULL)  {
-//      phydro=pmb->phydro;
-//      pbval=pmb->pbval;
-//      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
-//      if (MAGNETIC_FIELDS_ENABLED) {
-//        pfield=pmb->pfield;
-//        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-//      }
-////[JMSHI   send and receive shearingbox boundary conditions
-//      if (SHEARING_BOX)
-//        pbval->SendHydroShearingboxBoundaryBuffersForInit(phydro->u, true);
-//        //pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
-////JMSHI]
-//      pmb->pbval->ClearBoundaryForInit(true);
-//      pmb=pmb->next;
-//=======
 #pragma omp for private(pmb,pbval)
     for (int i=0; i<nmb; ++i) {
       pmb=pmb_array[i]; pbval=pmb->pbval;
       pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
-//[JMSHI   send and receive shearingbox boundary conditions
+      // send and receive shearingbox boundary conditions
       if (SHEARING_BOX)
         pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-        //pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
-//JMSHI]
       pbval->ClearBoundaryForInit(true);
-//>>>>>>> master
     }
 
     // With AMR/SMR GR send primitives to enable cons->prim before prolongation

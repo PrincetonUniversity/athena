@@ -195,10 +195,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
 
   // Boundary
-  // [JMSHI
   pbval  = new BoundaryValues(this, input_bcs, pin);
-  //pbval  = new BoundaryValues(this, input_bcs);
-  // JMSHI]
 
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);

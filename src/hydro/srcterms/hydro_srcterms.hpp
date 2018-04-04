@@ -41,11 +41,11 @@ public:
     AthenaArray<Real> &c);
   void ConstantAcceleration(const Real dt, const AthenaArray<Real> *flx,
     const AthenaArray<Real> &p, AthenaArray<Real> &c);
-//[JMSHI
+  // shearing box src terms
   void ShearingBoxSourceTerms(const Real dt, const AthenaArray<Real> *flx,
                            const AthenaArray<Real> &p, AthenaArray<Real> &c);
   Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
-//JMSHI]
+
   void SelfGravity(const Real dt, const AthenaArray<Real> *flx,
     const AthenaArray<Real> &p, AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
@@ -55,10 +55,7 @@ private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms
   Real gm_;           // GM for point mass MUST BE LOCATED AT ORIGIN
   Real g1_, g2_, g3_; // constant acc'n in each direction
-//[JMSHI
-  Real rsoft_;        // softening length for point mass potential
-  Real Omega_0_, qshear_;  // Orbital freq and shear rate
-  int  ShBoxCoord_;           // ShearCoordinate type: 1 = xy (default), 2 = xz
-//JMSHI]
+  Real Omega_0_, qshear_; // Orbital freq and shear rate
+  int  ShBoxCoord_;       // ShearCoordinate type: 1=xy (default), 2=xz
 };
 #endif

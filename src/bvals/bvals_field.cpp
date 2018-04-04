@@ -421,37 +421,6 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
   return;
 }
 
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool conserved_value)
-//  \brief receive shearingbox boundary data for field(face-centered) variables for initialization
-//         It is not used for now as our problem generator might start with t=0 periodic config.
-void BoundaryValues::ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool conserved_value)
-{
-  MeshBlock *pmb=pmy_block_;
-
-  if(shbb_.inner == true) { // check inner boundaries
-#ifdef MPI_PARALLEL
-    if (recv_inner_rank_[1]!=Globals::my_rank)
-      MPI_Wait(&rq_innerrecv_field_[1],MPI_STATUS_IGNORE);
-#endif
-    SetFieldShearingboxBoundarySameLevel(dst,recv_innerbuf_field_[1],1);
-    shbox_inner_field_flag_[1] = BNDRY_COMPLETED;
-  } // inner boundary
-
-  if(shbb_.outer == true) { // check inner boundaries
-#ifdef MPI_PARALLEL
-    if (recv_outer_rank_[1]!=Globals::my_rank)
-      MPI_Wait(&rq_outerrecv_field_[1],MPI_STATUS_IGNORE);
-#endif
-    SetFieldShearingboxBoundarySameLevel(dst,recv_outerbuf_field_[1],5);
-    shbox_outer_field_flag_[1] = BNDRY_COMPLETED;
-  } // outer boundary
-
-
-  return;
-
-}
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 //  \brief receive shearingbox boundary data for field(face-centered) variables

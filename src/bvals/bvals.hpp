@@ -138,8 +138,6 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
-// For now, we caclulate the list info for every boundary blocks, which might
-// cost some extra memory.
 typedef struct ShearingBoundaryBlock {
   int *igidlist, *ilidlist, *irnklist, *ilevlist;
   int *ogidlist, *olidlist, *ornklist, *olevlist;
@@ -245,12 +243,12 @@ public:
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
 
-  //int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  //int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-  //void SendEMFCorrection(void);
-  void SendEMFCorrection(int step);
+  void SendEMFCorrection(void);
+  //void SendEMFCorrection(int step);
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
@@ -267,8 +265,6 @@ public:
   void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                             const int nb);
   bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                      bool cons);
   void FindShearBlock(const Real tstep, const int step);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
@@ -279,7 +275,6 @@ public:
   void SendFieldShearingboxBoundaryBuffers(FaceField &src, bool cons);
   void SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
   bool ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst);
-  void ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool cons);
   void RemapFluxField(const int k, const int jinner, const int jouter, const int i,
                       const Real eps, const AthenaArray<Real> &U,
                       AthenaArray<Real> &Flux);
@@ -288,15 +283,11 @@ public:
   void SendEMFShearingboxBoundaryCorrectionForInit(void);
   void SendEMFShearingboxBoundaryCorrection(void);
   void SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
-  void ReceiveEMFShearingboxBoundaryCorrectionWithWait(void);
   bool ReceiveEMFShearingboxBoundaryCorrection(void);
   void RemapEMFShearingboxBoundary(void);
   void ClearEMFShearing(EdgeField &work);
   void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
                     const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
-
-  // misc
-  //void GetTimeIntegratorWeight(ParameterInput *pin);
 
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals

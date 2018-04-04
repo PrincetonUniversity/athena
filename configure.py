@@ -17,9 +17,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
-#[JMSHI
 #   -sh               enable shearing periodic boundary conditions
-#JMSHI]
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
@@ -308,23 +306,19 @@ if args['g']:
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
 
-#[JMSHI
 # -sh argument
 if args['sh']:
   definitions['SHEARING_BOX'] = '1'
-#  makefile_options['SH_FILE'] = '*.cpp'
 else:
   definitions['SHEARING_BOX'] = '0'
-#  makefile_options['SH_FILE'] = '*.cpp'
-#JMSHI]
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = 'g++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  #makefile_options['COMPILER_FLAGS'] = '-O3'
-  makefile_options['COMPILER_FLAGS'] = '-O3 -march=native -ffast-math'
+  makefile_options['COMPILER_FLAGS'] = '-O3'
+  #makefile_options['COMPILER_FLAGS'] = '-O3 -march=native -ffast-math'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
@@ -548,9 +542,7 @@ print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-#[JMSHI
 print('  ShearingBox:             ' + ('ON' if args['sh'] else 'OFF'))
-#JMSHI]
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])

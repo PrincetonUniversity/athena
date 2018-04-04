@@ -222,9 +222,10 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
   }
   else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
-//[JMSHI
+
+    //2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
     if(SHEARING_BOX) {
-      if(ShBoxCoord_==2){ //2d shearingbox in x-z plane;need to shift v2 to set bndry values;
+      if(ShBoxCoord_==2){
         Mesh *pmy_mesh = pmb->pmy_mesh;
         int level = pmb->loc.level - pmy_mesh->root_level;
         long int nrbx1 = pmy_mesh->nrbx1*(1L << level);
@@ -253,7 +254,6 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
         } //outer boundary
       }
     }
-//JMSHI]
   return;
 }
 

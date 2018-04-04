@@ -535,8 +535,8 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step
 
 enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 {
-  //pmb->pbval->SendEMFCorrection();
-  pmb->pbval->SendEMFCorrection(step);
+  pmb->pbval->SendEMFCorrection();
+  //pmb->pbval->SendEMFCorrection(step);
   return TASK_SUCCESS;
 }
 

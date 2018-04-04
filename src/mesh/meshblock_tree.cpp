@@ -375,7 +375,6 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
 
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
-  // [JMSHI
   if(lx<0) {
     if(bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY)
       lx=(rbx<<(ll-rl))-1;
@@ -388,7 +387,6 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     //if(bcs[OUTER_X1]==PERIODIC_BNDRY) lx=0;
     else return NULL;
   }
-  //JMSHI]
   bool polar = false;
   if(ly<0) {
     if(bcs[INNER_X2]==PERIODIC_BNDRY) ly=(rby<<(ll-rl))-1;

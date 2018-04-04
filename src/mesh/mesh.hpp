@@ -44,54 +44,6 @@ class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 
-//<<<<<<< HEAD
-////----------------------------------------------------------------------------------------
-////! \struct NeighborBlock
-////  \brief neighbor rank, level, and ids
-//
-//typedef struct NeighborBlock {
-//  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
-//  enum NeighborType type;
-//  enum BoundaryFace fid;
-//  bool polar; // flag indicating boundary is across a pole
-//
-////[JMSHI
-//  bool shear; // flag indicating boundary is attaching shearing periodic bcs.
-//  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-//    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
-//    fid(FACE_UNDEF), polar(false), shear(false) {};
-//    //fid(FACE_UNDEF), polar(false) {};
-//  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-//                   int iox3, enum NeighborType itype, int ibid, int itargetid,
-//                   bool ipolar, bool ishear, int ifi1, int ifi2);
-//                   //bool ipolar, int ifi1, int ifi2);
-////JMSHI]
-//} NeighborBlock;
-//
-////----------------------------------------------------------------------------------------
-////! \struct PolarNeighborBlock
-////  \brief Struct for describing neighbors around pole at same radius and polar angle
-//
-//typedef struct PolarNeighborBlock {
-//  int rank;    // MPI rank of neighbor
-//  int lid;     // local ID of neighbor
-//  int gid;     // global ID of neighbor
-//  bool north;  // flag that is true for North pole and false for South pole
-//} PolarNeighborBlock;
-//
-////----------------------------------------------------------------------------------------
-////! \struct RegionSize
-////  \brief physical size and number of cells in a Mesh
-//
-//typedef struct RegionSize {
-//  Real x1min, x2min, x3min;
-//  Real x1max, x2max, x3max;
-//  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
-//  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
-//} RegionSize;
-//=======
-//>>>>>>> master
-
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
