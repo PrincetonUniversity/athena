@@ -16,9 +16,6 @@
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
-//[diffusion
-#include "diffusion/diffusion.hpp"
-//diffusion]
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

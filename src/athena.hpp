@@ -100,20 +100,17 @@ enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 // needed for arrays dimensioned over grid directions
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 
-// [JMSHI
 // needed wherever MPI communications are used.  Must be < 32 and unique
-//enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
-//  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10};
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
   TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_GRAVITY=11,
   TAG_MGGRAV=12,TAG_SHBOX_HYDRO=13,TAG_SHBOX_FIELD=14,TAG_SHBOX_EMF=15};
-//JMSHI]
 
 enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
                    BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};
 enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
 enum FluxCorrectionType {FLUX_HYDRO=0};
 
+//----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
 
 typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,

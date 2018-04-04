@@ -16,9 +16,6 @@
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
-//[diffusion
-class HydroDiffusion;
-//diffusion]
 struct IntegratorWeight;
 
 //! \class Hydro
@@ -39,9 +36,6 @@ public:
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   HydroSourceTerms *psrc;
-//[diffusion
-  HydroDiffusion *pdif;
-//diffusion]
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock

@@ -307,7 +307,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
 //[JMSHI
 // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
-    GetTimeIntegratorWeight(pin);
+    //GetTimeIntegratorWeight(pin);
     Mesh *pmy_mesh = pmb->pmy_mesh;
     Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
     qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
@@ -1872,26 +1872,26 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
 
 
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::GetTimeIntegratorWeight(ParameterInput *pin)
-//  \brief Obtain the substep weight for given integrator
-void BoundaryValues::GetTimeIntegratorWeight(ParameterInput *pin)
-{
-
-  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
-
-  if (integrator == "vl2") {
-    nsteps_ = 2;
-    wghts_[0] = 0.5;
-    wghts_[1] = 1.0;
-  } else if (integrator == "rk2") {
-    nsteps_ = 2;
-    wghts_[0] = 1.0;
-    wghts_[1] = 0.5;
-  } else {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in GetTimeIntegratorWeight" << std::endl
-        << "integrator=" << integrator << " not valid time integrator" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-}
+////--------------------------------------------------------------------------------------
+////! \fn void BoundaryValues::GetTimeIntegratorWeight(ParameterInput *pin)
+////  \brief Obtain the substep weight for given integrator
+//void BoundaryValues::GetTimeIntegratorWeight(ParameterInput *pin)
+//{
+//
+//  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+//
+//  if (integrator == "vl2") {
+//    nsteps_ = 2;
+//    wghts_[0] = 0.5;
+//    wghts_[1] = 1.0;
+//  } else if (integrator == "rk2") {
+//    nsteps_ = 2;
+//    wghts_[0] = 1.0;
+//    wghts_[1] = 0.5;
+//  } else {
+//    std::stringstream msg;
+//    msg << "### FATAL ERROR in GetTimeIntegratorWeight" << std::endl
+//        << "integrator=" << integrator << " not valid time integrator" << std::endl;
+//    throw std::runtime_error(msg.str().c_str());
+//  }
+//}

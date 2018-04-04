@@ -118,17 +118,13 @@ public:
   enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step);
 
   enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step);
-  //[diffusion
-  enum TaskStatus HydroDiffusion(MeshBlock *pmb, int step);
-  enum TaskStatus FieldDiffusion(MeshBlock *pmb, int step);
-  //diffusion]
 
   enum TaskStatus HydroSend(MeshBlock *pmb, int step);
   enum TaskStatus FieldSend(MeshBlock *pmb, int step);
 
   enum TaskStatus HydroReceive(MeshBlock *pmb, int step);
   enum TaskStatus FieldReceive(MeshBlock *pmb, int step);
-//[JMSHI
+
   enum TaskStatus HydroShearSend(MeshBlock *pmb, int step);
   enum TaskStatus HydroShearReceive(MeshBlock *pmb, int step);
   enum TaskStatus FieldShearSend(MeshBlock *pmb, int step);
@@ -136,7 +132,7 @@ public:
   enum TaskStatus EMFShearSend(MeshBlock *pmb, int step);
   enum TaskStatus EMFShearReceive(MeshBlock *pmb, int step);
   enum TaskStatus EMFShearRemap(MeshBlock *pmb, int step);
-//JMSHI]
+
   enum TaskStatus Prolongation(MeshBlock *pmb, int step);
   enum TaskStatus Primitives(MeshBlock *pmb, int step);
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step);
@@ -216,8 +212,8 @@ namespace HydroIntegratorTaskNames {
   const uint64_t CORR_GFLX=1LL<<44;
 
   const uint64_t STARTUP_INT=1LL<<45;
-  const uint64_t UPDATE_DT=1LL<<46;
-//[JMSHI
+  const uint64_t UPDATE_DT  =1LL<<46;
+
   const uint64_t SEND_HYDSH=1LL<<47;
   const uint64_t SEND_EMFSH=1LL<<48;
   const uint64_t SEND_FLDSH=1LL<<49;
@@ -225,11 +221,6 @@ namespace HydroIntegratorTaskNames {
   const uint64_t RECV_EMFSH=1LL<<51;
   const uint64_t RECV_FLDSH=1LL<<52;
   const uint64_t RMAP_EMFSH=1LL<<53;
-  //[diffusion
-  const uint64_t DIFFUSE_HYD=1LL<<54;
-  const uint64_t DIFFUSE_FLD=1LL<<55;
-  //diffusion]
-//JMSHI]
 };
 
 #endif // TASK_LIST_HPP

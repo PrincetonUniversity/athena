@@ -12,10 +12,6 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
-//[diffusion
-#include "../hydro/hydro.hpp"
-#include "../hydro/diffusion/diffusion.hpp"
-//diffusion]
 #include "../bvals/bvals.hpp"
 
 //----------------------------------------------------------------------------------------

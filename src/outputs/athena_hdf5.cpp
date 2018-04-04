@@ -455,9 +455,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
-  //[JMSHI
-  code_time = (float)time;
-  //JMSHI]
+  code_time = (float)time; // output time for xdmf
 
   // Write coordinate system
   if (std::strlen(COORDINATE_SYSTEM) > max_name_length) {
@@ -804,9 +802,7 @@ void ATHDF5Output::MakeXDMF()
   xdmf << "<Xdmf Version=\"2.0\">\n";
   xdmf << "<Domain>\n";
   xdmf << "<Grid Name=\"Mesh\" GridType=\"Collection\">\n";
-  //[JMSHI
   xdmf << " <Time Value=\"" << code_time << "\"/>\n";
-  //JMSHI]
 
   // Go through all MeshBlocks
   for (int n_block = 0; n_block < num_blocks_global; ++n_block) {

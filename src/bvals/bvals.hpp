@@ -36,12 +36,8 @@ enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3
   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
-// [JMSHI
-//enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-//  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
 enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6, SHEAR_PERIODIC_BNDRY=7};
-//JMSHI]
 
 // identifiers for types of neighbor blocks
 enum NeighborType {NEIGHBOR_NONE=0, NEIGHBOR_FACE=1, NEIGHBOR_EDGE=2, NEIGHBOR_CORNER=3};
@@ -62,17 +58,13 @@ typedef struct NeighborBlock {
   enum NeighborType type;
   enum BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
-//[JMSHI
-  bool shear; // flag indicating boundary is attaching shearing periodic bcs.
+  bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
     bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
     fid(FACE_UNDEF), polar(false), shear(false) {};
-    //fid(FACE_UNDEF), polar(false) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
-                   //bool ipolar, int ifi1, int ifi2);
-//JMSHI]
 } NeighborBlock;
 
 //----------------------------------------------------------------------------------------
@@ -145,7 +137,6 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
-//[JMSHI
 // Struct for describing blocks which touched the shearing-periodic boundaries
 // For now, we caclulate the list info for every boundary blocks, which might
 // cost some extra memory.
@@ -154,8 +145,6 @@ typedef struct ShearingBoundaryBlock {
   int *ogidlist, *olidlist, *ornklist, *olevlist;
   bool inner, outer; //inner=true is inner blocks
 } ShearingBoundaryBlock;
-
-//JMSHI]
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
@@ -199,24 +188,19 @@ private:
 
 class BoundaryValues : public BoundaryBase {
 public:
-  //[JMSHI
-  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   //BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
+  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
   void DestroyBoundaryData(BoundaryData &bd);
   void Initialize(void);
   void CheckBoundary(void);
-  //void StartReceivingForInit(void);
   void StartReceivingForInit(bool cons_and_field);
-  //[JMSHI
-  void StartReceivingAll(const Real tstep, const int step);
+  // tstep: pmesh->time+dtstep, where dtstep is the delta t for current step
   //void StartReceivingAll(void);
-  //JMSHI]
-  //void ClearBoundaryForInit(void);
+  void StartReceivingAll(const Real tstep, const int step);
   void ClearBoundaryForInit(bool cons_and_field);
-
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
@@ -261,14 +245,12 @@ public:
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
 
-  //[JMSHI
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
   //int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-  void SendEMFCorrection(int step);
   //void SendEMFCorrection(void);
-  //JMSHI]
+  void SendEMFCorrection(int step);
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
@@ -276,8 +258,8 @@ public:
   void AverageEMFBoundary(void);
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
-//[JMSHI
-  //Hydro
+
+  //Shearingbox Hydro
   void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
@@ -291,7 +273,7 @@ public:
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
                  AthenaArray<Real> &Flux);
-  //Field
+  //Shearingbox Field
   void LoadFieldShearing(FaceField &src, Real *buf, int nb);
   void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
   void SendFieldShearingboxBoundaryBuffers(FaceField &src, bool cons);
@@ -301,7 +283,7 @@ public:
   void RemapFluxField(const int k, const int jinner, const int jouter, const int i,
                       const Real eps, const AthenaArray<Real> &U,
                       AthenaArray<Real> &Flux);
-  // EMF
+  // Shearingbox EMF
   void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
   void SendEMFShearingboxBoundaryCorrectionForInit(void);
   void SendEMFShearingboxBoundaryCorrection(void);
@@ -314,8 +296,7 @@ public:
                     const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
   // misc
-  void GetTimeIntegratorWeight(ParameterInput *pin);
-//JMSHI]
+  //void GetTimeIntegratorWeight(ParameterInput *pin);
 
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
@@ -339,7 +320,7 @@ private:
 
   BValFunc_t BoundaryFunction_[6];
 
-//[JMSHI
+//Shearingbox
   Real wghts_[MAX_NSTEP];        // integrator weight factor for given step
   Real nsteps_;                 // total number of substeps of integrator
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
@@ -358,49 +339,52 @@ private:
 
   // Hydro
   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_; //working arrays of remapped quantities
-  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;   // flux from conservative remapping
+  //working arrays of remapped quantities
+  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
+  // flux from conservative remapping
+  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
   int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4]; // MPI request for send and recv msgs
+  // MPI request for send and recv msgs
+  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
 #endif
   int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4]; // MPI request for send and recv msgs
+  // MPI request for send and recv msgs
+  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
 #endif
   // Field
   enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
-  FaceField shboxvar_inner_field_, shboxvar_outer_field_; // working arrays of remapped quantities
-  FaceField flx_inner_field_, flx_outer_field_; // flux from conservative remapping
-  int  send_innersize_field_[4], recv_innersize_field_[4]; // buffer sizes
-  Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4]; // send and recv buffers
+  FaceField shboxvar_inner_field_, shboxvar_outer_field_;
+  FaceField flx_inner_field_, flx_outer_field_;
+  int  send_innersize_field_[4], recv_innersize_field_[4];
+  Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4];
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];// MPI request for send and recv msgs
+  MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];
 #endif
-  int  send_outersize_field_[4], recv_outersize_field_[4]; // buffer sizes
-  Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4]; // send and recv buffers
+  int  send_outersize_field_[4], recv_outersize_field_[4];
+  Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4];
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];//MPI request for send and recv msgs
+  MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];
 #endif
   // EMF correction
   enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
-  EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_; // working arrays of remapped quantities
-  EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_; // working arrays of remapped quantities
-  EdgeField flx_inner_emf_, flx_outer_emf_; // flux from conservative remapping
-  int  send_innersize_emf_[4], recv_innersize_emf_[4]; // buffer sizes
-  Real *send_innerbuf_emf_[4], *recv_innerbuf_emf_[4]; // send and recv buffers
+  EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_;
+  EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_;
+  EdgeField flx_inner_emf_, flx_outer_emf_;
+  int  send_innersize_emf_[4], recv_innersize_emf_[4];
+  Real *send_innerbuf_emf_[4], *recv_innerbuf_emf_[4];
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_emf_[4],  rq_innerrecv_emf_[4];// MPI request for send and recv msgs
+  MPI_Request rq_innersend_emf_[4],  rq_innerrecv_emf_[4];
 #endif
-  int  send_outersize_emf_[4], recv_outersize_emf_[4]; // buffer sizes
-  Real *send_outerbuf_emf_[4], *recv_outerbuf_emf_[4]; // send and recv buffers
+  int  send_outersize_emf_[4], recv_outersize_emf_[4];
+  Real *send_outerbuf_emf_[4], *recv_outerbuf_emf_[4];
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];// MPI request for send and recv msgs
+  MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 #endif
 
-//JMSHI]
   // temporary
   friend class Mesh;
 };

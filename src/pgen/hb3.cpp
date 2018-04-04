@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file hb3.c
 //  \brief Problem generator for 2D MRI simulations using the shearing sheet
 //   based on "A powerful local shear instability in weakly magnetized disks.
@@ -35,9 +25,6 @@
 // * REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //
 //======================================================================================
-//
-//[JMSHI
-//
 // C++ headers
 #include <iostream>   // cout, endl
 #include <stdlib.h>   // exit
@@ -55,6 +42,8 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../utils/utils.hpp" // ran2()
+
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -69,18 +58,9 @@ static Real beta,B0,pres;
 static Real gm1,iso_cs;
 static Real x1size,x2size,x3size;
 static Real Omega_0,qshear;
-static int nx1,nx2,nvar;
-static AthenaArray<Real> ibval,obval; // ghost cells array
-static int first_time=1;
 AthenaArray<Real> volume; // 1D array of volumes
 
-
-static double ran2(long int *idum);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
-void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
-void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
@@ -99,9 +79,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   Omega_0= pin->GetOrAddReal("problem","Omega0",0.001);
   qshear = pin->GetOrAddReal("problem","qshear",1.5);
 
-  // enroll boundary value function pointers
-  //EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
-  //EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
@@ -130,16 +107,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
-  // Initialize boundary value arrays
-  if (first_time) {
-    nx1 = (ie-is)+1 + 2*(NGHOST);
-    nx2 = (je-js)+1 + 2*(NGHOST);
-    nvar = (NHYDRO+NFIELD);  // for now IDN, IVX, IVY, IVZ, NHYDRO,NHYDRO+1,+2
-    ibval.NewAthenaArray(nvar,nx2,(NGHOST));
-    obval.NewAthenaArray(nvar,nx2,(NGHOST));
-
-    first_time = 0;
-  }
   Real d0 = 1.0;
   Real p0 = 1e-5;
 
@@ -264,195 +231,6 @@ void MeshBlock::UserWorkInLoop(void)
   return;
 }
 
-
-//--------------------------------------------------------------------------------------
-//! \fn void ShearInnerX1()
-//  \brief Sets boundary condition on left X boundary (iib) for ssheet problem
-
-void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
-
-  Real qomL = qshear*Omega_0*x1size;
-
-  //// Initialize boundary value arrays
-  //int nx1 = (ie-is)+1 + 2*(NGHOST);
-  //int nx2 = (je-js)+1 + 2*(NGHOST);
-  //int nvar = (NHYDRO+NFIELD);  // for now IDN, IVX, IVY and IVZ, and IEN if non_barotropic
-  //AthenaArray<Real> bval;
-  //bval.NewAthenaArray(nvar,nx2,(NGHOST));
-  //int nyzone = (je-js)+1;
-
-  // set bval variables in inlet ghost zones
-  for(int j=0; j<nx2; ++j) {
-    for(int i=1; i<=(NGHOST); ++i) {
-      ibval(IDN,j,i-1) = a(IDN,ks,j,ie-(NGHOST)+i);
-      ibval(IVX,j,i-1) = a(IVX,ks,j,ie-(NGHOST)+i);
-      ibval(IVY,j,i-1) = a(IVY,ks,j,ie-(NGHOST)+i);
-      ibval(IVZ,j,i-1) = a(IVZ,ks,j,ie-(NGHOST)+i);
-      if (NON_BAROTROPIC_EOS) {
-        ibval(IEN,j,i-1) = a(IEN,ks,j,ie-(NGHOST)+i);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        ibval(NHYDRO,j,i-1) = b.x1f(ks,j,ie-(NGHOST)+i);
-        ibval(NHYDRO+1,j,i-1) = b.x2f(ks,j,ie-(NGHOST)+i);
-        ibval(NHYDRO+2,j,i-1) = b.x3f(ks,j,ie-(NGHOST)+i);
-      }
-    }
-  }
-
-  for(int j=0; j<nx2; ++j) {
-    for(int i=1; i<=(NGHOST); ++i) {
-      int ib = (NGHOST) - i;
-      a(IDN,ks,j,is-i) = ibval(IDN,j,ib);
-      a(IVX,ks,j,is-i) = ibval(IVX,j,ib);
-      a(IVY,ks,j,is-i) = ibval(IVY,j,ib);
-      a(IVZ,ks,j,is-i) = ibval(IVZ,j,ib)+qshear*Omega_0*x1size;
-      if (NON_BAROTROPIC_EOS) {
-        a(IEN,ks,j,is-i) = ibval(IEN,j,ib);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        b.x1f(ks,j,is-i) = ibval(NHYDRO,j,ib);
-        b.x2f(ks,j,is-i) = ibval(NHYDRO+1,j,ib);
-        b.x3f(ks,j,is-i) = ibval(NHYDRO+2,j,ib);
-      }
-    }}
-
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void ShearOuterX1()
-//  \brief Sets boundary condition on right X boundary (oib) for ssheet problem
-
-void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
-
-//  // Initialize boundary value arrays
-//  int nx1 = (ie-is)+1 + 2*(NGHOST);
-//  int nx2 = (je-js)+1 + 2*(NGHOST);
-//  int nvar = (NHYDRO);  // for now IDN, IVX, IVY and IVZ
-//  AthenaArray<Real> bval;
-//  bval.NewAthenaArray(nvar,nx2,(NGHOST));
-//  AthenaArray<Real> dbval;
-//  dbval.NewAthenaArray(nvar,nx2,(NGHOST));
-//  int nyzone = (je-js)+1;
-
-  // set primitive variables in inlet ghost zones
-  for(int j=0; j<nx2; ++j) {
-    for(int i=1; i<=(NGHOST); ++i) {
-      obval(IDN,j,i-1) = a(IDN,ks,j,is+i-1);
-      obval(IVX,j,i-1) = a(IVX,ks,j,is+i-1);
-      obval(IVY,j,i-1) = a(IVY,ks,j,is+i-1);
-      obval(IVZ,j,i-1) = a(IVZ,ks,j,is+i-1);
-      if (NON_BAROTROPIC_EOS) {
-        obval(IEN,j,i-1) = a(IEN,ks,j,is+i-1);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        obval(NHYDRO,j,i-1) = b.x1f(ks,j,is+i-1);
-        obval(NHYDRO+1,j,i-1) = b.x2f(ks,j,is+i-1);
-        obval(NHYDRO+2,j,i-1) = b.x3f(ks,j,is+i-1);
-      }
-    }
-  }
-
-
-  for(int j=0; j<=nx2; ++j) {
-    for(int i=1; i<=(NGHOST); ++i) {
-      int ib =  i - 1;
-      a(IDN,ks,j,ie+i) = obval(IDN,j,ib);
-      a(IVX,ks,j,ie+i) = obval(IVX,j,ib);
-      a(IVY,ks,j,ie+i) = obval(IVY,j,ib);
-      a(IVZ,ks,j,ie+i) = obval(IVZ,j,ib)-qshear*Omega_0*x1size;
-      if (NON_BAROTROPIC_EOS) {
-        a(IEN,ks,j,ie+i) = obval(IEN,j,ib);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        b.x1f(ks,j,ie+i) = obval(NHYDRO,j,ib);
-        b.x2f(ks,j,ie+i) = obval(NHYDRO+1,j,ib);
-        b.x3f(ks,j,ie+i) = obval(NHYDRO+2,j,ib);
-      }
-    }}
-
-}
-
-#define IM1 2147483563
-#define IM2 2147483399
-#define AM (1.0/IM1)
-#define IMM1 (IM1-1)
-#define IA1 40014
-#define IA2 40692
-#define IQ1 53668
-#define IQ2 52774
-#define IR1 12211
-#define IR2 3791
-#define NTAB 32
-#define NDIV (1+IMM1/NTAB)
-#define RNMX (1.0-DBL_EPSILON)
-
-/*! \fn double ran2(long int *idum)
- *  \brief Extracted from the Numerical Recipes in C (version 2) code.  Modified
- *   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
- *
- * Long period (> 2 x 10^{18}) random number generator of L'Ecuyer
- * with Bays-Durham shuffle and added safeguards.  Returns a uniform
- * random deviate between 0.0 and 1.0 (exclusive of the endpoint
- * values).  Call with idum = a negative integer to initialize;
- * thereafter, do not alter idum between successive deviates in a
- * sequence.  RNMX should appriximate the largest floating point value
- * that is less than 1.
- */
-
-double ran2(long int *idum)
-{
-  int j;
-  long int k;
-  static long int idum2=123456789;
-  static long int iy=0;
-  static long int iv[NTAB];
-  double temp;
-
-  if (*idum <= 0) { /* Initialize */
-    if (-(*idum) < 1) *idum=1; /* Be sure to prevent idum = 0 */
-    else *idum = -(*idum);
-    idum2=(*idum);
-    for (j=NTAB+7;j>=0;j--) { /* Load the shuffle table (after 8 warm-ups) */
-      k=(*idum)/IQ1;
-      *idum=IA1*(*idum-k*IQ1)-k*IR1;
-      if (*idum < 0) *idum += IM1;
-      if (j < NTAB) iv[j] = *idum;
-    }
-    iy=iv[0];
-  }
-  k=(*idum)/IQ1;                 /* Start here when not initializing */
-  *idum=IA1*(*idum-k*IQ1)-k*IR1; /* Compute idum=(IA1*idum) % IM1 without */
-  if (*idum < 0) *idum += IM1;   /* overflows by Schrage's method */
-  k=idum2/IQ2;
-  idum2=IA2*(idum2-k*IQ2)-k*IR2; /* Compute idum2=(IA2*idum) % IM2 likewise */
-  if (idum2 < 0) idum2 += IM2;
-  j=(int)(iy/NDIV);              /* Will be in the range 0...NTAB-1 */
-  iy=iv[j]-idum2;                /* Here idum is shuffled, idum and idum2 */
-  iv[j] = *idum;                 /* are combined to generate output */
-  if (iy < 1) iy += IMM1;
-  if ((temp=AM*iy) > RNMX) return RNMX; /* No endpoint values */
-  else return temp;
-}
-
-#undef IM1
-#undef IM2
-#undef AM
-#undef IMM1
-#undef IA1
-#undef IA2
-#undef IQ1
-#undef IQ2
-#undef IR1
-#undef IR2
-#undef NTAB
-#undef NDIV
-#undef RNMX
-
-
 static Real hst_BxBy(MeshBlock *pmb, int iout)
 {
   Real bxby=0;
@@ -472,4 +250,3 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
 }
 
 
-//JMSHI]

@@ -55,10 +55,10 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../utils/utils.hpp" //ran2()
 
 
 Real Lx,Ly,Lz; // root grid size, global to share with output functions
-static double ran2(long int *idum);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 static Real hst_dBy(MeshBlock *pmb, int iout);
@@ -73,7 +73,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
-  //std::cout << "[hgb.cpp]: initusermeshdata omg,qshear= " << Omega_0 << qshear << std::endl;
   return;
 }
 
@@ -303,12 +302,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             rbz = 0.0;
             pfield->b.x3f(ke+1,j,i) =  rbz;
           }
-          //pfield->b.x1f(k,j,i) = 0.0;
-          //pfield->b.x2f(k,j,i) = 0.0;
-          //pfield->b.x3f(k,j,i) = 0.0;
-          //if (i==ie) pfield->b.x1f(k,j,ie+1) =  0.0;
-          //if (j==je) pfield->b.x2f(k,je+1,i) =  0.0;
-          //if (k==ke) pfield->b.x3f(ke+1,j,i) =  0.0;
         }
         if (ifield == 1) {
           pfield->b.x1f(k,j,i) = 0.0;
@@ -354,22 +347,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}
 
-// calc the cc-B seems unnecessary now
-//#ifdef MHD
-//  for (k=ks; k<=ke; k++) {
-//    for (j=js; j<=je; j++) {
-//      for (i=is; i<=ie; i++) {
-//        pGrid->U[k][j][i].B1c = 0.5*(pGrid->B1i[k][j][i]+pGrid->B1i[k][j][i+1]);
-//        pGrid->U[k][j][i].B2c = 0.5*(pGrid->B2i[k][j][i]+pGrid->B2i[k][j+1][i]);
-//        pGrid->U[k][j][i].B3c = 0.5*(pGrid->B3i[k][j][i]+pGrid->B3i[k+1][j][i]);
-//#ifdef ADIABATIC
-//      pGrid->U[k][j][i].E += 0.5*(SQR(pGrid->U[k][j][i].B1c)
-//         + SQR(pGrid->U[k][j][i].B2c) + SQR(pGrid->U[k][j][i].B3c));
-//#endif
-//      }
-//    }
-//  }
-//#endif /* MHD */
 
 /* For random perturbations as in HGB, ensure net momentum is zero by
  * subtracting off mean of perturbations */
@@ -392,82 +369,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-//------------------------------------------------------------------------------
-//  ran2: extracted from the Numerical Recipes in C (version 2) code.  Modified
- //   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
-
-#define IM1 2147483563
-#define IM2 2147483399
-#define AM (1.0/IM1)
-#define IMM1 (IM1-1)
-#define IA1 40014
-#define IA2 40692
-#define IQ1 53668
-#define IQ2 52774
-#define IR1 12211
-#define IR2 3791
-#define NTAB 32
-#define NDIV (1+IMM1/NTAB)
-#define RNMX (1.0-DBL_EPSILON)
-
-/* Long period (> 2 x 10^{18}) random number generator of L'Ecuyer
- * with Bays-Durham shuffle and added safeguards.  Returns a uniform
- * random deviate between 0.0 and 1.0 (exclusive of the endpoint
- * values).  Call with idum = a negative integer to initialize;
- * thereafter, do not alter idum between successive deviates in a
- * sequence.  RNMX should appriximate the largest floating point value
- * that is less than 1.
- */
-
-double ran2(long int *idum)
-{
-  int j;
-  long int k;
-  static long int idum2=123456789;
-  static long int iy=0;
-  static long int iv[NTAB];
-  double temp;
-
-  if (*idum <= 0) { /* Initialize */
-    if (-(*idum) < 1) *idum=1; /* Be sure to prevent idum = 0 */
-    else *idum = -(*idum);
-    idum2=(*idum);
-    for (j=NTAB+7;j>=0;j--) { /* Load the shuffle table (after 8 warm-ups) */
-      k=(*idum)/IQ1;
-      *idum=IA1*(*idum-k*IQ1)-k*IR1;
-      if (*idum < 0) *idum += IM1;
-      if (j < NTAB) iv[j] = *idum;
-    }
-    iy=iv[0];
-  }
-  k=(*idum)/IQ1;                 /* Start here when not initializing */
-  *idum=IA1*(*idum-k*IQ1)-k*IR1; /* Compute idum=(IA1*idum) % IM1 without */
-  if (*idum < 0) *idum += IM1;   /* overflows by Schrage's method */
-  k=idum2/IQ2;
-  idum2=IA2*(idum2-k*IQ2)-k*IR2; /* Compute idum2=(IA2*idum) % IM2 likewise */
-  if (idum2 < 0) idum2 += IM2;
-  j=(int)(iy/NDIV);              /* Will be in the range 0...NTAB-1 */
-  iy=iv[j]-idum2;                /* Here idum is shuffled, idum and idum2 */
-  iv[j] = *idum;                 /* are combined to generate output */
-  if (iy < 1) iy += IMM1;
-  if ((temp=AM*iy) > RNMX) return RNMX; /* No endpoint values */
-  else return temp;
-}
-
-#undef IM1
-#undef IM2
-#undef AM
-#undef IMM1
-#undef IA1
-#undef IA2
-#undef IQ1
-#undef IQ2
-#undef IR1
-#undef IR2
-#undef NTAB
-#undef NDIV
-#undef RNMX
 
 
 static Real hst_BxBy(MeshBlock *pmb, int iout)

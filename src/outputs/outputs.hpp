@@ -10,7 +10,7 @@
 
 // C/C++ headers
 #include <stdio.h>  // size_t
-#include <string> 
+#include <string>
 
 // Athena++ headers
 #include "io_wrapper.hpp"
@@ -158,10 +158,8 @@ private:
   static const int max_name_length = 20;  // maximum length of names excluding \0
 
   // Metadata
-  // [JMSHI
-  float code_time;                            // time in code unit
-  // JMSHI]
   std::string filename;                       // name of athdf file
+  float code_time;                            // time in code unit for XDMF
   int num_blocks_global;                      // number of MeshBlocks in simulation
   int nx1, nx2, nx3;                          // sizes of MeshBlocks
   int num_datasets;                           // count of datasets to output
