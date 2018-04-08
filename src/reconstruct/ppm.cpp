@@ -119,6 +119,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,q_im2);
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,q_im1);
@@ -309,8 +310,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,ql_iph);
-      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,qr_imh);
+      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,ql_iph);
+      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,qr_imh);
     }
 
     // compute ql_(i+1/2) and qr_(i-1/2)
@@ -415,6 +416,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm2);
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm1);
@@ -605,8 +607,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,ql_jph);
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,qr_jmh);
+      RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,ql_jph);
+      RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,qr_jmh);
     }
 
     // compute ql_(j+1/2) and qr_(j-1/2)
@@ -711,6 +713,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,q_km2);
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,q_km1);
@@ -902,8 +905,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,ql_kph);
-      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,qr_kmh);
+      RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,ql_kph);
+      RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,qr_kmh);
     }
 
     // compute ql_(k+1/2) and qr_(k-1/2)
