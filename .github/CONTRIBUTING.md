@@ -38,10 +38,10 @@ The public version of Athena++ should serve as the primary resource for the majo
 By default, users with Read access to the private repository will only be subscribed to *participating notifications*, e.g. if the user makes or comments on an issue/PR/commit or if someone explicitly mentions their username. *Watching notifications* are a stronger notification setting that, typically, users have to explicitly opt-in for. See "[About notifications](https://help.github.com/articles/about-notifications/)" for more information. However, users with Write access are [automatically signed up for *watching notifications*](https://help.github.com/articles/watching-and-unwatching-repositories/) if their account has "Automatically watch repositories" enabled (default setting).
 
 # How to contribute
-There are many ways to contribute! We welcome feedback, [documentation](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#documentation), tutorials, scripts, [bug reports](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#bug-reports), [feature requests](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#suggesting-enhancements), and [quality pull requests](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#pull-requests).
+There are many ways to contribute! We welcome feedback, [documentation](#documentation), tutorials, scripts, [bug reports](#bug-reports), [feature requests](#suggesting-enhancements), and [quality pull requests](#pull-requests).
 
 ## Using the issue tracker
-Both [bug reports](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#bug-reports) and [feature requests](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#suggesting-enhancements) should use the [GitHub issue tracker](https://github.com/PrincetonUniversity/athena/issues).
+Both [bug reports](#bug-reports) and [feature requests](#suggesting-enhancements) should use the [GitHub issue tracker](https://github.com/PrincetonUniversity/athena/issues).
 
 Please do not file an issue to ask a question on code usage.
 
@@ -58,9 +58,9 @@ Please understand that we may not be able to respond to all of them because of l
 ## Submitting changes
 Some requirements for code submissions:
 - Athena++ is licensed under the BSD 3-Clause License; contributions must also use the BSD-3 license.
-- The code must be commented and well documented, see [Documentation](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#documentation).
+- The code must be commented and well documented, see [Documentation](#documentation).
 - The Athena++ Wiki has a [Style Guide](https://github.com/PrincetonUniversity/athena/wiki/Style-Guide) section in the Programmer Guide. Please follow these conventions as closely as possible in order to promote consistency in the codebase.
-- When implementing new functionality, add a regression test. See [Testing and continuous integration (CI)](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#testing-and-continuous-integration-CI).
+- When implementing new functionality, add a regression test. See [Testing and continuous integration (CI)](#testing-and-continuous-integration-CI).
 - If your submission fixes an issue in the [issue tracker](https://github.com/PrincetonUniversity/athena/issues), please reference the issue # in the pull request title or commit message, for example:
 ```
 Fixes #42
@@ -118,7 +118,7 @@ If you have modified your forked `master` branch, the last two steps could be re
 ```
 git pull --rebase upstream master
 ```
-See [Developing on `master`](https://github.com/PrincetonUniversity/athena/blob/master/CONTRIBUTING.md#developing-on-master).
+See [Developing on `master`](#developing-on-master).
 
 ### Developing on `master`
 There are a few practices that should be followed when committing changes to the `master` branch on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) in order to avoid conflicts and headaches.
