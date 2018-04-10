@@ -444,7 +444,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::FindShearBlock(const Real tstep)
+//! \fn void BoundaryValues::FindShearBlock(const Real time)
 //
 //  \brief Calc the following things:
 //  send_gid recv_gid send_lid recv_lid send_rank recv_rank,

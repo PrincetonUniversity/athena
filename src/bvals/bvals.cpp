@@ -1225,9 +1225,8 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingAll(const Real tstep)
+//! \fn void BoundaryValues::StartReceivingAll(const Real time)
 //  \brief initiate MPI_Irecv for all the sweeps
-//void BoundaryValues::StartReceivingAll(void)
 void BoundaryValues::StartReceivingAll(const Real time)
 {
   firsttime_=true;
