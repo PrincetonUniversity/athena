@@ -65,6 +65,7 @@ Some requirements for code submissions:
 ```
 Fixes #42
 ```
+
 The below instructions assume a basic understanding of the Git command line interface.
 If you are new to Git or a need a refresher, the [Atlassian Bitbucket Git tutorial](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud) and the [Git documentation](https://git-scm.com/) are helpful resources.
 
@@ -111,7 +112,9 @@ git fetch upstream
 ```
 git merge --ff-only upstream/master
 ```
-will work if you have not committed directly to your forked `master` branch. If you have, the last two steps could be replaced by:
+will work if you have not committed directly to your forked `master` branch.
+
+If you have modified your forked `master` branch, the last two steps could be replaced by:
 ```
 git pull --rebase upstream master
 ```
@@ -123,7 +126,7 @@ There are a few practices that should be followed when committing changes to the
 If you commit to an outdated local copy of `master` (i.e. someone else has pushed changes to GitHub since you last checked), the `git push origin master` command will be rejected by the server and prompt you to execute the `git pull` command. The default `git pull` behavior in this scenario is to create a merge-commit after you resolve any conflicts between your changes and the remote commits. However, these non-descriptive commit messages tend to clutter the repository history unnecessarily.
 <!-- insert image of Network graph -->
 
-Searching the Athena++ repository history using the [GitHub website](https://github.com/PrincetonUniversity/athena/search?utf8=%E2%9C%93&q=merge+branch+%27master%27+of+https:&type=Commits) or the command line:
+For example, searching the Athena++ repository history using the [GitHub website](https://github.com/PrincetonUniversity/athena/search?utf8=%E2%9C%93&q=merge+branch+%27master%27+of+https:&type=Commits) or the command line:
 ```
 git log --oneline —grep="Merge branch ‘master' of https://github.com/PrincetonUniversity/athena$" | wc -l
 ```
