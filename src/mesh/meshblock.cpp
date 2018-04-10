@@ -131,11 +131,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
-  // physics-related objects
-  //phydro = new Hydro(this, pin);
-  //if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  //peos = new EquationOfState(this, pin);
-
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
