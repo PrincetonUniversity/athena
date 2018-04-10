@@ -100,8 +100,8 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
-//                                                    bool conserved_values)
+//! \fn void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(
+//                                         AthenaArray<Real> &src,bool conserved_values)
 //  \brief Send shearingbox boundary buffers for hydro variables
 
 void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
@@ -130,7 +130,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
     for(int k=kl; k<=ku; k++) {
       for(int j=js-NGHOST; j<=je+NGHOST; j++) {
         for(int i=0; i<NGHOST; i++) {
-          //add shear to conservative
+          // add shear to conservative
           shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i)
                                             +qomL*src(IDN,k,j,i);
           if (NON_BAROTROPIC_EOS) {
@@ -138,7 +138,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
                              *(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
                              -SQR(src(IM2,k,j,i)));
           } // update energy
-          src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);//update IM2
+          src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
         }
     }}
   }
@@ -151,7 +151,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
       for(int j=js-NGHOST; j<=je+NGHOST; j++) {
         for(int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          //add shear to conservative
+          // add shear to conservative
           shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii)
                                             -qomL*src(IDN,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
@@ -159,7 +159,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
                               *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
                               -SQR(src(IM2,k,j,ii)));
           } // update energy
-          src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);//update IM2
+          src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);// update IM2
         }
     }}
   }
@@ -451,7 +451,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-void BoundaryValues::FindShearBlock(const Real tstep, const int step)
+void BoundaryValues::FindShearBlock(const Real tstep)
 {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
@@ -472,7 +472,7 @@ void BoundaryValues::FindShearBlock(const Real tstep, const int step)
   Real qomL = qshear_*Omega_0_*x1size_;
   Real yshear = qomL*tstep;
   Real deltay = fmod(yshear,x2size_);
-  int joffset = (int)(deltay/pco->dx2v(js)); //assumes uniform grid in azimuth
+  int joffset = (int)(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
   int Ngrids  = (int)(joffset/nx2);
   joverlap_   = joffset - Ngrids*nx2;
   eps_ = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
@@ -548,9 +548,11 @@ void BoundaryValues::FindShearBlock(const Real tstep, const int step)
       recv_inner_rank_[0] = shbb_.irnklist[jtmp];
       recv_inner_lid_[0]  = shbb_.ilidlist[jtmp];
       recv_innersize_hydro_[0] = send_innersize_hydro_[0];
-      shbox_inner_hydro_flag_[0] = BNDRY_WAITING;//switch on if overlap
+      shbox_inner_hydro_flag_[0] = BNDRY_WAITING;// switch on if overlap
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_field_[0] = send_innersize_hydro_[0]*NGHOST*(NFIELD*ncells3+1)+NGHOST*ncells3;
+        send_innersize_field_[0] = send_innersize_hydro_[0]
+                                  *NGHOST*(NFIELD*ncells3+1)
+                                  +NGHOST*ncells3;
         recv_innersize_field_[0] = send_innersize_field_[0];
         shbox_inner_field_flag_[0] = BNDRY_WAITING;
         send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1)+nx3;
@@ -583,7 +585,7 @@ void BoundaryValues::FindShearBlock(const Real tstep, const int step)
           shbox_inner_emf_flag_[2] = BNDRY_WAITING;
         }
       }
-      //deal with the right boundary cells with send[3]
+      // deal with the right boundary cells with send[3]
       if (joverlap_<NGHOST) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -610,7 +612,7 @@ void BoundaryValues::FindShearBlock(const Real tstep, const int step)
           shbox_inner_emf_flag_[3] = BNDRY_WAITING;
         }
       }
-    } else { //joverlap_ == 0
+    } else { // joverlap_ == 0
       // send [je-(NGHOST-1):je] to Right
       jtmp = jblock + (Ngrids+1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -795,7 +797,7 @@ void BoundaryValues::FindShearBlock(const Real tstep, const int step)
           shbox_outer_emf_flag_[3] = BNDRY_WAITING;
         }
       }
-    } else { //joverlap_ == 0
+    } else { // joverlap_ == 0
       // recv [je+1:je+NGHOST] from Left
       jtmp = jblock + (Ngrids+1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -863,8 +865,8 @@ void BoundaryValues::RemapFlux(const int n, const int k, const int jinner, const
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 
-  //jinner,jouter are index range over which flux must be returned.  Set loop
-  //limits depending on direction of upwind differences
+  // jinner,jouter are index range over which flux must be returned.  Set loop
+  // limits depending on direction of upwind differences
 
   if (eps > 0.0) { // eps always > 0 for inner i boundary
     jl = jinner-1;

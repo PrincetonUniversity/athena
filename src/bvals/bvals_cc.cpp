@@ -223,7 +223,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
   else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
 
-    //2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
+    // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
     if(SHEARING_BOX) {
       if(ShBoxCoord_==2){
         Mesh *pmy_mesh = pmb->pmy_mesh;
@@ -240,7 +240,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
                  -SQR(dst(IM3,k,j,i)));
             dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
           }}}
-        } //inner boundary
+        } // inner boundary
         if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
           for (int k=sk;k<=ek;++k) {
           for (int j=sj;j<=ej;++j) {
@@ -251,7 +251,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
                  -SQR(dst(IM3,k,j,i)));
             dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
           }}}
-        } //outer boundary
+        } // outer boundary
       }
     }
   return;

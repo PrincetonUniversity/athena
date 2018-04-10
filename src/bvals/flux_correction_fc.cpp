@@ -38,7 +38,6 @@
 //! \fn int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf,
 //                                                   const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the same level
-//int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step)
 int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_block_;
@@ -48,8 +47,6 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
 
   Real qomL = qshear_*Omega_0_*x1size_;
   AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
-  //if (step == 2)
-  //  AthenaArray<Real> &bx1=pmb->pfield->b1.x1f;
 
   int p=0;
   if(nb.type==NEIGHBOR_FACE) {
@@ -482,7 +479,6 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
 //! \fn void BoundaryValues::SendEMFCorrection(void)
 //  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if
 //  needed
-//void BoundaryValues::SendEMFCorrection(int step)
 void BoundaryValues::SendEMFCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
@@ -495,7 +491,6 @@ void BoundaryValues::SendEMFCorrection(void)
     if(nb.level==pmb->loc.level) {
       if((nb.type==NEIGHBOR_FACE)
       || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true)))
-        //p=LoadEMFBoundaryBufferSameLevel(bd_emfcor_.send[nb.bufid], nb, step);
         p=LoadEMFBoundaryBufferSameLevel(bd_emfcor_.send[nb.bufid], nb);
       else continue;
     }

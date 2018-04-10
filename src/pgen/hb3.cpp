@@ -7,22 +7,22 @@
 //  \brief Problem generator for 2D MRI simulations using the shearing sheet
 //   based on "A powerful local shear instability in weakly magnetized disks.
 //
-// * PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
-// *   based on "A powerful local shear instability in weakly magnetized disks.
-// *   III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
-// *   is the third of the HB papers on the MRI, thus hb3.
-// *
-// * Several different perturbations and field configurations are possible:
-// * - ipert = 1 - isentropic perturbations to P & d [default]
-// * - ipert = 2 - uniform Vx=amp, sinusoidal density
-// *
-// * - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
-// * - ifield = 2 - uniform Bz
-// *
-// * PRIVATE FUNCTION PROTOTYPES:
-// * - ran2() - random number generator from NR
-// *
-// * REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
+//  PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
+//    based on "A powerful local shear instability in weakly magnetized disks.
+//    III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
+//    is the third of the HB papers on the MRI, thus hb3.
+//
+//  Several different perturbations and field configurations are possible:
+//  - ipert = 1 - isentropic perturbations to P & d [default]
+//  - ipert = 2 - uniform Vx=amp, sinusoidal density
+//
+//  - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//  - ifield = 2 - uniform Bz
+//
+//  PRIVATE FUNCTION PROTOTYPES:
+//  - ran2() - random number generator from NR
+//
+//  REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //
 //======================================================================================
 // C++ headers
@@ -138,10 +138,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real kz = (2.0*PI/x2size)*((double)nwy);
 
   Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
-  long int iseed = -1-gid; /* Initialize on the first call to ran2 */
+  long int iseed = -1-gid; // Initialize on the first call to ran2
 // Initialize perturbations
-// *  ipert = 1 - isentropic perturbations to P & d [default]
-// *  ipert = 2 - uniform Vx=amp, sinusoidal density
+//   ipert = 1 - isentropic perturbations to P & d [default]
+//   ipert = 2 - uniform Vx=amp, sinusoidal density
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);

@@ -1,26 +1,5 @@
 """
-Example test script.
-
-This is a complete, working example that can be run as part of the test suite. It does a
-simple test of a relativistic shock tube using the GR framework. There are many comments
-in order to make this file self-explanatory, but the actual working code is only 28
-lines long.
-
-There are three functions defined here:
-    prepare()
-    run()
-    analyze()
-All three must be defined with the same names and no inputs in order to make a working
-script. They are called in sequence from the main test script run_tests.py. Additional
-support functions can be defined here, to be called by the three primary functions.
-
-Heavy use is made of support utilities defined in scripts/utils/athena.py. These are
-general-purpose Python scripts that interact with Athena++. They should be used whenever
-possible, since they work together to compile and run Athena++ and read the output data.
-In particular, proper use of them will result in all files outside tst/regression/ being
-in the same state after the test as they were before (including whatever configured
-version of Athena++ existed in athena/bin/), as well as cleaning up any new files
-produced by the test.
+Regression test of shearingbox with 2d MRI.  
 """
 
 # Modules
@@ -97,13 +76,6 @@ def analyze():
   (test fails).
   """
 
-  # Read in reference data. The tst/regression/data/ directory has reference runs for
-  # comparing future output of the code. We only need to specify file names starting
-  # with "data/". Now athena_read.vtk() returns four objects: the x-interface locations,
-  # the y-interface locations, the z-interface locations, and the values of the
-  # variables themselves. In a 1D problem we ignore the second and third returned
-  # values, assigning them to the _ variable as is typical Python style.
-  #x_ref,_,_,data_ref = athena_read.vtk('data/sr_hydro_shock1_hlle.vtk')
   fname= 'data/mhd_mri_2d.hst'
   omg  = 1e-3
   rho0 = 1.0
@@ -116,10 +88,7 @@ def analyze():
   ref_stress = np.average(a['stress'][index:]/vol/pres)
   ref_me = np.average(me[index:]/vol/pres)
   ref_ratio = ref_me/ref_stress
-  # Read in the data produced during this test. This will usually be stored in the
-  # tst/regression/bin/ directory, but again we omit the first part of the path. Note
-  # the file name is what we expect based on the job/problem_id field supplied in run().
-  #x_new,_,_,data_new = athena_read.vtk('bin/gr_shock_tube.block0.out1.00001.vtk')
+
   fname='bin/HB3.hst'
   b = np.loadtxt(fname, dtype=np.dtype([('me1','f8'),('me2','f8'),('me3','f8'),('stress','f8')]), skiprows=2, usecols=(9,10,11,12))
   me = (b['me1']+b['me2']+b['me3'])

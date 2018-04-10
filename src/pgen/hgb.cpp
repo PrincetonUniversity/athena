@@ -4,38 +4,38 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hgb.cpp
-/*
- *  \brief Problem generator for 3D shearing sheet.
- *
- * PURPOSE:  Problem generator for 3D shearing sheet.  Based on the initial
- *   conditions described in "Local Three-dimensional Magnetohydrodynamic
- *   Simulations of Accretion Disks" by Hawley, Gammie & Balbus, or HGB.
- *
- * Several different field configurations and perturbations are possible:
- *
- *- ifield = 0 - uses field set by choice of ipert flag
- *- ifield = 1 - Bz=B0sin(kx*x1) field with zero-net-flux [default] (kx input)
- *- ifield = 2 - uniform Bz
- *- ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
- *- ifield = 4 - B=(0,B0/sqrt(2),B0/sqrt(2))= net toroidal+vertical field
- *- ifield = 5 - uniform By
- *
- *- ipert = 1 - random perturbations to P and V [default, used by HGB]
- *- ipert = 2 - uniform Vx=amp (epicyclic wave test)
- *- ipert = 3 - J&G vortical shwave (hydro test)
- *- ipert = 4 - nonlinear density wave test of Fromang & Papaloizou
- *- ipert = 5 - 2nd MHD shwave test of JGG (2008) -- their figure 9
- *- ipert = 6 - 3rd MHD shwave test of JGG (2008) -- their figure 11
- *- ipert = 7 - nonlinear shearing wave test of Heinemann & Papaloizou (2008)
- *
- * To run simulations of stratified disks (including vertical gravity), use the
- * strat.c problem generator.
- *
- * Code must be configured using --enable-shearing-box
- *
- * REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
- *            Johnson, Guan, & Gammie, ApJSupp, (2008)                  */
-/*============================================================================*/
+//
+//  \brief Problem generator for 3D shearing sheet.
+//
+// PURPOSE:  Problem generator for 3D shearing sheet.  Based on the initial
+//   conditions described in "Local Three-dimensional Magnetohydrodynamic
+//   Simulations of Accretion Disks" by Hawley, Gammie & Balbus, or HGB.
+//
+// Several different field configurations and perturbations are possible:
+//
+//- ifield = 0 - uses field set by choice of ipert flag
+//- ifield = 1 - Bz=B0sin(kx*x1) field with zero-net-flux [default] (kx input)
+//- ifield = 2 - uniform Bz
+//- ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+//- ifield = 4 - B=(0,B0/sqrt(2),B0/sqrt(2))= net toroidal+vertical field
+//- ifield = 5 - uniform By
+//
+//- ipert = 1 - random perturbations to P and V [default, used by HGB]
+//- ipert = 2 - uniform Vx=amp (epicyclic wave test)
+//- ipert = 3 - J&G vortical shwave (hydro test)
+//- ipert = 4 - nonlinear density wave test of Fromang & Papaloizou
+//- ipert = 5 - 2nd MHD shwave test of JGG (2008) -- their figure 9
+//- ipert = 6 - 3rd MHD shwave test of JGG (2008) -- their figure 11
+//- ipert = 7 - nonlinear shearing wave test of Heinemann & Papaloizou (2008)
+//
+// To run simulations of stratified disks (including vertical gravity), use the
+// strat.c problem generator.
+//
+// Code must be configured using --enable-shearing-box
+//
+// REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
+//            Johnson, Guan, & Gammie, ApJSupp, (2008)
+//============================================================================
 
 
 // C/C++ headers
@@ -139,7 +139,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // For PF density wave test, read data from file: not implemented yet.
 
 
-/* Rescale amp to sound speed for ipert 2,3 */
+// Rescale amp to sound speed for ipert 2,3
   if (NON_BAROTROPIC_EOS) {
     if (ipert == 2 || ipert == 3)
       amp *= sqrt(gamma*pres/den);
@@ -348,8 +348,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }}
 
 
-/* For random perturbations as in HGB, ensure net momentum is zero by
- * subtracting off mean of perturbations */
+// For random perturbations as in HGB, ensure net momentum is zero by
+// subtracting off mean of perturbations
 
   if (ipert == 1) {
     int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
@@ -422,7 +422,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
 static Real hst_dBy(MeshBlock *pmb, int iout)
 {
   Real dby=0;
-  Real fkx, fky, fkz; /* Fourier kx, ky */
+  Real fkx, fky, fkz; // Fourier kx, ky
   Real x1,x2,x3;
   AthenaArray<Real> volume; // 1D array of volumes
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);

@@ -339,7 +339,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
           nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, shear);
-          //nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -360,7 +359,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int tbid=FindBufferID(0,-n,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
               fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, false, f1,
-              //fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
               f2);
           bufid++; nneighbor++;
         }
@@ -384,7 +382,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
           nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar, false);
-          //nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -405,7 +402,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
             int tbid=FindBufferID(0,0,-n,0,0);
             neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
                 fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false,
-                //fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false,
                 f1, f2);
             bufid++; nneighbor++;
           }
@@ -424,7 +420,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
         }
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
             nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false);
-            //nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false);
         bufid+=nf1*nf2; nneighbor++;
       }
     }
@@ -454,7 +449,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int tbid=FindBufferID(-n,polar?m:-m,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
               fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, false, f1,
-              //fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, f1,
               0);
           bufid++; nneighbor++;
         }
@@ -478,7 +472,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
         if(nlevel>=loc.level || (myox1==n && myox2==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
               nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, shear);
-              //nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar);
           nneighbor++;
         }
         bufid+=nf2;
@@ -539,7 +532,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int tbid=FindBufferID(-n,0,-m,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
               fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
-              //fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
               0);
           bufid++; nneighbor++;
         }
@@ -563,7 +555,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
         if(nlevel>=loc.level || (myox1==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
               nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, shear);
-              //nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false);
           nneighbor++;
         }
         bufid+=nf1;
@@ -587,7 +578,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int tbid=FindBufferID(0,-n,-m,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
               fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
-              //fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
               0);
           bufid++; nneighbor++;
         }
@@ -611,7 +601,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
         if(nlevel>=loc.level || (myox2==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
               nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar, false);
-              //nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar);
           nneighbor++;
         }
         bufid+=nf1;
@@ -646,7 +635,6 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int tbid=FindBufferID(-n,polar?m:-m,-l,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
               nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar, false);
-              //nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar);
           nneighbor++;
         }
         bufid++;

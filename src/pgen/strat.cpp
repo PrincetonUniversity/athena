@@ -3,32 +3,32 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-/*============================================================================*/
-/*! \file strat.c
- *  \brief Problem generator for stratified 3D shearing sheet.
- *
- * PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
- *   initial conditions described in "Three-dimensional Magnetohydrodynamic
- *   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
- *   Gammie & Balbus.
- *
- * Several different field configurations and perturbations are possible:
- *  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
- *  ifield = 2 - uniform Bz
- *  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
- *  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
- *  ifield = 5 - uniform By, but only for |z|<2
- *  ifield = 6 - By with constant \beta versus z
- *  ifield = 7 - zero field everywhere
- *
- * - ipert = 1 - random perturbations to P and V [default, used by HGB]
- *
- * Code must be configured using -sh
- *
- * REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
- * (1996)
- *            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)	      */
-/*============================================================================*/
+//============================================================================
+//! \file strat.c
+//  \brief Problem generator for stratified 3D shearing sheet.
+//
+// PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
+//   initial conditions described in "Three-dimensional Magnetohydrodynamic
+//   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
+//   Gammie & Balbus.
+//
+// Several different field configurations and perturbations are possible:
+//  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//  ifield = 2 - uniform Bz
+//  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
+//  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+//  ifield = 5 - uniform By, but only for |z|<2
+//  ifield = 6 - By with constant \beta versus z
+//  ifield = 7 - zero field everywhere
+//
+// - ipert = 1 - random perturbations to P and V [default, used by HGB]
+//
+// Code must be configured using -sh
+//
+// REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
+// (1996)
+//            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
+//============================================================================
 
 // C/C++ headers
 #include <iostream>
@@ -67,7 +67,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout);
 
 static Real Omega_0,qshear;
 
-/* Apply a density floor - useful for large |z| regions */
+// Apply a density floor - useful for large |z| regions
 static Real dfloor,pfloor;
 
 
@@ -273,7 +273,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
           if (ifield == 6) {
-            /* net toroidal field with constant \beta with height */
+            // net toroidal field with constant \beta with height
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = sqrt(den*exp(-x3*x3)*SQR(Omega_0)/beta);
             pfield->b.x3f(k,j,i) = 0.0;
@@ -283,7 +283,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
           if (ifield == 7) {
-            /* zero field everywhere */
+            // zero field everywhere
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
             pfield->b.x3f(k,j,i) = 0.0;
@@ -296,8 +296,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
 
-  /* For random perturbations as in HGB, ensure net momentum is zero by
-   * subtracting off mean of perturbations */
+  // For random perturbations as in HGB, ensure net momentum is zero by
+  // subtracting off mean of perturbations
 
   if (ipert == 1) {
     int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
@@ -402,8 +402,8 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     int je, int ks, int ke)
 {
 
-  /* Copy field components from last physical zone
-   * zero slope boundary for B field*/
+  // Copy field components from last physical zone
+  // zero slope boundary for B field
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=NGHOST; k++) {
       for (int j=js; j<=je; j++) {
@@ -434,23 +434,23 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
         Real x3 = pco->x3v(ks-k);
         Real x3b = pco->x3v(ks);
         Real den = prim(IDN,ks,j,i);
-        /* First calculate the effective gas temperature (Tks=cs^2)
-         * in the last physical zone. If isothermal, use H=1 */
+        // First calculate the effective gas temperature (Tks=cs^2)
+        // in the last physical zone. If isothermal, use H=1
         Real Tks = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
           Real pressks = prim(IPR,ks,j,i);
           pressks = std::max(pressks,pfloor);
           Tks = pressks/den;
         }
-        /* Now extrapolate the density to balance gravity
-         * assuming a constant temperature in the ghost zones */
+        // Now extrapolate the density to balance gravity
+        // assuming a constant temperature in the ghost zones
         prim(IDN,ks-k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
                                 (2.0*Tks/SQR(Omega_0)));
-        /* Copy the velocities, but not the momenta ---
-         * important because of the density extrapolation above */
+        // Copy the velocities, but not the momenta ---
+        // important because of the density extrapolation above
         prim(IVX,ks-k,j,i) = prim(IVX,ks,j,i);
         prim(IVY,ks-k,j,i) = prim(IVY,ks,j,i);
-        /* If there's inflow into the grid, set the normal velocity to zero */
+        // If there's inflow into the grid, set the normal velocity to zero
         if (prim(IVZ,ks,j,i) >= 0.0) {
           prim(IVZ,ks-k,j,i) = 0.0;
         } else {
@@ -480,7 +480,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   FaceField &b, Real time, Real dt,
                   int is, int ie, int js, int je, int ks, int ke)
 {
-/* Copy field components from last physical zone */
+// Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=NGHOST; k++) {
       for (int j=js; j<=je; j++) {
@@ -511,23 +511,23 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
         Real x3 = pco->x3v(ke+k);
         Real x3b = pco->x3v(ke);
         Real den = prim(IDN,ke,j,i);
-        /* First calculate the effective gas temperature (Tks=cs^2)
-         * in the last physical zone. If isothermal, use H=1 */
+        // First calculate the effective gas temperature (Tks=cs^2)
+        // in the last physical zone. If isothermal, use H=1
         Real Tke = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
           Real presske = prim(IPR,ke,j,i);
           presske = std::max(presske,pfloor);
           Real Tke = presske/den;
         }
-        /* Now extrapolate the density to balance gravity
-         * assuming a constant temperature in the ghost zones */
+        // Now extrapolate the density to balance gravity
+        // assuming a constant temperature in the ghost zones
         prim(IDN,ke+k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
                                (2.0*Tke/SQR(Omega_0)));
-        /* Copy the velocities, but not the momenta ---
-         * important because of the density extrapolation above */
+        // Copy the velocities, but not the momenta ---
+        // important because of the density extrapolation above
         prim(IVX,ke+k,j,i) = prim(IVX,ke,j,i);
         prim(IVY,ke+k,j,i) = prim(IVY,ke,j,i);
-        /* If there's inflow into the grid, set the normal velocity to zero */
+        // If there's inflow into the grid, set the normal velocity to zero
         if (prim(IVZ,ke,j,i) <= 0.0) {
           prim(IVZ,ke+k,j,i) = 0.0;
         } else {

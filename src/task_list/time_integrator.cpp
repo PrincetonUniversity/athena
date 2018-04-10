@@ -32,20 +32,18 @@
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm)
 {
-  // First, define each time-integrator by setting weights for each step of the
-  // algorithm and the CFL number stability limit when coupled to the single-stage
-  // spatial operator. Currently, the time-integrators must be expressed as 2S-type
-  // algorithms as in Ketchenson (2010) Algorithm 3, which incudes 2N (Williamson) and
-  // 2R (van der Houwen) popular 2-register low-storage RK methods. The 2S-type
-  // integrators depend on a bidiagonally sparse Shu-Osher representation; at each
-  // stage l:
+  // First, define each time-integrator by setting weights for each step of the algorithm
+  // and the CFL number stability limit when coupled to the single-stage spatial operator.
+  // Currently, the time-integrators must be expressed as 2S-type algorithms as in
+  // Ketchenson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
+  // popular 2-register low-storage RK methods. The 2S-type integrators depend on a
+  // bidiagonally sparse Shu-Osher representation; at each stage l:
   //
   //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
   //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
   //
-  // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=
-  // (1-a_{l,l-2}), and b_{l,l-2}, b_{l,l-1} are weights that are different for each
-  // stage and integrator.
+  // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
+  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator.
   //
   // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
   // another weighted average / caching of these terms each stage.
@@ -481,10 +479,9 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 
 enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step)
 {
-  // pmb->pbval->StartReceivingAll();
   Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
   Real time = pmb->pmy_mesh->time+dt;
-  pmb->pbval->StartReceivingAll(time, step);
+  pmb->pbval->StartReceivingAll(time);
   return TASK_SUCCESS;
 }
 
@@ -536,7 +533,6 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step
 enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 {
   pmb->pbval->SendEMFCorrection();
-  //pmb->pbval->SendEMFCorrection(step);
   return TASK_SUCCESS;
 }
 

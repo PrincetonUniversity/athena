@@ -44,22 +44,22 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
   // copy face-centered magnetic fields into ghost zones, reflecting b1
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) { 
-    for (int j=js; j<=je; ++j) { 
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for (int i=1; i<=(NGHOST); ++i) { 
+      for (int i=1; i<=(NGHOST); ++i) {
         b.x1f(k,j,(is-i)) = -b.x1f(k,j,(is+i  ));  // reflect 1-field
-      } 
+      }
     }}
-  
+
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         b.x2f(k,j,(is-i)) =  b.x2f(k,j,(is+i-1));
       }
-    }}  
-        
+    }}
+
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
 #pragma omp simd

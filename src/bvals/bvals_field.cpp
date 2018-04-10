@@ -1,20 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-//! \file bvals_cc.cpp
-//  \brief functions that apply BCs for CELL_CENTERED variables
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file bvals_field.cpp
+//  \brief functions that apply shearingbox BCs for magnetic field
 //======================================================================================
 
 // C++ headers
@@ -62,30 +52,6 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
   si=pmb->is-NGHOST; ei=pmb->is-1;
   sk=pmb->ks;        ek=pmb->ke;
   if (pmesh->mesh_size.nx3>1)  ek += NGHOST, sk -= NGHOST;
-  // --- inner boundary:
-  // load [je-joverlap-(NGHOST-1):je] for send_inner[0]; nb=0
-  // load [je-joverlap:je]            for send_inner[0]; nb=0  if joverlap == nx2-1
-  // load [js:je-joverlap+NGHOST]     for send_inner[1]; nb=1
-  //     ([js:je-joverlap+NGHOST+1]   for bx2)
-  // load [js:je]                     for send_inner[1]; nb=1  if joverlap == 0
-  //     ([js:je+1]                   for bx2)
-  // load [je-(NGHOST-1):je]          for send_inner[2]; nb=2
-  // load [je:je]                     for send_inner[2]; nb=2  if joverlap == nx2-1
-  // load [js:js+NGHOST-1]            for send_inner[3]; nb=3
-  //     ([js+1:js+NGHOST]            for bx2)
-  // --- outer boundary:
-  // load [js:js+joverlap+NGHOST-1]   for send_outer[0]; nb=4
-  //     ([js:js+joverlap+NGHOST-1+1] for bx2)
-  // load [js:js+joverlap]            for send_outer[0]; nb=4  if joverlap == nx2-1
-  //     ([js:js+joverlap+1]          for bx2)
-  // load [js+joverlap-NGHOST:je]     for send_outer[1]; nb=5
-  // load [js:je]                     for send_outer[1]; nb=5  if joverlap == 0
-  //     ([js:je+1]                   for bx2)
-  // load [js:js+NGHOST-1]            for send_outer[2]; nb=6
-  //     ([js+1:js+NGHOST-1+1]        for bx2)
-  // load [js:js]                     for send_outer[2]; nb=6  if joverlap == nx2-1
-  //     ([js+1:js+1]                 for bx2)
-  // load [je-NGHOST+1:je]            for send_outer[3]; nb=7
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
@@ -116,11 +82,6 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
       sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
       if(joverlap_<NGHOST) sj=pmb->js;
       psj=sj; pej=ej+1;
-      //if(joverlap_==0) {
-      //  sj=pmb->js;
-      //  psj=sj;
-      //  pej=ej+1;
-      //}
       break;
     case 6:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
@@ -240,7 +201,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
           pbl->pbval->shbox_inner_field_flag_[n]=BNDRY_ARRIVED;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_FIELD, n); //bufid = n
+          int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_FIELD, n); // bufid = n
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
 #endif
@@ -338,30 +299,6 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 
   sk = pmb->ks; ek = pmb->ke;
   if (pmesh->mesh_size.nx3>1) ek += NGHOST, sk -= NGHOST;
-  // --- inner boundary:
-  // set [js-NGHOST:js+(joverlap-1)] with recv_inner[0]; nb=0
-  // set [js-1:js+(joverlap-1)]      with recv_inner[0]; nb=0 if joverlap==nx2-1
-  // set [js+joverlap:je+NGHOST]     with recv_inner[1]; nb=1
-  //    ([js+joverlap:je+NGHOST+1]   for bx2)
-  // set [js+joverlap:je]            with recv_inner[1]; nb=1 if joverlap==0
-  //    ([js+joverlap:je+1]          for bx2)
-  // set [js-NGHOST:js-1]            with recv_inner[2]; nb=2
-  // set [js-NGHOST:js-NGHOST]       with recv_inner[2]; nb=2 if joverlap==nx2-1
-  // set [je+1:je+NGHOST]            with recv_inner[3]; nb=3
-  //    ([je+2:je+NGHOST+1]          for bx2)
-  // --- outer boundary:
-  // set [je-joverlap+1:je+NGHOST]   with recv_outer[0]; nb=4
-  //    ([je-joverlap+1:je+NGHOST+1] for bx2)
-  // set [je-joverlap+1:je+1]        with recv_outer[0]; nb=4 if joverlap==nx2-1
-  //    ([je-joverlap+1:je+2]        for bx2)
-  // set [js-NGHOST:je-joverlap]     with recv_outer[1]; nb=5
-  // set [js:je-joverlap]            with recv_outer[1]; nb=5 if joverlap==0
-  //    ([js:je-joverlap+1]          for bx2 if joverlap==0)
-  // set [je+1:je+NGHOST]            with recv_outer[2]; nb=6
-  //    ([je+2:je+NGHOST+1]          for bx2)
-  // set [je+NGHOST:je+NGHOST]       with recv_outer[2]; nb=6 if joverlap==nx2-1
-  //    ([je+NGHOST+1:je+NGHOST+1]   for bx2)
-  // set [js-NGHOST:js-1]            with recv_outer[3]; nb=7
   switch(nb) {
     case 0:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
@@ -391,11 +328,6 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
       if(joverlap_<NGHOST) sj=pmb->js-joverlap_;
       psi=si+1; pei=ei+1; psj=sj; pej=ej+1;
-      //if(joverlap_==0) {
-      //  sj=pmb->js;
-      //  psj=sj;
-      //  pej=ej+1;
-      //}
       break;
     case 6:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je+1; ej=pmb->je+NGHOST;
