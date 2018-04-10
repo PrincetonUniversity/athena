@@ -15,7 +15,7 @@ The guidelines in this document are meant to help make the development of Athena
   * The [Athena 4.2 Test Page](https://www.astro.princeton.edu/~jstone/Athena/tests/) contains useful algorithm test results.
 * The [Athena++ website](https://princetonuniversity.github.io/athena/index.html) is hosted by [GitHub Pages](https://pages.github.com/).
 * The latest version of the [Athena++ documentation](https://github.com/PrincetonUniversity/athena/wiki) is hosted as a GitHub Wiki attached to the private repository.
-* The Athena++ Slack workspace is located at [athena-pp.slack.com](athena-pp.slack.com).
+* The Athena++ Slack workspace is located at [athena-pp.slack.com](https:://athena-pp.slack.com).
 <!-- Could add links to New PR, New Issue, Issue Labels e.g. current "bugs" -->
 
 ## Organization
@@ -180,7 +180,7 @@ Any significant change or new feature requires accompanying documentation before
 > You and your collaborators can create branches when working on wikis, but only changes pushed to the `master` branch will be made live and available to your readers.
 
 ## Community
-The Athena++ private Slack workspace is located at [athena-pp.slack.com](athena-pp.slack.com). The `#general` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed.
+The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The `#general` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed.
 <!-- Note, GitHub integration is via a Webhook and "GitHub Notifications (Legacy)
 instead of the GitHub Slack App, which
 <!-- Add Jenkins and/or Travis CI status messages to Slack after integration-->
