@@ -50,13 +50,13 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     for (int j=1; j<=(NGHOST); ++j) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(js-j),i) = sign * b.x2f(k,(js+j  ),i);  
+        b.x2f(k,(js-j),i) = sign * b.x2f(k,(js+j  ),i);
       }
     }}
     for (int k=ks; k<=ke; ++k) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,js,i) = 0.0;  
+        b.x2f(k,js,i) = 0.0;
       }
     }
 
@@ -111,7 +111,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     for (int j=1; j<=(NGHOST); ++j) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+j+1),i) = sign * b.x2f(k,(je-j+1),i);  
+        b.x2f(k,(je+j+1),i) = sign * b.x2f(k,(je-j+1),i);
       }
     }}
     for (int k=ks; k<=ke; ++k) {

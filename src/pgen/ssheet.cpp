@@ -39,9 +39,6 @@ static Real gm1,iso_cs;
 static Real x1size,x2size,x3size;
 static Real Omega_0,qshear;
 static int shboxcoord;
-static int nx1,nx2,nvar;
-static AthenaArray<Real> ibval,obval; // ghost cells array
-static int first_time=1;
 AthenaArray<Real> volume; // 1D array of volumes
 
 //======================================================================================
@@ -80,16 +77,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   if (MAGNETIC_FIELDS_ENABLED) {
       std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
       exit(0);
-  }
-  // Initialize boundary value arrays
-  if (first_time) {
-    nx1 = (ie-is)+1 + 2*(NGHOST);
-    nx2 = (je-js)+1 + 2*(NGHOST);
-    nvar = (NHYDRO+NFIELD);  // for now IDN, IVX, IVY, IVZ, NHYDRO,NHYDRO+1,+2
-    ibval.NewAthenaArray(nvar,nx2,(NGHOST));
-    obval.NewAthenaArray(nvar,nx2,(NGHOST));
-
-    first_time = 0;
   }
 
   Real d0 = 1.0;
@@ -138,21 +125,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM3,k,j,i) = 0.0;
       } else if (ipert == 1) {
         // 2) initialize with shwave in velocity
-        //rd = d0; //d0*(1.0+amp*cos(kx*x1 + ky*x2));
         rvx = amp*iso_cs*sin(kx*x1 + ky*x2);
         rvy = amp*iso_cs*(kx/ky)*sin(kx*x1 + ky*x2);
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
         phydro->u(IM3,k,j,i) = 0.0;
-        //if(MAGNETIC_FIELDS_ENABLED) {
-        //    pfield->b.x1f(k,j,i) = 0.0;
-        //    pfield->b.x2f(k,j,i) = 0.0;
-        //    pfield->b.x3f(k,j,i) = 1e-5*sin(kx*x1);
-        //    if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-        //    if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-        //    if (k==ke) pfield->b.x3f(ke+1,j,i) = 1e-5*sin(kx*x1);
-        //}
       } else if (ipert == 2) {
         // 3) epicyclic oscillation
         if (shboxcoord == 1) { // x-y shear

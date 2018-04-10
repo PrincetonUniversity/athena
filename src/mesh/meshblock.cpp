@@ -99,9 +99,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pbval  = new BoundaryValues(this, input_bcs, pin);
 
   // physics-related objects
-  //phydro = new Hydro(this, pin);
-  //if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  //peos = new EquationOfState(this, pin);
+  phydro = new Hydro(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  peos = new EquationOfState(this, pin);
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
   if (SELF_GRAVITY_ENABLED == 1) {
@@ -132,9 +132,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // physics-related objects
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  peos = new EquationOfState(this, pin);
+  //phydro = new Hydro(this, pin);
+  //if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  //peos = new EquationOfState(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);

@@ -17,7 +17,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
-#   -sh               enable shearing periodic boundary conditions
+#   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
@@ -107,8 +107,8 @@ parser.add_argument('-t',
     default=False,
     help='enable interface frame transformations for GR')
 
-# -sh argument
-parser.add_argument('-sh',
+# -shear argument
+parser.add_argument('-shear',
     action='store_true',
     default=False,
     help='enable shearing box')
@@ -306,8 +306,8 @@ if args['g']:
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
 
-# -sh argument
-if args['sh']:
+# -shear argument
+if args['shear']:
   definitions['SHEARING_BOX'] = '1'
 else:
   definitions['SHEARING_BOX'] = '0'
@@ -318,7 +318,6 @@ if args['cxx'] == 'g++':
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3'
-  #makefile_options['COMPILER_FLAGS'] = '-O3 -march=native -ffast-math'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
@@ -542,7 +541,7 @@ print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  ShearingBox:             ' + ('ON' if args['sh'] else 'OFF'))
+print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])

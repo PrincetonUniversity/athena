@@ -49,7 +49,7 @@ enum BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
 static bool flip_across_pole_hydro[] = {false, false, true, true, false};
 static bool flip_across_pole_field[] = {false, true, true};
 
-
+//----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
@@ -141,7 +141,7 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 typedef struct ShearingBoundaryBlock {
   int *igidlist, *ilidlist, *irnklist, *ilevlist;
   int *ogidlist, *olidlist, *ornklist, *olevlist;
-  bool inner, outer; //inner=true is inner blocks
+  bool inner, outer; // inner=true if inner blocks
 } ShearingBoundaryBlock;
 
 //----------------------------------------------------------------------------------------
@@ -186,7 +186,6 @@ private:
 
 class BoundaryValues : public BoundaryBase {
 public:
-  //BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
   BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
@@ -196,8 +195,7 @@ public:
   void CheckBoundary(void);
   void StartReceivingForInit(bool cons_and_field);
   // tstep: pmesh->time+dtstep, where dtstep is the delta t for current step
-  //void StartReceivingAll(void);
-  void StartReceivingAll(const Real tstep, const int step);
+  void StartReceivingAll(const Real tstep);
   void ClearBoundaryForInit(bool cons_and_field);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
@@ -244,11 +242,9 @@ public:
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
-  //int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
   void SendEMFCorrection(void);
-  //void SendEMFCorrection(int step);
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
@@ -257,7 +253,7 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 
-  //Shearingbox Hydro
+  // Shearingbox Hydro
   void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
@@ -265,11 +261,11 @@ public:
   void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                             const int nb);
   bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  void FindShearBlock(const Real tstep, const int step);
+  void FindShearBlock(const Real tstep);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
                  AthenaArray<Real> &Flux);
-  //Shearingbox Field
+  // Shearingbox Field
   void LoadFieldShearing(FaceField &src, Real *buf, int nb);
   void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
   void SendFieldShearingboxBoundaryBuffers(FaceField &src, bool cons);
@@ -311,9 +307,7 @@ private:
 
   BValFunc_t BoundaryFunction_[6];
 
-//Shearingbox
-  Real wghts_[MAX_NSTEP];        // integrator weight factor for given step
-  Real nsteps_;                 // total number of substeps of integrator
+// Shearingbox
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
@@ -330,20 +324,17 @@ private:
 
   // Hydro
   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-  //working arrays of remapped quantities
+  // working arrays of remapped quantities
   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
   // flux from conservative remapping
   AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
   int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
-#ifdef MPI_PARALLEL
-  // MPI request for send and recv msgs
-  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
-#endif
   int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
   // MPI request for send and recv msgs
+  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
 #endif
   // Field
@@ -352,12 +343,10 @@ private:
   FaceField flx_inner_field_, flx_outer_field_;
   int  send_innersize_field_[4], recv_innersize_field_[4];
   Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4];
-#ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];
-#endif
   int  send_outersize_field_[4], recv_outersize_field_[4];
   Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4];
 #ifdef MPI_PARALLEL
+  MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];
   MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];
 #endif
   // EMF correction
@@ -367,12 +356,10 @@ private:
   EdgeField flx_inner_emf_, flx_outer_emf_;
   int  send_innersize_emf_[4], recv_innersize_emf_[4];
   Real *send_innerbuf_emf_[4], *recv_innerbuf_emf_[4];
-#ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_emf_[4],  rq_innerrecv_emf_[4];
-#endif
   int  send_outersize_emf_[4], recv_outersize_emf_[4];
   Real *send_outerbuf_emf_[4], *recv_outerbuf_emf_[4];
 #ifdef MPI_PARALLEL
+  MPI_Request rq_innersend_emf_[4],  rq_innerrecv_emf_[4];
   MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 #endif
 

@@ -143,7 +143,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[OUTER_X2] = NULL;
         break;
-      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
+      case POLAR_BNDRY_WEDGE: // polar boundary with a wedge
         BoundaryFunction_[OUTER_X2] = PolarWedgeOuterX2;
         break;
       case USER_BNDRY: // user-enrolled BCs
@@ -1132,7 +1132,7 @@ void BoundaryValues::Initialize(void)
   }
 #endif
 
-//initialize the shearing block lists
+// initialize the shearing block lists
   if (SHEARING_BOX) {
     Mesh *pmesh = pmb->pmy_mesh;
     int level = pmb->loc.level - pmesh->root_level;
@@ -1214,11 +1214,11 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
     }
   }
 #endif
-//find send_block_id and recv_block_id;
+// find send_block_id and recv_block_id;
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_block_;
     Mesh *pmesh = pmb->pmy_mesh;
-    FindShearBlock(pmesh->time,0);
+    FindShearBlock(pmesh->time);
   }
 
   return;
@@ -1228,7 +1228,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //! \fn void BoundaryValues::StartReceivingAll(void)
 //  \brief initiate MPI_Irecv for all the sweeps
 //void BoundaryValues::StartReceivingAll(void)
-void BoundaryValues::StartReceivingAll(const Real tstep, const int step)
+void BoundaryValues::StartReceivingAll(const Real tstep)
 {
   firsttime_=true;
 #ifdef MPI_PARALLEL
@@ -1265,11 +1265,11 @@ void BoundaryValues::StartReceivingAll(const Real tstep, const int step)
     }
   }
 #endif
-//find send_block_id and recv_block_id; post non-blocking recv
+// find send_block_id and recv_block_id; post non-blocking recv
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_block_;
     Mesh *pmesh = pmb->pmy_mesh;
-    FindShearBlock(tstep, step);
+    FindShearBlock(tstep);
 #ifdef MPI_PARALLEL
     int size,tag;
     if (shbb_.inner) { // inner boundary
@@ -1417,7 +1417,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 #endif
     }
   }
-//clear shearingbox boundary communications
+// clear shearingbox boundary communications
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
       for (int n=0; n<4; n++){
@@ -1429,10 +1429,10 @@ void BoundaryValues::ClearBoundaryAll(void)
         }
 #ifdef MPI_PARALLEL
         if(send_inner_rank_[n]!=Globals::my_rank) {
-          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);//Wait for Isend
+          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);// Wait for Isend
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);//Wait for Isend
-            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);//Wait for Isend
+            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);// Wait for Isend
+            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);// Wait for Isend
           }
         }
 #endif
@@ -1449,10 +1449,10 @@ void BoundaryValues::ClearBoundaryAll(void)
 #ifdef MPI_PARALLEL
         if(send_outer_rank_[n]!=Globals::my_rank) {
           Mesh *pmesh = pmb->pmy_mesh;
-          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);//Wait for Isend
+          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);// Wait for Isend
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);//Wait for Isend
-            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);//Wait for Isend
+            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);// Wait for Isend
+            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);// Wait for Isend
           }
         }
 #endif

@@ -170,7 +170,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, 
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the finer level
 
@@ -356,7 +356,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
@@ -413,7 +413,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
@@ -443,7 +443,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie+1;
     if((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else             si-=cng; 
+    else             si-=cng;
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+1+cng;
   else               si=pmb->cis-cng, ei=pmb->cis;
@@ -451,7 +451,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
       if((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng; 
+      else             sj-=cng;
     }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -460,7 +460,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
       if((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else             sk-=cng; 
+      else             sk-=cng;
     }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
@@ -476,14 +476,14 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
     if((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else             si-=cng; 
+    else             si-=cng;
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
   else               si=pmb->cis-cng, ei=pmb->cis-1;
@@ -492,7 +492,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     if(pmb->block_size.nx2 > 1) {
       ej++;
       if((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng; 
+      else             sj-=cng;
     }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+1+cng;
@@ -522,7 +522,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
       if((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng; 
+      else             sj-=cng;
     }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -532,7 +532,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     if(pmb->block_size.nx3 > 1) {
       ek++;
       if((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else             sk-=cng; 
+      else             sk-=cng;
     }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+1+cng;
@@ -627,7 +627,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
@@ -726,7 +726,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {

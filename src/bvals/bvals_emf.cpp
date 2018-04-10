@@ -44,7 +44,6 @@
 void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
 {
   MeshBlock *pmb=pmy_block_;
-  //Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for e3
   int nx2=pmb->block_size.nx2-NGHOST;
@@ -129,7 +128,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
-  Mesh *pmesh=pmb->pmy_mesh;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -218,7 +216,6 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
                                                         buf, const int nb)
 {
   MeshBlock *pmb=pmy_block_;
-  Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej;
   int nx2=pmb->block_size.nx2-NGHOST;
@@ -293,7 +290,6 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
-  Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 
   if(shbb_.inner == true) { // check inner boundaries
@@ -384,7 +380,6 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
     // average e2
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
-      //for(int j=js-NGHOST; j<=je+NGHOST; j++)
         e2(k,j,is) = 0.5*(e2(k,j,is)+shboxmap_inner_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_inner_emf_);
@@ -404,7 +399,6 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
     // average e2
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
-      //for(int j=js-NGHOST; j<=je+NGHOST; j++)
         e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1)+shboxmap_outer_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_outer_emf_);

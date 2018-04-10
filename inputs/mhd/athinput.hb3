@@ -2,7 +2,7 @@
 problem = 2D MRI
 author  = J.F. Hawley & S.A. Balbus
 journal = ApJ 400, 595-609 (1992)
-config  = -sh -b --eos=isothermal --problem=hb3 
+config  = -shear -b --eos=isothermal --problem=hb3 
 
 <job>
 problem_id      = HB3        # problem ID: basename of output filenames
@@ -38,6 +38,10 @@ nx3             = 1         # Number of zones in X3-direction
 x3min           = -0.5      # minimum value of X3
 x3max           = 0.5       # maximum value of X3
 
+<meshblock>
+nx1            = 64
+nx2            = 64
+
 <hydro>
 iso_sound_speed = 0.00408    # Isothermal sound speed squared
 gamma           = 1.6666666666666667    # gamma = C_p/C_v
@@ -53,6 +57,3 @@ Omega0          = 1.0e-3    # orbital freq
 qshear          = 1.5       # shear rate
 shboxcoord      = 2         # 1=xy; 2=xz
 
-<meshblock>
-nx1            = 64
-nx2            = 64
