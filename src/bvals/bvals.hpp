@@ -194,8 +194,8 @@ public:
   void Initialize(void);
   void CheckBoundary(void);
   void StartReceivingForInit(bool cons_and_field);
-  // tstep: pmesh->time+dtstep, where dtstep is the delta t for current step
-  void StartReceivingAll(const Real tstep);
+  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
+  void StartReceivingAll(const Real time);
   void ClearBoundaryForInit(bool cons_and_field);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
@@ -261,7 +261,7 @@ public:
   void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                             const int nb);
   bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  void FindShearBlock(const Real tstep);
+  void FindShearBlock(const Real time);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
                  AthenaArray<Real> &Flux);

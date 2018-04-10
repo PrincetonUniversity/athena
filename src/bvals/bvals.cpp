@@ -1228,7 +1228,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //! \fn void BoundaryValues::StartReceivingAll(void)
 //  \brief initiate MPI_Irecv for all the sweeps
 //void BoundaryValues::StartReceivingAll(void)
-void BoundaryValues::StartReceivingAll(const Real tstep)
+void BoundaryValues::StartReceivingAll(const Real time)
 {
   firsttime_=true;
 #ifdef MPI_PARALLEL
@@ -1269,7 +1269,7 @@ void BoundaryValues::StartReceivingAll(const Real tstep)
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_block_;
     Mesh *pmesh = pmb->pmy_mesh;
-    FindShearBlock(tstep);
+    FindShearBlock(time);
 #ifdef MPI_PARALLEL
     int size,tag;
     if (shbb_.inner) { // inner boundary
