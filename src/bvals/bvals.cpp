@@ -1225,7 +1225,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingAll(void)
+//! \fn void BoundaryValues::StartReceivingAll(const Real tstep)
 //  \brief initiate MPI_Irecv for all the sweeps
 //void BoundaryValues::StartReceivingAll(void)
 void BoundaryValues::StartReceivingAll(const Real time)
@@ -1345,13 +1345,13 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
-        MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if (MAGNETIC_FIELDS_ENABLED)
-          MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+          MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
       else {  // must be primitive initialization
         if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
-          MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+          MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
     }
 #endif
@@ -1381,17 +1381,17 @@ void BoundaryValues::ClearBoundaryAll(void)
     }
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
-      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if(nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (MAGNETIC_FIELDS_ENABLED) {
-        MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if(nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
           if(nb.level < pmb->loc.level)
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
           else if((nb.level==pmb->loc.level) && ((nb.type==NEIGHBOR_FACE)
               || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
       }
     }
@@ -1429,10 +1429,10 @@ void BoundaryValues::ClearBoundaryAll(void)
         }
 #ifdef MPI_PARALLEL
         if(send_inner_rank_[n]!=Globals::my_rank) {
-          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);// Wait for Isend
+          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);// Wait for Isend
-            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);// Wait for Isend
+            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);
           }
         }
 #endif
@@ -1449,10 +1449,10 @@ void BoundaryValues::ClearBoundaryAll(void)
 #ifdef MPI_PARALLEL
         if(send_outer_rank_[n]!=Globals::my_rank) {
           Mesh *pmesh = pmb->pmy_mesh;
-          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);// Wait for Isend
+          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);// Wait for Isend
-            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);// Wait for Isend
+            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);
           }
         }
 #endif
