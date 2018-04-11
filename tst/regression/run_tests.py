@@ -7,7 +7,7 @@ Usage: From this directory, call this script with python:
       python run_tests.py
 
 Notes:
-  - Requires Python 2.7+.
+  - Requires Python 2.7+. (compliant with Python 3)
   - This file should not be modified when adding new scripts.
   - To add a new script, create a new .py file in scripts/tests/ subdirectory.
   - See scripts/tests/example.py for an example.
@@ -135,5 +135,27 @@ if __name__ == '__main__':
                         default=None,
                         nargs='*',
                         help=help_msg)
+    parser.add_argument('--mpirun',
+                        default='mpirun',
+                        choices=['mpirun', 'srun'],
+                        help='select MPI run command')
+    # Flags to pass to ./configure.py
+    # Manually keep these in sync with ./configure.py choices
+    cxx_choices = ['g++', 'g++-simd', 'icc', 'cray', 'bgxl', 'icc-phi',
+                   'clang++']
+    # --cxx=[name] argument
+    parser.add_argument('--cxx',
+                        default='g++',
+                        choices=cxx_choices,
+                        help='select C++ compiler')
+    # --ccmd=[name] argument
+    parser.add_argument('--ccmd',
+                        default=None,
+                        help='override for command to call C++ compiler')
+    # --cflag=[string] argument
+    parser.add_argument('--cflag',
+                        default=None,
+                        help=('additional string of flags to append'
+                              'to compiler/linker calls'))
     args = parser.parse_args()
     main(**vars(args))
