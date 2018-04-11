@@ -22,11 +22,11 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = ['time/nlim=80']
+  arguments = ['time/ncycle_out=0', 'time/nlim=80']
   athena.run('mhd/athinput.test_outputs', arguments)
-  arguments = ['time/nlim=330']
+  arguments = ['time/ncycle_out=0', 'time/nlim=330']
   athena.restart('TestOutputs.00001.rst', arguments)
-  arguments = ['time/nlim=-1']
+  arguments = ['time/ncycle_out=0', 'time/nlim=-1']
   athena.restart('TestOutputs.00004.rst', arguments)
 
 # Analyze outputs

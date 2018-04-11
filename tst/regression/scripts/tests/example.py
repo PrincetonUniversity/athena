@@ -68,7 +68,7 @@ def run(**kwargs):
   # Create list of runtime arguments to override the athinput file. Each element in the
   # list is simply a string of the form '<block>/<field>=<value>', where the contents of
   # the string are exactly what one would type on the command line run running Athena++.
-  arguments = [
+  arguments = ['time/ncycle_out=0',
       'job/problem_id=gr_shock_tube',
       'output1/file_type=vtk',
       'output1/variable=cons',

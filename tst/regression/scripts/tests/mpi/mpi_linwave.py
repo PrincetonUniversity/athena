@@ -31,7 +31,7 @@ def prepare(**kwargs):
 # Run Athena++ w/wo MPI
 def run(**kwargs):
   # L-going fast wave
-  arguments = [
+  arguments = ['time/ncycle_out=0',
     'problem/wave_flag=0','problem/vflow=0.0','mesh/refinement=static',
     'mesh/nx1=32', 'mesh/nx2=16', 'mesh/nx3=16',
     'meshblock/nx1=8',

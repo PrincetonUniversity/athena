@@ -24,7 +24,7 @@ def prepare(**kwargs):
 def run(**kwargs):
   # L-going sound wave
   for i in (32,64):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'problem/wave_flag=0','problem/vflow=0.0','mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4),
@@ -34,7 +34,7 @@ def run(**kwargs):
     athena.run('hydro/athinput.linear_wave3d', arguments)
   # entropy wave
   for i in (32,64):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'problem/wave_flag=3','problem/vflow=1.0','mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4),
@@ -44,7 +44,7 @@ def run(**kwargs):
     athena.run('hydro/athinput.linear_wave3d', arguments)
   # L/R-going sound wave, no SMR
   for w in (0,4):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'problem/wave_flag=' + repr(w),
       'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('hydro/athinput.linear_wave3d', arguments)

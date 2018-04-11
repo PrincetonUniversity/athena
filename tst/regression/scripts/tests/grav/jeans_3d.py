@@ -40,7 +40,7 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = [
+  arguments = ['time/ncycle_out=0',
     'mesh/nx1=64','mesh/nx2=32','mesh/nx3=32',
     'meshblock/nx1=16',
     'meshblock/nx2=16',

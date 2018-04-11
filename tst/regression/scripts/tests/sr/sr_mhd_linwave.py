@@ -37,7 +37,7 @@ def run(**kwargs):
         wave_flag)
     time = 1.0/abs(wavespeed)
     for res in (16,32):
-      arguments = [
+      arguments = ['time/ncycle_out=0',
           'time/tlim='+repr(time), 'time/cfl_number=0.3',
           'output1/dt=-1',
           'mesh/nx1='+repr(res), 'mesh/nx2='+repr(res/2), 'mesh/nx3='+repr(res/2),

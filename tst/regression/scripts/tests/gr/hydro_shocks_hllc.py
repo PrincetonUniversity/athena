@@ -18,7 +18,7 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = [
+  arguments = ['time/ncycle_out=0',
       '',
       'output1/file_type=vtk',
       'output1/variable=cons',

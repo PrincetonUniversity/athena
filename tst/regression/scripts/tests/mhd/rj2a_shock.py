@@ -24,7 +24,7 @@ def prepare(**kwargs):
 def run(**kwargs):
   # run in X1 direction
   for i in (256,512):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=' + repr(i), 'mesh/nx2=1', 'mesh/nx3=1',
       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
@@ -33,7 +33,7 @@ def run(**kwargs):
     athena.run('mhd/athinput.rj2a', arguments)
   # run in X2 direction
   for i in (256,512):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=' + repr(i), 'mesh/nx3=1',
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
@@ -42,7 +42,7 @@ def run(**kwargs):
     athena.run('mhd/athinput.rj2a', arguments)
   # run in X3 direction
   for i in (256,512):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=4', 'mesh/nx3=' + repr(i),
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',

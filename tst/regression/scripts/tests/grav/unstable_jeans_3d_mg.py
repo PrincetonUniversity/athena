@@ -27,7 +27,7 @@ def run(**kwargs):
   #1/omega = 0.046
   #amp 1e-6
   def arg_res(res):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=64','mesh/nx2=32','mesh/nx3=32',
       'meshblock/nx1=16',
       'meshblock/nx2=16',

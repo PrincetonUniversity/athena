@@ -16,7 +16,7 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = ['problem/compute_error=true']
+  arguments = ['time/ncycle_out=0', 'problem/compute_error=true']
   athena.run('hydro/athinput.blast_cyl', arguments)
 
 # Analyze output
