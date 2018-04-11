@@ -1,51 +1,67 @@
+# .travis.yml
+# Defines build matrix and regression tests for Travis CI.com
 language: cpp
 branches:
   only:
   - master
   - ci
+# Default build matrix is 4x Ubuntu builds:
 os:
-- linux
+  - linux
 dist: trusty
-sudo: false
+sudo: false # use faster container-based build
+
+# OpenMPI and MPICH implementations:
 env:
   matrix:
   - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
   - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
 compiler:
-- gcc
-- clang
+  - gcc
+  - clang
+# Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
-  pip: true
+  pip: true # Caching NumPy for regression test script
   directories:
-  - openmpi-2.1.1
-  - mpich-3.2
-  - openmpi
-  - mpich
-  - fftw
-  - fftw-3.3.7
+    # For caching Linux source directories:
+    - openmpi-2.1.1 # stable release as of 5/10/17
+    - mpich-3.2 # stable release, checked on 8/14/17
+    # Caching Linux install directories:
+    - openmpi
+    - mpich
+    - fftw
+    - fftw-3.3.7 # stable release as of 11/8/17
+
+# Explicitly includilng the 2x macOS jobs in build matrix
+# Must specify complete build details, or the jobs will inherit
+# the first value in the above arrays. Could encapsulate in script
 matrix:
   include:
   - os: osx
-    osx_image: xcode8.3
+    osx_image: xcode9.3 # macOS 10.13 High Sierra
     compiler: g++
     env:
     - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+    # Override Linux cache mapping
     cache:
       pip: true
       directories:
       - "/usr/local/Cellar/mpich/"
       - "/usr/local/Cellar/open-mpi/"
       - "/usr/local/Cellar/libevent/"
+      # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
       - "/usr/local/opt/libevent"
+      # For caching macOS Homebrew installation symlinks:
       - openmpi
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
   - os: osx
-    osx_image: xcode8.3
+    osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     env:
     - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
     - TMPDIR=$TRAVIS_BUILD_DIR/tmp/
+    # Cache is shared with other osx build with MPICH
     cache:
       pip: true
       directories:
@@ -57,9 +73,11 @@ matrix:
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
+# Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
   - test -n $CXX && unset CXX
+# Install OpenMPI, MPICH, and FFTW
 install:
   - travis_wait 45 bash ./ci/travis/install_mpich.sh
   - travis_wait 45 bash ./ci/travis/install_openmpi.sh
@@ -70,22 +88,28 @@ install:
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
   - cd tst/regression
   - echo $TMPDIR || true
+  # Fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - mkdir $TRAVIS_BUILD_DIR/tmp/
+# Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - pip install --user numpy || true
 script:
-  - set -e
-  - set -x
+  - set -e # fail at first error
+  - set -x # trace execution of all commands;
   - python2 run_tests.py mpi
-  - python2 run_tests.py grav
+  - python2 run_tests.py grav # requires FFTW library
   - python2 run_tests.py amr
+  # Longest set of tests. Timeout after 10 m
+  #- python2 run_tests.py mhd
   - python2 run_tests.py hydro
   - python2 run_tests.py outputs
   - python2 run_tests.py curvilinear
   - python2 run_tests.py gr
   - python2 run_tests.py sr
   - python2 run_tests.py pgen
+  #- python2 run_tests.py shearinbox
   - set +e
+  # Could alternatively group sets of tests with && operator
 notifications:
   email:
     on_success: change
