@@ -74,7 +74,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -159,7 +159,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq-cssq) == 0.0) {
+        if ((cfsq-cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {
@@ -312,7 +312,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -393,7 +393,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {

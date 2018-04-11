@@ -156,12 +156,12 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
-  Real asq = GetGamma()*prim[IPR]/prim[IDN];
-  Real vaxsq = bx*bx/prim[IDN];
-  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ])/prim[IDN];
+  Real asq = GetGamma()*prim[IPR];
+  Real vaxsq = bx*bx;
+  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
   Real qsq = vaxsq + ct2 + asq;
   Real tmp = vaxsq + ct2 - asq;
-  return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2)));
+  return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2))/prim[IDN]);
 }
 
 //---------------------------------------------------------------------------------------
