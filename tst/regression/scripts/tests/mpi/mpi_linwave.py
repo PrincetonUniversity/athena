@@ -14,7 +14,7 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++ w/wo MPI
-def prepare():
+def prepare(**kwargs):
   athena.configure('b','mpi',
       prob='linear_wave',
       coord='cartesian',

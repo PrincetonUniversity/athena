@@ -10,7 +10,7 @@ import numpy as np
 import scripts.utils.athena as athena
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('sb',
       prob='gr_linear_wave',
       coord='cartesian',

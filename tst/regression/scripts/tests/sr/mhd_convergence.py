@@ -26,7 +26,7 @@ by = 1.8
 bz = -1.2
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('sb',
       prob='gr_linear_wave',
       coord='cartesian',

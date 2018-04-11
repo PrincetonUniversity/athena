@@ -6,7 +6,7 @@ Test script for checking that Schwarzschild coordinates compile.
 import scripts.utils.athena as athena
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('gtb',
       prob='gr_bondi',
       coord='schwarzschild',

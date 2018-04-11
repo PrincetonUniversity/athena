@@ -23,7 +23,7 @@ vy = 0.3
 vz = -0.05
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('s',
       prob='gr_linear_wave',
       coord='cartesian',

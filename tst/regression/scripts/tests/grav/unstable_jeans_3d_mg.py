@@ -14,7 +14,7 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure(
       prob='jeans',
       grav='mg'

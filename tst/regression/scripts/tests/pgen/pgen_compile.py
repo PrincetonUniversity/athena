@@ -15,7 +15,7 @@ pgen_choices = glob.glob(pgen_directory + '*.cpp')
 pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   for pgen in pgen_choices:
     if pgen[0:3] == 'gr_':
       print(pgen)

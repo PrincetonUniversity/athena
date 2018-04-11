@@ -14,7 +14,7 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='orszag_tang',
       flux='hlld')

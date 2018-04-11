@@ -9,7 +9,7 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('gt',
       prob='gr_shock_tube',
       coord='minkowski',

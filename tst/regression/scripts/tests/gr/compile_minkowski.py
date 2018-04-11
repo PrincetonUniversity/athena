@@ -6,7 +6,7 @@ Test script for checking that Minkowski coordinates compile.
 import scripts.utils.athena as athena
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('gtb',
       prob='gr_shock_tube',
       coord='minkowski',

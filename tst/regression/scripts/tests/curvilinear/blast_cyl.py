@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure(
       prob='blast',
       coord='cylindrical')

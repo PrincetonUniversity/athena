@@ -12,7 +12,7 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
