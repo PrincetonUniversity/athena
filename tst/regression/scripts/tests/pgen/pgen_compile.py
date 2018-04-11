@@ -29,7 +29,7 @@ def prepare(**kwargs):
       athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   pass
 
 # Analyze outputs

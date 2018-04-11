@@ -18,7 +18,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
 
   # Parameters
   rho = 1.0

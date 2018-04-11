@@ -21,7 +21,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # run R-going wave at two resolutions
   for i in (128,256):
     arguments = [

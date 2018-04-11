@@ -29,7 +29,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++ w/wo MPI
-def run():
+def run(**kwargs):
   # L-going fast wave
   arguments = [
     'problem/wave_flag=0','problem/vflow=0.0','mesh/refinement=static',

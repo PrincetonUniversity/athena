@@ -20,7 +20,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # L-going fast wave (set by default in input)
   arguments = ['output1/dt=-1']
   athena.run('mhd/athinput.linear_wave2d_amr', arguments)

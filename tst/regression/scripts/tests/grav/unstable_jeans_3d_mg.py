@@ -21,7 +21,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   #njeans = 1.5
   #period = 0.3
   #1/omega = 0.046

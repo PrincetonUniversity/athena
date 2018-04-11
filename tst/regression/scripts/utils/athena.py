@@ -79,13 +79,13 @@ def restart(input_filename, arguments):
         os.chdir(current_dir)
 
 
-def mpirun(nproc, input_filename, arguments):
+def mpirun(mpirun_cmd, nproc, input_filename, arguments):
     current_dir = os.getcwd()
     os.chdir('bin')
     try:
         input_filename_full = '../' + athena_rel_path + 'inputs/' + \
                               input_filename
-        run_command = ['mpirun', '-np', str(nproc), './athena', '-i',
+        run_command = [mpirun_cmd, '-np', str(nproc), './athena', '-i',
                        input_filename_full]
         try:
             subprocess.check_call(run_command + arguments)

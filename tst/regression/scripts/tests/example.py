@@ -57,7 +57,7 @@ def prepare(**kwargs):
   # from the athena/ directory.
   athena.make()
 
-def run():
+def run(**kwargs):
   """
   Run the executable.
 

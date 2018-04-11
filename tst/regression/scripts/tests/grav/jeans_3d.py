@@ -39,7 +39,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = [
     'mesh/nx1=64','mesh/nx2=32','mesh/nx3=32',
     'meshblock/nx1=16',

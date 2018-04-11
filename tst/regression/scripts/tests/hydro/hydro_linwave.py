@@ -21,7 +21,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # L-going sound wave
   for i in (32,64):
     arguments = [

@@ -17,7 +17,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = [
       '',
       'output1/file_type=vtk',

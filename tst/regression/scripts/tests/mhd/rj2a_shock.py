@@ -21,7 +21,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # run in X1 direction
   for i in (256,512):
     arguments = [

@@ -15,7 +15,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = ['problem/compute_error=true']
   athena.run('hydro/athinput.blast_cyl', arguments)
 

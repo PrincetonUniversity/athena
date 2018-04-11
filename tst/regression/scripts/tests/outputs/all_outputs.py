@@ -21,7 +21,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = ['time/nlim=80']
   athena.run('mhd/athinput.test_outputs', arguments)
   arguments = ['time/nlim=330']

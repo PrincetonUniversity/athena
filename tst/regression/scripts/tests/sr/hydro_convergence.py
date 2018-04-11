@@ -31,7 +31,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   wavespeeds = wavespeeds_hydro()
   for wave_flag in wave_flags:
     time = 1.0 / abs(wavespeeds[wave_flag])

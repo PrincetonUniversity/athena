@@ -20,7 +20,7 @@ def prepare(**kwargs):
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # L-going fast/Alfven/slow waves
   for w in (0,1,2):
     tlim = max(0.5,w)
