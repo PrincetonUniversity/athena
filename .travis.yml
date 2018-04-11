@@ -2,6 +2,7 @@ language: cpp
 branches:
   only:
   - master
+  - ci
 os:
 - linux
 dist: trusty
