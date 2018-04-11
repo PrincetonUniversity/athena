@@ -49,7 +49,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
 // Set BC functions for each of the 6 boundaries in turn ---------------------------------
   // Inner x1
   nface_=2; nedge_=0;
-  switch(block_bcs[INNER_X1]){
+  switch(block_bcs[INNER_X1]) {
     case REFLECTING_BNDRY:
       BoundaryFunction_[INNER_X1] = ReflectInnerX1;
       break;
@@ -72,7 +72,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
    }
 
   // Outer x1
-  switch(block_bcs[OUTER_X1]){
+  switch(block_bcs[OUTER_X1]) {
     case REFLECTING_BNDRY:
       BoundaryFunction_[OUTER_X1] = ReflectOuterX1;
       break;
@@ -96,7 +96,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
     // Inner x2
-    switch(block_bcs[INNER_X2]){
+    switch(block_bcs[INNER_X2]) {
       case REFLECTING_BNDRY:
         BoundaryFunction_[INNER_X2] = ReflectInnerX2;
         break;
@@ -122,7 +122,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
      }
 
     // Outer x2
-    switch(block_bcs[OUTER_X2]){
+    switch(block_bcs[OUTER_X2]) {
       case REFLECTING_BNDRY:
         BoundaryFunction_[OUTER_X2] = ReflectOuterX2;
         break;
@@ -151,7 +151,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
     // Inner x3
-    switch(block_bcs[INNER_X3]){
+    switch(block_bcs[INNER_X3]) {
       case REFLECTING_BNDRY:
         BoundaryFunction_[INNER_X3] = ReflectInnerX3;
         break;
@@ -173,7 +173,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
      }
 
     // Outer x3
-    switch(block_bcs[OUTER_X3]){
+    switch(block_bcs[OUTER_X3]) {
       case REFLECTING_BNDRY:
         BoundaryFunction_[OUTER_X3] = ReflectOuterX3;
         break;
@@ -368,11 +368,12 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
   cng3=cng*f3d;
   int size;
   bd.nbmax=maxneighbor_;
-  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR)
+  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
     for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);
-  if (type==BNDRY_EMFCOR)
+  }
+  if (type==BNDRY_EMFCOR) {
     for (          ; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++);
-
+  }
   for (int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
@@ -474,8 +475,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
             else
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                   +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
-          }
-          else if (pmb->block_size.nx2>1) { // 2D
+          } else if (pmb->block_size.nx2>1) { // 2D
             if (BoundaryValues::ni[n].ox1!=0)
               size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
             else
@@ -483,8 +483,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
           }
           else // 1D
             size=2;
-        }
-        else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) {
+        } else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) {
           if (pmb->block_size.nx3>1) { // 3D
             if (BoundaryValues::ni[n].ox3==0) size=pmb->block_size.nx3;
             if (BoundaryValues::ni[n].ox2==0) size=pmb->block_size.nx2;
@@ -503,8 +502,8 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
       }
       break;
     }
-    bd.send[n]=new Real [size];
-    bd.recv[n]=new Real [size];
+    bd.send[n]=new Real[size];
+    bd.recv[n]=new Real[size];
   }
 }
 
@@ -550,7 +549,6 @@ void BoundaryValues::Initialize(void)
   myox1=((int)(lx1&1L));
   myox2=((int)(lx2&1L));
   myox3=((int)(lx3&1L));
-
 
   // count the number of the fine meshblocks contacting on each edge
   int eid=0;
@@ -622,16 +620,14 @@ void BoundaryValues::Initialize(void)
         ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
                    *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
                    *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
-      }
-      else if (nb.level<mylevel) { // coarser
+      } else if (nb.level<mylevel) { // coarser
         ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
              *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
              *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
         rsize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
              *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
              *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
-      }
-      else { // finer
+      } else { // finer
         ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
              *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
              *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
@@ -659,7 +655,7 @@ void BoundaryValues::Initialize(void)
           size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
         else if (nb.fid==2 || nb.fid==3)
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
-        else if (nb.fid==4 || nb.fid==5)
+        else // (nb.fid==4 || nb.fid==5)
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size*=NHYDRO;
         if (nb.level<mylevel) { // send to coarser
@@ -668,8 +664,7 @@ void BoundaryValues::Initialize(void)
             MPI_Request_free(&bd_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
               nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_send[nb.bufid]));
-        }
-        else if (nb.level>mylevel) { // receive from finer
+        } else if (nb.level>mylevel) { // receive from finer
           tag=CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
           if (bd_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_flcor_.req_recv[nb.bufid]);
@@ -798,7 +793,8 @@ void BoundaryValues::Initialize(void)
           continue;
 
         if (nb.level==mylevel) { // the same level
-          if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))) {
+          if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE)
+                                           && (edge_flag_[nb.eid]==true))) {
             tag=CreateBvalsMPITag(nb.lid, TAG_FLDFLX, nb.targetid);
             if (bd_emfcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
               MPI_Request_free(&bd_emfcor_.req_send[nb.bufid]);
@@ -974,13 +970,14 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
-        MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        // Wait for Isend
+        MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if (MAGNETIC_FIELDS_ENABLED)
-          MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+          MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
       else {  // must be primitive initialization
         if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
-          MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+          MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
     }
 #endif
@@ -1010,17 +1007,18 @@ void BoundaryValues::ClearBoundaryAll(void)
     }
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
-      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+      // Wait for Isend
+      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (MAGNETIC_FIELDS_ENABLED) {
-        MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
           if (nb.level < pmb->loc.level)
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
           else if ((nb.level==pmb->loc.level) && ((nb.type==NEIGHBOR_FACE)
               || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
       }
     }
@@ -1194,21 +1192,27 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
             else if (nb.ox1==-1) rie=pmb->cis;
           }
           else if (ni== 1) ris=pmb->cie+1, rie=pmb->cie+1;
-          else if (ni==-1) ris=pmb->cis-1, rie=pmb->cis-1;
+          else { //(ni==-1)
+            ris=pmb->cis-1, rie=pmb->cis-1;
+          }
           if (nj==0) {
             rjs=pmb->cjs, rje=pmb->cje;
             if (nb.ox2==1) rjs=pmb->cje;
             else if (nb.ox2==-1) rje=pmb->cjs;
           }
           else if (nj== 1) rjs=pmb->cje+1, rje=pmb->cje+1;
-          else if (nj==-1) rjs=pmb->cjs-1, rje=pmb->cjs-1;
+          else { //(nj==-1)
+            rjs=pmb->cjs-1, rje=pmb->cjs-1;
+          }
           if (nk==0) {
             rks=pmb->cks, rke=pmb->cke;
             if (nb.ox3==1) rks=pmb->cke;
             else if (nb.ox3==-1) rke=pmb->cks;
           }
           else if (nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
-          else if (nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
+          else { //(nk==-1)
+            rks=pmb->cks-1, rke=pmb->cks-1;
+          }
 
           pmb->pmr->RestrictCellCenteredValues(cdst, pmr->coarse_cons_, 0, NHYDRO-1,
                                                ris, rie, rjs, rje, rks, rke);
@@ -1219,15 +1223,18 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
             int rs=ris, re=rie+1;
             if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
             if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
-            pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks, rke);
+            pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
+                                 rke);
             if (pmb->block_size.nx2 > 1) {
               rs=rjs, re=rje+1;
               if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
               if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
-              pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks, rke);
+              pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
+                                   rke);
             }
             else { // 1D
-              pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks, rke);
+              pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
+                                   rke);
               for (int i=ris; i<=rie; i++)
                 pmr->coarse_b_.x2f(rks,rjs+1,i)=pmr->coarse_b_.x2f(rks,rjs,i);
             }
@@ -1235,10 +1242,12 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
               rs=rks, re=rke+1;
               if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
               if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
-              pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs, re);
+              pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
+                                   re);
             }
             else { // 1D or 2D
-              pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks, rke);
+              pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks,
+                                   rke);
               for (int j=rjs; j<=rje; j++) {
                 for (int i=ris; i<=rie; i++)
                   pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
