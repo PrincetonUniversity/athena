@@ -392,12 +392,12 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
             *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
         if (multilevel) {
-          int f2c=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-                 *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-                 *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-          int c2f=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-                 *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-                 *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+          int f2c=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+          int c2f=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+                 *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
+                 *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
           size=std::max(size,c2f);
           size=std::max(size,f2c);
         }
@@ -405,15 +405,15 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
       }
       break;
       case BNDRY_FIELD: {
-        int size1=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
-                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size2=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
-                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size3=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
+        int size1=((BoundaryValues::ni[n].ox1==0) ? (pmb->block_size.nx1+1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);
+        int size2=((BoundaryValues::ni[n].ox1==0) ? (pmb->block_size.nx1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0) ? (pmb->block_size.nx2+f2d):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);
+        int size3=((BoundaryValues::ni[n].ox1==0) ? (pmb->block_size.nx1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
         size=size1+size2+size3;
         if (multilevel) {
           if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
@@ -422,15 +422,15 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
             if (BoundaryValues::ni[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
           }
           size=size1+size2+size3;
-          int f2c1=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1):NGHOST)
-                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c2=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d):NGHOST)
-                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c3=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):NGHOST);
+          int f2c1=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
+                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+          int f2c2=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
+                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+          int f2c3=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
           if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
             if (BoundaryValues::ni[n].ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
@@ -438,17 +438,17 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
           }
           int fsize=f2c1+f2c2+f2c3;
           int c2f1=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+            ((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
+           *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
+           *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
           int c2f2=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+            ((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+           *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+           *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
           int c2f3=
-            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
+            ((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+           *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
+           *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
           int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
         }
@@ -621,19 +621,19 @@ void BoundaryValues::Initialize(void)
                    *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
                    *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
       } else if (nb.level<mylevel) { // coarser
-        ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-             *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-             *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-        rsize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
-             *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
-             *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
+        ssize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+             *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+             *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+        rsize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng1)
+             *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng2)
+             *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng3);
       } else { // finer
-        ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
-             *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
-             *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
-        rsize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-             *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-             *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+        ssize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng1)
+             *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng2)
+             *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng3);
+        rsize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+             *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+             *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
       }
       ssize*=NHYDRO; rsize*=NHYDRO;
       // specify the offsets in the view point of the target block: flip ox? signs
@@ -675,15 +675,15 @@ void BoundaryValues::Initialize(void)
 
       if (MAGNETIC_FIELDS_ENABLED) {
         int size, csize, fsize;
-        int size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
+        int size1=((nb.ox1==0) ? (pmb->block_size.nx1+1):NGHOST)
+                 *((nb.ox2==0) ? (pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0) ? (pmb->block_size.nx3):NGHOST);
+        int size2=((nb.ox1==0) ? (pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0) ? (pmb->block_size.nx2+f2d):NGHOST)
+                 *((nb.ox3==0) ? (pmb->block_size.nx3):NGHOST);
+        int size3=((nb.ox1==0) ? (pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0) ? (pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
         size=size1+size2+size3;
         if (pmy_mesh_->multilevel==true) {
           if (nb.type!=NEIGHBOR_FACE) {
@@ -692,30 +692,30 @@ void BoundaryValues::Initialize(void)
             if (nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
           }
           size=size1+size2+size3;
-          int f2c1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1):NGHOST)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d):NGHOST)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d):NGHOST);
+          int f2c1=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+          int f2c2=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+          int f2c3=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
           if (nb.type!=NEIGHBOR_FACE) {
             if (nb.ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (nb.ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
             if (nb.ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
           }
           fsize=f2c1+f2c2+f2c3;
-          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-          int c2f2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-          int c2f3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
+          int c2f1=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
+          int c2f2=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
+          int c2f3=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
+                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
           csize=c2f1+c2f2+c2f3;
         }
         if (nb.level==mylevel) // same
@@ -744,44 +744,37 @@ void BoundaryValues::Initialize(void)
                   +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
               f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                   +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
-            }
-            else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+            } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                   +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
               f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                   +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
-            }
-            else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+            } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                   +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
               f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
                   +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
             }
-          }
-          else if (pmb->block_size.nx2 > 1) { // 2D
+          } else if (pmb->block_size.nx2 > 1) { // 2D
             if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
               size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
               f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-            }
-            else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+            } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
               size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
               f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
             }
           }
           else // 1D
             size=f2csize=2;
-        }
-        else if (nb.type==NEIGHBOR_EDGE) { // edge
+        } else if (nb.type==NEIGHBOR_EDGE) { // edge
           if (pmb->block_size.nx3 > 1) { // 3D
             if (nb.eid>=0 && nb.eid<4) {
               size=pmb->block_size.nx3;
               f2csize=pmb->block_size.nx3/2;
-            }
-            else if (nb.eid>=4 && nb.eid<8) {
+            } else if (nb.eid>=4 && nb.eid<8) {
               size=pmb->block_size.nx2;
               f2csize=pmb->block_size.nx2/2;
-            }
-            else if (nb.eid>=8 && nb.eid<12) {
+            } else if (nb.eid>=8 && nb.eid<12) {
               size=pmb->block_size.nx1;
               f2csize=pmb->block_size.nx1/2;
             }
@@ -974,8 +967,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
         MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      }
-      else {  // must be primitive initialization
+      } else {  // must be primitive initialization
         if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
           MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
@@ -1190,27 +1182,27 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
             ris=pmb->cis, rie=pmb->cie;
             if (nb.ox1==1) ris=pmb->cie;
             else if (nb.ox1==-1) rie=pmb->cis;
-          }
-          else if (ni== 1) ris=pmb->cie+1, rie=pmb->cie+1;
-          else { //(ni==-1)
+          } else if (ni== 1) {
+            ris=pmb->cie+1, rie=pmb->cie+1;
+          } else { //(ni==-1)
             ris=pmb->cis-1, rie=pmb->cis-1;
           }
           if (nj==0) {
             rjs=pmb->cjs, rje=pmb->cje;
             if (nb.ox2==1) rjs=pmb->cje;
             else if (nb.ox2==-1) rje=pmb->cjs;
-          }
-          else if (nj== 1) rjs=pmb->cje+1, rje=pmb->cje+1;
-          else { //(nj==-1)
+          } else if (nj== 1) {
+            rjs=pmb->cje+1, rje=pmb->cje+1;
+          } else { //(nj==-1)
             rjs=pmb->cjs-1, rje=pmb->cjs-1;
           }
           if (nk==0) {
             rks=pmb->cks, rke=pmb->cke;
             if (nb.ox3==1) rks=pmb->cke;
             else if (nb.ox3==-1) rke=pmb->cks;
-          }
-          else if (nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
-          else { //(nk==-1)
+          } else if (nk== 1) {
+            rks=pmb->cke+1, rke=pmb->cke+1;
+          } else { //(nk==-1)
             rks=pmb->cks-1, rke=pmb->cks-1;
           }
 
@@ -1231,8 +1223,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
               if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
                                    rke);
-            }
-            else { // 1D
+            } else { // 1D
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
                                    rke);
               for (int i=ris; i<=rie; i++)
@@ -1244,8 +1235,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
               if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
                                    re);
-            }
-            else { // 1D or 2D
+            } else { // 1D or 2D
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks,
                                    rke);
               for (int j=rjs; j<=rje; j++) {
