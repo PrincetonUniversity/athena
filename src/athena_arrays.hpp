@@ -48,7 +48,7 @@ public:
 
   bool IsShallowCopy() { return (scopy_ == true); }
   T *data() { return pdata_; }
-  const T *data() const	{ return pdata_; }
+  const T *data() const { return pdata_; }
 
   // overload operator() to access 1d-5d data
   T &operator() (const int n) {
@@ -91,15 +91,13 @@ private:
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(NULL), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true)
-{
+  : pdata_(NULL), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
 }
 
 // destructor
 
 template<typename T>
-AthenaArray<T>::~AthenaArray()
-{
+AthenaArray<T>::~AthenaArray() {
   DeleteAthenaArray();
 }
 
@@ -127,7 +125,7 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
 
 template<typename T>
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
-  if (this != &src){
+  if (this != &src) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
@@ -160,8 +158,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
 
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
-  const int indx, const int nvar)
-{
+  const int indx, const int nvar) {
   pdata_ = src.pdata_;
 
   if (dim == 5) {
@@ -209,8 +206,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 //  \brief allocate new 1D array with elements initialized to zero.
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx1)
-{
+void AthenaArray<T>::NewAthenaArray(int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = 1;
@@ -225,8 +221,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
 //  \brief 2d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
-{
+void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -241,8 +236,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 //  \brief 3d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
-{
+void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -257,8 +251,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 //  \brief 4d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
-{
+void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -273,8 +266,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 //  \brief 5d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
-{
+void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -289,8 +281,7 @@ void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
 //  \brief  free memory allocated for data array
 
 template<typename T>
-void AthenaArray<T>::DeleteAthenaArray()
-{
+void AthenaArray<T>::DeleteAthenaArray() {
   if (scopy_) {
     pdata_ = NULL;
   } else {

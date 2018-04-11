@@ -39,7 +39,7 @@ typedef struct LogicalLocation {
   long int lx1, lx2, lx3;
   int level;
 
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll)
@@ -83,7 +83,7 @@ typedef struct EdgeField {
 //----------------------------------------------------------------------------------------
 // enums used everywhere
 
-// array indices for conserved: density, momemtum, total energy, face-centered field 
+// array indices for conserved: density, momemtum, total energy, face-centered field
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IB1=0, IB2=1, IB3=2};
 
