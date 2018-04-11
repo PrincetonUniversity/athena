@@ -1,0 +1,96 @@
+language: cpp
+branches:
+  only:
+  - master
+os:
+- linux
+dist: trusty
+sudo: false
+env:
+  matrix:
+  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+compiler:
+- gcc
+- clang
+cache:
+  pip: true
+  directories:
+  - openmpi-2.1.1
+  - mpich-3.2
+  - openmpi
+  - mpich
+  - fftw
+  - fftw-3.3.7
+matrix:
+  include:
+  - os: osx
+    osx_image: xcode8.3
+    compiler: g++
+    env:
+    - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+    cache:
+      pip: true
+      directories:
+      - "/usr/local/Cellar/mpich/"
+      - "/usr/local/Cellar/open-mpi/"
+      - "/usr/local/Cellar/libevent/"
+      - "/usr/local/opt/libevent"
+      - openmpi
+      - mpich
+      - fftw
+      - "/usr/local/Cellar/fftw/"
+  - os: osx
+    osx_image: xcode8.3
+    env:
+    - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+    - TMPDIR=$TRAVIS_BUILD_DIR/tmp/
+    cache:
+      pip: true
+      directories:
+      - "/usr/local/Cellar/mpich/"
+      - "/usr/local/Cellar/open-mpi/"
+      - "/usr/local/Cellar/libevent/"
+      - "/usr/local/opt/libevent"
+      - openmpi
+      - mpich
+      - fftw
+      - "/usr/local/Cellar/fftw/"
+before_install:
+  - test -n $CC  && unset CC
+  - test -n $CXX && unset CXX
+install:
+  - travis_wait 45 bash ./travis/install_mpich.sh
+  - travis_wait 45 bash ./travis/install_openmpi.sh
+  - bash ./travis/install_fftw.sh
+  - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$PATH
+  - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
+  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
+  - cd tst/regression
+  - echo $TMPDIR || true
+  - mkdir $TRAVIS_BUILD_DIR/tmp/
+before_script:
+  - pip install --user numpy || true
+script:
+  - set -e
+  - set -x
+  - python2 run_tests.py mpi
+  - python2 run_tests.py grav
+  - python2 run_tests.py amr
+  - python2 run_tests.py hydro
+  - python2 run_tests.py outputs
+  - python2 run_tests.py curvilinear
+  - python2 run_tests.py gr
+  - python2 run_tests.py sr
+  - python2 run_tests.py pgen
+  - set +e
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+  slack:
+    rooms:
+      secure: lQpuacMeYX8RWntTWyNbcaKfLw6gFIwkWfvnqfdpC/PDqB96R3BmfH2Yi6ZQyUOq+dD/QFGpmqJ0YEGD91hwPCaR9P5LMqhhbAbUC3ON23E3vhm33eynGjq7Y492UrQ1vFMUMAzl6mEi+OoSaKpMNi6OSXBEYs2KfxDlwTMWKbw+9pvGS8ydt8RFcsjofeQOeKWH/x09vTwHqsbwaNB0+GzotcbZQ8PQuT9Lot9OER1qiO1JXWzSce9PrJI1mPBWN094cDK3Na8fzUHq6qsY+G+dgTW45/gJjgO3nRawZd/XrY5iZsDKJ1t8XbC8GbHVxZzMcd+g0VEfaV5c4O8U20xBiWwdw8NmbgZB2sSxVi7wLhqDc6a/8brXx92gIP64AA+UTYXVYykU4/IlQqJs74EgAemTQOEHLO3j8ylK832+XS7JHmio9rjRb3y0meF+uWP5xZ71xBSLQcmvEVAJo5fsrK5SxXHkfvNb2ydjp2i+cUiUPlBXtY1HV7JCTnziqFwQvToA7/Z8/Bw/jaV1p2yQHMXTq0LzqiqNOq8aRiMPkMTwI4Hc6wIHkapfInqHGaqoYRbm9qqbbp6VcHmUjwRdVh0xv87PbHiLtgucV8Lq58isqXaZ42Xr5jJc3dKBx9XbDWWYBTMZgJti5Ye0BI4JR7AMjA67Td2FesG60W0=
+    on_success: always
+    on_failure: always
