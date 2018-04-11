@@ -18,7 +18,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 	# brew update
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix
 	ln -s `which glibtoolize`  /usr/local/opt/libtool/bin/libtoolize
-	brew install mpich --HEAD
+	brew install mpich # --HEAD
 	# brew install mpich --without-fortran --build-from-source --cc=gcc-7
 	# Unlink MPICH to allow for simultaneous installation with OpenMPI
 	brew unlink mpich
