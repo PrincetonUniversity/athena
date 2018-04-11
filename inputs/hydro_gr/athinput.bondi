@@ -18,6 +18,9 @@ dt        = 100.0
 cfl_number = 0.8
 nlim       = -1
 tlim       = 100.0
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1    = 100   # number of cells in r-direction
