@@ -86,7 +86,7 @@ def mpirun(mpirun_cmd, nproc, input_filename, arguments):
     try:
         input_filename_full = '../' + athena_rel_path + 'inputs/' + \
                               input_filename
-        run_command = [mpirun_cmd, '-np', str(nproc), './athena', '-i',
+        run_command = [mpirun_cmd, '-n', str(nproc), './athena', '-i',
                        input_filename_full]
         try:
             subprocess.check_call(run_command + arguments)
