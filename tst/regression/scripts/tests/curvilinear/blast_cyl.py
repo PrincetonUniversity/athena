@@ -11,7 +11,7 @@ import scripts.utils.comparison as comparison
 def prepare(**kwargs):
   athena.configure(
       prob='blast',
-      coord='cylindrical')
+      coord='cylindrical', **kwargs)
   athena.make()
 
 # Run Athena++

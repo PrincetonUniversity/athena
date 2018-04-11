@@ -14,7 +14,7 @@ def prepare(**kwargs):
   athena.configure('sb',
       prob='gr_linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++

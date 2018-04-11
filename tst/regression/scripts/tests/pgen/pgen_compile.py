@@ -19,13 +19,13 @@ def prepare(**kwargs):
   for pgen in pgen_choices:
     if pgen[0:3] == 'gr_':
       print(pgen)
-#      athena.configure('g',coord='minkowski',flux='hlle',prob=pgen)
+#      athena.configure('g',coord='minkowski',flux='hlle',prob=pgen, **kwargs)
 #      athena.make()
     elif pgen=='cpaw' or pgen=='field_loop' or pgen=='orszag_tang' or pgen=='rotor':
-      athena.configure('b',prob=pgen)
+      athena.configure('b',prob=pgen, **kwargs)
       athena.make()
     else:
-      athena.configure(prob=pgen)
+      athena.configure(prob=pgen, **kwargs)
       athena.make()
 
 # Run Athena++

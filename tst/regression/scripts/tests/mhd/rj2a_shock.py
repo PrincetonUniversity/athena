@@ -17,7 +17,7 @@ def prepare(**kwargs):
   athena.configure('b',
       prob='shock_tube',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++

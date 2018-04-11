@@ -17,7 +17,7 @@ def prepare(**kwargs):
   athena.configure('b',
       prob='cpaw',
       eos='isothermal',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++

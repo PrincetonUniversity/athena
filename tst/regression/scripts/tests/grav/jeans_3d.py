@@ -15,30 +15,27 @@ sys.path.insert(0, '../../vis/python')
 # Prepare Athena++
 def prepare(**kwargs):
   athena.configure('mpi','fft',
-      prob='jeans',
-      grav='fft'
-      )
+                   prob='jeans',
+                   grav='fft', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi_fft')
 
   athena.configure('mpi',
-      prob='jeans',
-      grav='mg'
-      )
+                   prob='jeans',
+                   grav='mg', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi_mg')
 
   athena.configure('fft',
-      prob='jeans',
-      grav='fft'
-      )
+                   prob='jeans',
+                   grav='fft',
+                   **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_fft')
 
-  athena.configure(
-      prob='jeans',
-      grav='mg'
-      )
+  athena.configure(prob='jeans',
+                   grav='mg',
+                   **kwargs)
   athena.make()
 
 # Run Athena++

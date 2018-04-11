@@ -18,14 +18,14 @@ def prepare(**kwargs):
   athena.configure('b','mpi',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi')
 
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++ w/wo MPI

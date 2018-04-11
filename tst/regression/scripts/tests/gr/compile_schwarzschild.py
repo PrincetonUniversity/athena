@@ -10,7 +10,7 @@ def prepare(**kwargs):
   athena.configure('gtb',
       prob='gr_bondi',
       coord='schwarzschild',
-      flux='hlle')
+      flux='hlle', **kwargs)
   athena.make()
 
 # Run Athena++

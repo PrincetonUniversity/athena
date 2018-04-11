@@ -16,9 +16,9 @@ sys.path.insert(0, '../../vis/python')
 # Prepare Athena++
 def prepare(**kwargs):
   athena.configure('fft',
-      prob='jeans',
-      grav='fft'
-      )
+                   prob='jeans',
+                   grav='fft',
+                   **kwargs)
   athena.make()
 
 # Run Athena++

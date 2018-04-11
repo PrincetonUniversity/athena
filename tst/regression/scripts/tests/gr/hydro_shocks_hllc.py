@@ -13,7 +13,7 @@ def prepare(**kwargs):
   athena.configure('gt',
       prob='gr_shock_tube',
       coord='minkowski',
-      flux='hllc')
+      flux='hllc', **kwargs)
   athena.make()
 
 # Run Athena++

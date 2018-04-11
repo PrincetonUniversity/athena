@@ -17,7 +17,7 @@ import athena_read
 def prepare(**kwargs):
   athena.configure('b',
       prob='orszag_tang',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++

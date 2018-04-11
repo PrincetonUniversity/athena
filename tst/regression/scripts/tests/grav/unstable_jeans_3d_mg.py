@@ -15,10 +15,9 @@ sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
 def prepare(**kwargs):
-  athena.configure(
-      prob='jeans',
-      grav='mg'
-      )
+  athena.configure(prob='jeans',
+                   grav='mg',
+                   **kwargs)
   athena.make()
 
 # Run Athena++
@@ -74,6 +73,5 @@ def analyze():
       result = False
     elif data[i+1][4] > (1.1*data[i][4]/(4.0)):
       print("WARNING: Linear Jeans instability error is not converging at 2nd order within 1.1")
-  
-  return result
 
+  return result
