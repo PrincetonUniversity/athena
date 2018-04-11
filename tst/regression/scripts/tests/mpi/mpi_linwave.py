@@ -41,9 +41,12 @@ def run(**kwargs):
   athena.run('mhd/athinput.linear_wave3d', arguments)
 
   os.system('mv bin/athena_mpi bin/athena')
-  athena.mpirun(1, 'mhd/athinput.linear_wave3d', arguments)
-  athena.mpirun(2, 'mhd/athinput.linear_wave3d', arguments)
-  athena.mpirun(4, 'mhd/athinput.linear_wave3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1, 'mhd/athinput.linear_wave3d',
+                arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2, 'mhd/athinput.linear_wave3d',
+                arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4, 'mhd/athinput.linear_wave3d',
+                arguments)
 
 # Analyze outputs
 def analyze():

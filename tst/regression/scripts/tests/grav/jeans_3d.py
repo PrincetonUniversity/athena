@@ -52,14 +52,14 @@ def run(**kwargs):
   athena.run('hydro/athinput.jeans_3d', arguments)
 
   os.system('mv bin/athena_mpi_mg bin/athena')
-  athena.mpirun(1,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(2,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(4,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1, 'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2, 'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4,'hydro/athinput.jeans_3d', arguments)
 
   os.system('mv bin/athena_mpi_fft bin/athena')
-  athena.mpirun(1,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(2,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(4,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4,'hydro/athinput.jeans_3d', arguments)
 
 # Analyze outputs
 def analyze():

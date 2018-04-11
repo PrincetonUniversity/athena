@@ -19,7 +19,8 @@ def configure(*args, **kwargs):
         for arg in args:
             configure_command.append('-{0}'.format(arg))
         for key, val in kwargs.items():
-            configure_command.append('--{0}={1}'.format(key, val))
+            if val:
+                configure_command.append('--{0}={1}'.format(key, val))
         try:
             subprocess.check_call(configure_command)
         except subprocess.CalledProcessError as err:
