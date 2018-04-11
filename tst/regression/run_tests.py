@@ -121,6 +121,11 @@ def main(**kwargs):
     test_string = 'test' if num_tests == 1 else 'tests'
     print('Summary: {0} out of {1} {2} passed\n'.format(num_passed, num_tests,
                                                         test_string))
+    # For CI calling scripts, explicitly raise error if not all tests passed
+    if num_passed == num_tests:
+        return 0
+    else:
+        raise TestError()
 
 
 # Exception for unexpected behavior by individual tests
