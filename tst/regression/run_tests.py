@@ -37,8 +37,11 @@ def main(**kwargs):
     athena.save_files()
 
     # Make list of tests to run
-    tests = kwargs['tests']
+    tests = kwargs.pop('tests')
     test_names = []
+    # Get MPI run syntax
+    mpirun_cmd = kwargs.pop('mpirun')
+
     if len(tests) == 0:  # run all tests
         for _, directory, ispkg in iter_modules(path=['scripts/tests']):
             if ispkg:
@@ -76,13 +79,13 @@ def main(**kwargs):
                                     fromlist=['prepare', 'run', 'analyze'])
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 try:
-                    module.prepare()
+                    module.prepare(**kwargs)
                 except Exception:
                     traceback.print_exc()
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 try:
-                    module.run()
+                    module.run(mpirun_cmd=mpirun_cmd)
                 except Exception:
                     traceback.print_exc()
                     test_errors.append('run()')
@@ -139,6 +142,7 @@ if __name__ == '__main__':
                         default='mpirun',
                         choices=['mpirun', 'srun'],
                         help='select MPI run command')
+
     # Flags to pass to ./configure.py
     # Manually keep these in sync with ./configure.py choices
     cxx_choices = ['g++', 'g++-simd', 'icc', 'cray', 'bgxl', 'icc-phi',
