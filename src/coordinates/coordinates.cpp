@@ -50,9 +50,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x3f.NewAthenaArray((ncells3+1));
 
   int64_t nrootmesh, noffset, noffset_ceil;
-  long int &lx1=pmy_block->loc.lx1;
-  long int &lx2=pmy_block->loc.lx2;
-  long int &lx3=pmy_block->loc.lx3;
+  int64_t &lx1=pmy_block->loc.lx1;
+  int64_t &lx2=pmy_block->loc.lx2;
+  int64_t &lx3=pmy_block->loc.lx3;
   int &ll=pmy_block->loc.level;
 
 //--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)

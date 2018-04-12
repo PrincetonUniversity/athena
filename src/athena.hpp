@@ -36,7 +36,7 @@ struct RegionSize;
 //  \brief stores logical location and level of meshblock
 
 typedef struct LogicalLocation {
-  long int lx1, lx2, lx3;
+  int64_t lx1, lx2, lx3;
   int level;
 
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};

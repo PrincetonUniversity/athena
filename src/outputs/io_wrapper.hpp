@@ -18,7 +18,7 @@ typedef MPI_File IOWrapperFile;
 typedef FILE * IOWrapperFile;
 #endif
 
-typedef long int IOWrapperSize_t;
+typedef int64_t IOWrapperSize_t;
 enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper

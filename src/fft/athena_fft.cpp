@@ -106,7 +106,7 @@ void FFTBlock::PrintSource(int in)
   for (int k=0; k<Nx[2]; ++k) {
     for (int j=0; j<Nx[1]; ++j) {
       for (int i=0; i<Nx[0]; ++i) {
-        long int idx=GetIndex(i,j,k,f_in_);
+        int64_t idx=GetIndex(i,j,k,f_in_);
         if(in == 1) std::cout << in_[idx][0] << " ";
         if(in == -1) std::cout << out_[idx][0] << " ";
       }
@@ -115,17 +115,17 @@ void FFTBlock::PrintSource(int in)
     std::cout << std::endl;
   }
 }
-long int FFTBlock::GetIndex(const int i, const int j, const int k)
+int64_t FFTBlock::GetIndex(const int i, const int j, const int k)
 {
   return i + nx[0] * ( j + nx[1] * k);
 }
 
-long int FFTBlock::GetGlobalIndex(const int i, const int j, const int k)
+int64_t FFTBlock::GetGlobalIndex(const int i, const int j, const int k)
 {
   return i + disp[0] + Nx[0]* ( j + disp[1] + Nx[1]* ( k + disp[2]) );
 }
 
-long int FFTBlock::GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx)
+int64_t FFTBlock::GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx)
 {
   int old_idx[3]={i,j,k};
   int new_idx[3];
@@ -154,7 +154,7 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
     for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
       for(int j=jl, mj=js; mj<=je; j++, mj++) {
         for(int i=ngh, mi=is; mi<=ie; i++, mi++){
-          long int idx=GetIndex(mi,mj,mk,b_out_);
+          int64_t idx=GetIndex(mi,mj,mk,b_out_);
           if(ns == 1){
             dst(k,j,i)=src[idx][0]*norm_factor_;
           } else {
@@ -185,7 +185,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
     for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
       for(int j=jl, mj=js; mj<=je; j++, mj++) {
         for(int i=ngh, mi=is; mi<=ie; i++, mi++) {
-          long int idx=GetIndex(mi,mj,mk,f_in_);
+          int64_t idx=GetIndex(mi,mj,mk,f_in_);
           if(ns == 1){
             dst[idx][0]=src(n,k,j,i);
             dst[idx][1]=0.0;
@@ -207,8 +207,8 @@ void FFTBlock::ApplyKernel(int mode)
   for(int k=0; k<knx[2]; k++) {
     for(int j=0; j<knx[1]; j++) {
       for(int i=0; i<knx[0]; i++) {
-        long int idx_in=GetIndex(i,j,k,b_in_);
-        long int idx_out=GetIndex(i,j,k,f_out_);
+        int64_t idx_in=GetIndex(i,j,k,b_in_);
+        int64_t idx_out=GetIndex(i,j,k,f_out_);
         in_[idx_in][0] = out_[idx_out][0];
         in_[idx_in][1] = out_[idx_out][1];
       }

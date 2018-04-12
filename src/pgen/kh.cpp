@@ -53,7 +53,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  long int iseed = -1 - gid;
+  int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
 
   // Read problem parameters

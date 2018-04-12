@@ -153,7 +153,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
         q2=ran2(&rseed);
         q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
         q1=ran2(&rseed);
-        long int kidx=pfb->GetIndex(i,j,k,idx);
+        int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] = q3*std::cos(2.0*PI*q1);
         amp[kidx][1] = q3*std::sin(2.0*PI*q1);
       }
@@ -173,7 +173,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
         Real kz=nz*pfb->dkx[2];
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
-        long int gidx = pfb->GetGlobalIndex(i,j,k);
+        int64_t gidx = pfb->GetGlobalIndex(i,j,k);
         if(gidx == 0){
           pcoeff = 0.0;
         } else {
@@ -183,7 +183,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
             pcoeff = 0.0;
           }
         }
-        long int kidx=pfb->GetIndex(i,j,k,idx);
+        int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] *= pcoeff;
         amp[kidx][1] *= pcoeff;
       }
@@ -345,7 +345,7 @@ void TurbulenceDriver::Perturb(Real dt){
 //  \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
 
 
-long int TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
+int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 {
   return (double)((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
 }
