@@ -18,7 +18,7 @@ pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 # Prepare Athena++
 def prepare(**kwargs):
     for pgen in pgen_choices:
-        if pgen[0:3] == 'gr_':
+        if (pgen[0:3] == 'gr_' or pgen == 'default_pgen'):
             print(pgen)
             # athena.configure('g', coord='minkowski', flux='hlle', prob=pgen)
             # athena.make()
