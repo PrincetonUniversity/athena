@@ -490,8 +490,8 @@ class athdf(dict):
       dataset_sizes = f.attrs['NumVariables'][:]
       dataset_sizes_cumulative = np.cumsum(dataset_sizes)
       variable_names = f.attrs['VariableNames'][:]
-      self.quantity_datasets = []
-      self.quantity_indices = []
+      self.quantity_datasets = {}
+      self.quantity_indices = {}
       for q in self.quantities:
         var_num = np.where(variable_names == q)[0][0]
         dataset_num = np.where(dataset_sizes_cumulative > var_num)[0][0]
@@ -499,8 +499,8 @@ class athdf(dict):
           dataset_index = var_num
         else:
           dataset_index = var_num - dataset_sizes_cumulative[dataset_num-1]
-        self.quantity_datasets.append(dataset_names[dataset_num])
-        self.quantity_indices.append(dataset_index)
+        self.quantity_datasets[q] = dataset_names[dataset_num]
+        self.quantity_indices[q] = dataset_index
 
       # Locate fine block for coordinates in case of slice
       fine_block = np.where(self.levels == self.max_level)[0][0]
@@ -687,7 +687,9 @@ class athdf(dict):
           ku_d = min(ku_d, self.k_max) - self.k_min
 
           # Assign values
-          for q,dataset,index in zip(quantities, self.quantity_datasets, self.quantity_indices):
+          for q in quantities:
+            dataset = self.quantity_datasets[q]
+            index = self.quantity_indices[q]
             block_data = f[dataset][index,block_num,:]
             if s > 1:
               if self.nx1 > 1:
@@ -751,7 +753,9 @@ class athdf(dict):
             o3 = s/2 - 1 if self.nx3 > 1 else 0
 
             # Assign values
-            for q,dataset,index in zip(quantities, self.quantity_datasets, self.quantity_indices):
+            for q in quantities:
+              dataset = self.quantity_datasets[q]
+              index = self.quantity_indices[q]
               self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = \
                   f[dataset][index,block_num,kl_s+o3:ku_s:s,jl_s+o2:ju_s:s,il_s+o1:iu_s:s]
 
@@ -764,7 +768,9 @@ class athdf(dict):
             ko_vals = range(s) if self.nx3 > 1 else (0,)
 
             # Assign values
-            for q,dataset,index in zip(quantities, self.quantity_datasets, self.quantity_indices):
+            for q in quantities:
+              dataset = self.quantity_datasets[q]
+              index = self.quantity_indices[q]
               for ko in ko_vals:
                 for jo in jo_vals:
                   for io in io_vals:
@@ -804,8 +810,9 @@ class athdf(dict):
                     self.x1m = f['x1f'][block_num,i_s]
                     self.x1p = f['x1f'][block_num,i_s+1]
                   vol = self.vol_func(self.x1m, self.x1p, self.x2m, self.x2p, self.x3m, self.x3p)
-                  for q,dataset,index in \
-                      zip(quantities, self.quantity_datasets, self.quantity_indices):
+                  for q in quantities:
+                    dataset = self.quantity_datasets[q]
+                    index = self.quantity_indices[q]
                     self[q][k_d, j_d, i_d] += f[dataset][index, block_num, k_s, j_s, i_s] * vol
             loc1 = (self.nx1 > 1) * block_location[0] / s
             loc2 = (self.nx2 > 1 ) * block_location[1] / s
