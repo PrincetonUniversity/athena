@@ -13,6 +13,7 @@ set -e # quit at first error
 cd tst/regression
 
 # Build step #1: GNU compiler and OpenMPI library
+module purge
 module load rh # latest GNU compiler
 module load openmpi/gcc # /1.10.2/64
 # grav/ regression tests require MPI and FFTW
