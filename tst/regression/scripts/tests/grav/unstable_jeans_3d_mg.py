@@ -34,7 +34,7 @@ def run(**kwargs):
       'meshblock/nx3=16',
       'problem/njeans=1.5',
       'output2/dt=-1', 'time/tlim=0.04', 'problem/compute_error=true',
-      'time/ncycle_out=0']
+      'time/ncycle_out=10']
     arguments[0] = 'mesh/nx1='+str(2*res)
     arguments[1] = 'mesh/nx2='+str(res)
     arguments[2] = 'mesh/nx3='+str(res)
