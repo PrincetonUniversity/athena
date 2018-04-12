@@ -162,15 +162,20 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     } else {
       // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX2()
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
-      for(int j=js-ng; j<=je+ng; ++j) {
-        dx2f(j)=dx;
-      }
-      x2f(js-ng)=block_size.x2min-ng*dx;
-      for(int j=js-ng+1;j<=je+ng+1;j++) {
-        x2f(j)=x2f(j-1)+dx;
+      for (int j=js-ng; j<=je+ng+1; ++j) {
+        noffset = j-js + (int64_t)lx2*block_size.nx2;
+        noffset_ceil = noffset - (nrootmesh-1)/2;
+        noffset -= nrootmesh/2;
+
+        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        x2f(j)=UniformMeshGeneratorX2(rx, mesh_size);
       }
       x2f(js) = block_size.x2min;
       x2f(je+1) = block_size.x2max;
+
+      for(int j=js-ng; j<=je+ng; ++j) {
+        dx2f(j)=dx;
+      }
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
@@ -234,15 +239,20 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     } else {
       // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
-      for(int k=ks-ng; k<=ke+ng; ++k) {
-        dx3f(k)=dx;
-      }
-      x3f(ks-ng)=block_size.x3min-ng*dx;
-      for(int k=ks-ng+1;k<=ke+ng+1;k++) {
-        x3f(k)=x3f(k-1)+dx;
+      for (int k=ks-ng; k<=ke+ng+1; ++k) {
+        noffset = k-ks + (int64_t)lx3*block_size.nx3;
+        noffset_ceil = noffset - (nrootmesh-1)/2;
+        noffset -= nrootmesh/2;
+
+        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        x2f(k)=UniformMeshGeneratorX3(rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
+
+      for(int k=ks-ng; k<=ke+ng; ++k) {
+        dx3f(k)=dx;
+      }
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
