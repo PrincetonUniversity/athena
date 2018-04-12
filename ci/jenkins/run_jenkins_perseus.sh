@@ -56,3 +56,7 @@ python ./run_tests.py curvilinear --cxx=icc --mpirun=srun
 
 set +e
 # end regression tests
+
+# Codecov coverage analysis
+# Pipe to bash (Jenkins)
+curl -s https://codecov.io/bash | bash -s - -t ccdc959e-e2c3-4811-95c6-512151b39471
