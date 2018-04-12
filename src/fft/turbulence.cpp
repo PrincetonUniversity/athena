@@ -164,10 +164,10 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
   for(k=0;k<knx3;k++){
     for(j=0;j<knx2;j++){
       for(i=0;i<knx1;i++){
-        Real nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
-        Real ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
-        Real nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
-        Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
+        long int nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
+        long int ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
+        long int nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
+        long int nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
         Real kx=nx*pfb->dkx[0];
         Real ky=ny*pfb->dkx[1];
         Real kz=nz*pfb->dkx[2];
