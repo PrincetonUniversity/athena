@@ -26,7 +26,7 @@ def run(**kwargs):
     'time/cfl_number=0.4',
     'time/tlim=0.4',
     'mesh/nx1=400',
-    'time/ncycle_out=0']
+    'time/ncycle_out=100']
   for i in range(1,5):
     arguments[0] = 'job/problem_id=sr_hydro_shock' + repr(i)
     athena.run('hydro_sr/athinput.mb_'+repr(i), arguments)

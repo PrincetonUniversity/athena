@@ -49,7 +49,7 @@ def run(**kwargs):
       'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
       'problem/Bx=' + repr(bx), 'problem/By=' + repr(by), 'problem/Bz=' + repr(bz),
       'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp),
-      'time/ncycle_out=0']
+      'time/ncycle_out=100']
     athena.run('mhd_sr/athinput.linear_wave', arguments)
     arguments[0] = 'job/problem_id=sr_mhd_wave_{0}_high'.format(wave_flag)
     arguments[1] = 'mesh/nx1=' + repr(res_high)
