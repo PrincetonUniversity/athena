@@ -49,7 +49,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x2f.NewAthenaArray((ncells2+1));
   x3f.NewAthenaArray((ncells3+1));
 
-  long long nrootmesh, noffset;
+  int64_t nrootmesh, noffset;
   long int &lx1=pmy_block->loc.lx1;
   long int &lx2=pmy_block->loc.lx2;
   long int &lx3=pmy_block->loc.lx3;
@@ -63,9 +63,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = i-is + (long long)lx1*block_size.nx1;
+        noffset = i-is + (int64_t)lx1*block_size.nx1;
       } else {
-        noffset = (i-is)*2 + (long long)lx1*block_size.nx1;
+        noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
       }
       Real rx=(Real)noffset/(Real)nrootmesh;
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
@@ -125,9 +125,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = j-js + (long long)lx2*block_size.nx2;
+          noffset = j-js + (int64_t)lx2*block_size.nx2;
         } else {
-          noffset = (j-js)*2 + (long long)lx2*block_size.nx2;
+          noffset = (j-js)*2 + (int64_t)lx2*block_size.nx2;
         }
         Real rx=(Real)noffset/(Real)nrootmesh;
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
@@ -196,9 +196,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = k-ks + (long long)lx3*block_size.nx3;
+          noffset = k-ks + (int64_t)lx3*block_size.nx3;
         } else {
-          noffset = (k-ks)*2 + (long long)lx3*block_size.nx3;
+          noffset = (k-ks)*2 + (int64_t)lx3*block_size.nx3;
         }
         Real rx=(Real)noffset/(Real)nrootmesh;
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
