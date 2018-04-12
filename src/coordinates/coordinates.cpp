@@ -49,7 +49,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x2f.NewAthenaArray((ncells2+1));
   x3f.NewAthenaArray((ncells3+1));
 
-  int64_t nrootmesh, noffset;
+  int64_t nrootmesh, noffset, noffset_ceil;
   long int &lx1=pmy_block->loc.lx1;
   long int &lx2=pmy_block->loc.lx2;
   long int &lx3=pmy_block->loc.lx3;
@@ -88,17 +88,26 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
          << std::endl;
     }
 
-  } else {  // uniform grid
+  } else {
+    // uniform grid: even though use_mesghen_fn[X1DIR]=false, use UniformMeshGeneratorX1()
     Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
-    for(int i=is-ng; i<=ie+ng; ++i) {
-      dx1f(i)=dx;
-    }
-    x1f(is-ng)=block_size.x1min-ng*dx;
-    for(int i=is-ng+1;i<=ie+ng+1;i++) {
-      x1f(i)=x1f(i-1)+dx;
+    for (int i=is-ng; i<=ie+ng+1; ++i) {
+      noffset = i-is + (int64_t)lx1*block_size.nx1;
+      noffset_ceil = noffset - (nrootmesh-1)/2;
+      noffset -= nrootmesh/2;
+      // if nrootmesh is even, central interface is at noffset=noffset_ceil=0
+      // else, central cell has faces at noffset=0,1 due to integer div floor(nrootmesh/2)
+      // Average with ceil(nrootmesh/2) indexing, noffset_ceil=-1,0 for symmetry
+      Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+      // pm->MeshGenerator_[X1DIR] still = DefaultMeshGeneratorX1().
+      x1f(i)=UniformMeshGeneratorX1(rx, mesh_size);
     }
     x1f(is) = block_size.x1min;
     x1f(ie+1) = block_size.x1max;
+
+    for(int i=is-ng; i<=ie+ng; ++i) {
+      dx1f(i)=dx;
+    }
   }
 
   // correct cell face coordinates in ghost zones for reflecting boundary condition
@@ -150,7 +159,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
            << std::endl;
       }
 
-    } else {  // uniform grid
+    } else {
+      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX2()
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for(int j=js-ng; j<=je+ng; ++j) {
         dx2f(j)=dx;
@@ -221,7 +231,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
            << std::endl;
       }
 
-    } else { // uniform grid
+    } else {
+      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for(int k=ks-ng; k<=ke+ng; ++k) {
         dx3f(k)=dx;
