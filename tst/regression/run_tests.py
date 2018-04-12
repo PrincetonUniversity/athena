@@ -104,6 +104,9 @@ def main(**kwargs):
                 test_errors.append(None)
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
+            # For CI, print after every individual test has finished
+            print('{} test: prepare(), run(), analyze() finished'.format(name))
+
     # Restore any previously-existing files once runs are complete
     finally:
         athena.restore_files()
