@@ -2,7 +2,7 @@ athena
 ======
 <!-- Jenkins Status Badge in Markdown (with view), unprotected, flat style -->
 <!-- In general, need to be on Princeton VPN, logged into Princeton CAS, with ViewStatus access to Jenkins instance to click on unprotected Build Status Badge, but server is configured to whitelist GitHub -->
-[![Jenkins Build Status](https://jenkins.princeton.edu/buildStatus/icon?job=athena/athena_jenkins_commit)](https://jenkins.princeton.edu/job/athena/job/athena_jenkins_commit/)
+[![Jenkins Build Status](https://jenkins.princeton.edu/buildStatus/icon?job=athena/felker_athena_jenkins_commit)](https://jenkins.princeton.edu/job/athena/job/felker_athena_jenkins_commit/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 <!--
 [![Travis CI Build Status](https://travis-ci.com/felker/athena.svg?token=Ejzw3yndG1Fqub679gCB&branch=master)](https://travis-ci.com/felker/athena) -->
