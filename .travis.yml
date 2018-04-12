@@ -92,6 +92,11 @@ install:
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - pip install --user numpy || true
+# Run regression test suite:
+# Do not use "python run_tests.py" to run all tests, so that:
+# - Each set/directory of tests are timed separately
+# - Script fails after first broken set of tests
+# (Could alternatively group sets of tests with && operator)
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
@@ -108,7 +113,8 @@ script:
   - python2 run_tests.py pgen
   #- python2 run_tests.py shearinbox
   - set +e
-  # Could alternatively group sets of tests with && operator
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
 notifications:
   email:
     on_success: change
