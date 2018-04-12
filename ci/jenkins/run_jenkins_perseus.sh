@@ -21,18 +21,18 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
-python ./run_tests.py grav --mpirun=srun
-python ./run_tests.py mpi --mpirun=srun
-python ./run_tests.py hydro --mpirun=srun
+time python ./run_tests.py grav --mpirun=srun
+time python ./run_tests.py mpi --mpirun=srun
+time python ./run_tests.py hydro --mpirun=srun
 # MHD is currenlty the longest regression test set:
-python ./run_tests.py mhd --mpirun=srun
-python ./run_tests.py amr --mpirun=srun
-python ./run_tests.py outputs --mpirun=srun
-python ./run_tests.py pgen --mpirun=srun
-python ./run_tests.py sr --mpirun=srun
-python ./run_tests.py gr --mpirun=srun
-python ./run_tests.py curvilinear --mpirun=srun
-#python ./run_tests.py shearingbox
+time python ./run_tests.py mhd --mpirun=srun
+time python ./run_tests.py amr --mpirun=srun
+time python ./run_tests.py outputs --mpirun=srun
+time python ./run_tests.py pgen --mpirun=srun
+time python ./run_tests.py sr --mpirun=srun
+time python ./run_tests.py gr --mpirun=srun
+time python ./run_tests.py curvilinear --mpirun=srun
+#time python ./run_tests.py shearingbox
 
 # Build step #2: Intel compiler and MPI library
 module purge
@@ -42,17 +42,17 @@ module load fftw/gcc/3.3.4
 module load rh
 module list
 
-python ./run_tests.py grav --cxx=icc --mpirun=srun
-python ./run_tests.py mpi --cxx=icc --mpirun=srun
-python ./run_tests.py hydro --cxx=icc --mpirun=srun
-python ./run_tests.py mhd --cxx=icc --mpirun=srun
-python ./run_tests.py amr --cxx=icc --mpirun=srun
-python ./run_tests.py outputs --cxx=icc --mpirun=srun
-python ./run_tests.py pgen --cxx=icc --mpirun=srun
-python ./run_tests.py sr --cxx=icc --mpirun=srun
-python ./run_tests.py gr --cxx=icc --mpirun=srun
-python ./run_tests.py curvilinear --cxx=icc --mpirun=srun
-#python ./run_tests.py shearingbox --cxx=icc
+time python ./run_tests.py grav --cxx=icc --mpirun=srun
+time python ./run_tests.py mpi --cxx=icc --mpirun=srun
+time python ./run_tests.py hydro --cxx=icc --mpirun=srun
+time python ./run_tests.py mhd --cxx=icc --mpirun=srun
+time python ./run_tests.py amr --cxx=icc --mpirun=srun
+time python ./run_tests.py outputs --cxx=icc --mpirun=srun
+time python ./run_tests.py pgen --cxx=icc --mpirun=srun
+time python ./run_tests.py sr --cxx=icc --mpirun=srun
+time python ./run_tests.py gr --cxx=icc --mpirun=srun
+time python ./run_tests.py curvilinear --cxx=icc --mpirun=srun
+#time python ./run_tests.py shearingbox --cxx=icc
 
 set +e
 # end regression tests
