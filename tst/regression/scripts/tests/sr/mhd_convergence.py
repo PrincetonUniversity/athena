@@ -38,17 +38,18 @@ def run(**kwargs):
   wavespeeds = wavespeeds_mhd()
   for wave_flag in wave_flags:
     time = 1.0 / abs(wavespeeds[wave_flag])
-    arguments = ['time/ncycle_out=0',
-        'job/problem_id=sr_mhd_wave_{0}_low'.format(wave_flag),
-        'mesh/nx1=' + repr(res_low),
-        'meshblock/nx1=' + repr(res_low),
-        'time/tlim=' + repr(time),
-        'output1/dt=' + repr(time),
-        'hydro/gamma=' + repr(gamma_adi),
-        'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
-        'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
-        'problem/Bx=' + repr(bx), 'problem/By=' + repr(by), 'problem/Bz=' + repr(bz),
-        'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp)]
+    arguments = [
+      'job/problem_id=sr_mhd_wave_{0}_low'.format(wave_flag),
+      'mesh/nx1=' + repr(res_low),
+      'meshblock/nx1=' + repr(res_low),
+      'time/tlim=' + repr(time),
+      'output1/dt=' + repr(time),
+      'hydro/gamma=' + repr(gamma_adi),
+      'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
+      'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
+      'problem/Bx=' + repr(bx), 'problem/By=' + repr(by), 'problem/Bz=' + repr(bz),
+      'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp),
+      'time/ncycle_out=0']
     athena.run('mhd_sr/athinput.linear_wave', arguments)
     arguments[0] = 'job/problem_id=sr_mhd_wave_{0}_high'.format(wave_flag)
     arguments[1] = 'mesh/nx1=' + repr(res_high)

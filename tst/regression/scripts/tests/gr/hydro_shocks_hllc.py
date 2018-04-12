@@ -18,14 +18,15 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = ['time/ncycle_out=0',
-      '',
-      'output1/file_type=vtk',
-      'output1/variable=cons',
-      'output1/dt=0.4',
-      'time/cfl_number=0.4',
-      'time/tlim=0.4',
-      'mesh/nx1=400']
+  arguments = [
+    '',
+    'output1/file_type=vtk',
+    'output1/variable=cons',
+    'output1/dt=0.4',
+    'time/cfl_number=0.4',
+    'time/tlim=0.4',
+    'mesh/nx1=400',
+    'time/ncycle_out=0']
   for i in range(1,5):
     arguments[0] = 'job/problem_id=gr_hydro_shock' + repr(i)
     athena.run('hydro_sr/athinput.mb_'+repr(i), arguments)

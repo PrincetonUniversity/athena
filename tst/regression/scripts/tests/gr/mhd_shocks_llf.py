@@ -18,13 +18,14 @@ def prepare(**kwargs):
 
 # Run Athena++
 def run(**kwargs):
-  arguments = ['time/ncycle_out=0',
-      'job/problem_id=',
-      'output1/file_type=vtk',
-      'output1/variable=cons',
-      'output1/dt=',
-      'time/tlim=',
-      'mesh/nx1=']
+  arguments = [
+    'job/problem_id=',
+    'output1/file_type=vtk',
+    'output1/variable=cons',
+    'output1/dt=',
+    'time/tlim=',
+    'mesh/nx1=',
+    'time/ncycle_out=0']
   times = [0.4, 0.55, 0.5]
   zones = [400, 800, 800]
   for i,time,zone in zip([1,2,4],times,zones):
