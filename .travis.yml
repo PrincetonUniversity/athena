@@ -101,17 +101,17 @@ script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
   - python2 run_tests.py mpi
-  - python2 run_tests.py grav # requires FFTW library
-  - python2 run_tests.py amr
+  - travis_wait 20 python2 run_tests.py grav # requires FFTW library
+  - travis_wait 20 python2 run_tests.py amr
   # Longest set of tests. Timeout after 10 m
-  #- python2 run_tests.py mhd
+  #- travis_wait 30 python2 run_tests.py mhd
   - python2 run_tests.py hydro
   - python2 run_tests.py outputs
   - python2 run_tests.py curvilinear
   - python2 run_tests.py gr
-  - python2 run_tests.py sr
+  - travis_wait 20 python2 run_tests.py sr
   - python2 run_tests.py pgen
-  #- python2 run_tests.py shearinbox
+  #- travis_wait 30 python2 run_tests.py shearinbox
   - set +e
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
