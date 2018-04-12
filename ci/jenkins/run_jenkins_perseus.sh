@@ -34,12 +34,12 @@ python ./run_tests.py gr --mpirun=srun
 python ./run_tests.py curvilinear --mpirun=srun
 #python ./run_tests.py shearingbox
 
-
 # Build step #2: Intel compiler and MPI library
 module purge
 module load intel
 module load intel-mpi
 module load fftw/gcc/3.3.4
+module load rh
 module list
 
 python ./run_tests.py grav --cxx=icc --mpirun=srun
