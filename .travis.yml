@@ -60,7 +60,7 @@ matrix:
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     env:
     - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
-    - TMPDIR=$TRAVIS_BUILD_DIR/tmp/
+    - TMPDIR=/tmp
     # Cache is shared with other osx build with MPICH
     cache:
       pip: true
@@ -87,9 +87,8 @@ install:
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
   - cd tst/regression
-  - echo $TMPDIR || true
   # Fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
-  - mkdir $TRAVIS_BUILD_DIR/tmp/
+  - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - pip install --user numpy || true
