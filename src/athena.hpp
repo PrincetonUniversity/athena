@@ -11,6 +11,7 @@
 #include "defs.hpp"
 #include "athena_arrays.hpp"
 #include <math.h>
+#include <stdint.h>  // int64_t
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
