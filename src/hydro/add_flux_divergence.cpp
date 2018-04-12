@@ -169,6 +169,5 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
       }
     }
   }
-
   return;
 }

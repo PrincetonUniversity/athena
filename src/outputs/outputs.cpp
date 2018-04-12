@@ -28,7 +28,7 @@
 //   - file_number  = any integer with up to 4 digits
 //   - x[123]_slice = specifies data should be a slice at x[123] position
 //   - x[123]_sum   = set to "true" to sum data along specified direction
-//   
+//
 // EXAMPLE of an <outputN> block for a VTK dump:
 //   <output3>
 //   file_type   = tab       # Tabular data dump
@@ -104,7 +104,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
-      // extract integer number of output block.  Save name and number 
+      // extract integer number of output block.  Save name and number
       std::string outn = pib->block_name.substr(6); // 6 because counting starts at 0!
       op.block_number = atoi(outn.c_str());
       op.block_name.assign(pib->block_name);
@@ -166,7 +166,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // read sum options.  Check for conflicts with slicing.
         op.output_sumx1 = pin->GetOrAddBoolean(op.block_name,"x1_sum",false);
         if ((op.output_slicex1) && (op.output_sumx1)) {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl 
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x1-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
           throw std::runtime_error(msg.str().c_str());
@@ -192,7 +192,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // read ghost cell option
         if(COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
           op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
-        else 
+        else
           op.cartesian_vector=false;
 
         // set output variable and optional data format string used in formatted writes
@@ -225,12 +225,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 #endif
         } else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Unrecognized file format = '" << op.file_type 
+              << "Unrecognized file format = '" << op.file_type
               << "' in output block '" << op.block_name << "'" << std::endl;
           throw std::runtime_error(msg.str().c_str());
         }
 
-        // Add type as node in linked list 
+        // Add type as node in linked list
         if (pfirst_type_ == NULL) {
           pfirst_type_ = pnew_type;
         } else {
@@ -250,7 +250,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // Move restarts to the end of the OutputType list, so file counters for other 
+  // Move restarts to the end of the OutputType list, so file counters for other
   // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
@@ -308,7 +308,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   OutputData *pod;
 
   // (lab-frame) density
-  if (output_params.variable.compare("D") == 0 || 
+  if (output_params.variable.compare("D") == 0 ||
       output_params.variable.compare("cons") == 0) {
     pod = new OutputData;
     pod->type = "SCALARS";
@@ -319,7 +319,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   }
 
   // (rest-frame) density
-  if (output_params.variable.compare("d") == 0 || 
+  if (output_params.variable.compare("d") == 0 ||
       output_params.variable.compare("prim") == 0) {
     pod = new OutputData;
     pod->type = "SCALARS";
@@ -331,7 +331,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 
   // total energy
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("E") == 0 || 
+    if (output_params.variable.compare("E") == 0 ||
         output_params.variable.compare("cons") == 0) {
       pod = new OutputData;
       pod->type = "SCALARS";
@@ -344,7 +344,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 
   // pressure
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("p") == 0 || 
+    if (output_params.variable.compare("p") == 0 ||
         output_params.variable.compare("prim") == 0) {
       pod = new OutputData;
       pod->type = "SCALARS";
@@ -356,7 +356,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   }
 
   // momentum vector
-  if (output_params.variable.compare("m") == 0 || 
+  if (output_params.variable.compare("m") == 0 ||
       output_params.variable.compare("cons") == 0) {
     pod = new OutputData;
     pod->type = "VECTORS";
@@ -404,7 +404,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   }
 
   // velocity vector
-  if (output_params.variable.compare("v") == 0 || 
+  if (output_params.variable.compare("v") == 0 ||
       output_params.variable.compare("prim") == 0) {
     pod = new OutputData;
     pod->type = "VECTORS";
@@ -426,7 +426,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   }
 
   // each component of velocity
-  if (output_params.variable.compare("vx") == 0 || 
+  if (output_params.variable.compare("vx") == 0 ||
       output_params.variable.compare("v1") == 0) {
     pod = new OutputData;
     pod->type = "SCALARS";
@@ -435,7 +435,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("vy") == 0 || 
+  if (output_params.variable.compare("vy") == 0 ||
       output_params.variable.compare("v2") == 0) {
     pod = new OutputData;
     pod->type = "SCALARS";
@@ -444,7 +444,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("vz") == 0 || 
+  if (output_params.variable.compare("vz") == 0 ||
       output_params.variable.compare("v3") == 0) {
     pod = new OutputData;
     pod->type = "SCALARS";
@@ -470,7 +470,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
-    if (output_params.variable.compare("bcc") == 0 || 
+    if (output_params.variable.compare("bcc") == 0 ||
         output_params.variable.compare("prim") == 0 ||
         output_params.variable.compare("cons") == 0) {
       pod = new OutputData;
@@ -621,7 +621,7 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
 {
   if (pold == pfirst_data_) {
     pfirst_data_ = pnew;
-    if (pold->pnext != NULL) {    // there is another node in the list 
+    if (pold->pnext != NULL) {    // there is another node in the list
       pnew->pnext = pold->pnext;
       pnew->pnext->pprev = pnew;
     } else {                      // there is only one node in the list
@@ -721,7 +721,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 
   // Compute i,j,k indices of slice; check if in range of data in this block
   if (dim == 1) {
-    if (output_params.x1_slice >= pmb->block_size.x1min && 
+    if (output_params.x1_slice >= pmb->block_size.x1min &&
         output_params.x1_slice < pmb->block_size.x1max) {
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->pcoord->x1f(i) > output_params.x1_slice) {
@@ -761,7 +761,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
     }
   }
 
-  // For each node in OutputData linked list, slice arrays containing output data  
+  // For each node in OutputData linked list, slice arrays containing output data
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
@@ -804,7 +804,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
     ReplaceOutputDataNode(pdata,pnew);
     pdata = pnew->pnext;
   }
- 
+
   // modify array indices
   if (dim == 3) {
     out_ks = 0;
@@ -828,7 +828,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
   std::stringstream str;
 
-  // For each node in OutputData linked list, sum arrays containing output data  
+  // For each node in OutputData linked list, sum arrays containing output data
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
@@ -874,7 +874,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
     ReplaceOutputDataNode(pdata,pnew);
     pdata = pdata->pnext;
   }
- 
+
   // modify array indices
   if (dim == 3) {
     out_ks = 0;

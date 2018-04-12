@@ -44,7 +44,6 @@ class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 
-
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -84,6 +83,7 @@ public:
   int nuser_out_var;
   AthenaArray<Real> user_out_var;
   std::string *user_out_var_names_;
+
 
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *ruser_meshblock_data;

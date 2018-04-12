@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_phi.cpp
-//  \brief functions that apply BCs for gravitational potential 
+//  \brief functions that apply BCs for gravitational potential
 
 // C++ headers
 #include <iostream>   // endl
@@ -53,7 +53,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
     for(int i=0; i<6; i++) {
       if(block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
         MGBoundaryFunction_[i]=NULL;
-      else 
+      else
         MGBoundaryFunction_[i]=MGBoundary[i];
     }
     if(SELF_GRAVITY_ENABLED == 2)

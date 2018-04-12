@@ -17,7 +17,6 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
-
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief
@@ -35,7 +34,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
   w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
   w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
   w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
- 
+
 //---- 1-D update:
 //  copy face-centered E-fields to edges and return.
 
@@ -251,6 +250,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
       }
     }}
   }
+
 
   return;
 }

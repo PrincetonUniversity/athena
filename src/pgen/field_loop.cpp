@@ -4,19 +4,19 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field_loop.c
-//  \brief Problem generator for advection of a field loop test. 
+//  \brief Problem generator for advection of a field loop test.
 //
 // Can only be run in 2D or 3D.  Input parameters are:
 //   -  problem/rad   = radius of field loop
 //   -  problem/amp   = amplitude of vector potential (and therefore B)
 //   -  problem/vflow = flow velocity
 //   -  problem/drat  = density ratio in loop, to test density advection and conduction
-// The flow is automatically set to run along the diagonal. 
+// The flow is automatically set to run along the diagonal.
 //
 // Various test cases are possible:
 //   - (iprob=1): field loop in x1-x2 plane (cylinder in 3D)
 //   - (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-//   - (iprob=3): field loop in x3-x1 plane (cylinder in 3D) 
+//   - (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
 //   - (iprob=4): rotated cylindrical field loop in 3D.
 //   - (iprob=5): spherical field loop in rotated plane
 //
@@ -52,6 +52,7 @@
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   Real gm1 = peos->GetGamma() - 1.0;
+  Real iso_cs =peos->GetIsoSoundSpeed();
 
   AthenaArray<Real> ax,ay,az;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -67,6 +68,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real vflow = pin->GetReal("problem","vflow");
   Real drat = pin->GetOrAddReal("problem","drat",1.0);
   int iprob = pin->GetInteger("problem","iprob");
+  Real omega0,qshear;
+  if (SHEARING_BOX) {
+    omega0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
+    qshear = pin->GetOrAddReal("problem","qshear",1.5);
+  }
   Real ang_2,cos_a2,sin_a2,lambda;
 
   // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
@@ -94,24 +100,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
 
-  // Use vector potential to initialize field loop
+// Use vector potential to initialize field loop
+  // the origin of the initial loop
+  Real x0 = pin->GetOrAddReal("problem","x0",0.0);
+  Real y0 = pin->GetOrAddReal("problem","y0",0.0);
+  Real z0 = pin->GetOrAddReal("problem","z0",0.0);
+
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie+1; i++) {
-     
+
     // (iprob=1): field loop in x1-x2 plane (cylinder in 3D) */
-    if(iprob==1) {  
+    if(iprob==1) {
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
-      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j))) < rad*rad) {
-        az(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j))));
+      if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
+        az(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)));
       } else {
         az(k,j,i) = 0.0;
       }
     }
 
     // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-    if(iprob==2) {  
+    if(iprob==2) {
       if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ax(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
       } else {
@@ -122,7 +133,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
-    if(iprob==3) {  
+    if(iprob==3) {
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ay(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
       } else {
@@ -132,7 +143,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       az(k,j,i) = 0.0;
     }
 
-    // (iprob=4): rotated cylindrical field loop in 3D.  Similar to iprob=1 with a 
+    // (iprob=4): rotated cylindrical field loop in 3D.  Similar to iprob=1 with a
     // rotation about the x2-axis.  Define coordinate systems (x1,x2,x3) and (x,y,z)
     // with the following transformation rules:
     //    x =  x1*cos(ang_2) + x3*sin(ang_2)
@@ -169,7 +180,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // (iprob=5): spherical field loop in rotated plane
-    if(iprob==5) { 
+    if(iprob==5) {
       ax(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ay(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i))+SQR(pcoord->x2v(j))+SQR(pcoord->x3f(k))));
@@ -204,6 +215,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
        phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
        phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
        phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
+     }
+     if (SHEARING_BOX) {
+       Real x1 = pcoord->x1v(i);
+       phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
+       phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
      }
   }}}
 
