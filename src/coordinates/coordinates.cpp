@@ -92,7 +92,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // uniform grid: even though use_mesghen_fn[X1DIR]=false, use UniformMeshGeneratorX1()
     Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
     for (int i=is-ng; i<=ie+ng+1; ++i) {
-      noffset = i-is + (int64_t)lx1*block_size.nx1;
+      // if there are too many levels, this won't work or be precise enough
+      if (coarse_flag == false) {
+        noffset = i-is + (int64_t)lx1*block_size.nx1;
+      }
+      else {
+        noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
+      }
       noffset_ceil = noffset - (nrootmesh+1)/2;
       noffset -= nrootmesh/2;
       // if nrootmesh is even, central interface is at noffset=noffset_ceil=0
@@ -163,7 +169,12 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX2()
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for (int j=js-ng; j<=je+ng+1; ++j) {
-        noffset = j-js + (int64_t)lx2*block_size.nx2;
+        if (coarse_flag == false) {
+          noffset = j-js + (int64_t)lx2*block_size.nx2;
+        }
+        else {
+          noffset = (j-js)*2 + (int64_t)lx2*block_size.nx2;
+        }
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;
 
@@ -240,7 +251,12 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
-        noffset = k-ks + (int64_t)lx3*block_size.nx3;
+        if (coarse_flag == false) {
+          noffset = k-ks + (int64_t)lx3*block_size.nx3;
+        }
+        else {
+          noffset = (k-ks)*2 + (int64_t)lx3*block_size.nx3;
+        }
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;
 
