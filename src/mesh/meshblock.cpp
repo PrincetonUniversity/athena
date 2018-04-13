@@ -94,8 +94,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // mesh-related objects
 
+
   // Boundary
-  pbval  = new BoundaryValues(this, input_bcs);
+  pbval  = new BoundaryValues(this, input_bcs, pin);
 
   // physics-related objects
   phydro = new Hydro(this, pin);
@@ -189,7 +190,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
 
   // Boundary
-  pbval  = new BoundaryValues(this, input_bcs);
+  pbval  = new BoundaryValues(this, input_bcs, pin);
 
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);
@@ -409,3 +410,4 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
   return size;
 }
+

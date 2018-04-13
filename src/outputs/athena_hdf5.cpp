@@ -71,7 +71,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   int num_blocks_local;                       // number of MeshBlocks on this Mesh
   int *levels_mesh;                           // array of refinement levels on Mesh
-  long int *locations_mesh;                   // array of logical locations on Mesh
+  int64_t *locations_mesh;                   // array of logical locations on Mesh
   float *x1f_mesh;                            // array of x1 values on Mesh
   float *x2f_mesh;                            // array of x2 values on Mesh
   float *x3f_mesh;                            // array of x3 values on Mesh
@@ -238,7 +238,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   // Allocate contiguous buffers for data in memory
   levels_mesh = new int[num_blocks_local];
-  locations_mesh = new long int[num_blocks_local * 3];
+  locations_mesh = new int64_t[num_blocks_local * 3];
   x1f_mesh = new float[num_blocks_local * (nx1+1)];
   x2f_mesh = new float[num_blocks_local * (nx2+1)];
   x3f_mesh = new float[num_blocks_local * (nx3+1)];
@@ -455,6 +455,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
+  code_time = (float)time; // output time for xdmf
 
   // Write coordinate system
   if (std::strlen(COORDINATE_SYSTEM) > max_name_length) {
@@ -801,6 +802,7 @@ void ATHDF5Output::MakeXDMF()
   xdmf << "<Xdmf Version=\"2.0\">\n";
   xdmf << "<Domain>\n";
   xdmf << "<Grid Name=\"Mesh\" GridType=\"Collection\">\n";
+  xdmf << " <Time Value=\"" << code_time << "\"/>\n";
 
   // Go through all MeshBlocks
   for (int n_block = 0; n_block < num_blocks_global; ++n_block) {

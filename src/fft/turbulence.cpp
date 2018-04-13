@@ -42,7 +42,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   impulsive = pin->GetOrAddBoolean("problem","impulsive", false); // implusive driving?
   tdrive = pm->time;
 
-  if(pm->turb_flag == 0) {
+  if (pm->turb_flag == 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
         << "Turbulence flag is set to zero! Shouldn't reach here!" << std::endl;
@@ -63,7 +63,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   int nx3=pm->pblock->block_size.nx3+2*NGHOST;
 
   vel = new AthenaArray<Real>[3];
-  for(int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb,nx3,nx2,nx1);
+  for (int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb,nx3,nx2,nx1);
 
   InitializeFFTBlock(true);
   QuickCreatePlan();
@@ -74,7 +74,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 // destructor
 TurbulenceDriver::~TurbulenceDriver()
 {
-  for(int nv=0; nv<3; nv++) vel[nv].DeleteAthenaArray();
+  for (int nv=0; nv<3; nv++) vel[nv].DeleteAthenaArray();
   delete [] vel;
 }
 
@@ -86,12 +86,12 @@ void TurbulenceDriver::Driving(void){
   Mesh *pm=pmy_mesh_;
 
 // check driving time interval to generate new perturbation
-  if(pm->time >= tdrive){
+  if (pm->time >= tdrive) {
     std::cout << "generating turbulence at " << pm->time << std::endl;
     Generate();
     tdrive = pm->time + dtdrive;
 // if impulsive, dt = dtdrive
-    if(impulsive == true){
+    if (impulsive == true) {
       Perturb(dtdrive);
       return;
     }
@@ -116,7 +116,7 @@ void TurbulenceDriver::Generate(void)
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
 
-  for(int nv=0; nv<3; nv++){
+  for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
     AthenaFFTComplex *fv = pfb->in_;
 
@@ -124,9 +124,9 @@ void TurbulenceDriver::Generate(void)
 
     pfb->Execute(plan);
 
-    for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
+    for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
-      if(pmb != NULL){
+      if (pmb != NULL) {
         dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
         pfb->RetrieveResult(dv_mb,1,NGHOST,pmb->loc,pmb->block_size);
       }
@@ -139,21 +139,19 @@ void TurbulenceDriver::Generate(void)
 //  \brief Generate Power spectrum in Fourier space with power-law
 
 void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
-  int i,j,k;
-  Real q1,q2,q3;
   Real pcoeff;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
   int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
 // set random amplitudes with gaussian deviation
-  for(k=0;k<knx3;k++){
-    for(j=0;j<knx2;j++){
-      for(i=0;i<knx1;i++){
+  for (int k=0; k<knx3; k++) {
+    for (int j=0; j<knx2; j++) {
+      for (int i=0; i<knx1; i++) {
+        Real q1=ran2(&rseed);
+        Real q2=ran2(&rseed);
+        Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
         q1=ran2(&rseed);
-        q2=ran2(&rseed);
-        q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
-        q1=ran2(&rseed);
-        long int kidx=pfb->GetIndex(i,j,k,idx);
+        int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] = q3*std::cos(2.0*PI*q1);
         amp[kidx][1] = q3*std::sin(2.0*PI*q1);
       }
@@ -161,20 +159,21 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
   }
 
 // set power spectrum: only power-law
-  for(k=0;k<knx3;k++){
-    for(j=0;j<knx2;j++){
-      for(i=0;i<knx1;i++){
-        Real nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
-        Real ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
-        Real nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
+  for (int k=0; k<knx3; k++) {
+    for (int j=0; j<knx2; j++) {
+      for (int i=0; i<knx1; i++) {
+        int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
+        int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
+        int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
         Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
         Real kx=nx*pfb->dkx[0];
         Real ky=ny*pfb->dkx[1];
         Real kz=nz*pfb->dkx[2];
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
-        long int gidx = pfb->GetGlobalIndex(i,j,k);
-        if(gidx == 0){
+        int64_t gidx = pfb->GetGlobalIndex(i,j,k);
+
+        if (gidx == 0) {
           pcoeff = 0.0;
         } else {
           if ((nmag > nlow) && (nmag < nhigh)) {
@@ -183,7 +182,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
             pcoeff = 0.0;
           }
         }
-        long int kidx=pfb->GetIndex(i,j,k,idx);
+        int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] *= pcoeff;
         amp[kidx][1] *= pcoeff;
       }
@@ -211,7 +210,7 @@ void TurbulenceDriver::Perturb(Real dt){
   Real m[4] = {0}, gm[4];
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
-  for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
+  for(int igid=nbs, nb=0; igid<=nbe; igid++, nb++){
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if(pmb != NULL){
       for (int k=ks; k<=ke; k++) {
@@ -237,13 +236,13 @@ void TurbulenceDriver::Perturb(Real dt){
     throw std::runtime_error(msg.str().c_str());
   }
   // Ask Changgoo about this
-  for (int n=0;n<4;n++) m[n]=gm[n];
+  for (int n=0; n<4; n++) m[n]=gm[n];
 #endif // MPI_PARALLEL
 
-  for(int nb=0;nb<nmb;nb++){
-    for(int k=ks;k<=ke;k++){
-      for(int j=js;j<=je;j++){
-        for(int i=is;i<=ie;i++){
+  for (int nb=0; nb<nmb; nb++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
           dv1(nb,k,j,i) -= m[1]/m[0];
           dv2(nb,k,j,i) -= m[2]/m[0];
           dv3(nb,k,j,i) -= m[3]/m[0];
@@ -302,7 +301,7 @@ void TurbulenceDriver::Perturb(Real dt){
   aa = std::max(aa,(Real)1.0e-20);
   b = m[1];
   c = -de/dvol;
-  if(b >= 0.0)
+  if (b >= 0.0)
     s = (-2.0*c)/(b + std::sqrt(b*b - 4.0*aa*c));
   else
     s = (-b + std::sqrt(b*b - 4.0*aa*c))/(2.0*aa);
@@ -310,9 +309,9 @@ void TurbulenceDriver::Perturb(Real dt){
   if (std::isnan(s)) std::cout << "[perturb]: s is NaN!" << std::endl;
 
   // Apply momentum pertubations
-  for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
+  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++){
     MeshBlock *pmb=pm->FindMeshBlock(igid);
-    if(pmb != NULL){
+    if (pmb != NULL) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
@@ -345,7 +344,7 @@ void TurbulenceDriver::Perturb(Real dt){
 //  \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
 
 
-long int TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
+int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 {
-  return (double)((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
+  return ((idx+disp) - (int)(2*(idx+disp)/Nx)*Nx);
 }

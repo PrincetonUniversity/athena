@@ -44,7 +44,6 @@ class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 
-
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -84,6 +83,7 @@ public:
   int nuser_out_var;
   AthenaArray<Real> user_out_var;
   std::string *user_out_var_names_;
+
 
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *ruser_meshblock_data;
@@ -203,7 +203,7 @@ private:
   int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
   LogicalLocation *loclist;
   MeshBlockTree tree;
-  long int nrbx1, nrbx2, nrbx3;
+  int64_t nrbx1, nrbx2, nrbx3;
   bool use_meshgen_fn_[3]; // flag to use non-uniform or user meshgen function
   int nreal_user_mesh_data_, nint_user_mesh_data_;
 
@@ -240,18 +240,18 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc);
-  void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
-  void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
-  void SetGravityThreshold(Real eps) { grav_eps_=eps; };
+  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
+                                         GravityBoundaryFunc_t my_bc);
+  void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
+  void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
+  void SetGravityThreshold(Real eps) { grav_eps_=eps; }
 };
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \brief x1 mesh generator function, x is the logical location; x=i/nx1
 
-inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
-{
+inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
   if(rs.x1rat==1.0) {
     rw=x, lw=1.0-x;
@@ -268,8 +268,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 // \brief x2 mesh generator function, x is the logical location; x=j/nx2
 
-inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
-{
+inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
   if(rs.x2rat==1.0) {
     rw=x, lw=1.0-x;
@@ -286,8 +285,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 // \brief x3 mesh generator function, x is the logical location; x=k/nx3
 
-inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
-{
+inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
   if(rs.x3rat==1.0) {
     rw=x, lw=1.0-x;
@@ -298,6 +296,30 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
     rw=1.0-lw;
   }
   return rs.x3min*lw+rs.x3max*rw;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn Real UniformMeshGeneratorX1(Real x, RegionSize rs)
+// \brief x1 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+
+inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
+  return ((Real) 0.5-x)*rs.x1min + ((Real) 0.5+x)*rs.x1max;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn Real UniformMeshGeneratorX2(Real x, RegionSize rs)
+// \brief x2 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+
+inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
+  return ((Real) 0.5-x)*rs.x2min + ((Real) 0.5+x)*rs.x2max;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn Real UniformMeshGeneratorX3(Real x, RegionSize rs)
+// \brief x3 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+
+inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
+  return ((Real) 0.5-x)*rs.x3min + ((Real) 0.5+x)*rs.x3max;
 }
 
 #endif  // MESH_HPP

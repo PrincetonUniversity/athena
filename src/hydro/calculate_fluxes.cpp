@@ -189,7 +189,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     }
   }
 
-  if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
+
+  if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 
   return;
 }

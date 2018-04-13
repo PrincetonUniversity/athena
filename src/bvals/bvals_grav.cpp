@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_grav.cpp
-//  \brief functions that apply BCs for gravitational potential 
+//  \brief functions that apply BCs for gravitational potential
 
 // C++ headers
 #include <iostream>   // endl
@@ -127,33 +127,33 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
       bks=pmb->ks, bke=pmb->ke;
   Real time=pmy_mesh_->time;
   Real dt=pmy_mesh_->dt;
-  if(GravityBoundaryFunction_[INNER_X2]==NULL 
+  if(GravityBoundaryFunction_[INNER_X2]==NULL
      && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
   if(GravityBoundaryFunction_[OUTER_X2]==NULL
      && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
   if(GravityBoundaryFunction_[INNER_X3]==NULL
      && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if(GravityBoundaryFunction_[OUTER_X3]==NULL 
+  if(GravityBoundaryFunction_[OUTER_X3]==NULL
      && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   // Apply boundary function on inner-x1
   if (GravityBoundaryFunction_[INNER_X1] != NULL)
-    GravityBoundaryFunction_[INNER_X1](pmb, pco, dst, time, dt, 
+    GravityBoundaryFunction_[INNER_X1](pmb, pco, dst, time, dt,
                                        pmb->is, pmb->ie, bjs, bje, bks, bke);
   // Apply boundary function on outer-x1
   if (GravityBoundaryFunction_[OUTER_X1] != NULL)
-    GravityBoundaryFunction_[OUTER_X1](pmb, pco, dst, time, dt, 
+    GravityBoundaryFunction_[OUTER_X1](pmb, pco, dst, time, dt,
                                        pmb->is, pmb->ie, bjs, bje, bks, bke);
 
   if(pmb->block_size.nx2>1) { // 2D or 3D
 
     // Apply boundary function on inner-x2
     if (GravityBoundaryFunction_[INNER_X2] != NULL)
-      GravityBoundaryFunction_[INNER_X2](pmb, pco, dst, time, dt, 
+      GravityBoundaryFunction_[INNER_X2](pmb, pco, dst, time, dt,
                                          bis, bie, pmb->js, pmb->je, bks, bke);
     // Apply boundary function on outer-x2
     if (GravityBoundaryFunction_[OUTER_X2] != NULL)
-      GravityBoundaryFunction_[OUTER_X2](pmb, pco, dst, time, dt, 
+      GravityBoundaryFunction_[OUTER_X2](pmb, pco, dst, time, dt,
                                          bis, bie, pmb->js, pmb->je, bks, bke);
   }
 
@@ -161,11 +161,11 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 
     // Apply boundary function on inner-x3
     if (GravityBoundaryFunction_[INNER_X3] != NULL)
-      GravityBoundaryFunction_[INNER_X3](pmb, pco, dst, time, dt, 
+      GravityBoundaryFunction_[INNER_X3](pmb, pco, dst, time, dt,
                                          bis, bie, bjs, bje, pmb->ks, pmb->ke);
     // Apply boundary function on outer-x3
     if (GravityBoundaryFunction_[OUTER_X3] != NULL)
-      GravityBoundaryFunction_[OUTER_X3](pmb, pco, dst, time, dt, 
+      GravityBoundaryFunction_[OUTER_X3](pmb, pco, dst, time, dt,
                                          bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
 
@@ -174,7 +174,7 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 
 //----------------------------------------------------------------------------------------
 //! \fn void GravityBoundaryValues::StartReceivingGravity(void)
-//  \brief initiate MPI_Irecv for gravity 
+//  \brief initiate MPI_Irecv for gravity
 
 void GravityBoundaryValues::StartReceivingGravity(void)
 {
@@ -229,7 +229,7 @@ void GravityBoundaryValues::ClearBoundaryGravity(void)
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set gravity boundary buffers for sending to a block on the same level
 
-int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, 
+int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
   Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_block_;
@@ -257,7 +257,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
   GravityBoundaryData *pbd, *ptarget;
   bool bflag=true;
   int tag;
- 
+
 
   pbd=&bd_gravity_;
 

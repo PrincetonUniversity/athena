@@ -110,7 +110,7 @@ void FFTGravity::ApplyKernel(int mode)
   for(int k=0; k<knx[2]; k++) {
     for(int j=0; j<knx[1]; j++) {
       for(int i=0; i<knx[0]; i++) {
-        long int gidx = GetGlobalIndex(i,j,k);
+        int64_t gidx = GetGlobalIndex(i,j,k);
         if(gidx == 0){ pcoeff = 0.0;}
         else {
           Real kx=(i+kdisp[0]);
@@ -137,8 +137,8 @@ void FFTGravity::ApplyKernel(int mode)
           pcoeff = 1.0/pcoeff;
         }
 
-        long int idx_in=GetIndex(i,j,k,b_in_);
-        long int idx_out=GetIndex(i,j,k,f_out_);
+        int64_t idx_in=GetIndex(i,j,k,b_in_);
+        int64_t idx_out=GetIndex(i,j,k,f_out_);
         in_[idx_in][0] = out_[idx_out][0]*pcoeff;
         in_[idx_in][1] = out_[idx_out][1]*pcoeff;
       }

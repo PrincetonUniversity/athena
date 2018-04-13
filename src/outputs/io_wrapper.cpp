@@ -27,9 +27,9 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
 {
   std::stringstream msg;
 
-  if(rw==IO_WRAPPER_READ_MODE) {
+  if (rw==IO_WRAPPER_READ_MODE) {
 #ifdef MPI_PARALLEL
-    if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh)
+    if (MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh)
        !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
 #else
     if ((fh = fopen(fname,"rb")) == NULL) {
@@ -40,10 +40,10 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
       return false;
     }
 
-  } else if(rw==IO_WRAPPER_WRITE_MODE) {
+  } else if (rw==IO_WRAPPER_WRITE_MODE) {
 #ifdef MPI_PARALLEL
     MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
-    if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
+    if (MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
                      MPI_INFO_NULL,&fh) != MPI_SUCCESS) {
 #else
     if ((fh = fopen(fname,"wb")) == NULL) {
@@ -53,7 +53,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
       throw std::runtime_error(msg.str().c_str());
       return false;
     }
-  } else { 
+  } else {
     return false;
   }
 
@@ -69,8 +69,8 @@ int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
-  if(MPI_File_read(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
-  if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
+  if (MPI_File_read(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
   return fread(buf,size,count,fh);
@@ -86,8 +86,8 @@ int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
-  if(MPI_File_read_all(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
-  if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
+  if (MPI_File_read_all(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
   return fread(buf,size,count,fh);
@@ -105,9 +105,9 @@ int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
-  if(MPI_File_read_at_all(fh,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
+  if (MPI_File_read_at_all(fh,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
-  if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
   fseek(fh, offset, SEEK_SET);
@@ -124,9 +124,9 @@ int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
-  if(MPI_File_write(fh,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)!=MPI_SUCCESS)
+  if (MPI_File_write(fh,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
-  if(MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
   return fwrite(buf,size,cnt,fh);
@@ -144,10 +144,10 @@ int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
-  if(MPI_File_write_at_all(fh,offset,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)
+  if (MPI_File_write_at_all(fh,offset,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)
      !=MPI_SUCCESS)
     return -1;
-  if(MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
   fseek(fh, offset, SEEK_SET);

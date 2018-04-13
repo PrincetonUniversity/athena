@@ -107,3 +107,5 @@ compute_error = false # set value to 'true' to compute L1 error compared to init
 wave_flag = 0         # Wave family number (0 - 6 for adiabatic MHD)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
+nuiso     = 0.0       # isotropic viscosity
+eta_O     = 0.0       # spatial constant resistivity

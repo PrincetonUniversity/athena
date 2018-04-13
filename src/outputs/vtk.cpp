@@ -195,7 +195,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         // write data in big endian order
         if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
         fwrite(data,sizeof(float),(size_t)(nvar*ncells1),pfile);
-     
+
       }}
 
       pdata = pdata->pnext;

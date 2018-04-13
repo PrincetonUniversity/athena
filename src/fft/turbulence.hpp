@@ -32,9 +32,9 @@ public:
   void Generate(void);
   void PowerSpectrum(AthenaFFTComplex *amp);
   void Perturb(Real dt);
-  long int GetKcomp(int idx, int disp, int Nx);
+  int64_t GetKcomp(int idx, int disp, int Nx);
 private:
-  long int rseed;
+  int64_t rseed;
   int nlow,nhigh;
   bool impulsive;
   Real dtdrive,tdrive;

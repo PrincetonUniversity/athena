@@ -92,6 +92,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 
   // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
   psrc  = new HydroSourceTerms(this,pin);
+
 }
 
 // destructor

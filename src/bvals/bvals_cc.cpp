@@ -222,6 +222,38 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
   }
   else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
+
+    // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
+    if(SHEARING_BOX) {
+      if(ShBoxCoord_==2){
+        Mesh *pmy_mesh = pmb->pmy_mesh;
+        int level = pmb->loc.level - pmy_mesh->root_level;
+        int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+        Real qomL = qshear_*Omega_0_*x1size_;
+        if ((pmb->loc.lx1==0) && (nb.ox1<0)){
+          for (int k=sk;k<=ek;++k) {
+          for (int j=sj;j<=ej;++j) {
+          for (int i=si;i<=ei;++i){
+            if (NON_BAROTROPIC_EOS)
+              dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                 *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
+                 -SQR(dst(IM3,k,j,i)));
+            dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
+          }}}
+        } // inner boundary
+        if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
+          for (int k=sk;k<=ek;++k) {
+          for (int j=sj;j<=ej;++j) {
+          for (int i=si;i<=ei;++i){
+            if (NON_BAROTROPIC_EOS)
+              dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                 *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
+                 -SQR(dst(IM3,k,j,i)));
+            dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
+          }}}
+        } // outer boundary
+      }
+    }
   return;
 }
 
@@ -241,7 +273,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
     if((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else             si-=cng; 
+    else             si-=cng;
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
   else               si=pmb->cis-cng, ei=pmb->cis-1;
@@ -249,7 +281,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
       if((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng; 
+      else             sj-=cng;
     }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -258,7 +290,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
       if((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else             sk-=cng; 
+      else             sk-=cng;
     }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
@@ -348,7 +380,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
   return;
 }
@@ -456,7 +488,6 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
       SetCellCenteredBoundaryFromFiner(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
- 
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarSingleCellCentered(dst, ns, ne);
 
@@ -467,7 +498,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
 //! \fn void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst,
 //                                                   int ns, int ne)
 //
-// \brief  single CPU in the azimuthal direction for the polar boundary 
+// \brief  single CPU in the azimuthal direction for the polar boundary
 
 void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne)
 {

@@ -91,7 +91,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   for (int i = il-ng; i <= iu+ng; ++i) {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
-    x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
+    x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), ONE_3RD);
   }
   for (int i = il-ng; i <= iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
@@ -227,7 +227,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real r_m_cu = r_m*r_m*r_m;
 
       // Volumes, areas, lengths, and widths
-      coord_vol_i1_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
+      coord_vol_i1_(i) = ONE_3RD * (r_p_cu - r_m_cu);
       coord_area1_i1_(i) = SQR(r_m);
       if (i == (iu+ng)) {
         coord_area1_i1_(i+1) = SQR(r_p);
