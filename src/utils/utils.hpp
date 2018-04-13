@@ -11,7 +11,7 @@
 #include <csignal>
 
 void ChangeRunDir(const char *pdir);
-double ran2(long int *idum);
+double ran2(int64_t *idum);
 void ShowConfig();
 
 //----------------------------------------------------------------------------------------

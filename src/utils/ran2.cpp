@@ -6,13 +6,14 @@
 //! \file ran2.cpp
 
 // C++ headers
+#include <iostream>
 #include "float.h"  // DBL_EPSILON
 
 // Athena headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn double ran2(long int *idum)
+//! \fn double ran2(int64_t *idum)
 //  \brief  Extracted from the Numerical Recipes in C (version 2) code. Modified
 //   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
 //
@@ -36,12 +37,12 @@
 #define NDIV (1+IMM1/NTAB)
 #define RNMX (1.0-DBL_EPSILON)
 
-double ran2(long int *idum){
+double ran2(int64_t *idum){
   int j;
-  long int k;
-  static long int idum2=123456789;
-  static long int iy=0;
-  static long int iv[NTAB];
+  int64_t k;
+  static int64_t idum2=123456789;
+  static int64_t iy=0;
+  static int64_t iv[NTAB];
   double temp;
 
   if (*idum <= 0) { // Initialize

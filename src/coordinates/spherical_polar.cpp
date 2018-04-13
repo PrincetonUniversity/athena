@@ -153,7 +153,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // 0.5*(R_{i+1}^2 - R_{i}^2)
       coord_area3_i_(i) = coord_area2_i_(i);
       // dV = (R_{i+1}^3 - R_{i}^3)/3
-      coord_vol_i_(i) = (1.0/3.0)*(rp*rp*rp - rm*rm*rm);
+      coord_vol_i_(i) = (ONE_3RD)*(rp*rp*rp - rm*rm*rm);
       // (A1^{+} - A1^{-})/dV
       coord_src1_i_(i) = coord_area2_i_(i)/coord_vol_i_(i);
       // (dR/2)/(R_c dV)

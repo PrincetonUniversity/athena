@@ -286,7 +286,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
           ref_size.x3min=mesh_size.x3min;
           ref_size.x3max=mesh_size.x3max;
         }
-        int ref_lev=pin->GetReal(pib->block_name,"level");
+        int ref_lev=pin->GetInteger(pib->block_name,"level");
         int lrlev=ref_lev+root_level;
         if(lrlev>current_level) current_level=lrlev;
         // range check
