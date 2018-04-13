@@ -1,0 +1,127 @@
+# .travis.yml
+# Defines build matrix and regression tests for Travis CI.com
+language: cpp
+branches:
+  only:
+  - master
+  - ci
+# Default build matrix is 4x Ubuntu builds:
+os:
+  - linux
+dist: trusty
+sudo: false # use faster container-based build
+
+# OpenMPI and MPICH implementations:
+env:
+  matrix:
+  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+compiler:
+  - gcc
+  - clang
+# Define Ubuntu build caches (cache ignored inside "include:" matrix)
+cache:
+  pip: true # Caching NumPy for regression test script
+  directories:
+    # For caching Linux source directories:
+    - openmpi-2.1.1 # stable release as of 5/10/17
+    - mpich-3.2 # stable release, checked on 8/14/17
+    # Caching Linux install directories:
+    - openmpi
+    - mpich
+    - fftw
+    - fftw-3.3.7 # stable release as of 11/8/17
+
+# Explicitly includilng the 2x macOS jobs in build matrix
+# Must specify complete build details, or the jobs will inherit
+# the first value in the above arrays. Could encapsulate in script
+matrix:
+  include:
+  - os: osx
+    osx_image: xcode9.3 # macOS 10.13 High Sierra
+    compiler: g++
+    env:
+    - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+    # Override Linux cache mapping
+    cache:
+      pip: true
+      directories:
+      - "/usr/local/Cellar/mpich/"
+      - "/usr/local/Cellar/open-mpi/"
+      - "/usr/local/Cellar/libevent/"
+      # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
+      - "/usr/local/opt/libevent"
+      # For caching macOS Homebrew installation symlinks:
+      - openmpi
+      - mpich
+      - fftw
+      - "/usr/local/Cellar/fftw/"
+  - os: osx
+    osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+    env:
+    - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+    - TMPDIR=/tmp
+    # Cache is shared with other osx build with MPICH
+    cache:
+      pip: true
+      directories:
+      - "/usr/local/Cellar/mpich/"
+      - "/usr/local/Cellar/open-mpi/"
+      - "/usr/local/Cellar/libevent/"
+      - "/usr/local/opt/libevent"
+      - openmpi
+      - mpich
+      - fftw
+      - "/usr/local/Cellar/fftw/"
+# Prevent conflicts with MPI
+before_install:
+  - test -n $CC  && unset CC
+  - test -n $CXX && unset CXX
+# Install OpenMPI, MPICH, and FFTW
+install:
+  - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
+  - travis_wait 45 bash ./tst/ci/travis/install_openmpi.sh
+  - bash ./tst/ci/travis/install_fftw.sh
+  - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$PATH
+  - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
+  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
+  - cd tst/regression
+  # Fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
+  - echo $TMPDIR || true
+# Install Python module dependencies for run_tests.py, utils/athena.py
+before_script:
+  - pip install --user numpy || true
+# Run regression test suite:
+# Do not use "python run_tests.py" to run all tests, so that:
+# - Each set/directory of tests are timed separately
+# - Script fails after first broken set of tests
+# (Could alternatively group sets of tests with && operator)
+script:
+  - set -e # fail at first error
+  - set -x # trace execution of all commands;
+  - python2 run_tests.py mpi
+  - python2 run_tests.py grav # requires FFTW library
+  - python2 run_tests.py amr
+  # Longest set of tests. Timeout after 10 m
+  #- python2 run_tests.py mhd
+  - python2 run_tests.py hydro
+  - python2 run_tests.py outputs
+  - python2 run_tests.py curvilinear
+  - python2 run_tests.py gr
+  - python2 run_tests.py sr
+  - python2 run_tests.py pgen
+  #- python2 run_tests.py shearinbox
+  - set +e
+# Codecov coverage analysis
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+  slack:
+    rooms:
+      secure: lQpuacMeYX8RWntTWyNbcaKfLw6gFIwkWfvnqfdpC/PDqB96R3BmfH2Yi6ZQyUOq+dD/QFGpmqJ0YEGD91hwPCaR9P5LMqhhbAbUC3ON23E3vhm33eynGjq7Y492UrQ1vFMUMAzl6mEi+OoSaKpMNi6OSXBEYs2KfxDlwTMWKbw+9pvGS8ydt8RFcsjofeQOeKWH/x09vTwHqsbwaNB0+GzotcbZQ8PQuT9Lot9OER1qiO1JXWzSce9PrJI1mPBWN094cDK3Na8fzUHq6qsY+G+dgTW45/gJjgO3nRawZd/XrY5iZsDKJ1t8XbC8GbHVxZzMcd+g0VEfaV5c4O8U20xBiWwdw8NmbgZB2sSxVi7wLhqDc6a/8brXx92gIP64AA+UTYXVYykU4/IlQqJs74EgAemTQOEHLO3j8ylK832+XS7JHmio9rjRb3y0meF+uWP5xZ71xBSLQcmvEVAJo5fsrK5SxXHkfvNb2ydjp2i+cUiUPlBXtY1HV7JCTnziqFwQvToA7/Z8/Bw/jaV1p2yQHMXTq0LzqiqNOq8aRiMPkMTwI4Hc6wIHkapfInqHGaqoYRbm9qqbbp6VcHmUjwRdVh0xv87PbHiLtgucV8Lq58isqXaZ42Xr5jJc3dKBx9XbDWWYBTMZgJti5Ye0BI4JR7AMjA67Td2FesG60W0=
+    on_success: always
+    on_failure: always

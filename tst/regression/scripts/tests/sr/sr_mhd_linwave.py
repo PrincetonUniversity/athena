@@ -10,15 +10,15 @@ import numpy as np
 import scripts.utils.athena as athena
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('sb',
       prob='gr_linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
 
   # Parameters
   rho = 1.0
@@ -37,7 +37,7 @@ def run():
         wave_flag)
     time = 1.0/abs(wavespeed)
     for res in (16,32):
-      arguments = [
+      arguments = ['time/ncycle_out=100',
           'time/tlim='+repr(time), 'time/cfl_number=0.3',
           'output1/dt=-1',
           'mesh/nx1='+repr(res), 'mesh/nx2='+repr(res/2), 'mesh/nx3='+repr(res/2),

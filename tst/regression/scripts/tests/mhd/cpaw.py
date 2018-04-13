@@ -13,25 +13,25 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='cpaw',
       eos='isothermal',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # run R-going wave at two resolutions
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4), 'meshblock/nx2=' + repr(i/8),
       'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('mhd/athinput.cpaw2d', arguments)
   # run L-going wave
-  arguments = [
+  arguments = ['time/ncycle_out=0',
     'mesh/refinement=static',
     'mesh/nx1=256', 'mesh/nx2=128',
     'meshblock/nx1=64', 'meshblock/nx2=32',

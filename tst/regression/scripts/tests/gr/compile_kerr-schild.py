@@ -6,15 +6,15 @@ Test script for checking that Kerr-Schild coordinates compile.
 import scripts.utils.athena as athena
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('gtb',
       prob='gr_torus',
       coord='kerr-schild',
-      flux='hlle')
+      flux='hlle', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   pass
 
 # Analyze outputs
