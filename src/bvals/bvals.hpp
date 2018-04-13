@@ -60,8 +60,8 @@ typedef struct NeighborBlock {
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
-    fid(FACE_UNDEF), polar(false), shear(false) {};
+                    fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
+                    type(NEIGHBOR_NONE), fid(FACE_UNDEF), polar(false), shear(false) {}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);

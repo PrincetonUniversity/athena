@@ -60,7 +60,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 
 //  f_in_->PrintIndex();
 #ifdef FFT
-  for(int i=0;i<3;i++){
+  for (int i=0;i<3;i++) {
     Nx[f_in_->iloc[i]]=f_in_->Nx[i];
     nx[f_in_->iloc[i]]=f_in_->nx[i];
     disp[f_in_->iloc[i]]=f_in_->is[i];
@@ -83,18 +83,18 @@ FFTBlock::~FFTBlock()
     delete f_out_;
     delete b_in_;
     delete b_out_;
-    if(fplan_!=NULL) DestroyPlan(fplan_);
-    if(bplan_!=NULL) DestroyPlan(bplan_);
+    if (fplan_!=NULL) DestroyPlan(fplan_);
+    if (bplan_!=NULL) DestroyPlan(bplan_);
 }
 
 void FFTBlock::DestroyPlan(AthenaFFTPlan *plan)
 {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if(plan->plan3d != NULL) fft_3d_destroy_plan(plan->plan3d);
-  if(plan->plan2d != NULL) fft_2d_destroy_plan(plan->plan2d);
+  if (plan->plan3d != NULL) fft_3d_destroy_plan(plan->plan3d);
+  if (plan->plan2d != NULL) fft_2d_destroy_plan(plan->plan2d);
 #endif
-  if(plan->plan != NULL) fftw_destroy_plan(plan->plan);
+  if (plan->plan != NULL) fftw_destroy_plan(plan->plan);
   delete plan;
 #endif
 }
@@ -227,13 +227,13 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
                                           enum AthenaFFTDirection dir)
 {
   int nfast,nmid,nslow;
-  if(dir == AthenaFFTForward){
+  if (dir == AthenaFFTForward) {
     nfast = f_in_->Nx[0]; nmid = f_in_->Nx[1]; nslow = f_in_->Nx[2];
   } else {
     nfast = b_in_->Nx[0]; nmid = b_in_->Nx[1]; nslow = b_in_->Nx[2];
   }
-  if(dim_==3) return CreatePlan(nfast,nmid,nslow,data,dir);
-  else if(dim_==2) return CreatePlan(nfast,nmid,data,dir);
+  if (dim_==3) return CreatePlan(nfast,nmid,nslow,data,dir);
+  else if (dim_==2) return CreatePlan(nfast,nmid,data,dir);
   else  return CreatePlan(nfast,data,dir);
 }
 
@@ -244,12 +244,12 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
-  AthenaFFTPlan *plan;
+  AthenaFFTPlan *plan = NULL;
 #ifdef FFT
   plan = new AthenaFFTPlan;
   plan->dir = dir;
   plan->dim = dim_;
-  if(dir == AthenaFFTForward)
+  if (dir == AthenaFFTForward)
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
   else
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -266,7 +266,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                      AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
-  AthenaFFTPlan *plan;
+  AthenaFFTPlan *plan = NULL;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -274,7 +274,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
-  if(dir == AthenaFFTForward){
+  if (dir == AthenaFFTForward) {
     plan->dir = FFTW_FORWARD;
     plan->plan2d = fft_2d_create_plan(MPI_COMM_WORLD,nfast,nslow,
                                       f_in_->is[0],f_in_->ie[0],
@@ -298,7 +298,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->plan3d=NULL;
   plan->plan=NULL;
 #else // MPI_PARALLEL
-  if(dir == AthenaFFTForward)
+  if (dir == AthenaFFTForward)
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   else
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);
@@ -317,7 +317,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                      AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir)
 {
-  AthenaFFTPlan *plan;
+  AthenaFFTPlan *plan = NULL;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -326,8 +326,8 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 #ifdef MPI_PARALLEL
   int nbuf;
   int ois[3], oie[3];
-  if(dir == AthenaFFTForward){
-    for(int l=0; l<dim_; l++){
+  if (dir == AthenaFFTForward) {
+    for (int l=0; l<dim_; l++) {
       ois[l]=f_out_->is[(l+(dim_-permute1_)) % dim_];
       oie[l]=f_out_->ie[(l+(dim_-permute1_)) % dim_];
     }
@@ -341,7 +341,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                       ois[2],oie[2],
                                       0, permute1_, &nbuf);
   } else {
-    for(int l=0; l<dim_; l++){
+    for (int l=0; l<dim_; l++) {
       ois[l]=b_out_->is[(l+(dim_-permute2_)) % dim_];
       oie[l]=b_out_->ie[(l+(dim_-permute2_)) % dim_];
     }
@@ -358,7 +358,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
   plan->plan2d=NULL;
   plan->plan=NULL;
 #else // MPI_PARALLEL
-  if(dir == AthenaFFTForward){
+  if (dir == AthenaFFTForward) {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   } else {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);
@@ -377,8 +377,8 @@ void FFTBlock::Execute(AthenaFFTPlan *plan)
 {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-    if(plan->dim == 3) fft_3d(in_, out_, plan->dir, plan->plan3d);
-    if(plan->dim == 2) fft_2d(in_, out_, plan->dir, plan->plan2d);
+    if (plan->dim == 3) fft_3d(in_, out_, plan->dir, plan->plan3d);
+    if (plan->dim == 2) fft_2d(in_, out_, plan->dir, plan->plan2d);
 #else
     fftw_execute_dft(plan->plan, in_, out_);
 #endif
@@ -393,8 +393,8 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
 {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-    if(plan->dim == 3) fft_3d(data, data, plan->dir, plan->plan3d);
-    if(plan->dim == 2) fft_2d(data, data, plan->dir, plan->plan2d);
+    if (plan->dim == 3) fft_3d(data, data, plan->dir, plan->plan3d);
+    if (plan->dim == 2) fft_2d(data, data, plan->dir, plan->plan2d);
 #else
     fftw_execute_dft(plan->plan, data, data);
 #endif
@@ -410,8 +410,8 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
 {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if(plan->dim == 3) fft_3d(in_data, out_data, plan->dir, plan->plan3d);
-  if(plan->dim == 2) fft_2d(in_data, out_data, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(in_data, out_data, plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(in_data, out_data, plan->dir, plan->plan2d);
 #else
   fftw_execute_dft(plan->plan, in_data, out_data);
 #endif
@@ -426,7 +426,7 @@ void FFTBlock::MpiInitialize()
 {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
-  if((pdim_ == 2 || pdim_ ==1) && dim_ == 3){
+  if ((pdim_ == 2 || pdim_ ==1) && dim_ == 3) {
 // To achieve best performance with 2D-pencil decomposition,
 // (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
 //     one needs to permute the axes to make it fast by setting "permute0":
@@ -451,17 +451,17 @@ void FFTBlock::MpiInitialize()
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
       {using namespace DecompositionNames;
-      if(decomp_ == x_decomp){
+      if (decomp_ == x_decomp) {
         permute0_ = 1;
-      } else if(decomp_ == y_decomp){
+      } else if (decomp_ == y_decomp) {
         permute0_ = 2;
-      } else if(decomp_ == z_decomp){
+      } else if (decomp_ == z_decomp) {
         permute0_ = 0;
-      } else if(decomp_ == xy_decomp){
+      } else if (decomp_ == xy_decomp) {
         permute0_ = 2;
-      } else if(decomp_ == yz_decomp){
+      } else if (decomp_ == yz_decomp) {
         permute0_ = 0;
-      } else if(decomp_ == xz_decomp){
+      } else if (decomp_ == xz_decomp) {
         permute0_ = 1;
       } else {
         msg << "Something wrong with " << pdim_ << "D decomposition!" << std::endl
@@ -481,7 +481,7 @@ void FFTBlock::MpiInitialize()
     f_in_ = new AthenaFFTIndex(orig_idx_);
     f_in_->PermuteAxis(permute0_);
     f_in_->PermuteProc(permute0_);
-    if(swap1_){
+    if (swap1_) {
       f_in_->SwapAxis(0);
       f_in_->SwapProc(0);
     }
@@ -497,7 +497,7 @@ void FFTBlock::MpiInitialize()
 // prepare backward FFT;
 // now permute fast, mid, and slow axes twice
     b_in_ = new AthenaFFTIndex(f_out_);
-    if(swap2_){
+    if (swap2_) {
       b_in_->SwapAxis(0);
       b_in_->SwapProc(0);
     }
@@ -510,14 +510,14 @@ void FFTBlock::MpiInitialize()
     b_out_->PermuteAxis(permute2_);
     b_out_->SetLocalIndex();
 
-//    if(Globals::my_rank == 0){
+//    if (Globals::my_rank == 0) {
 //      std::cout << "iloc: " << orig_idx->iloc[0] << " " << orig_idx->iloc[1] << " " << orig_idx->iloc[2] << std::endl
 //                << "iloc: " << f_in->iloc[0] << " " << f_in->iloc[1] << " " << f_in->iloc[2] << std::endl
 //                << "iloc: " << f_out->iloc[0] << " " << f_out->iloc[1] << " " << f_out->iloc[2] << std::endl
 //                << "iloc: " << b_in->iloc[0] << " " << b_in->iloc[1] << " " << b_in->iloc[2] << std::endl
 //                << "iloc: " << b_out->iloc[0] << " " << b_out->iloc[1] << " " << b_out->iloc[2] << std::endl;
 //    }
-//    if(Globals::my_rank == Globals::nranks-1){
+//    if (Globals::my_rank == Globals::nranks-1) {
 //      std::cout << "f_in  " << Globals::my_rank << std::endl;
 //      f_in->PrintIndex();
 //      std::cout << "f_out ";
@@ -560,10 +560,10 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
 }
 
 // copy constructor
-AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc){
+AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc) {
   dim_ = psrc->dim_;
 
-  for(int i=0; i<3; i++){
+  for (int i=0; i<3; i++) {
     Lx[i]=psrc->Lx[i];
     Nx[i]=psrc->Nx[i];
     np[i]=psrc->np[i];
@@ -580,8 +580,8 @@ AthenaFFTIndex::~AthenaFFTIndex()
 
 }
 
-void AthenaFFTIndex::SetLocalIndex(){
-  for(int i=0; i<3; i++){
+void AthenaFFTIndex::SetLocalIndex() {
+  for (int i=0; i<3; i++) {
     nx[i] = Nx[i]/np[i];
     is[i] = ip[i]*nx[i];
     ie[i] = is[i]+nx[i]-1;
@@ -589,7 +589,7 @@ void AthenaFFTIndex::SetLocalIndex(){
 //  PrintIndex();
 }
 
-void AthenaFFTIndex::Swap_(int loc[],int ref_axis){
+void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
   int tmp;
   int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
   tmp=loc[axis1];
@@ -597,20 +597,20 @@ void AthenaFFTIndex::Swap_(int loc[],int ref_axis){
   loc[axis2]=tmp;
 }
 
-void AthenaFFTIndex::SwapAxis(int ref_axis){
+void AthenaFFTIndex::SwapAxis(int ref_axis) {
   Swap_(iloc,ref_axis);
   Swap_(Nx,ref_axis);
 }
 
-void AthenaFFTIndex::SwapProc(int ref_axis){
+void AthenaFFTIndex::SwapProc(int ref_axis) {
   Swap_(ploc,ref_axis);
   Swap_(ip,ref_axis);
   Swap_(np,ref_axis);
 }
 
-void AthenaFFTIndex::Permute_(int loc[], int npermute){
+void AthenaFFTIndex::Permute_(int loc[], int npermute) {
   int tmp;
-  for(int i=0; i<npermute; i++){
+  for (int i=0; i<npermute; i++) {
     tmp=loc[0];
     loc[0]=loc[1];
     loc[1]=loc[2];
@@ -618,36 +618,36 @@ void AthenaFFTIndex::Permute_(int loc[], int npermute){
   }
 }
 
-void AthenaFFTIndex::PermuteAxis(int npermute){
+void AthenaFFTIndex::PermuteAxis(int npermute) {
   Permute_(iloc,npermute);
   Permute_(Nx,npermute);
 }
 
-void AthenaFFTIndex::PermuteProc(int npermute){
+void AthenaFFTIndex::PermuteProc(int npermute) {
   Permute_(ploc,npermute);
   Permute_(np,npermute);
   Permute_(ip,npermute);
 }
 
-void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir){
+void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
   int tmp[dim_];
-  for(int i=0; i<dim_; i++) tmp[i]=arr[i];
-  for(int i=0; i<dim_; i++){
-    if(dir>0) arr[loc[i]]=tmp[i];
+  for (int i=0; i<dim_; i++) tmp[i]=arr[i];
+  for (int i=0; i<dim_; i++) {
+    if (dir>0) arr[loc[i]]=tmp[i];
     else arr[i]=tmp[loc[i]];
   }
 }
 
-void AthenaFFTIndex::RemapAxis(int dir){
+void AthenaFFTIndex::RemapAxis(int dir) {
   RemapArray_(Nx,iloc,dir);
 }
 
-void AthenaFFTIndex::RemapProc(int dir){
+void AthenaFFTIndex::RemapProc(int dir) {
   RemapArray_(np,ploc,dir);
   RemapArray_(ip,ploc,dir);
 }
 
-void AthenaFFTIndex::PrintIndex(void){
+void AthenaFFTIndex::PrintIndex(void) {
   std::cout << "Lx:" << Lx[0] << " "  << Lx[1] << " " << Lx[2] << std::endl
             << "Nx:" << Nx[0] << " "  << Nx[1] << " " << Nx[2] << std::endl
             << "np:" << np[0] << " "  << np[1] << " " << np[2] << std::endl

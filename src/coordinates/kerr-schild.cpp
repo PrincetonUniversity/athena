@@ -614,7 +614,7 @@ void KerrSchild::Edge1Length(const int k, const int j, const int il, const int i
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j)
-        * (1.0/3.0 * coord_len1_i2_(i) + coord_len1_j2_(j));
+        * (ONE_3RD * coord_len1_i2_(i) + coord_len1_j2_(j));
   }
   return;
 }
@@ -626,7 +626,7 @@ void KerrSchild::Edge2Length(const int k, const int j, const int il, const int i
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+    lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + ONE_3RD * coord_len2_j2_(j));
   }
   return;
 }
@@ -651,14 +651,14 @@ Real KerrSchild::GetEdge1Length(const int k, const int j, const int i)
   // \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
   return coord_len1_i1_(i) * coord_len1_j1_(j)
-      * (1.0/3.0 * coord_len1_i2_(i) + coord_len1_j2_(j));
+      * (ONE_3RD * coord_len1_i2_(i) + coord_len1_j2_(j));
 }
 
 Real KerrSchild::GetEdge2Length(const int k, const int j, const int i)
 {
   // \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  return coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+  return coord_len2_j1_(j) * (coord_len2_i1_(i) + ONE_3RD * coord_len2_j2_(j));
 }
 
 Real KerrSchild::GetEdge3Length(const int k, const int j, const int i)
@@ -733,7 +733,7 @@ void KerrSchild::Face2Area(const int k, const int j, const int il, const int iu,
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
-        * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
+        * (ONE_3RD * coord_area2_i2_(i) + coord_area2_j2_(j));
   }
   return;
 }
@@ -746,7 +746,7 @@ void KerrSchild::Face3Area(const int k, const int j, const int il, const int iu,
   //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    areas(i) = 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
+    areas(i) = ONE_3RD * coord_area3_i1_(i) * coord_area3_j1_(j)
         * (coord_area3_i2_(i) + coord_area3_j2_(j));
   }
   return;
@@ -764,7 +764,7 @@ Real KerrSchild::GetFace1Area(const int k, const int j, const int i)
   // \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
   return coord_area1_j1_(j) * coord_area1_k1_(k)
-      * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
+      * (coord_area1_i1_(i) + ONE_3RD * coord_area1_j2_(j));
 }
 
 Real KerrSchild::GetFace2Area(const int k, const int j, const int i)
@@ -772,7 +772,7 @@ Real KerrSchild::GetFace2Area(const int k, const int j, const int i)
   // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
   return coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
-      * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
+      * (ONE_3RD * coord_area2_i2_(i) + coord_area2_j2_(j));
 }
 
 Real KerrSchild::GetFace3Area(const int k, const int j, const int i)
@@ -780,7 +780,7 @@ Real KerrSchild::GetFace3Area(const int k, const int j, const int i)
   // \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
   //     * (r_-^2 + r_- r_+ + r_+^2
   //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  return 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
+  return ONE_3RD * coord_area3_i1_(i) * coord_area3_j1_(j)
       * (coord_area3_i2_(i) + coord_area3_j2_(j));
 }
 
@@ -801,7 +801,7 @@ void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu
 {
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+    volumes(i) = ONE_3RD * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
         * (coord_vol_i2_(i) + coord_vol_j2_(j));
   }
   return;
@@ -820,7 +820,7 @@ void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu
 
 Real KerrSchild::GetCellVolume(const int k, const int j, const int i)
 {
-  return 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+  return ONE_3RD * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
       * (coord_vol_i2_(i) + coord_vol_j2_(j));
 }
 

@@ -62,7 +62,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
     if (dim == 2) cfl_limit = 0.5;
-    if (dim == 3) cfl_limit = 1.0/3.0;
+    if (dim == 3) cfl_limit = ONE_3RD;
 
     step_wghts[0].delta = 1.0; // required for consistency
     step_wghts[0].gamma_1 = 0.0;

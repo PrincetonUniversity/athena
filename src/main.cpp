@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   }
   if(mpiprv != MPI_THREAD_MULTIPLE) {
     std::cout << "### FATAL ERROR in main" << std::endl
-              << "MPI_THREAD_MULTIPLE must be supported for the hybrid parallelzation. " 
+              << "MPI_THREAD_MULTIPLE must be supported for the hybrid parallelzation. "
               << MPI_THREAD_MULTIPLE << " : " << mpiprv
               << std::endl;
     MPI_Finalize();
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
   for (int i=1; i<argc; i++) {
 
     // If argv[i] is a 2 character string of the form "-?" then:
-    if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
+    if (*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0') {
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_filename>
         ++i;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
   }
 
   // Dump input parameters and quit if code was run with -n option.
-  if (narg_flag){
+  if (narg_flag) {
     if(Globals::my_rank==0) pinput->ParameterDump(std::cout);
     if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
@@ -246,9 +246,9 @@ int main(int argc, char *argv[])
 
   Mesh *pmesh;
   try {
-    if(res_flag==0)
+    if(res_flag==0) {
       pmesh = new Mesh(pinput, mesh_flag);
-    else {
+    } else {
       pmesh = new Mesh(pinput, restartfile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
   if(res_flag==1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
-  if (mesh_flag>0){
+  if (mesh_flag>0) {
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -360,14 +360,15 @@ int main(int argc, char *argv[])
 #endif
 
   while ((pmesh->time < pmesh->tlim) &&
-         (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
+         (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
 
     if(Globals::my_rank==0) {
-      if (pmesh->ncycle_out != 0)
+      if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
           std::cout << "cycle=" << pmesh->ncycle<< std::scientific <<std::setprecision(14)
                     << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
         }
+      }
     }
 
     if(pmesh->turb_flag == 2) pmesh->ptrbd->Driving(); // driven turbulence

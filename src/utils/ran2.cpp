@@ -6,6 +6,7 @@
 //! \file ran2.cpp
 
 // C++ headers
+#include <iostream>
 #include "float.h"  // DBL_EPSILON
 
 // Athena headers

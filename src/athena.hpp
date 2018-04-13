@@ -40,7 +40,7 @@ typedef struct LogicalLocation {
   int64_t lx1, lx2, lx3;
   int level;
 
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll)

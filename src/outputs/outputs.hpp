@@ -45,9 +45,9 @@ typedef struct OutputParameters {
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
 
-  OutputParameters() : output_sumx1(false), output_sumx2(false), output_sumx3(false),
-     output_slicex1(false), output_slicex2(false), output_slicex3(false),
-     include_ghost_zones(false) {};
+  OutputParameters() : output_slicex1(false),output_slicex2(false),output_slicex3(false),
+                       output_sumx1(false), output_sumx2(false), output_sumx3(false),
+                       include_ghost_zones(false) {}
 } OutputParameters;
 
 //----------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ typedef struct OutputData {
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
 
-  OutputData() : pnext(NULL), pprev(NULL) {};
+  OutputData() : pnext(NULL),  pprev(NULL) {}
 } OutputData;
 
 //----------------------------------------------------------------------------------------
