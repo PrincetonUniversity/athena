@@ -132,7 +132,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real kz = (2.0*PI/Lz)*((double)nwz);
 
   // Ensure a different initial random seed for each meshblock.
-  long int iseed = -1 - gid;
+  int64_t iseed = -1 - gid;
 
   // adiabatic gamma
   Real gam = peos->GetGamma();
