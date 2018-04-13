@@ -32,7 +32,7 @@ time python ./run_tests.py pgen --mpirun=srun
 time python ./run_tests.py sr --mpirun=srun
 time python ./run_tests.py gr --mpirun=srun
 time python ./run_tests.py curvilinear --mpirun=srun
-#time python ./run_tests.py shearingbox
+time python ./run_tests.py shearingbox --mpirun=srun
 
 # Build step #2: Intel compiler and MPI library
 module purge
@@ -52,7 +52,7 @@ time python ./run_tests.py pgen --cxx=icc --mpirun=srun
 time python ./run_tests.py sr --cxx=icc --mpirun=srun
 time python ./run_tests.py gr --cxx=icc --mpirun=srun
 time python ./run_tests.py curvilinear --cxx=icc --mpirun=srun
-#time python ./run_tests.py shearingbox --cxx=icc
+time python ./run_tests.py shearingbox --cxx=icc --mpirun=srun
 
 set +e
 # end regression tests
