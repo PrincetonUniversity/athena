@@ -300,7 +300,7 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real UniformMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location in [-0.5, 0.5]
+// \brief x1 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
   return ((Real) 0.5-x)*rs.x1min + ((Real) 0.5+x)*rs.x1max;
@@ -308,7 +308,7 @@ inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real UniformMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location in [-0.5, 0.5]
+// \brief x2 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
   return ((Real) 0.5-x)*rs.x2min + ((Real) 0.5+x)*rs.x2max;
@@ -316,7 +316,7 @@ inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real UniformMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location in [-0.5, 0.5]
+// \brief x3 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
   return ((Real) 0.5-x)*rs.x3min + ((Real) 0.5+x)*rs.x3max;
