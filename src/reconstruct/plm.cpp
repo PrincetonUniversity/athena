@@ -13,6 +13,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()
@@ -64,6 +65,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwl);
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwr);
@@ -101,7 +103,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,dwm);
+      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwm);
     }
 
     // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
@@ -110,6 +112,11 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int i=il-1; i<=iu; ++i) {
         wl(n,k,j,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
         wr(n,k,j,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
+        if (pmb->precon->characteristic_reconstruction) {
+          // Reapply EOS floors to both L/R reconstructed primitive states
+          pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+        }
       }
     }
 
@@ -169,6 +176,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwl);
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
@@ -191,14 +199,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     } else {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
           Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -206,7 +214,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,dwm);
+      RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwm);
     }
 
     // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
@@ -215,6 +223,11 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i) {
         wl(n,k,j+1,i) = wc(n,i) + ((pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j))*dwm(n,i);
         wr(n,k,j  ,i) = wc(n,i) - ((pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j))*dwm(n,i);
+        if (pmb->precon->characteristic_reconstruction) {
+          // Reapply EOS floors to both L/R reconstructed primitive states
+          pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
+          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+        }
       }
     }
   }}
@@ -272,6 +285,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwl);
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwr);
@@ -295,14 +309,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     } else {
       for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
           Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
-        for (int i=il-1; i<=iu; ++i) {
+        for (int i=il; i<=iu; ++i) {
           if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -310,7 +324,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,dwm);
+      RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwm);
     }
 
     // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
@@ -319,6 +333,11 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i) {
         wl(n,k+1,j,i) = wc(n,i) + ((pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k))*dwm(n,i);
         wr(n,k  ,j,i) = wc(n,i) - ((pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k))*dwm(n,i);
+        if (pmb->precon->characteristic_reconstruction) {
+          // Reapply EOS floors to both L/R reconstructed primitive states
+          pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
+          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+        }
       }
     }
   }}

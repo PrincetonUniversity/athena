@@ -31,6 +31,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseParabolicX1()
@@ -78,12 +79,12 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
   dqf_plus.InitWithShallowCopy(pmb->precon->scr13_i_);
   dqf_minus.InitWithShallowCopy(pmb->precon->scr14_i_);
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k,j,i  );
         q_im2(n,i) = w(n,k,j,i-2);
@@ -94,11 +95,11 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
     }
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         bx(i) = bcc(IB1,k,j,i);
       }
 #pragma omp simd
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         wc(IBY,i) = bcc(IB2,k,j,i);
         q    (IBY,i) = bcc(IB2,k,j,i  );
         q_im2(IBY,i) = bcc(IB2,k,j,i-2);
@@ -107,7 +108,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         q_ip2(IBY,i) = bcc(IB2,k,j,i+2);
       }
 #pragma omp simd
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         wc(IBZ,i) = bcc(IB3,k,j,i);
         q    (IBZ,i) = bcc(IB3,k,j,i  );
         q_im2(IBZ,i) = bcc(IB3,k,j,i-2);
@@ -118,6 +119,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,q_im2);
       LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,q_im1);
@@ -131,7 +133,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 
       // Compute average slope in i-1, i, i+1 zones
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         Real qa = (q(n,i) - q_im1(n,i));
         Real qb = (q_ip1(n,i) - q(n,i));
         dd_im1(i) = prec->c1i(i-1)*qa + prec->c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
@@ -167,7 +169,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
             qb = d2qc_im1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph(i) = 0.5*(q_im1(n,i)+q(n,i)) - qd/6.0;
@@ -183,7 +185,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_ip1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph_ip1(i) = 0.5*(q(n,i)+q_ip1(n,i)) - qd/6.0;
@@ -308,16 +310,19 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,ql_iph);
-      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,qr_imh);
+      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,ql_iph);
+      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,qr_imh);
     }
 
-    // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
+    // compute ql_(i+1/2) and qr_(i-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-      for (int i=il-1; i<=iu; ++i){
+      for (int i=il-1; i<=iu; ++i) {
         wl(n,k,j,i+1) = ql_iph(n,i);
         wr(n,k,j,i  ) = qr_imh(n,i);
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
   }}
@@ -371,12 +376,12 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
   dqf_plus.InitWithShallowCopy(pmb->precon->scr13_i_);
   dqf_minus.InitWithShallowCopy(pmb->precon->scr14_i_);
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl-1; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl-1; j<=ju; ++j) {
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k,j  ,i);
         q_jm2(n,i) = w(n,k,j-2,i);
@@ -387,11 +392,11 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
     }
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB2,k,j,i);
       }
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(IBY,i) = bcc(IB3,k,j,i);
         q    (IBY,i) = bcc(IB3,k,j  ,i);
         q_jm2(IBY,i) = bcc(IB3,k,j-2,i);
@@ -400,7 +405,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         q_jp2(IBY,i) = bcc(IB3,k,j+2,i);
       }
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(IBZ,i) = bcc(IB1,k,j,i);
         q    (IBZ,i) = bcc(IB1,k,j  ,i);
         q_jm2(IBZ,i) = bcc(IB1,k,j-2,i);
@@ -411,6 +416,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm2);
       LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,q_jm1);
@@ -424,7 +430,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 
       // Compute average slope in j-1, j, j+1 zones
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         Real qa = (q(n,i) - q_jm1(n,i));
         Real qb = (q_jp1(n,i) - q(n,i));
         dd_jm1(i) = prec->c1j(j-1)*qa + prec->c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
@@ -460,7 +466,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
             qb = d2qc_jm1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph(i) = 0.5*(q_jm1(n,i)+q(n,i)) - qd/6.0;
@@ -476,7 +482,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph_jp1(i) = 0.5*(q(n,i)+q_jp1(n,i)) - qd/6.0;
@@ -601,16 +607,19 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,ql_jph);
-      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,qr_jmh);
+      RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,ql_jph);
+      RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,qr_jmh);
     }
 
-    // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
+    // compute ql_(j+1/2) and qr_(j-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wl(n,k,j+1,i) = ql_jph(n,i);
         wr(n,k,j  ,i) = qr_jmh(n,i);
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
   }}
@@ -664,12 +673,12 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
   dqf_plus.InitWithShallowCopy(pmb->precon->scr13_i_);
   dqf_minus.InitWithShallowCopy(pmb->precon->scr14_i_);
 
-  for (int k=kl-1; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl-1; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
     // cache the x1-sliced primitive states for eigensystem calculation
     for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(n,i) = w(n,k,j,i);
         q    (n,i) = w(n,k  ,j,i);
         q_km2(n,i) = w(n,k-2,j,i);
@@ -680,11 +689,11 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
     }
     if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB3,k,j,i);
       }
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(IBY,i) = bcc(IB1,k,j,i);
         q    (IBY,i) = bcc(IB1,k  ,j,i);
         q_km2(IBY,i) = bcc(IB1,k-2,j,i);
@@ -693,7 +702,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         q_kp2(IBY,i) = bcc(IB1,k+2,j,i);
       }
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wc(IBZ,i) = bcc(IB2,k,j,i);
         q    (IBZ,i) = bcc(IB2,k  ,j,i);
         q_km2(IBZ,i) = bcc(IB2,k-2,j,i);
@@ -704,6 +713,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
     }
 
     // Project cell-averages to characteristic variables, if necessary
+    // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
     if (pmb->precon->characteristic_reconstruction) {
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,q_km2);
       LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,q_km1);
@@ -717,7 +727,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
     for (int n=0; n<(NWAVE); ++n) {
 
       // Compute average slope in k-1, k, k+1 zones
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         Real qa = (q(n,i) - q_km1(n,i));
         Real qb = (q_kp1(n,i) - q(n,i));
         dd_km1(i) = prec->c1k(k-1)*qa + prec->c2k(k-1)*(q_km1(n,i) - q_km2(n,i));
@@ -753,7 +763,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
             qb = d2qc_km1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph(i) = 0.5*(q_km1(n,i)+q(n,i)) - qd/6.0;
@@ -769,7 +779,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_kp1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
-            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
               qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             }
             dph_kp1(i) = 0.5*(q(n,i)+q_kp1(n,i)) - qd/6.0;
@@ -895,16 +905,19 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,ql_kph);
-      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,qr_kmh);
+      RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,ql_kph);
+      RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,qr_kmh);
     }
 
-    // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
+    // compute ql_(k+1/2) and qr_(k-1/2)
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
         wl(n,k+1,j,i) = ql_kph(n,i);
         wr(n,k  ,j,i) = qr_kmh(n,i);
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
   }}

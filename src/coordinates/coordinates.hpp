@@ -8,7 +8,7 @@
 //! \file coordinates.hpp
 //  \brief defines abstract base and derived classes for coordinates.  These classes
 //  provide data and functions to compute/store coordinate positions and spacing, as well
-//  as geometrical factors (areas, volumes, coordinate source terms) for various 
+//  as geometrical factors (areas, volumes, coordinate source terms) for various
 //  coordinate systems.
 
 // Athena++ classes headers
@@ -77,7 +77,7 @@ public:
 
   // ...to compute geometrical source terms
   virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+                             const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   // ...to determine if index is a pole
   bool IsPole(int j);

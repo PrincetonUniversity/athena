@@ -1274,6 +1274,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+      // send and receive shearingbox boundary conditions
+      if (SHEARING_BOX)
+        pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
       pbval->ClearBoundaryForInit(true);
     }
 

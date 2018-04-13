@@ -1,0 +1,38 @@
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
+# Email addresses or GitHub usernames can be used
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# these global owners will be requested for
+# review when someone opens a pull request.
+*       @jmstone @tomidakn
+
+# Order is important; the last matching pattern takes the most
+# precedence. When someone opens a pull request that only
+# modifies reconstruct/ files, only @kfelker and not the global
+# owner(s) will be requested for a review.
+
+src/reconstruct/ @felker @jmstone
+src/task_list/time_integrator.cpp @felker @jmstone
+
+src/gravity/ @changgoo @jmstone
+src/fft/ @changgoo @jmstone
+
+# Only request @tomidakn, not @jmstone for PR affecting these folders
+src/bvals/ @tomidakn @jmstone
+src/mesh/ @tomidakn @jmstone
+src/multigrid/ @tomidakn @jmstone
+
+vis/ @c-white @jmstone
+
+# dir/* syntax will not match files in subfolders
+src/eos/*gr* @c-white @jmstone
+src/eos/*sr* @c-white @jmstone
+src/pgen/gr_* @c-white @jmstone
+
+# Any file in any coordinates/ directory throughout repo
+coordinates/ @c-white @tomidakn @jmstone
+
+# Any file in /tst/regression/ in root of repo
+/tst/regression/ @c-white @felker @jmstone

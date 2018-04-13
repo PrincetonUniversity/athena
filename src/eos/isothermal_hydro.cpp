@@ -37,17 +37,15 @@ EquationOfState::~EquationOfState()
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //           const AthenaArray<Real> &prim_old, const FaceField &b,
 //           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke)
-// \brief Converts conserved into primitive variables in isothermal hydro.
-
+//           int il, int iu, int jl, int ju, int kl, int ku)
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
+  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku)
 {
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
 #pragma omp simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -75,19 +73,19 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke);
+//           int il, int iu, int jl, int ju, int kl, int ku);
 // \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
+     int il, int iu, int jl, int ju, int kl, int ku)
 {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
 #pragma omp simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -115,4 +113,19 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
 {
   return iso_sound_speed_;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density floor to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
+{
+  Real& w_d  = prim(IDN,k,j,i);
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+  return;
 }

@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-#-----------------------------------------------------------------------------------------
+#!/usr/bin/env python
+#---------------------------------------------------------------------------------------
 # configure.py: Athena++ configuration script in python. Original version by CJW.
 #
 # When configure.py is run, it uses the command line options and default settings to
@@ -17,6 +17,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
+#   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
@@ -28,6 +29,7 @@
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
+#   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
 #-----------------------------------------------------------------------------------------
@@ -105,6 +107,12 @@ parser.add_argument('-t',
     default=False,
     help='enable interface frame transformations for GR')
 
+# -shear argument
+parser.add_argument('-shear',
+    action='store_true',
+    default=False,
+    help='enable shearing box')
+
 # -debug argument
 parser.add_argument('-debug',
     action='store_true',
@@ -161,13 +169,18 @@ parser.add_argument('--hdf5_path',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc','cray','bgxl','icc-phi','clang++'],
+    choices=['g++','g++-simd','icc','cray','bgxl','icc-phi','clang++'],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
     default=None,
     help='override for command to use to call C++ compiler')
+
+# --cflag=[string] argument
+parser.add_argument('--cflag',
+    default=None,
+    help='additional string of flags to append to compiler/linker calls')
 
 # --include=[name] arguments
 parser.add_argument('--include',
@@ -293,6 +306,12 @@ if args['g']:
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
 
+# -shear argument
+if args['shear']:
+  definitions['SHEARING_BOX'] = '1'
+else:
+  definitions['SHEARING_BOX'] = '0'
+
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = 'g++'
@@ -301,11 +320,21 @@ if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'g++-simd':
+  definitions['COMPILER_CHOICE'] = 'g++-simd' # gcc version > 4.9
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd -fwhole-program' \
+                                       + ' -march=skylake-avx512 -flto'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline -qopenmp-simd'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline' \
+                                       + ' -qopenmp-simd -qopt-prefetch=4'
+                                       #-qopt-zmm-usage=high'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -360,7 +389,7 @@ else:
 # -debug argument
 if args['debug']:
   definitions['DEBUG'] = 'DEBUG'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc':
+  if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] = '-O0 -g'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -375,7 +404,7 @@ else:
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' \
-      or args['cxx'] == 'clang++':
+     or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -387,7 +416,7 @@ else:
 # -omp argument
 if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
     makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
@@ -460,6 +489,10 @@ else:
 if args['ccmd'] is not None:
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
+# --cflag=[string] argument
+if args['cflag'] is not None:
+  makefile_options['COMPILER_FLAGS'] += ' '+args['cflag']
+
 # --include=[name] arguments
 for include_path in args['include']:
   makefile_options['COMPILER_FLAGS'] += ' -I'+include_path
@@ -509,6 +542,7 @@ print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])

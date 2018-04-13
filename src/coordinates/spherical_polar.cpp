@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a 
+//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a
 //  derived class of the Coordinates abstract base class.
 
 // C/C++ headers
@@ -313,7 +313,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
 #pragma omp simd
   for (int i=il; i<=iu; ++i){
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
-    area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k); 
+    area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
   }
   return;
 }
@@ -382,7 +382,6 @@ Real SphericalPolar::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
 void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
@@ -406,12 +405,12 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         }
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
 
-        // src_2 = -< M_{theta r} ><1/r> 
+        // src_2 = -< M_{theta r} ><1/r>
         u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
           (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
          + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
 
-        // src_3 = -< M_{phi r} ><1/r> 
+        // src_3 = -< M_{phi r} ><1/r>
         u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
           (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
          + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
@@ -428,7 +427,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         }
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
-        // src_3 = -< M_{phi theta} ><cot theta/r> 
+        // src_3 = -< M_{phi theta} ><cot theta/r>
         if (use_x2_fluxes) {
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
               (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)

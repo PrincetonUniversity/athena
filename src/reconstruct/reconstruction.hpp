@@ -41,7 +41,7 @@ public:
   static void LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
     AthenaArray<Real> &vect);
-  static void VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
+  static void RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
     AthenaArray<Real> &vect);
 

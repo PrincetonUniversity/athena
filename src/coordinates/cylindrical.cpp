@@ -146,7 +146,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 #pragma omp simd
     for (int i=il-ng; i<=iu+(ng-1); ++i){
-       // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+       // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
     }
   }
@@ -225,7 +225,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
 {
 #pragma omp simd
   for (int i=il; i<=iu; ++i){
-    // area1 = r dphi dz 
+    // area1 = r dphi dz
     area(i) = x1f(i)*dx2f(j)*dx3f(k);
   }
   return;
@@ -247,7 +247,7 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
 
 Real Cylindrical::GetFace1Area(const int k, const int j, const int i)
 {
-  // area1 = r dphi dz 
+  // area1 = r dphi dz
   return x1f(i)*dx2f(j)*dx3f(k);
 }
 
@@ -281,7 +281,6 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
 void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {

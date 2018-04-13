@@ -36,15 +36,18 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf,
-//                                                         const NeighborBlock& nb)
+//                                                   const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the same level
-
 int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+
+  Real qomL = qshear_*Omega_0_*x1size_;
+  AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
+
   int p=0;
   if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
@@ -59,9 +62,22 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
             buf[p++]=e2(k,j,i);
         }
         // pack e3
-        for(int k=pmb->ks; k<=pmb->ke; k++) {
-          for(int j=pmb->js; j<=pmb->je+1; j++)
-            buf[p++]=e3(k,j,i);
+        // shift azmuthal velocity if shearing boundary blocks
+        if (nb.shear && nb.fid==INNER_X1) {
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              buf[p++]=e3(k,j,i)-0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+          }
+        } else if (nb.shear && nb.fid==OUTER_X1) {
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              buf[p++]=e3(k,j,i)+0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+          }
+        } else {
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              buf[p++]=e3(k,j,i);
+          }
         }
       }
       // x2 direction
@@ -105,8 +121,23 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // pack e2
-        for(int j=pmb->js; j<=pmb->je; j++)
-          buf[p++]=e2(k,j,i);
+        // shift azimuthal velocity for x-z shearing
+        if (SHEARING_BOX) {
+          if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1)) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
+          } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1))
+                                   && nb.ox1==1) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
+          } else {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              buf[p++]=e2(k,j,i);
+          }
+        } else {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+        }
         // pack e3
         for(int j=pmb->js; j<=pmb->je+1; j++)
           buf[p++]=e3(k,j,i);
@@ -141,9 +172,18 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       else i=pmb->ie+1;
       if((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
+      // shift azmuthal velocity if shearing boundary blocks
+      if(nb.shear and nb.ox1==-1){
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          buf[p++]=e3(k,j,i)-0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+      } else if(nb.shear and nb.ox1==1){
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          buf[p++]=e3(k,j,i)+0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+      } else {
       // pack e3
-      for(int k=pmb->ks; k<=pmb->ke; k++)
-        buf[p++]=e3(k,j,i);
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          buf[p++]=e3(k,j,i);
+      }
     }
     // x1x3 edge
     else if(nb.eid>=4 && nb.eid<8) {
@@ -153,8 +193,22 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       if((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       // pack e2
-      for(int j=pmb->js; j<=pmb->je; j++)
-        buf[p++]=e2(k,j,i);
+      // shift azimuthal velocity for x-z shearing
+      if(SHEARING_BOX) {
+        if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1))   {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
+        } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1)) && nb.ox1==1){
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
+        } else {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+        }
+      } else {
+        for(int j=pmb->js; j<=pmb->je; j++)
+          buf[p++]=e2(k,j,i);
+      }
     }
     // x2x3 edge
     else if(nb.eid>=8 && nb.eid<12) {
@@ -423,8 +477,8 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFCorrection(void)
-//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
-
+//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if
+//  needed
 void BoundaryValues::SendEMFCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
@@ -507,15 +561,40 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         int i;
         if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
-        // unpack e2
-        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-          for(int j=pmb->js; j<=pmb->je; j++)
-            e2(k,j,i)+=buf[p++];
-        }
-        // unpack e3
-        for(int k=pmb->ks; k<=pmb->ke; k++) {
-          for(int j=pmb->js; j<=pmb->je+1; j++)
-            e3(k,j,i)+=buf[p++];
+
+        if(nb.shear and nb.fid==INNER_X1){
+          // store e2 for shearing periodic bcs
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              shboxvar_inner_emf_.x2e(k,j) += buf[p++];
+          }
+          // store e3 for shearing periodic bcs
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              shboxvar_inner_emf_.x3e(k,j) += buf[p++];
+          }
+        } else if(nb.shear and nb.fid==OUTER_X1) {
+          // store e2 for shearing periodic bcs
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              shboxvar_outer_emf_.x2e(k,j) += buf[p++];
+          }
+          // store e3 for shearing periodic bcs
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              shboxvar_outer_emf_.x3e(k,j) += buf[p++];
+          }
+        } else {
+          // unpack e2
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              e2(k,j,i)+=buf[p++];
+          }
+          // unpack e3
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je+1; j++)
+              e3(k,j,i)+=buf[p++];
+          }
         }
       }
       // x2 direction
@@ -604,10 +683,20 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       else i=pmb->ie+1;
       if((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
+      if(nb.shear and nb.ox1==-1){
+        // store e3 for shearing periodic bcs
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          shboxvar_inner_emf_.x3e(k,j) += buf[p++];
+      } else if(nb.shear and nb.ox1==1){
+        // store e3 for shearing periodic bcs
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          shboxvar_outer_emf_.x3e(k,j) += buf[p++];
+      } else {
       // unpack e3
-      Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
-      for(int k=pmb->ks; k<=pmb->ke; k++) {
-        e3(k,j,i)+=sign*buf[p++];
+        Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          e3(k,j,i)+=sign*buf[p++];
+        }
       }
     }
     // x1x3 edge
@@ -617,9 +706,19 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       else i=pmb->ie+1;
       if((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
+      if(nb.shear and nb.ox1==-1){
+        // store e2 for shearing periodic bcs
+        for(int j=pmb->js; j<=pmb->je; j++)
+          shboxvar_inner_emf_.x2e(k,j) += buf[p++];
+      } else if(nb.shear and nb.ox1==1){
+        // store e2 for shearing periodic bcs
+        for(int j=pmb->js; j<=pmb->je; j++)
+          shboxvar_outer_emf_.x2e(k,j) += buf[p++];
+      } else {
       // unpack e2
-      for(int j=pmb->js; j<=pmb->je; j++)
-        e2(k,j,i)+=buf[p++];
+        for(int j=pmb->js; j<=pmb->je; j++)
+          e2(k,j,i)+=buf[p++];
+      }
     }
     // x2x3 edge
     else if(nb.eid>=8 && nb.eid<12) {
@@ -1076,6 +1175,9 @@ void BoundaryValues::AverageEMFBoundary(void)
   for(int n=0; n<nedge_; n++) {
     if(nedge_fine_[n]==1) continue;
     Real div=1.0/(Real)nedge_fine_[n];
+    NeighborBlock& nb=neighbor[n+6];
+    Real half_div=div;
+    if(nb.shear) half_div=0.5;
     // x1x2 edge (both 2D and 3D)
     if(n>=0 && n<4) {
       if((n&1)==0) i=pmb->is;
@@ -1083,7 +1185,7 @@ void BoundaryValues::AverageEMFBoundary(void)
       if((n&2)==0) j=pmb->js;
       else j=pmb->je+1;
       for(int k=pmb->ks; k<=pmb->ke; k++)
-        e3(k,j,i)*=div;
+        e3(k,j,i)*=half_div;
     }
     // x1x3 edge
     else if(n>=4 && n<8) {
@@ -1092,7 +1194,7 @@ void BoundaryValues::AverageEMFBoundary(void)
       if((n&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       for(int j=pmb->js; j<=pmb->je; j++)
-        e2(k,j,i)*=div;
+        e2(k,j,i)*=half_div;
     }
     // x2x3 edge
     else if(n>=8 && n<12) {
