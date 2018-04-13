@@ -79,9 +79,9 @@ before_install:
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
 install:
-  - travis_wait 45 bash ./ci/travis/install_mpich.sh
-  - travis_wait 45 bash ./ci/travis/install_openmpi.sh
-  - bash ./ci/travis/install_fftw.sh
+  - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
+  - travis_wait 45 bash ./tst/ci/travis/install_openmpi.sh
+  - bash ./tst/ci/travis/install_fftw.sh
   - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$PATH
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
