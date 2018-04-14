@@ -172,6 +172,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
         int64_t gidx = pfb->GetGlobalIndex(i,j,k);
+
         if (gidx == 0) {
           pcoeff = 0.0;
         } else {

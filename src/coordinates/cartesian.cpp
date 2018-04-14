@@ -63,7 +63,13 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     x1v(i) = 0.5*(x1f(i+1) + x1f(i));
   }
   for (int i=il-ng; i<=iu+ng-1; ++i) {
-    dx1v(i) = x1v(i+1) - x1v(i);
+    if (pmb->block_size.x1rat != 1.0) {
+      dx1v(i) = x1v(i+1) - x1v(i);
+    }
+    else {
+      // dx1v = dx1f constant for uniform mesh; may disagree with x1v(i+1) - x1v(i)
+      dx1v(i) = dx1f(i);
+    }
   }
 
   // x2-direction: x2v = dy/2
@@ -75,7 +81,13 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
       x2v(j) = 0.5*(x2f(j+1) + x2f(j));
     }
     for (int j=jl-ng; j<=ju+ng-1; ++j) {
-      dx2v(j) = x2v(j+1) - x2v(j);
+      if (pmb->block_size.x2rat != 1.0) {
+        dx2v(j) = x2v(j+1) - x2v(j);
+      }
+      else {
+        // dx2v = dx2f constant for uniform mesh; may disagree with x2v(j+1) - x2v(j)
+        dx2v(j) = dx2f(j);
+      }
     }
   }
 
@@ -88,7 +100,13 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
       x3v(k) = 0.5*(x3f(k+1) + x3f(k));
     }
     for (int k=kl-ng; k<=ku+ng-1; ++k) {
-      dx3v(k) = x3v(k+1) - x3v(k);
+      if (pmb->block_size.x3rat != 1.0) {
+        dx3v(k) = x3v(k+1) - x3v(k);
+      }
+      else {
+        // dxkv = dx3f constant for uniform mesh; may disagree with x3v(k+1) - x3v(k)
+        dx3v(k) = dx3f(k);
+      }
     }
   }
 

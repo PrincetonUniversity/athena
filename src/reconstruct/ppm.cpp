@@ -142,10 +142,11 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       }
       // Approximate interface average at i-1/2 and i+1/2 using PPM (CW eq 1.6)
       for (int i=il-1; i<=iu; ++i) {
-        dph(i)= prec->c3i(i)*q_im1(n,i) + prec->c4i(i)*q(n,i) +
-                prec->c5i(i)*dd_im1(i) + prec->c6i(i)*dd(i);
-        dph_ip1(i)= prec->c3i(i+1)*q(n,i) + prec->c4i(i+1)*q_ip1(n,i) +
-                    prec->c5i(i+1)*dd(i) + prec->c6i(i+1)*dd_ip1(i);
+        // KGF: group the biased stencil quantities to preserve FP symmetry
+        dph(i)= (prec->c3i(i)*q_im1(n,i) + prec->c4i(i)*q(n,i)) +
+            (prec->c5i(i)*dd_im1(i) + prec->c6i(i)*dd(i));
+        dph_ip1(i)= (prec->c3i(i+1)*q(n,i) + prec->c4i(i+1)*q_ip1(n,i)) +
+            (prec->c5i(i+1)*dd(i) + prec->c6i(i+1)*dd_ip1(i) );
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
@@ -154,9 +155,10 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il-1; i<=iu+1; ++i) {
-          d2qc_im1(i) = q_im2(n,i) - 2.0*q_im1(n,i) + q    (n,i);
-          d2qc    (i) = q_im1(n,i) - 2.0*q    (n,i) + q_ip1(n,i); //(CD eq 85a) (no 1/2)
-          d2qc_ip1(i) = q    (n,i) - 2.0*q_ip1(n,i) + q_ip2(n,i);
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qc_im1(i) = q_im2(n,i) + q    (n,i) - 2.0*q_im1(n,i);
+          d2qc    (i) = q_im1(n,i) + q_ip1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
+          d2qc_ip1(i) = q    (n,i) + q_ip2(n,i) - 2.0*q_ip1(n,i);
         }
 
         // i-1/2
@@ -165,7 +167,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
           Real qa = dph(i) - q_im1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
-            qa = 3.0*(q_im1(n,i) - 2.0*dph(i) + q(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q_im1(n,i) + q(n,i)  - 2.0*dph(i));  // (CD eq 85b)
             qb = d2qc_im1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -181,7 +184,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
           Real qa = dph_ip1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_ip1(n,i) - dph_ip1(i);   // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at i+1/2 face
-            qa = 3.0*(q(n,i) - 2.0*dph_ip1(i) + q_ip1(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q(n,i) + q_ip1(n,i) - 2.0*dph_ip1(i));  // (CD eq 85b)
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_ip1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -194,7 +198,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 
 #pragma omp simd
         for (int i=il-1; i<=iu; ++i) {
-          d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_ip1(i)); // a6 coefficient * -2
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qf(i) = 6.0*(dph(i) + dph_ip1(i) - 2.0*q(n,i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
@@ -439,10 +444,11 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       }
       // Approximate interface average at j-1/2 and j+1/2 using PPM (CW eq 1.6)
       for (int i=il; i<=iu; ++i) {
-        dph(i)= prec->c3j(j)*q_jm1(n,i) + prec->c4j(j)*q(n,i) +
-                prec->c5j(j)*dd_jm1(i) + prec->c6j(j)*dd(i);
-        dph_jp1(i)= prec->c3j(j+1)*q(n,i) + prec->c4j(j+1)*q_jp1(n,i) +
-                    prec->c5j(j+1)*dd(i) + prec->c6j(j+1)*dd_jp1(i);
+        // KGF: group the biased stencil quantities to preserve FP symmetry
+        dph(i)= (prec->c3j(j)*q_jm1(n,i) + prec->c4j(j)*q(n,i)) +
+            (prec->c5j(j)*dd_jm1(i) + prec->c6j(j)*dd(i));
+        dph_jp1(i)= (prec->c3j(j+1)*q(n,i) + prec->c4j(j+1)*q_jp1(n,i)) +
+            (prec->c5j(j+1)*dd(i) + prec->c6j(j+1)*dd_jp1(i));
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
@@ -451,9 +457,10 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          d2qc_jm1(i) = q_jm2(n,i) - 2.0*q_jm1(n,i) + q    (n,i);
-          d2qc    (i) = q_jm1(n,i) - 2.0*q    (n,i) + q_jp1(n,i); //(CD eq 85a) (no 1/2)
-          d2qc_jp1(i) = q    (n,i) - 2.0*q_jp1(n,i) + q_jp2(n,i);
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qc_jm1(i) = q_jm2(n,i) + q    (n,i) - 2.0*q_jm1(n,i);
+          d2qc    (i) = q_jm1(n,i) + q_jp1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
+          d2qc_jp1(i) = q    (n,i) + q_jp2(n,i) - 2.0*q_jp1(n,i);
         }
 
         // j-1/2
@@ -462,7 +469,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
           Real qa = dph(i) - q_jm1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at j-1/2 face
-            qa = 3.0*(q_jm1(n,i) - 2.0*dph(i) + q(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q_jm1(n,i) + q(n,i) - 2.0*dph(i));  // (CD eq 85b)
             qb = d2qc_jm1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -478,7 +486,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
           Real qa = dph_jp1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_jp1(n,i) - dph_jp1(i);   // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at j+1/2 face
-            qa = 3.0*(q(n,i) - 2.0*dph_jp1(i) + q_jp1(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q(n,i) + q_jp1(n,i)  - 2.0*dph_jp1(i));  // (CD eq 85b)
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -491,7 +500,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_jp1(i)); // a6 coefficient * -2
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qf(i) = 6.0*(dph(i) + dph_jp1(i) - 2.0*q(n,i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
@@ -736,10 +746,11 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       }
       // Approximate interface average at k-1/2 and k+1/2 using PPM (CW eq 1.6)
       for (int i=il; i<=iu; ++i) {
-        dph(i)= prec->c3k(k)*q_km1(n,i) + prec->c4k(k)*q(n,i) +
-                prec->c5k(k)*dd_km1(i) + prec->c6k(k)*dd(i);
-        dph_kp1(i)= prec->c3k(k+1)*q(n,i) + prec->c4k(k+1)*q_kp1(n,i) +
-                    prec->c5k(k+1)*dd(i) + prec->c6k(k+1)*dd_kp1(i);
+        // KGF: group the biased stencil quantities to preserve FP symmetry
+        dph(i)= (prec->c3k(k)*q_km1(n,i) + prec->c4k(k)*q(n,i)) +
+            (prec->c5k(k)*dd_km1(i) + prec->c6k(k)*dd(i));
+        dph_kp1(i)= (prec->c3k(k+1)*q(n,i) + prec->c4k(k+1)*q_kp1(n,i)) +
+            (prec->c5k(k+1)*dd(i) + prec->c6k(k+1)*dd_kp1(i));
       }
 
 //--- Step 2a. ---------------------------------------------------------------------------
@@ -748,9 +759,10 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          d2qc_km1(i) = q_km2(n,i) - 2.0*q_km1(n,i) + q    (n,i);
-          d2qc    (i) = q_km1(n,i) - 2.0*q    (n,i) + q_kp1(n,i); //(CD eq 85a) (no 1/2)
-          d2qc_kp1(i) = q    (n,i) - 2.0*q_kp1(n,i) + q_kp2(n,i);
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qc_km1(i) = q_km2(n,i) + q    (n,i) - 2.0*q_km1(n,i) ;
+          d2qc    (i) = q_km1(n,i) + q_kp1(n,i) - 2.0*q    (n,i) ; //(CD eq 85a) (no 1/2)
+          d2qc_kp1(i) = q    (n,i) + q_kp2(n,i) - 2.0*q_kp1(n,i) ;
         }
 
         // k-1/2
@@ -759,7 +771,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
           Real qa = dph(i) - q_km1(n,i); // (CD eq 84a)
           Real qb = q(n,i) - dph(i);     // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at k-1/2 face
-            qa = 3.0*(q_km1(n,i) - 2.0*dph(i) + q(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q_km1(n,i) + q(n,i) - 2.0*dph(i));  // (CD eq 85b)
             qb = d2qc_km1(i);    // (CD eq 85a) (no 1/2)
             Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -775,7 +788,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
           Real qa = dph_kp1(i) - q(n,i);       // (CD eq 84a)
           Real qb = q_kp1(n,i) - dph_kp1(i);   // (CD eq 84b)
           if (qa*qb < 0.0) { // Local extrema detected at k+1/2 face
-            qa = 3.0*(q(n,i) - 2.0*dph_kp1(i) + q_kp1(n,i));  // (CD eq 85b)
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            qa = 3.0*(q(n,i) + q_kp1(n,i) - 2.0*dph_kp1(i));  // (CD eq 85b)
             qb = d2qc(i);            // (CD eq 85a) (no 1/2)
             Real qc = d2qc_kp1(i);   // (CD eq 85c) (no 1/2)
             Real qd = 0.0;
@@ -788,7 +802,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          d2qf(i) = 6.0*(dph(i) - 2.0*q(n,i) + dph_kp1(i)); // a6 coefficient * -2
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          d2qf(i) = 6.0*(dph(i) + dph_kp1(i) - 2.0*q(n,i)); // a6 coefficient * -2
         }
 
 //--- Step 2b. ---------------------------------------------------------------------------
