@@ -10,6 +10,7 @@
 //  - ipert = 1  shearing wave perturbed in velocity
 //  - ipert = 2  epicycle motion (0.1 c_s initial kick in radial)
 //
+// Code must be configured using -shear
 //======================================================================================
 //
 // C++ headers
@@ -173,4 +174,3 @@ void MeshBlock::UserWorkInLoop(void)
   // nothing to do
   return;
 }
-

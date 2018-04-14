@@ -23,7 +23,7 @@
 //
 // - ipert = 1 - random perturbations to P and V [default, used by HGB]
 //
-// Code must be configured using -sh
+// Code must be configured using -shear
 //
 // REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
 // (1996)
@@ -50,6 +50,9 @@
 #include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp" //ran2()
 
+#if !SHEARING_BOX
+#error "This problem generator requires shearing box"
+#endif
 
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,

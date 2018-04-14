@@ -26,7 +26,8 @@ def prepare(**kwargs):
               pgen == 'orszag_tang' or pgen == 'rotor'):
             athena.configure('b', prob=pgen, **kwargs)
             athena.make()
-        elif (pgen == 'hb3' or pgen == 'hbg'):
+        elif (pgen == 'hb3' or pgen == 'hgb' or pgen == 'ssheet' or
+              pgen == 'strat'):
             athena.configure('b', 'shear', prob=pgen, **kwargs)
             athena.make()
         else:
