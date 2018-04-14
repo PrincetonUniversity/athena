@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 
 
 def prepare(**kwargs):
-    athena.configure('b', 'sh',
+    athena.configure('b', 'shear',
                      prob='hgb',
                      flux='hlld',
                      eos='isothermal', **kwargs)
@@ -17,20 +17,20 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-      'job/problem_id=HGB',
-      'output1/file_type=hst', 'output1/dt=0.062831853',
-      'output2/file_type=vtk', 'output2/variable=prim', 'output2/dt=31.4616',
-      'time/cfl_number=0.3', 'time/tlim=62.83185', 'time/nlim=10000',
-      'mesh/nx1=32', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
-      'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
-      'mesh/nx2=24', 'mesh/x2min=-1.57079632679', 'mesh/x2max=1.57079632679',
-      'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
-      'mesh/nx3=32', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-      'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-      'meshblock/nx1=32', 'meshblock/nx2=24', 'meshblock/nx3=32',
-      'hydro/iso_sound_speed=1.0', 'problem/beta=100', 'problem/amp=0.025',
-      'problem/ipert=1', 'problem/ifield=1',
-      'problem/Omega0=1.0', 'problem/qshear=1.5', 'time/ncycle_out=0']
+        'job/problem_id=HGB',
+        'output1/file_type=hst', 'output1/dt=0.062831853',
+        'output2/file_type=vtk', 'output2/variable=prim', 'output2/dt=31.4616',
+        'time/cfl_number=0.3', 'time/tlim=62.83185', 'time/nlim=10000',
+        'mesh/nx1=32', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
+        'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
+        'mesh/nx2=24', 'mesh/x2min=-1.57079632679', 'mesh/x2max=1.57079632679',
+        'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
+        'mesh/nx3=32', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
+        'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
+        'meshblock/nx1=32', 'meshblock/nx2=24', 'meshblock/nx3=32',
+        'hydro/iso_sound_speed=1.0', 'problem/beta=100', 'problem/amp=0.025',
+        'problem/ipert=1', 'problem/ifield=1',
+        'problem/Omega0=1.0', 'problem/qshear=1.5', 'time/ncycle_out=0']
 
     athena.run('mhd/athinput.hgb', arguments)
 

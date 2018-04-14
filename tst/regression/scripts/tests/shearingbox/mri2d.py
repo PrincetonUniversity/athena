@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 
 
 def prepare(**kwargs):
-    athena.configure('b', 'sh',
+    athena.configure('b', 'shear',
                      prob='hb3',
                      flux='hlld',
                      eos='isothermal', **kwargs)
@@ -17,19 +17,20 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-      'job/problem_id=HB3',
-      'output1/file_type=hst', 'output1/dt=62.831853',
-      'output2/file_type=vtk', 'output2/variable=prim', 'output2/dt=62831.853',
-      'time/cfl_number=0.4', 'time/tlim=50265.482', 'time/nlim=500000',
-      'mesh/nx1=64', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
-      'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
-      'mesh/nx2=64', 'mesh/x2min=-0.5', 'mesh/x2max=0.5',
-      'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
-      'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-      'hydro/iso_sound_speed=0.00408', 'problem/beta=4000',
-      'problem/amp=0.01', 'problem/ipert=1', 'problem/ifield=1',
-      'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=2',
-      'time/ncycle_out=0']
+        'job/problem_id=HB3',
+        'output1/file_type=hst', 'output1/dt=62.831853',
+        'output2/file_type=vtk', 'output2/variable=prim',
+        'output2/dt=62831.853', 'time/cfl_number=0.4',
+        'time/tlim=50265.482', 'time/nlim=500000',
+        'mesh/nx1=64', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
+        'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
+        'mesh/nx2=64', 'mesh/x2min=-0.5', 'mesh/x2max=0.5',
+        'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
+        'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
+        'hydro/iso_sound_speed=0.00408', 'problem/beta=4000',
+        'problem/amp=0.01', 'problem/ipert=1', 'problem/ifield=1',
+        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=2',
+        'time/ncycle_out=0']
 
     athena.run('mhd/athinput.hb3', arguments)
 
