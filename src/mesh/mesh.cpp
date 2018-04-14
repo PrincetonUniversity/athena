@@ -316,8 +316,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         }
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
-        long int lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-        long int lxmax=nrbx1*(1L<<ref_lev);
+        int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
+        int64_t lxmax=nrbx1*(1L<<ref_lev);
         for(lx1min=0;lx1min<lxmax;lx1min++) {
           if(MeshGenerator_[X1DIR]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
             break;
@@ -356,7 +356,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         }
         // create the finest level
         if(dim==1) {
-          for(long int i=lx1min; i<lx1max; i+=2) {
+          for(int64_t i=lx1min; i<lx1max; i+=2) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
@@ -364,8 +364,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
           }
         }
         if(dim==2) {
-          for(long int j=lx2min; j<lx2max; j+=2) {
-            for(long int i=lx1min; i<lx1max; i+=2) {
+          for(int64_t j=lx2min; j<lx2max; j+=2) {
+            for(int64_t i=lx1min; i<lx1max; i+=2) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
@@ -374,9 +374,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
           }
         }
         if(dim==3) {
-          for(long int k=lx3min; k<lx3max; k+=2) {
-            for(long int j=lx2min; j<lx2max; j+=2) {
-              for(long int i=lx1min; i<lx1max; i+=2) {
+          for(int64_t k=lx3min; k<lx3max; k+=2) {
+            for(int64_t j=lx2min; j<lx2max; j+=2) {
+              for(int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
                 nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
                 int nnew;
@@ -909,15 +909,15 @@ void Mesh::OutputMeshStructure(int dim)
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
         SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
-        long int &lx1=loclist[j].lx1;
-        long int &lx2=loclist[j].lx2;
-        long int &lx3=loclist[j].lx3;
+        int64_t &lx1=loclist[j].lx1;
+        int64_t &lx2=loclist[j].lx2;
+        int64_t &lx3=loclist[j].lx3;
         int &ll=loclist[j].level;
         mincost=std::min(mincost,costlist[i]);
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
+        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n",ll,lx1,lx2,lx3);
         if(dim==2) {
           fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
@@ -1453,9 +1453,9 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      enum BoundaryFlag *block_bcs)
 {
-  long int &lx1=loc.lx1;
-  long int &lx2=loc.lx2;
-  long int &lx3=loc.lx3;
+  int64_t &lx1=loc.lx1;
+  int64_t &lx2=loc.lx2;
+  int64_t &lx3=loc.lx3;
   int &ll=loc.level;
   // calculate physical block size, x1
   if(lx1==0) {
@@ -1626,9 +1626,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     for(int n=0; n<tnderef; n++) {
       if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
         int r=n, rr=0;
-        for(long int k=0;k<=lk;k++) {
-          for(long int j=0;j<=lj;j++) {
-            for(long int i=0;i<=1;i++) {
+        for(int64_t k=0;k<=lk;k++) {
+          for(int64_t j=0;j<=lj;j++) {
+            for(int64_t i=0;i<=1;i++) {
               if((lderef[n].lx1+i)==lderef[r].lx1
               && (lderef[n].lx2+j)==lderef[r].lx2
               && (lderef[n].lx3+k)==lderef[r].lx3

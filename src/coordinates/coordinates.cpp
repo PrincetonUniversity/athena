@@ -49,10 +49,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x2f.NewAthenaArray((ncells2+1));
   x3f.NewAthenaArray((ncells3+1));
 
-  long long nrootmesh, noffset;
-  long int &lx1=pmy_block->loc.lx1;
-  long int &lx2=pmy_block->loc.lx2;
-  long int &lx3=pmy_block->loc.lx3;
+  int64_t nrootmesh, noffset, noffset_ceil;
+  int64_t &lx1=pmy_block->loc.lx1;
+  int64_t &lx2=pmy_block->loc.lx2;
+  int64_t &lx3=pmy_block->loc.lx3;
   int &ll=pmy_block->loc.level;
 
 //--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)
@@ -63,9 +63,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = i-is + (long long)lx1*block_size.nx1;
+        noffset = i-is + (int64_t)lx1*block_size.nx1;
       } else {
-        noffset = (i-is)*2 + (long long)lx1*block_size.nx1;
+        noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
       }
       Real rx=(Real)noffset/(Real)nrootmesh;
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
@@ -88,17 +88,32 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
          << std::endl;
     }
 
-  } else {  // uniform grid
+  } else {
+    // uniform grid: even though use_mesghen_fn[X1DIR]=false, use UniformMeshGeneratorX1()
     Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
-    for(int i=is-ng; i<=ie+ng; ++i) {
-      dx1f(i)=dx;
-    }
-    x1f(is-ng)=block_size.x1min-ng*dx;
-    for(int i=is-ng+1;i<=ie+ng+1;i++) {
-      x1f(i)=x1f(i-1)+dx;
+    for (int i=is-ng; i<=ie+ng+1; ++i) {
+      // if there are too many levels, this won't work or be precise enough
+      if (coarse_flag == false) {
+        noffset = i-is + (int64_t)lx1*block_size.nx1;
+      }
+      else {
+        noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
+      }
+      noffset_ceil = noffset - (nrootmesh+1)/2;
+      noffset -= nrootmesh/2;
+      // if nrootmesh is even, central interface is at noffset=noffset_ceil=0
+      // else, central cell has faces at noffset=0,1 due to integer div floor(nrootmesh/2)
+      // Average with ceil(nrootmesh/2) indexing, noffset_ceil=-1,0 for symmetry
+      Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+      // pm->MeshGenerator_[X1DIR] still = DefaultMeshGeneratorX1().
+      x1f(i)=UniformMeshGeneratorX1(rx, mesh_size);
     }
     x1f(is) = block_size.x1min;
     x1f(ie+1) = block_size.x1max;
+
+    for(int i=is-ng; i<=ie+ng; ++i) {
+      dx1f(i)=dx;
+    }
   }
 
   // correct cell face coordinates in ghost zones for reflecting boundary condition
@@ -125,9 +140,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = j-js + (long long)lx2*block_size.nx2;
+          noffset = j-js + (int64_t)lx2*block_size.nx2;
         } else {
-          noffset = (j-js)*2 + (long long)lx2*block_size.nx2;
+          noffset = (j-js)*2 + (int64_t)lx2*block_size.nx2;
         }
         Real rx=(Real)noffset/(Real)nrootmesh;
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
@@ -150,17 +165,28 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
            << std::endl;
       }
 
-    } else {  // uniform grid
+    } else {
+      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX2()
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
-      for(int j=js-ng; j<=je+ng; ++j) {
-        dx2f(j)=dx;
-      }
-      x2f(js-ng)=block_size.x2min-ng*dx;
-      for(int j=js-ng+1;j<=je+ng+1;j++) {
-        x2f(j)=x2f(j-1)+dx;
+      for (int j=js-ng; j<=je+ng+1; ++j) {
+        if (coarse_flag == false) {
+          noffset = j-js + (int64_t)lx2*block_size.nx2;
+        }
+        else {
+          noffset = (j-js)*2 + (int64_t)lx2*block_size.nx2;
+        }
+        noffset_ceil = noffset - (nrootmesh+1)/2;
+        noffset -= nrootmesh/2;
+
+        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        x2f(j)=UniformMeshGeneratorX2(rx, mesh_size);
       }
       x2f(js) = block_size.x2min;
       x2f(je+1) = block_size.x2max;
+
+      for(int j=js-ng; j<=je+ng; ++j) {
+        dx2f(j)=dx;
+      }
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
@@ -196,9 +222,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = k-ks + (long long)lx3*block_size.nx3;
+          noffset = k-ks + (int64_t)lx3*block_size.nx3;
         } else {
-          noffset = (k-ks)*2 + (long long)lx3*block_size.nx3;
+          noffset = (k-ks)*2 + (int64_t)lx3*block_size.nx3;
         }
         Real rx=(Real)noffset/(Real)nrootmesh;
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
@@ -221,17 +247,28 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
            << std::endl;
       }
 
-    } else { // uniform grid
+    } else {
+      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
-      for(int k=ks-ng; k<=ke+ng; ++k) {
-        dx3f(k)=dx;
-      }
-      x3f(ks-ng)=block_size.x3min-ng*dx;
-      for(int k=ks-ng+1;k<=ke+ng+1;k++) {
-        x3f(k)=x3f(k-1)+dx;
+      for (int k=ks-ng; k<=ke+ng+1; ++k) {
+        if (coarse_flag == false) {
+          noffset = k-ks + (int64_t)lx3*block_size.nx3;
+        }
+        else {
+          noffset = (k-ks)*2 + (int64_t)lx3*block_size.nx3;
+        }
+        noffset_ceil = noffset - (nrootmesh+1)/2;
+        noffset -= nrootmesh/2;
+
+        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        x2f(k)=UniformMeshGeneratorX3(rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
+
+      for(int k=ks-ng; k<=ke+ng; ++k) {
+        dx3f(k)=dx;
+      }
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
