@@ -261,7 +261,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
         noffset -= nrootmesh/2;
 
         Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
-        x2f(k)=UniformMeshGeneratorX3(rx, mesh_size);
+        x3f(k)=UniformMeshGeneratorX3(rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
