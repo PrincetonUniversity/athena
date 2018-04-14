@@ -228,7 +228,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
       if(ShBoxCoord_==2){
         Mesh *pmy_mesh = pmb->pmy_mesh;
         int level = pmb->loc.level - pmy_mesh->root_level;
-        int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+        long int nrbx1 = pmy_mesh->nrbx1*(1L << level);
         Real qomL = qshear_*Omega_0_*x1size_;
         if ((pmb->loc.lx1==0) && (nb.ox1<0)){
           for (int k=sk;k<=ek;++k) {

@@ -84,7 +84,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  int64_t iseed = -1;
+  long int iseed = -1;
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
   
