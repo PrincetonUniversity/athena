@@ -31,7 +31,7 @@
 // To run simulations of stratified disks (including vertical gravity), use the
 // strat.c problem generator.
 //
-// Code must be configured using --enable-shearing-box
+// Code must be configured using -shear
 //
 // REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
 //            Johnson, Guan, & Gammie, ApJSupp, (2008)
@@ -57,6 +57,12 @@
 #include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp" //ran2()
 
+#if !MAGNETIC_FIELDS_ENABLED
+#error "This problem generator requires magnetic fields"
+#endif
+#if !SHEARING_BOX
+#error "This problem generator requires shearing box"
+#endif
 
 Real Lx,Ly,Lz; // root grid size, global to share with output functions
 static Real hst_BxBy(MeshBlock *pmb, int iout);
