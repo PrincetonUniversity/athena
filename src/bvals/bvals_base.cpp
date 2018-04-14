@@ -283,7 +283,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   myox1=((int)(loc.lx1&1L))*2-1;
   if(block_size_.nx2>1) myox2=((int)(loc.lx2&1L))*2-1;
   if(block_size_.nx3>1) myox3=((int)(loc.lx3&1L))*2-1;
-  int64_t nrbx1=pmy_mesh_->nrbx1, nrbx2=pmy_mesh_->nrbx2, nrbx3=pmy_mesh_->nrbx3;
+  long int nrbx1=pmy_mesh_->nrbx1, nrbx2=pmy_mesh_->nrbx2, nrbx3=pmy_mesh_->nrbx3;
 
   int nf1=1, nf2=1;
   if(pmy_mesh_->multilevel==true) {

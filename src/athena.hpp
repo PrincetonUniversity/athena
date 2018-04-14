@@ -11,7 +11,6 @@
 #include "defs.hpp"
 #include "athena_arrays.hpp"
 #include <math.h>
-#include <stdint.h>  // int64_t
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
@@ -37,7 +36,7 @@ struct RegionSize;
 //  \brief stores logical location and level of meshblock
 
 typedef struct LogicalLocation {
-  int64_t lx1, lx2, lx3;
+  long int lx1, lx2, lx3;
   int level;
 
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}

@@ -31,7 +31,7 @@
 #endif
 
 
-int64_t rseed; // seed for turbulence power spectrum
+long int rseed; // seed for turbulence power spectrum
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

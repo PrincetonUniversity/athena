@@ -138,7 +138,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real kz = (2.0*PI/x2size)*((double)nwy);
 
   Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
-  int64_t iseed = -1-gid; // Initialize on the first call to ran2
+  long int iseed = -1-gid; // Initialize on the first call to ran2
 // Initialize perturbations
 //   ipert = 1 - isentropic perturbations to P & d [default]
 //   ipert = 2 - uniform Vx=amp, sinusoidal density

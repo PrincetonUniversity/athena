@@ -462,7 +462,7 @@ void BoundaryValues::FindShearBlock(const Real time)
   int ku, ii,jj;
 
   int level = pmb->loc.level-pmesh->root_level;
-  int64_t nrbx2 = pmesh->nrbx2*(1L<<level);
+  long int nrbx2 = pmesh->nrbx2*(1L<<level);
   int nx2   = pmb->block_size.nx2; // # of cells per meshblock
   int nx3   = pmb->block_size.nx3; // # of cells per meshblock
   int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
