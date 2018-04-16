@@ -29,9 +29,9 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   gid_=igid;
   msize_=msize;
   bsize_=bsize;
-  dx1=(msize_.x1max-msize_.x1min)/(Real)msize_.nx1;
-  dx2=(msize_.x2max-msize_.x2min)/(Real)msize_.nx2;
-  dx3=(msize_.x3max-msize_.x3min)/(Real)msize_.nx3;
+  dx1=(msize_.x1max-msize_.x1min)/static_cast<Real>(msize_.nx1);
+  dx2=(msize_.x2max-msize_.x2min)/static_cast<Real>(msize_.nx2);
+  dx3=(msize_.x3max-msize_.x3min)/static_cast<Real>(msize_.nx3);
   fplan_=NULL;
   bplan_=NULL;
 
