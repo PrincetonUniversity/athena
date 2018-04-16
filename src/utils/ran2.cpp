@@ -63,7 +63,7 @@ double ran2(int64_t *idum) {
   k=idum2/IQ2;
   idum2=IA2*(idum2-k*IQ2)-k*IR2; // Compute idum2=(IA2*idum) % IMR2 likewise
   if (idum2 < 0) idum2 += IMR2;
-  j=(int)(iy/NDIV);              // Will be in the range 0...NTAB-1
+  j=static_cast<int>(iy/NDIV);              // Will be in the range 0...NTAB-1
   iy=iv[j]-idum2;                // Here idum is shuffled, idum and idum2
   iv[j] = *idum;                 // are combined to generate output
   if (iy < 1) iy += IMM1;

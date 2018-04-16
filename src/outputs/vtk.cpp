@@ -30,13 +30,15 @@
 // legacy format requires data to be stored as big-endian.
 
 int IsBigEndian(void) {
-  short int n = 1;
-  char *ep = (char *)&n;
+  int32_t n = 1;
+  // careful! although int -> char * -> int round-trip conversion is safe,
+  // an arbitrary char* may not be converted to int*
+  char *ep = reinterpret_cast<char *>(&n);
   return (*ep == 0); // Returns 1 (true) on a big endian machine
 }
 
 static inline void Swap4Bytes(void *vdat) {
-  char tmp, *dat = (char *) vdat;
+  char tmp, *dat = static_cast<char *>(vdat);
   tmp = dat[0];  dat[0] = dat[3];  dat[3] = tmp;
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
