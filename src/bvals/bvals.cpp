@@ -812,9 +812,9 @@ void BoundaryValues::Initialize(void) {
   int64_t &lx2=pmb->loc.lx2;
   int64_t &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
-  myox1=((int)(lx1&1L));
-  myox2=((int)(lx2&1L));
-  myox3=((int)(lx3&1L));
+  myox1=(static_cast<int>(lx1&1L));
+  myox2=(static_cast<int>(lx2&1L));
+  myox3=(static_cast<int>(lx3&1L));
 
   // count the number of the fine meshblocks contacting on each edge
   int eid=0;

@@ -6,6 +6,9 @@
 //! \file coordinates.cpp
 //  \brief implements functions for Coordinates abstract base class
 
+// C/C++ headers
+#include <algorithm>
+
 // Athena++ headers
 #include "coordinates.hpp"
 #include "../athena.hpp"
@@ -62,9 +65,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = i-is + (int64_t)lx1*block_size.nx1;
+        noffset = i-is + static_cast<int64_t>(lx1*block_size.nx1);
       } else {
-        noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
+        noffset = (i-is)*2 + static_cast<int64_t>(lx1*block_size.nx1);
       }
       Real rx=static_cast<Real>(noffset)/static_cast<Real>(nrootmesh);
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
@@ -93,9 +96,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = i-is + static_cast<int64_t> (lx1)*block_size.nx1;
+        noffset = i-is + static_cast<int64_t>(lx1*block_size.nx1);
       } else {
-        noffset = (i-is)*2 + static_cast<int64_t> (lx1)*block_size.nx1;
+        noffset = (i-is)*2 + static_cast<int64_t>(lx1*block_size.nx1);
       }
       noffset_ceil = noffset - (nrootmesh+1)/2;
       noffset -= nrootmesh/2;
@@ -138,9 +141,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = j-js + static_cast<int64_t> (lx2)*block_size.nx2;
+          noffset = j-js + static_cast<int64_t>(lx2*block_size.nx2);
         } else {
-          noffset = (j-js)*2 + static_cast<int64_t> (lx2)*block_size.nx2;
+          noffset = (j-js)*2 + static_cast<int64_t>(lx2*block_size.nx2);
         }
         Real rx=static_cast<Real>(noffset)/static_cast<Real>(nrootmesh);
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
@@ -168,9 +171,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for (int j=js-ng; j<=je+ng+1; ++j) {
         if (coarse_flag == false) {
-          noffset = j-js + static_cast<int64_t> (lx2)*block_size.nx2;
+          noffset = j-js + static_cast<int64_t>(lx2*block_size.nx2);
         } else {
-          noffset = (j-js)*2 + static_cast<int64_t> (lx2)*block_size.nx2;
+          noffset = (j-js)*2 + static_cast<int64_t>(lx2*block_size.nx2);
         }
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;
@@ -219,11 +222,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = k-ks + static_cast<int64_t> (lx3)*block_size.nx3;
+          noffset = k-ks + static_cast<int64_t>(lx3*block_size.nx3);
         } else {
-          noffset = (k-ks)*2 + static_cast<int64_t> (lx3)*block_size.nx3;
+          noffset = (k-ks)*2 + static_cast<int64_t>(lx3*block_size.nx3);
         }
-        Real rx=static_cast<Real>(noffset)/static_cast<Real>nrootmesh;
+        Real rx=static_cast<Real>(noffset)/static_cast<Real>(nrootmesh);
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
       }
       x3f(ks) = block_size.x3min;
@@ -249,9 +252,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         if (coarse_flag == false) {
-          noffset = k-ks + static_cast<int64_t> (lx3)*block_size.nx3;
+          noffset = k-ks + static_cast<int64_t>(lx3*block_size.nx3);
         } else {
-          noffset = (k-ks)*2 + static_cast<int64_t> (lx3)*block_size.nx3;
+          noffset = (k-ks)*2 + static_cast<int64_t>(lx3*block_size.nx3);
         }
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;

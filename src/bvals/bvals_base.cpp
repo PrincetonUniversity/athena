@@ -41,10 +41,10 @@ int BoundaryBase::maxneighbor_ ;
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   int iox1, int iox2, int iox3, enum NeighborType itype, int ibid, int itargetid,
-  bool ipolar, bool ishear, int ifi1=0, int ifi2=0)
-{
+  bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
-  type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear; fi1=ifi1; fi2=ifi2;
+  type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
+  fi1=ifi1; fi2=ifi2;
   if (type==NEIGHBOR_FACE) {
     if (ox1==-1)      fid=INNER_X1;
     else if (ox1==1)  fid=OUTER_X1;
@@ -67,8 +67,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                                 enum BoundaryFlag *input_bcs)
 //  \brief constructor of BoundaryBase
 BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-                           enum BoundaryFlag *input_bcs)
-{
+                           enum BoundaryFlag *input_bcs) {
   loc=iloc;
   block_size_=isize;
   pmy_mesh_=pm;
@@ -106,8 +105,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::~BoundaryBase()
 //  \brief destructor of BoundaryBase
-BoundaryBase::~BoundaryBase()
-{
+BoundaryBase::~BoundaryBase() {
   if (block_bcs[INNER_X2] == POLAR_BNDRY
    || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE)
     delete [] polar_neighbor_north;
@@ -127,8 +125,7 @@ BoundaryBase::~BoundaryBase()
 //  \brief calculate a buffer identifier
 
 unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
-                                                 int fi1, int fi2)
-{
+                                                 int fi1, int fi2) {
   unsigned int ux1=(unsigned)(ox1+1);
   unsigned int ux2=(unsigned)(ox2+1);
   unsigned int ux3=(unsigned)(ox3+1);
@@ -140,8 +137,7 @@ unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
 //! \fn int BoundaryBase::BufferID(int dim, bool multilevel)
 //  \brief calculate neighbor indexes and target buffer IDs
 
-int BoundaryBase::BufferID(int dim, bool multilevel)
-{
+int BoundaryBase::BufferID(int dim, bool multilevel) {
   int nf1=1, nf2=1;
   if (multilevel==true) {
     if (dim>=2) nf1=2;
@@ -246,8 +242,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel)
 //! \fn int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 //  \brief find the boundary buffer ID from the direction
 
-int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
-{
+int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
   int bid=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
 
   for (int i=0;i<maxneighbor_;i++) {
@@ -262,8 +257,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 //  \brief calculate an MPI tag for Bval communications
 // tag = local id of destination (20) + bufid(6) + physics(5)
 
-unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
-{
+unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid) {
   return (lid<<11) | (bufid<<5) | phys;
 }
 
@@ -273,16 +267,16 @@ unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
 //                                               int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
 
-void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
-{
+void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
+                                         int *nslist) {
   MeshBlockTree* neibt;
   int myox1, myox2=0, myox3=0, myfx1, myfx2, myfx3;
-  myfx1=(int)(loc.lx1&1L);
-  myfx2=(int)(loc.lx2&1L);
-  myfx3=(int)(loc.lx3&1L);
-  myox1=((int)(loc.lx1&1L))*2-1;
-  if (block_size_.nx2>1) myox2=((int)(loc.lx2&1L))*2-1;
-  if (block_size_.nx3>1) myox3=((int)(loc.lx3&1L))*2-1;
+  myfx1=static_cast<int>(loc.lx1&1L);
+  myfx2=static_cast<int>(loc.lx2&1L);
+  myfx3=static_cast<int>(loc.lx3&1L);
+  myox1=(static_cast<int>(loc.lx1&1L))*2-1;
+  if (block_size_.nx2>1) myox2=(static_cast<int>(loc.lx2&1L))*2-1;
+  if (block_size_.nx3>1) myox3=(static_cast<int>(loc.lx3&1L))*2-1;
   int64_t nrbx1=pmy_mesh_->nrbx1, nrbx2=pmy_mesh_->nrbx2, nrbx3=pmy_mesh_->nrbx3;
 
   int nf1=1, nf2=1;
@@ -314,14 +308,13 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, false, f1,
-              //fid-nslist[ranklist[fid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
-              f2);
+                                          fid-nslist[ranklist[fid]], n, 0, 0,
+                                          NEIGHBOR_FACE, bufid, tbid, false,
+                                          false, f1, f2);
           bufid++; nneighbor++;
         }
       }
-    }
-    else { // neighbor at same or coarser level
+    } else { // neighbor at same or coarser level
       int nlevel=neibt->loc.level;
       int nid=neibt->gid;
       nblevel[1][1][n+1]=nlevel;
@@ -333,8 +326,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
             or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
           shear = true; // neighbor is shearing periodic
         }
-      }
-      else { // neighbor at coarser level
+      } else { // neighbor at coarser level
         tbid=FindBufferID(-n,0,0,myfx2,myfx3);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
@@ -358,13 +350,13 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, false, f1,
-              f2);
+                                          fid-nslist[ranklist[fid]], 0, n, 0,
+                                          NEIGHBOR_FACE, bufid, tbid, false, false,
+                                          f1, f2);
           bufid++; nneighbor++;
         }
       }
-    }
-    else { // neighbor at same or coarser level
+    } else { // neighbor at same or coarser level
       int nlevel=neibt->loc.level;
       int nid=neibt->gid;
       nblevel[1][n+1][1]=nlevel;
@@ -376,8 +368,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           polar = true; // neighbor is across top or bottom pole
         }
         tbid=FindBufferID(0,polar?n:-n,0,0,0);
-      }
-      else { // neighbor at coarser level
+      } else { // neighbor at coarser level
         tbid=FindBufferID(0,-n,0,myfx1,myfx3);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
@@ -389,7 +380,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   // x3 face
   if (block_size_.nx3>1) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
+      neibt=tree.FindNeighbor(loc, 0, 0, n, block_bcs, nrbx1, nrbx2, nrbx3,
+                              pmy_mesh_->root_level);
       if (neibt==NULL) { bufid+=nf1*nf2; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int fface=1-(n+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
@@ -401,21 +393,20 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
             int nlevel=nf->loc.level;
             int tbid=FindBufferID(0,0,-n,0,0);
             neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false,
-                f1, f2);
+                                            fid-nslist[ranklist[fid]], 0, 0, n,
+                                            NEIGHBOR_FACE, bufid, tbid,
+                                            false, false, f1, f2);
             bufid++; nneighbor++;
           }
         }
-      }
-      else { // neighbor at same or coarser level
+      } else { // neighbor at same or coarser level
         int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[n+1][1][1]=nlevel;
         int tbid;
         if (nlevel==loc.level) { // neighbor at same level
           tbid=FindBufferID(0,0,-n,0,0);
-        }
-        else { // neighbor at coarser level
+        } else { // neighbor at coarser level
           tbid=FindBufferID(0,0,-n,myfx1,myfx2);
         }
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
@@ -428,7 +419,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   // x1x2 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
+      neibt=tree.FindNeighbor(loc, n, m, 0, block_bcs, nrbx1, nrbx2, nrbx3,
+                              pmy_mesh_->root_level);
       if (neibt==NULL) { bufid+=nf2; continue;}
       bool polar=false;
       if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
@@ -448,12 +440,12 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,polar?m:-m,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, false, f1,
-              0);
+                                          fid-nslist[ranklist[fid]], n, m, 0,
+                                          NEIGHBOR_EDGE, bufid, tbid, polar,
+                                          false, f1, 0);
           bufid++; nneighbor++;
         }
-      }
-      else { // neighbor at same or coarser level
+      } else { // neighbor at same or coarser level
         int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[1][m+1][n+1]=nlevel;
@@ -465,13 +457,13 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
             shear = true; // neighbor is on shearing periodic bcs
           }
           tbid=FindBufferID(-n,polar?m:-m,0,0,0);
-        }
-        else { // neighbor at coarser level
+        } else { // neighbor at coarser level
           tbid=FindBufferID(-n,polar?m:-m,0,myfx3,0);
         }
         if (nlevel>=loc.level || (myox1==n && myox2==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, shear);
+                                          nid-nslist[ranklist[nid]], n, m, 0,
+                                          NEIGHBOR_EDGE, bufid, tbid, polar, shear);
           nneighbor++;
         }
         bufid+=nf2;
@@ -519,7 +511,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   // x1x3 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
+      neibt=tree.FindNeighbor(loc, n, 0, m, block_bcs, nrbx1, nrbx2, nrbx3,
+                              pmy_mesh_->root_level);
       if (neibt==NULL) { bufid+=nf1; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int ff1=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
@@ -531,12 +524,12 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,-m,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
-              0);
+                                          fid-nslist[ranklist[fid]], n, 0, m,
+                                          NEIGHBOR_EDGE, bufid, tbid,
+                                          false, false, f1, 0);
           bufid++; nneighbor++;
         }
-      }
-      else { // neighbor at same or coarser level
+      } else { // neighbor at same or coarser level
         int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[m+1][1][n+1]=nlevel;
@@ -548,13 +541,13 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
               or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
             shear = true; //neighbor is on shearing periodic boundary
           }
-        }
-        else { // neighbor at coarser level
+        } else { // neighbor at coarser level
           tbid=FindBufferID(-n,0,-m,myfx2,0);
         }
         if (nlevel>=loc.level || (myox1==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, shear);
+                                          nid-nslist[ranklist[nid]], n, 0, m,
+                                          NEIGHBOR_EDGE, bufid, tbid, false, shear);
           nneighbor++;
         }
         bufid+=nf1;
@@ -565,7 +558,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   // x2x3 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
+      neibt=tree.FindNeighbor(loc, 0, n, m, block_bcs, nrbx1, nrbx2, nrbx3,
+                              pmy_mesh_->root_level);
       if (neibt==NULL) { bufid+=nf1; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int ff1=1-(n+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
@@ -577,12 +571,12 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,-m,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
-              0);
+                                          fid-nslist[ranklist[fid]], 0, n, m,
+                                          NEIGHBOR_EDGE, bufid, tbid,
+                                          false, false, f1, 0);
           bufid++; nneighbor++;
         }
-      }
-      else { // neighbor at same or coarser level
+      } else { // neighbor at same or coarser level
         int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[m+1][n+1][1]=nlevel;
@@ -594,13 +588,13 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
             polar = true; // neighbor is across top or bottom pole
           }
           tbid=FindBufferID(0,polar?n:-n,-m,0,0);
-        }
-        else { // neighbor at coarser level
+        } else { // neighbor at coarser level
           tbid=FindBufferID(0,-n,-m,myfx1,0);
         }
         if (nlevel>=loc.level || (myox2==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar, false);
+                                          nid-nslist[ranklist[nid]], 0, n, m,
+                                          NEIGHBOR_EDGE, bufid, tbid, polar, false);
           nneighbor++;
         }
         bufid+=nf1;
@@ -612,7 +606,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
   for (int l=-1; l<=1; l+=2) {
     for (int m=-1; m<=1; m+=2) {
       for (int n=-1; n<=1; n+=2) {
-        neibt=tree.FindNeighbor(loc,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
+        neibt=tree.FindNeighbor(loc, n, m, l, block_bcs, nrbx1, nrbx2, nrbx3,
+                                pmy_mesh_->root_level);
         if (neibt==NULL) { bufid++; continue;}
         bool polar=false;
         if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
@@ -634,7 +629,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int nid=neibt->gid;
           int tbid=FindBufferID(-n,polar?m:-m,-l,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar, false);
+                                          nid-nslist[ranklist[nid]], n, m, l,
+                                          NEIGHBOR_CORNER, bufid, tbid, polar, false);
           nneighbor++;
         }
         bufid++;
@@ -644,4 +640,3 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
 
   return;
 }
-

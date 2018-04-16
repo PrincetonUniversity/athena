@@ -418,8 +418,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
           flago=false;
           continue;
-        }
-        else { // MPI boundary
+        } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
@@ -451,8 +450,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-void BoundaryValues::FindShearBlock(const Real time)
-{
+void BoundaryValues::FindShearBlock(const Real time) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -472,13 +470,13 @@ void BoundaryValues::FindShearBlock(const Real time)
   Real qomL = qshear_*Omega_0_*x1size_;
   Real yshear = qomL*time;
   Real deltay = fmod(yshear,x2size_);
-  int joffset = (int)(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
-  int Ngrids  = (int)(joffset/nx2);
+  int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
+  int Ngrids  = static_cast<int>(joffset/nx2);
   joverlap_   = joffset - Ngrids*nx2;
   eps_ = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
 
   if (shbb_.inner == true) { // if inner block
-    for (int n=0; n<4; n++){
+    for (int n=0; n<4; n++) {
       send_inner_gid_[n]  = -1;
       send_inner_rank_[n] = -1;
       send_inner_lid_[n]  = -1;
@@ -669,7 +667,7 @@ void BoundaryValues::FindShearBlock(const Real time)
 
 
   if (shbb_.outer == true) { // if outer block
-    for (int n=0; n<4; n++){
+    for (int n=0; n<4; n++) {
       send_outer_gid_[n]  = -1;
       send_outer_rank_[n] = -1;
       send_outer_lid_[n]  = -1;
