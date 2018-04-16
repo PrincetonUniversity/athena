@@ -53,8 +53,7 @@
 //! \fn int main(int argc, char *argv[])
 //  \brief Athena++ main program
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   std::string athena_version = "version 1.0 - October 2016";
   char *input_filename=NULL, *restart_filename=NULL;
   char *prundir = NULL;
@@ -470,14 +469,15 @@ int main(int argc, char *argv[])
     double omp_time = omp_get_wtime() - omp_start_time;;
 #endif
     clock_t tstop = clock();
-    float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+    float cpu_time = (tstop>tstart ? static_cast<float> (tstop-tstart) :
+                      1.0)/static_cast<float> (CLOCKS_PER_SEC);
     int64_t zones = pmesh->GetTotalCells();
-    float zc_cpus = (float)(zones*(pmesh->ncycle-ncstart))/cpu_time;
+    float zc_cpus = static_cast<float> (zones*(pmesh->ncycle-ncstart))/cpu_time;
 
     std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
     std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
-    float zc_omps = (float)(zones*(pmesh->ncycle-ncstart))/omp_time;
+    float zc_omps = static_cast<float> (zones*(pmesh->ncycle-ncstart))/omp_time;
     std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
     std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif

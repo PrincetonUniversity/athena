@@ -161,7 +161,7 @@ public:
   // accessors
   int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
   int GetNumMeshThreads() const {return num_mesh_threads_;}
-  int64_t GetTotalCells() {return (int64_t)nbtotal*
+  int64_t GetTotalCells() {return static_cast<int64_t> (nbtotal)*
      pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
 
   // data
