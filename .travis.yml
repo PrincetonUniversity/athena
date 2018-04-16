@@ -111,7 +111,7 @@ script:
   - python2 run_tests.py gr
   - python2 run_tests.py sr
   - python2 run_tests.py pgen
-  - python2 run_tests.py shearinbox
+  - python2 run_tests.py shearingbox
   - set +e
 # Codecov coverage analysis
 after_success:
