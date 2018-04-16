@@ -7,9 +7,11 @@
 //  \brief contains functions that implement a simple SignalHandler
 //  These functions are based on TAG's signal handler written for Athena 8/19/2004
 
+// C headers
+#include <unistd.h>
+
 // C++ headers
 #include <csignal>
-#include <unistd.h>
 #include <iostream>
 
 // Athena++ headers
@@ -45,9 +47,10 @@ void SignalHandlerInit(void) {
 
 int CheckSignalFlags(void) {
   int ret = 0;
-  sigprocmask(SIG_BLOCK,&mask,NULL);
+  sigprocmask(SIG_BLOCK, &mask, NULL);
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE, (void *)signalflag, nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, reinterpret_cast<void *>(signalflag), nsignal, MPI_INT,
+                MPI_MAX, MPI_COMM_WORLD);
 #endif
   for (int n=0; n<nsignal; n++)
     ret+=signalflag[n];
@@ -121,6 +124,5 @@ void CancelWallTimeAlarm(void) {
   alarm(0);
   return;
 }
-
 
 } // namespace SignalHandler
