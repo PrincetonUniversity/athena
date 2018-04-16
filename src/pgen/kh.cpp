@@ -182,9 +182,9 @@ int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real vgmax=0.0;
-  for(int k=pmb->ks; k<=pmb->ke; k++) {
-    for(int j=pmb->js; j<=pmb->je; j++) {
-      for(int i=pmb->is; i<=pmb->ie; i++) {
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
         Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
         Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
         if (vgy > vgmax) vgmax=vgy;

@@ -554,10 +554,10 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
-      for(int i=is; i<=ie; i++) {
+      for (int i=is; i<=ie; i++) {
         bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
       }
     }
@@ -578,10 +578,10 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
-      for(int i=is; i<=ie; i++) {
+      for (int i=is; i<=ie; i++) {
         vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
         dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }

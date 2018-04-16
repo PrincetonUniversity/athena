@@ -62,7 +62,7 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
 
   if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
 
-  for(int i=ts.indx_first_task; i<ntasks; i++) {
+  for (int i=ts.indx_first_task; i<ntasks; i++) {
     MGTask &taski=task_list_[i];
 
     if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done

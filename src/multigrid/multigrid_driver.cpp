@@ -71,7 +71,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
   ranklist_  = new int[pmy_mesh_->nbtotal];
-  for(int n=0; n<pmy_mesh_->nbtotal; n++)
+  for (int n=0; n<pmy_mesh_->nbtotal; n++)
     ranklist_[n]=pmy_mesh_->ranklist[n];
   nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
@@ -81,7 +81,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
 #endif
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
     nvslist_[n] = nslist_[n]*nvar_;
@@ -169,7 +169,7 @@ void MultigridDriver::SubtractAverage(int type)
 {
   Multigrid *pmg=pmg_;
   while(pmg!=NULL) {
-    for(int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->CalculateTotal(type, v);
     pmg=pmg->next;
   }
@@ -180,9 +180,9 @@ void MultigridDriver::SubtractAverage(int type)
   Real vol=(pmy_mesh_->mesh_size.x1max-pmy_mesh_->mesh_size.x1min)
           *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
           *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
-  for(int v=0; v<nvar_; v++) {
+  for (int v=0; v<nvar_; v++) {
     Real total=0.0;
-    for(int n=0; n<pmy_mesh_->nbtotal; n++)
+    for (int n=0; n<pmy_mesh_->nbtotal; n++)
       total+=rootbuf_[n*nvar_+v];
     last_ave_=total/vol;
     pmg=pmg_;
@@ -204,7 +204,7 @@ void MultigridDriver::FillRootGridSource(void)
 {
   Multigrid *pmg=pmg_;
   while(pmg!=NULL) {
-    for(int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->GetRootSource(v);
     pmg=pmg->next;
   }
@@ -216,9 +216,9 @@ void MultigridDriver::FillRootGridSource(void)
     // *** implement later
   }
   else { // uniform
-    for(int n=0; n<pmy_mesh_->nbtotal; n++) {
+    for (int n=0; n<pmy_mesh_->nbtotal; n++) {
       LogicalLocation &loc=pmy_mesh_->loclist[n];
-      for(int v=0; v<nvar_; v++)
+      for (int v=0; v<nvar_; v++)
         rootsrc_(v,loc.lx3,loc.lx2,loc.lx1)=rootbuf_[n*nvar_+v];
     }
     mgroot_->LoadSource(rootsrc_,0,0,1.0);
@@ -294,7 +294,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth)
   else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrect();
-    for(int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -321,7 +321,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
     }
   }
   else { // root grid
-    for(int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -360,7 +360,7 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
   int turnlevel;
   if (startlevel==0) turnlevel=0;
   else turnlevel=1;
-  for(; turnlevel<=startlevel; turnlevel++) {
+  for (; turnlevel<=startlevel; turnlevel++) {
     while(current_level_>0)
       OneStepToCoarser(npresmooth);
     SolveCoarsestGrid();
@@ -377,7 +377,7 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 
 void MultigridDriver::SolveFMGCycle(void)
 {
-  for(int lev=0; lev<ntotallevel_; lev++) {
+  for (int lev=0; lev<ntotallevel_; lev++) {
     if (mode_==0)
       SolveVCycle(1, 1);
     else if (mode_==1)
@@ -403,7 +403,7 @@ void MultigridDriver::SolveIterative(void)
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
-    for(int n=0; n<nvar_; n++)
+    for (int n=0; n<nvar_; n++)
       def+=CalculateDefectNorm(n, 2);
     if (niter > 0 && def/olddef > 0.5) {
       if (eps_==0.0) break;
@@ -445,12 +445,12 @@ void MultigridDriver::SolveCoarsestGrid(void)
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
-      for(int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
       }
     }
-    for(int i=0; i<ni; i++) { // iterate ni times
+    for (int i=0; i<ni; i++) { // iterate ni times
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -461,7 +461,7 @@ void MultigridDriver::SolveCoarsestGrid(void)
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
-      for(int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
       }

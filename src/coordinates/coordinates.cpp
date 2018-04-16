@@ -71,13 +71,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
     x1f(is) = block_size.x1min;
     x1f(ie+1) = block_size.x1max;
-    for(int i=is-ng; i<=ie+ng; ++i) {
+    for (int i=is-ng; i<=ie+ng; ++i) {
       dx1f(i)=x1f(i+1)-x1f(i);
     }
 
     // check that coordinate spacing is reasonable
     Real rmax=1.0, rmin=1.0;
-    for(int i=is; i<=ie; i++) {
+    for (int i=is; i<=ie; i++) {
       rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
       rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
     }
@@ -109,7 +109,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     x1f(is) = block_size.x1min;
     x1f(ie+1) = block_size.x1max;
 
-    for(int i=is-ng; i<=ie+ng; ++i) {
+    for (int i=is-ng; i<=ie+ng; ++i) {
       dx1f(i)=dx;
     }
   }
@@ -147,13 +147,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
       x2f(js) = block_size.x2min;
       x2f(je+1) = block_size.x2max;
-      for(int j=js-ng; j<=je+ng; ++j) {
+      for (int j=js-ng; j<=je+ng; ++j) {
         dx2f(j)=x2f(j+1)-x2f(j);
       }
 
       // check that coordinate spacing is reasonable
       Real rmax=1.0, rmin=1.0;
-      for(int j=pmy_block->js; j<=pmy_block->je; j++) {
+      for (int j=pmy_block->js; j<=pmy_block->je; j++) {
         rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
         rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
       }
@@ -181,7 +181,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       x2f(js) = block_size.x2min;
       x2f(je+1) = block_size.x2max;
 
-      for(int j=js-ng; j<=je+ng; ++j) {
+      for (int j=js-ng; j<=je+ng; ++j) {
         dx2f(j)=dx;
       }
     }
@@ -228,13 +228,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
-      for(int k=ks-ng; k<=ke+ng; ++k) {
+      for (int k=ks-ng; k<=ke+ng; ++k) {
         dx3f(k)=x3f(k+1)-x3f(k);
       }
 
       // check that coordinate spacing is reasonable
       Real rmax=1.0, rmin=1.0;
-      for(int k=pmy_block->ks; k<=pmy_block->ke; k++) {
+      for (int k=pmy_block->ks; k<=pmy_block->ke; k++) {
         rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
         rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
       }
@@ -262,7 +262,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
 
-      for(int k=ks-ng; k<=ke+ng; ++k) {
+      for (int k=ks-ng; k<=ke+ng; ++k) {
         dx3f(k)=dx;
       }
     }

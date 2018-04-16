@@ -66,7 +66,7 @@ void Hydro::AddGravityFlux(void)
       Real dx3 = pco->dx3v(k);
       for (int j=js; j<=je+1; ++j) {
         Real dx2 = pco->dx2v(j);
-        for(int i=is; i<=ie; i++) {
+        for (int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
           phil = 0.5*(phi(k,j-1,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x2-faces
@@ -95,7 +95,7 @@ void Hydro::AddGravityFlux(void)
       Real dx3 = pco->dx3v(k);
       for (int j=js; j<=je; ++j) {
         Real dx2 = pco->dx2v(j);
-        for(int i=is; i<=ie; i++) {
+        for (int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
           phil = 0.5*(phi(k-1,j,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x3-faces
@@ -245,7 +245,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
     }
     for (int k=kl; k<=ku; ++k){
       for (int j=js; j<=je+1; ++j){
-        for(int i=il; i<=iu; i++) {
+        for (int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);
@@ -287,7 +287,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 
     for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
-        for(int i=il; i<=iu; i++) {
+        for (int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);

@@ -159,7 +159,7 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
     }
   }
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank == Globals::my_rank) // on the same process
       pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
@@ -412,7 +412,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     }
   }
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
@@ -474,7 +474,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
     }
   }
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)

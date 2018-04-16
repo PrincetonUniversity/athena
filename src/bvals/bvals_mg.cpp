@@ -46,11 +46,11 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
 {
   pmy_mg_=pmg;
   if (pmy_mg_->root_flag_==true) {
-    for(int i=0; i<6; i++)
+    for (int i=0; i<6; i++)
       MGBoundaryFunction_[i]=MGBoundary[i];
   }
   else {
-    for(int i=0; i<6; i++) {
+    for (int i=0; i<6; i++) {
       if (block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
         MGBoundaryFunction_[i]=NULL;
       else
@@ -79,7 +79,7 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
 {
  int size;
   bd.nbmax=maxneighbor_;
-  for(int n=0;n<bd.nbmax;n++) {
+  for (int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.sflag[n]=BNDRY_WAITING;
@@ -127,7 +127,7 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
 //  \brief Destroy MGBoundaryData structure
 void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
 {
-  for(int n=0;n<bd.nbmax;n++) {
+  for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
@@ -214,7 +214,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
   }
   if (type==BNDRY_MGGRAVF)
     faceonly=true;
-  for(int n=0;n<nneighbor;n++) {
+  for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
 #ifdef MPI_PARALLEL
@@ -267,7 +267,7 @@ void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
   if (type==BNDRY_MGGRAVF)
     faceonly=true;
 
-  for(int n=0;n<nneighbor;n++) {
+  for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
     pbd->flag[nb.bufid] = BNDRY_WAITING;
@@ -324,7 +324,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   }
   if (type==BNDRY_MGGRAVF)
     faceonly=true;
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
     if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
@@ -409,7 +409,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   if (type==BNDRY_MGGRAVF)
     faceonly=true;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
     if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;

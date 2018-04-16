@@ -214,7 +214,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
-  for(int dir=0; dir<6; dir++)
+  for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
@@ -318,11 +318,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         // note: if this is too slow, this should be replaced with bi-section search.
         int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
         int64_t lxmax=nrbx1*(1L<<ref_lev);
-        for(lx1min=0;lx1min<lxmax;lx1min++) {
+        for (lx1min=0;lx1min<lxmax;lx1min++) {
           if (MeshGenerator_[X1DIR]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
             break;
         }
-        for(lx1max=lx1min;lx1max<lxmax;lx1max++) {
+        for (lx1max=lx1min;lx1max<lxmax;lx1max++) {
           if (MeshGenerator_[X1DIR]((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
             break;
         }
@@ -330,11 +330,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         if (lx1max%2==0) lx1max++;
         if (dim>=2) { // 2D or 3D
           lxmax=nrbx2*(1L<<ref_lev);
-          for(lx2min=0;lx2min<lxmax;lx2min++) {
+          for (lx2min=0;lx2min<lxmax;lx2min++) {
             if (MeshGenerator_[X2DIR]((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
               break;
           }
-          for(lx2max=lx2min;lx2max<lxmax;lx2max++) {
+          for (lx2max=lx2min;lx2max<lxmax;lx2max++) {
             if (MeshGenerator_[X2DIR]((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
               break;
           }
@@ -343,11 +343,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         }
         if (dim==3) { // 3D
           lxmax=nrbx3*(1L<<ref_lev);
-          for(lx3min=0;lx3min<lxmax;lx3min++) {
+          for (lx3min=0;lx3min<lxmax;lx3min++) {
             if (MeshGenerator_[X3DIR]((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
               break;
           }
-          for(lx3max=lx3min;lx3max<lxmax;lx3max++) {
+          for (lx3max=lx3min;lx3max<lxmax;lx3max++) {
             if (MeshGenerator_[X3DIR]((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
               break;
           }
@@ -356,7 +356,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         }
         // create the finest level
         if (dim==1) {
-          for(int64_t i=lx1min; i<lx1max; i+=2) {
+          for (int64_t i=lx1min; i<lx1max; i+=2) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
@@ -364,8 +364,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
           }
         }
         if (dim==2) {
-          for(int64_t j=lx2min; j<lx2max; j+=2) {
-            for(int64_t i=lx1min; i<lx1max; i+=2) {
+          for (int64_t j=lx2min; j<lx2max; j+=2) {
+            for (int64_t i=lx1min; i<lx1max; i+=2) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
@@ -374,9 +374,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
           }
         }
         if (dim==3) {
-          for(int64_t k=lx3min; k<lx3max; k+=2) {
-            for(int64_t j=lx2min; j<lx2max; j+=2) {
-              for(int64_t i=lx1min; i<lx1max; i+=2) {
+          for (int64_t k=lx3min; k<lx3max; k+=2) {
+            for (int64_t j=lx2min; j<lx2max; j+=2) {
+              for (int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
                 nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
                 int nnew;
@@ -428,7 +428,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
-  for(int i=0;i<nbtotal;i++) costlist[i]=1.0;
+  for (int i=0;i<nbtotal;i++) costlist[i]=1.0;
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
@@ -450,7 +450,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nblist[Globals::my_rank]-1;
   // create MeshBlock list for this process
-  for(int i=nbs;i<=nbe;i++) {
+  for (int i=nbs;i<=nbe;i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if (i==nbs) {
@@ -598,7 +598,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
-  for(int dir=0; dir<6; dir++)
+  for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
@@ -632,9 +632,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   // read user Mesh data
   IOWrapperSize_t udsize = 0;
-  for(int n=0; n<nint_user_mesh_data_; n++)
+  for (int n=0; n<nint_user_mesh_data_; n++)
     udsize+=iuser_mesh_data[n].GetSizeInBytes();
-  for(int n=0; n<nreal_user_mesh_data_; n++)
+  for (int n=0; n<nreal_user_mesh_data_; n++)
     udsize+=ruser_mesh_data[n].GetSizeInBytes();
   if (udsize!=0) {
     char *userdata = new char[udsize];
@@ -651,12 +651,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 #endif
 
     IOWrapperSize_t udoffset=0;
-    for(int n=0; n<nint_user_mesh_data_; n++) {
+    for (int n=0; n<nint_user_mesh_data_; n++) {
       memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
              iuser_mesh_data[n].GetSizeInBytes());
       udoffset+=iuser_mesh_data[n].GetSizeInBytes();
     }
-    for(int n=0; n<nreal_user_mesh_data_; n++) {
+    for (int n=0; n<nreal_user_mesh_data_; n++) {
       memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
              ruser_mesh_data[n].GetSizeInBytes());
       udoffset+=ruser_mesh_data[n].GetSizeInBytes();
@@ -681,7 +681,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 #endif
 
   int os=0;
-  for(int i=0;i<nbtotal;i++) {
+  for (int i=0;i<nbtotal;i++) {
     memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
@@ -696,7 +696,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     resfile.Seek(headeroffset);
 
   // rebuild the Block Tree
-  for(int i=0;i<nbtotal;i++)
+  for (int i=0;i<nbtotal;i++)
     tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
   // check the tree structure, and assign GID
@@ -763,7 +763,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
         << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  for(i=nbs;i<=nbe;i++) {
+  for (i=nbs;i<=nbe;i++) {
     int buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
@@ -831,10 +831,10 @@ Mesh::~Mesh()
     delete [] bddisp;
   }
   // delete user Mesh data
-  for(int n=0; n<nreal_user_mesh_data_; n++)
+  for (int n=0; n<nreal_user_mesh_data_; n++)
     ruser_mesh_data[n].DeleteAthenaArray();
   if (nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
-  for(int n=0; n<nint_user_mesh_data_; n++)
+  for (int n=0; n<nint_user_mesh_data_; n++)
     iuser_mesh_data[n].DeleteAthenaArray();
   if (nint_user_mesh_data_>0) delete [] iuser_mesh_data;
 }
@@ -878,7 +878,7 @@ void Mesh::OutputMeshStructure(int dim)
     nb_per_plevel[(loclist[i].level - root_level)]++;
     cost_per_plevel[(loclist[i].level - root_level)] += costlist[i];
   }
-  for(int i=root_level;i<=max_level;i++) {
+  for (int i=root_level;i<=max_level;i++) {
     if (nb_per_plevel[i-root_level]!=0) {
       std::cout << "  Physical level = " << i-root_level << " (logical level = " << i
                 << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = "
@@ -1089,7 +1089,7 @@ void Mesh::AllocateUserHistoryOutput(int n)
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
   user_history_func_ = new HistoryOutputFunc_t[n];
-  for(int i=0; i<n; i++) user_history_func_[i] = NULL;
+  for (int i=0; i<n; i++) user_history_func_[i] = NULL;
 }
 
 //----------------------------------------------------------------------------------------
@@ -1392,7 +1392,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
   std::stringstream msg;
   Real totalcost=0, maxcost=0.0, mincost=(FLT_MAX);
 
-  for(int i=0; i<nb; i++) {
+  for (int i=0; i<nb; i++) {
     totalcost+=clist[i];
     mincost=std::min(mincost,clist[i]);
     maxcost=std::max(maxcost,clist[i]);
@@ -1401,7 +1401,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
   Real targetcost=totalcost/Globals::nranks;
   Real mycost=0.0;
   // create rank list from the end: the master node should have less load
-  for(int i=nb-1;i>=0;i--) {
+  for (int i=nb-1;i>=0;i--) {
     if (targetcost==0.0) {
       msg << "### FATAL ERROR in LoadBalance" << std::endl
           << "There is at least one process which has no MeshBlock" << std::endl
@@ -1419,7 +1419,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
   }
   slist[0]=0;
   j=0;
-  for(int i=1;i<nb;i++) { // make the list of nbstart and nblocks
+  for (int i=1;i<nb;i++) { // make the list of nbstart and nblocks
     if (rlist[i]!=rlist[i-1]) {
       nlist[j]=i-nslist[j];
       slist[++j]=i;
@@ -1568,7 +1568,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 
   // count the number of the blocks to be (de)refined and displacement
   int tnref=0, tnderef=0;
-  for(int n=0; n<Globals::nranks; n++) {
+  for (int n=0; n<Globals::nranks; n++) {
     tnref  += nref[n];
     tnderef+= nderef[n];
   }
@@ -1576,7 +1576,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     return;
 
   int rd=0, dd=0;
-  for(int n=0; n<Globals::nranks; n++) {
+  for (int n=0; n<Globals::nranks; n++) {
     bnref[n]   = nref[n]*sizeof(LogicalLocation);
     bnderef[n] = nderef[n]*sizeof(LogicalLocation);
     rdisp[n] = rd;
@@ -1623,12 +1623,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     int lk=0, lj=0;
     if (mesh_size.nx2 > 1) lj=1;
     if (mesh_size.nx3 > 1) lk=1;
-    for(int n=0; n<tnderef; n++) {
+    for (int n=0; n<tnderef; n++) {
       if ((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
         int r=n, rr=0;
-        for(int64_t k=0;k<=lk;k++) {
-          for(int64_t j=0;j<=lj;j++) {
-            for(int64_t i=0;i<=1;i++) {
+        for (int64_t k=0;k<=lk;k++) {
+          for (int64_t j=0;j<=lj;j++) {
+            for (int64_t i=0;i<=1;i++) {
               if ((lderef[n].lx1+i)==lderef[r].lx1
               && (lderef[n].lx2+j)==lderef[r].lx2
               && (lderef[n].lx3+k)==lderef[r].lx3
@@ -1659,7 +1659,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // Start tree manipulation
   // Step 1. perform refinement
   int nnew=0, ndel=0, ntot=0;
-  for(int n=0; n<tnref; n++) {
+  for (int n=0; n<tnref; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
   }
@@ -1667,7 +1667,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     delete [] lref;
 
   // Step 2. perform derefinement
-  for(int n=0; n<ctnd; n++) {
+  for (int n=0; n<ctnd; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
@@ -1692,18 +1692,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // create a list mapping the previous gid to the current one
   oldtonew[0]=0;
   int k=1;
-  for(int n=1; n<ntot; n++) {
+  for (int n=1; n<ntot; n++) {
     if (newtoold[n]==newtoold[n-1]+1) { // normal
       oldtonew[k++]=n;
     }
     else if (newtoold[n]==newtoold[n-1]+nlbl) { // derefined
-      for(int j=0; j<nlbl-1; j++)
+      for (int j=0; j<nlbl-1; j++)
         oldtonew[k++]=n-1;
       oldtonew[k++]=n;
     }
   }
   // fill the last block
-  for(;k<nbtold; k++)
+  for (;k<nbtold; k++)
     oldtonew[k]=ntot-1;
 
 #ifdef MPI_PARALLEL
@@ -1713,7 +1713,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #endif
 
   current_level=0;
-  for(int n=0; n<ntot; n++) {
+  for (int n=0; n<ntot; n++) {
     int on=newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level=newloc[n].level;
@@ -1721,7 +1721,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       newcost[n]=costlist[on];
     else {
       Real acost=0.0;
-      for(int l=0; l<nlbl; l++)
+      for (int l=0; l<nlbl; l++)
         acost+=costlist[on+l];
       newcost[n]=acost/nlbl;
     }
@@ -1749,10 +1749,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
   int nsend=0, nrecv=0;
-  for(int n=nbs; n<=nbe; n++) {
+  for (int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if (loclist[on].level > newloc[n].level) { // f2c
-      for(int k=0; k<nlbl; k++) {
+      for (int k=0; k<nlbl; k++) {
         if (ranklist[on+k]!=Globals::my_rank)
           nrecv++;
       }
@@ -1762,10 +1762,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         nrecv++;
     }
   }
-  for(int n=onbs; n<=onbe; n++) {
+  for (int n=onbs; n<=onbe; n++) {
     int nn=oldtonew[n];
     if (loclist[n].level < newloc[nn].level) { // c2f
-      for(int k=0; k<nlbl; k++) {
+      for (int k=0; k<nlbl; k++) {
         if (newrank[nn+k]!=Globals::my_rank)
           nsend++;
       }
@@ -1797,12 +1797,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
     int k=0;
-    for(int n=nbs; n<=nbe; n++) {
+    for (int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
       LogicalLocation &nloc=newloc[n];
       if (oloc.level>nloc.level) { // f2c
-        for(int l=0; l<nlbl; l++) {
+        for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
           int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
@@ -1831,7 +1831,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
     int k=0;
-    for(int n=onbs; n<=onbe; n++) {
+    for (int n=onbs; n<=onbe; n++) {
       int nn=oldtonew[n];
       LogicalLocation &oloc=loclist[n];
       LogicalLocation &nloc=newloc[nn];
@@ -1857,7 +1857,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         k++;
       }
       else if (nloc.level>oloc.level) { // c2f
-        for(int l=0; l<nlbl; l++) {
+        for (int l=0; l<nlbl; l++) {
           if (newrank[nn+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=newloc[nn+l];
           int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
@@ -1927,7 +1927,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   RegionSize block_size=pblock->block_size;
   enum BoundaryFlag block_bcs[6];
 
-  for(int n=nbs; n<=nbe; n++) {
+  for (int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
       // on the same node and same level -> just move it
@@ -1963,7 +1963,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       }
       // fill the conservative variables
       if ((loclist[on].level>newloc[n].level)) { // fine to coarse
-        for(int ll=0; ll<nlbl; ll++) {
+        for (int ll=0; ll<nlbl; ll++) {
           if (ranklist[on+ll]!=Globals::my_rank) continue;
           // on the same node - restriction
           MeshBlock* pob=FindMeshBlock(on+ll);
@@ -1975,10 +1975,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
-          for(int nv=0; nv<NHYDRO; nv++) {
-            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+          for (int nv=0; nv<NHYDRO; nv++) {
+            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst(nv, k, j, i)=src(nv, fk, fj, fi);
           }}}
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -1990,30 +1990,30 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                          pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
             FaceField &src=pmr->coarse_b_;
             FaceField &dst=pmb->pfield->b;
-            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for(int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
+            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for (int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
                   dst.x1f(k, j, i)=src.x1f(fk, fj, fi);
             }}
-            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
-                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for (int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
+                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x2f(k, j, i)=src.x2f(fk, fj, fi);
             }}
             if (pmb->block_size.nx2==1) {
               int ie=is+block_size.nx1/2-1;
-              for(int i=is; i<=ie; i++)
+              for (int i=is; i<=ie; i++)
                 dst.x2f(pmb->ks, pmb->js+1, i)=dst.x2f(pmb->ks, pmb->js, i);
             }
-            for(int k=ks, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
-              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+            for (int k=ks, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
+              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x3f(k, j, i)=src.x3f(fk, fj, fi);
             }}
             if (pmb->block_size.nx3==1) {
               int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
-              for(int j=js; j<=je; j++) {
-                for(int i=is; i<=ie; i++)
+              for (int j=js; j<=je; j++) {
+                for (int i=is; i<=ie; i++)
                   dst.x3f(pmb->ks+1, j, i)=dst.x3f(pmb->ks, j, i);
               }
             }
@@ -2032,10 +2032,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer
-        for(int nv=0; nv<NHYDRO; nv++) {
-          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=cis; i<=ie; i++, ci++)
+        for (int nv=0; nv<NHYDRO; nv++) {
+          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for (int j=js, cj=cjs; j<=je; j++, cj++) {
+              for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst(nv, k, j, i)=src(nv, ck, cj, ci);
         }}}
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
@@ -2043,19 +2043,19 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &src=pob->pfield->b;
           FaceField &dst=pmr->coarse_b_;
-          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=cis; i<=ie+1; i++, ci++)
+          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for (int j=js, cj=cjs; j<=je; j++, cj++) {
+              for (int i=is, ci=cis; i<=ie+1; i++, ci++)
                 dst.x1f(k, j, i)=src.x1f(ck, cj, ci);
           }}
-          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=cjs; j<=je+f2; j++, cj++) {
-              for(int i=is, ci=cis; i<=ie; i++, ci++)
+          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for (int j=js, cj=cjs; j<=je+f2; j++, cj++) {
+              for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x2f(k, j, i)=src.x2f(ck, cj, ci);
           }}
-          for(int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
-            for(int j=js, cj=cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=cis; i<=ie; i++, ci++)
+          for (int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
+            for (int j=js, cj=cjs; j<=je; j++, cj++) {
+              for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
           }}
           pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
@@ -2087,7 +2087,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #ifdef MPI_PARALLEL
   if (nrecv!=0) {
     int k=0;
-    for(int n=nbs; n<=nbe; n++) {
+    for (int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
       LogicalLocation &nloc=newloc[n];
@@ -2107,12 +2107,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
                          pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if (pb->block_size.nx2==1) {
-            for(int i=pb->is; i<=pb->ie; i++)
+            for (int i=pb->is; i<=pb->ie; i++)
               dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
           }
           if (pb->block_size.nx3==1) {
-            for(int j=pb->js; j<=pb->je; j++) {
-              for(int i=pb->is; i<=pb->ie; i++)
+            for (int j=pb->js; j<=pb->je; j++) {
+              for (int i=pb->is; i<=pb->ie; i++)
                 dst.x3f(pb->ks+1, j, i)=dst.x3f(pb->ks, j, i);
             }
           }
@@ -2120,7 +2120,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         k++;
       }
       else if (oloc.level>nloc.level) { // f2c
-        for(int l=0; l<nlbl; l++) {
+        for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
           int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
@@ -2143,12 +2143,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
             BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
                            is, ie, js, je, ks, ke+f3, p);
             if (pb->block_size.nx2==1) {
-              for(int i=is; i<=ie; i++)
+              for (int i=is; i<=ie; i++)
                 dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
             }
             if (pb->block_size.nx3==1) {
-              for(int j=js; j<=je; j++) {
-                for(int i=is; i<=ie; i++)
+              for (int j=js; j<=je; j++) {
+                for (int i=is; i<=ie; i++)
                   dst.x3f(pb->ks+1, j, i)=dst.x3f(pb->ks, j, i);
               }
             }
@@ -2198,13 +2198,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #ifdef MPI_PARALLEL
   if (nsend!=0) {
     MPI_Waitall(nsend, req_send, MPI_STATUSES_IGNORE);
-    for(int n=0;n<nsend;n++)
+    for (int n=0;n<nsend;n++)
       delete [] sendbuf[n];
     delete [] sendbuf;
     delete [] req_send;
   }
   if (nrecv!=0) {
-    for(int n=0;n<nrecv;n++)
+    for (int n=0;n<nrecv;n++)
       delete [] recvbuf[n];
     delete [] recvbuf;
     delete [] req_recv;

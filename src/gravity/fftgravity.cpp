@@ -68,7 +68,7 @@ void FFTGravityDriver::Solve(int step, int mode)
   // Load the source
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
-  for(int igid=nbs;igid<=nbe;igid++){
+  for (int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if (pmb!=NULL) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
@@ -83,7 +83,7 @@ void FFTGravityDriver::Solve(int step, int mode)
   pfb->ExecuteBackward();
 
   // Return the result
-  for(int igid=nbs;igid<=nbe;igid++){
+  for (int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if (pmb!=NULL) {
       pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
@@ -107,9 +107,9 @@ void FFTGravity::ApplyKernel(int mode)
   Real dx1sq=SQR(2*PI/(kNx[0]*dkx[0]));
   Real dx2sq=SQR(2*PI/(kNx[1]*dkx[1]));
   Real dx3sq=SQR(2*PI/(kNx[2]*dkx[2]));
-  for(int k=0; k<knx[2]; k++) {
-    for(int j=0; j<knx[1]; j++) {
-      for(int i=0; i<knx[0]; i++) {
+  for (int k=0; k<knx[2]; k++) {
+    for (int j=0; j<knx[1]; j++) {
+      for (int i=0; i<knx[0]; i++) {
         int64_t gidx = GetGlobalIndex(i,j,k);
         if (gidx == 0){ pcoeff = 0.0;}
         else {

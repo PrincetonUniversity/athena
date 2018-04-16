@@ -76,9 +76,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   gm1 = peos->GetGamma() - 1.0;
 
   // initialize conserved variables
-  for(int k=ks; k<=ke; ++k){
-  for(int j=js; j<=je; ++j){
-  for(int i=is; i<=ie; ++i){
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je; ++j){
+  for (int i=is; i<=ie; ++i){
     phydro->u(IDN,k,j,i) = d_amb;
     phydro->u(IM1,k,j,i) = d_amb*vx_amb;
     phydro->u(IM2,k,j,i) = d_amb*vy_amb;
@@ -126,9 +126,9 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // set primitive variables in inlet ghost zones
-  for(int k=ks; k<=ke; ++k){
-  for(int j=js; j<=je; ++j){
-    for(int i=1; i<=(NGHOST); ++i){
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je; ++j){
+    for (int i=1; i<=(NGHOST); ++i){
       Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
       if (rad <= r_jet){
         prim(IDN,k,j,is-i) = d_jet;
@@ -148,10 +148,10 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
   // set magnetic field in inlet ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for(int k=ks; k<=ke; ++k){
-    for(int j=js; j<=je; ++j){
+    for (int k=ks; k<=ke; ++k){
+    for (int j=js; j<=je; ++j){
 #pragma omp simd
-      for(int i=1; i<=(NGHOST); ++i){
+      for (int i=1; i<=(NGHOST); ++i){
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if (rad <= r_jet){
           b.x1f(k,j,is-i) = bx_jet;

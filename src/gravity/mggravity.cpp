@@ -73,7 +73,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, Paramet
   block_size.nx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
   block_size.nx2=pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
   block_size.nx3=pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
-  for(int i=nbs;i<=nbe;i++) {
+  for (int i=nbs;i<=nbe;i++) {
     enum BoundaryFlag block_bcs[6];
     pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
     Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
@@ -143,9 +143,9 @@ void MGGravity::Smooth(int color)
   Real dx = rdx_*(Real)(1<<ll);
   Real dx2 = SQR(dx);
   Real isix=omega_/6.0;
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
-      for(int i=is+c; i<=ie; i+=2)
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is+c; i<=ie; i+=2)
         u(0,k,j,i)-=((6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
       c^=1;
@@ -170,9 +170,9 @@ void MGGravity::CalculateDefect(void)
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*(Real)(1<<ll);
   Real idx2 = 1.0/SQR(dx);
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
-      for(int i=is; i<=ie; i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
         def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                          -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
       }

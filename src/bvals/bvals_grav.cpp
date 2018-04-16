@@ -46,7 +46,7 @@ GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *
  : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
 {
   pmy_block_=pmb;
-  for(int i=0; i<6; i++){
+  for (int i=0; i<6; i++){
     if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
       GravityBoundaryFunction_[i]=NULL;
     // else
@@ -75,7 +75,7 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd)
   MeshBlock *pmb=pmy_block_;
   int size;
   bd.nbmax=maxneighbor_;
-  for(int n=0;n<bd.nbmax;n++) {
+  for (int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.sflag[n]=BNDRY_WAITING;
@@ -102,7 +102,7 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd)
 //  \brief Destroy GravityBoundaryData structure
 void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
 {
-  for(int n=0;n<bd.nbmax;n++) {
+  for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
@@ -184,7 +184,7 @@ void GravityBoundaryValues::StartReceivingGravity(void)
 
   pbd=&bd_gravity_;
 
-  for(int n=0;n<nneighbor;n++) {
+  for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
@@ -212,7 +212,7 @@ void GravityBoundaryValues::ClearBoundaryGravity(void)
 
   pbd=&bd_gravity_;
 
-  for(int n=0;n<nneighbor;n++) {
+  for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
     pbd->flag[nb.bufid] = BNDRY_WAITING;
     pbd->sflag[nb.bufid] = BNDRY_WAITING;
@@ -261,7 +261,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 
   pbd=&bd_gravity_;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
     int ssize;
@@ -333,7 +333,7 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
 
   pbd=&bd_gravity_;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if (pbd->flag[nb.bufid]==BNDRY_WAITING) {

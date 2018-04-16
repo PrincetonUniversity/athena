@@ -221,20 +221,20 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   // find indices of the center
   int ic, jc, kc;
-  for(ic=is; ic<=ie; ic++)
+  for (ic=is; ic<=ie; ic++)
     if (pblock->pcoord->x1f(ic) > x1_0) break;
   ic--;
-  for(jc=pblock->js; jc<=pblock->je; jc++)
+  for (jc=pblock->js; jc<=pblock->je; jc++)
     if (pblock->pcoord->x2f(jc) > x2_0) break;
   jc--;
-  for(kc=pblock->ks; kc<=pblock->ke; kc++)
+  for (kc=pblock->ks; kc<=pblock->ke; kc++)
     if (pblock->pcoord->x3f(kc) > x3_0) break;
   kc--;
 
   // search pressure maximum in each direction
   Real rmax=0.0, rmin=100.0, rave=0.0;
   int nr=0;
-  for(int o=0; o<=6; o++) {
+  for (int o=0; o<=6; o++) {
     int ios=0, jos=0, kos=0;
     if (o==1) ios=-10;
     else if (o==2) ios= 10;
@@ -242,13 +242,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     else if (o==4) jos= 10;
     else if (o==5) kos=-10;
     else if (o==6) kos= 10;
-    for(int d=0; d<6; d++) {
+    for (int d=0; d<6; d++) {
       Real pmax=0.0;
       int imax, jmax, kmax;
       if (d==0) {
         if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;
-        for(int i=ic; i>=is; i--) {
+        for (int i=ic; i>=is; i--) {
           if (pr(kmax,jmax,i)>pmax) {
             pmax=pr(kmax,jmax,i);
             imax=i;
@@ -258,7 +258,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       else if (d==1) {
         if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;
-        for(int i=ic; i<=ie; i++) {
+        for (int i=ic; i<=ie; i++) {
           if (pr(kmax,jmax,i)>pmax) {
             pmax=pr(kmax,jmax,i);
             imax=i;
@@ -268,7 +268,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       else if (d==2) {
         if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
-        for(int j=jc; j>=js; j--) {
+        for (int j=jc; j>=js; j--) {
           if (pr(kmax,j,imax)>pmax) {
             pmax=pr(kmax,j,imax);
             jmax=j;
@@ -278,7 +278,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       else if (d==3) {
         if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
-        for(int j=jc; j<=je; j++) {
+        for (int j=jc; j<=je; j++) {
           if (pr(kmax,j,imax)>pmax) {
             pmax=pr(kmax,j,imax);
             jmax=j;
@@ -288,7 +288,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       else if (d==4) {
         if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
-        for(int k=kc; k>=ks; k--) {
+        for (int k=kc; k>=ks; k--) {
           if (pr(k,jmax,imax)>pmax) {
             pmax=pr(k,jmax,imax);
             kmax=k;
@@ -298,7 +298,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       else if (d==5) {
         if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
-        for(int k=kc; k<=ke; k++) {
+        for (int k=kc; k<=ke; k++) {
           if (pr(k,jmax,imax)>pmax) {
             pmax=pr(k,jmax,imax);
             kmax=k;

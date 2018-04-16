@@ -260,8 +260,8 @@ int RefinementCondition(MeshBlock *pmb)
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps=0.0;
   int k=pmb->ks;
-  for(int j=pmb->js; j<=pmb->je; j++) {
-    for(int i=pmb->is; i<=pmb->ie; i++) {
+  for (int j=pmb->js; j<=pmb->je; j++) {
+    for (int i=pmb->is; i<=pmb->ie; i++) {
       Real epsr= (std::abs(w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
                  +std::abs(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
       Real epsp= (std::abs(w(IPR,k,j,i+1)-2.0*w(IPR,k,j,i)+w(IPR,k,j,i-1))

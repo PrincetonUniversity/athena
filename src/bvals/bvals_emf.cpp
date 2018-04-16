@@ -98,13 +98,13 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
 
   int p=0;
   // pack e2
-  for(int k=sk; k<=ek+1; k++) {
-    for(int j=sj; j<=ej; j++)
+  for (int k=sk; k<=ek+1; k++) {
+    for (int j=sj; j<=ej; j++)
       buf[p++] = src.x2e(k,j);
   }
   // pack e3
-  for(int k=sk; k<=ek; k++) {
-    for(int j=psj; j<=pej; j++)
+  for (int k=sk; k<=ek; k++) {
+    for (int j=psj; j<=pej; j++)
       buf[p++] = src.x3e(k,j);
   }
 
@@ -140,19 +140,19 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
   if (shbb_.inner == true) {
     // step 1. -- average edges of shboxvar_emf_
     // average e3 for x1x2 edge
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je+1; j+=nx2)
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j+=nx2)
         shboxvar_inner_emf_.x3e(k,j) *= 0.5;
     }
     // average e2 for x1x3 edge
-    for(int k=ks; k<=ke+1; k+=nx3) {
-      for(int j=js; j<=je; j++)
+    for (int k=ks; k<=ke+1; k+=nx3) {
+      for (int j=js; j<=je; j++)
         shboxvar_inner_emf_.x2e(k,j) *= 0.5;
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
     // MPI_Isend otherwise
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_inner_emf_, send_innerbuf_emf_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
@@ -174,20 +174,20 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
   if (shbb_.outer == true) {
     // step 1. -- average edges of shboxvar_emf_
     // average e3 for x1x2 edge
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je+1; j+=nx2)
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j+=nx2)
         shboxvar_outer_emf_.x3e(k,j) *= 0.5;
     }
     // average e2 for x1x3 edge
-    for(int k=ks; k<=ke+1; k+=nx3) {
-      for(int j=js; j<=je; j++)
+    for (int k=ks; k<=ke+1; k+=nx3) {
+      for (int j=js; j<=je; j++)
         shboxvar_outer_emf_.x2e(k,j) *= 0.5;
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
     // MPI_Isend otherwise
     int offset = 4;
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_outer_emf_, send_outerbuf_emf_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
@@ -270,13 +270,13 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 
   int p=0;
   // unpack e2
-  for(int k=sk; k<=ek+1; k++) {
-    for(int j=sj; j<=ej; j++)
+  for (int k=sk; k<=ek+1; k++) {
+    for (int j=sj; j<=ej; j++)
       dst.x2e(k,j)+=buf[p++];
   }
  // unpack e3
-  for(int k=sk; k<=ek; k++) {
-    for(int j=psj; j<=pej; j++)
+  for (int k=sk; k<=ek; k++) {
+    for (int j=psj; j<=pej; j++)
       dst.x3e(k,j)+=buf[p++];
   }
 
@@ -293,7 +293,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
   bool flagi=true, flago=true;
 
   if (shbb_.inner == true) { // check inner boundaries
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (shbox_inner_emf_flag_[n]==BNDRY_COMPLETED) continue;
       if (shbox_inner_emf_flag_[n]==BNDRY_WAITING) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
@@ -323,7 +323,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (shbox_outer_emf_flag_[n]==BNDRY_COMPLETED) continue;
       if (shbox_outer_emf_flag_[n]==BNDRY_WAITING) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
@@ -369,17 +369,17 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
   if (shbb_.inner==true) {
     ClearEMFShearing(shboxvar_inner_emf_);
     // step 1.-- conservative remapping
-    for(int k=ks; k<=ke+1; k++) {
+    for (int k=ks; k<=ke+1; k++) {
       RemapFluxEMF(k,js,je+2,eps_,shboxmap_inner_emf_.x2e,flx_inner_emf_.x2e);
-      for(int j=js; j<=je; j++) {
+      for (int j=js; j<=je; j++) {
         shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1)
                                        -flx_inner_emf_.x2e(j);
       }
     }
     // step 2.-- average the EMF correction
     // average e2
-    for(int k=ks; k<=ke+1; k++) {
-      for(int j=js; j<=je; j++)
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++)
         e2(k,j,is) = 0.5*(e2(k,j,is)+shboxmap_inner_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_inner_emf_);
@@ -388,17 +388,17 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
   if (shbb_.outer==true) {
     ClearEMFShearing(shboxvar_outer_emf_);
     // step 1.-- conservative remapping
-    for(int k=ks; k<=ke+1; k++) { // e2
+    for (int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js-1,je+1,-eps_,shboxmap_outer_emf_.x2e,
                                      flx_outer_emf_.x2e);
-      for(int j=js; j<=je; j++)
+      for (int j=js; j<=je; j++)
         shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1)
                                        -flx_outer_emf_.x2e(j);
     }
     // step 2.-- average the EMF correction
     // average e2
-    for(int k=ks; k<=ke+1; k++) {
-      for(int j=js; j<=je; j++)
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++)
         e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1)+shboxmap_outer_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_outer_emf_);
@@ -419,8 +419,8 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work)
   AthenaArray<Real> &e3=work.x3e;
   int ks=pmb->ks, ke=pmb->ke;
   int js=pmb->js, je=pmb->je;
-  for(int k=ks-NGHOST; k<=ke+NGHOST; k++) {
-    for(int j=js-NGHOST; j<=je+NGHOST; j++) {
+  for (int k=ks-NGHOST; k<=ke+NGHOST; k++) {
+    for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       e2(k,j) = 0.0;
       e3(k,j) = 0.0;
       if (k==ke+NGHOST) e2(k+1,j) = 0.0;

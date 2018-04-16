@@ -217,7 +217,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   //  Initialize density
-  for(int k=ks; k<=ke; ++k) {
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
 	phydro->u(IDN,k,j,i) = rho0 ;

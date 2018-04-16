@@ -237,10 +237,10 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
 
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
-      for(int i=is; i<=ie; i++) {
+      for (int i=is; i<=ie; i++) {
         bxby-=volume(i)*b(IB1,k,j,i)*b(IB3,k,j,i);
       }
     }

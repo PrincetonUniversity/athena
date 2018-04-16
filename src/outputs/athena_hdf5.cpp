@@ -88,7 +88,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   bool *active_flags = new bool [max_blocks_local];
   std::string variable = output_params.variable;
 
-  for(int i=0; i<max_blocks_local; i++)
+  for (int i=0; i<max_blocks_local; i++)
     active_flags[i]=true;
 
   // shooting a blank just for getting the variable names
@@ -153,7 +153,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   pod=pfirst_data_;
   while(pod!=NULL) {
     if (pod->type=="VECTORS") {
-      for(int i=1; i<=3; i++) {
+      for (int i=1; i<=3; i++) {
         char sn[3];
         std::sprintf(sn,"%d", i);
         std::string vname = pod->name + sn;
@@ -203,10 +203,10 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     MPI_Allgather(&nba, 1, MPI_INT, n_active, 1, MPI_INT, MPI_COMM_WORLD);
     num_blocks_local=n_active[Globals::my_rank];
     first_block=0;
-    for(int n=0; n<Globals::my_rank; n++)
+    for (int n=0; n<Globals::my_rank; n++)
       first_block+=n_active[n];
     num_blocks_global=0;
-    for(int n=0; n<Globals::nranks; n++)
+    for (int n=0; n<Globals::nranks; n++)
       num_blocks_global+=n_active[n];
     delete [] n_active;
 #else

@@ -150,10 +150,10 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
   int jl=bsize.nx2>1?ngh:0;
   int kl=bsize.nx3>1?ngh:0;
 
-  for(int n=0; n<ns; n++) {
-    for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
-      for(int j=jl, mj=js; mj<=je; j++, mj++) {
-        for(int i=ngh, mi=is; mi<=ie; i++, mi++){
+  for (int n=0; n<ns; n++) {
+    for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
+      for (int j=jl, mj=js; mj<=je; j++, mj++) {
+        for (int i=ngh, mi=is; mi<=ie; i++, mi++){
           int64_t idx=GetIndex(mi,mj,mk,b_out_);
           if (ns == 1){
             dst(k,j,i)=src[idx][0]*norm_factor_;
@@ -181,10 +181,10 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
   int jl=bsize.nx2>1?ngh:0;
   int kl=bsize.nx3>1?ngh:0;
 
-  for(int n=0; n<ns; n++) {
-    for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
-      for(int j=jl, mj=js; mj<=je; j++, mj++) {
-        for(int i=ngh, mi=is; mi<=ie; i++, mi++) {
+  for (int n=0; n<ns; n++) {
+    for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
+      for (int j=jl, mj=js; mj<=je; j++, mj++) {
+        for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           int64_t idx=GetIndex(mi,mj,mk,f_in_);
           if (ns == 1){
             dst[idx][0]=src(n,k,j,i);
@@ -204,9 +204,9 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
 //  \brief Apply kernel
 void FFTBlock::ApplyKernel(int mode)
 {
-  for(int k=0; k<knx[2]; k++) {
-    for(int j=0; j<knx[1]; j++) {
-      for(int i=0; i<knx[0]; i++) {
+  for (int k=0; k<knx[2]; k++) {
+    for (int j=0; j<knx[1]; j++) {
+      for (int i=0; i<knx[0]; i++) {
         int64_t idx_in=GetIndex(i,j,k,b_in_);
         int64_t idx_out=GetIndex(i,j,k,f_out_);
         in_[idx_in][0] = out_[idx_out][0];

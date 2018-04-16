@@ -32,9 +32,9 @@ MeshBlockTree::MeshBlockTree()
   loc.lx1=0, loc.lx2=0, loc.lx3=0;
   loc.level=0;
   pparent=NULL;
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
+  for (int k=0; k<=1; k++) {
+    for (int j=0; j<=1; j++) {
+      for (int i=0; i<=1; i++) {
         pleaf[k][j][i]=NULL;
       }
     }
@@ -54,9 +54,9 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
   loc.lx2=(parent->loc.lx2<<1)+oy;
   loc.lx3=(parent->loc.lx3<<1)+oz;
   loc.level=parent->loc.level+1;
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
+  for (int k=0; k<=1; k++) {
+    for (int j=0; j<=1; j++) {
+      for (int i=0; i<=1; i++) {
         pleaf[k][j][i]=NULL;
       }
     }
@@ -70,9 +70,9 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 
 MeshBlockTree::~MeshBlockTree()
 {
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
+  for (int k=0; k<=1; k++) {
+    for (int j=0; j<=1; j++) {
+      for (int i=0; i<=1; i++) {
         if (pleaf[k][j][i]!=NULL)
           delete pleaf[k][j][i];
       }
@@ -88,11 +88,11 @@ void MeshBlockTree::CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl)
 {
   if (loc.level == nl) return;
 
-  for(int k=0; k<=1; k++) {
+  for (int k=0; k<=1; k++) {
     if ((loc.lx3*2+k)*(1L<<(nl-loc.level-1)) < nz) {
-      for(int j=0; j<=1; j++) {
+      for (int j=0; j<=1; j++) {
         if ((loc.lx2*2+j)*(1L<<(nl-loc.level-1)) < ny) {
-          for(int i=0; i<=1; i++) {
+          for (int i=0; i<=1; i++) {
             if ((loc.lx1*2+i)*(1L<<(nl-loc.level-1)) < nx) {
               flag=false; // if there is a leaf, this is a node
               gid=-1;
@@ -177,16 +177,16 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
   else       ymax=0, oymin=0,  oymax=0, nymax=1;
   if (dim==3) zmax=1, ozmin=-1, ozmax=1, nzmax=(rbz<<(loc.level-rl));
   else       zmax=0, ozmin=0,  ozmax=0, nzmax=1;
-  for(int k=0; k<=zmax; k++) {
-    for(int j=0; j<=ymax; j++) {
-      for(int i=0; i<=xmax; i++) {
+  for (int k=0; k<=zmax; k++) {
+    for (int j=0; j<=ymax; j++) {
+      for (int i=0; i<=xmax; i++) {
         pleaf[k][j][i] = new MeshBlockTree(this, i, j, k);
         nnew++;
       }
     }
   }
 
-  for(oz=ozmin;oz<=ozmax;oz++) {
+  for (oz=ozmin;oz<=ozmax;oz++) {
     nloc.lx3=loc.lx3+oz;
     if (nloc.lx3<0) {
       if (mesh_bcs[INNER_X3]!=PERIODIC_BNDRY) continue;
@@ -196,7 +196,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
       if (mesh_bcs[OUTER_X3]!=PERIODIC_BNDRY) continue;
       else nloc.lx3=0;
     }
-    for(oy=oymin;oy<=oymax;oy++) {
+    for (oy=oymin;oy<=oymax;oy++) {
       nloc.lx2=loc.lx2+oy;
       bool polar=false;
       if (nloc.lx2<0) {
@@ -218,7 +218,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
           continue;
       }
       if (polar) nloc.lx3=(nloc.lx3+nzmax/2)%nzmax;
-      for(ox=oxmin;ox<=oxmax;ox++) {
+      for (ox=oxmin;ox<=oxmax;ox++) {
         if (ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;
         if (nloc.lx1<0) {
@@ -252,9 +252,9 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
   int s2=0, e2=0, s3=0, e3=0;
   if (dim>=2) s2=-1, e2=1;
   if (dim==3) s3=-1, e3=1;
-  for(int ox3=s3; ox3<=e3; ox3++) {
-    for(int ox2=s2; ox2<=e2; ox2++) {
-      for(int ox1=-1; ox1<=1; ox1++) {
+  for (int ox3=s3; ox3<=e3; ox3++) {
+    for (int ox2=s2; ox2<=e2; ox2++) {
+      for (int ox1=-1; ox1<=1; ox1++) {
         MeshBlockTree *bt=
           root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl,true);
         if (bt!=NULL) {
@@ -275,9 +275,9 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
               else            lks=0, lke=1;
             }
             else              lks=lke=0;
-            for(int lk=lks; lk<=lke; lk++) {
-              for(int lj=ljs; lj<=lje; lj++) {
-                for(int li=lis; li<=lie; li++) {
+            for (int lk=lks; lk<=lke; lk++) {
+              for (int lj=ljs; lj<=lje; lj++) {
+                for (int li=lis; li<=lie; li++) {
                   if (bt->pleaf[lk][lj][li]->flag==false) return;
                 }
               }
@@ -289,9 +289,9 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
   }
 
   gid=pleaf[0][0][0]->gid; // inherit the first leaf's GID
-  for(int k=0; k<=e3; k++) {
-    for(int j=0; j<=e2; j++) {
-      for(int i=0; i<=1; i++) {
+  for (int k=0; k<=e3; k++) {
+    for (int j=0; j<=e2; j++) {
+      for (int i=0; i<=1; i++) {
         delete pleaf[k][j][i];
         pleaf[k][j][i]=NULL;
         ndel++;
@@ -313,9 +313,9 @@ void MeshBlockTree::CountMeshBlock(int& count)
   if (flag==true)
     count++;
   else {
-    for(int k=0; k<=1; k++) {
-      for(int j=0; j<=1; j++) {
-        for(int i=0; i<=1; i++) {
+    for (int k=0; k<=1; k++) {
+      for (int j=0; j<=1; j++) {
+        for (int i=0; i<=1; i++) {
           if (pleaf[k][j][i]!=NULL)
             pleaf[k][j][i]->CountMeshBlock(count);
         }
@@ -341,9 +341,9 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
     count++;
   }
   else {
-    for(int k=0; k<=1; k++) {
-      for(int j=0; j<=1; j++) {
-        for(int i=0; i<=1; i++) {
+    for (int k=0; k<=1; k++) {
+      for (int j=0; j<=1; j++) {
+        for (int i=0; i<=1; i++) {
           if (pleaf[k][j][i]!=NULL)
             pleaf[k][j][i]->GetMeshBlockList(list, pglist, count);
         }
@@ -416,7 +416,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   if (ll<1) return this; // single grid; return itself
 
 
-  for(int level=0;level<ll;level++) {
+  for (int level=0;level<ll;level++) {
     if (bt->flag==true) { // leaf
       if (level == ll-1)
         return bt;

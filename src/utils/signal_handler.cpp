@@ -30,7 +30,7 @@ namespace SignalHandler {
 
 void SignalHandlerInit(void)
 {
-  for(int n=0; n<nsignal; n++) signalflag[n]=0;
+  for (int n=0; n<nsignal; n++) signalflag[n]=0;
   signal(SIGTERM, SetSignalFlag);
   signal(SIGINT,  SetSignalFlag);
   signal(SIGALRM, SetSignalFlag);
@@ -51,7 +51,7 @@ int CheckSignalFlags(void)
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE, (void *)signalflag, nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
-  for(int n=0; n<nsignal; n++)
+  for (int n=0; n<nsignal; n++)
     ret+=signalflag[n];
   sigprocmask(SIG_UNBLOCK,&mask,NULL);
   return ret;

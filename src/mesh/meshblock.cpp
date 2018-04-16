@@ -257,12 +257,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // load user MeshBlock data
-  for(int n=0; n<nint_user_meshblock_data_; n++) {
+  for (int n=0; n<nint_user_meshblock_data_; n++) {
     memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
            iuser_meshblock_data[n].GetSizeInBytes());
     os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
-  for(int n=0; n<nreal_user_meshblock_data_; n++) {
+  for (int n=0; n<nreal_user_meshblock_data_; n++) {
     memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
            ruser_meshblock_data[n].GetSizeInBytes());
     os+=ruser_meshblock_data[n].GetSizeInBytes();
@@ -296,10 +296,10 @@ MeshBlock::~MeshBlock()
     delete [] user_out_var_names_;
   }
   // delete user MeshBlock data
-  for(int n=0; n<nreal_user_meshblock_data_; n++)
+  for (int n=0; n<nreal_user_meshblock_data_; n++)
     ruser_meshblock_data[n].DeleteAthenaArray();
   if (nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
-  for(int n=0; n<nint_user_meshblock_data_; n++)
+  for (int n=0; n<nint_user_meshblock_data_; n++)
     iuser_meshblock_data[n].DeleteAthenaArray();
   if (nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
@@ -403,9 +403,9 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   // NEW_PHYSICS: modify the size counter here when new physics is introduced
 
   // calculate user MeshBlock data size
-  for(int n=0; n<nint_user_meshblock_data_; n++)
+  for (int n=0; n<nint_user_meshblock_data_; n++)
     size+=iuser_meshblock_data[n].GetSizeInBytes();
-  for(int n=0; n<nreal_user_meshblock_data_; n++)
+  for (int n=0; n<nreal_user_meshblock_data_; n++)
     size+=ruser_meshblock_data[n].GetSizeInBytes();
 
   return size;

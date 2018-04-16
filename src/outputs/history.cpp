@@ -90,7 +90,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         }
       }
     }}
-    for(int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
+    for (int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
       if (pm->user_history_func_[n]!=NULL)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
@@ -143,7 +143,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         fprintf(pfile,"[%d]=2-ME    ", iout++);
         fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
-      for(int n=0; n<pm->nuser_history_output_; n++)
+      for (int n=0; n<pm->nuser_history_output_; n++)
         fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
       fprintf(pfile,"\n");                              // terminate line
     }

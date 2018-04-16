@@ -1051,9 +1051,9 @@ int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real rmax=0.0, rmin=2.0*d0;
-  for(int k=pmb->ks; k<=pmb->ke; k++) {
-    for(int j=pmb->js; j<=pmb->je; j++) {
-      for(int i=pmb->is; i<=pmb->ie; i++) {
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
         if (w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
         if (w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
       }
@@ -1076,9 +1076,9 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 
 void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
 {
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
-      for(int i=is; i<=ie; i++)
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++)
         user_out_var(0,k,j,i) = phydro->w(IDN,k,j,i)-d0;
     }
   }

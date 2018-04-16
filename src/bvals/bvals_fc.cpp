@@ -140,7 +140,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   }
   pmr->RestrictFieldX2(src.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx2==1) { // 1D
-    for(int i=si; i<=ei; i++)
+    for (int i=si; i<=ei; i++)
       pmr->coarse_b_.x2f(sk,sj+1,i)=pmr->coarse_b_.x2f(sk,sj,i);
   }
   BufferUtility::Pack3DData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
@@ -159,8 +159,8 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   }
   pmr->RestrictFieldX3(src.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx3==1) { // 1D or 2D
-    for(int j=sj; j<=ej; j++) {
-      for(int i=si; i<=ei; i++)
+    for (int j=sj; j<=ej; j++) {
+      for (int i=si; i<=ei; i++)
         pmr->coarse_b_.x3f(sk+1,j,i)=pmr->coarse_b_.x3f(sk,j,i);
     }
   }
@@ -293,7 +293,7 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     int ssize;
     if (nb.level==pmb->loc.level)
@@ -748,7 +748,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
   MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if (bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
@@ -795,7 +795,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<nneighbor; n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)

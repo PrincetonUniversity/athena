@@ -210,7 +210,7 @@ void TurbulenceDriver::Perturb(Real dt){
   Real m[4] = {0}, gm[4];
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
-  for(int igid=nbs, nb=0; igid<=nbe; igid++, nb++){
+  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++){
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if (pmb != NULL){
       for (int k=ks; k<=ke; k++) {
@@ -254,7 +254,7 @@ void TurbulenceDriver::Perturb(Real dt){
   // Calculate unscaled energy of perturbations
   m[0] = 0.0;
   m[1] = 0.0;
-  for(int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
+  for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++){
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if (pmb != NULL){
       for (int k=ks; k<=ke; k++) {

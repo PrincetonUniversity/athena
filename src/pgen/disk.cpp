@@ -115,7 +115,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real v1, v2, v3;
 
   //  Initialize density and momenta
-  for(int k=ks; k<=ke; ++k) {
+  for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates

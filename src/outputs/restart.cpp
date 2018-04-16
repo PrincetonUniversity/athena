@@ -77,9 +77,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   // calculate the header size
   IOWrapperSize_t udsize=0;
-  for(int n=0; n<pm->nint_user_mesh_data_; n++)
+  for (int n=0; n<pm->nint_user_mesh_data_; n++)
     udsize+=pm->iuser_mesh_data[n].GetSizeInBytes();
-  for(int n=0; n<pm->nreal_user_mesh_data_; n++)
+  for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize+=pm->ruser_mesh_data[n].GetSizeInBytes();
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
@@ -110,12 +110,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     if (udsize!=0) {
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
-      for(int n=0; n<pm->nint_user_mesh_data_; n++) {
+      for (int n=0; n<pm->nint_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
                pm->iuser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->iuser_mesh_data[n].GetSizeInBytes();
       }
-      for(int n=0; n<pm->nreal_user_mesh_data_; n++) {
+      for (int n=0; n<pm->nreal_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pm->ruser_mesh_data[n].data(),
                pm->ruser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->ruser_mesh_data[n].GetSizeInBytes();
@@ -173,12 +173,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     // for restarts.
 
     // pack the user MeshBlock data
-    for(int n=0; n<pmb->nint_user_meshblock_data_; n++) {
+    for (int n=0; n<pmb->nint_user_meshblock_data_; n++) {
       memcpy(pdata, pmb->iuser_meshblock_data[n].data(),
              pmb->iuser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->iuser_meshblock_data[n].GetSizeInBytes();
     }
-    for(int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
+    for (int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
       memcpy(pdata, pmb->ruser_meshblock_data[n].data(),
              pmb->ruser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->ruser_meshblock_data[n].GetSizeInBytes();

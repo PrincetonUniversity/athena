@@ -724,7 +724,7 @@ void ParameterInput::ParameterDump(std::ostream& os)
 
 InputLine* InputBlock::GetPtrToLine(std::string name)
 {
-  for(InputLine* pl = pline; pl != NULL; pl = pl->pnext){
+  for (InputLine* pl = pline; pl != NULL; pl = pl->pnext){
     if (name.compare(pl->param_name) == 0) return pl;
   }
   return NULL;

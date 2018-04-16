@@ -49,7 +49,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   // *** we also need to construct another neighbor list for Multigrid ***
 
   ranklist_  = new int[pm->nbtotal];
-  for(int n=0; n<pm->nbtotal; n++)
+  for (int n=0; n<pm->nbtotal; n++)
     ranklist_[n]=pm->ranklist[n];
 
   nranks_  = Globals::nranks;
@@ -58,7 +58,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_FFT);
 #endif
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pm->nslist[n];
     nblist_[n]  = pm->nblist[n];
   }
@@ -73,7 +73,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int64_t lx2max = lx2min;
   int64_t lx3max = lx3min;
 
-  for(int n=ns; n<ne; n++){
+  for (int n=ns; n<ne; n++){
     int64_t &lx1 = pm->loclist[n].lx1;
     int64_t &lx2 = pm->loclist[n].lx2;
     int64_t &lx3 = pm->loclist[n].lx3;
@@ -105,7 +105,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   // MeshBlocks in the same processor will be gathered into FFTBlock of the processor.
   fft_loclist_ = new LogicalLocation[nranks_];
 
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     int ns = nslist_[n];
     fft_loclist_[n] = pm->loclist[ns];
     fft_loclist_[n].lx1 = fft_loclist_[n].lx1/nbx1;

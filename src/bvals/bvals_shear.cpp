@@ -127,9 +127,9 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
 
   if (shbb_.inner == true) {
     // step 1. -- add shear to the inner periodic boundary values
-    for(int k=kl; k<=ku; k++) {
-      for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+        for (int i=0; i<NGHOST; i++) {
           // add shear to conservative
           shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i)
                                             +qomL*src(IDN,k,j,i);
@@ -147,9 +147,9 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
     int  ib = ie+1;
     int ii;
     // step 2. -- add shear to the outer periodic boundary values
-    for(int k=kl; k<=ku; k++) {
-      for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+        for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
           // add shear to conservative
           shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii)
@@ -195,9 +195,9 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
     int ib = is-NGHOST;
     int ii;
     // step 1. -- load shboxvar_hydro_
-    for(int k=kl; k<=ku; k++) {
-      for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+        for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
           shboxvar_inner_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
           shboxvar_inner_hydro_(IM1,k,j,i) = src(IM1,k,j,ii);
@@ -214,11 +214,11 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
     }}
 
     // step 2. -- conservative remaping
-    for(int n=0; n<NHYDRO; n++) {
-      for(int k=kl; k<=ku; k++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int n=0; n<NHYDRO; n++) {
+      for (int k=kl; k<=ku; k++) {
+        for (int i=0; i<NGHOST; i++) {
           RemapFlux(n,k,js,je+2,i,eps_,shboxvar_inner_hydro_,flx_inner_hydro_);
-          for(int j=js; j<=je+1; j++) {
+          for (int j=js; j<=je+1; j++) {
             shboxvar_inner_hydro_(n,k,j,i) -= flx_inner_hydro_(j+1)
                                              -flx_inner_hydro_(j);
           }
@@ -227,7 +227,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
 
   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
   // MPI_Isend otherwise
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
         LoadHydroShearing(shboxvar_inner_hydro_, send_innerbuf_hydro_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
@@ -251,9 +251,9 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
     qomL = -qomL;
     int ii;
     // step 1. -- load shboxvar_hydro_
-    for(int k=kl; k<=ku; k++) {
-      for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+        for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
           shboxvar_outer_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
           shboxvar_outer_hydro_(IM1,k,j,i) = src(IM1,k,j,ii);
@@ -270,12 +270,12 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
     }}
 
     // step 2. -- conservative remaping
-    for(int n=0; n<NHYDRO; n++) {
-      for(int k=kl; k<=ku; k++) {
-        for(int i=0; i<NGHOST; i++) {
+    for (int n=0; n<NHYDRO; n++) {
+      for (int k=kl; k<=ku; k++) {
+        for (int i=0; i<NGHOST; i++) {
           RemapFlux(n,k,js-1,je+1,i,-eps_,shboxvar_outer_hydro_,
                     flx_outer_hydro_);
-          for(int j=js-1; j<=je; j++) {
+          for (int j=js-1; j<=je; j++) {
             shboxvar_outer_hydro_(n,k,j,i) -= flx_outer_hydro_(j+1)
                                              -flx_outer_hydro_(j);
           }
@@ -285,7 +285,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
   // MPI_Isend otherwise
     int offset = 4;
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
         LoadHydroShearing(shboxvar_outer_hydro_, send_outerbuf_hydro_[n],
                           n+offset);
@@ -384,7 +384,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
   bool flagi=true, flago=true;
 
   if (shbb_.inner == true) { // check inner boundaries
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (shbox_inner_hydro_flag_[n]==BNDRY_COMPLETED) continue;
       if (shbox_inner_hydro_flag_[n]==BNDRY_WAITING) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
@@ -412,7 +412,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
-    for(int n=0; n<4; n++) {
+    for (int n=0; n<4; n++) {
       if (shbox_outer_hydro_flag_[n]==BNDRY_COMPLETED) continue;
       if (shbox_outer_hydro_flag_[n]==BNDRY_WAITING) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
