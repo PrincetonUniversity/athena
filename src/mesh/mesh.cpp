@@ -1232,7 +1232,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     else if (SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
-#pragma omp parallel num_threads(nthreads) {
+#pragma omp parallel num_threads(nthreads)
+{
     MeshBlock *pmb;
     Hydro *phydro;
     Field *pfield;

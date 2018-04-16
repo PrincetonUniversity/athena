@@ -93,7 +93,8 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step) {
   // cycle through all MeshBlocks and perform all tasks possible
   while(nmb_left > 0) {
 
-#pragma omp parallel shared(nmb_left) num_threads(nthreads) {
+#pragma omp parallel shared(nmb_left) num_threads(nthreads)
+{
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {
