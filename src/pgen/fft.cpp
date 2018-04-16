@@ -117,15 +117,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     double omp_time = omp_get_wtime() - omp_start_time;;
 #endif
     clock_t tstop = clock();
-    float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+    float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
+        static_cast<Real>(CLOCKS_PER_SEC);
     int64_t zones = GetTotalCells();
-    float zc_cpus = (float)(zones*ncycle)/cpu_time;
+    float zc_cpus = static_cast<Real>(zones*ncycle)/cpu_time;
 
     if (Globals::my_rank == 0) {
       std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
       std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
-      float zc_omps = (float)(zones*ncycle)/omp_time;
+      float zc_omps = static_cast<Real>(zones*ncycle)/omp_time;
       std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
       std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif

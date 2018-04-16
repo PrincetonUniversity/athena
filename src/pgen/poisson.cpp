@@ -176,11 +176,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       double omp_time = omp_get_wtime() - omp_start_time;;
 #endif
       clock_t tstop = clock();
-      float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+      float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
+          static_cast<Real>(CLOCKS_PER_SEC);
       int64_t zones = GetTotalCells();
       int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
-      float zc_cpus = (float)(mb_zones*ncycle)/cpu_time;
-      float zc_cpus2 = (float)(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
+      float zc_cpus = static_cast<Real>(mb_zones*ncycle)/cpu_time;
+      float zc_cpus2 = static_cast<Real>(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
 
       if (Globals::my_rank == 0) {
         std::cout << "Timing Possison Solver                               " << std::endl;
@@ -194,12 +195,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         std::cout << "processor configuration = "
                   << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
         std::cout << "cpu time used  = " << cpu_time << std::endl;
-        std::cout << "cpu time used/cycle  = " << cpu_time/(float)(ncycle) << std::endl;
+        std::cout << "cpu time used/cycle  = " << cpu_time/static_cast<Real>(ncycle) << std::endl;
         std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
         std::cout << "zone-cycles(NlogN)/cpu_second = " << zc_cpus2 << std::endl;
 #ifdef OPENMP_PARALLEL
         std::cout << "=====================================================" << std::endl;
-        float zc_omps = (float)(zones*ncycle)/omp_time;
+        float zc_omps = static_cast<Real>(zones*ncycle)/omp_time;
         std::cout << "omp number of threads = " << GetNumMeshThreads() << std::endl;
         std::cout << "omp wtime used = " << omp_time << std::endl;
         std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
