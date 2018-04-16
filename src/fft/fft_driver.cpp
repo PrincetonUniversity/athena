@@ -27,8 +27,7 @@
 
 // constructor, initializes data structures and parameters
 
-FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
-{
+FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   pmy_mesh_=pm;
 
   if (pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
@@ -157,8 +156,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 
 // destructor
 
-FFTDriver::~FFTDriver()
-{
+FFTDriver::~FFTDriver() {
   delete [] ranklist_;
   delete [] nslist_;
   delete [] nblist_;

@@ -30,8 +30,7 @@
 
 void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-  AthenaArray<Real> &vect)
-{
+  AthenaArray<Real> &vect) {
   // permute components of input primitive vector depending on direction
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -269,8 +268,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
 void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-  AthenaArray<Real> &vect)
-{
+  AthenaArray<Real> &vect) {
   // permute components of output primitive vector depending on direction
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;

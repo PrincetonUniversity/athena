@@ -33,8 +33,7 @@
 //  \brief Shu-Osher test problem generator
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // setup dependent variables
   Real dl = 3.857143;
   Real pl = 10.33333;

@@ -52,8 +52,7 @@ static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 static Real d0,p0,v0,u0,w0,va,b0;
 
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
@@ -123,8 +122,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x, sinkx, coskx;
 
   for (int k=ks; k<=ke; ++k) {
@@ -160,8 +158,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   } // self-gravity
 }
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
   if (omega2 < 0) {
     if (Globals::my_rank==0)

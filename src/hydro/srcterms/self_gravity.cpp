@@ -19,8 +19,7 @@
 //  \brief Adds source terms for self-gravitational acceleration to conserved variables
 
 void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-{
+  const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   if (SELF_GRAVITY_ENABLED && NON_BAROTROPIC_EOS) {
     Gravity *pgrav = pmb->pgrav;

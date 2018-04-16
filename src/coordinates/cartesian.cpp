@@ -18,8 +18,7 @@
 // Cartesian coordinates constructor
 
 Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
@@ -134,8 +133,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 // destructor
 
-Cartesian::~Cartesian()
-{
+Cartesian::~Cartesian() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();

@@ -27,8 +27,7 @@ namespace RefinementConditions {
 //! \fn MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 //  \brief constructor
 
-MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
-{
+MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   AMRFlag_=pmb->pmy_mesh->AMRFlag_;
 
@@ -95,8 +94,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 //! \fn MeshRefinement::~MeshRefinement()
 //  \brief destructor
 
-MeshRefinement::~MeshRefinement()
-{
+MeshRefinement::~MeshRefinement() {
   coarse_cons_.DeleteAthenaArray();
   coarse_prim_.DeleteAthenaArray();
   fvol_[0][0].DeleteAthenaArray();
@@ -136,8 +134,7 @@ MeshRefinement::~MeshRefinement()
 
 void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
                      AthenaArray<Real> &coarse, int sn, int en,
-                     int csi, int cei, int csj, int cej, int csk, int cek)
-{
+                     int csi, int cei, int csj, int cej, int csk, int cek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
@@ -203,8 +200,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
 //  \brief restrict the x1 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
-     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-{
+     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is;
@@ -260,8 +256,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
 //  \brief restrict the x2 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
-     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-{
+     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
@@ -336,8 +331,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
 //  \brief restrict the x3 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
-     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-{
+     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
@@ -399,8 +393,7 @@ void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
 
 void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coarse,
                      AthenaArray<Real> &fine, int sn, int en,
-                     int si, int ei, int sj, int ej, int sk, int ek)
-{
+                     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if (pmb->block_size.nx3 > 1) {
@@ -548,8 +541,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
 //  \brief prolongate x1 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
-     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-{
+     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if (pmb->block_size.nx3 > 1) {
@@ -629,8 +621,7 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
 //  \brief prolongate x2 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
-     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-{
+     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if (pmb->block_size.nx3 > 1) {
@@ -714,8 +705,7 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
 //  \brief prolongate x3 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
-     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-{
+     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if (pmb->block_size.nx3 > 1) {
@@ -819,8 +809,7 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
 //  \brief prolongate the internal face-centered fields
 
 void MeshRefinement::ProlongateInternalField(FaceField &fine,
-                     int si, int ei, int sj, int ej, int sk, int ek)
-{
+                     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
@@ -975,8 +964,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
 //! \fn void MeshRefinement::CheckRefinementCondition(void)
 //  \brief Check refinement criteria
 
-void MeshRefinement::CheckRefinementCondition(void)
-{
+void MeshRefinement::CheckRefinementCondition(void) {
   MeshBlock *pmb=pmy_block_;
   int ret=0, aret=-1;
   refine_flag_=0;

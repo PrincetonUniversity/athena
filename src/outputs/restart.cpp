@@ -30,16 +30,14 @@
 // destructor - not needed for this derived class
 
 RestartOutput::RestartOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //  \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
-void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write)
-{
+void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
   MeshBlock *pmb;
   IOWrapper resfile;
   IOWrapperSize_t listsize, headeroffset, datasize;

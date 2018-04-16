@@ -43,8 +43,7 @@ class FFTDriver;
 //  \brief Constructor of the GravityBoundaryValues class
 
 GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
-{
+ : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++) {
     if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
@@ -62,16 +61,14 @@ GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *
 //! \fn GravityBoundaryValues::~GravityBoundaryValues()
 //  \brief Destructor of the GravityBoundaryValues class
 
-GravityBoundaryValues::~GravityBoundaryValues()
-{
+GravityBoundaryValues::~GravityBoundaryValues() {
   DestroyBoundaryData(bd_gravity_);
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd)
 //  \brief Initialize GravityBoundaryData structure
-void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd)
-{
+void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
   MeshBlock *pmb=pmy_block_;
   int size;
   bd.nbmax=maxneighbor_;
@@ -100,8 +97,7 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd)
 //----------------------------------------------------------------------------------------
 //! \fn void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
 //  \brief Destroy GravityBoundaryData structure
-void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
-{
+void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd) {
   for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
@@ -118,8 +114,7 @@ void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
 //! \fn void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 //  \brief Apply physical boundary conditions to the gravitational potential
 
-void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
-{
+void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> &dst=pmb->pgrav->phi;
@@ -176,8 +171,7 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 //! \fn void GravityBoundaryValues::StartReceivingGravity(void)
 //  \brief initiate MPI_Irecv for gravity
 
-void GravityBoundaryValues::StartReceivingGravity(void)
-{
+void GravityBoundaryValues::StartReceivingGravity(void) {
   MeshBlock *pmb=pmy_block_;
   int tag;
   GravityBoundaryData *pbd;
@@ -206,8 +200,7 @@ void GravityBoundaryValues::StartReceivingGravity(void)
 //! \fn void GravityBoundaryValues::ClearBoundaryGravity(void)
 //  \brief clean up the boundary flags after each loop for multigrid
 
-void GravityBoundaryValues::ClearBoundaryGravity(void)
-{
+void GravityBoundaryValues::ClearBoundaryGravity(void) {
   GravityBoundaryData *pbd;
 
   pbd=&bd_gravity_;
@@ -230,8 +223,7 @@ void GravityBoundaryValues::ClearBoundaryGravity(void)
 //  \brief Set gravity boundary buffers for sending to a block on the same level
 
 int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
-  Real *buf, const NeighborBlock& nb)
-{
+  Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -250,8 +242,7 @@ int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> 
 //! \fn void GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 //  \brief Send boundary buffers
 
-bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
-{
+bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
   GravityBoundaryData *pbd, *ptarget;
@@ -300,8 +291,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 //  \brief Set gravity boundary received from a block on the same level
 
 void GravityBoundaryValues::SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                               const NeighborBlock& nb)
-{
+                                               const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -325,8 +315,7 @@ void GravityBoundaryValues::SetGravityBoundarySameLevel(AthenaArray<Real> &dst, 
 //! \fn bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
 //  \brief receive the boundary data
 
-bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
-{
+bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst) {
   MeshBlock *pmb=pmy_block_;
   bool flag=true;
   GravityBoundaryData *pbd;

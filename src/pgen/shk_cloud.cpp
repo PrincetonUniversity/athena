@@ -50,8 +50,7 @@ void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Set IIB value function pointer
   EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
   return;
@@ -62,8 +61,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Problem Generator for the shock-cloud interaction test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gmma  = peos->GetGamma();
   gmma1 = gmma - 1.0;
 
@@ -179,8 +177,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Note quantities at this boundary are held fixed at the downstream state
 
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1; i<=(NGHOST); ++i) {

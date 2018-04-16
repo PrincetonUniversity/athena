@@ -20,8 +20,7 @@
 void Reconstruction::DonorCellX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -59,8 +58,7 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb,
 void Reconstruction::DonorCellX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -98,8 +96,7 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb,
 void Reconstruction::DonorCellX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {

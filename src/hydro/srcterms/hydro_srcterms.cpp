@@ -22,8 +22,7 @@
 
 // HydroSourceTerms constructor
 
-HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
-{
+HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   pmy_hydro_ = phyd;
   hydro_sourceterms_defined = false;
 
@@ -70,8 +69,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 
 // destructor
 
-HydroSourceTerms::~HydroSourceTerms()
-{
+HydroSourceTerms::~HydroSourceTerms() {
 }
 
 //----------------------------------------------------------------------------------------
@@ -80,8 +78,7 @@ HydroSourceTerms::~HydroSourceTerms()
 
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
      const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
+     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)

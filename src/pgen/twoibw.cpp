@@ -34,8 +34,7 @@
 //  \brief Problem Generator for the two interacting blast waves
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}

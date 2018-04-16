@@ -37,8 +37,7 @@ static Real gm1, iso_cs;
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
@@ -460,8 +459,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 inline static void RoeEigensystem(const Real wroe[], const Real b1,
   const Real x, const Real y, Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
-{
+  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];

@@ -28,8 +28,7 @@
 //  previous step(s) of time integrator algorithm
 
 void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-                                       const Real wght, AthenaArray<Real> &u_out)
-{
+                                       const Real wght, AthenaArray<Real> &u_out) {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
@@ -105,8 +104,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 //  \brief Compute weighted average of cell-averaged U in time integrator step
 
 void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                         AthenaArray<Real> &u_in2, const Real wght[3])
-{
+                         AthenaArray<Real> &u_in2, const Real wght[3]) {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

@@ -70,8 +70,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout);
 static Real hst_dBy(MeshBlock *pmb, int iout);
 static Real Omega_0,qshear;
 //====================================================================================
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(3);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
@@ -87,8 +86,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief mhd shearing waves and unstratified disk problem generator for
 //  3D problems.
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   if (pmy_mesh->mesh_size.nx2 == 1) {
@@ -377,8 +375,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-static Real hst_BxBy(MeshBlock *pmb, int iout)
-{
+static Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -400,8 +397,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   return bxby;
 }
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout)
-{
+static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -425,8 +421,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
   return dvxvy;
 }
 
-static Real hst_dBy(MeshBlock *pmb, int iout)
-{
+static Real hst_dBy(MeshBlock *pmb, int iout) {
   Real dby=0;
   Real fkx, fky, fkz; // Fourier kx, ky
   Real x1,x2,x3;

@@ -38,8 +38,7 @@
 //! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
 //  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
 
-void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
-{
+void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_, *pbl;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
@@ -166,8 +165,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
 //! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
 //  \brief Receive and apply the surace flux from the finer neighbor(s)
 
-bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
-{
+bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   bool bflag=true;

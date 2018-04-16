@@ -42,8 +42,7 @@ class MultigridDriver;
 
 MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
                                    MGBoundaryFunc_t *MGBoundary)
-  : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs)
-{
+  : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs) {
   pmy_mg_=pmg;
   if (pmy_mg_->root_flag_==true) {
     for (int i=0; i<6; i++)
@@ -66,8 +65,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
 //! \fn MGBoundaryValues::~MGBoundaryValues()
 //  \brief Destructor of the MGBoundaryValues class
 
-MGBoundaryValues::~MGBoundaryValues()
-{
+MGBoundaryValues::~MGBoundaryValues() {
   if (SELF_GRAVITY_ENABLED == 2)
     DestroyBoundaryData(bd_mggrav_);
 }
@@ -75,8 +73,7 @@ MGBoundaryValues::~MGBoundaryValues()
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type)
 //  \brief Initialize MGBoundaryData structure
-void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type)
-{
+void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type) {
  int size;
   bd.nbmax=maxneighbor_;
   for (int n=0;n<bd.nbmax;n++) {
@@ -125,8 +122,7 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
 //  \brief Destroy MGBoundaryData structure
-void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
-{
+void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd) {
   for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
@@ -144,8 +140,7 @@ void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
 //! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(void)
 //  \brief Apply physical boundary conditions to the current Multigrid data
 
-void MGBoundaryValues::ApplyPhysicalBoundaries(void)
-{
+void MGBoundaryValues::ApplyPhysicalBoundaries(void) {
   AthenaArray<Real> &dst=pmy_mg_->GetCurrentData();
   int ll=pmy_mg_->nlevel_-1-pmy_mg_->current_level_;
   int ngh=pmy_mg_->ngh_, nvar=pmy_mg_->nvar_;
@@ -200,8 +195,7 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void)
 //! \fn void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 //  \brief initiate MPI_Irecv for multigrid
 
-void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
-{
+void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
   int mylevel=loc.level;
   int nvar, tag, phys, ngh;
   bool faceonly=false;
@@ -257,8 +251,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 //! \fn void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 //  \brief clean up the boundary flags after each loop for multigrid
 
-void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
-{
+void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type) {
   bool faceonly=false;
   MGBoundaryData *pbd;
 
@@ -288,8 +281,7 @@ void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
-{
+                      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb) {
   int si, sj, sk, ei, ej, ek;
 
   si=(nb.ox1>0)?nc:ngh;
@@ -310,8 +302,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &sr
 //  \brief Send boundary buffers
 
 bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                                    int nc, enum BoundaryType type)
-{
+                                                    int nc, enum BoundaryType type) {
   int mylevel=loc.level;
   int nvar, tag, ngh, phys;
   bool faceonly=false;
@@ -371,8 +362,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 //  \brief Set hydro boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-                        int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
-{
+                        int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb) {
   int si, sj, sk, ei, ej, ek;
 
   if (nb.ox1==0)     si=ngh,    ei=nc+ngh-1;
@@ -397,8 +387,7 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
 //  \brief receive the boundary data
 
 bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                                       int nc, enum BoundaryType type)
-{
+                                                       int nc, enum BoundaryType type) {
   bool bflag=true, faceonly=false;
   int nvar, ngh;
   MGBoundaryData *pbd;

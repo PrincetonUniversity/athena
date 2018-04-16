@@ -22,8 +22,7 @@
 void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
@@ -132,8 +131,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
@@ -242,8 +240,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;

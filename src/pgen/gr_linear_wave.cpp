@@ -67,8 +67,7 @@ AthenaArray<Real> volume;     // 1D array of volumes
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read information regarding desired wave and check input
   int wave_flag = pin->GetInteger("problem", "wave_flag");
   if (wave_flag < 0 or wave_flag > NWAVE-1) {
@@ -431,8 +430,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //   pin: parameters
 // Outputs: (none)
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Free metric
   if (GENERAL_RELATIVITY) {
     g.DeleteAthenaArray();
@@ -564,8 +562,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //   references Anton et al. 2010, ApJS 188 1 (A, MHD)
 //              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -866,8 +863,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz)
-{
+    Real *px, Real *py, Real *pz) {
   if (COORDINATE_SYSTEM == "minkowski") {
     *pt = x0;
     *px = x1;
@@ -889,8 +885,7 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (COORDINATE_SYSTEM == "minkowski") {
     *pa0 = at;
     *pa1 = ax;
@@ -915,8 +910,7 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
 
-static Real QuadraticRoot(Real a1, Real a0, bool greater_root)
-{
+static Real QuadraticRoot(Real a1, Real a0, bool greater_root) {
   if (a1*a1 < 4.0*a0) {  // no real roots
     return -a1/2.0;
   }
@@ -948,8 +942,7 @@ static Real QuadraticRoot(Real a1, Real a0, bool greater_root)
 //   same function as in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 //   references Numerical Recipes, 3rd ed. (NR)
 
-static Real CubicRootReal(Real a2, Real a1, Real a0)
-{
+static Real CubicRootReal(Real a2, Real a1, Real a0) {
   Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
   Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
   if (r*r - q*q*q < 0.0) {
@@ -988,8 +981,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0)
 //   similar function to those in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-    Real *px3, Real *px4)
-{
+    Real *px3, Real *px4) {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*SQR(a3);
   Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);

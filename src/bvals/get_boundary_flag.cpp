@@ -18,8 +18,7 @@
 //! \fn GetBoundaryFlag(std::string input_string)
 //  \brief Parses input string to return integer flag specifying boundary condition
 
-enum BoundaryFlag GetBoundaryFlag(std::string input_string)
-{
+enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
   if (input_string == "reflecting") {
     return REFLECTING_BNDRY;
   } else if (input_string == "outflow") {

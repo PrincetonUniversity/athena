@@ -20,8 +20,7 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   iso_sound_speed_ = pin->GetReal("hydro","iso_sound_speed"); // error if missing!
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
@@ -29,8 +28,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
 }
 
 //----------------------------------------------------------------------------------------
@@ -40,8 +38,7 @@ EquationOfState::~EquationOfState()
 //           int il, int iu, int jl, int ju, int kl, int ku)
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku)
-{
+  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -78,8 +75,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int il, int iu, int jl, int ju, int kl, int ku)
-{
+     int il, int iu, int jl, int ju, int kl, int ku) {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
   for (int k=kl; k<=ku; ++k) {
@@ -110,8 +106,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
 // \brief returns isothermal sound speed
 
-Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
-{
+Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
   return iso_sound_speed_;
 }
 
@@ -120,8 +115,7 @@ Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
-{
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 
   // apply density floor

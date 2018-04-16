@@ -20,8 +20,7 @@
 //----------------------------------------------------------------------------------------
 // TaskList constructor
 
-TaskList::TaskList(Mesh *pm)
-{
+TaskList::TaskList(Mesh *pm) {
   pmy_mesh_=pm;
   ntasks = 0;
   nsub_steps = 0;
@@ -29,8 +28,7 @@ TaskList::TaskList(Mesh *pm)
 
 // destructor
 
-TaskList::~TaskList()
-{
+TaskList::~TaskList() {
 }
 
 //----------------------------------------------------------------------------------------
@@ -38,8 +36,7 @@ TaskList::~TaskList()
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts)
-{
+enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -73,8 +70,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
 //! \fn void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
-{
+void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step) {
   MeshBlock *pmb = pmesh->pblock;
   // initialize counters stored in each MeshBlock
   while (pmb != NULL)  {
@@ -97,8 +93,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
   // cycle through all MeshBlocks and perform all tasks possible
   while(nmb_left > 0) {
 
-#pragma omp parallel shared(nmb_left) num_threads(nthreads)
-{
+#pragma omp parallel shared(nmb_left) num_threads(nthreads) {
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {

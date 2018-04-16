@@ -32,8 +32,7 @@
 //  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
@@ -249,8 +248,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Problem Generator for the shock tube tests
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}

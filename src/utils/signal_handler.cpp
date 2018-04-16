@@ -28,8 +28,7 @@ namespace SignalHandler {
 //! \fn void SignalHandlerInit(void)
 //  \brief install handlers for selected signals
 
-void SignalHandlerInit(void)
-{
+void SignalHandlerInit(void) {
   for (int n=0; n<nsignal; n++) signalflag[n]=0;
   signal(SIGTERM, SetSignalFlag);
   signal(SIGINT,  SetSignalFlag);
@@ -44,8 +43,7 @@ void SignalHandlerInit(void)
 //! \fn int CheckSignalFlags(void)
 //  \brief Synchronize and check signal flags and return true if any of them is caught
 
-int CheckSignalFlags(void)
-{
+int CheckSignalFlags(void) {
   int ret = 0;
   sigprocmask(SIG_BLOCK,&mask,NULL);
 #ifdef MPI_PARALLEL
@@ -62,8 +60,7 @@ int CheckSignalFlags(void)
 //  \brief Gets a signal flag assuming the signalflag array is already synchronized.
 //         Returns -1 if the specified signal is not handled.
 
-int GetSignalFlag(int s)
-{
+int GetSignalFlag(int s) {
   int ret=-1;
   switch(s) {
   case SIGTERM:
@@ -86,8 +83,7 @@ int GetSignalFlag(int s)
 //! \fn void SetSignalFlag(int s)
 //  \brief Sets signal flags and reinstalls the signal handler function.
 
-void SetSignalFlag(int s)
-{
+void SetSignalFlag(int s) {
   switch(s) {
   case SIGTERM:
     signalflag[ITERM]=1;
@@ -112,8 +108,7 @@ void SetSignalFlag(int s)
 //! \fn void SetWallTimeAlarm(int t)
 //  \brief Set the wall time limit alarm
 
-void SetWallTimeAlarm(int t)
-{
+void SetWallTimeAlarm(int t) {
   alarm(t);
   return;
 }
@@ -122,8 +117,7 @@ void SetWallTimeAlarm(int t)
 //! \fn void CancelWallTimeAlarm(void)
 //  \brief Cancel the wall time limit alarm
 
-void CancelWallTimeAlarm(void)
-{
+void CancelWallTimeAlarm(void) {
   alarm(0);
   return;
 }

@@ -38,8 +38,7 @@
 // destructor - not needed for this derived class
 
 ATHDF5Output::ATHDF5Output(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -47,8 +46,7 @@ ATHDF5Output::ATHDF5Output(OutputParameters oparams)
 //  \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
 //         one file per output using parallel IO.
 
-void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // HDF5 structures
   hid_t file;                                   // file to be written to
   hsize_t dims_start[5], dims_count[5];         // array sizes
@@ -790,8 +788,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //   should only be called by single process
 //   file size scales proportional to total number of MeshBlocks
 //   for many small MeshBlocks, this can take most of the output writing time
-void ATHDF5Output::MakeXDMF()
-{
+void ATHDF5Output::MakeXDMF() {
   std::string filename_aux(filename);
   filename_aux.append(".xdmf");
   std::ofstream xdmf(filename_aux.c_str());

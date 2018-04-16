@@ -66,8 +66,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout);
 //  \brief Init the Mesh properties
 //======================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // initialize global variables
   amp    = pin->GetReal("problem","amp");
   beta   = pin->GetReal("problem","beta");
@@ -91,8 +90,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
       std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
       exit(0);
@@ -225,14 +223,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \fn void MeshBlock::UserWorkInLoop(void)
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
+void MeshBlock::UserWorkInLoop(void) {
   // nothing to do
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout)
-{
+static Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;

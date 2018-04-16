@@ -18,8 +18,7 @@
 
 // constructor, initializes data structures and parameters
 
-Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
-{
+Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   // Allocate memory for primitive/conserved variables
@@ -97,8 +96,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-Hydro::~Hydro()
-{
+Hydro::~Hydro() {
   u.DeleteAthenaArray();
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();

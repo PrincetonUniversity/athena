@@ -28,8 +28,7 @@
 // destructor not required for this derived class
 
 FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -37,8 +36,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 //  \brief writes OutputData to file in tabular format using C style fprintf
 //         Writes one file per MeshBlock
 
-void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
 
   // Loop over MeshBlocks

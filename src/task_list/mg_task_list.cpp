@@ -27,8 +27,7 @@ using namespace MultigridTaskNames;
 //! \fn void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
-{
+void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd) {
   Multigrid *pmg = pmd->pmg_;
   int nmg_left = pmd->GetNumMultigrids();
 
@@ -55,8 +54,7 @@ void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskState &ts)
-{
+enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -92,8 +90,7 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
-{
+void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
@@ -206,34 +203,29 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
   return;
 }
 
-enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   pmg->pmgbval->StartReceivingMultigrid(nc, pmg->btype);
   return TASK_SUCCESS;
 }
 
-enum TaskStatus MultigridTaskList::StartReceiveFace(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::StartReceiveFace(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   pmg->pmgbval->StartReceivingMultigrid(nc, pmg->btypef);
   return TASK_SUCCESS;
 }
 
-enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg) {
   pmg->pmgbval->ClearBoundaryMultigrid(pmg->btype);
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg) {
   pmg->pmgbval->ClearBoundaryMultigrid(pmg->btypef);
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
@@ -241,8 +233,7 @@ enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
@@ -250,8 +241,7 @@ enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
@@ -259,8 +249,7 @@ enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg)
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
@@ -268,38 +257,32 @@ enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg)
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg) {
   pmg->Smooth(0);
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg) {
   pmg->Smooth(1);
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::Restrict(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::Restrict(Multigrid *pmg) {
   pmg->Restrict();
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg) {
   pmg->ProlongateAndCorrect();
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg) {
   pmg->FMGProlongate();
   return TASK_NEXT;
 }
 
-enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
-{
+enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
   pmg->pmgbval->ApplyPhysicalBoundaries();
   return TASK_NEXT;
 }
@@ -309,8 +292,7 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
 //! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 //  \brief Set the task list for prolongation and post smoothing
 
-void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
-{
+void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
   ClearTaskList();
   // nsmooth==0 should not be used
   if (flag==1) // first time on the block level
@@ -371,8 +353,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 //! \fn void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 //  \brief Set the task list for pre smoothing and restriction
 
-void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
-{
+void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
   ClearTaskList();
   if (nsmooth==0) {
     AddMultigridTask(MG_STARTRECV0F, NONE);
@@ -441,8 +422,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 //! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
 //  \brief Set the task list for FMG prolongation
 
-void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
-{
+void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
   ClearTaskList();
   if (flag==1) // first time on the block level
     AddMultigridTask(MG_FMGPROLONG,    NONE);

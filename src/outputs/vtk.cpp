@@ -29,8 +29,7 @@
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
 // legacy format requires data to be stored as big-endian.
 
-int IsBigEndian(void)
-{
+int IsBigEndian(void) {
   short int n = 1;
   char *ep = (char *)&n;
   return (*ep == 0); // Returns 1 (true) on a big endian machine
@@ -47,8 +46,7 @@ static inline void Swap4Bytes(void *vdat) {
 // destructor - not needed for this derived class
 
 VTKOutput::VTKOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -56,8 +54,7 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 //  \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
 //         MeshBlock per file
 
-void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
   int big_end = IsBigEndian(); // =1 on big endian machine
 

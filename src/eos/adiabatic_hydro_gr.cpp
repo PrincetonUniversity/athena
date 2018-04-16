@@ -34,8 +34,7 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
@@ -56,8 +55,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 // Destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
   fixed_.DeleteAthenaArray();
@@ -87,8 +85,7 @@ EquationOfState::~EquationOfState()
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
     AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-    int ku)
-{
+    int ku) {
   // Parameters
   const Real max_wgas_rel = 1.0e8;
   const Real initial_guess_multiplier = 10.0;
@@ -274,8 +271,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku)
-{
+     int iu, int jl, int ju, int kl, int ku) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
@@ -301,8 +297,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    AthenaArray<Real> &cons, Coordinates *pco)
-{
+    AthenaArray<Real> &cons, Coordinates *pco) {
   // Extract primitives
   const Real &rho = prim(IDN,k,j,i);
   const Real &pgas = prim(IPR,k,j,i);
@@ -356,8 +351,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
-    Real *plambda_plus, Real *plambda_minus)
-{
+    Real *plambda_plus, Real *plambda_minus) {
   const Real gamma_adi = gamma_;
   Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
   Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
@@ -382,8 +376,7 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_l
 //   variables are named as though 1 is normal direction
 
 void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real g00,
-    Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
-{
+    Real g01, Real g11, Real *plambda_plus, Real *plambda_minus) {
   // Parameters and constants
   const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
   const Real gamma_adi = gamma_;
@@ -428,8 +421,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi)
-{
+static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq / (w_guess*w_guess);        // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real pgas = (gamma_adi-1.0)/gamma_adi
@@ -450,8 +442,7 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_ad
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi)
-{
+static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq/SQR(w_guess);                             // (N 28)
   Real gamma_sq = 1.0/(1.0-v_norm_sq);
   Real gamma_4 = SQR(gamma_sq);
@@ -467,8 +458,7 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi)
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
-{
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
   // Not applying position-dependent floors here in GR, nor using rho_min

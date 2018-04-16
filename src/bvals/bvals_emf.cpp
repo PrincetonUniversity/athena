@@ -41,8 +41,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFShearing(FaceField &src, Real *buf, int nb)
 //  \brief Load shearingbox EMF boundary buffers
-void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
-{
+void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for e3
@@ -116,16 +115,14 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
 //  \brief Send shearingbox boundary buffers for EMF correction
 //  Currently not used. As we only correct vy at t=0.
 
-void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit(void)
-{
+void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit(void) {
   return;
 }
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 //  \brief Send shearingbox boundary buffers for EMF correction
 
-void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
-{
+void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
 
@@ -213,8 +210,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 //! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb)
 //  \brief Set EMF shearingbox boundary received from a block on the same level
 void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
-                                                        buf, const int nb)
-{
+                                                        buf, const int nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int psj,pej;
@@ -287,8 +283,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 //  \brief receive shearingbox boundary data for EMF correction
-bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
-{
+bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
   MeshBlock *pmb=pmy_block_;
   bool flagi=true, flago=true;
 
@@ -358,8 +353,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::RemapEMFShearingboxBoundary(void)
 //  \brief Set EMF boundary received from a block on the finer level
-void BoundaryValues::RemapEMFShearingboxBoundary(void)
-{
+void BoundaryValues::RemapEMFShearingboxBoundary(void) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -412,8 +406,7 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
 //! \fn void BoundaryValues::ClearEMFShearing(void)
 //  \brief Clear the working array for EMFs on the surface/edge contacting with
 //  a shearing periodic boundary
-void BoundaryValues::ClearEMFShearing(EdgeField &work)
-{
+void BoundaryValues::ClearEMFShearing(EdgeField &work) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=work.x2e;
   AthenaArray<Real> &e3=work.x3e;
@@ -435,8 +428,7 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work)
 //  eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping
 //  adopted from 2nd order RemapFlux of Athena4.0
-void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux)
-{
+void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 

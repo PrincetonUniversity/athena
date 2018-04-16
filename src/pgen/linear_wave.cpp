@@ -65,8 +65,7 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // read global parameters
   wave_flag = pin->GetInteger("problem","wave_flag");
   amp = pin->GetReal("problem","amp");
@@ -152,8 +151,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Compute L1 error in linear waves and output to file
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // Initialize errors to zero
@@ -318,8 +316,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize the magnetic fields.  Note wavevector, eigenvectors, and other variables
   // are set in InitUserMeshData
 
@@ -470,8 +467,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3)
-{
+static Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay =  bz0*x - (dbz/k_par)*cos(k_par*(x));
@@ -484,8 +480,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3)
-{
+static Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay =  bz0*x - (dbz/k_par)*cos(k_par*(x));
@@ -498,8 +493,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3)
-{
+static Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = -by0*x + (dby/k_par)*cos(k_par*(x)) + bx0*y;
@@ -514,8 +508,7 @@ static Real A3(const Real x1, const Real x2, const Real x3)
 static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
   const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
   Real eigenvalues[(NWAVE)],
-  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)])
-{
+  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
   if (MAGNETIC_FIELDS_ENABLED) {
 
 //--- Adiabatic MHD ---
@@ -1052,8 +1045,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 
 
 // refinement condition: density curvature
-int RefinementCondition(MeshBlock *pmb)
-{
+int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real rmax=0.0, rmin=2.0*d0;
   for (int k=pmb->ks; k<=pmb->ke; k++) {
@@ -1073,14 +1065,12 @@ int RefinementCondition(MeshBlock *pmb)
 }
 
 
-void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
-{
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   AllocateUserOutputVariables(1);
   return;
 }
 
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
-{
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++)

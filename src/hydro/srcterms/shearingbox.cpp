@@ -39,8 +39,7 @@
 //  next step or the final update.
 
 void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-{
+  const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
   if (Omega_0_==0.0 || qshear_==0.0 ) {
     std::cout << "[ShearingBoxSourceTerms]: Omega_0 or qshear not stated " << std::endl;
     return;

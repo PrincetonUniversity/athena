@@ -26,8 +26,7 @@
 //! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void Field::CT(const Real wght, FaceField &b_out)
-{
+void Field::CT(const Real wght, FaceField &b_out) {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -129,8 +128,7 @@ void Field::CT(const Real wght, FaceField &b_out)
 //  \brief Compute weighted average of face-averaged B in time integrator step
 
 void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
-                         const Real wght[3])
-{
+                         const Real wght[3]) {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

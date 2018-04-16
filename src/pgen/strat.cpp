@@ -75,8 +75,7 @@ static Real dfloor,pfloor;
 
 
 //====================================================================================
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
@@ -105,8 +104,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief stratified disk problem generator for 3D problems.
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int ifield, ipert;
   Real beta, amp, pres;
   Real iso_cs=1.0;
@@ -322,13 +320,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
-{
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   return;
 }
 
-void MeshBlock::UserWorkInLoop(void)
-{
+void MeshBlock::UserWorkInLoop(void) {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -351,16 +347,14 @@ void MeshBlock::UserWorkInLoop(void)
   return;
 }
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   return;
 }
 
 
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
-              AthenaArray<Real> &cons)
-{
+              AthenaArray<Real> &cons) {
   Real fsmooth, xi, sign;
   Real Lz = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
   Real z0 = Lz/2.0;
@@ -402,8 +396,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     AthenaArray<Real> &prim, FaceField &b,
     Real time, Real dt, int is, int ie, int js,
-    int je, int ks, int ke)
-{
+    int je, int ks, int ke) {
 
   // Copy field components from last physical zone
   // zero slope boundary for B field
@@ -481,8 +474,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &prim,
                   FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke)
-{
+                  int is, int ie, int js, int je, int ks, int ke) {
 // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=NGHOST; k++) {
@@ -544,8 +536,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout)
-{
+static Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -567,8 +558,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   return bxby;
 }
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout)
-{
+static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;

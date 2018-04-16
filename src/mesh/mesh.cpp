@@ -50,8 +50,7 @@
 //----------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 
-Mesh::Mesh(ParameterInput *pin, int mesh_test)
-{
+Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst;
@@ -487,8 +486,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 //----------------------------------------------------------------------------------------
 // Mesh constructor for restarts. Load the restart file
 
-Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
-{
+Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
@@ -812,8 +810,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 //----------------------------------------------------------------------------------------
 // destructor
 
-Mesh::~Mesh()
-{
+Mesh::~Mesh() {
   while(pblock->prev != NULL) // should not be true
     delete pblock->prev;
   while(pblock->next != NULL)
@@ -850,8 +847,7 @@ Mesh::~Mesh()
 //! \fn void Mesh::OutputMeshStructure(int dim)
 //  \brief print the mesh structure information
 
-void Mesh::OutputMeshStructure(int dim)
-{
+void Mesh::OutputMeshStructure(int dim) {
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   FILE *fp;
@@ -980,8 +976,7 @@ void Mesh::OutputMeshStructure(int dim)
 // \brief function that loops over all MeshBlocks and find new timestep
 //        this assumes that phydro->NewBlockTimeStep is already called
 
-void Mesh::NewTimeStep(void)
-{
+void Mesh::NewTimeStep(void) {
   MeshBlock *pmb = pblock;
   Real min_dt=pmb->new_block_dt;
   pmb=pmb->next;
@@ -1003,8 +998,7 @@ void Mesh::NewTimeStep(void)
 //! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
-{
+void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1025,8 +1019,7 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
 //! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
 
-void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
-{
+void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag) {
   if (adaptive==true)
     AMRFlag_=amrflag;
   return;
@@ -1036,8 +1029,7 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 //! \fn void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc_t my_mg)
 //  \brief Enroll a user-defined function for Mesh generation
 
-void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg)
-{
+void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg) {
   std::stringstream msg;
   if (dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
@@ -1071,8 +1063,7 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
 //! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 //  \brief Enroll a user-defined source function
 
-void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
-{
+void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func) {
   UserSourceTerm_ = my_func;
   return;
 }
@@ -1081,8 +1072,7 @@ void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 //! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
 //  \brief Enroll a user-defined time step function
 
-void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
-{
+void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func) {
   UserTimeStep_ = my_func;
   return;
 }
@@ -1091,8 +1081,7 @@ void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
 //! \fn void Mesh::AllocateUserHistoryOutput(int n)
 //  \brief set the number of user-defined history outputs
 
-void Mesh::AllocateUserHistoryOutput(int n)
-{
+void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
   user_history_func_ = new HistoryOutputFunc_t[n];
@@ -1104,8 +1093,7 @@ void Mesh::AllocateUserHistoryOutput(int n)
 //                                         const char *name)
 //  \brief Enroll a user-defined history output function and set its name
 
-void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name)
-{
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name) {
   std::stringstream msg;
   if (i>=nuser_history_output_) {
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
@@ -1121,8 +1109,7 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const cha
 //! \fn void Mesh::EnrollUserMetric(MetricFunc_t my_func)
 //  \brief Enroll a user-defined metric for arbitrary GR coordinates
 
-void Mesh::EnrollUserMetric(MetricFunc_t my_func)
-{
+void Mesh::EnrollUserMetric(MetricFunc_t my_func) {
   UserMetric_ = my_func;
   return;
 }
@@ -1131,8 +1118,7 @@ void Mesh::EnrollUserMetric(MetricFunc_t my_func)
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
 
-void Mesh::AllocateRealUserMeshDataField(int n)
-{
+void Mesh::AllocateRealUserMeshDataField(int n) {
   if (nreal_user_mesh_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateRealUserMeshDataField"
@@ -1148,8 +1134,7 @@ void Mesh::AllocateRealUserMeshDataField(int n)
 //! \fn void Mesh::AllocateIntUserMeshDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in Mesh
 
-void Mesh::AllocateIntUserMeshDataField(int n)
-{
+void Mesh::AllocateIntUserMeshDataField(int n) {
   if (nint_user_mesh_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateIntUserMeshDataField"
@@ -1167,8 +1152,7 @@ void Mesh::AllocateIntUserMeshDataField(int n)
 //                                              MGBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc)
-{
+void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1185,8 +1169,7 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 //                                                   GravityBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
-{
+void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1201,8 +1184,7 @@ void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBound
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 // \brief Apply MeshBlock::UserWorkBeforeOutput
-void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
-{
+void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
   while (pmb != NULL)  {
     pmb->UserWorkBeforeOutput(pin);
@@ -1214,8 +1196,7 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
 // \brief  initialization before the main loop
 
-void Mesh::Initialize(int res_flag, ParameterInput *pin)
-{
+void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   bool iflag=true;
   int inb=nbtotal;
   int nthreads=GetNumMeshThreads();
@@ -1251,8 +1232,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     else if (SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
-#pragma omp parallel num_threads(nthreads)
-{
+#pragma omp parallel num_threads(nthreads) {
     MeshBlock *pmb;
     Hydro *phydro;
     Field *pfield;
@@ -1381,8 +1361,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
 //  \brief return the MeshBlock whose gid is tgid
 
-MeshBlock* Mesh::FindMeshBlock(int tgid)
-{
+MeshBlock* Mesh::FindMeshBlock(int tgid) {
   MeshBlock *pbl=pblock;
   while(pbl!=NULL)
   {
@@ -1397,8 +1376,7 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
 // \!fn void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
 
-void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
-{
+void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
   std::stringstream msg;
   Real totalcost=0, maxcost=0.0, mincost=(FLT_MAX);
 
@@ -1461,8 +1439,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 // \brief Set the physical part of a block_size structure and block boundary conditions
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
-                                     enum BoundaryFlag *block_bcs)
-{
+                                     enum BoundaryFlag *block_bcs) {
   int64_t &lx1=loc.lx1;
   int64_t &lx2=loc.lx2;
   int64_t &lx3=loc.lx3;
@@ -1554,8 +1531,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 // \!fn void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 // \brief Main function for adaptive mesh refinement
 
-void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
-{
+void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   MeshBlock *pmb;
   int nlbl=2, dim=1;
   if (mesh_size.nx2 > 1) nlbl=4, dim=2;
@@ -2242,7 +2218,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 //  \brief calculate an MPI tag for AMR block transfer
 // tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)
 
-unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
-{
+unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
   return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | TAG_AMR;
 }

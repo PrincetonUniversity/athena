@@ -40,8 +40,7 @@
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
 int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                                    int ns, int ne, Real *buf, const NeighborBlock& nb)
-{
+                                    int ns, int ne, Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -62,8 +61,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &s
 //  \brief Set hydro boundary buffers for sending to a block on the coarser level
 
 int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
-    int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb)
-{
+    int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
@@ -90,8 +88,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &s
 //  \brief Set hydro boundary buffers for sending to a block on the finer level
 
 int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
-                                    int ns, int ne, Real *buf, const NeighborBlock& nb)
-{
+                                    int ns, int ne, Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn=pmb->cnghost-1;
@@ -140,8 +137,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src
 //                                                           enum CCBoundaryType type)
 //  \brief Send boundary buffers of cell-centered variables
 void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-                                                     enum CCBoundaryType type)
-{
+                                                     enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_, *pbl;
   int mylevel=pmb->loc.level;
   int ns, ne;
@@ -191,8 +187,7 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
 //  \brief Set hydro boundary received from a block on the same level
 
 void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
-                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip)
-{
+                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -263,8 +258,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
 //  \brief Set hydro prolongation buffer received from a block on a coarser level
 
 void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
-             Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip)
-{
+             Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip) {
   MeshBlock *pmb=pmy_block_;
 
   int si, sj, sk, ei, ej, ek;
@@ -322,8 +316,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
 //  \brief Set hydro boundary received from a block on a finer level
 
 void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
-                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip)
-{
+                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip) {
   MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
@@ -391,8 +384,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
 //  \brief receive the boundary data
 
 bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                                        enum CCBoundaryType type)
-{
+                                                        enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
   bool *flip=NULL;
@@ -454,8 +446,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
 //  \brief receive the boundary data for initialization
 
 void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                                enum CCBoundaryType type)
-{
+                                                                enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool *flip=NULL;
   AthenaArray<Real> cbuf;
@@ -500,8 +491,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
 //
 // \brief  single CPU in the azimuthal direction for the polar boundary
 
-void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne)
-{
+void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
   && pmb->block_size.nx3 > 1) {

@@ -70,8 +70,7 @@
 //----------------------------------------------------------------------------------------
 // OutputType constructor
 
-OutputType::OutputType(OutputParameters oparams)
-{
+OutputType::OutputType(OutputParameters oparams) {
   output_params = oparams;
   pnext_type = NULL;   // Terminate this node in linked list with NULL ptr
 
@@ -82,15 +81,13 @@ OutputType::OutputType(OutputParameters oparams)
 
 // destructor
 
-OutputType::~OutputType()
-{
+OutputType::~OutputType() {
 }
 
 //----------------------------------------------------------------------------------------
 // Outputs constructor
 
-Outputs::Outputs(Mesh *pm, ParameterInput *pin)
-{
+Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   pfirst_type_ = NULL;
   std::stringstream msg;
   InputBlock *pib = pin->pfirst_block;
@@ -285,8 +282,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 
 // destructor - iterates through linked list of OutputTypes and deletes nodes
 
-Outputs::~Outputs()
-{
+Outputs::~Outputs() {
   OutputType *ptype = pfirst_type_;
   while(ptype != NULL) {
     OutputType *ptype_old = ptype;
@@ -299,8 +295,7 @@ Outputs::~Outputs()
 //! \fn void OutputType::LoadOutputData(MeshBlock *pmb)
 //  \brief Create linked list of OutputData's containing requested variables
 
-void OutputType::LoadOutputData(MeshBlock *pmb)
-{
+void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
   Gravity *pgrav = pmb->pgrav;
@@ -602,8 +597,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 //! \fn void OutputData::AppendOutputDataNode(OutputData *pod)
 //  \brief
 
-void OutputType::AppendOutputDataNode(OutputData *pnew_data)
-{
+void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
   if (pfirst_data_ == NULL) {
     pfirst_data_ = pnew_data;
   } else {
@@ -617,8 +611,7 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data)
 //! \fn void OutputData::ReplaceOutputDataNode()
 //  \brief
 
-void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
-{
+void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
   if (pold == pfirst_data_) {
     pfirst_data_ = pnew;
     if (pold->pnext != NULL) {    // there is another node in the list
@@ -644,8 +637,7 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
 //! \fn void OutputData::ClearOutputData()
 //  \brief
 
-void OutputType::ClearOutputData()
-{
+void OutputType::ClearOutputData() {
   OutputData *pdata = pfirst_data_;
   while (pdata != NULL) {
     OutputData *pdata_old = pdata;
@@ -660,8 +652,7 @@ void OutputType::ClearOutputData()
 //! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 //  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
-void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
-{
+void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
   while (ptype != NULL) {
@@ -684,8 +675,7 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 //  \brief Calls sum and slice functions on each direction in turn, in order to allow
 //  mulitple operations performed on the same data set
 
-bool OutputType::TransformOutputData(MeshBlock *pmb)
-{
+bool OutputType::TransformOutputData(MeshBlock *pmb) {
   bool flag = true;
   if (output_params.output_slicex3) {
     bool ret = SliceOutputData(pmb,3);
@@ -715,8 +705,7 @@ bool OutputType::TransformOutputData(MeshBlock *pmb)
 //! \fn bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 //  \brief perform data slicing and update the data list
 
-bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
-{
+bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
   int islice, jslice, kslice;
 
   // Compute i,j,k indices of slice; check if in range of data in this block
@@ -824,8 +813,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 //! \fn void OutputType::SumOutputData(OutputData* pod, int dim)
 //  \brief perform data summation and update the data list
 
-void OutputType::SumOutputData(MeshBlock* pmb, int dim)
-{
+void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
   std::stringstream str;
 
   // For each node in OutputData linked list, sum arrays containing output data
@@ -897,8 +885,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 //  \brief Convert vectors in curvilinear coordinates into Cartesian
 
 void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
-                                          Coordinates *pco)
-{
+                                          Coordinates *pco) {
   Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
   if (COORDINATE_SYSTEM == "spherical_polar") {
     if (out_ks==out_ke) { // 2D

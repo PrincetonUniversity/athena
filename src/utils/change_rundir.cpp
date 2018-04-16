@@ -20,8 +20,7 @@
 //! \fn void ChangeRunDir(const char *pdir)
 //  \brief change to input run directory; create if it does not exist yet
 
-void ChangeRunDir(const char *pdir)
-{
+void ChangeRunDir(const char *pdir) {
   std::stringstream msg;
 
   if (pdir == NULL || *pdir == '\0') return;

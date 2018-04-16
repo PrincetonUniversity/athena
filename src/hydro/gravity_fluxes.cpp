@@ -17,8 +17,7 @@
 //! \fn void Hydro::AddGravityFlux(void)
 //  \brief Add gravity flux using new potential directly
 
-void Hydro::AddGravityFlux(void)
-{
+void Hydro::AddGravityFlux(void) {
   MeshBlock *pmb=pmy_block;
   Coordinates *pco=pmb->pcoord;
   Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
@@ -124,8 +123,7 @@ void Hydro::AddGravityFlux(void)
 //  \brief Adds gravity flux to hydro flux using pre-calculated gflx.
 //         Implemented for one poisson solver call. (old Athena style)
 
-void Hydro::AddGravityFluxWithGflx(void)
-{
+void Hydro::AddGravityFluxWithGflx(void) {
   MeshBlock *pmb=pmy_block;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -164,8 +162,7 @@ void Hydro::AddGravityFluxWithGflx(void)
 //  \brief Calcuates gravity flux to hydro flux
 //         Implemented for one poisson solver call. (old Athena style)
 
-void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
-{
+void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
   MeshBlock *pmb=pmy_block;
   Coordinates *pco=pmb->pcoord;
   Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
@@ -325,8 +322,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 //  \brief Correct the fluxes using the updated gravitational fluxes
 //         Implemented for one poisson solver call. (old Athena style)
 
-void Hydro::CorrectGravityFlux(void)
-{
+void Hydro::CorrectGravityFlux(void) {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1gflx=gflx[X1DIR];
   AthenaArray<Real> &x2gflx=gflx[X2DIR];

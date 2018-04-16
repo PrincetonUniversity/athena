@@ -22,8 +22,7 @@
 // Cylindrical coordinates constructor
 
 Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
@@ -154,8 +153,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 // destructor
 
-Cylindrical::~Cylindrical()
-{
+Cylindrical::~Cylindrical() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
@@ -187,8 +185,7 @@ Cylindrical::~Cylindrical()
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void Cylindrical::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
-{
+  AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     len(i) = x1f(i)*dx2f(j);
@@ -199,8 +196,7 @@ void Cylindrical::Edge2Length(const int k, const int j, const int il, const int 
 //----------------------------------------------------------------------------------------
 // GetEdgeXLength functions: return length of edge-X length at (i,j,k)
 
-Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
-{
+Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
   return x1f(i)*dx2f(j);
 }
 
@@ -208,8 +204,7 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2)
-{
+                               AthenaArray<Real> &dx2) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     dx2(i) = x1v(i)*dx2f(j);
@@ -221,8 +216,7 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area1 = r dphi dz
@@ -232,8 +226,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
 }
 
 void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area3 = dr r dphi = d(r^2/2) dphi
@@ -245,14 +238,12 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
 //----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 
-Real Cylindrical::GetFace1Area(const int k, const int j, const int i)
-{
+Real Cylindrical::GetFace1Area(const int k, const int j, const int i) {
   // area1 = r dphi dz
   return x1f(i)*dx2f(j)*dx3f(k);
 }
 
-Real Cylindrical::GetFace3Area(const int k, const int j, const int i)
-{
+Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
   // area3 = dr r dphi = d(r^2/2) dphi
   return coord_area3_i_(i)*dx2f(j);
 }
@@ -261,8 +252,7 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i)
 // Cell Volume function: compute volume of cell as vector
 
 void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
-{
+  AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // volume = dr dz r dphi = d(r^2/2) dphi dz
@@ -274,16 +264,14 @@ void Cylindrical::CellVolume(const int k, const int j, const int il, const int i
 //----------------------------------------------------------------------------------------
 // GetCellVolume: returns cell volume at (i,j,k)
 
-Real Cylindrical::GetCellVolume(const int k, const int j, const int i)
-{
+Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
   return coord_vol_i_(i)*dx2f(j)*dx3f(k);
 }
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
 void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {

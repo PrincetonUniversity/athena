@@ -22,8 +22,7 @@
 // Spherical polar coordinates constructor
 
 SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
@@ -204,8 +203,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 // destructor
 
-SphericalPolar::~SphericalPolar()
-{
+SphericalPolar::~SphericalPolar() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
@@ -245,8 +243,7 @@ SphericalPolar::~SphericalPolar()
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void SphericalPolar::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
-{
+  AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // length2 = r d(theta)
@@ -258,8 +255,7 @@ void SphericalPolar::Edge2Length(const int k, const int j, const int il, const i
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void SphericalPolar::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
-{
+  AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // length3 = r sin(theta) d(phi)
@@ -271,13 +267,11 @@ void SphericalPolar::Edge3Length(const int k, const int j, const int il, const i
 //----------------------------------------------------------------------------------------
 // GetEdgeXLength functions: return length of edge-X at (i,j,k)
 
-Real SphericalPolar::GetEdge2Length(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetEdge2Length(const int k, const int j, const int i) {
   return x1f(i)*dx2f(j);
 }
 
-Real SphericalPolar::GetEdge3Length(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetEdge3Length(const int k, const int j, const int i) {
   return x1f(i)*coord_area2_j_(j)*dx3f(k);
 }
 
@@ -285,8 +279,7 @@ Real SphericalPolar::GetEdge3Length(const int k, const int j, const int i)
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2)
-{
+                               AthenaArray<Real> &dx2) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     dx2(i) = x1v(i)*dx2f(j);
@@ -295,8 +288,7 @@ void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const 
 }
 
 void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx3)
-{
+                               AthenaArray<Real> &dx3) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
@@ -308,8 +300,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void SphericalPolar::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
@@ -319,8 +310,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
 }
 
 void SphericalPolar::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
@@ -330,8 +320,7 @@ void SphericalPolar::Face2Area(const int k, const int j, const int il, const int
 }
 
 void SphericalPolar::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area3 = dr r dtheta = d(r^2/2) dtheta
@@ -343,18 +332,15 @@ void SphericalPolar::Face3Area(const int k, const int j, const int il, const int
 //----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 
-Real SphericalPolar::GetFace1Area(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetFace1Area(const int k, const int j, const int i) {
   return (coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k));
 }
 
-Real SphericalPolar::GetFace2Area(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetFace2Area(const int k, const int j, const int i) {
   return (coord_area2_i_(i)*coord_area2_j_(j)*dx3f(k));
 }
 
-Real SphericalPolar::GetFace3Area(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetFace3Area(const int k, const int j, const int i) {
   return (coord_area3_i_(i)*dx2f(j));
 }
 
@@ -362,8 +348,7 @@ Real SphericalPolar::GetFace3Area(const int k, const int j, const int i)
 // Cell Volume function: compute volume of cell as vector
 
 void SphericalPolar::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
-{
+  AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
@@ -375,16 +360,14 @@ void SphericalPolar::CellVolume(const int k, const int j, const int il, const in
 //----------------------------------------------------------------------------------------
 // GetCellVolume: returns cell volume at (i,j,k)
 
-Real SphericalPolar::GetCellVolume(const int k, const int j, const int i)
-{
+Real SphericalPolar::GetCellVolume(const int k, const int j, const int i) {
   return coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
 }
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
 void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 

@@ -41,8 +41,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
 //  \brief Load shearingbox field boundary buffers
-void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
-{
+void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb) {
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -113,16 +112,14 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
 //  \brief Send shearingbox boundary buffers for field variables
 //  Currently not used. As we only correct vy at t=0.
 
-void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons)
-{
+void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons) {
   return;
 }
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src)
 //  \brief Send shearingbox boundary buffers for field variables
 
-void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool conserved_values)
-{
+void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool conserved_values) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -288,8 +285,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
 //                                           Real *buf, const int nb)
 //  \brief Set field shearingbox boundary received from a block on the same level
 void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
-                                               const int nb)
-{
+                                               const int nb) {
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -356,8 +352,7 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 //  \brief receive shearingbox boundary data for field(face-centered) variables
-bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
-{
+bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
@@ -422,8 +417,7 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 //! \fn void BoundaryValues::RemapFluxField(int k, int jinner, int jouter, int i, Real eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping
 //  adopted from 2nd order RemapFlux of Athena4.0
-void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux)
-{
+void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 

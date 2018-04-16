@@ -60,8 +60,7 @@ static Real xc, yc, zc, beta, b0;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Get parameters for initial density and velocity
   rho0 = pin->GetReal("problem","rho0");
   vy0 = pin->GetOrAddReal("problem","vy0",0.0);
@@ -103,8 +102,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Initializes field loop advection through pole.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real rad, phi, z;
   Real v1, v2, v3;
   // Set initial magnetic fields
@@ -248,8 +246,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \f transforms uniform velocity in x-directin in spherical polar coords
 
 static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
-                          Real &v1, Real &v2, Real &v3)
-{
+                          Real &v1, Real &v2, Real &v3) {
   v1 = vy0*sin(x2)*sin(x3);
   v2 = vy0*cos(x2)*sin(x3);
   v3 = vy0*cos(x3);
@@ -259,8 +256,7 @@ static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
 //----------------------------------------------------------------------------------------
 //! \f compute 3-compnent of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3)
-{
+static Real A3(const Real x1, const Real x2, const Real x3) {
   Real a3=0.0;
   return a3;
 }
@@ -289,8 +285,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
 //----------------------------------------------------------------------------------------
 //! \f compute 1-compnent of vector potential
 
-static Real A1(const Real x1, const Real x2, const Real x3)
-{
+static Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
@@ -311,8 +306,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
 //!\f: User-defined boundary Conditions: LoopInnerX1
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -360,8 +354,7 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX1
 
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -409,8 +402,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopInnerX2
 
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -458,8 +450,7 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX2
 
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {

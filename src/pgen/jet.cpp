@@ -35,8 +35,7 @@ static Real gm1,x2_0,x3_0;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // initialize global variables
   d_amb  = pin->GetReal("problem", "d");
   p_amb  = pin->GetReal("problem", "p");
@@ -71,8 +70,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Jet problem
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gm1 = peos->GetGamma() - 1.0;
 
   // initialize conserved variables
@@ -123,8 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // set primitive variables in inlet ghost zones
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {

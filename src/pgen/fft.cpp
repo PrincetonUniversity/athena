@@ -35,8 +35,7 @@
 //  \brief
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 //========================================================================================
@@ -44,8 +43,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Coordinates *pcoord = pblock->pcoord;
   Real x0=0.0, y0=0.0, z0=0.0;
   int is=pblock->is, ie=pblock->ie;

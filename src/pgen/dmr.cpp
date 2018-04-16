@@ -53,8 +53,7 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll user-defined boundary functions
   EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
   EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
@@ -71,8 +70,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Initialize DMR test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   if (block_size.nx3 > 1) {
@@ -154,8 +152,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  Quantities at this boundary are held fixed at the downstream state
 
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -181,8 +178,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -219,8 +215,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 > 0.16666666+v1_shock*time
 
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -255,8 +250,7 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //! \fn
 //  \brief refinement condition: density and pressure curvature
 
-int RefinementCondition(MeshBlock *pmb)
-{
+int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps=0.0;
   int k=pmb->ks;

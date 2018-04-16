@@ -41,8 +41,7 @@
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
-{
+ : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;

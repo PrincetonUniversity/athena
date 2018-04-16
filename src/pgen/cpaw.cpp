@@ -55,8 +55,7 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Initialize magnetic field parameters
 // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
 //    For example, for 1D problem use ang_2 = ang_3 = 0.0
@@ -114,8 +113,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Compute L1 error in CPAW and output to file
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // Initialize errors to zero
@@ -216,8 +214,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> a1,a2,a3;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
   int nx2 = (je-js)+1 + 2*(NGHOST);
@@ -363,8 +360,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3)
-{
+static Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
@@ -377,8 +373,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3)
-{
+static Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
@@ -391,8 +386,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3)
-{
+static Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;

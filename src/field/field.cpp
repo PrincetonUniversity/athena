@@ -15,8 +15,7 @@
 
 // constructor, initializes data structures and parameters
 
-Field::Field(MeshBlock *pmb, ParameterInput *pin)
-{
+Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   // Allocate memory for interface fields, but only when needed.
@@ -76,8 +75,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-Field::~Field()
-{
+Field::~Field() {
   b.x1f.DeleteAthenaArray();
   b.x2f.DeleteAthenaArray();
   b.x3f.DeleteAthenaArray();
@@ -118,8 +116,7 @@ Field::~Field()
 // \! brief
 
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
-{
+            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
     // calc cell centered fields first

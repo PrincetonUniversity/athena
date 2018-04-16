@@ -36,8 +36,7 @@
 //  \brief Problem Generator for the Orszag-Tang test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
   AthenaArray<Real> az;

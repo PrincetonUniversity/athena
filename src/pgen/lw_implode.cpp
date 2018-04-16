@@ -27,8 +27,7 @@
 //  \brief Liska & Wendroff implosion test problem generator
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real d_in = pin->GetReal("problem","d_in");
   Real p_in = pin->GetReal("problem","p_in");
 

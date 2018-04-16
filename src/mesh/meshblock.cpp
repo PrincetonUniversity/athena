@@ -40,8 +40,7 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag)
-{
+  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag) {
   std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
@@ -142,8 +141,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, char *mbdata, int igflag)
-{
+           Real icost, char *mbdata, int igflag) {
   std::stringstream msg;
   pmy_mesh = pm;
   prev=NULL;
@@ -274,8 +272,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 //----------------------------------------------------------------------------------------
 // MeshBlock destructor
 
-MeshBlock::~MeshBlock()
-{
+MeshBlock::~MeshBlock() {
   if (prev!=NULL) prev->next=next;
   if (next!=NULL) next->prev=prev;
 
@@ -308,8 +305,7 @@ MeshBlock::~MeshBlock()
 //! \fn void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
-void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
-{
+void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
   if (nreal_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
@@ -325,8 +321,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
-void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
-{
+void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
   if (nint_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
@@ -343,8 +338,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //! \fn void MeshBlock::AllocateUserOutputVariables(int n)
 //  \brief Allocate user-defined output variables
 
-void MeshBlock::AllocateUserOutputVariables(int n)
-{
+void MeshBlock::AllocateUserOutputVariables(int n) {
   if (n<=0) return;
   if (nuser_out_var!=0) {
     std::stringstream msg;
@@ -368,8 +362,7 @@ void MeshBlock::AllocateUserOutputVariables(int n)
 //! \fn void MeshBlock::SetUserOutputVariableName(int n, const char *name)
 //  \brief set the user-defined output variable name
 
-void MeshBlock::SetUserOutputVariableName(int n, const char *name)
-{
+void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
   if (n>=nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
@@ -385,8 +378,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name)
 //! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
-size_t MeshBlock::GetBlockSizeInBytes(void)
-{
+size_t MeshBlock::GetBlockSizeInBytes(void) {
   size_t size;
 
   size=phydro->u.GetSizeInBytes();

@@ -55,8 +55,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
@@ -101,8 +100,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
     AthenaArray<Real> &lambdas_m_l, AthenaArray<Real> &lambdas_p_r,
     AthenaArray<Real> &lambdas_m_r, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
-    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Parameters
   const Real p_transition = 0.01;     // value delineating intial pressure regimes
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
@@ -838,8 +836,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
 //   same function as in adiabatic_mhd_sr.cpp
 
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime)
-{
+    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -868,8 +865,7 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 //   same function as in adiabatic_mhd_sr.cpp
 
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime)
-{
+    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);

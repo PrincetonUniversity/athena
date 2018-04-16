@@ -33,16 +33,14 @@
 // destructor - not needed for this derived class
 
 HistoryOutput::HistoryOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
 //  \brief Writes a history file
 
-void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
   AthenaArray<Real> vol;
 

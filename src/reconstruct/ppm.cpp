@@ -41,8 +41,7 @@
 void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Reconstruction* prec = pmb->precon;
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
@@ -343,8 +342,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Reconstruction* prec = pmb->precon;
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
@@ -645,8 +643,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Reconstruction* prec = pmb->precon;
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;

@@ -32,8 +32,7 @@
 //  \brief Spherical blast wave test problem generator
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real rout = pin->GetReal("problem","radius");
   Real rin  = rout - pin->GetOrAddReal("problem","ramp",0.0);
   Real pa   = pin->GetOrAddReal("problem","pamb",1.0);
@@ -189,8 +188,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Check radius of sphere to make sure it is round
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // analysis - check shape of the spherical blast wave
