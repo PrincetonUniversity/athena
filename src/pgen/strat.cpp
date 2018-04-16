@@ -128,9 +128,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int nwx = pin->GetOrAddInteger("problem","nwx",1);
   int nwy = pin->GetOrAddInteger("problem","nwy",1);
   int nwz = pin->GetOrAddInteger("problem","nwz",1);
-  Real kx = (2.0*PI/Lx)*((double)nwx);// nxw=-ve for leading wave
-  Real ky = (2.0*PI/Ly)*((double)nwy);
-  Real kz = (2.0*PI/Lz)*((double)nwz);
+  Real kx = (2.0*PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
+  Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
 
   // Ensure a different initial random seed for each meshblock.
   int64_t iseed = -1 - gid;
@@ -163,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //Compute field strength based on beta.
   if (MAGNETIC_FIELDS_ENABLED) {
-    B0 = sqrt((double)(2.0*pres/beta));
+    B0 = sqrt(static_cast<Real>(2.0*pres/beta));
     std::cout << "B0=" << B0 << std::endl;
   }
 
@@ -236,10 +236,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 1) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 2) {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -252,18 +252,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 3) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0 + 0.5*
+                                                     sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 4) {
             pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0*(cos((double)kx*x1));
-            pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+            pfield->b.x2f(k,j,i) = B0*(cos(static_cast<Real>(kx)*x1));
+            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos((double)kx*x1));
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos(static_cast<Real>(kx)*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 5 && fabs(x3) < 2.0) {
             pfield->b.x1f(k,j,i) = 0.0;

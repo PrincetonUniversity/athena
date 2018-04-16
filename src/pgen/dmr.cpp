@@ -88,8 +88,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       // x-positions of shock at top and bottom of cell
-      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt((double)3.0);
-      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt((double)3.0);
+      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt(static_cast<Real>(3.0));
+      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt(static_cast<Real>(3.0));
       phydro->u(IM3,ks,j,i) = 0.0;
 
       if (pcoord->x1f(i) > shock_xpos_top) {

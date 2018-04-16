@@ -116,7 +116,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     p0 = d0*SQR(iso_cs);
   }
 
-  B0 = sqrt((double)(2.0*p0/beta));
+  B0 = sqrt(static_cast<Real>(2.0*p0/beta));
   std::cout << "iso_cs = " << iso_cs << std::endl;
   std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
@@ -130,10 +130,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
   x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-  std::cout << "[hb3.cpp]: [Lx,Lz,Ly] = [" <<x1size <<","<<x2size<<","<<x3size<<"]"<<std::endl;
+  std::cout << "[hb3.cpp]: [Lx,Lz,Ly] = [" <<x1size <<","<<x2size<<","<<x3size<<"]"
+            << std::endl;
 
-  Real kx = (2.0*PI/x1size)*((double)nwx);
-  Real kz = (2.0*PI/x2size)*((double)nwy);
+  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
+  Real kz = (2.0*PI/x2size)*(static_cast<Real>(nwy));
 
   Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
   int64_t iseed = -1-gid; // Initialize on the first call to ran2
@@ -160,7 +161,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rvx = 0.0;
       } else if (ipert == 2) {
         rp = p0;
-        rd = d0*(1.0+0.1*sin((double)kx*x1));
+        rd = d0*(1.0+0.1*sin(static_cast<Real>(kx)*x1));
         if (NON_BAROTROPIC_EOS) {
           rvx = amp*sqrt((gm1+1.0)*p0/d0);
         } else {
@@ -190,10 +191,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 1) {
           pfield->b.x1f(ks,j,i) = 0.0;
-          pfield->b.x2f(ks,j,i) = B0*(sin((double)kx*x1));
+          pfield->b.x2f(ks,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           pfield->b.x3f(ks,j,i) = 0.0;
           if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin((double)kx*x1));
+          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin(static_cast<Real>(kx)*x1));
         } else if (ifield == 2) {
             pfield->b.x1f(ks,j,i) = 0.0;
             pfield->b.x2f(ks,j,i) = B0;
@@ -244,5 +245,3 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 
   return bxby;
 }
-
-

@@ -122,7 +122,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Compute field strength based on beta.
   Real B0  = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
-    B0 = sqrt((double)(2.0*pres/beta));
+    B0 = sqrt(static_cast<Real>(2.0*pres/beta));
 
 // Ensure a different initial random seed for each meshblock.
   int64_t iseed = -1 - gid;
@@ -136,9 +136,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int nwx = pin->GetOrAddInteger("problem","nwx",1);
   int nwy = pin->GetOrAddInteger("problem","nwy",1);
   int nwz = pin->GetOrAddInteger("problem","nwz",1);
-  Real kx = (2.0*PI/Lx)*((double)nwx);// nxw=-ve for leading wave
-  Real ky = (2.0*PI/Ly)*((double)nwy);
-  Real kz = (2.0*PI/Lz)*((double)nwz);
+  Real kx = (2.0*PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
+  Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
 
 // For PF density wave test, read data from file: not implemented yet.
 
@@ -209,8 +209,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       if (ipert == 3) {
         rp = pres;
         rd = den;
-        rvx = amp*sin((double)(kx*x1 + ky*x2));
-        rvy = -amp*(kx/ky)*sin((double)(kx*x1 + ky*x2));
+        rvx = amp*sin(static_cast<Real>(kx*x1 + ky*x2));
+        rvy = -amp*(kx/ky)*sin(static_cast<Real>(kx*x1 + ky*x2));
         rvz = 0.0;
       }
       if (ipert == 4) {
@@ -220,29 +220,32 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       // Note: ICs in JGG for this test are incorrect.
       if (ipert == 5) {
         ifield = 0;
-        rd = den + 8.9525e-10*cos((double)(kx*x1 + ky*x2 + kz*x3 - PI/4.));
-        rvx = 8.16589e-8*cos((double)(kx*x1 + ky*x2 + kz*x3 + PI/4.));
-        rvy = 8.70641e-8*cos((double)(kx*x1 + ky*x2 + kz*x3 + PI/4.));
-        rvz = 0.762537e-8*cos((double)(kx*x1 + ky*x2 + kz*x3 + PI/4.));
+        rd = den + 8.9525e-10*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 - PI/4.));
+        rvx = 8.16589e-8*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
+        rvy = 8.70641e-8*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
+        rvz = 0.762537e-8*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
         rbx = -1.08076e-7;
-        rbx *= cos((double)(kx*(x1-0.5*pcoord->dx1f(i)) + ky*x2 + kz*x3 - PI/4.));
+        rbx *= cos(static_cast<Real>(kx*(x1-0.5*pcoord->dx1f(i)) +
+                                     ky*x2 + kz*x3 - PI/4.));
         rby = 1.04172e-7;
-        rby *= cos((double)(kx*x1 + ky*(x2-0.5*pcoord->dx2f(j)) + kz*x3 - PI/4.));
+        rby *= cos(static_cast<Real>(kx*x1 + ky*(x2-0.5*pcoord->dx2f(j)) +
+                                     kz*x3 - PI/4.));
         rbz = -0.320324e-7;
-        rbz *= cos((double)(kx*x1 + ky*x2 + kz*(x3-0.5*pcoord->dx3f(k)) - PI/4.));;
+        rbz *= cos(static_cast<Real>(kx*x1 + ky*x2 +
+                                     kz*(x3-0.5*pcoord->dx3f(k)) - PI/4.));
         rbz += (sqrt(15.0)/16.0)*(Omega_0/kz);
       }
       if (ipert == 6) {
         ifield = 0;
-        rd = den + 5.48082e-6*cos((double)(kx*x1 + ky*x2 + kz*x3));
-        rvx = -4.5856e-6*cos((double)(kx*x1 + ky*x2 + kz*x3));
-        rvy = 2.29279e-6*cos((double)(kx*x1 + ky*x2 + kz*x3));
-        rvz = 2.29279e-6*cos((double)(kx*x1 + ky*x2 + kz*x3));
+        rd = den + 5.48082e-6*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
+        rvx = -4.5856e-6*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
+        rvy = 2.29279e-6*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
+        rvz = 2.29279e-6*cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
         rbx = 5.48082e-7;
-        rbx *= cos((double)(kx*x1f + ky*x2 + kz*x3));
+        rbx *= cos(static_cast<Real>(kx*x1f + ky*x2 + kz*x3));
         rbx += (0.1);
         rby = 1.0962e-6;
-        rby *= cos((double)(kx*x1 + ky*x2f + kz*x3));
+        rby *= cos(static_cast<Real>(kx*x1 + ky*x2f + kz*x3));
         rby += (0.2);
         rbz = 0.0;
       }
@@ -255,9 +258,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real rd_hat =         (ky*iso_cs*bb -2.0*Omega_0*aa)*amp/denom;
           Real px_hat = -iso_cs*(ky*iso_cs*aa +2.0*Omega_0*bb)*amp/denom;
           Real py_hat = (amp + ky*px_hat + (2.0-qshear)*Omega_0*rd_hat)/kx;
-          rd  = 1.0 + rd_hat*cos((double)(kx*x1 + ky*x2));
-          rvx = px_hat*sin((double)(kx*x1 + ky*x2))/rd;
-          rvy = py_hat*sin((double)(kx*x1 + ky*x2))/rd;
+          rd  = 1.0 + rd_hat*cos(static_cast<Real>(kx*x1 + ky*x2));
+          rvx = px_hat*sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
+          rvy = py_hat*sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
         }
         rvz = 0.0;
       }
@@ -290,14 +293,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (i==ie) {
             x1f = pcoord->x1f(ie+1);
             rbx = 5.48082e-7;
-            rbx *= cos((double)(kx*x1f + ky*x2 + kz*x3));
+            rbx *= cos(static_cast<Real>(kx*x1f + ky*x2 + kz*x3));
             rbx += (0.1);
             pfield->b.x1f(k,j,ie+1) =  rbx;
           }
           if (j==je) {
             x2f = pcoord->x2f(je+1);
             rby = 1.0962e-6;
-            rby *= cos((double)(kx*x1 + ky*x2f + kz*x3));
+            rby *= cos(static_cast<Real>(kx*x1 + ky*x2f + kz*x3));
             rby += (0.2);
             pfield->b.x2f(k,je+1,i) =  rby;
           }
@@ -310,10 +313,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (ifield == 1) {
           pfield->b.x1f(k,j,i) = 0.0;
           pfield->b.x2f(k,j,i) = 0.0;
-          pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+          pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
           if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
         }
         if (ifield == 2) {
           pfield->b.x1f(k,j,i) = 0.0;
@@ -325,11 +328,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
         if (ifield == 3) {
           pfield->b.x1f(k,j,i) = 0.0;
-          pfield->b.x2f(k,j,i) = B0*(cos((double)kx*x1));
-          pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+          pfield->b.x2f(k,j,i) = B0*(cos(static_cast<Real>(kx)*x1));
+          pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-          if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos((double)kx*x1));
-          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+          if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos(static_cast<Real>(kx)*x1));
+          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
         }
         if (ifield == 4) {
           pfield->b.x1f(k,j,i) = 0.0;
