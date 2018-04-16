@@ -30,7 +30,7 @@
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
 
-typedef struct InputLine {   
+typedef struct InputLine {
   std::string param_name;
   std::string param_value;    // value of the parameter is stored as a string!
   std::string param_comment;
@@ -41,7 +41,7 @@ typedef struct InputLine {
 //! \class InputBlock
 //  \brief  node in a linked list of all input blocks contained within input file
 
-class InputBlock { 
+class InputBlock {
 public:
   // constructor/destructor
   InputBlock();
