@@ -8,7 +8,8 @@ import subprocess
 athena_rel_path = '../../'
 saved_filenames = ['src/defs.hpp', 'Makefile']
 saved_files = []
-
+global_config_args = []
+global_run_args = []
 
 # Function for configuring Athena++
 def configure(*args, **kwargs):
@@ -22,7 +23,7 @@ def configure(*args, **kwargs):
             if val:
                 configure_command.append('--{0}={1}'.format(key, val))
         try:
-            subprocess.check_call(configure_command)
+            subprocess.check_call(configure_command+global_config_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -59,7 +60,7 @@ def run(input_filename, arguments):
                               input_filename
         run_command = ['./athena', '-i', input_filename_full]
         try:
-            subprocess.check_call(run_command + arguments)
+            subprocess.check_call(run_command + arguments + global_run_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))

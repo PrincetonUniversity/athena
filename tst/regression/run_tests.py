@@ -41,6 +41,10 @@ def main(**kwargs):
     # Get MPI run syntax
     mpirun_cmd = kwargs.pop('mpirun')
 
+    # Get args to pass to scripts.utils.athena as list of strings
+    athena_config_args = kwargs.pop('c')
+    athena_run_args = kwargs.pop('r')
+
     if len(tests) == 0:  # run all tests
         for _, directory, ispkg in iter_modules(path=['scripts/tests']):
             if ispkg:
@@ -77,6 +81,12 @@ def main(**kwargs):
                 module = __import__(name_full, globals(), locals(),
                                     fromlist=['prepare', 'run', 'analyze'])
                 os.system('rm -rf {0}/bin'.format(current_dir))
+
+                #insert arguments to athena.run and athena.configure
+                #by changing global values through module
+                module.athena.global_config_args = athena_config_args
+                module.athena.global_run_args = athena_run_args
+
                 try:
                     module.prepare(**kwargs)
                 except Exception:
@@ -168,5 +178,18 @@ if __name__ == '__main__':
                         default=None,
                         help=('additional string of flags to append'
                               'to compiler/linker calls'))
+
+    parser.add_argument("-c",
+                        type=str, 
+                        default=[],  
+                        nargs='*',
+                        help=('arguments to pass to athena.configure'))   
+
+    parser.add_argument("-r",
+                        type=str, 
+                        default=[],  
+                        nargs='*',
+                        help=('arguments to pass to athena.run'))   
+    
     args = parser.parse_args()
     main(**vars(args))
