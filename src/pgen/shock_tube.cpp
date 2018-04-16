@@ -199,7 +199,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   }
 
   // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    err[i] = err[i]/static_cast<Real>(GetTotalCells());
+  }
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
   rms_err = sqrt(rms_err);

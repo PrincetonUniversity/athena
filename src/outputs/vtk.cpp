@@ -137,38 +137,38 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // write x1-coordinates as binary float in big endian order
     fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
     if (ncells1 == 1) {
-        data[0] = (float)(pmb->pcoord->x1v(out_is));
+        data[0] = static_cast<float>(pmb->pcoord->x1v(out_is));
     } else {
       for (int i=out_is; i<=out_ie+1; ++i) {
-        data[i-out_is] = (float)(pmb->pcoord->x1f(i));
+        data[i-out_is] = static_cast<float>(pmb->pcoord->x1f(i));
       }
     }
     if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
+    fwrite(data,sizeof(float),static_cast<size_t>(ncoord1),pfile);
 
     // write x2-coordinates as binary float in big endian order
     fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
     if (ncells2 == 1) {
-        data[0] = (float)(pmb->pcoord->x2v(out_js));
+        data[0] = static_cast<float>(pmb->pcoord->x2v(out_js));
     } else {
       for (int j=out_js; j<=out_je+1; ++j) {
-        data[j-out_js] = (float)(pmb->pcoord->x2f(j));
+        data[j-out_js] = static_cast<float>(pmb->pcoord->x2f(j));
       }
     }
     if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),(size_t)ncoord2,pfile);
+    fwrite(data,sizeof(float),static_cast<size_t>(ncoord2),pfile);
 
     // write x3-coordinates as binary float in big endian order
     fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
     if (ncells3 == 1) {
-        data[0] = (float)(pmb->pcoord->x3v(out_ks));
+        data[0] = static_cast<float>(pmb->pcoord->x3v(out_ks));
     } else {
       for (int k=out_ks; k<=out_ke+1; ++k) {
-        data[k-out_ks] = (float)(pmb->pcoord->x3f(k));
+        data[k-out_ks] = static_cast<float>(pmb->pcoord->x3f(k));
       }
     }
     if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),(size_t)ncoord3,pfile);
+    fwrite(data,sizeof(float),static_cast<size_t>(ncoord3),pfile);
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
     //  in the OutputData linked lists), all in binary floats format
@@ -186,12 +186,12 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
         for (int i=out_is; i<=out_ie; ++i) {
         for (int n=0; n<nvar; ++n) {
-          data[nvar*(i-out_is)+n] = (float)pdata->data(n,k,j,i);
+          data[nvar*(i-out_is)+n] = static_cast<float>(pdata->data(n,k,j,i));
         }}
 
         // write data in big endian order
         if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
-        fwrite(data,sizeof(float),(size_t)(nvar*ncells1),pfile);
+        fwrite(data,sizeof(float),static_cast<size_t>(nvar*ncells1),pfile);
 
       }}
 
