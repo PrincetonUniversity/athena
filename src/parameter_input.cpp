@@ -491,7 +491,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
 
   // check is string contains integers 0 or 1 (instead of true or false) and return
   if (val.compare(0, 1, "0")==0 || val.compare(0, 1, "1")==0) {
-    return (bool)atoi(val.c_str());
+    return static_cast<bool>(atoi(val.c_str()));
   }
 
   // convert string to all lower case
