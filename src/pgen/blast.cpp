@@ -330,7 +330,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       nr++;
     }
   }
-  rave/=(Real)nr;
+  rave/=static_cast<Real>(nr);
 
   // use physical grid spacing at center of blast
   Real dr_max;

@@ -176,7 +176,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
         Real d1 = d0 + amp*sn*rem[0][wave_flag];
         l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-        max_err[IDN] = std::max((Real)fabs(d1 - pmb->phydro->u(IDN,k,j,i)),max_err[IDN]);
+        max_err[IDN] = std::max(static_cast<Real>(fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
+                                max_err[IDN]);
 
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
         Real my = amp*sn*rem[2][wave_flag];
@@ -187,9 +188,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
         l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
         l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-        max_err[IM1] = std::max((Real)fabs(m1 - pmb->phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max((Real)fabs(m2 - pmb->phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max((Real)fabs(m3 - pmb->phydro->u(IM3,k,j,i)),max_err[IM3]);
+        max_err[IM1] = std::max(static_cast<Real>(fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
+                                max_err[IM1]);
+        max_err[IM2] = std::max(static_cast<Real>(fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
+                                max_err[IM2]);
+        max_err[IM3] = std::max(static_cast<Real>(fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
+                                max_err[IM3]);
 
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
@@ -197,7 +201,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
             e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
           }
           l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-          max_err[IEN] = std::max((Real)fabs(e0-pmb->phydro->u(IEN,k,j,i)),max_err[IEN]);
+          max_err[IEN] = std::max(static_cast<Real>(fabs(e0-pmb->phydro->u(IEN,k,j,i))),
+                                  max_err[IEN]);
         }
 
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -258,8 +263,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if ((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -267,7 +272,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if ((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -1084,4 +1089,3 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
   }
   return;
 }
-
