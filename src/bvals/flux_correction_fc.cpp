@@ -1195,7 +1195,7 @@ void BoundaryValues::PolarSingleEMF(void) {
         Real tote1=0.0;
         for (int k=pmb->ks; k<=pmb->ke; k++)
           tote1+=e1(k,j,i);
-        Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+        Real e1a=tote1/static_cast<double>(pmb->ke-pmb->ks+1);
         for (int k=pmb->ks; k<=pmb->ke+1; k++)
           e1(k,j,i)=e1a;
       }
@@ -1217,7 +1217,7 @@ void BoundaryValues::PolarSingleEMF(void) {
         Real tote1=0.0;
         for (int k=pmb->ks; k<=pmb->ke; ++k)
           tote1+=e1(k,j,i);
-        Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+        Real e1a=tote1/static_cast<double>(pmb->ke-pmb->ks+1);
         for (int k=pmb->ks; k<=pmb->ke+1; ++k)
           e1(k,j,i)=e1a;
       }
