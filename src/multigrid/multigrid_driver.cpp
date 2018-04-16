@@ -151,8 +151,7 @@ void MultigridDriver::SetupMultigrid(void) {
     FillRootGridSource();
     mgroot_->RestrictFMGSource();
     current_level_=0;
-  }
-  else current_level_=ntotallevel_-1;
+  } else current_level_=ntotallevel_-1;
   return;
 }
 
@@ -208,8 +207,7 @@ void MultigridDriver::FillRootGridSource(void) {
 #endif
   if (pmy_mesh_->multilevel) {
     // *** implement later
-  }
-  else { // uniform
+  } else { // uniform
     for (int n=0; n<pmy_mesh_->nbtotal; n++) {
       LogicalLocation &loc=pmy_mesh_->loclist[n];
       for (int v=0; v<nvar_; v++)
@@ -234,8 +232,7 @@ void MultigridDriver::FMGProlongate(void) {
   if (current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListFMGProlongate(flag);
     mgtlist_->DoTaskListOneSubStep(this);
-  }
-  else { // root grid
+  } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->FMGProlongate();
   }
@@ -254,8 +251,7 @@ void MultigridDriver::TransferFromRootToBlocks(void) {
   mgroot_->pmgbval->ApplyPhysicalBoundaries();
   if (pmy_mesh_->multilevel) {
     // *** implement later ***
-  }
-  else {
+  } else {
     while(pmg!=NULL) {
       LogicalLocation &loc=pmg->loc_;
       pmg->SetFromRootGrid(src, loc.lx1, loc.lx2, loc.lx3);
@@ -281,8 +277,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     if (current_level_==ntotallevel_-2) flag=2;
     mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, flag);
     mgtlist_->DoTaskListOneSubStep(this);
-  }
-  else { // root grid
+  } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrect();
     for (int n=0; n<nsmooth; n++) {
@@ -309,8 +304,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       FillRootGridSource();
       mgroot_->ZeroClearData();
     }
-  }
-  else { // root grid
+  } else { // root grid
     for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
@@ -424,8 +418,7 @@ void MultigridDriver::SolveCoarsestGrid(void) {
   if (fperiodic_ && ni==1) { // trivial case - all zero
     mgroot_->ZeroClearData();
     return;
-  }
-  else {
+  } else {
     if (fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)

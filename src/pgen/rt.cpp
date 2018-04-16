@@ -67,8 +67,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     // Enroll special BCs
     EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
     EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
-  }
-  else { // 3D problem
+  } else { // 3D problem
     // Enroll special BCs
     EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
     EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);

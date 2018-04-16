@@ -47,8 +47,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
   if (pmy_mg_->root_flag_==true) {
     for (int i=0; i<6; i++)
       MGBoundaryFunction_[i]=MGBoundary[i];
-  }
-  else {
+  } else {
     for (int i=0; i<6; i++) {
       if (block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
         MGBoundaryFunction_[i]=NULL;
@@ -97,8 +96,7 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
           if (BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
           else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
           else if (BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
-        }
-        else { // uniform - NGHOST=1
+        } else { // uniform - NGHOST=1
           size=((BoundaryValues::ni[n].ox1==0)?block_size_.nx1:ngh)
               *((BoundaryValues::ni[n].ox2==0)?block_size_.nx2:ngh)
               *((BoundaryValues::ni[n].ox3==0)?block_size_.nx3:ngh);
@@ -219,19 +217,16 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
           if (nb.type==NEIGHBOR_FACE) size=SQR(nc);
           else if (nb.type==NEIGHBOR_EDGE) size=nc+nc/2;
           else if (nb.type==NEIGHBOR_CORNER) size=2;
-        }
-        else if (nb.level < mylevel) { // coarser
+        } else if (nb.level < mylevel) { // coarser
           if (nb.type==NEIGHBOR_FACE) size=SQR(nc/2+1);
           else if (nb.type==NEIGHBOR_EDGE) size=SQR(nc/2+1);
           else if (nb.type==NEIGHBOR_CORNER) size=1;
-        }
-        else { // finer
+        } else { // finer
           if (nb.type==NEIGHBOR_FACE) size=SQR(nc);
           else if (nb.type==NEIGHBOR_EDGE) size=nc/2;
           else if (nb.type==NEIGHBOR_CORNER) size=1;
         }
-      }
-      else { // no SMR/AMR - NGHOST=2 (Not necessarily! KGF)
+      } else { // no SMR/AMR - NGHOST=2 (Not necessarily! KGF)
         if (nb.type==NEIGHBOR_FACE) size=nc*nc*ngh;
         else if (nb.type==NEIGHBOR_EDGE) size=nc*ngh*ngh;
         else if (nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;

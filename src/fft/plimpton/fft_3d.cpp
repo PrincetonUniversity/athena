@@ -79,8 +79,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
     remap_3d((double *) in, (double *) copy, (double *) plan->scratch,
 	     plan->pre_plan);
     data = copy;
-  }
-  else
+  } else
     data = in;
 
 /* 1d FFTs along fast axis */
@@ -221,8 +220,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     first_klo = in_klo;
     first_khi = in_khi;
     plan->pre_plan = NULL;
-  }
-  else {
+  } else {
     first_ilo = 0;
     first_ihi = nfast - 1;
     first_jlo = ip1*nmid/np1;
@@ -292,8 +290,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     third_jhi = out_jhi;
     third_klo = out_klo;
     third_khi = out_khi;
-  }
-  else {
+  } else {
     third_ilo = ip1*nfast/np1;
     third_ihi = (ip1+1)*nfast/np1 - 1;
     third_jlo = ip2*nmid/np2;
@@ -406,14 +403,12 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (copy_size) {
     plan->copy = (FFT_DATA *) malloc(copy_size*sizeof(FFT_DATA));
     if (plan->copy == NULL) return NULL;
-  }
-  else plan->copy = NULL;
+  } else plan->copy = NULL;
 
   if (scratch_size) {
     plan->scratch = (FFT_DATA *) malloc(scratch_size*sizeof(FFT_DATA));
     if (plan->scratch == NULL) return NULL;
-  }
-  else plan->scratch = NULL;
+  } else plan->scratch = NULL;
 
 /* system specific pre-computation of 1d FFT coeffs
    and scaling normalization */
@@ -430,8 +425,7 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (plan->length2 == plan->length1) {
     plan->plan_mid_forward = plan->plan_fast_forward;
     plan->plan_mid_backward = plan->plan_fast_backward;
-  }
-  else {
+  } else {
     plan->plan_mid_forward =
       fftw_plan_many_dft(1,&(plan->length2),plan->total2/plan->length2,
                          plan->scratch,NULL,1,plan->length2,plan->scratch,
@@ -445,12 +439,10 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (plan->length3 == plan->length1) {
     plan->plan_slow_forward = plan->plan_fast_forward;
     plan->plan_slow_backward = plan->plan_fast_backward;
-  }
-  else if (plan->length3 == plan->length2) {
+  } else if (plan->length3 == plan->length2) {
     plan->plan_slow_forward = plan->plan_mid_forward;
     plan->plan_slow_backward = plan->plan_mid_backward;
-  }
-  else {
+  } else {
     plan->plan_slow_forward =
       fftw_plan_many_dft(1,&(plan->length3),plan->total3/plan->length3,
                          plan->scratch,NULL,1,plan->length3,plan->scratch,

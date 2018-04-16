@@ -137,8 +137,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       sl =  am/(am - bm);
       sr = 0.0;
       sm = -bm/(am - bm);
-    }
-    else {
+    } else {
       sl =  0.0;
       sr = -am/(bp - am);
       sm =  bp/(bp - am);

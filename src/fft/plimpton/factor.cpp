@@ -22,38 +22,31 @@ void factor(int n, int *num, int *list)
 {
   if (n == 1) {
     return;
-  }
-  else if (n % 2 == 0) {
+  } else if (n % 2 == 0) {
     *list = 2;
     (*num)++;
     factor(n/2,num,list+1);
-  }
-  else if (n % 3 == 0) {
+  } else if (n % 3 == 0) {
     *list = 3;
     (*num)++;
     factor(n/3,num,list+1);
-  }
-  else if (n % 5 == 0) {
+  } else if (n % 5 == 0) {
     *list = 5;
     (*num)++;
     factor(n/5,num,list+1);
-  }
-  else if (n % 7 == 0) {
+  } else if (n % 7 == 0) {
     *list = 7;
     (*num)++;
     factor(n/7,num,list+1);
-  }
-  else if (n % 11 == 0) {
+  } else if (n % 11 == 0) {
     *list = 11;
     (*num)++;
     factor(n/11,num,list+1);
-  }
-  else if (n % 13 == 0) {
+  } else if (n % 13 == 0) {
     *list = 13;
     (*num)++;
     factor(n/13,num,list+1);
-  }
-  else {
+  } else {
     *list = n;
     (*num)++;
     return;

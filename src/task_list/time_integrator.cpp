@@ -498,8 +498,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
     if ((step == 1) && (integrator == "vl2")) {
       phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       return TASK_NEXT;
-    }
-    else {
+    } else {
       phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
       return TASK_NEXT;
     }
@@ -626,8 +625,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step) {
   if (step <= nsub_steps) {
     pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
   return TASK_SUCCESS;
@@ -636,8 +634,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step) {
 enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step) {
   if (step <= nsub_steps) {
     pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
   return TASK_SUCCESS;
@@ -650,8 +647,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step) {
   bool ret;
   if (step <= nsub_steps) {
     ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
 
@@ -666,8 +662,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step) {
   bool ret;
   if (step <= nsub_steps) {
     ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
 
@@ -783,8 +778,7 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
                                     is, ie, js, je, ks, ke);
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
 
@@ -803,8 +797,7 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int ste
     Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
                                    time, dt);
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
 
@@ -843,8 +836,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
   // Initialize registers only on first sub-step
   if (step != 1) {
     return TASK_SUCCESS;
-  }
-  else {
+  } else {
     // For each Meshblock, initialize the dt abscissae of each memory register u()
     // to correspond to the beginning of the interval [t^n, t^{n+1}]
     pmb->step_dt[0]= 0.0;
@@ -901,8 +893,7 @@ enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step)
     pmb->step_dt[1]= dt1;
     pmb->step_dt[2]= dt2;
     return TASK_SUCCESS;
-  }
-  else {
+  } else {
     return TASK_FAIL;
   }
 }

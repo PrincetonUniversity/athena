@@ -266,8 +266,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
     pot=pfirst_type_;
     if (pos==0) { // first block
       pfirst_type_=pfirst_type_->pnext_type;
-    }
-    else {
+    } else {
       for (int j=0; j<pos-1; j++) // seek the list
         pot=pot->pnext_type;
       pot->pnext_type=prst->pnext_type; // remove it
@@ -547,8 +546,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
       if (iv>=0 && iv<pmb->nuser_out_var)
         ns=iv, ne=iv;
-    }
-    else if (sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
+    } else if (sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
       if (iv>=0 && iv<pmb->nuser_out_var)
         ns=iv, ne=iv;
     }
@@ -902,8 +900,7 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
           }
         }
       }
-    }
-    else { // 3D
+    } else { // 3D
       for (int k=out_ks; k<=out_ke; k++) {
         n3x=-sin(pco->x3v(k));
         n3y=cos(pco->x3v(k));

@@ -91,8 +91,7 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
           }
         }
       }
-  }
-  else {
+  } else {
     std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
     return;
   }

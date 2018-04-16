@@ -117,8 +117,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       if (output_params.cartesian_vector)
         num_variables[n_dataset-1] += 3;
     }
-  }
-  else {
+  } else {
     num_datasets = 1;
     num_variables = new int[num_datasets];
     num_variables[0] = num_vars_;
@@ -135,8 +134,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       std::strncpy(dataset_names[n_dataset++], "cons", max_name_length+1);
     if (MAGNETIC_FIELDS_ENABLED)
       std::strncpy(dataset_names[n_dataset++], "B", max_name_length+1);
-  }
-  else { // single data
+  } else { // single data
     if (variable.compare(0,1,"B") == 0 && MAGNETIC_FIELDS_ENABLED)
       std::strncpy(dataset_names[n_dataset++], "B", max_name_length+1);
     else if (variable.compare(0,1,"uov") == 0
@@ -157,8 +155,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
-    }
-    else
+    } else
       std::strncpy(variable_names[n_variable++], pod->name.c_str(), max_name_length+1);
     pod=pod->pnext;
   }
@@ -211,8 +208,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     num_blocks_global=num_blocks_local=nba;
     first_block=0;
 #endif
-  }
-  else {
+  } else {
     num_blocks_global=max_blocks_global;
     num_blocks_local=max_blocks_local;
   }
@@ -286,18 +282,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           =(float)pmb->pcoord->x1f(output_params.islice+1);
         x1v_mesh[nba*nx1]
           =(float)pmb->pcoord->x1v(output_params.islice);
-      }
-      else if (output_params.output_sumx1) {
+      } else if (output_params.output_sumx1) {
         x1f_mesh[nba*(nx1+1)] = pmb->pcoord->x1f(pmb->is);
         x1f_mesh[nba*(nx1+1)+1] = pmb->pcoord->x1f(pmb->ie+1);
         if (pmb->block_size.nx1%2 == 0) {
           x1v_mesh[nba*nx1] = pmb->pcoord->x1f((pmb->is + pmb->ie + 1) / 2);
-        }
-        else {
+        } else {
           x1v_mesh[nba*nx1] = pmb->pcoord->x1v((pmb->is + pmb->ie) / 2);
         }
-      }
-      else {
+      } else {
         for (int i=out_is, index=0; i <= out_ie+1; ++i, ++index)
           x1f_mesh[nba*(nx1+1) + index] = (float)pmb->pcoord->x1f(i);
         for (int i=out_is, index=0; i <= out_ie; ++i, ++index)
@@ -310,18 +303,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           =(float)pmb->pcoord->x2f(output_params.jslice+1);
         x2v_mesh[nba*nx2]
           =(float)pmb->pcoord->x2v(output_params.jslice);
-      }
-      else if (output_params.output_sumx2) {
+      } else if (output_params.output_sumx2) {
         x2f_mesh[nba*(nx2+1)] = pmb->pcoord->x2f(pmb->js);
         x2f_mesh[nba*(nx2+1)+1] = pmb->pcoord->x2f(pmb->je+1);
         if (pmb->block_size.nx2%2 == 0) {
           x2v_mesh[nba*nx2] = pmb->pcoord->x2f((pmb->js + pmb->je + 1) / 2);
-        }
-        else {
+        } else {
           x2v_mesh[nba*nx2] = pmb->pcoord->x2v((pmb->js + pmb->je) / 2);
         }
-      }
-      else {
+      } else {
         for (int j=out_js, index=0; j <= out_je+1; ++j, ++index)
           x2f_mesh[nba*(nx2+1) + index] = (float)pmb->pcoord->x2f(j);
         for (int j=out_js, index=0; j <= out_je; ++j, ++index)
@@ -334,18 +324,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           =(float)pmb->pcoord->x3f(output_params.kslice+1);
         x3v_mesh[nba*nx3]
           =(float)pmb->pcoord->x3v(output_params.kslice);
-      }
-      else if (output_params.output_sumx3) {
+      } else if (output_params.output_sumx3) {
         x3f_mesh[nba*(nx3+1)] = pmb->pcoord->x3f(pmb->ks);
         x3f_mesh[nba*(nx3+1)+1] = pmb->pcoord->x3f(pmb->ke+1);
         if (pmb->block_size.nx3%2 == 0) {
           x3v_mesh[nba*nx3] = pmb->pcoord->x3f((pmb->ks + pmb->ke + 1) / 2);
-        }
-        else {
+        } else {
           x3v_mesh[nba*nx3] = pmb->pcoord->x3v((pmb->ks + pmb->ke) / 2);
         }
-      }
-      else {
+      } else {
         for (int k=out_ks, index=0; k <= out_ke+1; ++k, ++index)
           x3f_mesh[nba*(nx3+1) + index] = (float)pmb->pcoord->x3f(k);
         for (int k=out_ks, index=0; k <= out_ke; ++k, ++index)
@@ -376,8 +363,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           }
           pod=pod->pnext;
         }
-      }
-      else {
+      } else {
         int ndv=0;
         pod=pfirst_data_;
         while(pod!=NULL) {
@@ -855,8 +841,7 @@ void ATHDF5Output::MakeXDMF() {
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
               << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " "
               << nx2 << " " << nx1 << " </DataItem>\n";
-        }
-        else
+        } else
         {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx2 << " "
               << nx1 << "\">\n";

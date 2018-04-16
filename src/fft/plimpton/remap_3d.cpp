@@ -289,8 +289,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	  plan->unpack = NULL;
 	else
 	  plan->unpack = NULL;
-      }
-      else if (permute == 2) {
+      } else if (permute == 2) {
 	if (nqty == 1)
 	  plan->unpack = NULL;
 	else if (nqty == 2)
@@ -298,8 +297,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	else
 	  plan->unpack = NULL;
       }
-    }
-    else if (precision == 2) {
+    } else if (precision == 2) {
       if (permute == 0)
 	plan->unpack = unpack_3d;
       else if (permute == 1) {
@@ -309,8 +307,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	  plan->unpack = unpack_3d_permute1_2;
 	else
 	  plan->unpack = unpack_3d_permute1_n;
-      }
-      else if (permute == 2) {
+      } else if (permute == 2) {
 	if (nqty == 1)
 	  plan->unpack = unpack_3d_permute2_1;
 	else if (nqty == 2)
@@ -356,8 +353,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	plan->unpackplan[nrecv].nstride_line = nqty*out.isize;
 	plan->unpackplan[nrecv].nstride_plane = nqty*out.jsize*out.isize;
 	plan->unpackplan[nrecv].nqty = nqty;
-      }
-      else if (permute == 1) {
+      } else if (permute == 1) {
 	plan->recv_offset[nrecv] = nqty *
 	  ((overlap.ilo-out.ilo)*out.ksize*out.jsize +
 	   (overlap.klo-out.klo)*out.jsize + (overlap.jlo-out.jlo));
@@ -367,8 +363,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	plan->unpackplan[nrecv].nstride_line = nqty*out.jsize;
 	plan->unpackplan[nrecv].nstride_plane = nqty*out.ksize*out.jsize;
 	plan->unpackplan[nrecv].nqty = nqty;
-      }
-      else {
+      } else {
 	plan->recv_offset[nrecv] = nqty *
 	  ((overlap.jlo-out.jlo)*out.isize*out.ksize +
 	   (overlap.ilo-out.ilo)*out.ksize + (overlap.klo-out.klo));

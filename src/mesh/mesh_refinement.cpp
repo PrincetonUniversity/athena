@@ -163,8 +163,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2>1) { // 2D
+  } else if (pmb->block_size.nx2>1) { // 2D
     for (int n=sn; n<=en; ++n) {
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
@@ -179,8 +178,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
         }
       }
     }
-  }
-  else { // 1D
+  } else { // 1D
     int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks;
     for (int n=sn; n<=en; ++n) {
       pco->CellVolume(k,j,si,ei,fvol_[0][0]);
@@ -225,8 +223,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2>1) { // 2D
+  } else if (pmb->block_size.nx2>1) { // 2D
     int k=pmb->ks;
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
@@ -239,8 +236,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
           (fine(k,j,i)*sarea_x1_[0][0](i)+fine(k,j+1,i)*sarea_x1_[0][1](i))/tarea;
       }
     }
-  }
-  else { // 1D - no restriction, just copy
+  } else { // 1D - no restriction, just copy
     for (int ci=csi; ci<=cei; ci++) {
       int i=(ci-pmb->cis)*2+pmb->is;
       coarse(csk,csj,ci)=fine(pmb->ks,pmb->js,i);
@@ -289,8 +285,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2>1) { // 2D
+  } else if (pmb->block_size.nx2>1) { // 2D
     int k=pmb->ks;
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
@@ -310,8 +305,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
           (fine(k,j,i)*sarea_x2_[0][0](i)+fine(k,j,i+1)*sarea_x2_[0][0](i+1))/tarea;
       }
     }
-  }
-  else { // 1D
+  } else { // 1D
     int k=pmb->ks, j=pmb->js;
     pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -354,8 +348,7 @@ void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2>1) { // 2D
+  } else if (pmb->block_size.nx2>1) { // 2D
     int k=pmb->ks;
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
@@ -370,8 +363,7 @@ void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
             +fine(k,j+1,i)*sarea_x3_[0][1](i)+fine(k,j+1,i+1)*sarea_x3_[0][1](i+1))/tarea;
       }
     }
-  }
-  else { // 1D
+  } else { // 1D
     int k=pmb->ks, j=pmb->js;
     pco->Face3Area(k, j, si, ei, sarea_x3_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -460,8 +452,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2 > 1) {
+  } else if (pmb->block_size.nx2 > 1) {
     int k=pmb->cks, fk=pmb->ks;
     for (int n=sn; n<=en; n++) {
       for (int j=sj; j<=ej; j++) {
@@ -504,8 +495,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
         }
       }
     }
-  }
-  else { // 1D
+  } else { // 1D
     int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
     for (int n=sn; n<=en; n++) {
       for (int i=si; i<=ei; i++) {
@@ -581,8 +571,7 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2 > 1) {
+  } else if (pmb->block_size.nx2 > 1) {
     int k=pmb->cks, fk=pmb->ks;
     for (int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
@@ -605,8 +594,7 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
         fine(fk,fj+1,fi)=ccval+gx2c*(fx2p-x2c);
       }
     }
-  }
-  else { // 1D
+  } else { // 1D
     for (int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
       fine(0,0,fi)=coarse(0,0,i);
@@ -661,8 +649,7 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2 > 1) {
+  } else if (pmb->block_size.nx2 > 1) {
     int k=pmb->cks, fk=pmb->ks;
     for (int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
@@ -683,8 +670,7 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
         fine(fk,fj,fi+1)=ccval+gx1c*(fx1p-x1c);
       }
     }
-  }
-  else {
+  } else {
     int fi=(si-pmb->cis)*2+pmb->is;
     Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))
                /(pcoarsec->x1s2(si)-pcoarsec->x1s2(si-1));
@@ -745,8 +731,7 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2 > 1) {
+  } else if (pmb->block_size.nx2 > 1) {
     int k=pmb->cks, fk=pmb->ks;
     for (int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
@@ -787,8 +772,7 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
         fine(fk,fj+1,fi+1)=fine(fk+1,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp;
       }
     }
-  }
-  else {
+  } else {
     for (int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
       Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))/(pcoarsec->x1s3(si)-pcoarsec->x1s3(si-1));
@@ -914,8 +898,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2 > 1) {
+  } else if (pmb->block_size.nx2 > 1) {
     int fk=pmb->ks;
     for (int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
@@ -948,8 +931,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
                               /sarea_x2_[0][1](fi+1);
       }
     }
-  }
-  else {
+  } else {
     pco->Face1Area(0, 0, fsi, fei+1, sarea_x1_[0][0]);
     for (int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
@@ -980,8 +962,7 @@ void MeshRefinement::CheckRefinementCondition(void) {
   if (aret>0) {
     if (pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
-  }
-  else if (aret<0) {
+  } else if (aret<0) {
     if (pmb->loc.level == pmb->pmy_mesh->root_level) refine_flag_=0;
     else {
       deref_count_++;

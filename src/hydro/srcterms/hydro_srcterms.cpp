@@ -36,8 +36,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
     || (COORDINATE_SYSTEM == "cylindrical"
     && phyd->pmy_block->block_size.nx3==1)) {
       hydro_sourceterms_defined = true;
-    }
-    else {
+    } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
           << "The point mass gravity works only in spherical polar coordinates"

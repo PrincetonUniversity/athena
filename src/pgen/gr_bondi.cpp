@@ -278,8 +278,7 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
     *pa1 = a1_bl;
     *pa2 = a2_bl;
     *pa3 = a3_bl;
-  }
-  else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
     Real delta = SQR(r) - 2.0*m*r + SQR(a);
     *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
     *pa1 = a1_bl;

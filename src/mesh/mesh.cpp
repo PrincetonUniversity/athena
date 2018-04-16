@@ -272,16 +272,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         if (dim>=2) {
           ref_size.x2min=pin->GetReal(pib->block_name,"x2min");
           ref_size.x2max=pin->GetReal(pib->block_name,"x2max");
-        }
-        else {
+        } else {
           ref_size.x2min=mesh_size.x2min;
           ref_size.x2max=mesh_size.x2max;
         }
         if (dim>=3) {
           ref_size.x3min=pin->GetReal(pib->block_name,"x3min");
           ref_size.x3max=pin->GetReal(pib->block_name,"x3max");
-        }
-        else {
+        } else {
           ref_size.x3min=mesh_size.x3min;
           ref_size.x3max=mesh_size.x3max;
         }
@@ -463,8 +461,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this,
                              pin, gflag);
       pfirst = pblock;
-    }
-    else {
+    } else {
       pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs,
                                    this, pin, gflag);
       pblock->next->prev = pblock;
@@ -720,8 +717,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
           << Globals::nranks << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
-    }
-    else { // test
+    } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
           << Globals::nranks << ")" << std::endl;
@@ -776,8 +772,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
                              block_bcs, costlist[i], mbdata+buff_os, gflag);
       pfirst = pblock;
-    }
-    else {
+    } else {
       pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
                                    block_bcs, costlist[i], mbdata+buff_os, gflag);
       pblock->next->prev = pblock;
@@ -1449,8 +1444,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   if (lx1==0) {
     block_size.x1min=mesh_size.x1min;
     block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
-  }
-  else {
+  } else {
     Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx1<<(ll-root_level));
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
@@ -1458,8 +1452,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   if (lx1==(nrbx1<<(ll-root_level))-1) {
     block_size.x1max=mesh_size.x1max;
     block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
-  }
-  else {
+  } else {
     Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx1<<(ll-root_level));
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
@@ -1471,13 +1464,11 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_size.x2max=mesh_size.x2max;
     block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
-  }
-  else {
+  } else {
     if (lx2==0) {
       block_size.x2min=mesh_size.x2min;
       block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
-    }
-    else {
+    } else {
       Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx2<<(ll-root_level));
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
@@ -1485,8 +1476,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     if (lx2==(nrbx2<<(ll-root_level))-1) {
       block_size.x2max=mesh_size.x2max;
       block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
-    }
-    else {
+    } else {
       Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx2<<(ll-root_level));
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
@@ -1499,13 +1489,11 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_size.x3max=mesh_size.x3max;
     block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
-  }
-  else {
+  } else {
     if (lx3==0) {
       block_size.x3min=mesh_size.x3min;
       block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
-    }
-    else {
+    } else {
       Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx3<<(ll-root_level));
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
@@ -1513,8 +1501,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     if (lx3==(nrbx3<<(ll-root_level))-1) {
       block_size.x3max=mesh_size.x3max;
       block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
-    }
-    else {
+    } else {
       Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx3<<(ll-root_level));
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
@@ -1682,8 +1669,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   for (int n=1; n<ntot; n++) {
     if (newtoold[n]==newtoold[n-1]+1) { // normal
       oldtonew[k++]=n;
-    }
-    else if (newtoold[n]==newtoold[n-1]+nlbl) { // derefined
+    } else if (newtoold[n]==newtoold[n-1]+nlbl) { // derefined
       for (int j=0; j<nlbl-1; j++)
         oldtonew[k++]=n-1;
       oldtonew[k++]=n;
@@ -1743,8 +1729,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (ranklist[on+k]!=Globals::my_rank)
           nrecv++;
       }
-    }
-    else {
+    } else {
       if (ranklist[on]!=Globals::my_rank)
         nrecv++;
     }
@@ -1756,8 +1741,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (newrank[nn+k]!=Globals::my_rank)
           nsend++;
       }
-    }
-    else {
+    } else {
       if (newrank[nn]!=Globals::my_rank)
         nsend++;
     }
@@ -1799,8 +1783,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                     tag, MPI_COMM_WORLD, &(req_recv[k]));
           k++;
         }
-      }
-      else { // same or c2f
+      } else { // same or c2f
         if (ranklist[on]==Globals::my_rank) continue;
         int size;
         if (oloc.level == nloc.level) size=bssame;
@@ -1842,8 +1825,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[k]));
         k++;
-      }
-      else if (nloc.level>oloc.level) { // c2f
+      } else if (nloc.level>oloc.level) { // c2f
         for (int l=0; l<nlbl; l++) {
           if (newrank[nn+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=newloc[nn+l];
@@ -1873,8 +1855,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                     tag, MPI_COMM_WORLD, &(req_send[k]));
           k++;
         }
-      }
-      else { // f2c
+      } else { // f2c
         if (newrank[nn]==Globals::my_rank) continue;
         int ox1=oloc.lx1&1L, ox2=oloc.lx2&1L, ox3=oloc.lx3&1L;
         sendbuf[k] = new Real[bsf2c];
@@ -1926,23 +1907,20 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (n==nbs) { // first
         pob->prev=NULL;
         newlist=pmb=pob;
-      }
-      else {
+      } else {
         pmb->next=pob;
         pob->prev=pmb;
         pmb=pmb->next;
       }
       pmb->gid=n; pmb->lid=n-nbs;
-    }
-    else {
+    } else {
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       if (n==nbs) { // first
         newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
                                 pin, gflag, true);
         pmb=newlist;
-      }
-      else {
+      } else {
         pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
                                   pin, gflag, true);
         pmb->next->prev=pmb;
@@ -2006,8 +1984,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-      }
-      else if ((loclist[on].level < newloc[n].level) && (ranklist[on]==Globals::my_rank)) {
+      } else if ((loclist[on].level < newloc[n].level) && (ranklist[on]==Globals::my_rank)) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob=FindMeshBlock(on);
         MeshRefinement *pmr=pmb->pmr;
@@ -2105,8 +2082,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
         }
         k++;
-      }
-      else if (oloc.level>nloc.level) { // f2c
+      } else if (oloc.level>nloc.level) { // f2c
         for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
@@ -2142,8 +2118,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
           k++;
         }
-      }
-      else { // c2f
+      } else { // c2f
         if (ranklist[on]==Globals::my_rank) continue;
         MeshRefinement *pmr=pb->pmr;
         int p=0;

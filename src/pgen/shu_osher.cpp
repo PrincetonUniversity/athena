@@ -54,8 +54,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM2,k,j,i) = vl*dl;
         phydro->u(IM3,k,j,i) = wl*dl;
         phydro->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
-      }
-      else {
+      } else {
         phydro->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pcoord->x1v(i)));
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;

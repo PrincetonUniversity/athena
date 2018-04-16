@@ -252,8 +252,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             imax=i;
           }
         }
-      }
-      else if (d==1) {
+      } else if (d==1) {
         if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;
         for (int i=ic; i<=ie; i++) {
@@ -262,8 +261,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             imax=i;
           }
         }
-      }
-      else if (d==2) {
+      } else if (d==2) {
         if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
         for (int j=jc; j>=js; j--) {
@@ -272,8 +270,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             jmax=j;
           }
         }
-      }
-      else if (d==3) {
+      } else if (d==3) {
         if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
         for (int j=jc; j<=je; j++) {
@@ -282,8 +279,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             jmax=j;
           }
         }
-      }
-      else if (d==4) {
+      } else if (d==4) {
         if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
         for (int k=kc; k>=ks; k--) {
@@ -292,8 +288,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             kmax=k;
           }
         }
-      }
-      else if (d==5) {
+      } else if (d==5) {
         if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
         for (int k=kc; k<=ke; k++) {

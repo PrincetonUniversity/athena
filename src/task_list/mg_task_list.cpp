@@ -362,8 +362,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
     AddMultigridTask(MG_PHYSBND0,    MG_SENDBND0F|MG_RECVBND0F);
     AddMultigridTask(MG_RESTRICT,    MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBND0F,  MG_RESTRICT);
-  }
-  else if (nsmooth==1) {
+  } else if (nsmooth==1) {
     AddMultigridTask(MG_STARTRECV1R, NONE);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);
@@ -382,8 +381,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
     AddMultigridTask(MG_PHYSBND0,    MG_SENDBND0F|MG_RECVBND0F);
     AddMultigridTask(MG_RESTRICT,    MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBND0F,  MG_RESTRICT);
-  }
-  else if (nsmooth==2) {
+  } else if (nsmooth==2) {
     AddMultigridTask(MG_STARTRECV1R, NONE);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);

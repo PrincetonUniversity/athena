@@ -110,8 +110,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src
     if (nb.ox1!=0) {
       if (nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
-    }
-    else {
+    } else {
       if (nb.fi2==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
     }
@@ -120,8 +119,7 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src
     if (nb.ox1!=0 && nb.ox2!=0) {
       if (nb.fi1==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
       else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
-    }
-    else {
+    } else {
       if (nb.fi2==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
       else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
     }
@@ -214,8 +212,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
         }
       }
     }
-  }
-  else
+  } else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
 
     // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
@@ -268,8 +265,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
     si=pmb->cis, ei=pmb->cie;
     if ((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng;
-  }
-  else if (nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
+  } else if (nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
   else               si=pmb->cis-cng, ei=pmb->cis-1;
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
@@ -277,8 +273,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
       if ((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng;
     }
-  }
-  else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
+  } else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
@@ -286,8 +281,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
       if ((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng;
     }
-  }
-  else if (nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
+  } else if (nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   int p=0;
@@ -303,8 +297,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
         }
       }
     }
-  }
-  else
+  } else
     BufferUtility::Unpack4DData(buf, cbuf, ns, ne, si, ei, sj, ej, sk, ek, p);
   return;
 }
@@ -325,8 +318,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
     si=pmb->is, ei=pmb->ie;
     if (nb.fi1==1)   si+=pmb->block_size.nx1/2;
     else            ei-=pmb->block_size.nx1/2;
-  }
-  else if (nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+  } else if (nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   if (nb.ox2==0) {
     sj=pmb->js, ej=pmb->je;
@@ -334,14 +326,12 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
       if (nb.ox1!=0) {
         if (nb.fi1==1) sj+=pmb->block_size.nx2/2;
         else          ej-=pmb->block_size.nx2/2;
-      }
-      else {
+      } else {
         if (nb.fi2==1) sj+=pmb->block_size.nx2/2;
         else          ej-=pmb->block_size.nx2/2;
       }
     }
-  }
-  else if (nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  } else if (nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   if (nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
@@ -349,14 +339,12 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
       if (nb.ox1!=0 && nb.ox2!=0) {
         if (nb.fi1==1) sk+=pmb->block_size.nx3/2;
         else          ek-=pmb->block_size.nx3/2;
-      }
-      else {
+      } else {
         if (nb.fi2==1) sk+=pmb->block_size.nx3/2;
         else          ek-=pmb->block_size.nx3/2;
       }
     }
-  }
-  else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  } else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
@@ -372,8 +360,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
         }
       }
     }
-  }
-  else
+  } else
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
   return;
 }

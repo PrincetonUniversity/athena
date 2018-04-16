@@ -196,8 +196,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 	  //unstable case v = amp*omega/k * coskx * e^omega*t
 	  //minus sign counters minus sign in m
 	  cosot = exp(omega*tlim);//time dependent factor of rho
-	}
-	else {
+	} else {
 	  sinot = sin(omega*tlim);//time dependent factor of vel
 	  cosot = cos(omega*tlim);//time dependent factor of rho
 	}

@@ -75,7 +75,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0",0.0025);
     pslope = pin->GetOrAddReal("problem","pslope",0.0);
     gamma_gas = pin->GetReal("hydro","gamma");
-  }else{
+  } else{
     p0_over_r0=SQR(pin->GetReal("hydro","iso_sound_speed"));
   }
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
@@ -187,7 +187,7 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
     v1=0.0;
     v2=vel;
     v3=0.0;
-  }else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
     v1=0.0;
     v2=0.0;
     v3=vel;

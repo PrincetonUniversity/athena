@@ -765,8 +765,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       if (bt == 0.0) {
         bet2 = 1.0;
         bet3 = 0.0;
-      }
-      else {
+      } else {
         bet2 = b2/bt;
         bet3 = b3/bt;
       }

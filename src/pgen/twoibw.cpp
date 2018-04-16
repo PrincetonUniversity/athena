@@ -57,13 +57,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           (shk_dir==2 && pcoord->x2v(j) < 0.1) ||
           (shk_dir==3 && pcoord->x3v(k) < 0.1)) {
         phydro->u(IEN,k,j,i)= 1.0e3/(peos->GetGamma() - 1.0);
-      }
-      else if ((shk_dir==1 && pcoord->x1v(i) > 0.9) ||
+      } else if ((shk_dir==1 && pcoord->x1v(i) > 0.9) ||
                (shk_dir==2 && pcoord->x2v(j) > 0.9) ||
                (shk_dir==3 && pcoord->x3v(k) > 0.9)) {
         phydro->u(IEN,k,j,i)= 1.0e2/(peos->GetGamma() - 1.0);
-      }
-      else {
+      } else {
         phydro->u(IEN,k,j,i)= 0.01/(peos->GetGamma() - 1.0);
       }
     }

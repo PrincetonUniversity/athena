@@ -271,8 +271,7 @@ struct remap_plan_2d *remap_2d_create_plan(
 	plan->unpack = NULL;
       else
 	plan->unpack = NULL;
-    }
-    else if (precision == 2) {
+    } else if (precision == 2) {
       if (permute == 0)
 	plan->unpack = unpack_2d;
       else if (nqty == 1)
@@ -316,8 +315,7 @@ struct remap_plan_2d *remap_2d_create_plan(
 	plan->unpackplan[nrecv].nslow = overlap.jsize;
 	plan->unpackplan[nrecv].nstride = nqty*out.isize;
 	plan->unpackplan[nrecv].nqty = nqty;
-      }
-      else {
+      } else {
 	plan->recv_offset[nrecv] = nqty * ((overlap.ilo-out.ilo)*out.jsize +
 					  (overlap.jlo-out.jlo));
 	plan->unpackplan[nrecv].nfast = overlap.isize;

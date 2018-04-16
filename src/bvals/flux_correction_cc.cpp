@@ -78,8 +78,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
               }
             }
           }
-        }
-        else if (pmb->block_size.nx2>1) { // 2D
+        } else if (pmb->block_size.nx2>1) { // 2D
           int k=pmb->ks;
           for (int nn=ns; nn<=ne; nn++) {
             for (int j=pmb->js; j<=pmb->je; j+=2) {
@@ -90,8 +89,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
                         +x1flux(nn, k, j+1, i)*ap)/tarea;
             }
           }
-        }
-        else { // 1D
+        } else { // 1D
           int k=pmb->ks, j=pmb->js;
           for (int nn=ns; nn<=ne; nn++)
             sbuf[p++]=x1flux(nn, k, j, i);
@@ -114,8 +112,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
               }
             }
           }
-        }
-        else if (pmb->block_size.nx2>1) { // 2D
+        } else if (pmb->block_size.nx2>1) { // 2D
           int k=pmb->ks;
           for (int nn=ns; nn<=ne; nn++) {
             pco->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
@@ -219,8 +216,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
               x1flux(nn,k,j,is)=rbuf[p++];
           }
         }
-      }
-      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int js=pmb->js+(pmb->je-pmb->js)*(nb.fid&1)+(nb.fid&1);
         int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
@@ -233,8 +229,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
               x2flux(nn,k,js,i)=rbuf[p++];
           }
         }
-      }
-      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid&1)+(nb.fid&1);
         int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;

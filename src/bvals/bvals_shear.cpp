@@ -385,8 +385,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
           flagi=false;
           continue;
-        }
-        else { // MPI boundary
+        } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);

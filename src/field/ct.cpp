@@ -177,9 +177,7 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
               + wght[2]*b_in2.x3f(k,j,i);
         }
       }}
-  }
-
-  else { // do not derefernce b_in2
+  } else { // do not derefernce b_in2
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd

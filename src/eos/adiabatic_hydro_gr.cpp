@@ -398,8 +398,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   if (root_1 > root_2) {
     *plambda_plus = root_1;
     *plambda_minus = root_2;
-  }
-  else
+  } else
   {
     *plambda_plus = root_2;
     *plambda_minus = root_1;

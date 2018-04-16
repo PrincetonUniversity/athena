@@ -139,8 +139,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           Real y0;
           if (c3 >= 0.0) {
             y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
-          }
-          else {
+          } else {
             y0 = 2.0 * cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
           }
