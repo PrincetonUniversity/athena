@@ -190,7 +190,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name,"ghost_zones",false);
 
         // read ghost cell option
-        if(COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
+        if (COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
           op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
         else
           op.cartesian_vector=false;
@@ -255,19 +255,19 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
   while(pot!=NULL) {
-    if(pot->output_params.file_type.compare("rst")==0) {
+    if (pot->output_params.file_type.compare("rst")==0) {
       prst=pot;
       found=1;
-      if(pot->pnext_type==NULL) found=2;
+      if (pot->pnext_type==NULL) found=2;
       break;
     }
     pos++;
     pot=pot->pnext_type;
   }
-  if(found==1) {
+  if (found==1) {
     // remove the restarting block
     pot=pfirst_type_;
-    if(pos==0) { // first block
+    if (pos==0) { // first block
       pfirst_type_=pfirst_type_->pnext_type;
     }
     else {
@@ -364,7 +364,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     pod->data.InitWithShallowSlice(phyd->u,4,IM1,3);
     AppendOutputDataNode(pod);
     num_vars_+=3;
-    if(output_params.cartesian_vector) {
+    if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
       src.InitWithShallowSlice(phyd->u,4,IM1,3);
       pod = new OutputData;
@@ -412,7 +412,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     pod->data.InitWithShallowSlice(phyd->w,4,IVX,3);
     AppendOutputDataNode(pod);
     num_vars_+=3;
-    if(output_params.cartesian_vector) {
+    if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
       src.InitWithShallowSlice(phyd->w,4,IVX,3);
       pod = new OutputData;
@@ -479,7 +479,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
       pod->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
       AppendOutputDataNode(pod);
       num_vars_+=3;
-      if(output_params.cartesian_vector) {
+      if (output_params.cartesian_vector) {
         AthenaArray<Real> src;
         src.InitWithShallowSlice(pfld->bcc,4,IB1,3);
         pod = new OutputData;
@@ -549,18 +549,18 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   if (output_params.variable.compare(0, 3, "uov") == 0
    || output_params.variable.compare(0, 12, "user_out_var") == 0) {
     int iv, ns=0, ne=pmb->nuser_out_var-1;
-    if(sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
-      if(iv>=0 && iv<pmb->nuser_out_var)
+    if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
+      if (iv>=0 && iv<pmb->nuser_out_var)
         ns=iv, ne=iv;
     }
-    else if(sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
-      if(iv>=0 && iv<pmb->nuser_out_var)
+    else if (sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
+      if (iv>=0 && iv<pmb->nuser_out_var)
         ns=iv, ne=iv;
     }
     for (int n = ns; n <= ne; ++n) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      if(pmb->user_out_var_names_[n].length()!=0)
+      if (pmb->user_out_var_names_[n].length()!=0)
         pod->name=pmb->user_out_var_names_[n];
       else {
         char vn[16];
@@ -574,8 +574,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   }
 
   for (int n = 0; n < pmb->nuser_out_var; ++n) {
-    if(pmb->user_out_var_names_[n].length()!=0) {
-      if(output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
+    if (pmb->user_out_var_names_[n].length()!=0) {
+      if (output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name=pmb->user_out_var_names_[n];
@@ -669,7 +669,7 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
         (wtflag==true && ptype->output_params.file_type=="rst")) {
-      if(first && ptype->output_params.file_type!="hst") {
+      if (first && ptype->output_params.file_type!="hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
         first=false;
       }
@@ -900,8 +900,8 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
                                           Coordinates *pco)
 {
   Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
-  if(COORDINATE_SYSTEM == "spherical_polar") {
-    if(out_ks==out_ke) { // 2D
+  if (COORDINATE_SYSTEM == "spherical_polar") {
+    if (out_ks==out_ke) { // 2D
       for(int k=out_ks; k<=out_ke; k++) {
         for(int j=out_js; j<=out_je; j++) {
           n1x=sin(pco->x2v(j));
@@ -937,7 +937,7 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
       }
     }
   }
-  if(COORDINATE_SYSTEM == "cylindrical") {
+  if (COORDINATE_SYSTEM == "cylindrical") {
     for(int k=out_ks; k<=out_ke; k++) {
       for(int j=out_js; j<=out_je; j++) {
         n1x=cos(pco->x2v(j));

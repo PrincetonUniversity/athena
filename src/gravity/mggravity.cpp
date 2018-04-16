@@ -39,7 +39,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, Paramet
 {
   four_pi_G_=pmy_mesh_->four_pi_G_;
   eps_=pmy_mesh_->grav_eps_;
-  if(four_pi_G_==0.0) {
+  if (four_pi_G_==0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -47,7 +47,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, Paramet
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  if(mode_>=2 && eps_<0.0) {
+  if (mode_>=2 && eps_<0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Convergence threshold must be set in the Mesh::InitUserMeshData "
@@ -96,10 +96,10 @@ void MGGravityDriver::Solve(int step)
   // Load the source
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if(pmb!=NULL) {
+    if (pmb!=NULL) {
       in.InitWithShallowCopy(pmb->phydro->u);
       pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
-      if(mode_>=2) // iterative mode - load initial guess
+      if (mode_>=2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
 //    else { // on another process
@@ -109,15 +109,15 @@ void MGGravityDriver::Solve(int step)
 
   SetupMultigrid();
   Real mean_rho=0.0;
-  if(fperiodic_) mean_rho=last_ave_/four_pi_G_;
-  if(mode_<=1) SolveFMGCycle();
+  if (fperiodic_) mean_rho=last_ave_/four_pi_G_;
+  if (mode_<=1) SolveFMGCycle();
   else SolveIterative();
 
   // Return the result
   pmggrav=pmg_;
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if(pmb!=NULL) {
+    if (pmb!=NULL) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho=mean_rho;
     }

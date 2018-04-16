@@ -41,10 +41,10 @@ void Hydro::AddGravityFlux(void)
         phil = 0.5*(phi(k,j,i-1)+phi(k,j,i));
         // gx, gy, and gz centered at L and R x1-faces
         gxl =       (phi(k,j  ,i-1) - phi(k,j  ,i  ))/dx1;
-        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+        if (pmb->block_size.nx2 > 1) { // 2D or 3D
           gyl = 0.25*((phi(k,j-1,i-1) - phi(k,j+1,i-1)) +
                       (phi(k,j-1,i  ) - phi(k,j+1,i  )))/dx2;
-          if(pmb->block_size.nx3 > 1) { // 3D
+          if (pmb->block_size.nx3 > 1) { // 3D
             gzl = 0.25*((phi(k-1,j,i-1) - phi(k+1,j,i-1)) +
                         (phi(k-1,j,i  ) - phi(k+1,j,i  )))/dx3;
           }
@@ -73,7 +73,7 @@ void Hydro::AddGravityFlux(void)
           gxl = 0.25*((phi(k,j-1,i-1) - phi(k,j-1,i+1)) +
                       (phi(k,j  ,i-1) - phi(k,j  ,i+1)))/dx1;
           gyl =       (phi(k,j-1,i  ) - phi(k,j  ,i  ))/dx2;
-          if(pmb->block_size.nx3 > 1) { // 3D
+          if (pmb->block_size.nx3 > 1) { // 3D
             gzl = 0.25*((phi(k-1,j-1,i) - phi(k+1,j-1,i)) +
                         (phi(k-1,j  ,i) - phi(k+1,j  ,i)))/dx3;
           }
@@ -143,14 +143,14 @@ void Hydro::AddGravityFluxWithGflx(void)
       for (int j=js; j<=je; ++j){
         for (int i=is; i<=ie; ++i){
           x1flux(n,k,j,i) += x1gflx(n,k,j,i);
-          if(i==ie) x1flux(n,k,j,i+1) += x1gflx(n,k,j,i+1);
+          if (i==ie) x1flux(n,k,j,i+1) += x1gflx(n,k,j,i+1);
           if (pmb->block_size.nx2 > 1) {
             x2flux(n,k,j,i) += x2gflx(n,k,j,i);
-            if(j==je) x2flux(n,k,j+1,i) += x2gflx(n,k,j+1,i);
+            if (j==je) x2flux(n,k,j+1,i) += x2gflx(n,k,j+1,i);
           }
           if (pmb->block_size.nx3 > 1) {
             x3flux(n,k,j,i) += x3gflx(n,k,j,i);
-            if(k==ke) x3flux(n,k+1,j,i) += x3gflx(n,k+1,j,i);
+            if (k==ke) x3flux(n,k+1,j,i) += x3gflx(n,k+1,j,i);
           }
         }
       }
@@ -189,8 +189,8 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmb->block_size.nx2 > 1) {
-      if(pmb->block_size.nx3 == 1) // 2D
+    if (pmb->block_size.nx2 > 1) {
+      if (pmb->block_size.nx3 == 1) // 2D
         jl=js-1, ju=je+1, kl=ks, ku=ke;
       else // 3D
         jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
@@ -208,10 +208,10 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
         phil = 0.5*(phi_in(k,j,i-1) + phi_in(k,j,i  ));
         // gx, gy, and gz centered at L and R x1-faces
         gxl =       (phi_in(k,j  ,i-1) - phi_in(k,j  ,i  ))/dx1;
-        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+        if (pmb->block_size.nx2 > 1) { // 2D or 3D
           gyl = 0.25*((phi_in(k,j-1,i-1) - phi_in(k,j+1,i-1)) +
                       (phi_in(k,j-1,i  ) - phi_in(k,j+1,i  )))/dx2;
-          if(pmb->block_size.nx3 > 1) // 3D
+          if (pmb->block_size.nx3 > 1) // 3D
             gzl = 0.25*((phi_in(k-1,j,i-1) - phi_in(k+1,j,i-1)) +
                         (phi_in(k-1,j,i  ) - phi_in(k+1,j,i  )))/dx3;
         }
@@ -238,7 +238,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
     if (MAGNETIC_FIELDS_ENABLED) {
-      if(pmb->block_size.nx3 == 1) // 2D
+      if (pmb->block_size.nx3 == 1) // 2D
         il=is-1, iu=ie+1, kl=ks, ku=ke;
       else // 3D
         il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
@@ -256,7 +256,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
           gxl = 0.25*((phi_in(k,j-1,i-1) - phi_in(k,j-1,i+1)) +
                       (phi_in(k,j  ,i-1) - phi_in(k,j  ,i+1)))/dx1;
           gyl =       (phi_in(k,j-1,i  ) - phi_in(k,j  ,i  ))/dx2;
-          if(pmb->block_size.nx3 > 1)
+          if (pmb->block_size.nx3 > 1)
             gzl = 0.25*((phi_in(k-1,j-1,i) - phi_in(k+1,j-1,i)) +
                         (phi_in(k-1,j  ,i) - phi_in(k+1,j  ,i)))/dx3;
 

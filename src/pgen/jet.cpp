@@ -130,7 +130,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
       Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-      if(rad <= r_jet){
+      if (rad <= r_jet){
         prim(IDN,k,j,is-i) = d_jet;
         prim(IVX,k,j,is-i) = vx_jet;
         prim(IVY,k,j,is-i) = vy_jet;
@@ -153,7 +153,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 #pragma omp simd
       for(int i=1; i<=(NGHOST); ++i){
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet){
           b.x1f(k,j,is-i) = bx_jet;
         } else{
           b.x1f(k,j,is-i) = b.x1f(k,j,is);
@@ -166,7 +166,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet){
           b.x2f(k,j,is-i) = by_jet;
         } else{
           b.x2f(k,j,is-i) = b.x2f(k,j,is);
@@ -179,7 +179,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet){
           b.x3f(k,j,is-i) = bz_jet;
         } else{
           b.x3f(k,j,is-i) = b.x3f(k,j,is);

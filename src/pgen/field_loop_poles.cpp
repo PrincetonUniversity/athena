@@ -68,7 +68,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
   // Get parameters of initial pressure and cooling parameters
   isocs2=SQR(pin->GetReal("hydro","iso_sound_speed"));
-  if(NON_BAROTROPIC_EOS){
+  if (NON_BAROTROPIC_EOS){
     gamma_gas = pin->GetReal("hydro","gamma");
   }
 
@@ -82,16 +82,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   }
 
   // setup boundary condition
-  if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X1, LoopInnerX1);
   }
-  if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X1, LoopOuterX1);
   }
-  if(mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X2, LoopInnerX2);
   }
-  if(mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X2, LoopOuterX2);
   }
 
@@ -274,12 +274,12 @@ static Real A2(const Real x1, const Real x2, const Real x3)
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
   Real y=x1*fabs(sin(x2))*sin(x3);
-  if(x2<0.0||x2>PI){
+  if (x2<0.0||x2>PI){
    x=-x;
    y=-y;
   }
   Real z=x1*cos(x2);
-  if(sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
+  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
     az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a2=-az*fabs(sin(x2));
@@ -295,12 +295,12 @@ static Real A1(const Real x1, const Real x2, const Real x3)
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
   Real y=x1*fabs(sin(x2))*sin(x3);
-  if(x2<0.0||x2>PI){
+  if (x2<0.0||x2>PI){
    x=-x;
    y=-y;
   }
   Real z=x1*cos(x2);
-  if(sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
+  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
     az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a1=az*cos(x2);

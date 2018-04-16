@@ -103,7 +103,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
 /*
     Real cfmax = std::max(cfl,cfr);
-    if(wli[IVX] <= wri[IVX]) {
+    if (wli[IVX] <= wri[IVX]) {
       spd[0] = wli[IVX] - cfmax;
       spd[4] = wri[IVX] + cfmax;
     } else {
@@ -208,7 +208,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
               bxi*(wri[IVX]*bxi + wri[IVY]*ur.by + wri[IVZ]*ur.bz - vbstr))/sdmr;
 
   // ul** and ur** - if Bx is near zero, same as *-states
-    if(0.5*bxsq < (SMALL_NUMBER)*ptst) {
+    if (0.5*bxsq < (SMALL_NUMBER)*ptst) {
       uldst = ulst;
       urdst = urst;
     } else {
@@ -251,7 +251,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 6.  Compute flux
 
-    if(spd[0] >= 0.0){
+    if (spd[0] >= 0.0){
       // return Fl if flow is supersonic
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -260,7 +260,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if(spd[4] <= 0.0){
+    } else if (spd[4] <= 0.0){
       // return Fr if flow is supersonic
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;
@@ -269,7 +269,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fr.e;
       flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
-    } else if(spd[1] >= 0.0) {
+    } else if (spd[1] >= 0.0) {
       // return Fl*
       flxi[IDN] = fl.d  + spd[0]*(ulst.d  - ul.d);
       flxi[IVX] = fl.mx + spd[0]*(ulst.mx - ul.mx);
@@ -278,7 +278,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e  + spd[0]*(ulst.e  - ul.e);
       flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
       flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
-    } else if(spd[2] >= 0.0) {
+    } else if (spd[2] >= 0.0) {
       // return Fl**
       Real tmp = spd[1] - spd[0];
       flxi[IDN] = fl.d  - spd[0]*ul.d  - tmp*ulst.d  + spd[1]*uldst.d;
@@ -288,7 +288,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e  - spd[0]*ul.e  - tmp*ulst.e  + spd[1]*uldst.e;
       flxi[IBY] = fl.by - spd[0]*ul.by - tmp*ulst.by + spd[1]*uldst.by;
       flxi[IBZ] = fl.bz - spd[0]*ul.bz - tmp*ulst.bz + spd[1]*uldst.bz;
-    } else if(spd[3] > 0.0) {
+    } else if (spd[3] > 0.0) {
       // return Fr**
       Real tmp = spd[3] - spd[4];
       flxi[IDN] = fr.d  - spd[4]*ur.d  - tmp*urst.d  + spd[3]*urdst.d;

@@ -89,10 +89,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   EnrollUserExplicitSourceFunction(VertGrav);
 
 // enroll user-defined boundary conditions
-  if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
       EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
   }
-  if(mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
       EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
   }
 

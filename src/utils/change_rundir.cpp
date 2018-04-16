@@ -27,7 +27,7 @@ void ChangeRunDir(const char *pdir)
   if (pdir == NULL || *pdir == '\0') return;
 
   mkdir(pdir, 0775);
-  if(chdir(pdir)) {
+  if (chdir(pdir)) {
     msg << "### FATAL ERROR in function [ChangeToRunDir]" << std::endl
         << "Cannot cd to directory '" << pdir << "'";
     throw std::runtime_error(msg.str().c_str());

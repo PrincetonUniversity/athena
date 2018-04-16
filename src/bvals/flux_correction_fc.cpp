@@ -49,12 +49,12 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
   AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
 
   int p=0;
-  if(nb.type==NEIGHBOR_FACE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  if (nb.type==NEIGHBOR_FACE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // pack e2
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
@@ -81,9 +81,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         }
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // pack e1
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
@@ -97,9 +97,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         }
       }
       // x3 direction
-      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==INNER_X3) k=pmb->ks;
+        if (nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // pack e1
         for(int j=pmb->js; j<=pmb->je+1; j++) {
@@ -113,20 +113,20 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         }
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // pack e2
         // shift azimuthal velocity for x-z shearing
         if (SHEARING_BOX) {
-          if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1)) {
+          if (ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1)) {
             for(int j=pmb->js; j<=pmb->je; j++)
               buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
-          } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1))
+          } else if (ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1))
                                    && nb.ox1==1) {
             for(int j=pmb->js; j<=pmb->je; j++)
               buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
@@ -143,9 +143,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
           buf[p++]=e3(k,j,i);
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // pack e1
         for(int i=pmb->is; i<=pmb->ie; i++)
@@ -157,26 +157,26 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==INNER_X1) i=pmb->is;
+      if (nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
       buf[p++]=e3(k,j,i);
     }
   }
-  else if(nb.type==NEIGHBOR_EDGE) {
+  else if (nb.type==NEIGHBOR_EDGE) {
     // x1x2 edge (both 2D and 3D)
-    if(nb.eid>=0 && nb.eid<4) {
+    if (nb.eid>=0 && nb.eid<4) {
       int i, j;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) j=pmb->js;
+      if ((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
       // shift azmuthal velocity if shearing boundary blocks
-      if(nb.shear and nb.ox1==-1){
+      if (nb.shear and nb.ox1==-1){
         for(int k=pmb->ks; k<=pmb->ke; k++)
           buf[p++]=e3(k,j,i)-0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
-      } else if(nb.shear and nb.ox1==1){
+      } else if (nb.shear and nb.ox1==1){
         for(int k=pmb->ks; k<=pmb->ke; k++)
           buf[p++]=e3(k,j,i)+0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
       } else {
@@ -186,19 +186,19 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       }
     }
     // x1x3 edge
-    else if(nb.eid>=4 && nb.eid<8) {
+    else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) k=pmb->ks;
+      if ((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       // pack e2
       // shift azimuthal velocity for x-z shearing
-      if(SHEARING_BOX) {
-        if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1))   {
+      if (SHEARING_BOX) {
+        if (ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1))   {
           for(int j=pmb->js; j<=pmb->je; j++)
             buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
-        } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1)) && nb.ox1==1){
+        } else if (ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1)) && nb.ox1==1){
           for(int j=pmb->js; j<=pmb->je; j++)
             buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
         } else {
@@ -211,11 +211,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       }
     }
     // x2x3 edge
-    else if(nb.eid>=8 && nb.eid<12) {
+    else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
-      if((nb.eid&1)==0) j=pmb->js;
+      if ((nb.eid&1)==0) j=pmb->js;
       else j=pmb->je+1;
-      if((nb.eid&2)==0) k=pmb->ks;
+      if ((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       // pack e1
       for(int i=pmb->is; i<=pmb->ie; i++)
@@ -242,12 +242,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
   AthenaArray<Real> &le1=sarea_[0];
   AthenaArray<Real> &le2=sarea_[1];
   int p=0;
-  if(nb.type==NEIGHBOR_FACE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  if (nb.type==NEIGHBOR_FACE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // restrict and pack e2
         for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
@@ -274,9 +274,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         bool pole = pco->IsPole(j);
         // restrict and pack e1
@@ -308,9 +308,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x3 direction
-      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==INNER_X3) k=pmb->ks;
+        if (nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // restrict and pack e1
         for(int j=pmb->js; j<=pmb->je+1; j+=2) {
@@ -335,12 +335,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // restrict and pack e2
         for(int j=pmb->js; j<=pmb->je; j+=2) {
@@ -353,9 +353,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
           buf[p++]=e3(k,j,i);
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         bool pole = pco->IsPole(j);
         // restrict and pack e1
@@ -376,21 +376,21 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==INNER_X1) i=pmb->is;
+      if (nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
       buf[p++]=e3(k,j,i);
     }
   }
-  else if(nb.type==NEIGHBOR_EDGE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  else if (nb.type==NEIGHBOR_EDGE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
-      if(nb.eid>=0 && nb.eid<4) {
+      if (nb.eid>=0 && nb.eid<4) {
         int i, j;
-        if((nb.eid&1)==0) i=pmb->is;
+        if ((nb.eid&1)==0) i=pmb->is;
         else i=pmb->ie+1;
-        if((nb.eid&2)==0) j=pmb->js;
+        if ((nb.eid&2)==0) j=pmb->js;
         else j=pmb->je+1;
         bool pole = pco->IsPole(j);
         // restrict and pack e3
@@ -407,11 +407,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x1x3 edge
-      else if(nb.eid>=4 && nb.eid<8) {
+      else if (nb.eid>=4 && nb.eid<8) {
         int i, k;
-        if((nb.eid&1)==0) i=pmb->is;
+        if ((nb.eid&1)==0) i=pmb->is;
         else i=pmb->ie+1;
-        if((nb.eid&2)==0) k=pmb->ks;
+        if ((nb.eid&2)==0) k=pmb->ks;
         else k=pmb->ke+1;
         // restrict and pack e2
         for(int j=pmb->js; j<=pmb->je; j+=2) {
@@ -421,12 +421,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x2x3 edge
-      else if(nb.eid>=8 && nb.eid<12) {
+      else if (nb.eid>=8 && nb.eid<12) {
         int j, k;
-        if((nb.eid&1)==0) j=pmb->js;
+        if ((nb.eid&1)==0) j=pmb->js;
         else j=pmb->je+1;
         bool pole = pco->IsPole(j);
-        if((nb.eid&2)==0) k=pmb->ks;
+        if ((nb.eid&2)==0) k=pmb->ks;
         else k=pmb->ke+1;
         // restrict and pack e1
         if (not pole or not GENERAL_RELATIVITY) {
@@ -441,12 +441,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
           buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       // x1x2 edge
       int i, j;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) j=pmb->js;
+      if ((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
       // pack e3
       buf[p++]=e3(pmb->ks,j,i);
@@ -486,18 +486,18 @@ void BoundaryValues::SendEMFCorrection(void)
   // Send non-polar EMF values
   for(int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if((nb.type!=NEIGHBOR_FACE) && (nb.type!=NEIGHBOR_EDGE)) break;
+    if ((nb.type!=NEIGHBOR_FACE) && (nb.type!=NEIGHBOR_EDGE)) break;
     int p=0;
-    if(nb.level==pmb->loc.level) {
-      if((nb.type==NEIGHBOR_FACE)
+    if (nb.level==pmb->loc.level) {
+      if ((nb.type==NEIGHBOR_FACE)
       || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true)))
         p=LoadEMFBoundaryBufferSameLevel(bd_emfcor_.send[nb.bufid], nb);
       else continue;
     }
-    else if(nb.level==pmb->loc.level-1)
+    else if (nb.level==pmb->loc.level-1)
       p=LoadEMFBoundaryBufferToCoarser(bd_emfcor_.send[nb.bufid], nb);
     else continue;
-    if(nb.rank==Globals::my_rank) { // on the same node
+    if (nb.rank==Globals::my_rank) { // on the same node
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->bd_emfcor_.recv[nb.targetid],
                   bd_emfcor_.send[nb.bufid], p*sizeof(Real));
@@ -554,15 +554,15 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p=0;
-  if(nb.type==NEIGHBOR_FACE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  if (nb.type==NEIGHBOR_FACE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
 
-        if(nb.shear and nb.fid==INNER_X1){
+        if (nb.shear and nb.fid==INNER_X1){
           // store e2 for shearing periodic bcs
           for(int k=pmb->ks; k<=pmb->ke+1; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
@@ -573,7 +573,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
             for(int j=pmb->js; j<=pmb->je+1; j++)
               shboxvar_inner_emf_.x3e(k,j) += buf[p++];
           }
-        } else if(nb.shear and nb.fid==OUTER_X1) {
+        } else if (nb.shear and nb.fid==OUTER_X1) {
           // store e2 for shearing periodic bcs
           for(int k=pmb->ks; k<=pmb->ke+1; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
@@ -598,9 +598,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         }
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // unpack e1
         Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -616,9 +616,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         }
       }
       // x3 direction
-      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==INNER_X3) k=pmb->ks;
+        if (nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // unpack e1
         for(int j=pmb->js; j<=pmb->je+1; j++) {
@@ -632,12 +632,12 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         }
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // unpack e2
         for(int j=pmb->js; j<=pmb->je; j++) {
@@ -649,9 +649,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
           e3(k,j,i)+=buf[p++];
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // unpack e1
         for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -665,7 +665,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==INNER_X1) i=pmb->is;
+      if (nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // unpack e2
       e2(k+1,j,i)+=buf[p];
@@ -675,19 +675,19 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       e3(k  ,j,i)+=buf[p++];
     }
   }
-  else if(nb.type==NEIGHBOR_EDGE) {
+  else if (nb.type==NEIGHBOR_EDGE) {
     // x1x2 edge (2D and 3D)
-    if(nb.eid>=0 && nb.eid<4) {
+    if (nb.eid>=0 && nb.eid<4) {
       int i, j;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) j=pmb->js;
+      if ((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
-      if(nb.shear and nb.ox1==-1){
+      if (nb.shear and nb.ox1==-1){
         // store e3 for shearing periodic bcs
         for(int k=pmb->ks; k<=pmb->ke; k++)
           shboxvar_inner_emf_.x3e(k,j) += buf[p++];
-      } else if(nb.shear and nb.ox1==1){
+      } else if (nb.shear and nb.ox1==1){
         // store e3 for shearing periodic bcs
         for(int k=pmb->ks; k<=pmb->ke; k++)
           shboxvar_outer_emf_.x3e(k,j) += buf[p++];
@@ -700,17 +700,17 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       }
     }
     // x1x3 edge
-    else if(nb.eid>=4 && nb.eid<8) {
+    else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) k=pmb->ks;
+      if ((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
-      if(nb.shear and nb.ox1==-1){
+      if (nb.shear and nb.ox1==-1){
         // store e2 for shearing periodic bcs
         for(int j=pmb->js; j<=pmb->je; j++)
           shboxvar_inner_emf_.x2e(k,j) += buf[p++];
-      } else if(nb.shear and nb.ox1==1){
+      } else if (nb.shear and nb.ox1==1){
         // store e2 for shearing periodic bcs
         for(int j=pmb->js; j<=pmb->je; j++)
           shboxvar_outer_emf_.x2e(k,j) += buf[p++];
@@ -721,11 +721,11 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       }
     }
     // x2x3 edge
-    else if(nb.eid>=8 && nb.eid<12) {
+    else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
-      if((nb.eid&1)==0) j=pmb->js;
+      if ((nb.eid&1)==0) j=pmb->js;
       else j=pmb->je+1;
-      if((nb.eid&2)==0) k=pmb->ks;
+      if ((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       // unpack e1
       Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -750,16 +750,16 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p=0;
-  if(nb.type==NEIGHBOR_FACE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  if (nb.type==NEIGHBOR_FACE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
-        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        if (nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
-        if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        if (nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
         else kl=pmb->ks+pmb->block_size.nx3/2;
         // unpack e2
         for(int k=kl; k<=ku+1; k++) {
@@ -773,13 +773,13 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         }
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j, il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
-        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        if (nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
-        if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        if (nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
         else kl=pmb->ks+pmb->block_size.nx3/2;
         // unpack e1
         Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -795,13 +795,13 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         }
       }
       // x3 direction
-      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k, il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
-        if(nb.fid==INNER_X3) k=pmb->ks;
+        if (nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
-        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        if (nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
-        if(nb.fi2==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        if (nb.fi2==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
         // unpack e1
         for(int j=jl; j<=ju+1; j++) {
@@ -815,14 +815,14 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         }
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i, jl=pmb->js, ju=pmb->je;
-        if(nb.fid==INNER_X1) i=pmb->is;
+        if (nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
-        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        if (nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
         // unpack e2
         for(int j=jl; j<=ju; j++) {
@@ -834,11 +834,11 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
           e3(k,j,i)+=buf[p++];
       }
       // x2 direction
-      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j, il=pmb->is, iu=pmb->ie;
-        if(nb.fid==INNER_X2) j=pmb->js;
+        if (nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
-        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        if (nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
         // unpack e1
         for(int i=il; i<=iu; i++) {
@@ -852,7 +852,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==INNER_X1) i=pmb->is;
+      if (nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // unpack e2
       e2(k+1,j,i)+=buf[p];
@@ -862,16 +862,16 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
       e3(k  ,j,i)+=buf[p++];
     }
   }
-  else if(nb.type==NEIGHBOR_EDGE) {
-    if(pmb->block_size.nx3 > 1) { // 3D
+  else if (nb.type==NEIGHBOR_EDGE) {
+    if (pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
-      if(nb.eid>=0 && nb.eid<4) {
+      if (nb.eid>=0 && nb.eid<4) {
         int i, j, kl=pmb->ks, ku=pmb->ke;
-        if((nb.eid&1)==0) i=pmb->is;
+        if ((nb.eid&1)==0) i=pmb->is;
         else i=pmb->ie+1;
-        if((nb.eid&2)==0) j=pmb->js;
+        if ((nb.eid&2)==0) j=pmb->js;
         else j=pmb->je+1;
-        if(nb.fi1==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        if (nb.fi1==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
         else kl=pmb->ks+pmb->block_size.nx3/2;
         // unpack e3
         Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
@@ -879,26 +879,26 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
           e3(k,j,i)+=sign*buf[p++];
       }
       // x1x3 edge
-      else if(nb.eid>=4 && nb.eid<8) {
+      else if (nb.eid>=4 && nb.eid<8) {
         int i, k, jl=pmb->js, ju=pmb->je;
-        if((nb.eid&1)==0) i=pmb->is;
+        if ((nb.eid&1)==0) i=pmb->is;
         else i=pmb->ie+1;
-        if((nb.eid&2)==0) k=pmb->ks;
+        if ((nb.eid&2)==0) k=pmb->ks;
         else k=pmb->ke+1;
-        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        if (nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
         // unpack e2
         for(int j=jl; j<=ju; j++)
           e2(k,j,i)+=buf[p++];
       }
       // x2x3 edge
-      else if(nb.eid>=8 && nb.eid<12) {
+      else if (nb.eid>=8 && nb.eid<12) {
         int j, k, il=pmb->is, iu=pmb->ie;
-        if((nb.eid&1)==0) j=pmb->js;
+        if ((nb.eid&1)==0) j=pmb->js;
         else j=pmb->je+1;
-        if((nb.eid&2)==0) k=pmb->ks;
+        if ((nb.eid&2)==0) k=pmb->ks;
         else k=pmb->ke+1;
-        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        if (nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
         // unpack e1
         Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -906,11 +906,11 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
           e1(k,j,i)+=sign*buf[p++];
       }
     }
-    else if(pmb->block_size.nx2 > 1) { // 2D
+    else if (pmb->block_size.nx2 > 1) { // 2D
       int i, j, k=pmb->ks;
-      if((nb.eid&1)==0) i=pmb->is;
+      if ((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((nb.eid&2)==0) j=pmb->js;
+      if ((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
       // unpack e3
       e3(k,j,i)+=buf[p++];
@@ -928,7 +928,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
 void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north)
 {
   MeshBlock *pmb = pmy_block_;
-  if(pmb->block_size.nx3 > 1) {
+  if (pmb->block_size.nx3 > 1) {
     int j = north ? pmb->js : pmb->je+1;
     int count = 0;
     for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -956,12 +956,12 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
-    if(n==INNER_X1 || n==OUTER_X1) {
-      if(n==INNER_X1) i=pmb->is;
+    if (n==INNER_X1 || n==OUTER_X1) {
+      if (n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       nl=nblevel[1][1][2*n];
-      if(nl>pmb->loc.level) { // finer
-        if(pmb->block_size.nx3 > 1) { // 3D
+      if (nl>pmb->loc.level) { // finer
+        if (pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
               e2(k,j,i)=0.0;
@@ -971,7 +971,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
               e3(k,j,i)=0.0;
           }
         }
-        else if(pmb->block_size.nx2 > 1) { // 2D
+        else if (pmb->block_size.nx2 > 1) { // 2D
           for(int j=pmb->js; j<=pmb->je; j++)
             e2(pmb->ks,j,i)=e2(pmb->ks+1,j,i)=0.0;
           for(int j=pmb->js+1; j<=pmb->je; j++)
@@ -983,12 +983,12 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
         }
       }
     }
-    if(n==INNER_X2 || n==OUTER_X2) {
-      if(n==INNER_X2) j=pmb->js;
+    if (n==INNER_X2 || n==OUTER_X2) {
+      if (n==INNER_X2) j=pmb->js;
       else j=pmb->je+1;
       nl=nblevel[1][2*n-4][1];
-      if(nl>pmb->loc.level) { // finer
-        if(pmb->block_size.nx3 > 1) { // 3D
+      if (nl>pmb->loc.level) { // finer
+        if (pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int i=pmb->is; i<=pmb->ie; i++)
               e1(k,j,i)=0.0;
@@ -998,7 +998,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
               e3(k,j,i)=0.0;
           }
         }
-        else if(pmb->block_size.nx2 > 1) { // 2D
+        else if (pmb->block_size.nx2 > 1) { // 2D
           for(int i=pmb->is; i<=pmb->ie; i++)
             e1(pmb->ks,j,i)=e1(pmb->ks+1,j,i)=0.0;
           for(int i=pmb->is+1; i<=pmb->ie; i++)
@@ -1006,11 +1006,11 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
         }
       }
     }
-    if(n==INNER_X3 || n==OUTER_X3) {
-      if(n==INNER_X3) k=pmb->ks;
+    if (n==INNER_X3 || n==OUTER_X3) {
+      if (n==INNER_X3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=nblevel[2*n-8][1][1];
-      if(nl>pmb->loc.level) { // finer
+      if (nl>pmb->loc.level) { // finer
         // this is always 3D
         for(int j=pmb->js+1; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++)
@@ -1025,29 +1025,29 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
   }
   // edge
   for(int n=0; n<nedge_; n++) {
-    if(edge_flag_[n]==true) continue;
-    if(n>=0 && n<4) {
-      if((n&1)==0) i=pmb->is;
+    if (edge_flag_[n]==true) continue;
+    if (n>=0 && n<4) {
+      if ((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((n&2)==0) j=pmb->js;
+      if ((n&2)==0) j=pmb->js;
       else j=pmb->je+1;
       for(int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i)=0.0;
     }
     // x1x3 edge
-    else if(n>=4 && n<8) {
-      if((n&1)==0) i=pmb->is;
+    else if (n>=4 && n<8) {
+      if ((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((n&2)==0) k=pmb->ks;
+      if ((n&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       for(int j=pmb->js; j<=pmb->je; j++)
         e2(k,j,i)=0.0;
     }
     // x2x3 edge
-    else if(n>=8 && n<12) {
-      if((n&1)==0) j=pmb->js;
+    else if (n>=8 && n<12) {
+      if ((n&1)==0) j=pmb->js;
       else j=pmb->je+1;
-      if((n&2)==0) k=pmb->ks;
+      if ((n&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       for(int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i)=0.0;
@@ -1072,12 +1072,12 @@ void BoundaryValues::AverageEMFBoundary(void)
   for(int n=0; n<nface_; n++) {
     if ((block_bcs[n] != BLOCK_BNDRY) && (block_bcs[n] != PERIODIC_BNDRY)
         && (block_bcs[n] != POLAR_BNDRY)) continue;
-    if(n==INNER_X1 || n==OUTER_X1) {
-      if(n==INNER_X1) i=pmb->is;
+    if (n==INNER_X1 || n==OUTER_X1) {
+      if (n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       nl=nblevel[1][1][2*n];
-      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
-        if(pmb->block_size.nx3 > 1) { // 3D
+      if (nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
+        if (pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
               e2(k,j,i)*=0.5;
@@ -1087,7 +1087,7 @@ void BoundaryValues::AverageEMFBoundary(void)
               e3(k,j,i)*=0.5;
           }
         }
-        else if(pmb->block_size.nx2 > 1) { // 2D
+        else if (pmb->block_size.nx2 > 1) { // 2D
           for(int j=pmb->js; j<=pmb->je; j++)
             e2(pmb->ks,j,i)*=0.5, e2(pmb->ks+1,j,i)*=0.5;
           for(int j=pmb->js+1; j<=pmb->je; j++)
@@ -1098,25 +1098,25 @@ void BoundaryValues::AverageEMFBoundary(void)
           e3(pmb->ks,pmb->js,i)*=0.5, e3(pmb->ks,pmb->js+1,i)*=0.5;
         }
       }
-      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
-        if(pmb->block_size.nx3 > 1) { // 3D
+      else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
+        if (pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for(int j=pmb->js; j<=pmb->je; j++)
             e2(k,j,i)*=0.5;
         }
-        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+        if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int j=pmb->js+pmb->block_size.nx2/2;
           for(int k=pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i)*=0.5;
         }
       }
     }
-    if(n==INNER_X2 || n==OUTER_X2) {
-      if(n==INNER_X2) j=pmb->js;
+    if (n==INNER_X2 || n==OUTER_X2) {
+      if (n==INNER_X2) j=pmb->js;
       else j=pmb->je+1;
       nl=nblevel[1][2*n-4][1];
-      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
-        if(pmb->block_size.nx3 > 1) {
+      if (nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
+        if (pmb->block_size.nx3 > 1) {
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int i=pmb->is; i<=pmb->ie; i++)
               e1(k,j,i)*=0.5;
@@ -1126,31 +1126,31 @@ void BoundaryValues::AverageEMFBoundary(void)
               e3(k,j,i)*=0.5;
           }
         }
-        else if(pmb->block_size.nx2 > 1) {
+        else if (pmb->block_size.nx2 > 1) {
           for(int i=pmb->is; i<=pmb->ie; i++)
             e1(pmb->ks,j,i)*=0.5, e1(pmb->ks+1,j,i)*=0.5;
           for(int i=pmb->is+1; i<=pmb->ie; i++)
             e3(pmb->ks,j,i)*=0.5;
         }
       }
-      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
-        if(pmb->block_size.nx3 > 1) { // 3D
+      else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
+        if (pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for(int i=pmb->is; i<=pmb->ie; i++)
             e1(k,j,i)*=0.5;
         }
-        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+        if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int i=pmb->is+pmb->block_size.nx1/2;
           for(int k=pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i)*=0.5;
         }
       }
     }
-    if(n==INNER_X3 || n==OUTER_X3) {
-      if(n==INNER_X3) k=pmb->ks;
+    if (n==INNER_X3 || n==OUTER_X3) {
+      if (n==INNER_X3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=nblevel[2*n-8][1][1];
-      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
+      if (nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
         for(int j=pmb->js+1; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++)
             e1(k,j,i)*=0.5;
@@ -1160,7 +1160,7 @@ void BoundaryValues::AverageEMFBoundary(void)
             e2(k,j,i)*=0.5;
         }
       }
-      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
+      else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
         int j=pmb->js+pmb->block_size.nx2/2;
         for(int i=pmb->is; i<=pmb->ie; i++)
@@ -1173,34 +1173,34 @@ void BoundaryValues::AverageEMFBoundary(void)
   }
   // edge
   for(int n=0; n<nedge_; n++) {
-    if(nedge_fine_[n]==1) continue;
+    if (nedge_fine_[n]==1) continue;
     Real div=1.0/(Real)nedge_fine_[n];
     NeighborBlock& nb=neighbor[n+6];
     Real half_div=div;
-    if(nb.shear) half_div=0.5;
+    if (nb.shear) half_div=0.5;
     // x1x2 edge (both 2D and 3D)
-    if(n>=0 && n<4) {
-      if((n&1)==0) i=pmb->is;
+    if (n>=0 && n<4) {
+      if ((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((n&2)==0) j=pmb->js;
+      if ((n&2)==0) j=pmb->js;
       else j=pmb->je+1;
       for(int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i)*=half_div;
     }
     // x1x3 edge
-    else if(n>=4 && n<8) {
-      if((n&1)==0) i=pmb->is;
+    else if (n>=4 && n<8) {
+      if ((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
-      if((n&2)==0) k=pmb->ks;
+      if ((n&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       for(int j=pmb->js; j<=pmb->je; j++)
         e2(k,j,i)*=half_div;
     }
     // x2x3 edge
-    else if(n>=8 && n<12) {
-      if((n&1)==0) j=pmb->js;
+    else if (n>=8 && n<12) {
+      if ((n&1)==0) j=pmb->js;
       else j=pmb->je+1;
-      if((n&2)==0) k=pmb->ks;
+      if ((n&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       for(int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i)*=div;
@@ -1220,9 +1220,9 @@ void BoundaryValues::PolarSingleEMF(void)
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int j;
 
-  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
   && pmb->block_size.nx3 > 1) {
-    if(block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
+    if (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for(int i=pmb->is; i<=pmb->ie; i++){
@@ -1244,7 +1244,7 @@ void BoundaryValues::PolarSingleEMF(void)
       }
     }
 
-    if(block_bcs[OUTER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE){
+    if (block_bcs[OUTER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE){
       j=pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for(int i=pmb->is; i<=pmb->ie; i++){
@@ -1281,15 +1281,15 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
   bool flag=true;
 
   // Receive same-level non-polar EMF values
-  if(firsttime_==true) {
+  if (firsttime_==true) {
     for(int n=0; n<nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = neighbor[n];
-      if(nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
-      if(nb.level!=pmb->loc.level) continue;
-      if((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))) {
-        if(bd_emfcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-        if(bd_emfcor_.flag[nb.bufid]==BNDRY_WAITING) {
-          if(nb.rank==Globals::my_rank) {// on the same process
+      if (nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
+      if (nb.level!=pmb->loc.level) continue;
+      if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))) {
+        if (bd_emfcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+        if (bd_emfcor_.flag[nb.bufid]==BNDRY_WAITING) {
+          if (nb.rank==Globals::my_rank) {// on the same process
             flag=false;
             continue;
           }
@@ -1298,7 +1298,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
             MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-            if(test==false) {
+            if (test==false) {
               flag=false;
               continue;
             }
@@ -1312,21 +1312,21 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
       }
     }
 
-    if(flag==false) return flag;
-    if(pmb->pmy_mesh->multilevel==true)
+    if (flag==false) return flag;
+    if (pmb->pmy_mesh->multilevel==true)
       ClearCoarseEMFBoundary();
     firsttime_=false;
   }
 
   // Receive finer non-polar EMF values
-  if(pmb->pmy_mesh->multilevel==true) {
+  if (pmb->pmy_mesh->multilevel==true) {
     for(int n=0; n<nneighbor; n++) { // then from finer
       NeighborBlock& nb = neighbor[n];
-      if(nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
-      if(nb.level!=pmb->loc.level+1) continue;
-      if(bd_emfcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if(bd_emfcor_.flag[nb.bufid]==BNDRY_WAITING) {
-        if(nb.rank==Globals::my_rank) {// on the same process
+      if (nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
+      if (nb.level!=pmb->loc.level+1) continue;
+      if (bd_emfcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+      if (bd_emfcor_.flag[nb.bufid]==BNDRY_WAITING) {
+        if (nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
         }
@@ -1335,7 +1335,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+          if (test==false) {
             flag=false;
             continue;
           }
@@ -1391,7 +1391,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
     }
   }
 
-  if(flag==true){
+  if (flag==true){
     AverageEMFBoundary();
     if (num_north_polar_blocks_ > 0)
       SetEMFBoundaryPolar(emf_north_recv_, num_north_polar_blocks_, true);

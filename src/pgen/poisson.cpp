@@ -77,8 +77,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int nlim = pin->GetInteger("time","nlim");
 
   int dim = 1;
-  if(mesh_size.nx2 > 1) dim=2;
-  if(mesh_size.nx3 > 1) dim=3;
+  if (mesh_size.nx2 > 1) dim=2;
+  if (mesh_size.nx3 > 1) dim=3;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -87,15 +87,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     y = pcoord->x2v(j);
     z = pcoord->x3v(k);
     r2 = SQR(x - x0);
-    if(dim > 1) r2 += SQR(y - y0);
-    if(dim > 2) r2 += SQR(z - z0);
-    if(iprob == 1){
+    if (dim > 1) r2 += SQR(y - y0);
+    if (dim > 2) r2 += SQR(z - z0);
+    if (iprob == 1){
       den = std::sin(2*PI*x/x1size);
-      if(dim > 1) den *= std::sin(2*PI*y/x2size);
-      if(dim > 2) den *= std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
+      if (dim > 1) den *= std::sin(2*PI*y/x2size);
+      if (dim > 2) den *= std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
       phia = SQR(2*PI/x1size);
-      if(dim > 1) phia += SQR(2*PI/x2size);
-      if(dim > 2) phia += SQR(2*PI/x3size);
+      if (dim > 1) phia += SQR(2*PI/x2size);
+      if (dim > 2) phia += SQR(2*PI/x3size);
       phia = -den*four_pi_G/phia;
       den+=2.0;
     } else if (iprob == 2){
@@ -110,7 +110,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phia = four_pi_G*exp(-a0*r2);
     }
 
-    if(nlim > 0){
+    if (nlim > 0){
       phydro->u(IDN,k,j,i) = den;
       phydro->u(IM1,k,j,i) = 0.0;
       phydro->u(IM2,k,j,i) = 0.0;
@@ -151,11 +151,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   int nlim = pin->GetInteger("time","nlim");
 
-  if(SELF_GRAVITY_ENABLED){
-    if(nlim == 0){
+  if (SELF_GRAVITY_ENABLED){
+    if (nlim == 0){
 // timing measure after loop
       int ncycle = pin->GetInteger("problem","ncycle");
-      if(Globals::my_rank == 0){
+      if (Globals::my_rank == 0){
         std::cout << "=====================================================" << std::endl;
         std::cout << "Call Poisson Solver  " << ncycle << " times          " << std::endl;
         std::cout << "=====================================================" << std::endl;
@@ -172,7 +172,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
           pmb=pmb->next;
         }
-        if(SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
+        if (SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
         else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
       }
 
@@ -186,7 +186,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       float zc_cpus = (float)(mb_zones*ncycle)/cpu_time;
       float zc_cpus2 = (float)(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
 
-      if(Globals::my_rank == 0){
+      if (Globals::my_rank == 0){
         std::cout << "Timing Possison Solver                               " << std::endl;
         std::cout << "number of zones in Mesh = " << zones << std::endl;
         std::cout << "Mesh configuration = " << mesh_size.nx1 << "x"
@@ -242,7 +242,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       phiamp += SQR(2*PI/x3size);
       phiamp = 1.0*four_pi_G/phiamp;
 
-      if(Globals::my_rank == 0){
+      if (Globals::my_rank == 0){
         std::cout << std::setprecision(15) << std::scientific;
         std::cout << "=====================================================" << std::endl;
         std::cout << "L1 : " << err1 <<" MaxPhi: " << maxphi << " Amp: " << phiamp << std::endl;

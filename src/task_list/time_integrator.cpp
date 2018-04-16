@@ -191,7 +191,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
   // Set cfl_number based on user input and time integrator CFL limit
   Real cfl_number = pin->GetReal("time","cfl_number");
-  if(cfl_number > cfl_limit) {
+  if (cfl_number > cfl_limit) {
     std::cout << "### Warning in CreateTimeIntegrator" << std::endl
         << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
         << " for integrator=" << integrator << " in "
@@ -207,7 +207,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
     // compute hydro fluxes, integrate hydro variables
     AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
-    if(pm->multilevel==true) { // SMR or AMR
+    if (pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(INT_HYD,RECV_HYDFLX);
@@ -246,7 +246,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // prolongate, compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      if(pm->multilevel==true) { // SMR or AMR
+      if (pm->multilevel==true) { // SMR or AMR
         AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
@@ -258,7 +258,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
         }
       }
     } else {  // HYDRO
-      if(pm->multilevel==true) { // SMR or AMR
+      if (pm->multilevel==true) { // SMR or AMR
         AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
@@ -279,7 +279,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
 //    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
-    if(pm->adaptive==true) {
+    if (pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
       AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
     } else {
@@ -500,7 +500,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   Field *pfield=pmb->pfield;
 
   if (step <= nsub_steps) {
-    if((step == 1) && (integrator == "vl2")) {
+    if ((step == 1) && (integrator == "vl2")) {
       phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       return TASK_NEXT;
     }
@@ -541,7 +541,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int step)
 {
-  if(pmb->pbval->ReceiveFluxCorrection(FLUX_HYDRO) == true) {
+  if (pmb->pbval->ReceiveFluxCorrection(FLUX_HYDRO) == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -550,7 +550,7 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int s
 
 enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int step)
 {
-  if(pmb->pbval->ReceiveEMFCorrection() == true) {
+  if (pmb->pbval->ReceiveEMFCorrection() == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -671,7 +671,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
     return TASK_FAIL;
   }
 
-  if(ret==true) {
+  if (ret==true) {
     return TASK_SUCCESS;
   } else {
     return TASK_FAIL;
@@ -688,7 +688,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
     return TASK_FAIL;
   }
 
-  if(ret==true) {
+  if (ret==true) {
     return TASK_SUCCESS;
   } else {
     return TASK_FAIL;
@@ -713,7 +713,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int st
     return TASK_FAIL;
   }
 
-  if(ret==true) {
+  if (ret==true) {
     return TASK_SUCCESS;
   } else {
     return TASK_FAIL;
@@ -736,7 +736,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int st
   } else {
     return TASK_FAIL;
   }
-  if(ret==true) {
+  if (ret==true) {
     return TASK_SUCCESS;
   } else {
     return TASK_FAIL;
@@ -749,7 +749,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int step)
 }
 enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int step)
 {
-  if(pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
+  if (pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -790,12 +790,12 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-  if(pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
-  if(pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
-  if(pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
-  if(pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
-  if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
-  if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
+  if (pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
+  if (pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
+  if (pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
+  if (pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
+  if (pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
+  if (pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if (step <= nsub_steps) {
     // At beginning of this task, phydro->w contains previous substep W(U) output

@@ -55,14 +55,14 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // add file number to name, unless write is forced by terminate signal, in which case
   // replace number in the name by the string "final".  This keeps the restart file
   // numbers consistent with output.dt when a job is restarted many times.
-  if(force_write==false)
+  if (force_write==false)
     fname.append(number);
   else
     fname.append("final");
   fname.append(".rst");
 
   // increment counters now so values for *next* dump are stored in restart file
-  if(force_write==false) {
+  if (force_write==false) {
     output_params.file_number++;
     output_params.next_time += output_params.dt;
     pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
@@ -93,7 +93,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   int mynb=pm->nblist[Globals::my_rank];
 
   // write the header; this part is serial
-  if(Globals::my_rank==0) {
+  if (Globals::my_rank==0) {
     // output the input parameters
     resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 
@@ -107,7 +107,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     resfile.Write(&(datasize), sizeof(IOWrapperSize_t), 1);
 
     // collect and write user Mesh data
-    if(udsize!=0) {
+    if (udsize!=0) {
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
       for(int n=0; n<pm->nint_user_mesh_data_; n++) {

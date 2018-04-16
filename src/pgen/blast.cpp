@@ -222,13 +222,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   // find indices of the center
   int ic, jc, kc;
   for(ic=is; ic<=ie; ic++)
-    if(pblock->pcoord->x1f(ic) > x1_0) break;
+    if (pblock->pcoord->x1f(ic) > x1_0) break;
   ic--;
   for(jc=pblock->js; jc<=pblock->je; jc++)
-    if(pblock->pcoord->x2f(jc) > x2_0) break;
+    if (pblock->pcoord->x2f(jc) > x2_0) break;
   jc--;
   for(kc=pblock->ks; kc<=pblock->ke; kc++)
-    if(pblock->pcoord->x3f(kc) > x3_0) break;
+    if (pblock->pcoord->x3f(kc) > x3_0) break;
   kc--;
 
   // search pressure maximum in each direction
@@ -236,70 +236,70 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   int nr=0;
   for(int o=0; o<=6; o++) {
     int ios=0, jos=0, kos=0;
-    if(o==1) ios=-10;
-    else if(o==2) ios= 10;
-    else if(o==3) jos=-10;
-    else if(o==4) jos= 10;
-    else if(o==5) kos=-10;
-    else if(o==6) kos= 10;
+    if (o==1) ios=-10;
+    else if (o==2) ios= 10;
+    else if (o==3) jos=-10;
+    else if (o==4) jos= 10;
+    else if (o==5) kos=-10;
+    else if (o==6) kos= 10;
     for(int d=0; d<6; d++) {
       Real pmax=0.0;
       int imax, jmax, kmax;
-      if(d==0) {
-        if(ios!=0) continue;
+      if (d==0) {
+        if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;
         for(int i=ic; i>=is; i--) {
-          if(pr(kmax,jmax,i)>pmax) {
+          if (pr(kmax,jmax,i)>pmax) {
             pmax=pr(kmax,jmax,i);
             imax=i;
           }
         }
       }
-      else if(d==1) {
-        if(ios!=0) continue;
+      else if (d==1) {
+        if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;
         for(int i=ic; i<=ie; i++) {
-          if(pr(kmax,jmax,i)>pmax) {
+          if (pr(kmax,jmax,i)>pmax) {
             pmax=pr(kmax,jmax,i);
             imax=i;
           }
         }
       }
-      else if(d==2) {
-        if(jos!=0) continue;
+      else if (d==2) {
+        if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
         for(int j=jc; j>=js; j--) {
-          if(pr(kmax,j,imax)>pmax) {
+          if (pr(kmax,j,imax)>pmax) {
             pmax=pr(kmax,j,imax);
             jmax=j;
           }
         }
       }
-      else if(d==3) {
-        if(jos!=0) continue;
+      else if (d==3) {
+        if (jos!=0) continue;
         imax=ic+ios, kmax=kc+kos;
         for(int j=jc; j<=je; j++) {
-          if(pr(kmax,j,imax)>pmax) {
+          if (pr(kmax,j,imax)>pmax) {
             pmax=pr(kmax,j,imax);
             jmax=j;
           }
         }
       }
-      else if(d==4) {
-        if(kos!=0) continue;
+      else if (d==4) {
+        if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
         for(int k=kc; k>=ks; k--) {
-          if(pr(k,jmax,imax)>pmax) {
+          if (pr(k,jmax,imax)>pmax) {
             pmax=pr(k,jmax,imax);
             kmax=k;
           }
         }
       }
-      else if(d==5) {
-        if(kos!=0) continue;
+      else if (d==5) {
+        if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
         for(int k=kc; k<=ke; k++) {
-          if(pr(k,jmax,imax)>pmax) {
+          if (pr(k,jmax,imax)>pmax) {
             pmax=pr(k,jmax,imax);
             kmax=k;
           }
@@ -324,8 +324,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         zm = x1m*std::cos(x2m);
       }
       Real rad = std::sqrt(SQR(xm-x0)+SQR(ym-y0)+SQR(zm-z0));
-      if(rad>rmax) rmax=rad;
-      if(rad<rmin) rmin=rad;
+      if (rad>rmax) rmax=rad;
+      if (rad<rmin) rmin=rad;
       rave+=rad;
       nr++;
     }
@@ -356,8 +356,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if ((pfile = fopen(fname.c_str(),"r")) != NULL){
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -365,7 +365,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if ((pfile = fopen(fname.c_str(),"w")) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());

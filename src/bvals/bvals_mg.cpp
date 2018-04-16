@@ -45,18 +45,18 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
   : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs)
 {
   pmy_mg_=pmg;
-  if(pmy_mg_->root_flag_==true) {
+  if (pmy_mg_->root_flag_==true) {
     for(int i=0; i<6; i++)
       MGBoundaryFunction_[i]=MGBoundary[i];
   }
   else {
     for(int i=0; i<6; i++) {
-      if(block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
+      if (block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
         MGBoundaryFunction_[i]=NULL;
       else
         MGBoundaryFunction_[i]=MGBoundary[i];
     }
-    if(SELF_GRAVITY_ENABLED == 2)
+    if (SELF_GRAVITY_ENABLED == 2)
       InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
   }
 }
@@ -95,11 +95,11 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
     switch(type) {
       case BNDRY_MGGRAV: {
         int ngh=pmy_mg_->ngh_;
-        if(pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
+        if (pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
           int nc=block_size_.nx1;
-          if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
+          if (BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
+          else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
+          else if (BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
         }
         else { // uniform - NGHOST=1
           size=((BoundaryValues::ni[n].ox1==0)?block_size_.nx1:ngh)
@@ -131,9 +131,9 @@ void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
-    if(bd.req_send[n]!=MPI_REQUEST_NULL)
+    if (bd.req_send[n]!=MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_send[n]);
-    if(bd.req_recv[n]!=MPI_REQUEST_NULL)
+    if (bd.req_recv[n]!=MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_recv[n]);
 #endif
   }
@@ -159,10 +159,10 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void)
   Real y0=block_size_.x2min-((Real)ngh+0.5)*dy;
   Real z0=block_size_.x3min-((Real)ngh+0.5)*dz;
   Real time=pmy_mesh_->time;
-  if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh;
-  if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh;
-  if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh;
-  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh;
+  if (MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh;
+  if (MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh;
+  if (MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh;
+  if (MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh;
 
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[INNER_X1] != NULL)
@@ -207,40 +207,40 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
   bool faceonly=false;
   MGBoundaryData *pbd;
 
-  if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
+  if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
     phys=TAG_MGGRAV;
   }
-  if(type==BNDRY_MGGRAVF)
+  if (type==BNDRY_MGGRAVF)
     faceonly=true;
   for(int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
-    if(faceonly && nb.type>NEIGHBOR_FACE) break;
+    if (faceonly && nb.type>NEIGHBOR_FACE) break;
 #ifdef MPI_PARALLEL
-    if(nb.rank!=Globals::my_rank) {
+    if (nb.rank!=Globals::my_rank) {
       int size;
-      if(pmy_mesh_->multilevel==true) { // with refinement - NGHOST = 1
-        if(nb.level == mylevel) { // same
-          if(nb.type==NEIGHBOR_FACE) size=SQR(nc);
-          else if(nb.type==NEIGHBOR_EDGE) size=nc+nc/2;
-          else if(nb.type==NEIGHBOR_CORNER) size=2;
+      if (pmy_mesh_->multilevel==true) { // with refinement - NGHOST = 1
+        if (nb.level == mylevel) { // same
+          if (nb.type==NEIGHBOR_FACE) size=SQR(nc);
+          else if (nb.type==NEIGHBOR_EDGE) size=nc+nc/2;
+          else if (nb.type==NEIGHBOR_CORNER) size=2;
         }
-        else if(nb.level < mylevel) { // coarser
-          if(nb.type==NEIGHBOR_FACE) size=SQR(nc/2+1);
-          else if(nb.type==NEIGHBOR_EDGE) size=SQR(nc/2+1);
-          else if(nb.type==NEIGHBOR_CORNER) size=1;
+        else if (nb.level < mylevel) { // coarser
+          if (nb.type==NEIGHBOR_FACE) size=SQR(nc/2+1);
+          else if (nb.type==NEIGHBOR_EDGE) size=SQR(nc/2+1);
+          else if (nb.type==NEIGHBOR_CORNER) size=1;
         }
         else { // finer
-          if(nb.type==NEIGHBOR_FACE) size=SQR(nc);
-          else if(nb.type==NEIGHBOR_EDGE) size=nc/2;
-          else if(nb.type==NEIGHBOR_CORNER) size=1;
+          if (nb.type==NEIGHBOR_FACE) size=SQR(nc);
+          else if (nb.type==NEIGHBOR_EDGE) size=nc/2;
+          else if (nb.type==NEIGHBOR_CORNER) size=1;
         }
       }
       else { // uniform - NGHOST=2
-        if(nb.type==NEIGHBOR_FACE) size=nc*nc*ngh;
-        else if(nb.type==NEIGHBOR_EDGE) size=nc*ngh*ngh;
-        else if(nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;
+        if (nb.type==NEIGHBOR_FACE) size=nc*nc*ngh;
+        else if (nb.type==NEIGHBOR_EDGE) size=nc*ngh*ngh;
+        else if (nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;
       }
       size*=nvar;
       tag=CreateBvalsMPITag(pmy_mg_->lid_, phys, nb.bufid);
@@ -262,18 +262,18 @@ void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
   bool faceonly=false;
   MGBoundaryData *pbd;
 
-  if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
+  if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
     pbd=&bd_mggrav_;
-  if(type==BNDRY_MGGRAVF)
+  if (type==BNDRY_MGGRAVF)
     faceonly=true;
 
   for(int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
-    if(faceonly && nb.type>NEIGHBOR_FACE) break;
+    if (faceonly && nb.type>NEIGHBOR_FACE) break;
     pbd->flag[nb.bufid] = BNDRY_WAITING;
     pbd->sflag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
-    if(nb.rank!=Globals::my_rank)
+    if (nb.rank!=Globals::my_rank)
       MPI_Wait(&(pbd->req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
 #endif
   }
@@ -317,36 +317,36 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   bool bflag=true;
   MGBoundaryData *pbd, *ptarget;
 
-  if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
+  if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
     phys=TAG_MGGRAV;
   }
-  if(type==BNDRY_MGGRAVF)
+  if (type==BNDRY_MGGRAVF)
     faceonly=true;
   for(int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if(faceonly && nb.type>NEIGHBOR_FACE) break;
-    if(pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if (faceonly && nb.type>NEIGHBOR_FACE) break;
+    if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
     int ssize;
-    if(nb.rank == Globals::my_rank) {
+    if (nb.rank == Globals::my_rank) {
       Multigrid *pmg=pmy_mg_->pmy_driver_->FindMultigrid(nb.gid);
-      if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
+      if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
         ptarget=&(pmg->pmgbval->bd_mggrav_);
-      if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
+      if (ptarget->flag[nb.targetid] != BNDRY_WAITING) {
         bflag=false;
         continue;
       }
     }
-    if(nb.level==mylevel)
+    if (nb.level==mylevel)
       ssize=LoadMultigridBoundaryBufferSameLevel(src, nvar, nc, ngh,
                                                  pbd->send[nb.bufid], nb);
-//    else if(nb.level<mylevel)
+//    else if (nb.level<mylevel)
 //      ssize=LoadMultigridBoundaryBufferToCoarser(src, nvar,
 //                                                 pbd->send[nb.bufid], cbuf, nb);
 //    else
 //      ssize=LoadMultigridBoundaryBufferToFiner(src, nvar, pbd->send[nb.bufid], nb);
-    if(nb.rank == Globals::my_rank) {
+    if (nb.rank == Globals::my_rank) {
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid] = BNDRY_ARRIVED;
     }
@@ -374,14 +374,14 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
 {
   int si, sj, sk, ei, ej, ek;
 
-  if(nb.ox1==0)     si=ngh,    ei=nc+ngh-1;
-  else if(nb.ox1>0) si=nc+ngh, ei=nc+2*ngh-1;
+  if (nb.ox1==0)     si=ngh,    ei=nc+ngh-1;
+  else if (nb.ox1>0) si=nc+ngh, ei=nc+2*ngh-1;
   else              si=0,      ei=ngh-1;
-  if(nb.ox2==0)     sj=ngh,    ej=nc+ngh-1;
-  else if(nb.ox2>0) sj=nc+ngh, ej=nc+2*ngh-1;
+  if (nb.ox2==0)     sj=ngh,    ej=nc+ngh-1;
+  else if (nb.ox2>0) sj=nc+ngh, ej=nc+2*ngh-1;
   else              sj=0,      ej=ngh-1;
-  if(nb.ox3==0)     sk=ngh,    ek=nc+ngh-1;
-  else if(nb.ox3>0) sk=nc+ngh, ek=nc+2*ngh-1;
+  if (nb.ox3==0)     sk=ngh,    ek=nc+ngh-1;
+  else if (nb.ox3>0) sk=nc+ngh, ek=nc+2*ngh-1;
   else              sk=0,      ek=ngh-1;
 
   int p=0;
@@ -402,19 +402,19 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   int nvar, ngh;
   MGBoundaryData *pbd;
 
-  if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
+  if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
   }
-  if(type==BNDRY_MGGRAVF)
+  if (type==BNDRY_MGGRAVF)
     faceonly=true;
 
   for(int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if(faceonly && nb.type>NEIGHBOR_FACE) break;
-    if(pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
-    if(pbd->flag[nb.bufid]==BNDRY_WAITING) {
-      if(nb.rank==Globals::my_rank) {// on the same process
+    if (faceonly && nb.type>NEIGHBOR_FACE) break;
+    if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+      if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
       }
@@ -423,7 +423,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if(test==false) {
+        if (test==false) {
           bflag=false;
           continue;
         }
@@ -431,9 +431,9 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
       }
 #endif
     }
-    if(nb.level==loc.level)
+    if (nb.level==loc.level)
       SetMultigridBoundarySameLevel(dst, nvar, nc, ngh, pbd->recv[nb.bufid], nb);
-//    else if(nb.level<loc.level) // this set only the prolongation buffer
+//    else if (nb.level<loc.level) // this set only the prolongation buffer
 //      SetMultigridBoundaryFromCoarser(nvar, nc, ngh, pbd->recv[nb.bufid], cbuf, nb);
 //    else
 //      SetMultigridBoundaryFromFiner(dst, nvar, nc, ngh, pbd->recv[nb.bufid], nb);

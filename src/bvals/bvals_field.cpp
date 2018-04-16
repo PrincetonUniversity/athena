@@ -55,42 +55,42 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if(joverlap_>nx2) sj=pmb->js;
+      if (joverlap_>nx2) sj=pmb->js;
       psj=sj; pej=ej+1;
       break;
     case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if(joverlap_<NGHOST) ej=pmb->je;
+      if (joverlap_<NGHOST) ej=pmb->je;
       psj=sj; pej=ej+1;
       break;
     case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_>nx2) sj=pmb->je-(joverlap_-nx2)+1;
+      if (joverlap_>nx2) sj=pmb->je-(joverlap_-nx2)+1;
       psj=sj; pej=ej;
       break;
     case 3:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
+      if (joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
       psj=sj+1; pej=ej+1;
       break;
     case 4:
       sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if(joverlap_>nx2) ej=pmb->je;
+      if (joverlap_>nx2) ej=pmb->je;
       psj=sj; pej=ej+1;
       break;
     case 5:
       sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      if(joverlap_<NGHOST) sj=pmb->js;
+      if (joverlap_<NGHOST) sj=pmb->js;
       psj=sj; pej=ej+1;
       break;
     case 6:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
+      if (joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
       psj=sj+1; pej=ej+1;
       break;
     case 7:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
+      if (joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
       psj=sj; pej=ej;
       break;
     default:
@@ -192,7 +192,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
 
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
     for(int n=0; n<4; n++) {
-      if(send_inner_rank_[n] != -1) {
+      if (send_inner_rank_[n] != -1) {
         LoadFieldShearing(shboxvar_inner_field_, send_innerbuf_field_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
@@ -263,7 +263,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
     int offset = 4;
     for(int n=0; n<4; n++) {
-      if(send_outer_rank_[n] != -1) {
+      if (send_outer_rank_[n] != -1) {
         LoadFieldShearing(shboxvar_outer_field_, send_outerbuf_field_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
@@ -302,17 +302,17 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
   switch(nb) {
     case 0:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
-      if(joverlap_>nx2) sj=pmb->js-nxo;
+      if (joverlap_>nx2) sj=pmb->js-nxo;
       psi=si; pei=ei; psj=sj; pej=ej+1;
       break;
     case 1:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
-      if(joverlap_<NGHOST) ej=pmb->je+joverlap_;
+      if (joverlap_<NGHOST) ej=pmb->je+joverlap_;
       psi=si; pei=ei; psj=sj; pej=ej+1;
       break;
     case 2:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js-1;
-      if(joverlap_>nx2) ej=pmb->js-nxo-1;
+      if (joverlap_>nx2) ej=pmb->js-nxo-1;
       psi=si; pei=ei; psj=sj; pej=ej;
       break;
     case 3:
@@ -321,17 +321,17 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
       break;
     case 4:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
-      if(joverlap_>nx2) ej=pmb->je+nxo;
+      if (joverlap_>nx2) ej=pmb->je+nxo;
       psi=si+1; pei=ei+1; psj=sj; pej=ej+1;
       break;
     case 5:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-      if(joverlap_<NGHOST) sj=pmb->js-joverlap_;
+      if (joverlap_<NGHOST) sj=pmb->js-joverlap_;
       psi=si+1; pei=ei+1; psj=sj; pej=ej+1;
       break;
     case 6:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je+1; ej=pmb->je+NGHOST;
-      if(joverlap_>nx2) sj=pmb->je+nxo+1;
+      if (joverlap_>nx2) sj=pmb->je+nxo+1;
       psi=si+1; pei=ei+1; psj=sj+1; pej=ej+1;
       break;
     case 7:
@@ -362,10 +362,10 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 
-  if(shbb_.inner == true) { // check inner boundaries
+  if (shbb_.inner == true) { // check inner boundaries
     for(int n=0; n<4; n++) {
-      if(shbox_inner_field_flag_[n]==BNDRY_COMPLETED) continue;
-      if(shbox_inner_field_flag_[n]==BNDRY_WAITING) {
+      if (shbox_inner_field_flag_[n]==BNDRY_COMPLETED) continue;
+      if (shbox_inner_field_flag_[n]==BNDRY_WAITING) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
           flagi=false;
           continue;
@@ -374,7 +374,7 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_field_[n],&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+          if (test==false) {
             flagi=false;
             continue;
           }
@@ -388,11 +388,11 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
-  if(shbb_.outer == true) { // check outer boundaries
+  if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for(int n=0; n<4; n++) {
-      if(shbox_outer_field_flag_[n]==BNDRY_COMPLETED) continue;
-      if(shbox_outer_field_flag_[n]==BNDRY_WAITING) {
+      if (shbox_outer_field_flag_[n]==BNDRY_COMPLETED) continue;
+      if (shbox_outer_field_flag_[n]==BNDRY_WAITING) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
           flago=false;
           continue;
@@ -401,7 +401,7 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_field_[n],&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+          if (test==false) {
             flago=false;
             continue;
           }

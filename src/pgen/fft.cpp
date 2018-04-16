@@ -62,7 +62,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   src.NewAthenaArray(nx3,nx2,nx1);
   dst.NewAthenaArray(2,nx3,nx2,nx1);
 
-  if(FFT_ENABLED){
+  if (FFT_ENABLED){
     FFTDriver *pfftd;
     pfftd = new FFTDriver(this, pin);
     pfftd->InitializeFFTBlock(true);
@@ -70,7 +70,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     FFTBlock *pfft = pfftd->pmy_fb;
   // Repeating FFTs for timing
-    if(Globals::my_rank == 0){
+    if (Globals::my_rank == 0){
       std::cout << "=====================================================" << std::endl;
       std::cout << "Initialize...                                        " << std::endl;
       std::cout << "=====================================================" << std::endl;
@@ -94,14 +94,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     pfft->LoadSource(src,1,NGHOST,loc,block_size);
 
-    if(Globals::my_rank == 0){
+    if (Globals::my_rank == 0){
       std::cout << "=====================================================" << std::endl;
       std::cout << "End Initialization...                                " << std::endl;
       std::cout << "=====================================================" << std::endl;
     }
 
     int ncycle = pin->GetOrAddInteger("problem","ncycle",100);
-    if(Globals::my_rank == 0){
+    if (Globals::my_rank == 0){
       std::cout << "=====================================================" << std::endl;
       std::cout << "Execute FFT " << ncycle << "                         " << std::endl;
       std::cout << "=====================================================" << std::endl;
@@ -123,7 +123,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     int64_t zones = GetTotalCells();
     float zc_cpus = (float)(zones*ncycle)/cpu_time;
 
-    if(Globals::my_rank == 0){
+    if (Globals::my_rank == 0){
       std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
       std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
@@ -159,7 +159,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       err1 += std::abs(dst(0,k,j,i) - src(k,j,i));
       err2 += std::abs(dst(1,k,j,i));
     }}}
-    if(Globals::my_rank == 0){
+    if (Globals::my_rank == 0){
       std::cout << std::setprecision(15) << std::scientific;
       std::cout << "=====================================================" << std::endl;
       std::cout << "Error for Real: " << err1 <<" Imaginary: " << err2 << std::endl;

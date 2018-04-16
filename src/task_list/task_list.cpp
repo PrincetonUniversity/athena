@@ -43,27 +43,27 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
   int skip=0;
   enum TaskStatus ret;
 
-  if(ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
 
   for(int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmb, step);
-        if(ret!=TASK_FAIL) { // success
+        if (ret!=TASK_FAIL) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
-          if(skip==0) ts.indx_first_task++;
-          if(ts.num_tasks_left==0) return TL_COMPLETE;
-          if(ret==TASK_NEXT) continue;
+          if (skip==0) ts.indx_first_task++;
+          if (ts.num_tasks_left==0) return TL_COMPLETE;
+          if (ret==TASK_NEXT) continue;
           return TL_RUNNING;
         }
       }
       skip++; // increment number of tasks processed
 
-    } else if(skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now

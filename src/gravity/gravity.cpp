@@ -26,7 +26,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
   four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
-  if(four_pi_G==0.0) {
+  if (four_pi_G==0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "

@@ -56,35 +56,35 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf,
   switch(nb) {
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if(joverlap_>nx2) sj = pmb->js;
+      if (joverlap_>nx2) sj = pmb->js;
       break;
     case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if(joverlap_<NGHOST) ej = pmb->je;
+      if (joverlap_<NGHOST) ej = pmb->je;
       break;
     case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_>nx2) sj = pmb->je-(joverlap_-nx2)+1;
+      if (joverlap_>nx2) sj = pmb->je-(joverlap_-nx2)+1;
       break;
     case 3:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
+      if (joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
       break;
     case 4:
       sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if(joverlap_>nx2) ej = pmb->je;
+      if (joverlap_>nx2) ej = pmb->je;
       break;
     case 5:
       sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      if(joverlap_<NGHOST) sj = pmb->js;
+      if (joverlap_<NGHOST) sj = pmb->js;
       break;
     case 6:
       sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if(joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
+      if (joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
       break;
     case 7:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if(joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
+      if (joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
       break;
     default:
       std::stringstream msg;
@@ -228,7 +228,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
   // MPI_Isend otherwise
     for(int n=0; n<4; n++) {
-      if(send_inner_rank_[n] != -1) {
+      if (send_inner_rank_[n] != -1) {
         LoadHydroShearing(shboxvar_inner_hydro_, send_innerbuf_hydro_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
@@ -286,7 +286,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
   // MPI_Isend otherwise
     int offset = 4;
     for(int n=0; n<4; n++) {
-      if(send_outer_rank_[n] != -1) {
+      if (send_outer_rank_[n] != -1) {
         LoadHydroShearing(shboxvar_outer_hydro_, send_outerbuf_hydro_[n],
                           n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
@@ -329,15 +329,15 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real>
     case 0:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST;
       ej=pmb->js+(joverlap_-1);
-      if(joverlap_>nx2) sj=pmb->js-nxo;
+      if (joverlap_>nx2) sj=pmb->js-nxo;
       break;
     case 1:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
-      if(joverlap_<NGHOST) ej=pmb->je+joverlap_;
+      if (joverlap_<NGHOST) ej=pmb->je+joverlap_;
       break;
     case 2:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->js-NGHOST; ej=pmb->js-1;
-      if(joverlap_>nx2) ej=pmb->js-nxo-1;
+      if (joverlap_>nx2) ej=pmb->js-nxo-1;
       break;
     case 3:
       si=pmb->is-NGHOST; ei=pmb->is-1; sj=pmb->je+joverlap_+1;
@@ -346,15 +346,15 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real>
     case 4:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je-(joverlap_-1);
       ej=pmb->je+NGHOST;
-      if(joverlap_>nx2) ej=pmb->je+nxo;
+      if (joverlap_>nx2) ej=pmb->je+nxo;
       break;
     case 5:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-      if(joverlap_<NGHOST)   sj=pmb->js-joverlap_;
+      if (joverlap_<NGHOST)   sj=pmb->js-joverlap_;
       break;
     case 6:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->je+1; ej=pmb->je+NGHOST;
-      if(joverlap_>nx2) sj=pmb->je+nxo+1;
+      if (joverlap_>nx2) sj=pmb->je+nxo+1;
       break;
     case 7:
       si=pmb->ie+1; ei=pmb->ie+NGHOST; sj=pmb->js-NGHOST;
@@ -383,10 +383,10 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 
-  if(shbb_.inner == true) { // check inner boundaries
+  if (shbb_.inner == true) { // check inner boundaries
     for(int n=0; n<4; n++) {
-      if(shbox_inner_hydro_flag_[n]==BNDRY_COMPLETED) continue;
-      if(shbox_inner_hydro_flag_[n]==BNDRY_WAITING) {
+      if (shbox_inner_hydro_flag_[n]==BNDRY_COMPLETED) continue;
+      if (shbox_inner_hydro_flag_[n]==BNDRY_WAITING) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
           flagi=false;
           continue;
@@ -396,7 +396,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+          if (test==false) {
             flagi=false;
             continue;
           }
@@ -410,11 +410,11 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
-  if(shbb_.outer == true) { // check outer boundaries
+  if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for(int n=0; n<4; n++) {
-      if(shbox_outer_hydro_flag_[n]==BNDRY_COMPLETED) continue;
-      if(shbox_outer_hydro_flag_[n]==BNDRY_WAITING) {
+      if (shbox_outer_hydro_flag_[n]==BNDRY_COMPLETED) continue;
+      if (shbox_outer_hydro_flag_[n]==BNDRY_WAITING) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
           flago=false;
           continue;
@@ -425,7 +425,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+          if (test==false) {
             flago=false;
             continue;
           }

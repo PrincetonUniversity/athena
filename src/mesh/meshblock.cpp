@@ -78,13 +78,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) {
+  if (pm->multilevel==true) {
     cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
-    if(block_size.nx2>1) // 2D or 3D
+    if (block_size.nx2>1) // 2D or 3D
       cjs=cnghost, cje=cjs+block_size.nx2/2-1;
-    if(block_size.nx3>1) // 3D
+    if (block_size.nx3>1) // 3D
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
@@ -129,7 +129,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // floors depend on EOS)
   precon = new Reconstruction(this, pin);
 
-  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -177,13 +177,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) {
+  if (pm->multilevel==true) {
     cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
-    if(block_size.nx2>1) // 2D or 3D
+    if (block_size.nx2>1) // 2D or 3D
       cjs=cnghost, cje=cjs+block_size.nx2/2-1;
-    if(block_size.nx3>1) // 3D
+    if (block_size.nx3>1) // 3D
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
@@ -222,7 +222,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // Reconstruction (constructor may implicitly depend on Coordinates)
   precon = new Reconstruction(this, pin);
 
-  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   InitUserMeshBlockData(pin);
 
@@ -276,8 +276,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
 MeshBlock::~MeshBlock()
 {
-  if(prev!=NULL) prev->next=next;
-  if(next!=NULL) next->prev=prev;
+  if (prev!=NULL) prev->next=next;
+  if (next!=NULL) next->prev=prev;
 
   delete pcoord;
   delete pbval;
@@ -291,17 +291,17 @@ MeshBlock::~MeshBlock()
   if (SELF_GRAVITY_ENABLED==1) delete pgbval;
 
   // delete user output variables array
-  if(nuser_out_var > 0) {
+  if (nuser_out_var > 0) {
     user_out_var.DeleteAthenaArray();
     delete [] user_out_var_names_;
   }
   // delete user MeshBlock data
   for(int n=0; n<nreal_user_meshblock_data_; n++)
     ruser_meshblock_data[n].DeleteAthenaArray();
-  if(nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
+  if (nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
   for(int n=0; n<nint_user_meshblock_data_; n++)
     iuser_meshblock_data[n].DeleteAthenaArray();
-  if(nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
+  if (nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 
 //----------------------------------------------------------------------------------------
@@ -310,7 +310,7 @@ MeshBlock::~MeshBlock()
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 {
-  if(nreal_user_meshblock_data_!=0) {
+  if (nreal_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
@@ -327,7 +327,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 {
-  if(nint_user_meshblock_data_!=0) {
+  if (nint_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
@@ -345,8 +345,8 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 
 void MeshBlock::AllocateUserOutputVariables(int n)
 {
-  if(n<=0) return;
-  if(nuser_out_var!=0) {
+  if (n<=0) return;
+  if (nuser_out_var!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
         << std::endl << "User output variables are already allocated." << std::endl;
@@ -370,7 +370,7 @@ void MeshBlock::AllocateUserOutputVariables(int n)
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name)
 {
-  if(n>=nuser_out_var) {
+  if (n>=nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
         << std::endl << "User output variable is not allocated." << std::endl;

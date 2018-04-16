@@ -76,7 +76,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real ang_2,cos_a2,sin_a2,lambda;
 
   // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
-  if(iprob == 4){
+  if (iprob == 4){
     Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
     Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
@@ -84,7 +84,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     //     lambda = x1size*cos_a;
     //     AND   lambda = x3size*sin_a;  are both satisfied.
 
-    if(x1size == x3size){
+    if (x1size == x3size){
       ang_2 = PI/4.0;
       cos_a2 = sin_a2 = sqrt(0.5);
     } else{
@@ -111,7 +111,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int i=is; i<=ie+1; i++) {
 
     // (iprob=1): field loop in x1-x2 plane (cylinder in 3D) */
-    if(iprob==1) {
+    if (iprob==1) {
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
@@ -122,7 +122,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-    if(iprob==2) {
+    if (iprob==2) {
       if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ax(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
       } else {
@@ -133,7 +133,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
-    if(iprob==3) {
+    if (iprob==3) {
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ay(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
       } else {
@@ -154,7 +154,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     //    x2  = y
     //    x3  = x*sin(ang_2) + z*cos(ang_2)
 
-    if(iprob==4) {
+    if (iprob==4) {
       Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
       Real y = pcoord->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
@@ -180,7 +180,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // (iprob=5): spherical field loop in rotated plane
-    if(iprob==5) {
+    if (iprob==5) {
       ax(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
         ay(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i))+SQR(pcoord->x2v(j))+SQR(pcoord->x3f(k))));

@@ -46,23 +46,23 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
   next=NULL;
 
   nlevel_=0;
-  if(root_flag_ == true) {
+  if (root_flag_ == true) {
     int nbx, nby, nbz;
     for(int l=0; l<20; l++) {
-      if(size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
+      if (size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
         nbx=size_.nx1/(1<<l), nby=size_.nx2/(1<<l), nbz=size_.nx3/(1<<l);
         nlevel_=l+1;
       }
     }
     int nmaxr=std::max(nbx, std::max(nby, nbz));
     int nminr=std::min(nbx, std::min(nby, nbz));
-    if(nmaxr!=1 && Globals::my_rank==0) {
+    if (nmaxr!=1 && Globals::my_rank==0) {
       std::cout << "### Warning in Multigrid::Multigrid" << std::endl
         << "The root grid can not be reduced to a single cell." << std::endl
         << "Multigrid should still work, but this is not the most efficient configuration "
         << "as the coarsest level is not solved exactly but iteratively." << std::endl;
     }
-    if(nbx*nby*nbz>100 && Globals::my_rank==0) {
+    if (nbx*nby*nbz>100 && Globals::my_rank==0) {
       std::cout << "### Warning in Multigrid::Multigrid" << std::endl
         << "The degrees of freedom on the coarsest level is very large: "
         << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
@@ -73,12 +73,12 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
   }
   else {
     for(int l=0; l<20; l++) {
-      if((1<<l) == size_.nx1) {
+      if ((1<<l) == size_.nx1) {
         nlevel_=l+1;
         break;
       }
     }
-    if(nlevel_==0) {
+    if (nlevel_==0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The MeshBlock size must be power of two." << std::endl;
@@ -86,7 +86,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
       return;
     }
     // *** temporary ***
-    if(std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
+    if (std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -117,8 +117,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
 
 Multigrid::~Multigrid()
 {
-  if(prev!=NULL) prev->next=next;
-  if(next!=NULL) next->prev=prev;
+  if (prev!=NULL) prev->next=next;
+  if (next!=NULL) next->prev=prev;
 
   for(int l=0; l<nlevel_; l++) {
     u_[l].DeleteAthenaArray();
@@ -164,7 +164,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
-  if(fac==1.0) {
+  if (fac==1.0) {
     for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
       for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
@@ -476,7 +476,7 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
   Real norm=0.0;
-  if(nrm==0) { // special case: max norm
+  if (nrm==0) { // special case: max norm
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
         for(int i=is; i<=ie; i++)
@@ -512,7 +512,7 @@ Real Multigrid::CalculateTotal(int type, int n)
 {
   AthenaArray<Real> src;
   int ll=nlevel_-1-current_level_;
-  if(type==0) src.InitWithShallowCopy(src_[current_level_]);
+  if (type==0) src.InitWithShallowCopy(src_[current_level_]);
   else src.InitWithShallowCopy(u_[current_level_]);
   Real s=0.0;
   int is, ie, js, je, ks, ke;
@@ -536,7 +536,7 @@ Real Multigrid::CalculateTotal(int type, int n)
 void Multigrid::SubtractAverage(int type, int n, Real ave)
 {
   AthenaArray<Real> dst;
-  if(type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
+  if (type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
   else dst.InitWithShallowCopy(u_[nlevel_-1]);
   int is, ie, js, je, ks, ke;
   is=js=ks=0;

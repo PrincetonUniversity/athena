@@ -21,7 +21,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int is, ie, js, je, ks, ke, ng;
-  if(coarse_flag==true) {
+  if (coarse_flag==true) {
     is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
     ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
     ng=pmb->cnghost;
@@ -58,7 +58,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
   nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
 
-  if(pm->use_meshgen_fn_[X1DIR]==true) { // use nonuniform or user-defined meshgen fn
+  if (pm->use_meshgen_fn_[X1DIR]==true) { // use nonuniform or user-defined meshgen fn
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
@@ -81,7 +81,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
       rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
     }
-    if(rmax > 1.1 || rmin  < 1.0/1.1) {
+    if (rmax > 1.1 || rmin  < 1.0/1.1) {
        std::cout << "### Warning in Coordinates constructor" << std::endl
          << "Neighboring cell sizes differ by more than 10% in the x1 direction."
          << std::endl;
@@ -130,11 +130,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
 //--- X2-DIRECTION: initialize coordinates and spacing of cell FACES (x2f,dx2f)
 
-  if(ncells2 > 1) {
+  if (ncells2 > 1) {
 
     nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
 
-    if(pm->use_meshgen_fn_[X2DIR]==true) { // use nonuniform or user-defined meshgen fn
+    if (pm->use_meshgen_fn_[X2DIR]==true) { // use nonuniform or user-defined meshgen fn
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
@@ -157,7 +157,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
         rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
       }
-      if(rmax > 1.1 || rmin  < 1.0/1.1) {
+      if (rmax > 1.1 || rmin  < 1.0/1.1) {
          std::cout << "### Warning in Coordinates constructor" << std::endl
            << "Neighboring cell sizes differ by more than 10% in the x2 direction."
            << std::endl;
@@ -211,11 +211,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
 //--- X3-DIRECTION: initialize coordinates and spacing of cell FACES (x3f,dx3f)
 
-  if(ncells3 > 1) {
+  if (ncells3 > 1) {
 
     nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
 
-    if(pm->use_meshgen_fn_[X3DIR]==true) {  // use nonuniform or user-defined meshgen fn
+    if (pm->use_meshgen_fn_[X3DIR]==true) {  // use nonuniform or user-defined meshgen fn
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
@@ -238,7 +238,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
         rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
       }
-      if(rmax > 1.1 || rmin  < 1.0/1.1) {
+      if (rmax > 1.1 || rmin  < 1.0/1.1) {
          std::cout << "### Warning in Coordinates constructor" << std::endl
            << "Neighboring cell sizes differ by more than 10% in the x3 direction."
            << std::endl;

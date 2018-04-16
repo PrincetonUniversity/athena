@@ -388,7 +388,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
-    if(ev[0] >= 0.0){
+    if (ev[0] >= 0.0){
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
       flxi[IVY] = fl[IVY];
@@ -397,7 +397,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBY] = fl[IBY];
       flxi[IBZ] = fl[IBZ];
     }
-    if(ev[NWAVE-1] <= 0.0){
+    if (ev[NWAVE-1] <= 0.0){
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];

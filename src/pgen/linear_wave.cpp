@@ -141,7 +141,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     pin->SetReal("time","tlim",ntlim);
   }
 
-  if(adaptive==true)
+  if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -258,8 +258,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if ((pfile = fopen(fname.c_str(),"r")) != NULL){
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -267,7 +267,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if ((pfile = fopen(fname.c_str(),"w")) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -1054,15 +1054,15 @@ int RefinementCondition(MeshBlock *pmb)
   for(int k=pmb->ks; k<=pmb->ke; k++) {
     for(int j=pmb->js; j<=pmb->je; j++) {
       for(int i=pmb->is; i<=pmb->ie; i++) {
-        if(w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
-        if(w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
+        if (w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
+        if (w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
       }
     }
   }
   // refine : delta rho > 0.9*amp
-  if(rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
+  if (rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
 //  Real a=std::max(rmax-d0,d0-rmin);
-//  if(a > 0.9*amp*rem[0][wave_flag]) return 1;
+//  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
 }

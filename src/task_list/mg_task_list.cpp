@@ -60,27 +60,27 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
   int skip=0;
   enum TaskStatus ret;
 
-  if(ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
 
   for(int i=ts.indx_first_task; i<ntasks; i++) {
     MGTask &taski=task_list_[i];
 
-    if((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmg);
-        if(ret!=TASK_FAIL) { // success
+        if (ret!=TASK_FAIL) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
-          if(skip==0) ts.indx_first_task++;
-          if(ts.num_tasks_left==0) return TL_COMPLETE;
-          if(ret==TASK_NEXT) continue;
+          if (skip==0) ts.indx_first_task++;
+          if (ts.num_tasks_left==0) return TL_COMPLETE;
+          if (ret==TASK_NEXT) continue;
           return TL_RUNNING;
         }
       }
       skip++; // increment number of tasks processed
 
-    } else if(skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
@@ -235,7 +235,7 @@ enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg)
 enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg)
 {
   int nc=pmg->GetCurrentNumberOfCells();
-  if(pmg->pmgbval->
+  if (pmg->pmgbval->
      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
@@ -244,7 +244,7 @@ enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg)
 enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg)
 {
   int nc=pmg->GetCurrentNumberOfCells();
-  if(pmg->pmgbval->
+  if (pmg->pmgbval->
      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
@@ -253,7 +253,7 @@ enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg)
 enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg)
 {
   int nc=pmg->GetCurrentNumberOfCells();
-  if(pmg->pmgbval->
+  if (pmg->pmgbval->
      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
     return TASK_FAIL;
   return TASK_NEXT;
@@ -262,7 +262,7 @@ enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg)
 enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg)
 {
   int nc=pmg->GetCurrentNumberOfCells();
-  if(pmg->pmgbval->
+  if (pmg->pmgbval->
      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
     return TASK_FAIL;
   return TASK_NEXT;
@@ -313,7 +313,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 {
   ClearTaskList();
   // nsmooth==0 should not be used
-  if(flag==1) // first time on the block level
+  if (flag==1) // first time on the block level
     AddMultigridTask(MG_PROLONG,    NONE);
   else {
     AddMultigridTask(MG_STARTRECV0, NONE);
@@ -323,8 +323,8 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
     AddMultigridTask(MG_PROLONG,    MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBND0,  MG_PROLONG);
   }
-  if(nsmooth==1) {
-    if(flag==1)
+  if (nsmooth==1) {
+    if (flag==1)
       AddMultigridTask(MG_STARTRECV1R, MG_PROLONG);
     else
       AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
@@ -340,7 +340,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
     AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
     AddMultigridTask(MG_CLEARBND1B,  MG_SMOOTH1B);
   }
-  if(nsmooth==2) {
+  if (nsmooth==2) {
     AddMultigridTask(MG_STARTRECV2R, MG_CLEARBND1B);
     AddMultigridTask(MG_SENDBND2R,   MG_STARTRECV2R);
     AddMultigridTask(MG_RECVBND2R,   MG_STARTRECV2R);
@@ -354,10 +354,10 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
     AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
     AddMultigridTask(MG_CLEARBND2B,  MG_SMOOTH2B);
   }
-  if(flag==2) { // last
-    if(nsmooth==1)
+  if (flag==2) { // last
+    if (nsmooth==1)
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND1B);
-    else if(nsmooth==2)
+    else if (nsmooth==2)
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND2B);
     AddMultigridTask(MG_SENDBNDL,   MG_STARTRECVL);
     AddMultigridTask(MG_RECVBNDL,   MG_STARTRECVL);
@@ -374,7 +374,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 {
   ClearTaskList();
-  if(nsmooth==0) {
+  if (nsmooth==0) {
     AddMultigridTask(MG_STARTRECV0F, NONE);
     AddMultigridTask(MG_SENDBND0F,   MG_STARTRECV0F);
     AddMultigridTask(MG_RECVBND0F,   MG_STARTRECV0F);
@@ -382,7 +382,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
     AddMultigridTask(MG_RESTRICT,    MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBND0F,  MG_RESTRICT);
   }
-  else if(nsmooth==1) {
+  else if (nsmooth==1) {
     AddMultigridTask(MG_STARTRECV1R, NONE);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);
@@ -402,7 +402,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
     AddMultigridTask(MG_RESTRICT,    MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBND0F,  MG_RESTRICT);
   }
-  else if(nsmooth==2) {
+  else if (nsmooth==2) {
     AddMultigridTask(MG_STARTRECV1R, NONE);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);
@@ -444,7 +444,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
 {
   ClearTaskList();
-  if(flag==1) // first time on the block level
+  if (flag==1) // first time on the block level
     AddMultigridTask(MG_FMGPROLONG,    NONE);
   else {
     AddMultigridTask(MG_STARTRECV0, NONE);

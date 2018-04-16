@@ -62,7 +62,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       BoundaryFunction_[INNER_X1] = NULL;
       break;
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if(!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
+      if (!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[INNER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
@@ -89,7 +89,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if(!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
+      if (!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
@@ -314,7 +314,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
     shbb_.outer = false;
     shbb_.inner = false;
 
-    if(ShBoxCoord_ == 1) {
+    if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       int ncells3 = pmb->block_size.nx3;
       if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
@@ -1257,7 +1257,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
     int size,tag;
     if (shbb_.inner) { // inner boundary
       for (int n=0; n<4; n++) {
-        if((recv_inner_rank_[n]!=Globals::my_rank) &&
+        if ((recv_inner_rank_[n]!=Globals::my_rank) &&
                           (recv_inner_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
@@ -1282,7 +1282,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
     if (shbb_.outer) { // outer boundary
       int offset=4;
       for (int n=0; n<4; n++) {
-        if((recv_outer_rank_[n]!=Globals::my_rank) &&
+        if ((recv_outer_rank_[n]!=Globals::my_rank) &&
                           (recv_outer_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n+offset);
@@ -1403,14 +1403,14 @@ void BoundaryValues::ClearBoundaryAll(void) {
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
       for (int n=0; n<4; n++){
-        if(send_inner_rank_[n] == -1) continue;
+        if (send_inner_rank_[n] == -1) continue;
         shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           shbox_inner_field_flag_[n] = BNDRY_WAITING;
           shbox_inner_emf_flag_[n] = BNDRY_WAITING;
         }
 #ifdef MPI_PARALLEL
-        if(send_inner_rank_[n]!=Globals::my_rank) {
+        if (send_inner_rank_[n]!=Globals::my_rank) {
           MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
             MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
@@ -1423,13 +1423,13 @@ void BoundaryValues::ClearBoundaryAll(void) {
 
     if (shbb_.outer == true) {
       for (int n=0; n<4; n++){
-        if(send_outer_rank_[n] == -1) continue;
+        if (send_outer_rank_[n] == -1) continue;
         shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           shbox_outer_field_flag_[n] = BNDRY_WAITING;
         }
 #ifdef MPI_PARALLEL
-        if(send_outer_rank_[n]!=Globals::my_rank) {
+        if (send_outer_rank_[n]!=Globals::my_rank) {
           Mesh *pmesh = pmb->pmy_mesh;
           MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {

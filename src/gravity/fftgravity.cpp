@@ -33,7 +33,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
  : FFTDriver(pm, pin)
 {
   four_pi_G_=pmy_mesh_->four_pi_G_;
-  if(four_pi_G_==0.0) {
+  if (four_pi_G_==0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -70,7 +70,7 @@ void FFTGravityDriver::Solve(int step, int mode)
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   for(int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
-    if(pmb!=NULL) {
+    if (pmb!=NULL) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
       pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
     }
@@ -85,7 +85,7 @@ void FFTGravityDriver::Solve(int step, int mode)
   // Return the result
   for(int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
-    if(pmb!=NULL) {
+    if (pmb!=NULL) {
       pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
                           pmb->loc, pmb->block_size);
     }
@@ -111,28 +111,28 @@ void FFTGravity::ApplyKernel(int mode)
     for(int j=0; j<knx[1]; j++) {
       for(int i=0; i<knx[0]; i++) {
         int64_t gidx = GetGlobalIndex(i,j,k);
-        if(gidx == 0){ pcoeff = 0.0;}
+        if (gidx == 0){ pcoeff = 0.0;}
         else {
           Real kx=(i+kdisp[0]);
           Real ky=(j+kdisp[1]);
           Real kz=(k+kdisp[2]);
-          if(kx > 0.5*kNx[0]) kx -= kNx[0];
-          if(ky > 0.5*kNx[1]) ky -= kNx[1];
-          if(kz > 0.5*kNx[2]) kz -= kNx[2];
-          if(mode == 0){ // Discrete FT
+          if (kx > 0.5*kNx[0]) kx -= kNx[0];
+          if (ky > 0.5*kNx[1]) ky -= kNx[1];
+          if (kz > 0.5*kNx[2]) kz -= kNx[2];
+          if (mode == 0){ // Discrete FT
             kx *= 2*PI/(Real)kNx[0];
             ky *= 2*PI/(Real)kNx[1];
             kz *= 2*PI/(Real)kNx[2];
             pcoeff = ((2.0*std::cos(kx)-2.0)/dx1sq);
-            if(dim_ > 1) pcoeff += ((2.0*std::cos(ky)-2.0)/dx2sq);
-            if(dim_ > 2) pcoeff += ((2.0*std::cos(kz)-2.0)/dx3sq);
-          } else if(mode == 1) { // Continous FT
+            if (dim_ > 1) pcoeff += ((2.0*std::cos(ky)-2.0)/dx2sq);
+            if (dim_ > 2) pcoeff += ((2.0*std::cos(kz)-2.0)/dx3sq);
+          } else if (mode == 1) { // Continous FT
             kx *= dkx[0];
             ky *= dkx[1];
             kz *= dkx[2];
             pcoeff = -kx*kx;
-            if(dim_ > 1) pcoeff -= ky*ky;
-            if(dim_ > 2) pcoeff -= kz*kz;
+            if (dim_ > 1) pcoeff -= ky*ky;
+            if (dim_ > 2) pcoeff -= kz*kz;
           }
           pcoeff = 1.0/pcoeff;
         }

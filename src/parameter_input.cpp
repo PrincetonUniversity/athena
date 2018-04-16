@@ -171,7 +171,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
 
   // search <par_end> or EOF.
   do {
-    if(Globals::my_rank==0) // only the master process reads the header from the file
+    if (Globals::my_rank==0) // only the master process reads the header from the file
       ret=input.Read(buf, sizeof(char), bufsize);
 #ifdef MPI_PARALLEL
     // then broadcasts it
@@ -182,12 +182,12 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
     header+=ret;
     std::string sbuf = par.str(); // create string for search
     loc=sbuf.find("<par_end>",0); // search from the top of the stream
-    if(loc!=std::string::npos) // found <par_end>
+    if (loc!=std::string::npos) // found <par_end>
     {
       header=loc+10; // store the header length
       break;
     }
-    if(header > bufsize*10) {
+    if (header > bufsize*10) {
       msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]"
           << "<par_end> is not found in the first 40KBytes." << std::endl
           << "Probably the file is broken or a wrong file is specified" << std::endl;
@@ -297,7 +297,7 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
     if (name.compare(pl->param_name) == 0) {   // param name already exists
       pl->param_value.assign(value);           // replace existing param value
       pl->param_comment.assign(comment);       // replace exisiting param comment
-      if(value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
+      if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
       return;
     }
     plast = pl;
@@ -318,8 +318,8 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
     pb->max_len_parvalue = value.length();
   } else {
     plast->pnext = pl;  // link new node into list
-    if(name.length() > pb->max_len_parname) pb->max_len_parname = name.length();
-    if(value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
+    if (name.length() > pb->max_len_parname) pb->max_len_parname = name.length();
+    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
   }
 
   return;
@@ -368,7 +368,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
       throw std::runtime_error(msg.str().c_str());
     }
     pl->param_value.assign(value);   // replace existing value
-    if(value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
+    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
 
   }
 }
@@ -740,7 +740,7 @@ void ParameterInput::StartReading(void)
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&rlock_);
   reading_++;
-  if(reading_==1)
+  if (reading_==1)
     omp_set_lock(&wlock_);
   omp_unset_lock(&rlock_);
 #endif
@@ -755,7 +755,7 @@ void ParameterInput::EndReading(void)
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&rlock_);
   reading_--;
-  if(reading_==0)
+  if (reading_==0)
     omp_unset_lock(&wlock_);
   omp_unset_lock(&rlock_);
 #endif

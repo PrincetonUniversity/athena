@@ -61,7 +61,7 @@ Real Hydro::NewBlockTimeStep(void)
       pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
-      if(!RELATIVISTIC_DYNAMICS) {
+      if (!RELATIVISTIC_DYNAMICS) {
 #pragma ivdep
         for (int i=is; i<=ie; ++i){
           wi[IDN]=w(IDN,k,j,i);
@@ -128,7 +128,7 @@ Real Hydro::NewBlockTimeStep(void)
 
   min_dt *= pmb->pmy_mesh->cfl_number;
 
-  if(UserTimeStep_!=NULL) {
+  if (UserTimeStep_!=NULL) {
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
   }
 

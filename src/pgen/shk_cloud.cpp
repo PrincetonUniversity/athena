@@ -94,7 +94,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     // postshock flow
-    if(pcoord->x1v(i) < xshock) {
+    if (pcoord->x1v(i) < xshock) {
       phydro->u(IDN,k,j,i) = dl;
       phydro->u(IM1,k,j,i) = ul*dl;
       phydro->u(IM2,k,j,i) = 0.0;
@@ -133,7 +133,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      if(pcoord->x1v(i) < xshock) {
+      if (pcoord->x1v(i) < xshock) {
         pfield->b.x1f(k,j,i) = bxl;
       } else {
         pfield->b.x1f(k,j,i) = bxr;
@@ -142,7 +142,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pcoord->x1v(i) < xshock) {
+      if (pcoord->x1v(i) < xshock) {
         pfield->b.x2f(k,j,i) = byl;
       } else {
         pfield->b.x2f(k,j,i) = byr;
@@ -151,7 +151,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pcoord->x1v(i) < xshock) {
+      if (pcoord->x1v(i) < xshock) {
         pfield->b.x3f(k,j,i) = bzl;
       } else {
         pfield->b.x3f(k,j,i) = bzr;
@@ -163,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pcoord->x1v(i) < xshock) {
+      if (pcoord->x1v(i) < xshock) {
         phydro->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
       } else {
         phydro->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);

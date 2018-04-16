@@ -27,7 +27,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(coarse_flag==true) {
+  if (coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng=pmb->cnghost;
@@ -52,7 +52,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x3v.NewAthenaArray(ncells3);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
-  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -97,7 +97,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
@@ -119,7 +119,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate memory for internal scratch arrays to store partial calculations
   // (note this is skipped if object is for coarse mesh with AMR)
-  if(coarse_flag==false) {
+  if (coarse_flag==false) {
     coord_area3_i_.NewAthenaArray(ncells1);
     coord_vol_i_.NewAthenaArray(ncells1);
     coord_src1_i_.NewAthenaArray(ncells1);
@@ -162,7 +162,7 @@ Cylindrical::~Cylindrical()
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();
@@ -170,7 +170,7 @@ Cylindrical::~Cylindrical()
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
-  if(coarse_flag==false) {
+  if (coarse_flag==false) {
     coord_area3_i_.DeleteAthenaArray();
     coord_vol_i_.DeleteAthenaArray();
     coord_src1_i_.DeleteAthenaArray();

@@ -236,7 +236,7 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,0,0,2);
     if (plan->pre_plan == NULL) return NULL;
 
-    if(Globals::my_rank==0)
+    if (Globals::my_rank==0)
       std::cout << "### WARNING in MPIFFT: " << std::endl
                 << "Current domain decomp. requires additional  global communication "
                 << "to prepare FFT along the fastest axis" << std::endl;
@@ -342,7 +342,7 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,(permute+1)%3,0,2);
     if (plan->post_plan == NULL) return NULL;
 
-    if(Globals::my_rank==0)
+    if (Globals::my_rank==0)
       std::cout << "### WARNING in MPIFFT: " << std::endl
                 << "Current domain decomp. requires additional  global communication "
                 << "to match input and output arrays" << std::endl;

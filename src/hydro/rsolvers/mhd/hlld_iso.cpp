@@ -194,7 +194,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 6.  Compute flux
 
-    if(spd[0] >= 0.0){
+    if (spd[0] >= 0.0){
       // return Fl if flow is supersonic, eqn. (38a) of Mignone
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -202,7 +202,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fl.mz;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if(spd[4] <= 0.0){
+    } else if (spd[4] <= 0.0){
       // return Fr if flow is supersonic, eqn. (38e) of Mignone
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;
@@ -210,7 +210,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fr.mz;
       flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
-    } else if(spd[1] >= 0.0) {
+    } else if (spd[1] >= 0.0) {
       // return (Fl+Sl*(Ulst-Ul)), eqn. (38b) of Mignone
       flxi[IDN] = fl.d  + spd[0]*(ulst.d  - ul.d);
       flxi[IVX] = fl.mx + spd[0]*(ulst.mx - ul.mx);
@@ -218,7 +218,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fl.mz + spd[0]*(ulst.mz - ul.mz);
       flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
       flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
-    } else if(spd[3] <= 0.0) {
+    } else if (spd[3] <= 0.0) {
       // return (Fr+Sr*(Urst-Ur)), eqn. (38d) of Mignone
       flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
       flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);

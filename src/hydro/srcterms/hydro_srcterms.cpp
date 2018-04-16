@@ -62,10 +62,10 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
   if ((Omega_0_ !=0.0) && (qshear_ != 0.0)) hydro_sourceterms_defined = true;
 
-  if(SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
+  if (SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
 
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
-  if(UserSourceTerm != NULL) hydro_sourceterms_defined = true;
+  if (UserSourceTerm != NULL) hydro_sourceterms_defined = true;
 }
 
 // destructor

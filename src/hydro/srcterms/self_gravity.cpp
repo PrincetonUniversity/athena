@@ -22,7 +22,7 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  if(SELF_GRAVITY_ENABLED && NON_BAROTROPIC_EOS){
+  if (SELF_GRAVITY_ENABLED && NON_BAROTROPIC_EOS){
     Gravity *pgrav = pmb->pgrav;
     Real four_pi_G = pgrav->four_pi_G;
     Real grav_mean_rho = pgrav->grav_mean_rho;

@@ -112,14 +112,14 @@ enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int 
 
 enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int step)
 {
-  if(pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+  if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
 enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int step)
 {
-  if(pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+  if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }

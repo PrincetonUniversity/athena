@@ -60,7 +60,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
   EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
   // Enroll user-defined AMR criterion
-  if(adaptive==true)
+  if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -271,9 +271,9 @@ int RefinementCondition(MeshBlock *pmb)
     }
   }
   // refine : curvature > 0.01
-  if(maxeps > 0.01) return 1;
+  if (maxeps > 0.01) return 1;
   // derefinement: curvature < 0.005
-  if(maxeps < 0.005) return -1;
+  if (maxeps < 0.005) return -1;
   // otherwise, stay
   return 0;
 }

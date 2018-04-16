@@ -110,13 +110,13 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     num_variables = new int[num_datasets];
     int n_dataset = 0;
     num_variables[n_dataset++] = NHYDRO;
-    if(output_params.cartesian_vector)
+    if (output_params.cartesian_vector)
       num_variables[n_dataset-1] += 3;
     if (SELF_GRAVITY_ENABLED)
       num_variables[n_dataset-1] += 1;
     if (MAGNETIC_FIELDS_ENABLED) {
       num_variables[n_dataset++] = 3;
-      if(output_params.cartesian_vector)
+      if (output_params.cartesian_vector)
         num_variables[n_dataset-1] += 3;
     }
   }
@@ -139,9 +139,9 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       std::strncpy(dataset_names[n_dataset++], "B", max_name_length+1);
   }
   else { // single data
-    if(variable.compare(0,1,"B") == 0 && MAGNETIC_FIELDS_ENABLED)
+    if (variable.compare(0,1,"B") == 0 && MAGNETIC_FIELDS_ENABLED)
       std::strncpy(dataset_names[n_dataset++], "B", max_name_length+1);
-    else if(variable.compare(0,1,"uov") == 0
+    else if (variable.compare(0,1,"uov") == 0
          || variable.compare(0,1,"user_out_var") == 0)
       std::strncpy(dataset_names[n_dataset++], "user_out_var", max_name_length+1);
     else
@@ -152,7 +152,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   int n_variable = 0;
   pod=pfirst_data_;
   while(pod!=NULL) {
-    if(pod->type=="VECTORS") {
+    if (pod->type=="VECTORS") {
       for(int i=1; i<=3; i++) {
         char sn[3];
         std::sprintf(sn,"%d", i);
@@ -174,27 +174,27 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   ClearOutputData();
 
   // count the number of active blocks if slicing
-  if(output_params.output_slicex1 || output_params.output_slicex2
+  if (output_params.output_slicex1 || output_params.output_slicex2
   || output_params.output_slicex3) {
     int nb=0, nba=0;
     pmb=pm->pblock;
     while(pmb!=NULL) {
-      if(output_params.output_slicex1) {
-        if(pmb->block_size.x1min >  output_params.x1_slice
+      if (output_params.output_slicex1) {
+        if (pmb->block_size.x1min >  output_params.x1_slice
         || pmb->block_size.x1max <= output_params.x1_slice)
           active_flags[nb]=false;
       }
-      if(output_params.output_slicex2) {
-        if(pmb->block_size.x2min >  output_params.x2_slice
+      if (output_params.output_slicex2) {
+        if (pmb->block_size.x2min >  output_params.x2_slice
         || pmb->block_size.x2max <= output_params.x2_slice)
           active_flags[nb]=false;
       }
-      if(output_params.output_slicex3) {
-        if(pmb->block_size.x3min >  output_params.x3_slice
+      if (output_params.output_slicex3) {
+        if (pmb->block_size.x3min >  output_params.x3_slice
         || pmb->block_size.x3max <= output_params.x3_slice)
           active_flags[nb]=false;
       }
-      if(active_flags[nb]==true) nba++;
+      if (active_flags[nb]==true) nba++;
       nb++;
       pmb=pmb->next;
     }
@@ -252,7 +252,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   int nb=0, nba=0;
   while(pmb!=NULL) {
     // Load the output data
-    if(active_flags[nb] == true) {
+    if (active_flags[nb] == true) {
       // set the default size because TransformOutputData will override it
       out_is=pmb->is; out_ie=pmb->ie;
       out_js=pmb->js; out_je=pmb->je;
@@ -281,7 +281,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       locations_mesh[nba*3 + 2] = pmb->loc.lx3;
 
       // Load coordinates
-      if(output_params.output_slicex1) {
+      if (output_params.output_slicex1) {
         x1f_mesh[nba*(nx1+1)]
           =(float)pmb->pcoord->x1f(output_params.islice);
         x1f_mesh[nba*(nx1+1)+1]
@@ -305,7 +305,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         for (int i=out_is, index=0; i <= out_ie; ++i, ++index)
           x1v_mesh[nba*nx1 + index] = (float)pmb->pcoord->x1v(i);
       }
-      if(output_params.output_slicex2) {
+      if (output_params.output_slicex2) {
         x2f_mesh[nba*(nx2+1)]
           =(float)pmb->pcoord->x2f(output_params.jslice);
         x2f_mesh[nba*(nx2+1)+1]
@@ -329,7 +329,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         for (int j=out_js, index=0; j <= out_je; ++j, ++index)
           x2v_mesh[nba*nx2 + index] = (float)pmb->pcoord->x2v(j);
       }
-      if(output_params.output_slicex3) {
+      if (output_params.output_slicex3) {
         x3f_mesh[nba*(nx3+1)]
           =(float)pmb->pcoord->x3f(output_params.kslice);
         x3f_mesh[nba*(nx3+1)+1]
@@ -360,12 +360,12 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         int ndv=0;
         pod=pfirst_data_;
         while(pod!=NULL) {
-          if(pod->name=="Bcc") {
+          if (pod->name=="Bcc") {
             n_dataset++;
             ndv=0;
           }
           int nv=1;
-          if(pod->type=="VECTORS") nv=3;
+          if (pod->type=="VECTORS") nv=3;
           for (int v=0; v < nv; v++, ndv++) {
             int index = 0;
             for (int k = out_ks; k <= out_ke; k++) {
@@ -384,7 +384,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         pod=pfirst_data_;
         while(pod!=NULL) {
           int nv=1;
-          if(pod->type=="VECTORS") nv=3;
+          if (pod->type=="VECTORS") nv=3;
           for (int v=0; v < nv; v++, ndv++) {
             int index = 0;
             for (int k = out_ks; k <= out_ke; k++) {
@@ -753,7 +753,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   // Write .athdf.xdmf file
   int write_xdmf = pin->GetOrAddInteger(output_params.block_name, "xdmf", 1);
-  if(Globals::my_rank == 0 && write_xdmf != 0)
+  if (Globals::my_rank == 0 && write_xdmf != 0)
     MakeXDMF();
 
   // Delete data storage

@@ -72,7 +72,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   dslope = pin->GetOrAddReal("problem","dslope",0.0);
 
   // Get parameters of initial pressure and cooling parameters
-  if(NON_BAROTROPIC_EOS){
+  if (NON_BAROTROPIC_EOS){
     p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0",0.0025);
     pslope = pin->GetOrAddReal("problem","pslope",0.0);
     gamma_gas = pin->GetReal("hydro","gamma");
@@ -82,22 +82,22 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
 
   // enroll user-defined boundary condition
-  if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
   }
-  if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
   }
-  if(mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
   }
-  if(mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
   }
-  if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X3, DiskInnerX3);
   }
-  if(mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X3, DiskOuterX3);
   }
 
@@ -143,11 +143,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k)
 {
-  if(COORDINATE_SYSTEM == "cylindrical"){
+  if (COORDINATE_SYSTEM == "cylindrical"){
     rad=pco->x1v(i);
     phi=pco->x2v(j);
     z=pco->x3v(k);
-  } else if(COORDINATE_SYSTEM == "spherical_polar"){
+  } else if (COORDINATE_SYSTEM == "spherical_polar"){
     rad=fabs(pco->x1v(i)*sin(pco->x2v(j)));
     phi=pco->x3v(i);
     z=pco->x1v(i)*cos(pco->x2v(j));
@@ -189,11 +189,11 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/sqrt(rad*rad+z*z);
   vel = sqrt(gm0/rad)*sqrt(vel);
-  if(COORDINATE_SYSTEM == "cylindrical"){
+  if (COORDINATE_SYSTEM == "cylindrical"){
     v1=0.0;
     v2=vel;
     v3=0.0;
-  }else if(COORDINATE_SYSTEM == "spherical_polar"){
+  }else if (COORDINATE_SYSTEM == "spherical_polar"){
     v1=0.0;
     v2=0.0;
     v3=vel;

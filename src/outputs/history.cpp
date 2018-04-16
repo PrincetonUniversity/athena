@@ -91,7 +91,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       }
     }}
     for(int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
-      if(pm->user_history_func_[n]!=NULL)
+      if (pm->user_history_func_[n]!=NULL)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
     pmb=pmb->next;
@@ -118,7 +118,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if((pfile = fopen(fname.c_str(),"a")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"a")) == NULL){
       msg << "### FATAL ERROR in function [OutputType::HistoryFile]" << std::endl
           << "Output file '" << fname << "' could not be opened";
       throw std::runtime_error(msg.str().c_str());

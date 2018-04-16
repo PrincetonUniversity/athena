@@ -253,7 +253,7 @@ private:
 
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
-  if(rs.x1rat==1.0) {
+  if (rs.x1rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
     Real ratn=pow(rs.x1rat,rs.nx1);
@@ -270,7 +270,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
 
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
-  if(rs.x2rat==1.0) {
+  if (rs.x2rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
     Real ratn=pow(rs.x2rat,rs.nx2);
@@ -287,7 +287,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
 
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
-  if(rs.x3rat==1.0) {
+  if (rs.x3rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
     Real ratn=pow(rs.x3rat,rs.nx3);

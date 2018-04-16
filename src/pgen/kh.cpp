@@ -38,7 +38,7 @@ int RefinementCondition(MeshBlock *pmb);
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  if(adaptive==true)
+  if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
   vflow = pin->GetReal("problem","vflow");
 
@@ -187,11 +187,11 @@ int RefinementCondition(MeshBlock *pmb)
       for(int i=pmb->is; i<=pmb->ie; i++) {
         Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
         Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
-        if(vgy > vgmax) vgmax=vgy;
-        if(vgx > vgmax) vgmax=vgx;
+        if (vgy > vgmax) vgmax=vgy;
+        if (vgx > vgmax) vgmax=vgx;
       }
     }
   }
-  if(vgmax > 0.01) return 1;
+  if (vgmax > 0.01) return 1;
   return -1;
 }
