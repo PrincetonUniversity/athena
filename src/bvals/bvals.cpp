@@ -503,8 +503,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
 
 // destructor
 
-BoundaryValues::~BoundaryValues()
-{
+BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb=pmy_block_;
 
   DestroyBoundaryData(bd_hydro_);
@@ -623,8 +622,7 @@ BoundaryValues::~BoundaryValues()
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 //  \brief Initialize BoundaryData structure
-void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
-{
+void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
   int f2d=0, f3d=0;
@@ -694,11 +692,13 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
                   *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                   *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
           int f2c2=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
+                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d)
+                    : NGHOST)
                   *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
           int f2c3=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                   *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
+                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d)
+                    : NGHOST);
           if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
             if (BoundaryValues::ni[n].ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
@@ -779,8 +779,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 //  \brief Destroy BoundaryData structure
-void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
-{
+void BoundaryValues::DestroyBoundaryData(BoundaryData &bd) {
   for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
@@ -797,8 +796,7 @@ void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Initialize MPI requests
 
-void BoundaryValues::Initialize(void)
-{
+void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
   int tag;
@@ -1166,8 +1164,7 @@ void BoundaryValues::Initialize(void)
 //! \fn void BoundaryValues::CheckBoundary(void)
 //  \brief checks if the boundary conditions are correctly enrolled
 
-void BoundaryValues::CheckBoundary(void)
-{
+void BoundaryValues::CheckBoundary(void) {
   MeshBlock *pmb=pmy_block_;
   for (int i=0;i<nface_;i++) {
     if (block_bcs[i]==USER_BNDRY) {
@@ -1186,8 +1183,7 @@ void BoundaryValues::CheckBoundary(void)
 //! \fn void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //  \brief initiate MPI_Irecv for initialization
 
-void BoundaryValues::StartReceivingForInit(bool cons_and_field)
-{
+void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   for (int n=0;n<nneighbor;n++) {
@@ -1216,8 +1212,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingAll(const Real time)
 //  \brief initiate MPI_Irecv for all the sweeps
-void BoundaryValues::StartReceivingAll(const Real time)
-{
+void BoundaryValues::StartReceivingAll(const Real time) {
   firsttime_=true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
@@ -1317,8 +1312,7 @@ void BoundaryValues::StartReceivingAll(const Real time)
 //! \fn void BoundaryValues::ClearBoundaryForInit(void)
 //  \brief clean up the boundary flags for initialization
 
-void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
-{
+void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   MeshBlock *pmb=pmy_block_;
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
@@ -1352,8 +1346,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 //! \fn void BoundaryValues::ClearBoundaryAll(void)
 //  \brief clean up the boundary flags after each loop
 
-void BoundaryValues::ClearBoundaryAll(void)
-{
+void BoundaryValues::ClearBoundaryAll(void) {
   MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
@@ -1460,8 +1453,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-                     const Real time, const Real dt)
-{
+                     const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
@@ -1561,8 +1553,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
 void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-     const Real time, const Real dt)
-{
+     const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int64_t &lx1=pmb->loc.lx1;
