@@ -297,7 +297,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         }
         if (lrlev > max_level) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
-              << "Refinement level exceeds the maximum level (specify maxlevel in <mesh> if adaptive)."
+              << "Refinement level exceeds the maximum level (specify"
+              << "maxlevel in <mesh> if adaptive)."
               << std::endl;
           throw std::runtime_error(msg.str().c_str());
         }
@@ -319,11 +320,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
         int64_t lxmax=nrbx1*(1L<<ref_lev);
         for (lx1min=0;lx1min<lxmax;lx1min++) {
-          if (MeshGenerator_[X1DIR]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
+          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1min+1)/lxmax,mesh_size)
+              > ref_size.x1min)
             break;
         }
         for (lx1max=lx1min;lx1max<lxmax;lx1max++) {
-          if (MeshGenerator_[X1DIR]((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
+          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1max+1)/lxmax,mesh_size)
+              >= ref_size.x1max)
             break;
         }
         if (lx1min%2==1) lx1min--;
@@ -331,11 +334,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         if (dim>=2) { // 2D or 3D
           lxmax=nrbx2*(1L<<ref_lev);
           for (lx2min=0;lx2min<lxmax;lx2min++) {
-            if (MeshGenerator_[X2DIR]((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
+            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2min+1)/lxmax,mesh_size)
+                > ref_size.x2min)
               break;
           }
           for (lx2max=lx2min;lx2max<lxmax;lx2max++) {
-            if (MeshGenerator_[X2DIR]((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
+            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2max+1)/lxmax,mesh_size)
+                >= ref_size.x2max)
               break;
           }
           if (lx2min%2==1) lx2min--;
@@ -344,11 +349,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
         if (dim==3) { // 3D
           lxmax=nrbx3*(1L<<ref_lev);
           for (lx3min=0;lx3min<lxmax;lx3min++) {
-            if (MeshGenerator_[X3DIR]((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
+            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3min+1)/lxmax,mesh_size)
+                > ref_size.x3min)
               break;
           }
           for (lx3max=lx3min;lx3max<lxmax;lx3max++) {
-            if (MeshGenerator_[X3DIR]((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
+            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3max+1)/lxmax,mesh_size)
+                >= ref_size.x3max)
               break;
           }
           if (lx3min%2==1) lx3min--;
@@ -986,7 +993,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt,(Real)(2.0)*dt);
+  dt=std::min(min_dt,static_cast<Real>(2.0)*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
@@ -1174,7 +1181,8 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
+//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
+//                                                   GravityBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
 void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
@@ -1346,12 +1354,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       if (nbtotal==onb) iflag=true;
       else if (nbtotal < onb && Globals::my_rank==0) {
          std::cout << "### Warning in Mesh::Initialize" << std::endl
-         << "The number of MeshBlocks decreased during AMR grid initialization." << std::endl
+         << "The number of MeshBlocks decreased during AMR grid initialization."
+         << std::endl
          << "Possibly the refinement criteria have a problem." << std::endl;
       }
       if (nbtotal > 2*inb && Globals::my_rank==0) {
-         std::cout << "### Warning in Mesh::Initialize" << std::endl
-         << "The number of MeshBlocks increased more than twice during initialization."<< std::endl
+        std::cout << "### Warning in Mesh::Initialize" << std::endl
+         << "The number of MeshBlocks increased more than twice during initialization."
+         << std::endl
          << "More computing power than you expected may be required." << std::endl;
       }
     }
@@ -1463,7 +1473,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
   }
   else {
-    Real rx=(Real)lx1/(Real)(nrbx1<<(ll-root_level));
+    Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx1<<(ll-root_level));
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
   }
@@ -1472,7 +1482,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
   }
   else {
-    Real rx=(Real)(lx1+1)/(Real)(nrbx1<<(ll-root_level));
+    Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx1<<(ll-root_level));
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
   }
@@ -1490,7 +1500,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     }
     else {
-      Real rx=(Real)lx2/(Real)(nrbx2<<(ll-root_level));
+      Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx2<<(ll-root_level));
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
     }
@@ -1499,7 +1509,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
     }
     else {
-      Real rx=(Real)(lx2+1)/(Real)(nrbx2<<(ll-root_level));
+      Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx2<<(ll-root_level));
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
     }
@@ -1518,7 +1528,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     }
     else {
-      Real rx=(Real)lx3/(Real)(nrbx3<<(ll-root_level));
+      Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx3<<(ll-root_level));
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
     }
@@ -1527,7 +1537,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
     }
     else {
-      Real rx=(Real)(lx3+1)/(Real)(nrbx3<<(ll-root_level));
+      Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx3<<(ll-root_level));
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }
