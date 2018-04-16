@@ -6,6 +6,16 @@
 //! \file mggravity.cpp
 //  \brief implementation of functions in class MGGravity
 
+// C/C++ headers
+#include <iostream>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 // Athena++ headers
 #include "mggravity.hpp"
 #include "gravity.hpp"
@@ -18,15 +28,6 @@
 #include "../multigrid/multigrid.hpp"
 #include "../globals.hpp"
 
-#include <iostream>
-#include <sstream>    // sstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-#ifdef MPI_PARALLEL
-#include <mpi.h>
-#endif
-
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
@@ -34,9 +35,9 @@ class MeshBlock;
 //                                   ParameterInput *pin)
 //  \brief MGGravityDriver constructor
 
-MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin)
- : MultigridDriver(pm, MGBoundary, 1)
-{
+MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+                                 ParameterInput *pin)
+    : MultigridDriver(pm, MGBoundary, 1) {
   four_pi_G_=pmy_mesh_->four_pi_G_;
   eps_=pmy_mesh_->grav_eps_;
   if (four_pi_G_==0.0) {
@@ -88,8 +89,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, Paramet
 //! \fn void MGGravityDriver::Solve(int step)
 //  \brief load the data and solve
 
-void MGGravityDriver::Solve(int step)
-{
+void MGGravityDriver::Solve(int step) {
   Multigrid *pmggrav=pmg_;
   AthenaArray<Real> in;
 
@@ -131,8 +131,7 @@ void MGGravityDriver::Solve(int step)
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(int color)
 //  \brief Red-Black Gauss-Seidel Smoother
-void MGGravity::Smooth(int color)
-{
+void MGGravity::Smooth(int color) {
   int c=color;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
@@ -159,8 +158,7 @@ void MGGravity::Smooth(int color)
 //! \fn void MGGravity::CalculateDefect(void)
 //  \brief calculate the residual
 
-void MGGravity::CalculateDefect(void)
-{
+void MGGravity::CalculateDefect(void) {
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];
@@ -180,4 +178,3 @@ void MGGravity::CalculateDefect(void)
   }
   return;
 }
-
