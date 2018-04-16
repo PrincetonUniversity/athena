@@ -193,8 +193,9 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
       nloc.lx2=loc.lx2+oy;
       bool polar=false;
       if (nloc.lx2<0) {
-        if (mesh_bcs[INNER_X2]==PERIODIC_BNDRY) nloc.lx2=nymax-1;
-      } else if (mesh_bcs[INNER_X2]==POLAR_BNDRY) {
+        if (mesh_bcs[INNER_X2]==PERIODIC_BNDRY) {
+          nloc.lx2=nymax-1;
+        } else if (mesh_bcs[INNER_X2]==POLAR_BNDRY) {
           nloc.lx2=0;
           polar=true;
         }
