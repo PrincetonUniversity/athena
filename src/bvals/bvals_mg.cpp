@@ -152,12 +152,12 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void)
   int ncx=block_size_.nx1>>ll, ncy=block_size_.nx2>>ll, ncz=block_size_.nx3>>ll;
   int is=ngh, ie=ncx+ngh-1, js=ngh, je=ncy+ngh-1, ks=ngh, ke=ncz+ngh-1;
   int bis=is-ngh, bie=ie+ngh, bjs=js, bje=je, bks=ks, bke=ke;
-  Real dx=pmy_mg_->rdx_*(Real)(1<<ll);
-  Real dy=pmy_mg_->rdy_*(Real)(1<<ll);
-  Real dz=pmy_mg_->rdz_*(Real)(1<<ll);
-  Real x0=block_size_.x1min-((Real)ngh+0.5)*dx;
-  Real y0=block_size_.x2min-((Real)ngh+0.5)*dy;
-  Real z0=block_size_.x3min-((Real)ngh+0.5)*dz;
+  Real dx=pmy_mg_->rdx_*static_cast<Real>(1<<ll);
+  Real dy=pmy_mg_->rdy_*static_cast<Real>(1<<ll);
+  Real dz=pmy_mg_->rdz_*static_cast<Real>(1<<ll);
+  Real x0=block_size_.x1min-(static_cast<Real>(ngh)+0.5)*dx;
+  Real y0=block_size_.x2min-(static_cast<Real>(ngh)+0.5)*dy;
+  Real z0=block_size_.x3min-(static_cast<Real>(ngh)+0.5)*dz;
   Real time=pmy_mesh_->time;
   if (MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh;
   if (MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh;
@@ -237,7 +237,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
           else if (nb.type==NEIGHBOR_CORNER) size=1;
         }
       }
-      else { // uniform - NGHOST=2
+      else { // no SMR/AMR - NGHOST=2 (Not necessarily! KGF)
         if (nb.type==NEIGHBOR_FACE) size=nc*nc*ngh;
         else if (nb.type==NEIGHBOR_EDGE) size=nc*ngh*ngh;
         else if (nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;
@@ -283,7 +283,8 @@ void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-//                            int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+//                            int nvar, int nc, int ngh, Real *buf,
+//                            const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
@@ -441,5 +442,3 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   }
   return bflag;
 }
-
-

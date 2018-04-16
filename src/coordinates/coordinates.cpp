@@ -66,7 +66,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       } else {
         noffset = (i-is)*2 + (int64_t)lx1*block_size.nx1;
       }
-      Real rx=(Real)noffset/(Real)nrootmesh;
+      Real rx=static_cast<Real>(noffset)/static_cast<Real>(nrootmesh);
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
     }
     x1f(is) = block_size.x1min;
@@ -102,7 +102,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       // if nrootmesh is even, central interface is at noffset=noffset_ceil=0
       // else, central cell has faces at noffset=0,1 due to integer div floor(nrootmesh/2)
       // Average with ceil(nrootmesh/2) indexing, noffset_ceil=-1,0 for symmetry
-      Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+      Real rx=static_cast<Real>(noffset+noffset_ceil)/(2.0*nrootmesh);
       // pm->MeshGenerator_[X1DIR] still = DefaultMeshGeneratorX1().
       x1f(i)=UniformMeshGeneratorX1(rx, mesh_size);
     }
@@ -142,7 +142,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = (j-js)*2 + static_cast<int64_t> (lx2)*block_size.nx2;
         }
-        Real rx=(Real)noffset/(Real)nrootmesh;
+        Real rx=static_cast<Real>(noffset)/static_cast<Real>(nrootmesh);
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
       }
       x2f(js) = block_size.x2min;
@@ -175,7 +175,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;
 
-        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        Real rx=static_cast<Real>(noffset+noffset_ceil)/(2.0*nrootmesh);
         x2f(j)=UniformMeshGeneratorX2(rx, mesh_size);
       }
       x2f(js) = block_size.x2min;
@@ -223,7 +223,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = (k-ks)*2 + static_cast<int64_t> (lx3)*block_size.nx3;
         }
-        Real rx=(Real)noffset/(Real)nrootmesh;
+        Real rx=static_cast<Real>(noffset)/static_cast<Real>nrootmesh;
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
       }
       x3f(ks) = block_size.x3min;
@@ -256,7 +256,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         noffset_ceil = noffset - (nrootmesh+1)/2;
         noffset -= nrootmesh/2;
 
-        Real rx=(Real)(noffset+noffset_ceil)/(2.0*nrootmesh);
+        Real rx=static_cast<Real>(noffset+noffset_ceil)/(2.0*nrootmesh);
         x3f(k)=UniformMeshGeneratorX3(rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;

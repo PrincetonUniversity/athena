@@ -30,8 +30,7 @@
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-                            AthenaArray<Real> &bcc, int order)
-{
+                            AthenaArray<Real> &bcc, int order) {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
@@ -91,16 +90,16 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k){
-    for (int j=jl; j<=ju; ++j){
+    for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i){
+      for (int i=is; i<=ie+1; ++i) {
         Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
                       / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-        Real tmp_min = std::min((Real)0.5,v_over_c);
-        w_x1f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
+        Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+        w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
       }
     }}
   }
@@ -135,15 +134,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-      for (int k=kl; k<=ku; ++k){
-      for (int j=js; j<=je+1; ++j){
+      for (int k=kl; k<=ku; ++k) {
+      for (int j=js; j<=je+1; ++j) {
         pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
 #pragma omp simd
-        for (int i=il; i<=iu; ++i){
+        for (int i=il; i<=iu; ++i) {
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min((Real)0.5,v_over_c);
-          w_x2f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
+          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+          w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
         }
       }}
     }
@@ -162,7 +161,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     // reconstruct L/R states at k
     if (order == 1) {
       pmb->precon->DonorCellX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
-    } else if (order == 2){
+    } else if (order == 2) {
       pmb->precon->PiecewiseLinearX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
     } else {
       pmb->precon->PiecewiseParabolicX3(pmb,ks,ke+1,jl,ju,il,iu,w,bcc,wl,wr);
@@ -175,15 +174,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-      for (int k=ks; k<=ke+1; ++k){
-      for (int j=jl; j<=ju; ++j){
+      for (int k=ks; k<=ke+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
         pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
 #pragma omp simd
-        for (int i=il; i<=iu; ++i){
+        for (int i=il; i<=iu; ++i) {
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min((Real)0.5,v_over_c);
-          w_x3f(k,j,i) = 0.5 + std::max((Real)(-0.5),tmp_min);
+          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+          w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
         }
       }}
     }
