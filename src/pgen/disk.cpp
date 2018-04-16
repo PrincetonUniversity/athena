@@ -50,7 +50,7 @@ void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
-// problem parameters which are useful to make global to this file  
+// problem parameters which are useful to make global to this file
 static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
 static Real dfloor;
 
@@ -199,11 +199,11 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
     v3=vel;
   }
   return;
-} 
+}
 
 //----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
-// 
+//
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)

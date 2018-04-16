@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -35,9 +35,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -238,7 +238,7 @@ struct fft_plan_2d *fft_2d_create_plan(
 
   plan->length2 = nslow;
   plan->total2 = (second_ihi-second_ilo+1) * nslow;
-  
+
 /* remap from 2nd FFT to final distribution
    not needed if permute = 1 and second indices = out indices on all procs */
 
@@ -315,7 +315,7 @@ struct fft_plan_2d *fft_2d_create_plan(
   }
   else plan->scratch = NULL;
 
-/* system specific pre-computation of 1d FFT coeffs 
+/* system specific pre-computation of 1d FFT coeffs
    and scaling normalization */
 
   plan->plan_fast_forward =

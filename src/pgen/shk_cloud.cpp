@@ -14,7 +14,7 @@
 //
 // The cloud radius is fixed at 1.0.  The center of the coordinate system defines the
 // center of the cloud, and should be in the middle of the cloud. The shock is initially
-// at x1=-2.0.  A typical grid domain should span x1 in [-3.0,7.0] , y and z in 
+// at x1=-2.0.  A typical grid domain should span x1 in [-3.0,7.0] , y and z in
 //[-2.5,2.5] (see input file in /tst).
 //========================================================================================
 
@@ -74,7 +74,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real drat = pin->GetReal("problem","drat");
   Real beta;
   if (MAGNETIC_FIELDS_ENABLED) beta = pin->GetReal("problem","beta");
-  
+
   // Set paramters in ambient medium ("R-state" for shock)
   Real dr = 1.0;
   Real pr = 1.0/(peos->GetGamma());
@@ -175,7 +175,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 //----------------------------------------------------------------------------------------
 //! \fn void ShockCloudInnerX1()
-//  \brief Sets boundary condition on left X boundary (iib) 
+//  \brief Sets boundary condition on left X boundary (iib)
 // Note quantities at this boundary are held fixed at the downstream state
 
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,

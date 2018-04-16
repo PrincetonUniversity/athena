@@ -8,7 +8,7 @@
 //         cylindrical, and spherical coordinates.  Contains post-processing code
 //         to check whether blast is spherical for regression tests
 //
-// REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for 
+// REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
 // C++ headers

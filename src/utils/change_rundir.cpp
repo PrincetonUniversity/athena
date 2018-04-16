@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file change_rundir.cpp 
+//! \file change_rundir.cpp
 //! \brief executes unix 'chdir' command to change dir in which Athena++ runs
 
 // Athena headers

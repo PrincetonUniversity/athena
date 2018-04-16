@@ -43,7 +43,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   dim_ = 1;
   if(pm->mesh_size.nx2 > 1) dim_=2;
   if(pm->mesh_size.nx3 > 1) dim_=3;
- 
+
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
@@ -173,7 +173,7 @@ void FFTDriver::InitializeFFTBlock(bool set_norm){
 }
 
 void FFTDriver::QuickCreatePlan(void){
-  
+
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
 

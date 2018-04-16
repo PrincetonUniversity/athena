@@ -6,7 +6,7 @@
 //! \file signal_handler.cpp
 //  \brief contains functions that implement a simple SignalHandler
 //  These functions are based on TAG's signal handler written for Athena 8/19/2004
- 
+
 // C++ headers
 #include <csignal>
 #include <unistd.h>

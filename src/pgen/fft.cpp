@@ -58,7 +58,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   int nx1=block_size.nx1+2*NGHOST;
   int nx2=block_size.nx2+2*NGHOST;
   int nx3=block_size.nx3+2*NGHOST;
-  
+
   src.NewAthenaArray(nx3,nx2,nx1);
   dst.NewAthenaArray(2,nx3,nx2,nx1);
 

@@ -72,7 +72,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
   Real gconst = four_pi_G / (4.0*PI);
   Real grav_mean_rho = 0.0;
-  
+
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
   int nlim = pin->GetInteger("time","nlim");
 
@@ -189,13 +189,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       if(Globals::my_rank == 0){
         std::cout << "Timing Possison Solver                               " << std::endl;
         std::cout << "number of zones in Mesh = " << zones << std::endl;
-        std::cout << "Mesh configuration = " << mesh_size.nx1 << "x" 
+        std::cout << "Mesh configuration = " << mesh_size.nx1 << "x"
                   << mesh_size.nx2 << "x" << mesh_size.nx3 << std::endl;
         std::cout << "number of zones in MeshBlock = " << mb_zones << std::endl;
-        std::cout << "MeshBlock configuration = " << pblock->block_size.nx1 << "x" 
+        std::cout << "MeshBlock configuration = " << pblock->block_size.nx1 << "x"
                   << pblock->block_size.nx2 << "x" << pblock->block_size.nx3 << std::endl;
         std::cout << "number of processors = " << Globals::nranks << std::endl;
-        std::cout << "processor configuration = " 
+        std::cout << "processor configuration = "
                   << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
         std::cout << "cpu time used  = " << cpu_time << std::endl;
         std::cout << "cpu time used/cycle  = " << cpu_time/(float)(ncycle) << std::endl;

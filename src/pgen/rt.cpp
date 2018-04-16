@@ -10,7 +10,7 @@
 // hardwired to be 2.0 in 2D, and is set by the input parameter <problem>/rhoh in 3D
 // (default value is 3.0). This reproduces 2D results of Liska & Wendroff, 3D results of
 // Dimonte et al.
-// 
+//
 // FOR 2D HYDRO:
 // Problem domain should be -1/6 < x < 1/6; -0.5 < y < 0.5 with gamma=1.4 to match Liska
 // & Wendroff. Interface is at y=0; perturbation added to Vy. Gravity acts in y-dirn.
@@ -87,7 +87,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int64_t iseed = -1;
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
-  
+
   Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);
   Real ky = 2.0*(PI)/(pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min);
   Real kz = 2.0*(PI)/(pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min);
@@ -242,7 +242,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i) 
+          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i)
              - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
@@ -302,7 +302,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i) 
+          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i)
              + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
@@ -362,7 +362,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i) 
+          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i)
              - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {

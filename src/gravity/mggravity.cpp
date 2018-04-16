@@ -93,7 +93,7 @@ void MGGravityDriver::Solve(int step)
   Multigrid *pmggrav=pmg_;
   AthenaArray<Real> in;
 
-  // Load the source 
+  // Load the source
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if(pmb!=NULL) {

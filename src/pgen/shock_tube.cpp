@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shock_tube.cpp
-//  \brief Problem generator for shock tube problems.  
+//  \brief Problem generator for shock tube problems.
 //
 // Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
 // shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
@@ -37,9 +37,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   MeshBlock *pmb = pblock;
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
-  
+
   // Read shock direction and set array indices
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
   int im1,im2,im3,ib1,ib2,ib3;
   if (shk_dir == 1) {
     im1 = IM1; im2 = IM2; im3 = IM3;
@@ -70,9 +70,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r, d0, mx, my, mz, e0, bx, by, bz;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
 
         bx = 2.0/sqrt(4.0*PI);
         if (r > xfp) {
@@ -151,7 +151,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         err[NHYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
     }}
-  
+
   // Errors in Sod solution
   } else {
     // Positions of shock, contact, head and foot of rarefaction for Sod test
@@ -164,10 +164,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r,d0,m0,e0;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
-  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
+
         if (r > xs) {
           d0 = 0.125;
           m0 = 0.0;
@@ -254,10 +254,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
 
   // parse shock location (must be inside grid)
-  Real xshock = pin->GetReal("problem","xshock"); 
+  Real xshock = pin->GetReal("problem","xshock");
   if (shk_dir == 1 && (xshock < pmy_mesh->mesh_size.x1min ||
                        xshock > pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="

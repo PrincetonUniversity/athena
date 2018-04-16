@@ -28,7 +28,7 @@
 // destructor not required for this derived class
 
 FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-  : OutputType(oparams) 
+  : OutputType(oparams)
 {
 }
 
@@ -69,7 +69,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     sprintf(number,"%05d",output_params.file_number);
     char blockid[12];
     sprintf(blockid,"block%d",pmb->gid);
-  
+
     fname.assign(output_params.file_basename);
     fname.append(".");
     fname.append(blockid);

@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -38,9 +38,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nmid x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nmid or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nmid or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -301,7 +301,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     third_klo = 0;
     third_khi = nslow - 1;
   }
-  
+
 
   plan->mid2_plan =
     remap_3d_create_plan(comm,
@@ -358,11 +358,11 @@ struct fft_plan_3d *fft_3d_create_plan(
      accumulate largest required remap scratch space */
 
   out_size = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1);
-  first_size = (first_ihi-first_ilo+1) * (first_jhi-first_jlo+1) * 
+  first_size = (first_ihi-first_ilo+1) * (first_jhi-first_jlo+1) *
     (first_khi-first_klo+1);
-  second_size = (second_ihi-second_ilo+1) * (second_jhi-second_jlo+1) * 
+  second_size = (second_ihi-second_ilo+1) * (second_jhi-second_jlo+1) *
     (second_khi-second_klo+1);
-  third_size = (third_ihi-third_ilo+1) * (third_jhi-third_jlo+1) * 
+  third_size = (third_ihi-third_ilo+1) * (third_jhi-third_jlo+1) *
     (third_khi-third_klo+1);
 
   copy_size = 0;
@@ -415,7 +415,7 @@ struct fft_plan_3d *fft_3d_create_plan(
   }
   else plan->scratch = NULL;
 
-/* system specific pre-computation of 1d FFT coeffs 
+/* system specific pre-computation of 1d FFT coeffs
    and scaling normalization */
 
   plan->plan_fast_forward =

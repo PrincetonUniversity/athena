@@ -24,7 +24,7 @@
 #include "../../../eos/eos.hpp"
 
 // prototype for function to compute eigenvalues and eigenvectors of Roe's matrix A
-inline static void RoeEigensystem(const Real wroe[], const Real b1, 
+inline static void RoeEigensystem(const Real wroe[], const Real b1,
   const Real x, const Real y, Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
 
@@ -104,7 +104,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     RoeEigensystem(wroe,bxi,x,y,ev,rem,lem);
 
-//--- Step 4.  Compute L/R fluxes 
+//--- Step 4.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -458,7 +458,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 
-inline static void RoeEigensystem(const Real wroe[], const Real b1, 
+inline static void RoeEigensystem(const Real wroe[], const Real b1,
   const Real x, const Real y, Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
 {
@@ -540,10 +540,10 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     eigenvalues[4] = v1 + cs;
     eigenvalues[5] = v1 + vax;
     eigenvalues[6] = v1 + cf;
-  
+
     // Right-eigenvectors, stored as COLUMNS (eq. B21) */
     right_eigenmatrix[0][0] = alpha_f;
-    right_eigenmatrix[0][1] = 0.0; 
+    right_eigenmatrix[0][1] = 0.0;
     right_eigenmatrix[0][2] = alpha_s;
     right_eigenmatrix[0][3] = 1.0;
     right_eigenmatrix[0][4] = alpha_s;
@@ -589,11 +589,11 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     right_eigenmatrix[4][4] = alpha_s*(hp + v1*cs) + qf*vbet - afpbb;
     right_eigenmatrix[4][5] = -right_eigenmatrix[4][1];
     right_eigenmatrix[4][6] = alpha_f*(hp + v1*cf) - qs*vbet + aspbb;
-    
+
     right_eigenmatrix[5][0] = as_prime*bet2_star;
     right_eigenmatrix[5][1] = -bet3*s*isqrtd;
     right_eigenmatrix[5][2] = -af_prime*bet2_star;
-    right_eigenmatrix[5][3] = 0.0; 
+    right_eigenmatrix[5][3] = 0.0;
     right_eigenmatrix[5][4] = right_eigenmatrix[5][2];
     right_eigenmatrix[5][5] = right_eigenmatrix[5][1];
     right_eigenmatrix[5][6] = right_eigenmatrix[5][0];
@@ -617,7 +617,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real as = norm*as_prime*d;
     Real afpb = norm*af_prime*bt_star;
     Real aspb = norm*as_prime*bt_star;
-  
+
     // Normalize by (gamma-1)/2a^{2}: quantities denoted by \bar{f}
     norm *= gm1;
     alpha_f *= norm;
@@ -626,7 +626,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real q3_star = bet3_star/bet_starsq;
     Real vqstr = (v2*q2_star + v3*q3_star);
     norm *= 2.0;
-  
+
     left_eigenmatrix[0][0] = alpha_f*(vsq-hp) + cff*(cf+v1) - qs*vqstr - aspb;
     left_eigenmatrix[0][1] = -alpha_f*v1 - cff;
     left_eigenmatrix[0][2] = -alpha_f*v2 + qs*q2_star;
@@ -639,10 +639,10 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     left_eigenmatrix[1][1] = 0.0;
     left_eigenmatrix[1][2] = -0.5*bet3;
     left_eigenmatrix[1][3] = 0.5*bet2;
-    left_eigenmatrix[1][4] = 0.0; 
+    left_eigenmatrix[1][4] = 0.0;
     left_eigenmatrix[1][5] = -0.5*sqrtd*bet3*s;
     left_eigenmatrix[1][6] = 0.5*sqrtd*bet2*s;
-  
+
     left_eigenmatrix[2][0] = alpha_s*(vsq-hp) + css*(cs+v1) + qf*vqstr + afpb;
     left_eigenmatrix[2][1] = -alpha_s*v1 - css;
     left_eigenmatrix[2][2] = -alpha_s*v2 - qf*q2_star;
@@ -651,7 +651,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     left_eigenmatrix[2][5] = -af*q2_star - alpha_s*b2;
     left_eigenmatrix[2][6] = -af*q3_star - alpha_s*b3;
 
-    left_eigenmatrix[3][0] = 1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1); 
+    left_eigenmatrix[3][0] = 1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1);
     left_eigenmatrix[3][1] = norm*v1;
     left_eigenmatrix[3][2] = norm*v2;
     left_eigenmatrix[3][3] = norm*v3;
@@ -697,13 +697,13 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real tsum = vaxsq + ct2 + twid_csq;
     Real tdif = vaxsq + ct2 - twid_csq;
     Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
-  
+
     Real cfsq = 0.5*(tsum + cf2_cs2);
     Real cf = sqrt(cfsq);
-   
+
     Real cssq = twid_csq*vaxsq/cfsq;
     Real cs = sqrt(cssq);
-  
+
     // Compute beta's (eqs. A17, B28, B40)
     Real bt = sqrt(btsq);
     Real bt_star = sqrt(bt_starsq);
@@ -779,12 +779,12 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     right_eigenmatrix[5][3] = right_eigenmatrix[5][2];
 
     right_eigenmatrix[0][4] = 0.0;
-    right_eigenmatrix[1][4] = 0.0; 
+    right_eigenmatrix[1][4] = 0.0;
     right_eigenmatrix[2][4] = bet3;
     right_eigenmatrix[3][4] = -bet2;
     right_eigenmatrix[4][4] = right_eigenmatrix[4][1];
     right_eigenmatrix[5][4] = right_eigenmatrix[5][1];
-  
+
     right_eigenmatrix[0][5] = alpha_f;
     right_eigenmatrix[1][5] = alpha_f*(v1 + cf);
     right_eigenmatrix[2][5] = alpha_f*v2 - qs*bet2_star;
@@ -807,42 +807,42 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real q2_star = bet2_star/bet_starsq;
     Real q3_star = bet3_star/bet_starsq;
     Real vqstr = (v2*q2_star + v3*q3_star);
-  
+
     left_eigenmatrix[0][0] = cff*(cf+v1) - qs*vqstr - aspb;
     left_eigenmatrix[0][1] = -cff;
     left_eigenmatrix[0][2] = qs*q2_star;
     left_eigenmatrix[0][3] = qs*q3_star;
     left_eigenmatrix[0][4] = as*q2_star;
     left_eigenmatrix[0][5] = as*q3_star;
-  
+
     left_eigenmatrix[1][0] = 0.5*(v2*bet3 - v3*bet2);
     left_eigenmatrix[1][1] = 0.0;
     left_eigenmatrix[1][2] = -0.5*bet3;
     left_eigenmatrix[1][3] = 0.5*bet2;
     left_eigenmatrix[1][4] = -0.5*sqrtd*bet3*s;
     left_eigenmatrix[1][5] = 0.5*sqrtd*bet2*s;
-  
+
     left_eigenmatrix[2][0] = css*(cs+v1) + qf*vqstr + afpb;
     left_eigenmatrix[2][1] = -css;
     left_eigenmatrix[2][2] = -qf*q2_star;
     left_eigenmatrix[2][3] = -qf*q3_star;
     left_eigenmatrix[2][4] = -af*q2_star;
     left_eigenmatrix[2][5] = -af*q3_star;
-  
+
     left_eigenmatrix[3][0] = css*(cs-v1) - qf*vqstr + afpb;
     left_eigenmatrix[3][1] = css;
     left_eigenmatrix[3][2] = -left_eigenmatrix[2][2];
     left_eigenmatrix[3][3] = -left_eigenmatrix[2][3];
     left_eigenmatrix[3][4] = left_eigenmatrix[2][4];
     left_eigenmatrix[3][5] = left_eigenmatrix[2][5];
-  
+
     left_eigenmatrix[4][0] = -left_eigenmatrix[1][0];
     left_eigenmatrix[4][1] = 0.0;
     left_eigenmatrix[4][2] = -left_eigenmatrix[1][2];
     left_eigenmatrix[4][3] = -left_eigenmatrix[1][3];
     left_eigenmatrix[4][4] = left_eigenmatrix[1][4];
     left_eigenmatrix[4][5] = left_eigenmatrix[1][5];
-  
+
     left_eigenmatrix[5][0] = cff*(cf-v1) + qs*vqstr - aspb;
     left_eigenmatrix[5][1] = cff;
     left_eigenmatrix[5][2] = -left_eigenmatrix[0][2];

@@ -55,9 +55,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // add file number to name, unless write is forced by terminate signal, in which case
   // replace number in the name by the string "final".  This keeps the restart file
   // numbers consistent with output.dt when a job is restarted many times.
-  if(force_write==false) 
+  if(force_write==false)
     fname.append(number);
-  else 
+  else
     fname.append("final");
   fname.append(".rst");
 

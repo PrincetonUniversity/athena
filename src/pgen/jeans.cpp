@@ -163,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
-  if (omega2 < 0){ 
+  if (omega2 < 0){
     if(Globals::my_rank==0)
       std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
     //    return;
@@ -190,7 +190,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) 
+        Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3)
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
@@ -199,7 +199,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 	  //unstable case v = amp*omega/k * coskx * e^omega*t
 	  //minus sign counters minus sign in m
 	  cosot = exp(omega*tlim);//time dependent factor of rho
-	} 
+	}
 	else {
 	  sinot = sin(omega*tlim);//time dependent factor of vel
 	  cosot = cos(omega*tlim);//time dependent factor of rho

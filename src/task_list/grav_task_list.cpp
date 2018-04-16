@@ -47,7 +47,7 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
 
 //----------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
 void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
 {
@@ -57,27 +57,27 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
   using namespace GravitySolverTaskNames;
   switch((id)) {
     case (START_GRAV_RECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::StartGravityReceive);
       break;
     case (CLEAR_GRAV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::ClearGravityBoundary);
       break;
     case (SEND_GRAV_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::SendGravityBoundary);
       break;
     case (RECV_GRAV_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::ReceiveGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::PhysicalBoundary);
       break;

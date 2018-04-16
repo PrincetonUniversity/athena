@@ -32,7 +32,7 @@ void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin)
 //========================================================================================
 //! \fn void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in MeshBlock class.  Can also be
-//  used to initialize variables which are global to other functions in this file. 
+//  used to initialize variables which are global to other functions in this file.
 //  Called in MeshBlock constructor before ProblemGenerator.
 //========================================================================================
 
@@ -49,7 +49,7 @@ void __attribute__((weak)) MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 
 void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  // In practice, this function should *always* be replaced by a version 
+  // In practice, this function should *always* be replaced by a version
   // that sets the initial conditions for the problem of interest.
   return;
 }

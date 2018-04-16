@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -494,7 +494,7 @@ void unpack_3d_permute2_n(double *buf, double *data, struct pack_plan_3d *plan)
 #endif
 
 /* ------------------------------------------------------------------- */
-/* pack/unpack with pointers and memcpy function 
+/* pack/unpack with pointers and memcpy function
    no memcpy version of unpack_permute routines,
      just use PACK_POINTER versions */
 /* ------------------------------------------------------------------- */

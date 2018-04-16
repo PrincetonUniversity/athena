@@ -20,7 +20,7 @@
 #include "../../../eos/eos.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
-// minimizes changes required to adopt athena4.2 version of this solver 
+// minimizes changes required to adopt athena4.2 version of this solver
 typedef struct Cons1D {
   Real d,mx,my,mz,e,by,bz;
 } Cons1D;
@@ -40,8 +40,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
-  Real spd[5];                    // signal speeds, left to right 
-  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states 
+  Real spd[5];                    // signal speeds, left to right
+  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states
   Cons1D fl,fr;                   // Fluxes for left & right states
 
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
@@ -138,7 +138,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sdl = spd[0] - wli[IVX];  // S_i-u_i (i=L or R)
     Real sdr = spd[4] - wri[IVX];
 
-    // S_M: eqn (38) of Miyoshi & Kusano 
+    // S_M: eqn (38) of Miyoshi & Kusano
     spd[2] = (sdr*ur.mx - sdl*ul.mx - ptr + ptl)/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
@@ -156,7 +156,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //--- Step 5.  Compute intermediate states
 
     Real ptst = ptl + ul.d*sdl*(sdl-sdml);  // total pressure (star state)
- 
+
   // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
     if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
@@ -192,7 +192,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.by = ur.by;
       urst.bz = ur.bz;
     } else {
-      // eqns (44) and (46) of M&K 
+      // eqns (44) and (46) of M&K
       Real tmp = bxi*(sdr - sdmr)/(ur.d*sdr*sdmr - bxsq);
       urst.my = urst.d * (wri[IVY] - ur.by*tmp);
       urst.mz = urst.d * (wri[IVZ] - ur.bz*tmp);
@@ -299,7 +299,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBY] = fr.by - spd[4]*ur.by - tmp*urst.by + spd[3]*urdst.by;
       flxi[IBZ] = fr.bz - spd[4]*ur.bz - tmp*urst.bz + spd[3]*urdst.bz;
     } else {
-      // return Fr* 
+      // return Fr*
       flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
       flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);
       flxi[IVY] = fr.my + spd[4]*(urst.my - ur.my);
@@ -317,7 +317,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-  }      
+  }
   }}
 
   return;

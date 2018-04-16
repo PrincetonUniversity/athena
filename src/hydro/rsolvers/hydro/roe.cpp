@@ -90,7 +90,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     RoeEigensystem(wroe,ev,rem,lem);
 
-//--- Step 4.  Compute L/R fluxes 
+//--- Step 4.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -364,7 +364,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
 
     right_eigenmatrix[0][2] = 0.0;
     right_eigenmatrix[1][2] = 0.0;
-    right_eigenmatrix[2][2] = 0.0; 
+    right_eigenmatrix[2][2] = 0.0;
     right_eigenmatrix[3][2] = 1.0;
     right_eigenmatrix[4][2] = v3;
 
@@ -387,7 +387,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[0][2] = -na*gm1*v2;
     left_eigenmatrix[0][3] = -na*gm1*v3;
     left_eigenmatrix[0][4] = na*gm1;
-  
+
     left_eigenmatrix[1][0] = -v2;
     left_eigenmatrix[1][1] = 0.0;
     left_eigenmatrix[1][2] = 1.0;
@@ -398,7 +398,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[2][1] = 0.0;
     left_eigenmatrix[2][2] = 0.0;
     left_eigenmatrix[2][3] = 1.0;
-    left_eigenmatrix[2][4] = 0.0; 
+    left_eigenmatrix[2][4] = 0.0;
 
     Real qa = gm1/asq;
     left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;

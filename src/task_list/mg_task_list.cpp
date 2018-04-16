@@ -52,8 +52,8 @@ void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
 
 //----------------------------------------------------------------------------------------
 //! \fn enum TaskListStatus MultigridTaskList::DoAllAvailableTasks
-//  \brief do all tasks that can be done (are not waiting for a dependency to be 
-//  cleared) in this TaskList, return status.  
+//  \brief do all tasks that can be done (are not waiting for a dependency to be
+//  cleared) in this TaskList, return status.
 
 enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskState &ts)
 {
@@ -90,7 +90,7 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
 void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
 {
@@ -326,7 +326,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
   if(nsmooth==1) {
     if(flag==1)
       AddMultigridTask(MG_STARTRECV1R, MG_PROLONG);
-    else 
+    else
       AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);

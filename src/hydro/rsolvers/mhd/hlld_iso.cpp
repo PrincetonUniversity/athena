@@ -20,7 +20,7 @@
 #include "../../../eos/eos.hpp"
 
 // container to store (density, momentum, tranverse magnetic field)
-// minimizes changes required to adopt athena4.2 version of this solver 
+// minimizes changes required to adopt athena4.2 version of this solver
 typedef struct Cons1D {
   Real d,mx,my,mz,by,bz;
 } Cons1D;
@@ -40,8 +40,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
-  Real spd[5];                    // signal speeds, left to right 
-  Cons1D ulst,urst,ucst;          // Conserved variable for all states 
+  Real spd[5];                    // signal speeds, left to right
+  Cons1D ulst,urst,ucst;          // Conserved variable for all states
   Cons1D fl,fr;                   // Fluxes for left & right states
 
   Real dfloor = pmy_block->peos->GetDensityFloor();
@@ -243,7 +243,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-  }      
+  }
   }}
 
   return;

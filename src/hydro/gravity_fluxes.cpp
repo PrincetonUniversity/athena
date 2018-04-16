@@ -32,7 +32,7 @@ void Hydro::AddGravityFlux(void)
   Real gxl,gyl,gzl;
 
   // i-direction
-  for (int k=ks; k<=ke; ++k) { 
+  for (int k=ks; k<=ke; ++k) {
     Real dx3 = pco->dx3v(k);
     for (int j=js; j<=je; ++j) {
       Real dx2 = pco->dx2v(j);
@@ -49,9 +49,9 @@ void Hydro::AddGravityFlux(void)
                         (phi(k-1,j,i  ) - phi(k+1,j,i  )))/dx3;
           }
         }
-        // momentum fluxes in x1-dir. 
+        // momentum fluxes in x1-dir.
         // 2nd term is needed only if Jean's swindle used
-        x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G 
+        x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G
                           +  grav_mean_rho*phil;
         x1flux(IM2,k,j,i) += gxl*gyl/four_pi_G;
         x1flux(IM3,k,j,i) += gxl*gzl/four_pi_G;
@@ -66,7 +66,7 @@ void Hydro::AddGravityFlux(void)
       Real dx3 = pco->dx3v(k);
       for (int j=js; j<=je+1; ++j) {
         Real dx2 = pco->dx2v(j);
-        for(int i=is; i<=ie; i++) { 
+        for(int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
           phil = 0.5*(phi(k,j-1,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x2-faces
@@ -77,10 +77,10 @@ void Hydro::AddGravityFlux(void)
             gzl = 0.25*((phi(k-1,j-1,i) - phi(k+1,j-1,i)) +
                         (phi(k-1,j  ,i) - phi(k+1,j  ,i)))/dx3;
           }
-          // momentum fluxes in x2-dir. 
+          // momentum fluxes in x2-dir.
           // 2nd term is needed only if Jean's swindle used
           x2flux(IM1,k,j,i) += gyl*gxl/four_pi_G;
-          x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G 
+          x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G
                             +  grav_mean_rho*phil;
           x2flux(IM3,k,j,i) += gyl*gzl/four_pi_G;
           // energy source term is included as a source term separately
@@ -95,7 +95,7 @@ void Hydro::AddGravityFlux(void)
       Real dx3 = pco->dx3v(k);
       for (int j=js; j<=je; ++j) {
         Real dx2 = pco->dx2v(j);
-        for(int i=is; i<=ie; i++) { 
+        for(int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
           phil = 0.5*(phi(k-1,j,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x3-faces
@@ -108,7 +108,7 @@ void Hydro::AddGravityFlux(void)
           // 2nd term is needed only if Jean's swindle used
           x3flux(IM1,k,j,i) += gzl*gxl/four_pi_G;
           x3flux(IM2,k,j,i) += gzl*gyl/four_pi_G;
-          x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G 
+          x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G
                             +  grav_mean_rho*phil;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
@@ -121,7 +121,7 @@ void Hydro::AddGravityFlux(void)
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFluxWithGflx(void)
-//  \brief Adds gravity flux to hydro flux using pre-calculated gflx. 
+//  \brief Adds gravity flux to hydro flux using pre-calculated gflx.
 //         Implemented for one poisson solver call. (old Athena style)
 
 void Hydro::AddGravityFluxWithGflx(void)
@@ -163,7 +163,7 @@ void Hydro::AddGravityFluxWithGflx(void)
 //! \fn void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 //  \brief Calcuates gravity flux to hydro flux
 //         Implemented for one poisson solver call. (old Athena style)
-  
+
 void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 {
   MeshBlock *pmb=pmy_block;
@@ -198,7 +198,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
   }
 
   gxl = 0.0, gyl = 0.0, gzl = 0.0;
-  for (int k=kl; k<=ku; ++k){ 
+  for (int k=kl; k<=ku; ++k){
     for (int j=jl; j<=ju; ++j){
       for (int i=is; i<=ie+1; ++i){
         Real dx1 = pco->dx1v(i);
@@ -219,9 +219,9 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
         x1gflx_old(IM1,k,j,i) = x1gflx(IM1,k,j,i);
         x1gflx_old(IM2,k,j,i) = x1gflx(IM2,k,j,i);
         x1gflx_old(IM3,k,j,i) = x1gflx(IM3,k,j,i);
-        // momentum fluxes in x1-dir. 
+        // momentum fluxes in x1-dir.
         // 2nd term is needed only if Jean's swindle used
-        x1gflx(IM1,k,j,i) = 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G 
+        x1gflx(IM1,k,j,i) = 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G
                           + grav_mean_rho*phil;
         x1gflx(IM2,k,j,i) = gxl*gyl/four_pi_G;
         x1gflx(IM3,k,j,i) = gxl*gzl/four_pi_G;
@@ -229,7 +229,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
         // see hydro/srctrm/gravity.cpp
       }
     }
-  } 
+  }
 //----------------------------------------------------------------------------------------
 // j-direction
 
@@ -245,7 +245,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
     }
     for (int k=kl; k<=ku; ++k){
       for (int j=js; j<=je+1; ++j){
-        for(int i=il; i<=iu; i++) { 
+        for(int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);
@@ -263,10 +263,10 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
           x2gflx_old(IM1,k,j,i) = x2gflx(IM1,k,j,i);
           x2gflx_old(IM2,k,j,i) = x2gflx(IM2,k,j,i);
           x2gflx_old(IM3,k,j,i) = x2gflx(IM3,k,j,i);
-          // momentum fluxes in x2-dir. 
+          // momentum fluxes in x2-dir.
           // 2nd term is needed only if Jean's swindle used
           x2gflx(IM1,k,j,i) = gyl*gxl/four_pi_G;
-          x2gflx(IM2,k,j,i) = 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G 
+          x2gflx(IM2,k,j,i) = 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G
                             + grav_mean_rho*phil;
           x2gflx(IM3,k,j,i) = gyl*gzl/four_pi_G;
           // energy source term is included as a source term separately
@@ -276,7 +276,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
     }
   } // 2D or 3D
 //----------------------------------------------------------------------------------------
-// k-direction 
+// k-direction
 
   gxl = 0.0, gyl = 0.0, gzl = 0.0;
   if (pmb->block_size.nx3 > 1) {
@@ -287,7 +287,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 
     for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
-        for(int i=il; i<=iu; i++) { 
+        for(int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);
@@ -308,7 +308,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
           // 2nd term is needed only if Jean's swindle used
           x3gflx(IM1,k,j,i) = gzl*gxl/four_pi_G;
           x3gflx(IM2,k,j,i) = gzl*gyl/four_pi_G;
-          x3gflx(IM3,k,j,i) = 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G 
+          x3gflx(IM3,k,j,i) = 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G
                             + grav_mean_rho*phil;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
@@ -324,7 +324,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 //! \fn void Hydro::CorrectGravityFlux(void)
 //  \brief Correct the fluxes using the updated gravitational fluxes
 //         Implemented for one poisson solver call. (old Athena style)
-  
+
 void Hydro::CorrectGravityFlux(void)
 {
   MeshBlock *pmb=pmy_block;
@@ -347,7 +347,7 @@ void Hydro::CorrectGravityFlux(void)
   dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
-  for (int k=ks; k<=ke; ++k) { 
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);

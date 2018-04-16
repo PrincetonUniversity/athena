@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -33,9 +33,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -88,7 +88,7 @@ void remap_2d(double *in, double *out, double *buf,
 	       plan->sendbuf,&plan->packplan[isend]);
     MPI_Send(plan->sendbuf,plan->send_size[isend],MPI_DOUBLE,
 	     plan->send_proc[isend],0,plan->comm);
-  }       
+  }
 
 /* copy in -> scratch -> out for self data */
 
@@ -210,10 +210,10 @@ struct remap_plan_2d *remap_2d_create_plan(
     plan->send_offset = (int *) malloc(nsend*sizeof(int));
     plan->send_size = (int *) malloc(nsend*sizeof(int));
     plan->send_proc = (int *) malloc(nsend*sizeof(int));
-    plan->packplan = (struct pack_plan_2d *) 
+    plan->packplan = (struct pack_plan_2d *)
       malloc(nsend*sizeof(struct pack_plan_2d));
 
-    if (plan->send_offset == NULL || plan->send_size == NULL || 
+    if (plan->send_offset == NULL || plan->send_size == NULL ||
 	plan->send_proc == NULL || plan->packplan == NULL) return NULL;
   }
 
@@ -226,7 +226,7 @@ struct remap_plan_2d *remap_2d_create_plan(
     if (iproc == nprocs) iproc = 0;
     if (remap_2d_collide(&in,&array[iproc],&overlap)) {
       plan->send_proc[nsend] = iproc;
-      plan->send_offset[nsend] = nqty * ((overlap.jlo-in.jlo)*in.isize + 
+      plan->send_offset[nsend] = nqty * ((overlap.jlo-in.jlo)*in.isize +
 					(overlap.ilo-in.ilo));
       plan->packplan[nsend].nfast = nqty*overlap.isize;
       plan->packplan[nsend].nslow = overlap.jsize;
@@ -258,7 +258,7 @@ struct remap_plan_2d *remap_2d_create_plan(
     if (iproc == nprocs) iproc = 0;
     nrecv += remap_2d_collide(&out,&array[iproc],&overlap);
   }
-  
+
 /* malloc space for recv info */
 
   if (nrecv) {
@@ -288,10 +288,10 @@ struct remap_plan_2d *remap_2d_create_plan(
     plan->recv_proc = (int *) malloc(nrecv*sizeof(int));
     plan->recv_bufloc = (int *) malloc(nrecv*sizeof(int));
     plan->request = (MPI_Request *) malloc(nrecv*sizeof(MPI_Request));
-    plan->unpackplan = (struct pack_plan_2d *) 
+    plan->unpackplan = (struct pack_plan_2d *)
       malloc(nrecv*sizeof(struct pack_plan_2d));
 
-    if (plan->recv_offset == NULL || plan->recv_size == NULL || 
+    if (plan->recv_offset == NULL || plan->recv_size == NULL ||
 	plan->recv_proc == NULL || plan->recv_bufloc == NULL ||
 	plan->request == NULL || plan->unpackplan == NULL) return NULL;
   }
@@ -310,7 +310,7 @@ struct remap_plan_2d *remap_2d_create_plan(
       plan->recv_bufloc[nrecv] = ibuf;
 
       if (permute == 0) {
-	plan->recv_offset[nrecv] = nqty * ((overlap.jlo-out.jlo)*out.isize + 
+	plan->recv_offset[nrecv] = nqty * ((overlap.jlo-out.jlo)*out.isize +
 					  (overlap.ilo-out.ilo));
 	plan->unpackplan[nrecv].nfast = nqty*overlap.isize;
 	plan->unpackplan[nrecv].nslow = overlap.jsize;
@@ -318,7 +318,7 @@ struct remap_plan_2d *remap_2d_create_plan(
 	plan->unpackplan[nrecv].nqty = nqty;
       }
       else {
-	plan->recv_offset[nrecv] = nqty * ((overlap.ilo-out.ilo)*out.jsize + 
+	plan->recv_offset[nrecv] = nqty * ((overlap.ilo-out.ilo)*out.jsize +
 					  (overlap.jlo-out.jlo));
 	plan->unpackplan[nrecv].nfast = overlap.isize;
 	plan->unpackplan[nrecv].nslow = overlap.jsize;
@@ -448,7 +448,7 @@ int remap_2d_collide(struct extent_2d *block1, struct extent_2d *block2,
   overlap->ihi = MIN(block1->ihi,block2->ihi);
   overlap->jlo = MAX(block1->jlo,block2->jlo);
   overlap->jhi = MIN(block1->jhi,block2->jhi);
-  
+
   if (overlap->ilo > overlap->ihi || overlap->jlo > overlap->jhi) return 0;
 
   overlap->isize = overlap->ihi - overlap->ilo + 1;

@@ -17,11 +17,11 @@
 //                     # blank lines are OK
 //   # my comment here   comment lines are OK
 //   # name3 = value3    values (and blocks) that are commented out are ignored
-//    
+//
 //   <blockname2>      # start new block
 //   name1 = value1    # note that same parameter names can appear in different blocks
 //   name2 = value2    # empty lines (like following) are OK
-// 
+//
 //   <blockname1>      # same blockname can re-appear, although NOT recommended
 //   name3 = value3    # this would be the 3rd parameter name in blockname1
 //   name1 = value4    # if parameter name is repeated, previous value is overwritten!
@@ -92,7 +92,7 @@ InputBlock::InputBlock()
 {
 }
 
-// destructor 
+// destructor
 
 InputBlock::~InputBlock()
 {
@@ -128,7 +128,7 @@ void ParameterInput::LoadFromStream(std::istream &is)
 
     if (line.compare(first_char,1,"<") == 0) {              // a new block
       first_char++;
-      last_char = (line.find_first_of(">",first_char));       
+      last_char = (line.find_first_of(">",first_char));
       block_name.assign(line,first_char,last_char-1);       // extract block name
 
       if (last_char == std::string::npos) {
@@ -169,7 +169,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
   char *buf=new char[bufsize];
   IOWrapperSize_t header=0, ret, loc;
 
-  // search <par_end> or EOF. 
+  // search <par_end> or EOF.
   do {
     if(Globals::my_rank==0) // only the master process reads the header from the file
       ret=input.Read(buf, sizeof(char), bufsize);
@@ -217,7 +217,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 
   // Search linked list of InputBlocks to see if name exists, return if found.
   while (pib != NULL) {
-    if (name.compare(pib->block_name) == 0) return pib;    
+    if (name.compare(pib->block_name) == 0) return pib;
     plast = pib;
     pib = pib->pnext;
   }
@@ -241,7 +241,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 //           std::string& name, std::string& value, std::string& comment)
-//  \brief parse "name = value # comment" format, return name/value/comment strings. 
+//  \brief parse "name = value # comment" format, return name/value/comment strings.
 
 void ParameterInput::ParseLine(InputBlock *pib, std::string line,
      std::string& name, std::string& value, std::string& comment)
@@ -261,7 +261,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 
   // copy substring into value, remove white space at start and end
   len = hash_char - equal_char - 1;
-  value.assign(line,equal_char+1,len);      
+  value.assign(line,equal_char+1,len);
 
   first_char = value.find_first_not_of(" ");
   value.erase(0,first_char);
@@ -278,13 +278,13 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::AddParameter(InputBlock *pb, std::string name, 
+//! \fn void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 //   std::string value, std::string comment)
-//  \brief add name/value/comment tuple to the InputLine linked list in block *pb.  
+//  \brief add name/value/comment tuple to the InputLine linked list in block *pb.
 //  If a parameter with the same name already exists, the value and comment strings
 //  are replaced (overwritten).
 
-void ParameterInput::AddParameter(InputBlock *pb, std::string name, 
+void ParameterInput::AddParameter(InputBlock *pb, std::string name,
      std::string value, std::string comment)
 {
   InputLine *pl, *plast;
@@ -345,7 +345,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 
     // skip if either "/" or "=" do not exist in input
     if ((slash_posn==std::string::npos) || (equal_posn==std::string::npos)) continue;
-    
+
     // extract block/name/value strings
     block = input_text.substr(0,slash_posn);
     name  = input_text.substr(slash_posn+1,(equal_posn - slash_posn - 1));
@@ -354,7 +354,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
     // get pointer to node with same block name in linked list of InputBlocks
     pb = GetPtrToBlock(block);
     if (pb == NULL) {
-      msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]" 
+      msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Block name '" << block << "' on command line not found";
       throw std::runtime_error(msg.str().c_str());
     }
@@ -363,32 +363,32 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
     pl = pb->GetPtrToLine(name);
     if (pl == NULL) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
-          << std::endl << "Parameter '" << name << "' in block '" << block 
+          << std::endl << "Parameter '" << name << "' in block '" << block
           << "' on command line not found";
       throw std::runtime_error(msg.str().c_str());
     }
     pl->param_value.assign(value);   // replace existing value
     if(value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
-     
+
   }
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn InputBlock* ParameterInput::GetPtrToBlock(std::string name)
-//  \brief return pointer to specified InputBlock if it exists 
+//  \brief return pointer to specified InputBlock if it exists
 
 InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 {
   InputBlock *pb;
   for (pb = pfirst_block; pb != NULL; pb = pb->pnext){
-    if (name.compare(pb->block_name) == 0) return pb;    
+    if (name.compare(pb->block_name) == 0) return pb;
   }
   return NULL;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::DoesParameterExist(std::string block, std::string name)
-//  \brief check whether parameter of given name in given block exists 
+//  \brief check whether parameter of given name in given block exists
 
 int ParameterInput::DoesParameterExist(std::string block, std::string name)
 {
@@ -402,7 +402,7 @@ int ParameterInput::DoesParameterExist(std::string block, std::string name)
 
 //----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::GetInteger(std::string block, std::string name)
-//  \brief returns integer value of string stored in block/name 
+//  \brief returns integer value of string stored in block/name
 
 int ParameterInput::GetInteger(std::string block, std::string name)
 {
@@ -424,7 +424,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
   // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl 
+    msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     throw std::runtime_error(msg.str().c_str());
   }
@@ -667,12 +667,12 @@ bool ParameterInput::SetBoolean(std::string block, std::string name, bool value)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
+//! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name,
 //std::string def_value)
 //  \brief returns string value stored in block/name if it exists, or creates and sets
 //  value to def_value if it does not exist
 
-std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
+std::string ParameterInput::GetOrAddString(std::string block, std::string name,
   std::string def_value)
 {
   InputBlock* pb;
@@ -713,7 +713,7 @@ void ParameterInput::ParameterDump(std::ostream& os)
       os<< param_name << "= " << param_value << pl->param_comment <<  std::endl;
     }
   }
-  
+
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
   os<< "<par_end>" << std::endl;    // finish with par-end (useful in restart files)
 }
@@ -725,7 +725,7 @@ void ParameterInput::ParameterDump(std::ostream& os)
 InputLine* InputBlock::GetPtrToLine(std::string name)
 {
   for(InputLine* pl = pline; pl != NULL; pl = pl->pnext){
-    if (name.compare(pl->param_name) == 0) return pl;    
+    if (name.compare(pl->param_name) == 0) return pl;
   }
   return NULL;
 }

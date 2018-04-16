@@ -15,7 +15,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX1()
-//  \brief 
+//  \brief
 
 void Reconstruction::DonorCellX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
@@ -54,7 +54,7 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb,
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX2()
-//  \brief 
+//  \brief
 
 void Reconstruction::DonorCellX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
@@ -93,7 +93,7 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb,
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX3()
-//  \brief 
+//  \brief
 
 void Reconstruction::DonorCellX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,

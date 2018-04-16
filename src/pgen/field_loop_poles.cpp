@@ -5,7 +5,7 @@
 //========================================================================================
 //! \file field_loop_poles.c
 //  \brief Advection of a field loop THROUGH the poles in spherical_polar coordinates.
-// 
+//
 //  Originally developed by ZZ.  Sets up constant uniform-density flow in x-direction
 //  through poles, and follows advection of loop.  Set xz>0 (xz<0) for loop through
 //  upper (lower) pole.  Works in 2D and 3D.
@@ -132,7 +132,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     area.NewAthenaArray(nx1);
     len.NewAthenaArray(nx1);
     len_p1.NewAthenaArray(nx1);
- 
+
     // for 1,2,3-D
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
@@ -254,7 +254,7 @@ static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
   v2 = vy0*cos(x2)*sin(x3);
   v3 = vy0*cos(x3);
   return;
-} 
+}
 
 //----------------------------------------------------------------------------------------
 //! \f compute 3-compnent of vector potential
@@ -318,7 +318,7 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=1; i<=(NGHOST); ++i) {
-        prim(IDN,k,j,is-i) = rho0; 
+        prim(IDN,k,j,is-i) = rho0;
         VelProfileCyl(pco->x1v(is-i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
         prim(IM1,k,j,is-i) = v1;
         prim(IM2,k,j,is-i) = v2;
@@ -367,7 +367,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=1; i<=(NGHOST); ++i) {
-        prim(IDN,k,j,ie+i) = rho0; 
+        prim(IDN,k,j,ie+i) = rho0;
         VelProfileCyl(pco->x1v(ie+i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
         prim(IM1,k,j,ie+i) = v1;
         prim(IM2,k,j,ie+i) = v2;
@@ -387,7 +387,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       }
     }}
 
-    for (int k=ks; k<=ke; ++k) { 
+    for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
@@ -416,7 +416,7 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
       for (int i=is; i<=ie; ++i) {
-        prim(IDN,k,js-j,i) = rho0; 
+        prim(IDN,k,js-j,i) = rho0;
         VelProfileCyl(pco->x1v(i),pco->x2v(js-j),pco->x3v(k),v1,v2,v3);
         prim(IM1,k,js-j,i) = v1;
         prim(IM2,k,js-j,i) = v2;
@@ -465,7 +465,7 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
       for (int i=is; i<=ie; ++i) {
-        prim(IDN,k,je+j,i) = rho0; 
+        prim(IDN,k,je+j,i) = rho0;
         VelProfileCyl(pco->x1v(i),pco->x2v(je+j),pco->x3v(k),v1,v2,v3);
         prim(IM1,k,je+j,i) = v1;
         prim(IM2,k,je+j,i) = v2;

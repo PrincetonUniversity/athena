@@ -75,7 +75,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   }
   pres = pin->GetReal("problem","pres");
   den = 1.0;
-  
+
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
@@ -84,11 +84,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
-  
+
   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-  sin_a2 = sin(ang_2); 
+  sin_a2 = sin(ang_2);
   cos_a2 = cos(ang_2);
-  
+
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
@@ -128,13 +128,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                        + pmb->pcoord->x3v(k)*sin_a2;
         Real sn = sin(k_par*x);
         Real cs = fac*cos(k_par*x);
-  
+
         err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
-  
+
         Real mx = den*v_par;
         Real my = -fac*den*v_perp*sn;
         Real mz = -fac*den*v_perp*cs;
@@ -144,7 +144,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
         err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
         err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
-  
+
         Real bx = b_par;
         Real by = b_perp*sn;
         Real bz = b_perp*cs;
@@ -252,7 +252,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
            || (pbval->nblevel[1][1][2]>level && i==ie+1)
            || (pbval->nblevel[0][1][1]>level && k==ks)
            || (pbval->nblevel[2][1][1]>level && k==ke+1)
-           || (pbval->nblevel[0][1][0]>level && i==is   && k==ks) 
+           || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
            || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
            || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
            || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
@@ -268,7 +268,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
            || (pbval->nblevel[1][1][2]>level && i==ie+1)
            || (pbval->nblevel[1][0][1]>level && j==js)
            || (pbval->nblevel[1][2][1]>level && j==je+1)
-           || (pbval->nblevel[1][0][0]>level && i==is   && j==js) 
+           || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
            || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
            || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
            || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
@@ -348,7 +348,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IEN,k,j,i) = pres/gm1 +
           0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
                SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + 
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) +
           (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
                      SQR(phydro->u(IM3,k,j,i)));
       }

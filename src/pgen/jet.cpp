@@ -61,7 +61,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   r_jet = pin->GetReal("problem", "rjet");
   x2_0 = 0.5*(mesh_size.x2max + mesh_size.x2min);
   x3_0 = 0.5*(mesh_size.x3max + mesh_size.x3min);
-   
+
   // enroll boundary value function pointers
   EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
   return;

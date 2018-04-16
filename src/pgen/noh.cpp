@@ -90,7 +90,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, 
+void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -98,7 +98,7 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int i=1;  i<=(NGHOST); ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)) 
+        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j))
               + SQR(pco->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
@@ -106,7 +106,7 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
         f_t = (1.0 + pmb->pmy_mesh->time/rad);
       }
       Real d0 = 1.0*f_t;
-   
+
       prim(IDN,k,j,ie+i)  = d0;
       prim(IVX,k,j,ie+i) = -pco->x1v(ie+i)/rad;
       prim(IVY,k,j,ie+i) = -pco->x2v(j   )/rad;
@@ -135,7 +135,7 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int i=is; i<=ie; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)) 
+        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j))
               + SQR(pco->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
@@ -164,13 +164,13 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, 
+void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) 
+      Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j))
               + SQR(pco->x3v(ke+k)));
       Real f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       Real d0 = 1.0*f_t;

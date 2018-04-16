@@ -20,13 +20,13 @@
 //  variables.  The result is returned in the input vector, with the components of the
 //  characteristic field stored such that vect(1,i) is in the direction of the sweep.
 //
-//  The order of the components in the input vector should be: 
+//  The order of the components in the input vector should be:
 //     (IDN,IVX,IVY,IVZ,[IPR],[IBY,IBZ])
 //  and these are permuted according to the direction specified by the input flag "ivx".
 //
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
-//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper. 
+//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
@@ -97,31 +97,31 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real as_prime = 0.5*alpha_s/(a*sqrtd);
 
         // Multiply row of L-eigenmatrix with vector using matrix elements from eq. A18
-        Real v_0 = nf*alpha_f*(vect(IPR,i)*id - cf*vect(ivx,i)) + 
+        Real v_0 = nf*alpha_f*(vect(IPR,i)*id - cf*vect(ivx,i)) +
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_1 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd + vect(ivz,i)) - 
+        Real v_1 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd + vect(ivz,i)) -
                         bet3*(vect(IBY,i)*s*isqrtd + vect(ivy,i)));
-        Real v_2 = nf*alpha_s*(vect(IPR,i)*id - cs*vect(ivx,i)) - 
+        Real v_2 = nf*alpha_s*(vect(IPR,i)*id - cs*vect(ivx,i)) -
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_3 = vect(IDN,i) - vect(IPR,i)/asq; 
-        Real v_4 = nf*alpha_s*(vect(IPR,i)*id + cs*vect(ivx,i)) + 
+        Real v_3 = vect(IDN,i) - vect(IPR,i)/asq;
+        Real v_4 = nf*alpha_s*(vect(IPR,i)*id + cs*vect(ivx,i)) +
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_5 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) - 
+        Real v_5 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) -
                         bet3*(vect(IBY,i)*s*isqrtd - vect(ivy,i)));
-        Real v_6 = nf*alpha_f*(vect(IPR,i)*id + cf*vect(ivx,i)) - 
+        Real v_6 = nf*alpha_f*(vect(IPR,i)*id + cf*vect(ivx,i)) -
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
 
-        vect(0,i) = v_0; 
-        vect(1,i) = v_1; 
-        vect(2,i) = v_2; 
-        vect(3,i) = v_3; 
-        vect(4,i) = v_4; 
-        vect(5,i) = v_5; 
-        vect(6,i) = v_6; 
+        vect(0,i) = v_0;
+        vect(1,i) = v_1;
+        vect(2,i) = v_2;
+        vect(3,i) = v_3;
+        vect(4,i) = v_4;
+        vect(5,i) = v_5;
+        vect(6,i) = v_6;
       }
 
     // Isothermal MHD --------------------------------------------------------------------
@@ -181,29 +181,29 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real as_prime = 0.5*alpha_s/(iso_cs*sqrtd);
 
         // Multiply row of L-eigenmatrix with vector using matrix elements from eq. A22
-        Real v_0 = 0.5*alpha_f*(vect(IDN,i)*id - cf*vect(ivx,i)/iso_cs2) + 
+        Real v_0 = 0.5*alpha_f*(vect(IDN,i)*id - cf*vect(ivx,i)/iso_cs2) +
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_1 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd + vect(ivz,i)) - 
+        Real v_1 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd + vect(ivz,i)) -
                         bet3*(vect(IBY,i)*s*isqrtd + vect(ivy,i)));
-        Real v_2 = 0.5*alpha_s*(vect(IDN,i)*id - cs*vect(ivx,i)/iso_cs2) - 
+        Real v_2 = 0.5*alpha_s*(vect(IDN,i)*id - cs*vect(ivx,i)/iso_cs2) -
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_3 = 0.5*alpha_s*(vect(IDN,i)*id + cs*vect(ivx,i)/iso_cs2) + 
+        Real v_3 = 0.5*alpha_s*(vect(IDN,i)*id + cs*vect(ivx,i)/iso_cs2) +
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_4 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) - 
+        Real v_4 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) -
                         bet3*(vect(IBY,i)*s*isqrtd - vect(ivy,i)));
-        Real v_5 = 0.5*alpha_f*(vect(IDN,i)*id + cf*vect(ivx,i)/iso_cs2) - 
+        Real v_5 = 0.5*alpha_f*(vect(IDN,i)*id + cf*vect(ivx,i)/iso_cs2) -
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
 
-        vect(0,i) = v_0; 
-        vect(1,i) = v_1; 
-        vect(2,i) = v_2; 
-        vect(3,i) = v_3; 
-        vect(4,i) = v_4; 
-        vect(5,i) = v_5; 
+        vect(0,i) = v_0;
+        vect(1,i) = v_1;
+        vect(2,i) = v_2;
+        vect(3,i) = v_3;
+        vect(4,i) = v_4;
+        vect(5,i) = v_5;
       }
     }
 
@@ -215,7 +215,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IPR,i)/w(IDN,i);
         Real a   = sqrt(asq);
-  
+
         // Multiply row of L-eigenmatrix with vector using matrix elements from eq. A4
         Real v_0 = 0.5*(vect(IPR,i)/asq - w(IDN,i)*vect(ivx,i)/a);
         Real v_1 = vect(IDN,i) - vect(IPR,i)/asq;
@@ -223,11 +223,11 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real v_3 = vect(ivz,i);
         Real v_4 = 0.5*(vect(IPR,i)/asq + w(IDN,i)*vect(ivx,i)/a);
 
-        vect(0,i) = v_0; 
-        vect(1,i) = v_1; 
-        vect(2,i) = v_2; 
-        vect(3,i) = v_3; 
-        vect(4,i) = v_4; 
+        vect(0,i) = v_0;
+        vect(1,i) = v_1;
+        vect(2,i) = v_2;
+        vect(3,i) = v_3;
+        vect(4,i) = v_4;
       }
 
     // Isothermal hydrodynamics ----------------------------------------------------------
@@ -241,10 +241,10 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real v_2 = vect(ivz,i);
         Real v_3 = 0.5*(vect(IDN,i) + w(IDN,i)*vect(ivx,i)/iso_cs);
 
-        vect(0,i) = v_0; 
-        vect(1,i) = v_1; 
-        vect(2,i) = v_2; 
-        vect(3,i) = v_3; 
+        vect(0,i) = v_0;
+        vect(1,i) = v_1;
+        vect(2,i) = v_2;
+        vect(3,i) = v_3;
       }
     }
   }
@@ -257,7 +257,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 //  variables and an input vector.  This operation converts characteristic to primitive
 //  variables.  The result is returned in the input vector.
 //
-//  The order of the components in the input vector (characteristic fields) should be: 
+//  The order of the components in the input vector (characteristic fields) should be:
 //     (IDN,ivx,ivy,ivz,[IPR],[IBY,IBZ])
 //  where the lower-case indices indicate that the characteristic field in the direction
 //  of the sweep (designated by the input flag "ivx") is stored first.  On output, the
@@ -265,7 +265,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 //
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
-//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper. 
+//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
@@ -339,24 +339,24 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
                              alpha_s*(vect(2,i) + vect(4,i))) + vect(3,i);
         Real v_1 = cf*alpha_f*(vect(6,i)-vect(0,i)) + cs*alpha_s*(vect(4,i)-vect(2,i));
         Real v_2 = bet2*(qs*(vect(0,i) - vect(6,i)) + qf*(vect(4,i) - vect(2,i)))
-                 + bet3*(vect(5,i) - vect(1,i)); 
+                 + bet3*(vect(5,i) - vect(1,i));
         Real v_3 = bet3*(qs*(vect(0,i) - vect(6,i)) + qf*(vect(4,i) - vect(2,i)))
-                 + bet2*(vect(1,i) - vect(5,i)); 
+                 + bet2*(vect(1,i) - vect(5,i));
         Real v_4 = w(IDN,i)*asq*(alpha_f*(vect(0,i) + vect(6,i)) +
-                                 alpha_s*(vect(2,i) + vect(4,i))); 
+                                 alpha_s*(vect(2,i) + vect(4,i)));
         Real v_5 = bet2*(as*(vect(0,i) + vect(6,i)) - af*(vect(2,i) + vect(4,i)))
-                 - bet3*s*sqrtd*(vect(5,i) + vect(1,i)); 
+                 - bet3*s*sqrtd*(vect(5,i) + vect(1,i));
         Real v_6 = bet3*(as*(vect(0,i) + vect(6,i)) - af*(vect(2,i) + vect(4,i)))
-                 + bet2*s*sqrtd*(vect(5,i) + vect(1,i)); 
+                 + bet2*s*sqrtd*(vect(5,i) + vect(1,i));
 
         // Permute components back into standard order for primitives on output
-        vect(IDN,i) = v_0; 
-        vect(ivx,i) = v_1; 
-        vect(ivy,i) = v_2; 
-        vect(ivz,i) = v_3; 
-        vect(IPR,i) = v_4; 
-        vect(IBY,i) = v_5; 
-        vect(IBZ,i) = v_6; 
+        vect(IDN,i) = v_0;
+        vect(ivx,i) = v_1;
+        vect(ivy,i) = v_2;
+        vect(ivz,i) = v_3;
+        vect(IPR,i) = v_4;
+        vect(IBY,i) = v_5;
+        vect(IBZ,i) = v_6;
       }
 
     // Isothermal MHD --------------------------------------------------------------------
@@ -420,21 +420,21 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
                              alpha_s*(vect(2,i) + vect(3,i)));
         Real v_1 = cf*alpha_f*(vect(5,i) - vect(0,i)) + cs*alpha_s*(vect(3,i)-vect(2,i));
         Real v_2 = bet2*(qs*(vect(0,i) - vect(5,i)) + qf*(vect(3,i) - vect(2,i)))
-                 + bet3*(vect(4,i) - vect(1,i)); 
+                 + bet3*(vect(4,i) - vect(1,i));
         Real v_3 = bet3*(qs*(vect(0,i) - vect(5,i)) + qf*(vect(3,i) - vect(2,i)))
-                 + bet2*(vect(1,i) - vect(4,i)); 
+                 + bet2*(vect(1,i) - vect(4,i));
         Real v_4 = bet2*(as*(vect(0,i) + vect(5,i)) - af*(vect(2,i) + vect(3,i)))
-                 - bet3*s*sqrtd*(vect(4,i) + vect(1,i)); 
+                 - bet3*s*sqrtd*(vect(4,i) + vect(1,i));
         Real v_5 = bet3*(as*(vect(0,i) + vect(5,i)) - af*(vect(2,i) + vect(3,i)))
-                 + bet2*s*sqrtd*(vect(4,i) + vect(1,i)); 
+                 + bet2*s*sqrtd*(vect(4,i) + vect(1,i));
 
         // Permute components back into standard order for primitives on output
-        vect(IDN,i) = v_0; 
-        vect(ivx,i) = v_1; 
-        vect(ivy,i) = v_2; 
-        vect(ivz,i) = v_3; 
-        vect(IBY,i) = v_4; 
-        vect(IBZ,i) = v_5; 
+        vect(IDN,i) = v_0;
+        vect(ivx,i) = v_1;
+        vect(ivy,i) = v_2;
+        vect(ivz,i) = v_3;
+        vect(IBY,i) = v_4;
+        vect(IBZ,i) = v_5;
       }
 
     }
@@ -457,11 +457,11 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real v_4 = asq*(vect(0,i) + vect(4,i));
 
         // Permute components back into standard order for primitives on output
-        vect(IDN,i) = v_0; 
-        vect(ivx,i) = v_1; 
-        vect(ivy,i) = v_2; 
-        vect(ivz,i) = v_3; 
-        vect(IPR,i) = v_4; 
+        vect(IDN,i) = v_0;
+        vect(ivx,i) = v_1;
+        vect(ivy,i) = v_2;
+        vect(ivz,i) = v_3;
+        vect(IPR,i) = v_4;
       }
 
     // Isothermal hydrodynamics ----------------------------------------------------------
@@ -475,12 +475,12 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real v_1 = iso_cs*(vect(3,i) - vect(0,i))/w(IDN,i);
         Real v_2 = vect(1,i);
         Real v_3 = vect(2,i);
-  
+
         // Permute components back into standard order for primitives on output
-        vect(IDN,i) = v_0; 
-        vect(ivx,i) = v_1; 
-        vect(ivy,i) = v_2; 
-        vect(ivz,i) = v_3; 
+        vect(IDN,i) = v_0;
+        vect(ivx,i) = v_1;
+        vect(ivy,i) = v_2;
+        vect(ivz,i) = v_3;
       }
     }
   }

@@ -65,7 +65,7 @@ void FFTGravityDriver::Solve(int step, int mode)
 {
   FFTBlock *pfb=pmy_fb;
   AthenaArray<Real> in;
-  // Load the source 
+  // Load the source
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   for(int igid=nbs;igid<=nbe;igid++){
@@ -86,7 +86,7 @@ void FFTGravityDriver::Solve(int step, int mode)
   for(int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if(pmb!=NULL) {
-      pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST, 
+      pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
                           pmb->loc, pmb->block_size);
     }
 //    else { // on another process

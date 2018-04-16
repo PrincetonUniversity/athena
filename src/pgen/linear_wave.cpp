@@ -169,15 +169,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                        + pmb->pcoord->x3v(k)*sin_a2;
         Real sn = sin(k_par*x);
         Real vol = pmb->pcoord->GetCellVolume(k, j, i);
-  
+
         Real d1 = d0 + amp*sn*rem[0][wave_flag];
         l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
         max_err[IDN] = std::max((Real)fabs(d1 - pmb->phydro->u(IDN,k,j,i)),max_err[IDN]);
-  
+
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
         Real my = amp*sn*rem[2][wave_flag];
         Real mz = amp*sn*rem[3][wave_flag];
@@ -190,7 +190,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         max_err[IM1] = std::max((Real)fabs(m1 - pmb->phydro->u(IM1,k,j,i)),max_err[IM1]);
         max_err[IM2] = std::max((Real)fabs(m2 - pmb->phydro->u(IM2,k,j,i)),max_err[IM2]);
         max_err[IM3] = std::max((Real)fabs(m3 - pmb->phydro->u(IM3,k,j,i)),max_err[IM3]);
-  
+
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -504,7 +504,7 @@ static Real A3(const Real x1, const Real x2, const Real x3)
 
 //----------------------------------------------------------------------------------------
 //! \fn static void Eigensystem()
-//  \brief computes eigenvectors of linear waves 
+//  \brief computes eigenvectors of linear waves
 
 static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
   const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
@@ -592,10 +592,10 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       eigenvalues[4] = v1 + cs;
       eigenvalues[5] = v1 + vax;
       eigenvalues[6] = v1 + cf;
-  
+
       // Right-eigenvectors, stored as COLUMNS (eq. B21) */
       right_eigenmatrix[0][0] = alpha_f;
-      right_eigenmatrix[0][1] = 0.0; 
+      right_eigenmatrix[0][1] = 0.0;
       right_eigenmatrix[0][2] = alpha_s;
       right_eigenmatrix[0][3] = 1.0;
       right_eigenmatrix[0][4] = alpha_s;
@@ -641,15 +641,15 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       right_eigenmatrix[4][4] = alpha_s*(hp + v1*cs) + qf*vbet - afpbb;
       right_eigenmatrix[4][5] = -right_eigenmatrix[4][1];
       right_eigenmatrix[4][6] = alpha_f*(hp + v1*cf) - qs*vbet + aspbb;
-    
+
       right_eigenmatrix[5][0] = as_prime*bet2_star;
       right_eigenmatrix[5][1] = -bet3*s*isqrtd;
       right_eigenmatrix[5][2] = -af_prime*bet2_star;
-      right_eigenmatrix[5][3] = 0.0; 
+      right_eigenmatrix[5][3] = 0.0;
       right_eigenmatrix[5][4] = right_eigenmatrix[5][2];
       right_eigenmatrix[5][5] = right_eigenmatrix[5][1];
       right_eigenmatrix[5][6] = right_eigenmatrix[5][0];
-  
+
       right_eigenmatrix[6][0] = as_prime*bet3_star;
       right_eigenmatrix[6][1] = bet2*s*isqrtd;
       right_eigenmatrix[6][2] = -af_prime*bet3_star;
@@ -669,7 +669,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       as = norm*as_prime*d;
       afpb = norm*af_prime*bt_star;
       aspb = norm*as_prime*bt_star;
-  
+
       // Normalize by (gamma-1)/2a^{2}: quantities denoted by \bar{f}
       norm *= gm1;
       alpha_f *= norm;
@@ -678,7 +678,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       q3_star = bet3_star/bet_starsq;
       vqstr = (v2*q2_star + v3*q3_star);
       norm *= 2.0;
-    
+
       left_eigenmatrix[0][0] = alpha_f*(vsq-hp) + cff*(cf+v1) - qs*vqstr - aspb;
       left_eigenmatrix[0][1] = -alpha_f*v1 - cff;
       left_eigenmatrix[0][2] = -alpha_f*v2 + qs*q2_star;
@@ -691,10 +691,10 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[1][1] = 0.0;
       left_eigenmatrix[1][2] = -0.5*bet3;
       left_eigenmatrix[1][3] = 0.5*bet2;
-      left_eigenmatrix[1][4] = 0.0; 
+      left_eigenmatrix[1][4] = 0.0;
       left_eigenmatrix[1][5] = -0.5*sqrtd*bet3*s;
       left_eigenmatrix[1][6] = 0.5*sqrtd*bet2*s;
-  
+
       left_eigenmatrix[2][0] = alpha_s*(vsq-hp) + css*(cs+v1) + qf*vqstr + afpb;
       left_eigenmatrix[2][1] = -alpha_s*v1 - css;
       left_eigenmatrix[2][2] = -alpha_s*v2 - qf*q2_star;
@@ -703,14 +703,14 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[2][5] = -af*q2_star - alpha_s*b2;
       left_eigenmatrix[2][6] = -af*q3_star - alpha_s*b3;
 
-      left_eigenmatrix[3][0] = 1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1); 
+      left_eigenmatrix[3][0] = 1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1);
       left_eigenmatrix[3][1] = norm*v1;
       left_eigenmatrix[3][2] = norm*v2;
       left_eigenmatrix[3][3] = norm*v3;
       left_eigenmatrix[3][4] = -norm;
       left_eigenmatrix[3][5] = norm*b2;
       left_eigenmatrix[3][6] = norm*b3;
-  
+
       left_eigenmatrix[4][0] = alpha_s*(vsq-hp) + css*(cs-v1) - qf*vqstr + afpb;
       left_eigenmatrix[4][1] = -alpha_s*v1 + css;
       left_eigenmatrix[4][2] = -alpha_s*v2 + qf*q2_star;
@@ -754,20 +754,20 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       tsum = vaxsq + ct2 + twid_csq;
       tdif = vaxsq + ct2 - twid_csq;
       cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
-    
+
       cfsq = 0.5*(tsum + cf2_cs2);
       cf = sqrt(cfsq);
-    
+
       cssq = twid_csq*vaxsq/cfsq;
       cs = sqrt(cssq);
-  
+
       // Compute beta's (eqs. A17, B28, B40)
       bt = sqrt(btsq);
       bt_star = sqrt(bt_starsq);
       if (bt == 0.0) {
         bet2 = 1.0;
         bet3 = 0.0;
-      } 
+      }
       else {
         bet2 = b2/bt;
         bet3 = b3/bt;
@@ -839,12 +839,12 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       right_eigenmatrix[5][3] = right_eigenmatrix[5][2];
 
       right_eigenmatrix[0][4] = 0.0;
-      right_eigenmatrix[1][4] = 0.0; 
+      right_eigenmatrix[1][4] = 0.0;
       right_eigenmatrix[2][4] = bet3;
       right_eigenmatrix[3][4] = -bet2;
       right_eigenmatrix[4][4] = right_eigenmatrix[4][1];
       right_eigenmatrix[5][4] = right_eigenmatrix[5][1];
-  
+
       right_eigenmatrix[0][5] = alpha_f;
       right_eigenmatrix[1][5] = alpha_f*(v1 + cf);
       right_eigenmatrix[2][5] = alpha_f*v2 - qs*bet2_star;
@@ -867,42 +867,42 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       q2_star = bet2_star/bet_starsq;
       q3_star = bet3_star/bet_starsq;
       vqstr = (v2*q2_star + v3*q3_star);
-  
+
       left_eigenmatrix[0][0] = cff*(cf+v1) - qs*vqstr - aspb;
       left_eigenmatrix[0][1] = -cff;
       left_eigenmatrix[0][2] = qs*q2_star;
       left_eigenmatrix[0][3] = qs*q3_star;
       left_eigenmatrix[0][4] = as*q2_star;
       left_eigenmatrix[0][5] = as*q3_star;
-  
+
       left_eigenmatrix[1][0] = 0.5*(v2*bet3 - v3*bet2);
       left_eigenmatrix[1][1] = 0.0;
       left_eigenmatrix[1][2] = -0.5*bet3;
       left_eigenmatrix[1][3] = 0.5*bet2;
       left_eigenmatrix[1][4] = -0.5*sqrtd*bet3*s;
       left_eigenmatrix[1][5] = 0.5*sqrtd*bet2*s;
-  
+
       left_eigenmatrix[2][0] = css*(cs+v1) + qf*vqstr + afpb;
       left_eigenmatrix[2][1] = -css;
       left_eigenmatrix[2][2] = -qf*q2_star;
       left_eigenmatrix[2][3] = -qf*q3_star;
       left_eigenmatrix[2][4] = -af*q2_star;
       left_eigenmatrix[2][5] = -af*q3_star;
-  
+
       left_eigenmatrix[3][0] = css*(cs-v1) - qf*vqstr + afpb;
       left_eigenmatrix[3][1] = css;
       left_eigenmatrix[3][2] = -left_eigenmatrix[2][2];
       left_eigenmatrix[3][3] = -left_eigenmatrix[2][3];
       left_eigenmatrix[3][4] = left_eigenmatrix[2][4];
       left_eigenmatrix[3][5] = left_eigenmatrix[2][5];
-  
+
       left_eigenmatrix[4][0] = -left_eigenmatrix[1][0];
       left_eigenmatrix[4][1] = 0.0;
       left_eigenmatrix[4][2] = -left_eigenmatrix[1][2];
       left_eigenmatrix[4][3] = -left_eigenmatrix[1][3];
       left_eigenmatrix[4][4] = left_eigenmatrix[1][4];
       left_eigenmatrix[4][5] = left_eigenmatrix[1][5];
-  
+
       left_eigenmatrix[5][0] = cff*(cf-v1) + qs*vqstr - aspb;
       left_eigenmatrix[5][1] = cff;
       left_eigenmatrix[5][2] = -left_eigenmatrix[0][2];
@@ -944,7 +944,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       right_eigenmatrix[2][2] = 0.0;
       right_eigenmatrix[3][2] = 1.0;
       right_eigenmatrix[4][2] = v3;
-    
+
       right_eigenmatrix[0][3] = 1.0;
       right_eigenmatrix[1][3] = v1;
       right_eigenmatrix[2][3] = v2;
@@ -976,7 +976,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[2][2] = 0.0;
       left_eigenmatrix[2][3] = 1.0;
       left_eigenmatrix[2][4] = 0.0;
-    
+
       Real qa = gm1/asq;
       left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;
       left_eigenmatrix[3][1] = qa*v1;

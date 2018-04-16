@@ -184,7 +184,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
     }
   }
   else { // 1D
-    int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks; 
+    int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks;
     for (int n=sn; n<=en; ++n) {
       pco->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
@@ -202,7 +202,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
 //      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 //  \brief restrict the x1 field data and set them into the coarse buffer
 
-void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine, 
+void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_block_;
@@ -244,7 +244,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
       }
     }
   }
-  else { // 1D - no restriction, just copy 
+  else { // 1D - no restriction, just copy
     for (int ci=csi; ci<=cei; ci++) {
       int i=(ci-pmb->cis)*2+pmb->is;
       coarse(csk,csj,ci)=fine(pmb->ks,pmb->js,i);
@@ -259,7 +259,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
 //      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 //  \brief restrict the x2 field data and set them into the coarse buffer
 
-void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine, 
+void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_block_;
@@ -316,7 +316,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
       }
     }
   }
-  else { // 1D 
+  else { // 1D
     int k=pmb->ks, j=pmb->js;
     pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -335,7 +335,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
 //      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 //  \brief restrict the x3 field data and set them into the coarse buffer
 
-void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine, 
+void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_block_;
@@ -377,7 +377,7 @@ void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
       }
     }
   }
-  else { // 1D 
+  else { // 1D
     int k=pmb->ks, j=pmb->js;
     pco->Face3Area(k, j, si, ei, sarea_x3_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -395,7 +395,7 @@ void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine,
 //! \fn void MeshRefinement::ProlongateCellCenteredValues(
 //        const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,,
 //        int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief Prolongate cell centered values 
+//  \brief Prolongate cell centered values
 
 void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coarse,
                      AthenaArray<Real> &fine, int sn, int en,
