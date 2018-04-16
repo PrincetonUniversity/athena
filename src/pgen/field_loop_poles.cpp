@@ -68,7 +68,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
   // Get parameters of initial pressure and cooling parameters
   isocs2=SQR(pin->GetReal("hydro","iso_sound_speed"));
-  if (NON_BAROTROPIC_EOS){
+  if (NON_BAROTROPIC_EOS) {
     gamma_gas = pin->GetReal("hydro","gamma");
   }
 
@@ -76,7 +76,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   xc = pin->GetOrAddReal("problem","xc",1.0);
   yc = pin->GetOrAddReal("problem","yc",0.0);
   zc = pin->GetOrAddReal("problem","zc",0.0);
-  if (MAGNETIC_FIELDS_ENABLED){
+  if (MAGNETIC_FIELDS_ENABLED) {
     beta = pin->GetReal("problem","beta");
     b0=sqrt(2.*isocs2*rho0/beta);
   }
@@ -108,7 +108,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real rad, phi, z;
   Real v1, v2, v3;
   // Set initial magnetic fields
-  if (MAGNETIC_FIELDS_ENABLED){
+  if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;
     int nx1 = (ie-is)+1 + 2*(NGHOST);
     int nx2 = (je-js)+1 + 2*(NGHOST);
@@ -225,12 +225,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
         phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
         phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-	if (NON_BAROTROPIC_EOS){
+	if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = isocs2*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
           phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))
                                       +SQR(phydro->u(IM2,k,j,i))
                                       +SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
-	  if (MAGNETIC_FIELDS_ENABLED){
+	  if (MAGNETIC_FIELDS_ENABLED) {
 	    phydro->u(IEN,k,j,i) +=
               0.5*(SQR(0.5*(pfield->b.x1f(k,j,i+1) + pfield->b.x1f(k,j,i)))
                  + SQR(0.5*(pfield->b.x2f(k,j+1,i) + pfield->b.x2f(k,j,i)))
@@ -274,12 +274,12 @@ static Real A2(const Real x1, const Real x2, const Real x3)
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
   Real y=x1*fabs(sin(x2))*sin(x3);
-  if (x2<0.0||x2>PI){
+  if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
   Real z=x1*cos(x2);
-  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
+  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
     az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a2=-az*fabs(sin(x2));
@@ -295,12 +295,12 @@ static Real A1(const Real x1, const Real x2, const Real x3)
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
   Real y=x1*fabs(sin(x2))*sin(x3);
-  if (x2<0.0||x2>PI){
+  if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
   Real z=x1*cos(x2);
-  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2){
+  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
     az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a1=az*cos(x2);

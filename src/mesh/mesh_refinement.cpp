@@ -850,10 +850,10 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
           Real Uxx = 0.0, Vyy = 0.0, Wzz = 0.0;
           Real Uxyz = 0.0, Vxyz = 0.0, Wxyz = 0.0;
 #pragma unroll
-          for (int jj=0; jj<2; jj++){
+          for (int jj=0; jj<2; jj++) {
             int js=2*jj-1, fjj=fj+jj, fjp=fj+2*jj;
 #pragma unroll
-            for (int ii=0; ii<2; ii++){
+            for (int ii=0; ii<2; ii++) {
               int is=2*ii-1, fii=fi+ii, fip=fi+2*ii;
               Uxx += is*(js*(fine.x2f(fk  ,fjp,fii)*sarea_x2_[0][2*jj](fii) +
                              fine.x2f(fk+1,fjp,fii)*sarea_x2_[1][2*jj](fii))

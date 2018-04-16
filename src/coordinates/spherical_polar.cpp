@@ -143,7 +143,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
 #pragma omp simd
-    for (int i=il-ng; i<=iu+ng; ++i){
+    for (int i=il-ng; i<=iu+ng; ++i) {
       Real rm = x1f(i  );
       Real rp = x1f(i+1);
       // R^2
@@ -167,7 +167,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     if (pmb->block_size.nx2 > 1) {
 #pragma omp simd
-      for (int j=jl-ng; j<=ju+ng; ++j){
+      for (int j=jl-ng; j<=ju+ng; ++j) {
         Real sm = fabs(sin(x2f(j  )));
         Real sp = fabs(sin(x2f(j+1)));
         Real cm = cos(x2f(j  ));
@@ -248,7 +248,7 @@ void SphericalPolar::Edge2Length(const int k, const int j, const int il, const i
   AthenaArray<Real> &len)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // length2 = r d(theta)
     len(i) = x1f(i)*dx2f(j);
   }
@@ -261,7 +261,7 @@ void SphericalPolar::Edge3Length(const int k, const int j, const int il, const i
   AthenaArray<Real> &len)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // length3 = r sin(theta) d(phi)
     len(i) = x1f(i)*coord_area2_j_(j)*dx3f(k);
   }
@@ -288,7 +288,7 @@ void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const 
                                AthenaArray<Real> &dx2)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     dx2(i) = x1v(i)*dx2f(j);
   }
   return;
@@ -298,7 +298,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
                                AthenaArray<Real> &dx3)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
   }
   return;
@@ -311,7 +311,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
   AthenaArray<Real> &area)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
     area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
   }
@@ -322,7 +322,7 @@ void SphericalPolar::Face2Area(const int k, const int j, const int il, const int
   AthenaArray<Real> &area)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
     area(i) = coord_area2_i_(i)*coord_area2_j_(j)*dx3f(k);
   }
@@ -333,7 +333,7 @@ void SphericalPolar::Face3Area(const int k, const int j, const int il, const int
   AthenaArray<Real> &area)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area3 = dr r dtheta = d(r^2/2) dtheta
     area(i) = coord_area3_i_(i)*dx2f(j);
   }
@@ -365,7 +365,7 @@ void SphericalPolar::CellVolume(const int k, const int j, const int il, const in
   AthenaArray<Real> &vol)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
     vol(i) = coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
   }

@@ -39,10 +39,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real igm1 = 1.0/gm1;
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 

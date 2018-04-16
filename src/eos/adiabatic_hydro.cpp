@@ -49,10 +49,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 {
   Real gm1 = GetGamma() - 1.0;
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -101,11 +101,11 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
   // Force outer-loop vectorization
 #pragma omp simd
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
     //#pragma omp simd
 #pragma novector
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);

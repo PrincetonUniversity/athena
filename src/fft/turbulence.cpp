@@ -342,6 +342,6 @@ void TurbulenceDriver::Perturb(Real dt) {
 //! \fn void TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 //  \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
 
-int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx){
+int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx) {
   return ((idx+disp) - static_cast<int64_t>(2*(idx+disp)/Nx)*Nx);
 }

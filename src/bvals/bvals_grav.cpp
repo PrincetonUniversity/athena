@@ -46,7 +46,7 @@ GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *
  : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
 {
   pmy_block_=pmb;
-  for (int i=0; i<6; i++){
+  for (int i=0; i<6; i++) {
     if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
       GravityBoundaryFunction_[i]=NULL;
     // else

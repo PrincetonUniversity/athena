@@ -369,7 +369,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
 
 InputBlock* ParameterInput::GetPtrToBlock(std::string name) {
   InputBlock *pb;
-  for (pb = pfirst_block; pb != NULL; pb = pb->pnext){
+  for (pb = pfirst_block; pb != NULL; pb = pb->pnext) {
     if (name.compare(pb->block_name) == 0) return pb;
   }
   return NULL;
@@ -675,9 +675,9 @@ void ParameterInput::ParameterDump(std::ostream& os) {
 
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
 
-  for (pb = pfirst_block; pb != NULL; pb = pb->pnext){ // loop over InputBlocks
+  for (pb = pfirst_block; pb != NULL; pb = pb->pnext) { // loop over InputBlocks
     os<< "<" << pb->block_name << ">" << std::endl;     // write block name
-    for (pl = pb->pline; pl != NULL; pl = pl->pnext){   // loop over InputLines
+    for (pl = pb->pline; pl != NULL; pl = pl->pnext) {   // loop over InputLines
       param_name.assign(pl->param_name);
       param_value.assign(pl->param_value);
 
@@ -699,7 +699,7 @@ void ParameterInput::ParameterDump(std::ostream& os) {
 //  \brief return pointer to InputLine containing specified parameter if it exists
 
 InputLine* InputBlock::GetPtrToLine(std::string name) {
-  for (InputLine* pl = pline; pl != NULL; pl = pl->pnext){
+  for (InputLine* pl = pline; pl != NULL; pl = pl->pnext) {
     if (name.compare(pl->param_name) == 0) return pl;
   }
   return NULL;

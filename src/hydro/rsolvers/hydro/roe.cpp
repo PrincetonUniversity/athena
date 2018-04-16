@@ -48,9 +48,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
   Real du[NWAVE],a[NWAVE],u[NWAVE];
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
-  for (int i=il; i<=iu; ++i){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -264,14 +264,14 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
-    if (ev[0] >= 0.0){
+    if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
       flxi[IVY] = fl[IVY];
       flxi[IVZ] = fl[IVZ];
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fl[IEN];
     }
-    if (ev[NWAVE-1] <= 0.0){
+    if (ev[NWAVE-1] <= 0.0) {
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];

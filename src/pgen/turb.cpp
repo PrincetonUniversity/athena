@@ -50,7 +50,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // turb_flag = 1 for decaying turbulence
 // turb_flag = 2 for driven turbulence
   turb_flag = pin->GetInteger("problem","turb_flag");
-  if (turb_flag != 0){
+  if (turb_flag != 0) {
 #ifndef FFT
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl

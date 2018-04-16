@@ -76,7 +76,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real ang_2,cos_a2,sin_a2,lambda;
 
   // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
-  if (iprob == 4){
+  if (iprob == 4) {
     Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
     Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
@@ -84,7 +84,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     //     lambda = x1size*cos_a;
     //     AND   lambda = x3size*sin_a;  are both satisfied.
 
-    if (x1size == x3size){
+    if (x1size == x3size) {
       ang_2 = PI/4.0;
       cos_a2 = sin_a2 = sqrt(0.5);
     } else{

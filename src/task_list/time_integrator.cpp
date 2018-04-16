@@ -272,7 +272,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-//    if (SELF_GRAVITY_ENABLED == 1){
+//    if (SELF_GRAVITY_ENABLED == 1) {
 //      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
 //      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
 //    } else {
@@ -914,7 +914,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 }
 
 
-enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step){
+enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step) {
   // Occurs after HydroIntegrate() and HydroSourceTerms(), before FieldIntegrate()
   if (step <= nsub_steps) {
     // Update the dt abscissae of each memory register to values at end of this substep

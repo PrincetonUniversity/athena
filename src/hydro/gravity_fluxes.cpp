@@ -138,10 +138,10 @@ void Hydro::AddGravityFluxWithGflx(void)
   AthenaArray<Real> &x2gflx=gflx[X2DIR];
   AthenaArray<Real> &x3gflx=gflx[X3DIR];
 
-  for (int n=IM1; n<=IM3; ++n){
-    for (int k=ks; k<=ke; ++k){
-      for (int j=js; j<=je; ++j){
-        for (int i=is; i<=ie; ++i){
+  for (int n=IM1; n<=IM3; ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
           x1flux(n,k,j,i) += x1gflx(n,k,j,i);
           if (i==ie) x1flux(n,k,j,i+1) += x1gflx(n,k,j,i+1);
           if (pmb->block_size.nx2 > 1) {
@@ -198,9 +198,9 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
   }
 
   gxl = 0.0, gyl = 0.0, gzl = 0.0;
-  for (int k=kl; k<=ku; ++k){
-    for (int j=jl; j<=ju; ++j){
-      for (int i=is; i<=ie+1; ++i){
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      for (int i=is; i<=ie+1; ++i) {
         Real dx1 = pco->dx1v(i);
         Real dx2 = pco->dx2v(j);
         Real dx3 = pco->dx3v(k);
@@ -243,8 +243,8 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
       else // 3D
         il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
     }
-    for (int k=kl; k<=ku; ++k){
-      for (int j=js; j<=je+1; ++j){
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=js; j<=je+1; ++j) {
         for (int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
@@ -285,8 +285,8 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
     if (MAGNETIC_FIELDS_ENABLED)
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
-    for (int k=ks; k<=ke+1; ++k){
-      for (int j=jl; j<=ju; ++j){
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
         for (int i=il; i<=iu; i++) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);

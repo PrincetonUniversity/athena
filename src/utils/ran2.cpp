@@ -37,7 +37,7 @@
 #define NDIV (1+IMM1/NTAB)
 #define RNMX (1.0-DBL_EPSILON)
 
-double ran2(int64_t *idum){
+double ran2(int64_t *idum) {
   int j;
   int64_t k;
   static int64_t idum2=123456789;

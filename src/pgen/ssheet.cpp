@@ -153,7 +153,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           std::cout << "[ssheet.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
           exit(0);
       }
-      if (NON_BAROTROPIC_EOS){
+      if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = rp/gm1 +0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))+
                                              SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
       }

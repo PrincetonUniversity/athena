@@ -72,7 +72,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   dslope = pin->GetOrAddReal("problem","dslope",0.0);
 
   // Get parameters of initial pressure and cooling parameters
-  if (NON_BAROTROPIC_EOS){
+  if (NON_BAROTROPIC_EOS) {
     p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0",0.0025);
     pslope = pin->GetOrAddReal("problem","pslope",0.0);
     gamma_gas = pin->GetReal("hydro","gamma");
@@ -126,7 +126,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
       phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
       phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-      if (NON_BAROTROPIC_EOS){
+      if (NON_BAROTROPIC_EOS) {
         Real p_over_r = PoverR(rad,phi,z);
         phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
         phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))
@@ -143,11 +143,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k)
 {
-  if (COORDINATE_SYSTEM == "cylindrical"){
+  if (COORDINATE_SYSTEM == "cylindrical") {
     rad=pco->x1v(i);
     phi=pco->x2v(j);
     z=pco->x3v(k);
-  } else if (COORDINATE_SYSTEM == "spherical_polar"){
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
     rad=fabs(pco->x1v(i)*sin(pco->x2v(j)));
     phi=pco->x3v(i);
     z=pco->x1v(i)*cos(pco->x2v(j));
@@ -189,11 +189,11 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/sqrt(rad*rad+z*z);
   vel = sqrt(gm0/rad)*sqrt(vel);
-  if (COORDINATE_SYSTEM == "cylindrical"){
+  if (COORDINATE_SYSTEM == "cylindrical") {
     v1=0.0;
     v2=vel;
     v3=0.0;
-  }else if (COORDINATE_SYSTEM == "spherical_polar"){
+  }else if (COORDINATE_SYSTEM == "spherical_polar") {
     v1=0.0;
     v2=0.0;
     v3=vel;

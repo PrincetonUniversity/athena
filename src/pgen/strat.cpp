@@ -140,7 +140,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // adiabatic gamma
   Real gam = peos->GetGamma();
 
-  if (pmy_mesh->mesh_size.nx3 == 1){
+  if (pmy_mesh->mesh_size.nx3 == 1) {
     std::cout << "[strat.cpp]: Strat only works on a 3D grid"
       << std::endl;
   }

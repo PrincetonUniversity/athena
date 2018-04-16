@@ -1402,7 +1402,7 @@ void BoundaryValues::ClearBoundaryAll(void) {
 // clear shearingbox boundary communications
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
-      for (int n=0; n<4; n++){
+      for (int n=0; n<4; n++) {
         if (send_inner_rank_[n] == -1) continue;
         shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -1422,7 +1422,7 @@ void BoundaryValues::ClearBoundaryAll(void) {
     } // inner boundary
 
     if (shbb_.outer == true) {
-      for (int n=0; n<4; n++){
+      for (int n=0; n<4; n++) {
         if (send_outer_rank_[n] == -1) continue;
         shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {

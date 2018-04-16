@@ -91,7 +91,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
-  if (pmy_mesh->mesh_size.nx2 == 1){
+  if (pmy_mesh->mesh_size.nx2 == 1) {
     std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
   }
 

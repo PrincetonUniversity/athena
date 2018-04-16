@@ -155,7 +155,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
-  if (SELF_GRAVITY_ENABLED){
+  if (SELF_GRAVITY_ENABLED) {
     pgrav->grav_mean_rho = grav_mean_rho;
   } // self-gravity
 }
@@ -163,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
-  if (omega2 < 0){
+  if (omega2 < 0) {
     if (Globals::my_rank==0)
       std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
     //    return;
@@ -268,8 +268,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if ((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -277,7 +277,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if ((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());

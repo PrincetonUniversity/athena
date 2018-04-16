@@ -444,7 +444,7 @@ void Schwarzschild::CenterWidth1(const int k, const int j, const int il, const i
                                AthenaArray<Real> &dx1)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W = \Delta(r \alpha) + M \Delta\log(r(1+\alpha)-M)
     dx1(i) = coord_width1_i1_(i);
   }
@@ -455,7 +455,7 @@ void Schwarzschild::CenterWidth2(const int k, const int j, const int il, const i
                                AthenaArray<Real> &dx2)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W = r \Delta\theta
     dx2(i) = x1v(i) * dx1f(j);
   }
@@ -466,7 +466,7 @@ void Schwarzschild::CenterWidth3(const int k, const int j, const int il, const i
                                AthenaArray<Real> &dx3)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W = r \sin\theta \Delta\phi
     dx3(i) = x1v(i) * coord_width3_j1_(j) * dx3f(k);
   }

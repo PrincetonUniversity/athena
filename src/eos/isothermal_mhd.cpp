@@ -51,10 +51,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   // Convert to Primitives
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);
       Real& u_m2 = cons(IVY,k,j,i);
@@ -91,10 +91,10 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int il, int iu, int jl, int ju, int kl, int ku)
 {
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);

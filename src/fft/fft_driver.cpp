@@ -73,7 +73,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int64_t lx2max = lx2min;
   int64_t lx3max = lx3min;
 
-  for (int n=ns; n<ne; n++){
+  for (int n=ns; n<ne; n++) {
     int64_t &lx1 = pm->loclist[n].lx1;
     int64_t &lx2 = pm->loclist[n].lx2;
     int64_t &lx3 = pm->loclist[n].lx3;
@@ -90,7 +90,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int nbx3=lx3max-lx3min+1;
 
   nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
-  if (pm->nbtotal/nmb != nranks_){
+  if (pm->nbtotal/nmb != nranks_) {
     // Will be implemented later.
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
@@ -139,15 +139,15 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 #ifdef MPI_PARALLEL
   {using namespace DecompositionNames;
   decomp_ = 0; pdim_ = 0;
-  if (npx1 > 1){
+  if (npx1 > 1) {
     decomp_ = decomp_ | x_decomp;
     pdim_++;
   }
-  if (npx2 > 1){
+  if (npx2 > 1) {
     decomp_ = decomp_ | y_decomp;
     pdim_++;
   }
-  if (npx3 > 1){
+  if (npx3 > 1) {
     decomp_ = decomp_ | z_decomp;
     pdim_++;
   }}
@@ -166,13 +166,13 @@ FFTDriver::~FFTDriver()
   delete pmy_fb;
 }
 
-void FFTDriver::InitializeFFTBlock(bool set_norm){
+void FFTDriver::InitializeFFTBlock(bool set_norm) {
   int igid=Globals::my_rank;
   pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
   if (set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 
-void FFTDriver::QuickCreatePlan(void){
+void FFTDriver::QuickCreatePlan(void) {
 
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);

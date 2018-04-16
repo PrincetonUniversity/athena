@@ -225,15 +225,15 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
 
     // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
     if (SHEARING_BOX) {
-      if (ShBoxCoord_==2){
+      if (ShBoxCoord_==2) {
         Mesh *pmy_mesh = pmb->pmy_mesh;
         int level = pmb->loc.level - pmy_mesh->root_level;
         int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
         Real qomL = qshear_*Omega_0_*x1size_;
-        if ((pmb->loc.lx1==0) && (nb.ox1<0)){
+        if ((pmb->loc.lx1==0) && (nb.ox1<0)) {
           for (int k=sk;k<=ek;++k) {
           for (int j=sj;j<=ej;++j) {
-          for (int i=si;i<=ei;++i){
+          for (int i=si;i<=ei;++i) {
             if (NON_BAROTROPIC_EOS)
               dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
                  *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
@@ -244,7 +244,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
         if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
           for (int k=sk;k<=ek;++k) {
           for (int j=sj;j<=ej;++j) {
-          for (int i=si;i<=ei;++i){
+          for (int i=si;i<=ei;++i) {
             if (NON_BAROTROPIC_EOS)
               dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
                  *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
@@ -504,12 +504,12 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
 {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
-  && pmb->block_size.nx3 > 1){
-    if (block_bcs[INNER_X2]==POLAR_BNDRY){
+  && pmb->block_size.nx3 > 1) {
+    if (block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
              exc_(k)=dst(n,k,j,i);
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
@@ -522,11 +522,11 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
       }
     }
 
-    if (block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if (block_bcs[OUTER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
-         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
              exc_(k)=dst(n,k,j,i);
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {

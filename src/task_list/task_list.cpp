@@ -100,7 +100,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
 {
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-    for (int i=0; i<nmb; ++i){
+    for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;
       }

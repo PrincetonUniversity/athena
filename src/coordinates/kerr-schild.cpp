@@ -674,7 +674,7 @@ void KerrSchild::CenterWidth1(const int k, const int j, const int il, const int 
                                AthenaArray<Real> &dx1)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
     //     + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
     dx1(i) = coord_width1_i1_(i);
@@ -686,7 +686,7 @@ void KerrSchild::CenterWidth2(const int k, const int j, const int il, const int 
                                AthenaArray<Real> &dx2)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W >= r (\theta_+ - \theta_-)
     dx2(i) =  coord_width2_i1_(i) * coord_width2_j1_(j);
   }
@@ -697,7 +697,7 @@ void KerrSchild::CenterWidth3(const int k, const int j, const int il, const int 
                                AthenaArray<Real> &dx3)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
     //     * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
     dx3(i) =  coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);

@@ -49,9 +49,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
   Real du[NWAVE],a[NWAVE],u[NWAVE];
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
-  for (int i=il; i<=iu; ++i){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -388,7 +388,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
-    if (ev[0] >= 0.0){
+    if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
       flxi[IVY] = fl[IVY];
@@ -397,7 +397,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBY] = fl[IBY];
       flxi[IBZ] = fl[IBZ];
     }
-    if (ev[NWAVE-1] <= 0.0){
+    if (ev[NWAVE-1] <= 0.0) {
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];
@@ -514,7 +514,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     } else if ((cfsq - twid_asq) <= 0.0) {
       alpha_f = 1.0;
       alpha_s = 0.0;
-    } else if ((cfsq-cssq) != 0.0){
+    } else if ((cfsq-cssq) != 0.0) {
       alpha_f = sqrt((twid_asq - cssq)/(cfsq - cssq));
       alpha_s = sqrt((cfsq - twid_asq)/(cfsq - cssq));
     }

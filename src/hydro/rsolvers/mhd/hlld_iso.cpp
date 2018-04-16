@@ -47,10 +47,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -194,7 +194,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 6.  Compute flux
 
-    if (spd[0] >= 0.0){
+    if (spd[0] >= 0.0) {
       // return Fl if flow is supersonic, eqn. (38a) of Mignone
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -202,7 +202,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fl.mz;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if (spd[4] <= 0.0){
+    } else if (spd[4] <= 0.0) {
       // return Fr if flow is supersonic, eqn. (38e) of Mignone
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;

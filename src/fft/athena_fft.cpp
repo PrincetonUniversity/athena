@@ -153,9 +153,9 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
   for (int n=0; n<ns; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
-        for (int i=ngh, mi=is; mi<=ie; i++, mi++){
+        for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           int64_t idx=GetIndex(mi,mj,mk,b_out_);
-          if (ns == 1){
+          if (ns == 1) {
             dst(k,j,i)=src[idx][0]*norm_factor_;
           } else {
             dst(n,k,j,i)=src[idx][n]*norm_factor_;
@@ -186,7 +186,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           int64_t idx=GetIndex(mi,mj,mk,f_in_);
-          if (ns == 1){
+          if (ns == 1) {
             dst[idx][0]=src(n,k,j,i);
             dst[idx][1]=0.0;
           } else {

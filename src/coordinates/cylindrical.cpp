@@ -130,7 +130,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
 #pragma omp simd
-    for (int i=il-ng; i<=iu+ng; ++i){
+    for (int i=il-ng; i<=iu+ng; ++i) {
       Real rm = x1f(i  );
       Real rp = x1f(i+1);
       // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
@@ -145,7 +145,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
       phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
     }
 #pragma omp simd
-    for (int i=il-ng; i<=iu+(ng-1); ++i){
+    for (int i=il-ng; i<=iu+(ng-1); ++i) {
        // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
     }
@@ -190,7 +190,7 @@ void Cylindrical::Edge2Length(const int k, const int j, const int il, const int 
   AthenaArray<Real> &len)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     len(i) = x1f(i)*dx2f(j);
   }
   return;
@@ -211,7 +211,7 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
                                AthenaArray<Real> &dx2)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     dx2(i) = x1v(i)*dx2f(j);
   }
   return;
@@ -224,7 +224,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
   AthenaArray<Real> &area)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area1 = r dphi dz
     area(i) = x1f(i)*dx2f(j)*dx3f(k);
   }
@@ -235,7 +235,7 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
   AthenaArray<Real> &area)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area3 = dr r dphi = d(r^2/2) dphi
     area(i) = coord_area3_i_(i)*dx2f(j);
   }
@@ -264,7 +264,7 @@ void Cylindrical::CellVolume(const int k, const int j, const int il, const int i
   AthenaArray<Real> &vol)
 {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // volume = dr dz r dphi = d(r^2/2) dphi dz
     vol(i) = coord_vol_i_(i)*dx2f(j)*dx3f(k);
   }
