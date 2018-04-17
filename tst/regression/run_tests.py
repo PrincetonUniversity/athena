@@ -16,6 +16,10 @@ Notes:
 """
 from __future__ import print_function
 
+# Prevent generation of .pyc files
+import sys
+sys.dont_write_bytecode = True
+
 # Athena++ modules
 import scripts.utils.athena as athena
 
@@ -23,12 +27,7 @@ import scripts.utils.athena as athena
 import argparse
 import os
 from pkgutil import iter_modules
-import sys
 import traceback
-
-# Prevent generation of .pyc files
-sys.dont_write_bytecode = True
-
 
 # Main function
 def main(**kwargs):
