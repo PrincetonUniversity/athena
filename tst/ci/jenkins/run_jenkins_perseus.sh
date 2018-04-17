@@ -42,7 +42,7 @@ module load fftw/gcc/3.3.4
 module load rh
 module list
 
-time python ./run_tests.py pgen --cxx=icc --mpirun=srun --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
+time python ./run_tests.py pgen --cxx=icc --mpirun=srun --cflag="-Wall -Wextra -diag-disable=175 -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
 time python ./run_tests.py grav --cxx=icc --mpirun=srun
 time python ./run_tests.py mpi --cxx=icc --mpirun=srun
 time python ./run_tests.py hydro --cxx=icc --mpirun=srun
