@@ -31,7 +31,7 @@ def configure(*args, **kwargs):
 
 
 # Function for compiling Athena++
-def make():
+def make(clean_first=True):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
     try:
@@ -40,7 +40,8 @@ def make():
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         make_command = ['make', '-j', exe_dir, obj_dir]
         try:
-            subprocess.check_call(clean_command)
+            if clean_first:
+                subprocess.check_call(clean_command)
             subprocess.check_call(make_command)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
