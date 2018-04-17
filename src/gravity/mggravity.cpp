@@ -69,9 +69,10 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   RegionSize block_size;
-  block_size.nx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
-  block_size.nx2=pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
-  block_size.nx3=pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
+  // nrbx* are int64_t
+  block_size.nx1 = static_cast<int>(pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1);
+  block_size.nx2 = static_cast<int>(pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2);
+  block_size.nx3 = static_cast<int>(pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3);
   for (int i=nbs;i<=nbe;i++) {
     enum BoundaryFlag block_bcs[6];
     pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);

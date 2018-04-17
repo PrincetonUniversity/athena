@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file gravity.cpp
-//  \brief implementation of functions in class Field
+//! \file athena_fft.cpp
+//  \brief
 
 // C/C++ headers
 #include <iostream>
@@ -132,15 +132,20 @@ int64_t FFTBlock::GetIndex(const int i, const int j, const int k, AthenaFFTIndex
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::RetrieveResult(const AthenaArray<Real> &src, int ns)
 //  \brief Fill the result in the active zone
-void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLocation loc, RegionSize bsize) {
+
+void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
+                              LogicalLocation loc, RegionSize bsize) {
   const AthenaFFTComplex *src=out_;
   int is, ie, js, je, ks, ke;
-  is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
-  js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
-  ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
-  ie=is+bsize.nx1-1, je=bsize.nx2>1?js+bsize.nx2-1:js, ke=bsize.nx3>1?ks+bsize.nx3-1:ks;
-  int jl=bsize.nx2>1?ngh:0;
-  int kl=bsize.nx3>1?ngh:0;
+  // possible loss of accuracy from int64_t loc.lx1 to int is, e.g.
+  is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
+  js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
+  ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
+  ie = is+bsize.nx1-1,
+      je=bsize.nx2>1 ? js+bsize.nx2-1:js,
+      ke=bsize.nx3>1 ? ks+bsize.nx3-1:ks;
+  int jl = bsize.nx2>1 ? ngh:0;
+  int kl = bsize.nx3>1 ? ngh:0;
 
   for (int n=0; n<ns; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
@@ -162,15 +167,20 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns)
 //  \brief Fill the source in the active zone
-void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, LogicalLocation loc, RegionSize bsize) {
+
+void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+                          LogicalLocation loc, RegionSize bsize) {
   AthenaFFTComplex *dst=in_;
   int is, ie, js, je, ks, ke;
-  is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
-  js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
-  ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
-  ie=is+bsize.nx1-1, je=bsize.nx2>1?js+bsize.nx2-1:js, ke=bsize.nx3>1?ks+bsize.nx3-1:ks;
-  int jl=bsize.nx2>1?ngh:0;
-  int kl=bsize.nx3>1?ngh:0;
+  // possible loss of accuracy from int64_t loc.lx1 to int is, e.g.
+  is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
+  js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
+  ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
+  ie = is+bsize.nx1-1,
+      je=bsize.nx2>1 ? js+bsize.nx2-1:js,
+      ke=bsize.nx3>1 ? ks+bsize.nx3-1:ks;
+  int jl=bsize.nx2>1 ? ngh:0;
+  int kl=bsize.nx3>1 ? ngh:0;
 
   for (int n=0; n<ns; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
@@ -193,6 +203,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::ApplyKernel(int mode)
 //  \brief Apply kernel
+
 void FFTBlock::ApplyKernel(int mode) {
   for (int k=0; k<knx[2]; k++) {
     for (int j=0; j<knx[1]; j++) {
@@ -211,7 +222,6 @@ void FFTBlock::ApplyKernel(int mode) {
 //! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 //                                                enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan using mesh information
-
 
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
                                           enum AthenaFFTDirection dir) {
@@ -300,6 +310,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //                                           AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 3D FFT
+
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                      AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir) {
@@ -389,6 +400,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data) {
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan,
 //                              AthenaFFTComplex *in_data,AthenaFFTComplex *out_data)
 //  \brief excute out-place FFT
+
 void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
                         AthenaFFTComplex *out_data) {
 #ifdef FFT
@@ -405,6 +417,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
 //! \fn void FFTBlock::MpiInitialize(AthenaFFTPlan *plan,
 //                              AthenaFFTComplex *in_data,AthenaFFTComplex *out_data)
 //  \brief excute out-place FFT
+
 void FFTBlock::MpiInitialize() {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
@@ -492,30 +505,15 @@ void FFTBlock::MpiInitialize() {
     b_out_->PermuteAxis(permute2_);
     b_out_->SetLocalIndex();
 
-//    if (Globals::my_rank == 0) {
-//      std::cout << "iloc: " << orig_idx->iloc[0] << " " << orig_idx->iloc[1] << " " << orig_idx->iloc[2] << std::endl
-//                << "iloc: " << f_in->iloc[0] << " " << f_in->iloc[1] << " " << f_in->iloc[2] << std::endl
-//                << "iloc: " << f_out->iloc[0] << " " << f_out->iloc[1] << " " << f_out->iloc[2] << std::endl
-//                << "iloc: " << b_in->iloc[0] << " " << b_in->iloc[1] << " " << b_in->iloc[2] << std::endl
-//                << "iloc: " << b_out->iloc[0] << " " << b_out->iloc[1] << " " << b_out->iloc[2] << std::endl;
-//    }
-//    if (Globals::my_rank == Globals::nranks-1) {
-//      std::cout << "f_in  " << Globals::my_rank << std::endl;
-//      f_in->PrintIndex();
-//      std::cout << "f_out ";
-//      f_out->PrintIndex();
-//      std::cout << "b_in  ";
-//      b_in->PrintIndex();
-//      std::cout << "b_out ";
-//      b_out->PrintIndex();
-//    }
 #endif
 }
 
 
 //---------------------------------------------------------------------------------------
 // AthenaFFTIndex class:
-AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize) {
+
+AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize,
+                               RegionSize bsize) {
   dim_=dim;
 
   Lx[0] = msize.x1max-msize.x1min;

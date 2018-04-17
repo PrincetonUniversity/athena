@@ -212,9 +212,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       throw std::runtime_error(msg.str().c_str());
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    num_north_polar_blocks_ = pmy_mesh_->nrbx3 * (1 << level);
-  } else
+    // possible loss of precision to 32 bit int, if int64_t nrbx3 is large
+    num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
+  } else {
     num_north_polar_blocks_ = 0;
+  }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
       std::stringstream msg;
@@ -223,7 +225,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       throw std::runtime_error(msg.str().c_str());
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    num_south_polar_blocks_ = pmy_mesh_->nrbx3 * (1 << level);
+    // possible loss of precision to 32 bit int, if int64_t nrbx3 is large
+    num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_south_polar_blocks_ = 0;
   }
