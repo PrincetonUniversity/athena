@@ -100,6 +100,7 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
+  - python2 run_tests.py pgen --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
   - python2 run_tests.py mpi
   - python2 run_tests.py grav # requires FFTW library
   - python2 run_tests.py amr
@@ -110,7 +111,6 @@ script:
   - python2 run_tests.py curvilinear
   - python2 run_tests.py gr
   - python2 run_tests.py sr
-  - python2 run_tests.py pgen
   - python2 run_tests.py shearingbox
   - set +e
 # Codecov coverage analysis
