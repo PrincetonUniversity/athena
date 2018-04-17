@@ -154,7 +154,7 @@ class Mesh {
 #endif
 
 public:
-  Mesh(ParameterInput *pin, int test_flag=0);
+  explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 
