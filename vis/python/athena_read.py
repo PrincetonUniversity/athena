@@ -12,6 +12,12 @@ from io import open  # Consistent binary I/O from Python 2 and 3
 # Other Python modules
 import numpy as np
 
+# Load HDF5 reader
+try:
+  import h5py
+except ImportError:
+  pass
+
 #=========================================================================================
 
 def hst(filename, raw=False):
@@ -275,504 +281,590 @@ def vtk(filename):
 
 #=========================================================================================
 
-def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
-    return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
-    x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
-    face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
-    center_func_2=None, center_func_3=None):
+class athdf(dict):
   """Read .athdf files and populate dict of arrays of data."""
 
-  # Load HDF5 reader
-  import h5py
+  # Initialization
+  def __init__(self, filename, data=None, quantities=None, dtype=np.float32, level=None,
+      return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
+      x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
+      face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
+      center_func_2=None, center_func_3=None):
 
-  # Prepare dictionary for results
-  if data is None:
-    data = {}
-    new_data = True
-  else:
-    new_data = False
+    # Import necessary module for reading HDF5 files
+    try:
+      h5py
+    except NameError:
+      raise ImportError('athdf could not be executed because h5py could not be imported.')
 
-  # Open file
-  with h5py.File(filename, 'r') as f:
+    # Prepare dictionary for results
+    if data is None:
+      data = {}
+      self.new_data = True
+      self._existing_keys = []
+    else:
+      self.new_data = False
+      self._existing_keys = list(data.keys())
+    super(athdf, self).__init__(data)
+    self.filename = filename
+    self.quantities = quantities
+    self.dtype = dtype
+    self.level = level
+    self.return_levels = return_levels
+    self.subsample = subsample
+    self.fast_restrict = fast_restrict
+    self.x1_min = x1_min
+    self.x1_max = x1_max
+    self.x2_min = x2_min
+    self.x2_max = x2_max
+    self.x3_min = x3_min
+    self.x3_max = x3_max
+    self.vol_func = vol_func
+    self.vol_params = vol_params
+    self.face_func_1 = face_func_1
+    self.face_func_2 = face_func_2
+    self.face_func_3 = face_func_3
+    self.center_func_1 = center_func_1
+    self.center_func_2 = center_func_2
+    self.center_func_3 = center_func_3
 
-    # Extract size information
-    max_level = f.attrs['MaxLevel']
-    if level is None:
-      level = max_level
-    block_size = f.attrs['MeshBlockSize']
-    root_grid_size = f.attrs['RootGridSize']
-    levels = f['Levels'][:]
-    logical_locations = f['LogicalLocations'][:]
-    nx_vals = []
-    for d in range(3):
-      if block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
-        other_locations = [location for location in \
-            zip(levels, logical_locations[:,(d+1)%3], logical_locations[:,(d+2)%3])]
-        if len(set(other_locations)) == len(other_locations):  # effective slice
+    # Open file
+    with h5py.File(filename, 'r') as f:
+
+      # Extract size information
+      self.max_level = f.attrs['MaxLevel']
+      if self.level is None:
+        self.level = self.max_level
+      self.block_size = f.attrs['MeshBlockSize']
+      root_grid_size = f.attrs['RootGridSize']
+      self.levels = f['Levels'][:]
+      self.logical_locations = f['LogicalLocations'][:]
+      nx_vals = []
+      for d in range(3):
+        if self.block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
+          other_locations = [location for location in zip(self.levels, \
+              self.logical_locations[:,(d+1)%3], self.logical_locations[:,(d+2)%3])]
+          if len(set(other_locations)) == len(other_locations):  # effective slice
+            nx_vals.append(1)
+          else:  # nontrivial sum
+            num_blocks_this_dim = 0
+            for level_this_dim,loc_this_dim in \
+                zip(self.levels, self.logical_locations[:,d]):
+              if level_this_dim <= self.level:
+                num_blocks_this_dim = max(num_blocks_this_dim, \
+                    (loc_this_dim + 1) * 2 ** (self.level - level_this_dim))
+              else:
+                num_blocks_this_dim = max(num_blocks_this_dim, \
+                    (loc_this_dim + 1) / 2 ** (level_this_dim - self.level))
+            nx_vals.append(num_blocks_this_dim)
+        elif self.block_size[d] == 1:  # singleton dimension
           nx_vals.append(1)
-        else:  # nontrivial sum
-          num_blocks_this_dim = 0
-          for level_this_dim,loc_this_dim in zip(levels, logical_locations[:,d]):
-            if level_this_dim <= level:
-              num_blocks_this_dim = max(num_blocks_this_dim, \
-                  (loc_this_dim + 1) * 2 ** (level - level_this_dim))
-            else:
-              num_blocks_this_dim = max(num_blocks_this_dim, \
-                  (loc_this_dim + 1) / 2 ** (level_this_dim - level))
-          nx_vals.append(num_blocks_this_dim)
-      elif block_size[d] == 1:  # singleton dimension
-        nx_vals.append(1)
-      else:  # normal case
-        nx_vals.append(root_grid_size[d] * 2**level)
-    nx1 = nx_vals[0]
-    nx2 = nx_vals[1]
-    nx3 = nx_vals[2]
-    lx1 = nx1 / block_size[0]
-    lx2 = nx2 / block_size[1]
-    lx3 = nx3 / block_size[2]
-    num_extended_dims = 0
-    for nx in nx_vals:
-      if nx > 1:
-        num_extended_dims += 1
+        else:  # normal case
+          nx_vals.append(root_grid_size[d] * 2 ** self.level)
+      self.nx1 = nx_vals[0]
+      self.nx2 = nx_vals[1]
+      self.nx3 = nx_vals[2]
+      self.lx1 = self.nx1 / self.block_size[0]
+      self.lx2 = self.nx2 / self.block_size[1]
+      self.lx3 = self.nx3 / self.block_size[2]
+      self.num_extended_dims = 0
+      for nx in nx_vals:
+        if nx > 1:
+          self.num_extended_dims += 1
 
-    # Set volume function for preset coordinates if needed
-    coord = f.attrs['Coordinates']
-    if level < max_level and not subsample and not fast_restrict and vol_func is None:
-      x1_rat = f.attrs['RootGridX1'][2]
-      x2_rat = f.attrs['RootGridX2'][2]
-      x3_rat = f.attrs['RootGridX3'][2]
-      if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
-          or coord == 'sinusoidal':
-        if (nx1 == 1 or x1_rat == 1.0) and (nx2 == 1 or x2_rat == 1.0) and \
-            (nx3 == 1 or x3_rat == 1.0):
-          fast_restrict = True
+      # Set volume function for preset coordinates if needed
+      coord = f.attrs['Coordinates']
+      if self.level < self.max_level and not self.subsample and not self.fast_restrict \
+          and self.vol_func is None:
+        x1_rat = f.attrs['RootGridX1'][2]
+        x2_rat = f.attrs['RootGridX2'][2]
+        x3_rat = f.attrs['RootGridX3'][2]
+        if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
+            or coord == 'sinusoidal':
+          if (self.nx1 == 1 or x1_rat == 1.0) and (self.nx2 == 1 or x2_rat == 1.0) and \
+              (self.nx3 == 1 or x3_rat == 1.0):
+            self.fast_restrict = True
+          else:
+            self.vol_func = lambda xm,xp,ym,yp,zm,zp: (xp - xm) * (yp - ym) * (zp - zm)
+        elif coord == 'cylindrical':
+          if self.nx1 == 1 and (self.nx2 == 1 or x2_rat == 1.0) \
+              and (self.nx3 == 1 or x3_rat == 1.0):
+            self.fast_restrict = True
+          else:
+            self.vol_func = \
+                lambda rm,rp,phim,phip,zm,zp: (rp**2 - rm**2) * (phip - phim) * (zp - zm)
+        elif coord == 'spherical_polar' or coord == 'schwarzschild':
+          if self.nx1 == 1 and self.nx2 == 1 and (self.nx3 == 1 or x3_rat == 1.0):
+            self.fast_restrict = True
+          else:
+            self.vol_func = lambda rm,rp,thetam,thetap,phim,phip: \
+                (rp**3 - rm**3) * abs(np.cos(thetam) - np.cos(thetap)) * (phip - phim)
+        elif coord == 'kerr-schild':
+          if self.nx1 == 1 and self.nx2 == 1 and (self.nx3 == 1 or x3_rat == 1.0):
+            self.fast_restrict = True
+          else:
+            a = vol_params[0]
+            def vol_func(rm, rp, thetam, thetap, phim, phip):
+              cosm = np.cos(thetam)
+              cosp = np.cos(thetap)
+              return ((rp**3 - rm**3) * abs(cosm - cosp) \
+                  + a**2 * (rp - rm) * abs(cosm**3 - cosp**3)) * (phip - phim)
         else:
-          vol_func = lambda xm,xp,ym,yp,zm,zp: (xp-xm) * (yp-ym) * (zp-zm)
-      elif coord == 'cylindrical':
-        if nx1 == 1 and (nx2 == 1 or x2_rat == 1.0) and (nx3 == 1 or x3_rat == 1.0):
-          fast_restrict = True
+          raise AthenaError('Coordinates not recognized')
+
+      # Set cell center functions for preset coordinates
+      if center_func_1 is None:
+        if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
+            or coord == 'sinusoidal' or coord == 'kerr-schild':
+          center_func_1 = lambda xm,xp: 0.5 * (xm + xp)
+        elif coord == 'cylindrical':
+          center_func_1 = lambda xm,xp: 2.0/3.0 * (xp**3 - xm**3) / (xp**2 - xm**2)
+        elif coord == 'spherical_polar':
+          center_func_1 = lambda xm,xp: 3.0/4.0 * (xp**4 - xm**4) / (xp**3 - xm**3)
+        elif coord == 'schwarzschild':
+          center_func_1 = lambda xm,xp: (0.5 * (xm**3 + xp**3)) ** (1.0/3.0)
         else:
-          vol_func = lambda rm,rp,phim,phip,zm,zp: (rp**2-rm**2) * (phip-phim) * (zp-zm)
-      elif coord == 'spherical_polar' or coord == 'schwarzschild':
-        if nx1 == 1 and nx2 == 1 and (nx3 == 1 or x3_rat == 1.0):
-          fast_restrict = True
+          raise AthenaError('Coordinates not recognized')
+      if center_func_2 is None:
+        if coord == 'cartesian' or coord == 'cylindrical' or coord == 'minkowski' \
+            or coord == 'tilted' or coord == 'sinusoidal' or coord == 'kerr-schild':
+          center_func_2 = lambda xm,xp: 0.5 * (xm + xp)
+        elif coord == 'spherical_polar':
+          def center_func_2(xm, xp):
+            sm = np.sin(xm)
+            cm = np.cos(xm)
+            sp = np.sin(xp)
+            cp = np.cos(xp)
+            return (sp - xp*cp - sm + xm*cm) / (cm-cp)
+        elif coord == 'schwarzschild':
+          center_func_2 = lambda xm,xp: np.arccos(0.5 * (np.cos(xm) + np.cos(xp)))
         else:
-          vol_func = lambda rm,rp,thetam,thetap,phim,phip: \
-              (rp**3-rm**3) * abs(np.cos(thetam)-np.cos(thetap)) * (phip-phim)
-      elif coord == 'kerr-schild':
-        if nx1 == 1 and nx2 == 1 and (nx3 == 1 or x3_rat == 1.0):
-          fast_restrict = True
+          raise AthenaError('Coordinates not recognized')
+      if center_func_3 is None:
+        if coord == 'cartesian' or coord == 'cylindrical' or coord == 'spherical_polar' \
+            or coord == 'minkowski' or coord == 'tilted' or coord == 'sinusoidal' \
+            or coord == 'schwarzschild' or coord == 'kerr-schild':
+          center_func_3 = lambda xm,xp: 0.5 * (xm + xp)
         else:
-          a = vol_params[0]
-          def vol_func(rm, rp, thetam, thetap, phim, phip):
-            cosm = np.cos(thetam)
-            cosp = np.cos(thetap)
-            return \
-                ((rp**3-rm**3) * abs(cosm-cosp) + a**2 * (rp-rm) * abs(cosm**3-cosp**3)) \
-                * (phip-phim)
+          raise AthenaError('Coordinates not recognized')
+
+      # Check output level compared to max level in file
+      if self.level < self.max_level and not self.subsample and not self.fast_restrict:
+        warnings.warn('Exact restriction being used: performance severely affected; see' \
+            + ' documentation', AthenaWarning)
+        sys.stderr.flush()
+      if self.level > self.max_level:
+        warnings.warn('Requested refinement level higher than maximum level in file:' \
+            + ' all cells will be prolongated', AthenaWarning)
+        sys.stderr.flush()
+
+      # Check that subsampling and/or fast restriction will work if needed
+      if self.level < self.max_level and (self.subsample or self.fast_restrict):
+        max_restrict_factor = 2 ** (self.max_level - self.level)
+        for current_block_size in self.block_size:
+          if current_block_size != 1 and current_block_size%max_restrict_factor != 0:
+            raise AthenaError('Block boundaries at finest level must be cell boundaries' \
+                + ' at desired level for subsampling or fast restriction to work')
+
+      # Create list of all quantities if none given
+      var_quantities = f.attrs['VariableNames'][:]
+      coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
+      attr_quantities = [key for key in f.attrs]
+      other_quantities = ('Levels',)
+      if not self.new_data:
+        self.quantities = self.values()
+      elif self.quantities is None:
+        self.quantities = var_quantities
       else:
-        raise AthenaError('Coordinates not recognized')
+        for q in self.quantities:
+          if q not in var_quantities and q not in coord_quantities:
+            possibilities = '", "'.join(var_quantities)
+            possibilities = '"' + possibilities + '"'
+            error_string = 'Quantity not recognized: file does not include "{0}" but' \
+                + ' does include {1}'
+            raise AthenaError(error_string.format(q, possibilities))
+      self.quantities = [str(q) for q in self.quantities if q not in coord_quantities \
+          and q not in attr_quantities and q not in other_quantities]
 
-    # Set cell center functions for preset coordinates
-    if center_func_1 is None:
-      if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
-          or coord == 'sinusoidal' or coord == 'kerr-schild':
-        center_func_1 = lambda xm,xp : 0.5*(xm+xp)
-      elif coord == 'cylindrical':
-        center_func_1 = lambda xm,xp : 2.0/3.0 * (xp**3-xm**3) / (xp**2-xm**2)
-      elif coord == 'spherical_polar':
-        center_func_1 = lambda xm,xp : 3.0/4.0 * (xp**4-xm**4) / (xp**3-xm**3)
-      elif coord == 'schwarzschild':
-        center_func_1 = lambda xm,xp : (0.5*(xm**3+xp**3)) ** 1.0/3.0
-      else:
-        raise AthenaError('Coordinates not recognized')
-    if center_func_2 is None:
-      if coord == 'cartesian' or coord == 'cylindrical' or coord == 'minkowski' \
-          or coord == 'tilted' or coord == 'sinusoidal' or coord == 'kerr-schild':
-        center_func_2 = lambda xm,xp : 0.5*(xm+xp)
-      elif coord == 'spherical_polar':
-        def center_func_2(xm, xp):
-          sm = np.sin(xm)
-          cm = np.cos(xm)
-          sp = np.sin(xp)
-          cp = np.cos(xp)
-          return (sp-xp*cp - sm+xm*cm) / (cm-cp)
-      elif coord == 'schwarzschild':
-        center_func_2 = lambda xm,xp : np.arccos(0.5*(np.cos(xm)+np.cos(xp)))
-      else:
-        raise AthenaError('Coordinates not recognized')
-    if center_func_3 is None:
-      if coord == 'cartesian' or coord == 'cylindrical' or coord == 'spherical_polar' \
-          or coord == 'minkowski' or coord == 'tilted' or coord == 'sinusoidal' \
-          or coord == 'schwarzschild' or coord == 'kerr-schild':
-        center_func_3 = lambda xm,xp : 0.5*(xm+xp)
-      else:
-        raise AthenaError('Coordinates not recognized')
+      # Store file attribute metadata
+      for key in attr_quantities:
+        self[str(key)] = f.attrs[key]
 
-    # Check output level compared to max level in file
-    if level < max_level and not subsample and not fast_restrict:
-      warnings.warn('Exact restriction being used: performance severely affected; see' \
-          + ' documentation', AthenaWarning)
-      sys.stderr.flush()
-    if level > max_level:
-      warnings.warn('Requested refinement level higher than maximum level in file: all' \
-          + ' cells will be prolongated', AthenaWarning)
-      sys.stderr.flush()
-
-    # Check that subsampling and/or fast restriction will work if needed
-    if level < max_level and (subsample or fast_restrict):
-      max_restrict_factor = 2**(max_level-level)
-      for current_block_size in block_size:
-        if current_block_size != 1 and current_block_size%max_restrict_factor != 0:
-          raise AthenaError('Block boundaries at finest level must be cell boundaries' \
-              + ' at desired level for subsampling or fast restriction to work')
-
-    # Create list of all quantities if none given
-    var_quantities = f.attrs['VariableNames'][:]
-    coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
-    attr_quantities = [key for key in f.attrs]
-    other_quantities = ('Levels',)
-    if not new_data:
-      quantities = data.values()
-    elif quantities is None:
-      quantities = var_quantities
-    else:
-      for q in quantities:
-        if q not in var_quantities and q not in coord_quantities:
-          possibilities = '", "'.join(var_quantities)
-          possibilities = '"' + possibilities + '"'
-          error_string = 'Quantity not recognized: file does not include "{0}" but does' \
-              + ' include {1}'
-          raise AthenaError(error_string.format(q, possibilities))
-    quantities = [str(q) for q in quantities if q not in coord_quantities \
-        and q not in attr_quantities and q not in other_quantities]
-
-    # Store file attribute metadata
-    for key in attr_quantities:
-      data[str(key)] = f.attrs[key]
-
-    # Get metadata describing file layout
-    num_blocks = f.attrs['NumMeshBlocks']
-    dataset_names = f.attrs['DatasetNames'][:]
-    dataset_sizes = f.attrs['NumVariables'][:]
-    dataset_sizes_cumulative = np.cumsum(dataset_sizes)
-    variable_names = f.attrs['VariableNames'][:]
-    quantity_datasets = []
-    quantity_indices = []
-    for q in quantities:
-      var_num = np.where(variable_names == q)[0][0]
-      dataset_num = np.where(dataset_sizes_cumulative > var_num)[0][0]
-      if dataset_num == 0:
-        dataset_index = var_num
-      else:
-        dataset_index = var_num - dataset_sizes_cumulative[dataset_num-1]
-      quantity_datasets.append(dataset_names[dataset_num])
-      quantity_indices.append(dataset_index)
-
-    # Locate fine block for coordinates in case of slice
-    fine_block = np.where(levels == max_level)[0][0]
-    x1m = f['x1f'][fine_block,0]
-    x1p = f['x1f'][fine_block,1]
-    x2m = f['x2f'][fine_block,0]
-    x2p = f['x2f'][fine_block,1]
-    x3m = f['x3f'][fine_block,0]
-    x3p = f['x3f'][fine_block,1]
-
-    # Populate coordinate arrays
-    face_funcs = (face_func_1, face_func_2, face_func_3)
-    center_funcs = (center_func_1, center_func_2, center_func_3)
-    for d,nx,face_func,center_func in zip(range(1, 4), nx_vals, face_funcs, center_funcs):
-      if nx == 1:
-        xm = (x1m, x2m, x3m)[d-1]
-        xp = (x1p, x2p, x3p)[d-1]
-        data['x'+repr(d)+'f'] = np.array([xm, xp])
-      else:
-        xmin = f.attrs['RootGridX'+repr(d)][0]
-        xmax = f.attrs['RootGridX'+repr(d)][1]
-        xrat_root = f.attrs['RootGridX'+repr(d)][2]
-        if xrat_root == -1.0 and face_func is None:
-          raise AthenaError('Must specify user-defined face_func_{0}'.format(d))
-        elif face_func is not None:
-          data['x'+repr(d)+'f'] = face_func(xmin, xmax, xrat_root, nx+1)
-        elif xrat_root == 1.0:
-          data['x'+repr(d)+'f'] = np.linspace(xmin, xmax, nx+1)
+      # Get metadata describing file layout
+      self.num_blocks = f.attrs['NumMeshBlocks']
+      dataset_names = f.attrs['DatasetNames'][:]
+      dataset_sizes = f.attrs['NumVariables'][:]
+      dataset_sizes_cumulative = np.cumsum(dataset_sizes)
+      variable_names = f.attrs['VariableNames'][:]
+      self.quantity_datasets = {}
+      self.quantity_indices = {}
+      for q in self.quantities:
+        var_num = np.where(variable_names == q)[0][0]
+        dataset_num = np.where(dataset_sizes_cumulative > var_num)[0][0]
+        if dataset_num == 0:
+          dataset_index = var_num
         else:
-          xrat = xrat_root ** (1.0 / 2**level)
-          data['x'+repr(d)+'f'] = \
-              xmin + (1.0-xrat**np.arange(nx+1)) / (1.0-xrat**nx) * (xmax-xmin)
-      data['x'+repr(d)+'v'] = np.empty(nx)
-      for i in range(nx):
-        data['x'+repr(d)+'v'][i] = \
-            center_func(data['x'+repr(d)+'f'][i], data['x'+repr(d)+'f'][i+1])
+          dataset_index = var_num - dataset_sizes_cumulative[dataset_num-1]
+        self.quantity_datasets[q] = dataset_names[dataset_num]
+        self.quantity_indices[q] = dataset_index
 
-    # Account for selection
-    x1_select = False
-    x2_select = False
-    x3_select = False
-    i_min = j_min = k_min = 0
-    i_max = nx1
-    j_max = nx2
-    k_max = nx3
-    error_string = '{0} must be {1} than {2} in order to intersect data range'
-    if x1_min is not None and x1_min >= data['x1f'][1]:
-      if x1_min >= data['x1f'][-1]:
-        raise AthenaError(error_string.format('x1_min', 'less', data['x1f'][-1]))
-      x1_select = True
-      i_min = np.where(data['x1f'] <= x1_min)[0][-1]
-    if x1_max is not None and x1_max <= data['x1f'][-2]:
-      if x1_max <= data['x1f'][0]:
-        raise AthenaError(error_string.format('x1_max', 'greater', data['x1f'][0]))
-      x1_select = True
-      i_max = np.where(data['x1f'] >= x1_max)[0][0]
-    if x2_min is not None and x2_min >= data['x2f'][1]:
-      if x2_min >= data['x2f'][-1]:
-        raise AthenaError(error_string.format('x2_min', 'less', data['x2f'][-1]))
-      x2_select = True
-      j_min = np.where(data['x2f'] <= x2_min)[0][-1]
-    if x2_max is not None and x2_max <= data['x2f'][-2]:
-      if x2_max <= data['x2f'][0]:
-        raise AthenaError(error_string.format('x2_max', 'greater', data['x2f'][0]))
-      x2_select = True
-      j_max = np.where(data['x2f'] >= x2_max)[0][0]
-    if x3_min is not None and x3_min >= data['x3f'][1]:
-      if x3_min >= data['x3f'][-1]:
-        raise AthenaError(error_string.format('x3_min', 'less', data['x3f'][-1]))
-      x3_select = True
-      k_min = np.where(data['x3f'] <= x3_min)[0][-1]
-    if x3_max is not None and x3_max <= data['x3f'][-2]:
-      if x3_max <= data['x3f'][0]:
-        raise AthenaError(error_string.format('x3_max', 'greater', data['x3f'][0]))
-      x3_select = True
-      k_max = np.where(data['x3f'] >= x3_max)[0][0]
+      # Locate fine block for coordinates in case of slice
+      fine_block = np.where(self.levels == self.max_level)[0][0]
+      self.x1m = f['x1f'][fine_block,0]
+      self.x1p = f['x1f'][fine_block,1]
+      self.x2m = f['x2f'][fine_block,0]
+      self.x2p = f['x2f'][fine_block,1]
+      self.x3m = f['x3f'][fine_block,0]
+      self.x3p = f['x3f'][fine_block,1]
 
-    # Adjust coordinates if selection made
-    if x1_select:
-      data['x1f'] = data['x1f'][i_min:i_max+1]
-      data['x1v'] = data['x1v'][i_min:i_max]
-    if x2_select:
-      data['x2f'] = data['x2f'][j_min:j_max+1]
-      data['x2v'] = data['x2v'][j_min:j_max]
-    if x3_select:
-      data['x3f'] = data['x3f'][k_min:k_max+1]
-      data['x3v'] = data['x3v'][k_min:k_max]
+      # Populate coordinate arrays
+      face_funcs = (face_func_1, face_func_2, face_func_3)
+      center_funcs = (center_func_1, center_func_2, center_func_3)
+      for d,nx,face_func,center_func in \
+          zip(range(1, 4), nx_vals, face_funcs, center_funcs):
+        if nx == 1:
+          xm = (self.x1m, self.x2m, self.x3m)[d-1]
+          xp = (self.x1p, self.x2p, self.x3p)[d-1]
+          self['x' + repr(d) + 'f'] = np.array([xm, xp])
+        else:
+          xmin = f.attrs['RootGridX'+repr(d)][0]
+          xmax = f.attrs['RootGridX'+repr(d)][1]
+          xrat_root = f.attrs['RootGridX' + repr(d)][2]
+          if xrat_root == -1.0 and face_func is None:
+            raise AthenaError('Must specify user-defined face_func_{0}'.format(d))
+          elif face_func is not None:
+            self['x' + repr(d) + 'f'] = face_func(xmin, xmax, xrat_root, nx + 1)
+          elif xrat_root == 1.0:
+            self['x' + repr(d) + 'f'] = np.linspace(xmin, xmax, nx + 1)
+          else:
+            xrat = xrat_root ** (1.0 / 2 ** self.level)
+            self['x' + repr(d) + 'f'] = \
+                xmin + (1.0 - xrat ** np.arange(nx+1)) / (1.0 - xrat**nx) * (xmax - xmin)
+        self['x' + repr(d) + 'v'] = np.empty(nx)
+        for i in range(nx):
+          self['x' + repr(d) + 'v'][i] = \
+              center_func(self['x' + repr(d) + 'f'][i], self['x' + repr(d) + 'f'][i+1])
 
-    # Prepare arrays for data and bookkeeping
-    if new_data:
-      for q in quantities:
-        data[q] = np.zeros((k_max-k_min, j_max-j_min, i_max-i_min), dtype=dtype)
-      if return_levels:
-        data['Levels'] = np.empty((k_max-k_min, j_max-j_min, i_max-i_min), dtype=np.int32)
-    else:
-      for q in quantities:
-        data[q].fill(0.0)
-    if not subsample and not fast_restrict and max_level > level:
-      restricted_data = np.zeros((lx3, lx2, lx1), dtype=bool)
+      # Account for selection
+      x1_select = False
+      x2_select = False
+      x3_select = False
+      self.i_min = self.j_min = self.k_min = 0
+      self.i_max = self.nx1
+      self.j_max = self.nx2
+      self.k_max = self.nx3
+      error_string = '{0} must be {1} than {2} in order to intersect data range'
+      if x1_min is not None and x1_min >= self['x1f'][1]:
+        if x1_min >= self['x1f'][-1]:
+          raise AthenaError(error_string.format('x1_min', 'less', self['x1f'][-1]))
+        x1_select = True
+        self.i_min = np.where(self['x1f'] <= x1_min)[0][-1]
+      if x1_max is not None and x1_max <= self['x1f'][-2]:
+        if x1_max <= self['x1f'][0]:
+          raise AthenaError(error_string.format('x1_max', 'greater', self['x1f'][0]))
+        x1_select = True
+        self.i_max = np.where(self['x1f'] >= x1_max)[0][0]
+      if x2_min is not None and x2_min >= self['x2f'][1]:
+        if x2_min >= self['x2f'][-1]:
+          raise AthenaError(error_string.format('x2_min', 'less', self['x2f'][-1]))
+        x2_select = True
+        self.j_min = np.where(self['x2f'] <= x2_min)[0][-1]
+      if x2_max is not None and x2_max <= self['x2f'][-2]:
+        if x2_max <= self['x2f'][0]:
+          raise AthenaError(error_string.format('x2_max', 'greater', self['x2f'][0]))
+        x2_select = True
+        self.j_max = np.where(self['x2f'] >= x2_max)[0][0]
+      if x3_min is not None and x3_min >= self['x3f'][1]:
+        if x3_min >= self['x3f'][-1]:
+          raise AthenaError(error_string.format('x3_min', 'less', self['x3f'][-1]))
+        x3_select = True
+        self.k_min = np.where(self['x3f'] <= x3_min)[0][-1]
+      if x3_max is not None and x3_max <= self['x3f'][-2]:
+        if x3_max <= self['x3f'][0]:
+          raise AthenaError(error_string.format('x3_max', 'greater', self['x3f'][0]))
+        x3_select = True
+        self.k_max = np.where(self['x3f'] >= x3_max)[0][0]
 
-    # Go through blocks in data file
-    for block_num in range(num_blocks):
+      # Adjust coordinates if selection made
+      if x1_select:
+        self['x1f'] = self['x1f'][self.i_min:self.i_max+1]
+        self['x1v'] = self['x1v'][self.i_min:self.i_max]
+      if x2_select:
+        self['x2f'] = self['x2f'][self.j_min:self.j_max+1]
+        self['x2v'] = self['x2v'][self.j_min:self.j_max]
+      if x3_select:
+        self['x3f'] = self['x3f'][self.k_min:self.k_max+1]
+        self['x3v'] = self['x3v'][self.k_min:self.k_max]
 
-      # Extract location information
-      block_level = levels[block_num]
-      block_location = logical_locations[block_num,:]
+      # Set to None any quantities not set by initialization
+      for i in self.quantities:
+        if not i in self:
+          self[i] = None
 
-      # Prolongate coarse data and copy same-level data
-      if block_level <= level:
+  # Function for contingently accessing data
+  def __getitem__(self, item):
+    if self._need_to_read(item):
+      self._grab_quantities([item])
+    return super(athdf, self).__getitem__(item)
 
-        # Calculate scale (number of copies per dimension)
-        s = 2 ** (level - block_level)
+  # Function for contingently setting data
+  def __setitem__(self, key, value):
+    if not self.new_data:
+      try:
+        self._existing_keys.remove(key)
+      except ValueError:
+        pass
+    return super(athdf, self).__setitem__(key, value)
 
-        # Calculate destination indices, without selection
-        il_d = block_location[0] * block_size[0] * s if nx1 > 1 else 0
-        jl_d = block_location[1] * block_size[1] * s if nx2 > 1 else 0
-        kl_d = block_location[2] * block_size[2] * s if nx3 > 1 else 0
-        iu_d = il_d + block_size[0] * s if nx1 > 1 else 1
-        ju_d = jl_d + block_size[1] * s if nx2 > 1 else 1
-        ku_d = kl_d + block_size[2] * s if nx3 > 1 else 1
+  # Function for returning constant shape of all 3D arrays
+  def _shape(self):
+    return (self.k_max - self.k_min, self.j_max - self.j_min, self.i_max - self.i_min)
 
-        # Calculate (prolongated) source indices, with selection
-        il_s = max(il_d, i_min) - il_d
-        jl_s = max(jl_d, j_min) - jl_d
-        kl_s = max(kl_d, k_min) - kl_d
-        iu_s = min(iu_d, i_max) - il_d
-        ju_s = min(ju_d, j_max) - jl_d
-        ku_s = min(ku_d, k_max) - kl_d
-        if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
-          continue
+  # Function for determining if a quantity must be set
+  def _need_to_read(self, quantity):
+    if not self.new_data:
+      if quantity in self._existing_keys:
+        return True
+    try:
+      if super(athdf, self).__getitem__(quantity) is None:
+        return True
+    except KeyError:
+      if quantity in self.quantities:
+        return True
+    return False
 
-        # Account for selection in destination indices
-        il_d = max(il_d, i_min) - i_min
-        jl_d = max(jl_d, j_min) - j_min
-        kl_d = max(kl_d, k_min) - k_min
-        iu_d = min(iu_d, i_max) - i_min
-        ju_d = min(ju_d, j_max) - j_min
-        ku_d = min(ku_d, k_max) - k_min
+  # Function for setting all needed quantities
+  def _grab_quantities(self, quantities):
 
-        # Assign values
-        for q,dataset,index in zip(quantities, quantity_datasets, quantity_indices):
-          block_data = f[dataset][index,block_num,:]
-          if s > 1:
-            if nx1 > 1:
-              block_data = np.repeat(block_data, s, axis=2)
-            if nx2 > 1:
-              block_data = np.repeat(block_data, s, axis=1)
-            if nx3 > 1:
-              block_data = np.repeat(block_data, s, axis=0)
-          data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = \
-              block_data[kl_s:ku_s,jl_s:ju_s,il_s:iu_s]
+    # Create list of quantities to be set
+    quantities = [q for q in quantities if self._need_to_read(q)]
 
-      # Restrict fine data
+    # Open file
+    with h5py.File(self.filename, 'r') as f:
+
+      # Prepare arrays for data and bookkeeping
+      if self.new_data:
+        for q in quantities:
+          self[q] = np.zeros((self._shape()), dtype=self.dtype)
+        if self.return_levels:
+          self['Levels'] = np.empty((self._shape()), dtype=np.int32)
       else:
+        for q in quantities:
+          self[q].fill(0.0)
+      if not self.subsample and not self.fast_restrict and self.max_level > self.level:
+        restricted_data = np.zeros((self.lx3, self.lx2, self.lx1), dtype=bool)
 
-        # Calculate scale
-        s = 2 ** (block_level - level)
+      # Go through blocks in data file
+      for block_num in range(self.num_blocks):
 
-        # Calculate destination indices, without selection
-        il_d = block_location[0] * block_size[0] / s if nx1 > 1 else 0
-        jl_d = block_location[1] * block_size[1] / s if nx2 > 1 else 0
-        kl_d = block_location[2] * block_size[2] / s if nx3 > 1 else 0
-        iu_d = il_d + block_size[0] / s if nx1 > 1 else 1
-        ju_d = jl_d + block_size[1] / s if nx2 > 1 else 1
-        ku_d = kl_d + block_size[2] / s if nx3 > 1 else 1
+        # Extract location information
+        block_level = self.levels[block_num]
+        block_location = self.logical_locations[block_num,:]
 
-        # Calculate (restricted) source indices, with selection
-        il_s = max(il_d, i_min) - il_d
-        jl_s = max(jl_d, j_min) - jl_d
-        kl_s = max(kl_d, k_min) - kl_d
-        iu_s = min(iu_d, i_max) - il_d
-        ju_s = min(ju_d, j_max) - jl_d
-        ku_s = min(ku_d, k_max) - kl_d
-        if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
-          continue
+        # Prolongate coarse data and copy same-level data
+        if block_level <= self.level:
 
-        # Account for selection in destination indices
-        il_d = max(il_d, i_min) - i_min
-        jl_d = max(jl_d, j_min) - j_min
-        kl_d = max(kl_d, k_min) - k_min
-        iu_d = min(iu_d, i_max) - i_min
-        ju_d = min(ju_d, j_max) - j_min
-        ku_d = min(ku_d, k_max) - k_min
+          # Calculate scale (number of copies per dimension)
+          s = 2 ** (self.level - block_level)
 
-        # Account for restriction in source indices
-        if nx1 > 1:
-          il_s *= s
-          iu_s *= s
-        if nx2 > 1:
-          jl_s *= s
-          ju_s *= s
-        if nx3 > 1:
-          kl_s *= s
-          ku_s *= s
+          # Calculate destination indices, without selection
+          il_d = block_location[0] * self.block_size[0] * s if self.nx1 > 1 else 0
+          jl_d = block_location[1] * self.block_size[1] * s if self.nx2 > 1 else 0
+          kl_d = block_location[2] * self.block_size[2] * s if self.nx3 > 1 else 0
+          iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
+          ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
+          ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
 
-        # Apply subsampling
-        if subsample:
+          # Calculate (prolongated) source indices, with selection
+          il_s = max(il_d, self.i_min) - il_d
+          jl_s = max(jl_d, self.j_min) - jl_d
+          kl_s = max(kl_d, self.k_min) - kl_d
+          iu_s = min(iu_d, self.i_max) - il_d
+          ju_s = min(ju_d, self.j_max) - jl_d
+          ku_s = min(ku_d, self.k_max) - kl_d
+          if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+            continue
 
-          # Calculate fine-level offsets (nearest cell at or below center)
-          o1 = s/2 - 1 if nx1 > 1 else 0
-          o2 = s/2 - 1 if nx2 > 1 else 0
-          o3 = s/2 - 1 if nx3 > 1 else 0
+          # Account for selection in destination indices
+          il_d = max(il_d, self.i_min) - self.i_min
+          jl_d = max(jl_d, self.j_min) - self.j_min
+          kl_d = max(kl_d, self.k_min) - self.k_min
+          iu_d = min(iu_d, self.i_max) - self.i_min
+          ju_d = min(ju_d, self.j_max) - self.j_min
+          ku_d = min(ku_d, self.k_max) - self.k_min
 
           # Assign values
-          for q,dataset,index in zip(quantities, quantity_datasets, quantity_indices):
-            data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = \
-                f[dataset][index,block_num,kl_s+o3:ku_s:s,jl_s+o2:ju_s:s,il_s+o1:iu_s:s]
+          for q in quantities:
+            dataset = self.quantity_datasets[q]
+            index = self.quantity_indices[q]
+            block_data = f[dataset][index,block_num,:]
+            if s > 1:
+              if self.nx1 > 1:
+                block_data = np.repeat(block_data, s, axis=2)
+              if self.nx2 > 1:
+                block_data = np.repeat(block_data, s, axis=1)
+              if self.nx3 > 1:
+                block_data = np.repeat(block_data, s, axis=0)
+            self[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = \
+                block_data[kl_s:ku_s,jl_s:ju_s,il_s:iu_s]
 
-        # Apply fast (uniform Cartesian) restriction
-        elif fast_restrict:
-
-          # Calculate fine-level offsets
-          io_vals = range(s) if nx1 > 1 else (0,)
-          jo_vals = range(s) if nx2 > 1 else (0,)
-          ko_vals = range(s) if nx3 > 1 else (0,)
-
-          # Assign values
-          for q,dataset,index in zip(quantities, quantity_datasets, quantity_indices):
-            for ko in ko_vals:
-              for jo in jo_vals:
-                for io in io_vals:
-                  data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] += \
-                      f[dataset]\
-                      [index,block_num,kl_s+ko:ku_s:s,jl_s+jo:ju_s:s,il_s+io:iu_s:s]
-            data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] /= s ** num_extended_dims
-
-        # Apply exact (volume-weighted) restriction
+        # Restrict fine data
         else:
 
-          # Calculate sets of indices
-          i_s_vals = range(il_s, iu_s)
-          j_s_vals = range(jl_s, ju_s)
-          k_s_vals = range(kl_s, ku_s)
-          i_d_vals = range(il_d, iu_d)
-          j_d_vals = range(jl_d, ju_d)
-          k_d_vals = range(kl_d, ku_d)
-          if nx1 > 1:
-            i_d_vals = np.repeat(i_d_vals, s)
-          if nx2 > 1:
-            j_d_vals = np.repeat(j_d_vals, s)
-          if nx3 > 1:
-            k_d_vals = np.repeat(k_d_vals, s)
+          # Calculate scale
+          s = 2 ** (block_level - self.level)
 
-          # Accumulate values
-          for k_s,k_d in zip(k_s_vals, k_d_vals):
-            if nx3 > 1:
-              x3m = f['x3f'][block_num,k_s]
-              x3p = f['x3f'][block_num,k_s+1]
-            for j_s,j_d in zip(j_s_vals, j_d_vals):
-              if nx2 > 1:
-                x2m = f['x2f'][block_num,j_s]
-                x2p = f['x2f'][block_num,j_s+1]
-              for i_s,i_d in zip(i_s_vals, i_d_vals):
-                if nx1 > 1:
-                  x1m = f['x1f'][block_num,i_s]
-                  x1p = f['x1f'][block_num,i_s+1]
-                vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
-                for q,dataset,index in \
-                    zip(quantities, quantity_datasets, quantity_indices):
-                  data[q][k_d,j_d,i_d] += f[dataset][index,block_num,k_s,j_s,i_s] * vol
-          loc1 = (nx1 > 1 ) * block_location[0] / s
-          loc2 = (nx2 > 1 ) * block_location[1] / s
-          loc3 = (nx3 > 1 ) * block_location[2] / s
-          restricted_data[loc3,loc2,loc1] = True
+          # Calculate destination indices, without selection
+          il_d = block_location[0] * self.block_size[0] / s if self.nx1 > 1 else 0
+          jl_d = block_location[1] * self.block_size[1] / s if self.nx2 > 1 else 0
+          kl_d = block_location[2] * self.block_size[2] / s if self.nx3 > 1 else 0
+          iu_d = il_d + self.block_size[0] / s if self.nx1 > 1 else 1
+          ju_d = jl_d + self.block_size[1] / s if self.nx2 > 1 else 1
+          ku_d = kl_d + self.block_size[2] / s if self.nx3 > 1 else 1
 
-      # Set level information for cells in this block
-      if return_levels:
-        data['Levels'][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = block_level
+          # Calculate (restricted) source indices, with selection
+          il_s = max(il_d, self.i_min) - il_d
+          jl_s = max(jl_d, self.j_min) - jl_d
+          kl_s = max(kl_d, self.k_min) - kl_d
+          iu_s = min(iu_d, self.i_max) - il_d
+          ju_s = min(ju_d, self.j_max) - jl_d
+          ku_s = min(ku_d, self.k_max) - kl_d
+          if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+            continue
 
-  # Remove volume factors from restricted data
-  if level < max_level and not subsample and not fast_restrict:
-    for loc3 in range(lx3):
-      for loc2 in range(lx2):
-        for loc1 in range(lx1):
-          if restricted_data[loc3,loc2,loc1]:
-            il = loc1 * block_size[0]
-            jl = loc2 * block_size[1]
-            kl = loc3 * block_size[2]
-            iu = il + block_size[0]
-            ju = jl + block_size[1]
-            ku = kl + block_size[2]
-            il = max(il, i_min) - i_min
-            jl = max(jl, j_min) - j_min
-            kl = max(kl, k_min) - k_min
-            iu = min(iu, i_max) - i_min
-            ju = min(ju, j_max) - j_min
-            ku = min(ku, k_max) - k_min
-            for k in range(kl, ku):
-              if nx3 > 1:
-                x3m = data['x3f'][k]
-                x3p = data['x3f'][k+1]
-              for j in range(jl, ju):
-                if nx2 > 1:
-                  x2m = data['x2f'][j]
-                  x2p = data['x2f'][j+1]
-                for i in range(il, iu):
-                  if nx1 > 1:
-                    x1m = data['x1f'][i]
-                    x1p = data['x1f'][i+1]
-                  vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
+          # Account for selection in destination indices
+          il_d = max(il_d, self.i_min) - self.i_min
+          jl_d = max(jl_d, self.j_min) - self.j_min
+          kl_d = max(kl_d, self.k_min) - self.k_min
+          iu_d = min(iu_d, self.i_max) - self.i_min
+          ju_d = min(ju_d, self.j_max) - self.j_min
+          ku_d = min(ku_d, self.k_max) - self.k_min
+
+          # Account for restriction in source indices
+          if self.nx1 > 1:
+            il_s *= s
+            iu_s *= s
+          if self.nx2 > 1:
+            jl_s *= s
+            ju_s *= s
+          if self.nx3 > 1:
+            kl_s *= s
+            ku_s *= s
+
+          # Apply subsampling
+          if self.subsample:
+
+            # Calculate fine-level offsets (nearest cell at or below center)
+            o1 = s/2 - 1 if self.nx1 > 1 else 0
+            o2 = s/2 - 1 if self.nx2 > 1 else 0
+            o3 = s/2 - 1 if self.nx3 > 1 else 0
+
+            # Assign values
+            for q in quantities:
+              dataset = self.quantity_datasets[q]
+              index = self.quantity_indices[q]
+              self[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = \
+                  f[dataset][index,block_num,kl_s+o3:ku_s:s,jl_s+o2:ju_s:s,il_s+o1:iu_s:s]
+
+          # Apply fast (uniform Cartesian) restriction
+          elif self.fast_restrict:
+
+            # Calculate fine-level offsets
+            io_vals = range(s) if self.nx1 > 1 else (0,)
+            jo_vals = range(s) if self.nx2 > 1 else (0,)
+            ko_vals = range(s) if self.nx3 > 1 else (0,)
+
+            # Assign values
+            for q in quantities:
+              dataset = self.quantity_datasets[q]
+              index = self.quantity_indices[q]
+              for ko in ko_vals:
+                for jo in jo_vals:
+                  for io in io_vals:
+                    self[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] += \
+                        f[dataset]\
+                        [index,block_num,kl_s+ko:ku_s:s,jl_s+jo:ju_s:s,il_s+io:iu_s:s]
+              self[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] /= s ** self.num_extended_dims
+
+          # Apply exact (volume-weighted) restriction
+          else:
+
+            # Calculate sets of indices
+            i_s_vals = range(il_s, iu_s)
+            j_s_vals = range(jl_s, ju_s)
+            k_s_vals = range(kl_s, ku_s)
+            i_d_vals = range(il_d, iu_d)
+            j_d_vals = range(jl_d, ju_d)
+            k_d_vals = range(kl_d, ku_d)
+            if self.nx1 > 1:
+              i_d_vals = np.repeat(i_d_vals, s)
+            if self.nx2 > 1:
+              j_d_vals = np.repeat(j_d_vals, s)
+            if self.nx3 > 1:
+              k_d_vals = np.repeat(k_d_vals, s)
+
+            # Accumulate values
+            for k_s,k_d in zip(k_s_vals, k_d_vals):
+              if self.nx3 > 1:
+                self.x3m = f['x3f'][block_num,k_s]
+                self.x3p = f['x3f'][block_num,k_s+1]
+              for j_s,j_d in zip(j_s_vals, j_d_vals):
+                if self.nx2 > 1:
+                  self.x2m = f['x2f'][block_num,j_s]
+                  self.x2p = f['x2f'][block_num,j_s+1]
+                for i_s,i_d in zip(i_s_vals, i_d_vals):
+                  if self.nx1 > 1:
+                    self.x1m = f['x1f'][block_num,i_s]
+                    self.x1p = f['x1f'][block_num,i_s+1]
+                  vol = self.vol_func(self.x1m, self.x1p, self.x2m, self.x2p, self.x3m, \
+                      self.x3p)
                   for q in quantities:
-                    data[q][k,j,i] /= vol
+                    dataset = self.quantity_datasets[q]
+                    index = self.quantity_indices[q]
+                    self[q][k_d,j_d,i_d] += f[dataset][index,block_num,k_s,j_s,i_s] * vol
+            loc1 = (self.nx1 > 1) * block_location[0] / s
+            loc2 = (self.nx2 > 1 ) * block_location[1] / s
+            loc3 = (self.nx3 > 1) * block_location[2] / s
+            restricted_data[loc3,loc2,loc1] = True
 
-  # Return dictionary containing requested data arrays
-  return data
+        # Set level information for cells in this block
+        if self.return_levels:
+          self['Levels'][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = block_level
+
+    # Remove volume factors from restricted data
+    if self.level < self.max_level and not self.subsample and not self.fast_restrict:
+      for loc3 in range(self.lx3):
+        for loc2 in range(self.lx2):
+          for loc1 in range(self.lx1):
+            if restricted_data[loc3,loc2,loc1]:
+              il = loc1 * self.block_size[0]
+              jl = loc2 * self.block_size[1]
+              kl = loc3 * self.block_size[2]
+              iu = il + self.block_size[0]
+              ju = jl + self.block_size[1]
+              ku = kl + self.block_size[2]
+              il = max(il, self.i_min) - self.i_min
+              jl = max(jl, self.j_min) - self.j_min
+              kl = max(kl, self.k_min) - self.k_min
+              iu = min(iu, self.i_max) - self.i_min
+              ju = min(ju, self.j_max) - self.j_min
+              ku = min(ku, self.k_max) - self.k_min
+              for k in range(kl, ku):
+                if self.nx3 > 1:
+                  self.x3m = self['x3f'][k]
+                  self.x3p = self['x3f'][k+1]
+                for j in range(jl, ju):
+                  if self.nx2 > 1:
+                    self.x2m = self['x2f'][j]
+                    self.x2p = self['x2f'][j+1]
+                  for i in range(il, iu):
+                    if self.nx1 > 1:
+                      self.x1m = self['x1f'][i]
+                      self.x1p = self['x1f'][i+1]
+                    vol = self.vol_func(self.x1m, self.x1p, self.x2m, self.x2p, \
+                        self.x3m, self.x3p)
+                    for q in quantities:
+                      self[q][k,j,i] /= vol
 
 #=========================================================================================
 
