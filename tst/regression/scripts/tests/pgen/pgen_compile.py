@@ -17,22 +17,36 @@ pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 
 # Prepare Athena++
 def prepare(**kwargs):
-    for pgen in pgen_choices:
-        if (pgen[0:3] == 'gr_' or pgen == 'default_pgen'):
-            print(pgen)
-            # athena.configure('g', coord='minkowski', flux='hlle', prob=pgen)
-            # athena.make()
-        elif (pgen == 'cpaw' or pgen == 'field_loop' or
-              pgen == 'orszag_tang' or pgen == 'rotor'):
-            athena.configure('b', prob=pgen, **kwargs)
-            athena.make()
-        elif (pgen == 'hb3' or pgen == 'hgb' or pgen == 'ssheet' or
-              pgen == 'strat'):
-            athena.configure('b', 'shear', prob=pgen, **kwargs)
-            athena.make()
-        else:
-            athena.configure(prob=pgen, **kwargs)
-            athena.make()
+    # Check that code compiles all pgen files in single or double precision
+    for single_precision in [True, False]:
+        for pgen in pgen_choices:
+            args = []
+            if single_precision:
+                args = ['float']
+            # Skip GR and default_pgen problems by default
+            # (default_pgen may not compile with Intel C++ compiler)
+            if (pgen[0:3] == 'gr_' or pgen == 'default_pgen'):
+                print(pgen)
+                args.extend(['g'])
+                # athena.configure(args, coord='minkowski',
+                #                  flux='hlle', prob=pgen)
+                # athena.make()
+            # MHD-required problems
+            elif (pgen == 'cpaw' or pgen == 'field_loop' or
+                  pgen == 'orszag_tang' or pgen == 'rotor'):
+                args.extend(['b'])
+                athena.configure(*args, prob=pgen, **kwargs)
+                athena.make()
+            # Shearinbox MHD problems
+            elif (pgen == 'hb3' or pgen == 'hgb' or pgen == 'ssheet' or
+                  pgen == 'strat'):
+                args.extend(['b', 'shear'])
+                athena.configure(*args, prob=pgen, **kwargs)
+                athena.make()
+            # Hydro-only and MHD-optional problems
+            else:
+                athena.configure(*args, prob=pgen, **kwargs)
+                athena.make()
 
 
 # Run Athena++
