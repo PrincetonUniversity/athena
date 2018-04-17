@@ -82,8 +82,8 @@ def main(**kwargs):
                                     fromlist=['prepare', 'run', 'analyze'])
                 os.system('rm -rf {0}/bin'.format(current_dir))
 
-                #insert arguments to athena.run and athena.configure
-                #by changing global values through module
+                # insert arguments to athena.run and athena.configure
+                # by changing global values through module
                 module.athena.global_config_args = athena_config_args
                 module.athena.global_run_args = athena_run_args
 

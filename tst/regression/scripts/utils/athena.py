@@ -23,7 +23,7 @@ def configure(*args, **kwargs):
             if val:
                 configure_command.append('--{0}={1}'.format(key, val))
         try:
-            subprocess.check_call(configure_command+global_config_args)
+            subprocess.check_call(configure_command + global_config_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
