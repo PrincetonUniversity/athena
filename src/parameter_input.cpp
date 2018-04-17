@@ -176,8 +176,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input) {
     header+=ret;
     std::string sbuf = par.str(); // create string for search
     loc=sbuf.find("<par_end>",0); // search from the top of the stream
-    if (loc!=std::string::npos) // found <par_end>
-    {
+    if (loc!=std::string::npos) { // found <par_end>
       header=loc+10; // store the header length
       break;
     }
