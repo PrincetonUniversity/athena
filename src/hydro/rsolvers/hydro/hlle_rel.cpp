@@ -47,8 +47,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
@@ -85,8 +84,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
-    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric if in GR
   int i01, i11;
   #if GENERAL_RELATIVITY

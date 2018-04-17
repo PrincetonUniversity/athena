@@ -7,7 +7,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity.hpp
-//  \brief defines Gravity class which implements data and functions for gravitational potential
+//  \brief defines Gravity class which implements data and functions for gravitational
+//         potential
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -39,6 +40,7 @@ public:
 private:
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
- 
+
 };
+
 #endif // GRAVITY_HPP

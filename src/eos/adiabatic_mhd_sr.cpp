@@ -33,8 +33,7 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
@@ -67,8 +66,7 @@ EquationOfState::~EquationOfState() {}
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
     AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-    int ku)
-{
+    int ku) {
   // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
   const Real v_sq_max = 1.0 - 1.0/SQR(gamma_max_);
@@ -194,8 +192,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku)
-{
+     int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
@@ -268,8 +265,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
-    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
-{
+    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m) {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
   const double b_limit = 1.0e-14;  // squared B^x less than this is considered 0
@@ -454,8 +450,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 //   same function as in hlld_rel.cpp
 
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime)
-{
+    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -484,8 +479,7 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 //   same function as in hlld_mhd_rel.cpp
 
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime)
-{
+    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -509,8 +503,7 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
-{
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
   // Eventually, may want to check that small field errors don't overwhelm gas floor

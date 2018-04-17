@@ -41,8 +41,7 @@
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
-{
+ : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
@@ -62,7 +61,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       BoundaryFunction_[INNER_X1] = NULL;
       break;
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if(!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
+      if (!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[INNER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
@@ -89,7 +88,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if(!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
+      if (!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
@@ -214,8 +213,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
     num_north_polar_blocks_ = pmy_mesh_->nrbx3 * (1 << level);
-  }
-  else
+  } else
     num_north_polar_blocks_ = 0;
   if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
@@ -314,7 +312,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
     shbb_.outer = false;
     shbb_.inner = false;
 
-    if(ShBoxCoord_ == 1) {
+    if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       int ncells3 = pmb->block_size.nx3;
       if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
@@ -503,8 +501,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, Par
 
 // destructor
 
-BoundaryValues::~BoundaryValues()
-{
+BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb=pmy_block_;
 
   DestroyBoundaryData(bd_hydro_);
@@ -623,8 +620,7 @@ BoundaryValues::~BoundaryValues()
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 //  \brief Initialize BoundaryData structure
-void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
-{
+void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
   int f2d=0, f3d=0;
@@ -694,11 +690,13 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
                   *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                   *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
           int f2c2=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
+                  *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d)
+                    : NGHOST)
                   *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
           int f2c3=((BoundaryValues::ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                   *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
+                  *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d)
+                    : NGHOST);
           if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
             if (BoundaryValues::ni[n].ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
@@ -748,16 +746,14 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
               size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
             else
               size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
-          }
-          else // 1D
+          } else // 1D
             size=2;
         } else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) {
           if (pmb->block_size.nx3>1) { // 3D
             if (BoundaryValues::ni[n].ox3==0) size=pmb->block_size.nx3;
             if (BoundaryValues::ni[n].ox2==0) size=pmb->block_size.nx2;
             if (BoundaryValues::ni[n].ox1==0) size=pmb->block_size.nx1;
-          }
-         else if (pmb->block_size.nx2>1)
+          } else if (pmb->block_size.nx2>1)
             size=1;
         }
       }
@@ -779,8 +775,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 //  \brief Destroy BoundaryData structure
-void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
-{
+void BoundaryValues::DestroyBoundaryData(BoundaryData &bd) {
   for (int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
@@ -797,8 +792,7 @@ void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Initialize MPI requests
 
-void BoundaryValues::Initialize(void)
-{
+void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
   int tag;
@@ -814,9 +808,9 @@ void BoundaryValues::Initialize(void)
   int64_t &lx2=pmb->loc.lx2;
   int64_t &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
-  myox1=((int)(lx1&1L));
-  myox2=((int)(lx2&1L));
-  myox3=((int)(lx3&1L));
+  myox1=(static_cast<int>(lx1&1L));
+  myox2=(static_cast<int>(lx2&1L));
+  myox3=(static_cast<int>(lx3&1L));
 
   // count the number of the fine meshblocks contacting on each edge
   int eid=0;
@@ -1031,8 +1025,7 @@ void BoundaryValues::Initialize(void)
               size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
               f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
             }
-          }
-          else // 1D
+          } else // 1D
             size=f2csize=2;
         } else if (nb.type==NEIGHBOR_EDGE) { // edge
           if (pmb->block_size.nx3 > 1) { // 3D
@@ -1046,11 +1039,9 @@ void BoundaryValues::Initialize(void)
               size=pmb->block_size.nx1;
               f2csize=pmb->block_size.nx1/2;
             }
-          }
-          else if (pmb->block_size.nx2 > 1) // 2D
+          } else if (pmb->block_size.nx2 > 1) // 2D
             size=f2csize=1;
-        }
-        else // corner
+        } else // corner
           continue;
 
         if (nb.level==mylevel) { // the same level
@@ -1166,8 +1157,7 @@ void BoundaryValues::Initialize(void)
 //! \fn void BoundaryValues::CheckBoundary(void)
 //  \brief checks if the boundary conditions are correctly enrolled
 
-void BoundaryValues::CheckBoundary(void)
-{
+void BoundaryValues::CheckBoundary(void) {
   MeshBlock *pmb=pmy_block_;
   for (int i=0;i<nface_;i++) {
     if (block_bcs[i]==USER_BNDRY) {
@@ -1186,8 +1176,7 @@ void BoundaryValues::CheckBoundary(void)
 //! \fn void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //  \brief initiate MPI_Irecv for initialization
 
-void BoundaryValues::StartReceivingForInit(bool cons_and_field)
-{
+void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   for (int n=0;n<nneighbor;n++) {
@@ -1197,8 +1186,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-      }
-      else  // must be primitive initialization
+      } else  // must be primitive initialization
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
     }
   }
@@ -1216,8 +1204,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingAll(const Real time)
 //  \brief initiate MPI_Irecv for all the sweeps
-void BoundaryValues::StartReceivingAll(const Real time)
-{
+void BoundaryValues::StartReceivingAll(const Real time) {
   firsttime_=true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
@@ -1262,7 +1249,7 @@ void BoundaryValues::StartReceivingAll(const Real time)
     int size,tag;
     if (shbb_.inner) { // inner boundary
       for (int n=0; n<4; n++) {
-        if((recv_inner_rank_[n]!=Globals::my_rank) &&
+        if ((recv_inner_rank_[n]!=Globals::my_rank) &&
                           (recv_inner_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
@@ -1287,7 +1274,7 @@ void BoundaryValues::StartReceivingAll(const Real time)
     if (shbb_.outer) { // outer boundary
       int offset=4;
       for (int n=0; n<4; n++) {
-        if((recv_outer_rank_[n]!=Globals::my_rank) &&
+        if ((recv_outer_rank_[n]!=Globals::my_rank) &&
                           (recv_outer_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n+offset);
@@ -1317,8 +1304,7 @@ void BoundaryValues::StartReceivingAll(const Real time)
 //! \fn void BoundaryValues::ClearBoundaryForInit(void)
 //  \brief clean up the boundary flags for initialization
 
-void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
-{
+void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   MeshBlock *pmb=pmy_block_;
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
@@ -1352,8 +1338,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 //! \fn void BoundaryValues::ClearBoundaryAll(void)
 //  \brief clean up the boundary flags after each loop
 
-void BoundaryValues::ClearBoundaryAll(void)
-{
+void BoundaryValues::ClearBoundaryAll(void) {
   MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
@@ -1409,15 +1394,15 @@ void BoundaryValues::ClearBoundaryAll(void)
 // clear shearingbox boundary communications
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
-      for (int n=0; n<4; n++){
-        if(send_inner_rank_[n] == -1) continue;
+      for (int n=0; n<4; n++) {
+        if (send_inner_rank_[n] == -1) continue;
         shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           shbox_inner_field_flag_[n] = BNDRY_WAITING;
           shbox_inner_emf_flag_[n] = BNDRY_WAITING;
         }
 #ifdef MPI_PARALLEL
-        if(send_inner_rank_[n]!=Globals::my_rank) {
+        if (send_inner_rank_[n]!=Globals::my_rank) {
           MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
             MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
@@ -1429,14 +1414,14 @@ void BoundaryValues::ClearBoundaryAll(void)
     } // inner boundary
 
     if (shbb_.outer == true) {
-      for (int n=0; n<4; n++){
-        if(send_outer_rank_[n] == -1) continue;
+      for (int n=0; n<4; n++) {
+        if (send_outer_rank_[n] == -1) continue;
         shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
         if (MAGNETIC_FIELDS_ENABLED) {
           shbox_outer_field_flag_[n] = BNDRY_WAITING;
         }
 #ifdef MPI_PARALLEL
-        if(send_outer_rank_[n]!=Globals::my_rank) {
+        if (send_outer_rank_[n]!=Globals::my_rank) {
           Mesh *pmesh = pmb->pmy_mesh;
           MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -1460,8 +1445,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-                     const Real time, const Real dt)
-{
+                     const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
@@ -1561,8 +1545,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
 void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-     const Real time, const Real dt)
-{
+     const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int64_t &lx1=pmb->loc.lx1;
@@ -1667,8 +1650,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       si=pmb->cis, ei=pmb->cie;
       if ((lx1&1L)==0L) ei+=cn;
       else             si-=cn;
-    }
-    else if (nb.ox1>0) si=pmb->cie+1,  ei=pmb->cie+cn;
+    } else if (nb.ox1>0) si=pmb->cie+1,  ei=pmb->cie+cn;
     else              si=pmb->cis-cn, ei=pmb->cis-1;
     if (nb.ox2==0) {
       sj=pmb->cjs, ej=pmb->cje;
@@ -1676,8 +1658,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
         if ((lx2&1L)==0L) ej+=cn;
         else             sj-=cn;
       }
-    }
-    else if (nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
+    } else if (nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
     else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
     if (nb.ox3==0) {
       sk=pmb->cks, ek=pmb->cke;
@@ -1685,8 +1666,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
         if ((lx3&1L)==0L) ek+=cn;
         else             sk-=cn;
       }
-    }
-    else if (nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
+    } else if (nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
     else              sk=pmb->cks-cn, ek=pmb->cks-1;
 
     // convert the ghost zone and ghost-ghost zones into primitive variables
@@ -1695,21 +1675,18 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     if (nb.ox1==0) {
       if (nblevel[1][1][0]!=-1) f1m=1;
       if (nblevel[1][1][2]!=-1) f1p=1;
-    }
-    else f1m=1, f1p=1;
+    } else f1m=1, f1p=1;
     if (pmb->block_size.nx2>1) {
       if (nb.ox2==0) {
         if (nblevel[1][0][1]!=-1) f2m=1;
         if (nblevel[1][2][1]!=-1) f2p=1;
-      }
-      else f2m=1, f2p=1;
+      } else f2m=1, f2p=1;
     }
     if (pmb->block_size.nx3>1) {
       if (nb.ox3==0) {
         if (nblevel[0][1][1]!=-1) f3m=1;
         if (nblevel[2][1][1]!=-1) f3p=1;
-      }
-      else f3m=1, f3p=1;
+      } else f3m=1, f3p=1;
     }
 
     pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
@@ -1771,14 +1748,12 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
         jl=sj, ju=ej+1;
         if ((nb.ox2>=0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
         if ((nb.ox2<=0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
-      }
-      else jl=sj, ju=ej;
+      } else jl=sj, ju=ej;
       if (pmb->block_size.nx3 > 1) {
         kl=sk, ku=ek+1;
         if ((nb.ox3>=0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
         if ((nb.ox3<=0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
-      }
-      else kl=sk, ku=ek;
+      } else kl=sk, ku=ek;
 
       // step 1. calculate x1 outer surface fields and slopes
       pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, bfdst.x1f, il, iu, sj, ej, sk, ek);

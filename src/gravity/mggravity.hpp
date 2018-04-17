@@ -29,7 +29,7 @@ public:
             enum BoundaryFlag *input_bcs, bool root)
    : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
-  ~MGGravity() {};
+  ~MGGravity() {}
   void Smooth(int color);
   void CalculateDefect(void);
 
@@ -44,7 +44,7 @@ private:
 class MGGravityDriver : public MultigridDriver{
 public:
   MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
-  ~MGGravityDriver() {};
+  ~MGGravityDriver() {}
   void Solve(int step);
 
 private:

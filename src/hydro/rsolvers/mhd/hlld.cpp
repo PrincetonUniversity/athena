@@ -20,7 +20,7 @@
 #include "../../../eos/eos.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
-// minimizes changes required to adopt athena4.2 version of this solver 
+// minimizes changes required to adopt athena4.2 version of this solver
 typedef struct Cons1D {
   Real d,mx,my,mz,e,by,bz;
 } Cons1D;
@@ -33,23 +33,22 @@ typedef struct Cons1D {
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
-  Real spd[5];                    // signal speeds, left to right 
-  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states 
+  Real spd[5];                    // signal speeds, left to right
+  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states
   Cons1D fl,fr;                   // Fluxes for left & right states
 
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -103,7 +102,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
 /*
     Real cfmax = std::max(cfl,cfr);
-    if(wli[IVX] <= wri[IVX]) {
+    if (wli[IVX] <= wri[IVX]) {
       spd[0] = wli[IVX] - cfmax;
       spd[4] = wri[IVX] + cfmax;
     } else {
@@ -138,7 +137,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sdl = spd[0] - wli[IVX];  // S_i-u_i (i=L or R)
     Real sdr = spd[4] - wri[IVX];
 
-    // S_M: eqn (38) of Miyoshi & Kusano 
+    // S_M: eqn (38) of Miyoshi & Kusano
     spd[2] = (sdr*ur.mx - sdl*ul.mx - ptr + ptl)/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
@@ -156,7 +155,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //--- Step 5.  Compute intermediate states
 
     Real ptst = ptl + ul.d*sdl*(sdl-sdml);  // total pressure (star state)
- 
+
   // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
     if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
@@ -192,7 +191,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.by = ur.by;
       urst.bz = ur.bz;
     } else {
-      // eqns (44) and (46) of M&K 
+      // eqns (44) and (46) of M&K
       Real tmp = bxi*(sdr - sdmr)/(ur.d*sdr*sdmr - bxsq);
       urst.my = urst.d * (wri[IVY] - ur.by*tmp);
       urst.mz = urst.d * (wri[IVZ] - ur.bz*tmp);
@@ -208,7 +207,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
               bxi*(wri[IVX]*bxi + wri[IVY]*ur.by + wri[IVZ]*ur.bz - vbstr))/sdmr;
 
   // ul** and ur** - if Bx is near zero, same as *-states
-    if(0.5*bxsq < (SMALL_NUMBER)*ptst) {
+    if (0.5*bxsq < (SMALL_NUMBER)*ptst) {
       uldst = ulst;
       urdst = urst;
     } else {
@@ -251,7 +250,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 6.  Compute flux
 
-    if(spd[0] >= 0.0){
+    if (spd[0] >= 0.0) {
       // return Fl if flow is supersonic
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -260,7 +259,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if(spd[4] <= 0.0){
+    } else if (spd[4] <= 0.0) {
       // return Fr if flow is supersonic
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;
@@ -269,7 +268,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fr.e;
       flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
-    } else if(spd[1] >= 0.0) {
+    } else if (spd[1] >= 0.0) {
       // return Fl*
       flxi[IDN] = fl.d  + spd[0]*(ulst.d  - ul.d);
       flxi[IVX] = fl.mx + spd[0]*(ulst.mx - ul.mx);
@@ -278,7 +277,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e  + spd[0]*(ulst.e  - ul.e);
       flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
       flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
-    } else if(spd[2] >= 0.0) {
+    } else if (spd[2] >= 0.0) {
       // return Fl**
       Real tmp = spd[1] - spd[0];
       flxi[IDN] = fl.d  - spd[0]*ul.d  - tmp*ulst.d  + spd[1]*uldst.d;
@@ -288,7 +287,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = fl.e  - spd[0]*ul.e  - tmp*ulst.e  + spd[1]*uldst.e;
       flxi[IBY] = fl.by - spd[0]*ul.by - tmp*ulst.by + spd[1]*uldst.by;
       flxi[IBZ] = fl.bz - spd[0]*ul.bz - tmp*ulst.bz + spd[1]*uldst.bz;
-    } else if(spd[3] > 0.0) {
+    } else if (spd[3] > 0.0) {
       // return Fr**
       Real tmp = spd[3] - spd[4];
       flxi[IDN] = fr.d  - spd[4]*ur.d  - tmp*urst.d  + spd[3]*urdst.d;
@@ -299,7 +298,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBY] = fr.by - spd[4]*ur.by - tmp*urst.by + spd[3]*urdst.by;
       flxi[IBZ] = fr.bz - spd[4]*ur.bz - tmp*urst.bz + spd[3]*urdst.bz;
     } else {
-      // return Fr* 
+      // return Fr*
       flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
       flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);
       flxi[IVY] = fr.my + spd[4]*(urst.my - ur.my);
@@ -317,7 +316,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-  }      
+  }
   }}
 
   return;

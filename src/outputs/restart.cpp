@@ -30,16 +30,14 @@
 // destructor - not needed for this derived class
 
 RestartOutput::RestartOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //  \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
-void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write)
-{
+void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
   MeshBlock *pmb;
   IOWrapper resfile;
   IOWrapperSize_t listsize, headeroffset, datasize;
@@ -55,14 +53,14 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // add file number to name, unless write is forced by terminate signal, in which case
   // replace number in the name by the string "final".  This keeps the restart file
   // numbers consistent with output.dt when a job is restarted many times.
-  if(force_write==false) 
+  if (force_write==false)
     fname.append(number);
-  else 
+  else
     fname.append("final");
   fname.append(".rst");
 
   // increment counters now so values for *next* dump are stored in restart file
-  if(force_write==false) {
+  if (force_write==false) {
     output_params.file_number++;
     output_params.next_time += output_params.dt;
     pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
@@ -77,9 +75,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   // calculate the header size
   IOWrapperSize_t udsize=0;
-  for(int n=0; n<pm->nint_user_mesh_data_; n++)
+  for (int n=0; n<pm->nint_user_mesh_data_; n++)
     udsize+=pm->iuser_mesh_data[n].GetSizeInBytes();
-  for(int n=0; n<pm->nreal_user_mesh_data_; n++)
+  for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize+=pm->ruser_mesh_data[n].GetSizeInBytes();
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
@@ -93,7 +91,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   int mynb=pm->nblist[Globals::my_rank];
 
   // write the header; this part is serial
-  if(Globals::my_rank==0) {
+  if (Globals::my_rank==0) {
     // output the input parameters
     resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 
@@ -107,15 +105,15 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     resfile.Write(&(datasize), sizeof(IOWrapperSize_t), 1);
 
     // collect and write user Mesh data
-    if(udsize!=0) {
+    if (udsize!=0) {
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
-      for(int n=0; n<pm->nint_user_mesh_data_; n++) {
+      for (int n=0; n<pm->nint_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
                pm->iuser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->iuser_mesh_data[n].GetSizeInBytes();
       }
-      for(int n=0; n<pm->nreal_user_mesh_data_; n++) {
+      for (int n=0; n<pm->nreal_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pm->ruser_mesh_data[n].data(),
                pm->ruser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->ruser_mesh_data[n].GetSizeInBytes();
@@ -173,12 +171,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     // for restarts.
 
     // pack the user MeshBlock data
-    for(int n=0; n<pmb->nint_user_meshblock_data_; n++) {
+    for (int n=0; n<pmb->nint_user_meshblock_data_; n++) {
       memcpy(pdata, pmb->iuser_meshblock_data[n].data(),
              pmb->iuser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->iuser_meshblock_data[n].GetSizeInBytes();
     }
-    for(int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
+    for (int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
       memcpy(pdata, pmb->ruser_meshblock_data[n].data(),
              pmb->ruser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->ruser_meshblock_data[n].GetSizeInBytes();

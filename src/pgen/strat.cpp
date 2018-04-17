@@ -75,8 +75,7 @@ static Real dfloor,pfloor;
 
 
 //====================================================================================
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
@@ -89,10 +88,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   EnrollUserExplicitSourceFunction(VertGrav);
 
 // enroll user-defined boundary conditions
-  if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
       EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
   }
-  if(mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
       EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
   }
 
@@ -105,8 +104,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief stratified disk problem generator for 3D problems.
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int ifield, ipert;
   Real beta, amp, pres;
   Real iso_cs=1.0;
@@ -130,9 +128,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int nwx = pin->GetOrAddInteger("problem","nwx",1);
   int nwy = pin->GetOrAddInteger("problem","nwy",1);
   int nwz = pin->GetOrAddInteger("problem","nwz",1);
-  Real kx = (2.0*PI/Lx)*((double)nwx);// nxw=-ve for leading wave
-  Real ky = (2.0*PI/Ly)*((double)nwy);
-  Real kz = (2.0*PI/Lz)*((double)nwz);
+  Real kx = (2.0*PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
+  Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
 
   // Ensure a different initial random seed for each meshblock.
   int64_t iseed = -1 - gid;
@@ -140,7 +138,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // adiabatic gamma
   Real gam = peos->GetGamma();
 
-  if (pmy_mesh->mesh_size.nx3 == 1){
+  if (pmy_mesh->mesh_size.nx3 == 1) {
     std::cout << "[strat.cpp]: Strat only works on a 3D grid"
       << std::endl;
   }
@@ -165,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   //Compute field strength based on beta.
   if (MAGNETIC_FIELDS_ENABLED) {
-    B0 = sqrt((double)(2.0*pres/beta));
+    B0 = sqrt(static_cast<Real>(2.0*pres/beta));
     std::cout << "B0=" << B0 << std::endl;
   }
 
@@ -238,10 +236,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           if (ifield == 1) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 2) {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -254,18 +252,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           if (ifield == 3) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0+0.5*sin((double)kx*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0 + 0.5*
+                                                     sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 4) {
             pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0*(cos((double)kx*x1));
-            pfield->b.x3f(k,j,i) = B0*(sin((double)kx*x1));
+            pfield->b.x2f(k,j,i) = B0*(cos(static_cast<Real>(kx)*x1));
+            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos((double)kx*x1));
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin((double)kx*x1));
+            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos(static_cast<Real>(kx)*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 5 && fabs(x3) < 2.0) {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -322,13 +321,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
-{
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   return;
 }
 
-void MeshBlock::UserWorkInLoop(void)
-{
+void MeshBlock::UserWorkInLoop(void) {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -351,16 +348,14 @@ void MeshBlock::UserWorkInLoop(void)
   return;
 }
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   return;
 }
 
 
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
-              AthenaArray<Real> &cons)
-{
+              AthenaArray<Real> &cons) {
   Real fsmooth, xi, sign;
   Real Lz = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
   Real z0 = Lz/2.0;
@@ -402,8 +397,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     AthenaArray<Real> &prim, FaceField &b,
     Real time, Real dt, int is, int ie, int js,
-    int je, int ks, int ke)
-{
+    int je, int ks, int ke) {
 
   // Copy field components from last physical zone
   // zero slope boundary for B field
@@ -481,8 +475,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &prim,
                   FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke)
-{
+                  int is, int ie, int js, int je, int ks, int ke) {
 // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=NGHOST; k++) {
@@ -544,8 +537,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout)
-{
+static Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -554,10 +546,10 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
-      for(int i=is; i<=ie; i++) {
+      for (int i=is; i<=ie; i++) {
         bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
       }
     }
@@ -567,8 +559,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   return bxby;
 }
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout)
-{
+static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -578,10 +569,10 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
-      for(int i=is; i<=ie; i++) {
+      for (int i=is; i<=ie; i++) {
         vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
         dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }

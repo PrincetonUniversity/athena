@@ -50,7 +50,7 @@ void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
-// problem parameters which are useful to make global to this file  
+// problem parameters which are useful to make global to this file
 static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
 static Real dfloor;
 
@@ -61,8 +61,7 @@ static Real dfloor;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Get parameters for gravitatonal potential of central point mass
   gm0 = pin->GetOrAddReal("problem","GM",0.0);
   r0 = pin->GetOrAddReal("problem","r0",1.0);
@@ -72,32 +71,32 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   dslope = pin->GetOrAddReal("problem","dslope",0.0);
 
   // Get parameters of initial pressure and cooling parameters
-  if(NON_BAROTROPIC_EOS){
+  if (NON_BAROTROPIC_EOS) {
     p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0",0.0025);
     pslope = pin->GetOrAddReal("problem","pslope",0.0);
     gamma_gas = pin->GetReal("hydro","gamma");
-  }else{
+  } else{
     p0_over_r0=SQR(pin->GetReal("hydro","iso_sound_speed"));
   }
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
 
   // enroll user-defined boundary condition
-  if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
   }
-  if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
   }
-  if(mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
   }
-  if(mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
   }
-  if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(INNER_X3, DiskInnerX3);
   }
-  if(mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
+  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(OUTER_X3, DiskOuterX3);
   }
 
@@ -109,13 +108,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Initializes Keplerian accretion disk.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real rad, phi, z;
   Real v1, v2, v3;
 
   //  Initialize density and momenta
-  for(int k=ks; k<=ke; ++k) {
+  for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates
@@ -126,7 +124,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
       phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
       phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-      if (NON_BAROTROPIC_EOS){
+      if (NON_BAROTROPIC_EOS) {
         Real p_over_r = PoverR(rad,phi,z);
         phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
         phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))
@@ -141,13 +139,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 //!\f transform to cylindrical coordinate
 
-static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k)
-{
-  if(COORDINATE_SYSTEM == "cylindrical"){
+static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k) {
+  if (COORDINATE_SYSTEM == "cylindrical") {
     rad=pco->x1v(i);
     phi=pco->x2v(j);
     z=pco->x3v(k);
-  } else if(COORDINATE_SYSTEM == "spherical_polar"){
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
     rad=fabs(pco->x1v(i)*sin(pco->x2v(j)));
     phi=pco->x3v(i);
     z=pco->x1v(i)*cos(pco->x2v(j));
@@ -158,8 +155,7 @@ static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j
 //----------------------------------------------------------------------------------------
 //! \f  computes density in cylindrical coordinates
 
-static Real DenProfileCyl(const Real rad, const Real phi, const Real z)
-{
+static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
   Real den;
   Real p_over_r = p0_over_r0;
   if (NON_BAROTROPIC_EOS) p_over_r = PoverR(rad, phi, z);
@@ -172,8 +168,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z)
 //----------------------------------------------------------------------------------------
 //! \f  computes pressure/density in cylindrical coordinates
 
-static Real PoverR(const Real rad, const Real phi, const Real z)
-{
+static Real PoverR(const Real rad, const Real phi, const Real z) {
   Real poverr;
   poverr = p0_over_r0*pow(rad/r0, pslope);
   return poverr;
@@ -183,31 +178,29 @@ static Real PoverR(const Real rad, const Real phi, const Real z)
 //! \f  computes rotational velocity in cylindrical coordinates
 
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3)
-{
+                          Real &v1, Real &v2, Real &v3) {
   Real p_over_r = PoverR(rad, phi, z);
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/sqrt(rad*rad+z*z);
   vel = sqrt(gm0/rad)*sqrt(vel);
-  if(COORDINATE_SYSTEM == "cylindrical"){
+  if (COORDINATE_SYSTEM == "cylindrical") {
     v1=0.0;
     v2=vel;
     v3=0.0;
-  }else if(COORDINATE_SYSTEM == "spherical_polar"){
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
     v1=0.0;
     v2=0.0;
     v3=vel;
   }
   return;
-} 
+}
 
 //----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
-// 
+//
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -227,8 +220,7 @@ void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -248,8 +240,7 @@ void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -269,8 +260,7 @@ void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
@@ -290,8 +280,7 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=1; k<=(NGHOST); ++k) {
@@ -311,8 +300,7 @@ void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=1; k<=(NGHOST); ++k) {

@@ -40,8 +40,7 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag)
-{
+  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag) {
   std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
@@ -78,13 +77,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) {
+  if (pm->multilevel==true) {
     cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
-    if(block_size.nx2>1) // 2D or 3D
+    if (block_size.nx2>1) // 2D or 3D
       cjs=cnghost, cje=cjs+block_size.nx2/2-1;
-    if(block_size.nx3>1) // 3D
+    if (block_size.nx3>1) // 3D
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
@@ -129,7 +128,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // floors depend on EOS)
   precon = new Reconstruction(this, pin);
 
-  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -142,8 +141,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, char *mbdata, int igflag)
-{
+           Real icost, char *mbdata, int igflag) {
   std::stringstream msg;
   pmy_mesh = pm;
   prev=NULL;
@@ -177,13 +175,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) {
+  if (pm->multilevel==true) {
     cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
-    if(block_size.nx2>1) // 2D or 3D
+    if (block_size.nx2>1) // 2D or 3D
       cjs=cnghost, cje=cjs+block_size.nx2/2-1;
-    if(block_size.nx3>1) // 3D
+    if (block_size.nx3>1) // 3D
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
@@ -222,7 +220,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // Reconstruction (constructor may implicitly depend on Coordinates)
   precon = new Reconstruction(this, pin);
 
-  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   InitUserMeshBlockData(pin);
 
@@ -257,12 +255,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // load user MeshBlock data
-  for(int n=0; n<nint_user_meshblock_data_; n++) {
+  for (int n=0; n<nint_user_meshblock_data_; n++) {
     memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
            iuser_meshblock_data[n].GetSizeInBytes());
     os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
-  for(int n=0; n<nreal_user_meshblock_data_; n++) {
+  for (int n=0; n<nreal_user_meshblock_data_; n++) {
     memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
            ruser_meshblock_data[n].GetSizeInBytes());
     os+=ruser_meshblock_data[n].GetSizeInBytes();
@@ -274,10 +272,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 //----------------------------------------------------------------------------------------
 // MeshBlock destructor
 
-MeshBlock::~MeshBlock()
-{
-  if(prev!=NULL) prev->next=next;
-  if(next!=NULL) next->prev=prev;
+MeshBlock::~MeshBlock() {
+  if (prev!=NULL) prev->next=next;
+  if (next!=NULL) next->prev=prev;
 
   delete pcoord;
   delete pbval;
@@ -291,26 +288,25 @@ MeshBlock::~MeshBlock()
   if (SELF_GRAVITY_ENABLED==1) delete pgbval;
 
   // delete user output variables array
-  if(nuser_out_var > 0) {
+  if (nuser_out_var > 0) {
     user_out_var.DeleteAthenaArray();
     delete [] user_out_var_names_;
   }
   // delete user MeshBlock data
-  for(int n=0; n<nreal_user_meshblock_data_; n++)
+  for (int n=0; n<nreal_user_meshblock_data_; n++)
     ruser_meshblock_data[n].DeleteAthenaArray();
-  if(nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
-  for(int n=0; n<nint_user_meshblock_data_; n++)
+  if (nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
+  for (int n=0; n<nint_user_meshblock_data_; n++)
     iuser_meshblock_data[n].DeleteAthenaArray();
-  if(nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
+  if (nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
-void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
-{
-  if(nreal_user_meshblock_data_!=0) {
+void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
+  if (nreal_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
@@ -325,9 +321,8 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
-void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
-{
-  if(nint_user_meshblock_data_!=0) {
+void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
+  if (nint_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
@@ -343,10 +338,9 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //! \fn void MeshBlock::AllocateUserOutputVariables(int n)
 //  \brief Allocate user-defined output variables
 
-void MeshBlock::AllocateUserOutputVariables(int n)
-{
-  if(n<=0) return;
-  if(nuser_out_var!=0) {
+void MeshBlock::AllocateUserOutputVariables(int n) {
+  if (n<=0) return;
+  if (nuser_out_var!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
         << std::endl << "User output variables are already allocated." << std::endl;
@@ -368,9 +362,8 @@ void MeshBlock::AllocateUserOutputVariables(int n)
 //! \fn void MeshBlock::SetUserOutputVariableName(int n, const char *name)
 //  \brief set the user-defined output variable name
 
-void MeshBlock::SetUserOutputVariableName(int n, const char *name)
-{
-  if(n>=nuser_out_var) {
+void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
+  if (n>=nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
         << std::endl << "User output variable is not allocated." << std::endl;
@@ -385,8 +378,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name)
 //! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
-size_t MeshBlock::GetBlockSizeInBytes(void)
-{
+size_t MeshBlock::GetBlockSizeInBytes(void) {
   size_t size;
 
   size=phydro->u.GetSizeInBytes();
@@ -403,9 +395,9 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   // NEW_PHYSICS: modify the size counter here when new physics is introduced
 
   // calculate user MeshBlock data size
-  for(int n=0; n<nint_user_meshblock_data_; n++)
+  for (int n=0; n<nint_user_meshblock_data_; n++)
     size+=iuser_meshblock_data[n].GetSizeInBytes();
-  for(int n=0; n<nreal_user_meshblock_data_; n++)
+  for (int n=0; n<nreal_user_meshblock_data_; n++)
     size+=ruser_meshblock_data[n].GetSizeInBytes();
 
   return size;

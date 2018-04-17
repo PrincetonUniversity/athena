@@ -37,9 +37,8 @@ int64_t rseed; // seed for turbulence power spectrum
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
 //========================================================================================
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
-  if(SELF_GRAVITY_ENABLED) {
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (SELF_GRAVITY_ENABLED) {
     Real four_pi_G = pin->GetReal("problem","four_pi_G");
     Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
     SetFourPiG(four_pi_G);
@@ -50,7 +49,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // turb_flag = 1 for decaying turbulence
 // turb_flag = 2 for driven turbulence
   turb_flag = pin->GetInteger("problem","turb_flag");
-  if(turb_flag != 0){
+  if (turb_flag != 0) {
 #ifndef FFT
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
@@ -67,8 +66,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
@@ -90,7 +88,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 }

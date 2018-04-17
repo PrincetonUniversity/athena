@@ -47,8 +47,7 @@ AthenaArray<Real> volume; // 1D array of volumes
 //  \brief Init the Mesh properties
 //======================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // initialize global variables
   amp = pin->GetReal("problem","amp");
   nwx = pin->GetInteger("problem","nwx");
@@ -68,8 +67,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
       std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
       exit(0);
@@ -102,8 +100,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
             <<","<<x3size<<"]"<<std::endl;
 
-  Real kx = (2.0*PI/x1size)*((double)nwx);
-  Real ky = (2.0*PI/x2size)*((double)nwy);
+  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
+  Real ky = (2.0*PI/x2size)*(static_cast<Real>(nwy));
 
   Real x1,x2,rd,rp,rvx,rvy;
 // update the physical variables as initial conditions
@@ -153,7 +151,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           std::cout << "[ssheet.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
           exit(0);
       }
-      if (NON_BAROTROPIC_EOS){
+      if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = rp/gm1 +0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))+
                                              SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
       }
@@ -169,8 +167,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \fn void MeshBlock::UserWorkInLoop(void)
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
+void MeshBlock::UserWorkInLoop(void) {
   // nothing to do
   return;
 }

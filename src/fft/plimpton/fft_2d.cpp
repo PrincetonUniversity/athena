@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -35,9 +35,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -76,8 +76,7 @@ void fft_2d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_2d *plan)
     remap_2d((double *) in, (double *) copy, (double *) plan->scratch,
 	     plan->pre_plan);
     data = copy;
-  }
-  else
+  } else
     data = in;
 
 /* 1d FFTs along fast axis */
@@ -185,8 +184,7 @@ struct fft_plan_2d *fft_2d_create_plan(
     first_jlo = in_jlo;
     first_jhi = in_jhi;
     plan->pre_plan = NULL;
-  }
-  else {
+  } else {
     first_ilo = 0;
     first_ihi = nfast - 1;
     first_jlo = me*nslow/nprocs;
@@ -220,8 +218,7 @@ struct fft_plan_2d *fft_2d_create_plan(
     second_ihi = out_ihi;
     second_jlo = out_jlo;
     second_jhi = out_jhi;
-  }
-  else {
+  } else {
     second_ilo = me*nfast/nprocs;
     second_ihi = (me+1)*nfast/nprocs - 1;
     second_jlo = 0;
@@ -238,7 +235,7 @@ struct fft_plan_2d *fft_2d_create_plan(
 
   plan->length2 = nslow;
   plan->total2 = (second_ihi-second_ilo+1) * nslow;
-  
+
 /* remap from 2nd FFT to final distribution
    not needed if permute = 1 and second indices = out indices on all procs */
 
@@ -253,8 +250,7 @@ struct fft_plan_2d *fft_2d_create_plan(
 
   if (remapflag == 0) {
     plan->post_plan = NULL;
-  }
-  else {
+  } else {
     plan->post_plan =
       remap_2d_create_plan(comm,second_jlo,second_jhi,second_ilo,second_ihi,
 			   out_jlo,out_jhi,out_ilo,out_ihi,
@@ -306,16 +302,14 @@ struct fft_plan_2d *fft_2d_create_plan(
   if (copy_size) {
     plan->copy = (FFT_DATA *) malloc(copy_size*sizeof(FFT_DATA));
     if (plan->copy == NULL) return NULL;
-  }
-  else plan->copy = NULL;
+  } else plan->copy = NULL;
 
   if (scratch_size) {
     plan->scratch = (FFT_DATA *) malloc(scratch_size*sizeof(FFT_DATA));
     if (plan->scratch == NULL) return NULL;
-  }
-  else plan->scratch = NULL;
+  } else plan->scratch = NULL;
 
-/* system specific pre-computation of 1d FFT coeffs 
+/* system specific pre-computation of 1d FFT coeffs
    and scaling normalization */
 
   plan->plan_fast_forward =
@@ -330,8 +324,7 @@ struct fft_plan_2d *fft_2d_create_plan(
   if (plan->length2 == plan->length1) {
     plan->plan_slow_forward = plan->plan_fast_forward;
     plan->plan_slow_backward = plan->plan_fast_backward;
-  }
-  else {
+  } else {
     plan->plan_slow_forward =
       fftw_plan_many_dft(1,&(plan->length2),plan->total2/plan->length2,
                          plan->scratch,NULL,1,plan->length2,plan->scratch,

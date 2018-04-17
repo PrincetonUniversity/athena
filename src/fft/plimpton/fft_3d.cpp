@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -38,9 +38,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nmid x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nmid or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nmid or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -79,8 +79,7 @@ void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
     remap_3d((double *) in, (double *) copy, (double *) plan->scratch,
 	     plan->pre_plan);
     data = copy;
-  }
-  else
+  } else
     data = in;
 
 /* 1d FFTs along fast axis */
@@ -221,8 +220,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     first_klo = in_klo;
     first_khi = in_khi;
     plan->pre_plan = NULL;
-  }
-  else {
+  } else {
     first_ilo = 0;
     first_ihi = nfast - 1;
     first_jlo = ip1*nmid/np1;
@@ -236,7 +234,7 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,0,0,2);
     if (plan->pre_plan == NULL) return NULL;
 
-    if(Globals::my_rank==0)
+    if (Globals::my_rank==0)
       std::cout << "### WARNING in MPIFFT: " << std::endl
                 << "Current domain decomp. requires additional  global communication "
                 << "to prepare FFT along the fastest axis" << std::endl;
@@ -292,8 +290,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     third_jhi = out_jhi;
     third_klo = out_klo;
     third_khi = out_khi;
-  }
-  else {
+  } else {
     third_ilo = ip1*nfast/np1;
     third_ihi = (ip1+1)*nfast/np1 - 1;
     third_jlo = ip2*nmid/np2;
@@ -301,7 +298,7 @@ struct fft_plan_3d *fft_3d_create_plan(
     third_klo = 0;
     third_khi = nslow - 1;
   }
-  
+
 
   plan->mid2_plan =
     remap_3d_create_plan(comm,
@@ -342,7 +339,7 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,(permute+1)%3,0,2);
     if (plan->post_plan == NULL) return NULL;
 
-    if(Globals::my_rank==0)
+    if (Globals::my_rank==0)
       std::cout << "### WARNING in MPIFFT: " << std::endl
                 << "Current domain decomp. requires additional  global communication "
                 << "to match input and output arrays" << std::endl;
@@ -358,11 +355,11 @@ struct fft_plan_3d *fft_3d_create_plan(
      accumulate largest required remap scratch space */
 
   out_size = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1);
-  first_size = (first_ihi-first_ilo+1) * (first_jhi-first_jlo+1) * 
+  first_size = (first_ihi-first_ilo+1) * (first_jhi-first_jlo+1) *
     (first_khi-first_klo+1);
-  second_size = (second_ihi-second_ilo+1) * (second_jhi-second_jlo+1) * 
+  second_size = (second_ihi-second_ilo+1) * (second_jhi-second_jlo+1) *
     (second_khi-second_klo+1);
-  third_size = (third_ihi-third_ilo+1) * (third_jhi-third_jlo+1) * 
+  third_size = (third_ihi-third_ilo+1) * (third_jhi-third_jlo+1) *
     (third_khi-third_klo+1);
 
   copy_size = 0;
@@ -406,16 +403,14 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (copy_size) {
     plan->copy = (FFT_DATA *) malloc(copy_size*sizeof(FFT_DATA));
     if (plan->copy == NULL) return NULL;
-  }
-  else plan->copy = NULL;
+  } else plan->copy = NULL;
 
   if (scratch_size) {
     plan->scratch = (FFT_DATA *) malloc(scratch_size*sizeof(FFT_DATA));
     if (plan->scratch == NULL) return NULL;
-  }
-  else plan->scratch = NULL;
+  } else plan->scratch = NULL;
 
-/* system specific pre-computation of 1d FFT coeffs 
+/* system specific pre-computation of 1d FFT coeffs
    and scaling normalization */
 
   plan->plan_fast_forward =
@@ -430,8 +425,7 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (plan->length2 == plan->length1) {
     plan->plan_mid_forward = plan->plan_fast_forward;
     plan->plan_mid_backward = plan->plan_fast_backward;
-  }
-  else {
+  } else {
     plan->plan_mid_forward =
       fftw_plan_many_dft(1,&(plan->length2),plan->total2/plan->length2,
                          plan->scratch,NULL,1,plan->length2,plan->scratch,
@@ -445,12 +439,10 @@ struct fft_plan_3d *fft_3d_create_plan(
   if (plan->length3 == plan->length1) {
     plan->plan_slow_forward = plan->plan_fast_forward;
     plan->plan_slow_backward = plan->plan_fast_backward;
-  }
-  else if (plan->length3 == plan->length2) {
+  } else if (plan->length3 == plan->length2) {
     plan->plan_slow_forward = plan->plan_mid_forward;
     plan->plan_slow_backward = plan->plan_mid_backward;
-  }
-  else {
+  } else {
     plan->plan_slow_forward =
       fftw_plan_many_dft(1,&(plan->length3),plan->total3/plan->length3,
                          plan->scratch,NULL,1,plan->length3,plan->scratch,

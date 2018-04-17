@@ -22,8 +22,7 @@
 void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
@@ -80,7 +79,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il-1; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -96,7 +95,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il-1; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }
@@ -132,8 +131,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
@@ -191,7 +189,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -207,7 +205,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }
@@ -242,8 +240,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
-{
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmb->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,dw2,wc,dwl,dwr,dwm;
@@ -301,7 +298,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
         }
         for (int i=il; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
 
@@ -317,7 +314,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
         }
         for (int i=il; i<=iu; ++i) {
-          if(dw2(i) <= 0.0) dwm(n,i) = 0.0;
+          if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
     }

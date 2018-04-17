@@ -27,11 +27,10 @@
 
 // constructor, initializes data structures and parameters
 
-FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
-{
+FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   pmy_mesh_=pm;
 
-  if(pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
+  if (pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
   || pm->use_meshgen_fn_[X3DIR]==true) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
@@ -41,15 +40,15 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   }
 
   dim_ = 1;
-  if(pm->mesh_size.nx2 > 1) dim_=2;
-  if(pm->mesh_size.nx3 > 1) dim_=3;
- 
+  if (pm->mesh_size.nx2 > 1) dim_=2;
+  if (pm->mesh_size.nx3 > 1) dim_=3;
+
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
 
   ranklist_  = new int[pm->nbtotal];
-  for(int n=0; n<pm->nbtotal; n++)
+  for (int n=0; n<pm->nbtotal; n++)
     ranklist_[n]=pm->ranklist[n];
 
   nranks_  = Globals::nranks;
@@ -58,7 +57,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_FFT);
 #endif
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pm->nslist[n];
     nblist_[n]  = pm->nblist[n];
   }
@@ -73,7 +72,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int64_t lx2max = lx2min;
   int64_t lx3max = lx3min;
 
-  for(int n=ns; n<ne; n++){
+  for (int n=ns; n<ne; n++) {
     int64_t &lx1 = pm->loclist[n].lx1;
     int64_t &lx2 = pm->loclist[n].lx2;
     int64_t &lx3 = pm->loclist[n].lx3;
@@ -90,7 +89,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int nbx3=lx3max-lx3min+1;
 
   nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
-  if(pm->nbtotal/nmb != nranks_){
+  if (pm->nbtotal/nmb != nranks_) {
     // Will be implemented later.
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
@@ -105,7 +104,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   // MeshBlocks in the same processor will be gathered into FFTBlock of the processor.
   fft_loclist_ = new LogicalLocation[nranks_];
 
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     int ns = nslist_[n];
     fft_loclist_[n] = pm->loclist[ns];
     fft_loclist_[n].lx1 = fft_loclist_[n].lx1/nbx1;
@@ -139,15 +138,15 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 #ifdef MPI_PARALLEL
   {using namespace DecompositionNames;
   decomp_ = 0; pdim_ = 0;
-  if(npx1 > 1){
+  if (npx1 > 1) {
     decomp_ = decomp_ | x_decomp;
     pdim_++;
   }
-  if(npx2 > 1){
+  if (npx2 > 1) {
     decomp_ = decomp_ | y_decomp;
     pdim_++;
   }
-  if(npx3 > 1){
+  if (npx3 > 1) {
     decomp_ = decomp_ | z_decomp;
     pdim_++;
   }}
@@ -157,8 +156,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
 
 // destructor
 
-FFTDriver::~FFTDriver()
-{
+FFTDriver::~FFTDriver() {
   delete [] ranklist_;
   delete [] nslist_;
   delete [] nblist_;
@@ -166,14 +164,14 @@ FFTDriver::~FFTDriver()
   delete pmy_fb;
 }
 
-void FFTDriver::InitializeFFTBlock(bool set_norm){
+void FFTDriver::InitializeFFTBlock(bool set_norm) {
   int igid=Globals::my_rank;
   pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
-  if(set_norm) pmy_fb->SetNormFactor(1./gcnt_);
+  if (set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 
-void FFTDriver::QuickCreatePlan(void){
-  
+void FFTDriver::QuickCreatePlan(void) {
+
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
 

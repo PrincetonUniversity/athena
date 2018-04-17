@@ -22,8 +22,7 @@
 
 // HydroSourceTerms constructor
 
-HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
-{
+HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   pmy_hydro_ = phyd;
   hydro_sourceterms_defined = false;
 
@@ -37,8 +36,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
     || (COORDINATE_SYSTEM == "cylindrical"
     && phyd->pmy_block->block_size.nx3==1)) {
       hydro_sourceterms_defined = true;
-    }
-    else {
+    } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
           << "The point mass gravity works only in spherical polar coordinates"
@@ -62,16 +60,15 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
   if ((Omega_0_ !=0.0) && (qshear_ != 0.0)) hydro_sourceterms_defined = true;
 
-  if(SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
+  if (SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
 
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
-  if(UserSourceTerm != NULL) hydro_sourceterms_defined = true;
+  if (UserSourceTerm != NULL) hydro_sourceterms_defined = true;
 }
 
 // destructor
 
-HydroSourceTerms::~HydroSourceTerms()
-{
+HydroSourceTerms::~HydroSourceTerms() {
 }
 
 //----------------------------------------------------------------------------------------
@@ -80,8 +77,7 @@ HydroSourceTerms::~HydroSourceTerms()
 
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
      const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
+     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)

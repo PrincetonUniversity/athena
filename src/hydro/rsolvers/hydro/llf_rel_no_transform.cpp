@@ -36,8 +36,7 @@
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;

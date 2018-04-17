@@ -37,7 +37,7 @@ public:
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
        enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
        int rl, int &nnew);
-  void AddMeshBlockWithoutRefine(LogicalLocation rloc, 
+  void AddMeshBlockWithoutRefine(LogicalLocation rloc,
                                  int64_t rbx, int64_t rby, int64_t rbz, int rl);
   void Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
               int64_t rbx, int64_t rby, int64_t rbz, int rl, int &nnew);

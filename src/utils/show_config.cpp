@@ -16,8 +16,7 @@
 //! \fn void ShowConfig(void)
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void)
-{
+void ShowConfig(void) {
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;

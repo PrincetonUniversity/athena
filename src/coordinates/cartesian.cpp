@@ -18,12 +18,11 @@
 // Cartesian coordinates constructor
 
 Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(coarse_flag==true) {
+  if (coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng=pmb->cnghost;
@@ -48,7 +47,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x3v.NewAthenaArray(ncells3);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
-  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -65,8 +64,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   for (int i=il-ng; i<=iu+ng-1; ++i) {
     if (pmb->block_size.x1rat != 1.0) {
       dx1v(i) = x1v(i+1) - x1v(i);
-    }
-    else {
+    } else {
       // dx1v = dx1f constant for uniform mesh; may disagree with x1v(i+1) - x1v(i)
       dx1v(i) = dx1f(i);
     }
@@ -83,8 +81,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int j=jl-ng; j<=ju+ng-1; ++j) {
       if (pmb->block_size.x2rat != 1.0) {
         dx2v(j) = x2v(j+1) - x2v(j);
-      }
-      else {
+      } else {
         // dx2v = dx2f constant for uniform mesh; may disagree with x2v(j+1) - x2v(j)
         dx2v(j) = dx2f(j);
       }
@@ -102,8 +99,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k=kl-ng; k<=ku+ng-1; ++k) {
       if (pmb->block_size.x3rat != 1.0) {
         dx3v(k) = x3v(k+1) - x3v(k);
-      }
-      else {
+      } else {
         // dxkv = dx3f constant for uniform mesh; may disagree with x3v(k+1) - x3v(k)
         dx3v(k) = dx3f(k);
       }
@@ -111,7 +107,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
@@ -134,15 +130,14 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 // destructor
 
-Cartesian::~Cartesian()
-{
+Cartesian::~Cartesian() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();

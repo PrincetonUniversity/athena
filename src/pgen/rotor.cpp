@@ -37,8 +37,7 @@
 //  \brief Problem Generator for the Rotor test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
   // Read initial conditions from 'athinput'

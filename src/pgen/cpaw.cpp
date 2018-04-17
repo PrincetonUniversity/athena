@@ -55,8 +55,7 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Initialize magnetic field parameters
 // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
 //    For example, for 1D problem use ang_2 = ang_3 = 0.0
@@ -75,7 +74,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   }
   pres = pin->GetReal("problem","pres");
   den = 1.0;
-  
+
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
@@ -84,11 +83,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
-  
+
   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-  sin_a2 = sin(ang_2); 
+  sin_a2 = sin(ang_2);
   cos_a2 = cos(ang_2);
-  
+
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
@@ -114,8 +113,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Compute L1 error in CPAW and output to file
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // Initialize errors to zero
@@ -128,13 +126,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                        + pmb->pcoord->x3v(k)*sin_a2;
         Real sn = sin(k_par*x);
         Real cs = fac*cos(k_par*x);
-  
+
         err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
-  
+
         Real mx = den*v_par;
         Real my = -fac*den*v_perp*sn;
         Real mz = -fac*den*v_perp*cs;
@@ -144,7 +142,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
         err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
         err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
-  
+
         Real bx = b_par;
         Real by = b_perp*sn;
         Real bz = b_perp*cs;
@@ -167,7 +165,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
 
   // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    err[i] = err[i]/static_cast<Real>(GetTotalCells());
+  }
+
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
   rms_err = sqrt(rms_err);
@@ -179,8 +180,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   FILE *pfile;
 
   // The file exists -- reopen the file in append mode
-  if((pfile = fopen(fname.c_str(),"r")) != NULL){
-    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+  if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+    if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -188,7 +189,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   // The file does not exist -- open the file in write mode and add headers
   } else {
-    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -216,8 +217,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> a1,a2,a3;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
   int nx2 = (je-js)+1 + 2*(NGHOST);
@@ -252,7 +252,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
            || (pbval->nblevel[1][1][2]>level && i==ie+1)
            || (pbval->nblevel[0][1][1]>level && k==ks)
            || (pbval->nblevel[2][1][1]>level && k==ke+1)
-           || (pbval->nblevel[0][1][0]>level && i==is   && k==ks) 
+           || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
            || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
            || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
            || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
@@ -268,7 +268,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
            || (pbval->nblevel[1][1][2]>level && i==ie+1)
            || (pbval->nblevel[1][0][1]>level && j==js)
            || (pbval->nblevel[1][2][1]>level && j==je+1)
-           || (pbval->nblevel[1][0][0]>level && i==is   && j==js) 
+           || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
            || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
            || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
            || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
@@ -348,7 +348,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IEN,k,j,i) = pres/gm1 +
           0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
                SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + 
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) +
           (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
                      SQR(phydro->u(IM3,k,j,i)));
       }
@@ -363,8 +363,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3)
-{
+static Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
@@ -377,8 +376,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3)
-{
+static Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
@@ -391,8 +389,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
 //! \fn static Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3)
-{
+static Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;

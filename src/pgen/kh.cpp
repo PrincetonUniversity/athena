@@ -36,9 +36,8 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
-  if(adaptive==true)
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
   vflow = pin->GetReal("problem","vflow");
 
@@ -51,8 +50,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Problem Generator for the Kelvin-Helmholz test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
 
@@ -178,20 +176,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 
 // refinement condition: velocity gradient
-int RefinementCondition(MeshBlock *pmb)
-{
+int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real vgmax=0.0;
-  for(int k=pmb->ks; k<=pmb->ke; k++) {
-    for(int j=pmb->js; j<=pmb->je; j++) {
-      for(int i=pmb->is; i<=pmb->ie; i++) {
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
         Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
         Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
-        if(vgy > vgmax) vgmax=vgy;
-        if(vgx > vgmax) vgmax=vgx;
+        if (vgy > vgmax) vgmax=vgy;
+        if (vgx > vgmax) vgmax=vgx;
       }
     }
   }
-  if(vgmax > 0.01) return 1;
+  if (vgmax > 0.01) return 1;
   return -1;
 }

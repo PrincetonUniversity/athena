@@ -21,8 +21,7 @@
 
 // constructor
 
-Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
-{
+Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
 
   // read and set type of spatial reconstruction
@@ -330,8 +329,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-Reconstruction::~Reconstruction()
-{
+Reconstruction::~Reconstruction() {
   scr01_i_.DeleteAthenaArray();
   scr02_i_.DeleteAthenaArray();
 
