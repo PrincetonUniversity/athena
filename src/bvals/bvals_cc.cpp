@@ -212,40 +212,40 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
         }
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
-
-    // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
-    if (SHEARING_BOX) {
-      if (ShBoxCoord_==2) {
-        Mesh *pmy_mesh = pmb->pmy_mesh;
-        int level = pmb->loc.level - pmy_mesh->root_level;
-        int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
-        Real qomL = qshear_*Omega_0_*x1size_;
-        if ((pmb->loc.lx1==0) && (nb.ox1<0)) {
-          for (int k=sk;k<=ek;++k) {
+  }
+  // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
+  if (SHEARING_BOX) {
+    if (ShBoxCoord_==2) {
+      Mesh *pmy_mesh = pmb->pmy_mesh;
+      int level = pmb->loc.level - pmy_mesh->root_level;
+      int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+      Real qomL = qshear_*Omega_0_*x1size_;
+      if ((pmb->loc.lx1==0) && (nb.ox1<0)) {
+        for (int k=sk;k<=ek;++k) {
           for (int j=sj;j<=ej;++j) {
-          for (int i=si;i<=ei;++i) {
-            if (NON_BAROTROPIC_EOS)
-              dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
-                 *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
-                 -SQR(dst(IM3,k,j,i)));
-            dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
-          }}}
-        } // inner boundary
-        if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
-          for (int k=sk;k<=ek;++k) {
+            for (int i=si;i<=ei;++i) {
+              if (NON_BAROTROPIC_EOS)
+                dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                    *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
+                      -SQR(dst(IM3,k,j,i)));
+              dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
+            }}}
+      } // inner boundary
+      if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
+        for (int k=sk;k<=ek;++k) {
           for (int j=sj;j<=ej;++j) {
-          for (int i=si;i<=ei;++i) {
+            for (int i=si;i<=ei;++i) {
             if (NON_BAROTROPIC_EOS)
               dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
                  *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
                  -SQR(dst(IM3,k,j,i)));
             dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
           }}}
-        } // outer boundary
-      }
+      } // outer boundary
     }
+  }
   return;
 }
 
