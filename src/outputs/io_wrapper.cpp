@@ -63,7 +63,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
 //! \fn int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 //  \brief wrapper for {MPI_File_read} versus {fread}
 
-int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
+size_t IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
@@ -79,7 +79,7 @@ int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
 //! \fn int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 //  \brief wrapper for {MPI_File_read_all} versus {fread}
 
-int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
+size_t IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
@@ -96,7 +96,7 @@ int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) 
 //                             IOWrapperSize_t count, IOWrapperSize_t offset)
 //  \brief wrapper for {MPI_File_read_at_all} versus {fseek+fread}
 
-int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
+size_t IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
                            IOWrapperSize_t count, IOWrapperSize_t offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
@@ -115,7 +115,7 @@ int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 //! \fn int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 //  \brief wrapper for {MPI_File_write} versus {fwrite}
 
-int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt) {
+size_t IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
@@ -133,7 +133,7 @@ int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 //                                  IOWrapperSize_t cnt, IOWrapperSize_t offset)
 //  \brief wrapper for {MPI_File_write_at_all} versus {fseek+fwrite}.
 
-int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
+size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
                             IOWrapperSize_t cnt, IOWrapperSize_t offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;

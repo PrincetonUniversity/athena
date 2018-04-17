@@ -36,12 +36,12 @@ public:
 
   // wrapper functions for basic I/O tasks
   int Open(const char* fname, enum rwmode rw);
-  int Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  int Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  int Read_at_all(void *buf, IOWrapperSize_t size,
+  size_t Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  size_t Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  size_t Read_at_all(void *buf, IOWrapperSize_t size,
                   IOWrapperSize_t count, IOWrapperSize_t offset);
-  int Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  int Write_at_all(const void *buf, IOWrapperSize_t size,
+  size_t Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  size_t Write_at_all(const void *buf, IOWrapperSize_t size,
                    IOWrapperSize_t cnt, IOWrapperSize_t offset);
   int Close(void);
   int Seek(IOWrapperSize_t offset);
