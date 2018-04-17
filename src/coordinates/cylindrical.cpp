@@ -22,12 +22,11 @@
 // Cylindrical coordinates constructor
 
 Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(coarse_flag==true) {
+  if (coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng=pmb->cnghost;
@@ -52,7 +51,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x3v.NewAthenaArray(ncells3);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
-  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -97,7 +96,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
@@ -119,7 +118,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate memory for internal scratch arrays to store partial calculations
   // (note this is skipped if object is for coarse mesh with AMR)
-  if(coarse_flag==false) {
+  if (coarse_flag==false) {
     coord_area3_i_.NewAthenaArray(ncells1);
     coord_vol_i_.NewAthenaArray(ncells1);
     coord_src1_i_.NewAthenaArray(ncells1);
@@ -130,7 +129,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
 #pragma omp simd
-    for (int i=il-ng; i<=iu+ng; ++i){
+    for (int i=il-ng; i<=iu+ng; ++i) {
       Real rm = x1f(i  );
       Real rp = x1f(i+1);
       // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
@@ -145,8 +144,8 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
       phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
     }
 #pragma omp simd
-    for (int i=il-ng; i<=iu+(ng-1); ++i){
-       // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+    for (int i=il-ng; i<=iu+(ng-1); ++i) {
+       // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
     }
   }
@@ -154,15 +153,14 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 // destructor
 
-Cylindrical::~Cylindrical()
-{
+Cylindrical::~Cylindrical() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();
@@ -170,7 +168,7 @@ Cylindrical::~Cylindrical()
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
-  if(coarse_flag==false) {
+  if (coarse_flag==false) {
     coord_area3_i_.DeleteAthenaArray();
     coord_vol_i_.DeleteAthenaArray();
     coord_src1_i_.DeleteAthenaArray();
@@ -187,10 +185,9 @@ Cylindrical::~Cylindrical()
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void Cylindrical::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
-{
+  AthenaArray<Real> &len) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     len(i) = x1f(i)*dx2f(j);
   }
   return;
@@ -199,8 +196,7 @@ void Cylindrical::Edge2Length(const int k, const int j, const int il, const int 
 //----------------------------------------------------------------------------------------
 // GetEdgeXLength functions: return length of edge-X length at (i,j,k)
 
-Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
-{
+Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
   return x1f(i)*dx2f(j);
 }
 
@@ -208,10 +204,9 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2)
-{
+                               AthenaArray<Real> &dx2) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     dx2(i) = x1v(i)*dx2f(j);
   }
   return;
@@ -221,21 +216,19 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
-    // area1 = r dphi dz 
+  for (int i=il; i<=iu; ++i) {
+    // area1 = r dphi dz
     area(i) = x1f(i)*dx2f(j)*dx3f(k);
   }
   return;
 }
 
 void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
-{
+  AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area3 = dr r dphi = d(r^2/2) dphi
     area(i) = coord_area3_i_(i)*dx2f(j);
   }
@@ -245,14 +238,12 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
 //----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 
-Real Cylindrical::GetFace1Area(const int k, const int j, const int i)
-{
-  // area1 = r dphi dz 
+Real Cylindrical::GetFace1Area(const int k, const int j, const int i) {
+  // area1 = r dphi dz
   return x1f(i)*dx2f(j)*dx3f(k);
 }
 
-Real Cylindrical::GetFace3Area(const int k, const int j, const int i)
-{
+Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
   // area3 = dr r dphi = d(r^2/2) dphi
   return coord_area3_i_(i)*dx2f(j);
 }
@@ -261,10 +252,9 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i)
 // Cell Volume function: compute volume of cell as vector
 
 void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
-{
+  AthenaArray<Real> &vol) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // volume = dr dz r dphi = d(r^2/2) dphi dz
     vol(i) = coord_vol_i_(i)*dx2f(j)*dx3f(k);
   }
@@ -274,17 +264,14 @@ void Cylindrical::CellVolume(const int k, const int j, const int il, const int i
 //----------------------------------------------------------------------------------------
 // GetCellVolume: returns cell volume at (i,j,k)
 
-Real Cylindrical::GetCellVolume(const int k, const int j, const int i)
-{
+Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
   return coord_vol_i_(i)*dx2f(j)*dx3f(k);
 }
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
 void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {

@@ -11,6 +11,7 @@
 #include "defs.hpp"
 #include "athena_arrays.hpp"
 #include <math.h>
+#include <stdint.h>  // int64_t
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
@@ -36,10 +37,10 @@ struct RegionSize;
 //  \brief stores logical location and level of meshblock
 
 typedef struct LogicalLocation {
-  long int lx1, lx2, lx3;
+  int64_t lx1, lx2, lx3;
   int level;
 
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll)
@@ -83,7 +84,7 @@ typedef struct EdgeField {
 //----------------------------------------------------------------------------------------
 // enums used everywhere
 
-// array indices for conserved: density, momemtum, total energy, face-centered field 
+// array indices for conserved: density, momemtum, total energy, face-centered field
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IB1=0, IB2=1, IB3=2};
 
@@ -103,7 +104,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 // needed wherever MPI communications are used.  Must be < 32 and unique
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
   TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_GRAVITY=11,
-  TAG_MGGRAV=12};
+  TAG_MGGRAV=12,TAG_SHBOX_HYDRO=13,TAG_SHBOX_FIELD=14,TAG_SHBOX_EMF=15};
 
 enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
                    BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};

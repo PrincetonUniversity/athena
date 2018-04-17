@@ -19,6 +19,9 @@
 // coordinate system
 #define COORDINATE_SYSTEM "@COORDINATE_SYSTEM@"
 
+// enable shearing box? default=0 (false)
+#define SHEARING_BOX @SHEARING_BOX@
+
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
 

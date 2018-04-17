@@ -14,15 +14,14 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
-  athena.configure(
-      prob='jeans',
-      grav='mg'
-      )
+def prepare(**kwargs):
+  athena.configure(prob='jeans',
+                   grav='mg',
+                   **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   #njeans = 1.5
   #period = 0.3
   #1/omega = 0.046
@@ -34,7 +33,8 @@ def run():
       'meshblock/nx2=16',
       'meshblock/nx3=16',
       'problem/njeans=1.5',
-      'output2/dt=-1', 'time/tlim=0.04', 'problem/compute_error=true']
+      'output2/dt=-1', 'time/tlim=0.04', 'problem/compute_error=true',
+      'time/ncycle_out=10']
     arguments[0] = 'mesh/nx1='+str(2*res)
     arguments[1] = 'mesh/nx2='+str(res)
     arguments[2] = 'mesh/nx3='+str(res)
@@ -74,6 +74,5 @@ def analyze():
       result = False
     elif data[i+1][4] > (1.1*data[i][4]/(4.0)):
       print("WARNING: Linear Jeans instability error is not converging at 2nd order within 1.1")
-  
-  return result
 
+  return result

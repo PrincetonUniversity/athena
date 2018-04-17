@@ -95,39 +95,39 @@ private:
 };
 
 //! \class FFTBlock
-//  \brief 
+//  \brief
 
 class FFTBlock {
 public:
-  FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid, 
+  FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
            RegionSize msize, RegionSize bsize);
   virtual ~FFTBlock();
 
-  void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, 
+  void LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
                   LogicalLocation loc, RegionSize bsize);
-  void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, 
+  void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
                       LogicalLocation loc, RegionSize bsize);
   virtual void ApplyKernel(int mode);
 
-  long int GetIndex(const int i, const int j, const int k);
-  long int GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
+  int64_t GetIndex(const int i, const int j, const int k);
+  int64_t GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
 
-  long int GetGlobalIndex(const int i, const int j, const int k);
+  int64_t GetGlobalIndex(const int i, const int j, const int k);
 
   void DestroyPlan(AthenaFFTPlan *plan);
   void MpiInitialize();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
-  void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data, 
+  void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
                AthenaFFTComplex *out_data);
 
   AthenaFFTPlan *QuickCreatePlan(AthenaFFTComplex *data,enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nfast, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(int nfast, AthenaFFTComplex *data,
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nfast, int nslow, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(int nfast, int nslow, AthenaFFTComplex *data,
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nfast, int nmid, int nslow, 
-                            AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(int nfast, int nmid, int nslow,
+                            AthenaFFTComplex *data,
                             enum AthenaFFTDirection dir);
 
   void ExecuteForward(void) {Execute(fplan_);};
@@ -147,7 +147,7 @@ public:
   friend class Mesh;
 
 protected:
-  long int cnt_,gcnt_;
+  int64_t cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
   AthenaFFTComplex *in_, *out_;
@@ -186,7 +186,7 @@ public:
   friend class Mesh;
 
 protected:
-  long int gcnt_;
+  int64_t gcnt_;
   int nranks_, nblocks_;
   int *ranklist_, *nslist_, *nblist_;
   Mesh *pmy_mesh_;

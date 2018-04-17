@@ -28,6 +28,7 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+
   // face-centered magnetic fields
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2

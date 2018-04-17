@@ -9,9 +9,10 @@
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
 #include <csignal>
+#include <stdint.h>  // int64_t
 
 void ChangeRunDir(const char *pdir);
-double ran2(long int *idum);
+double ran2(int64_t *idum);
 void ShowConfig();
 
 //----------------------------------------------------------------------------------------

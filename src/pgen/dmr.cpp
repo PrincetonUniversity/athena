@@ -35,9 +35,9 @@
 #include <iostream>
 #include <cmath>
 
-// DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.  
-// DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.  
-// DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.  
+// DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.
+// DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.
+// DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
@@ -53,14 +53,13 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll user-defined boundary functions
   EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
   EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
   EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
   // Enroll user-defined AMR criterion
-  if(adaptive==true)
+  if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -71,12 +70,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Initialize DMR test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   if (block_size.nx3 > 1) {
-    msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3=" 
+    msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3="
         << block_size.nx3 << " but this test only works for 2D" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -90,8 +88,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       // x-positions of shock at top and bottom of cell
-      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt((double)3.0);
-      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt((double)3.0);
+      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt(static_cast<Real>(3.0));
+      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt(static_cast<Real>(3.0));
       phydro->u(IM3,ks,j,i) = 0.0;
 
       if (pcoord->x1f(i) > shock_xpos_top) {
@@ -154,8 +152,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  Quantities at this boundary are held fixed at the downstream state
 
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -181,8 +178,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -219,8 +215,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 > 0.16666666+v1_shock*time
 
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -255,13 +250,12 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //! \fn
 //  \brief refinement condition: density and pressure curvature
 
-int RefinementCondition(MeshBlock *pmb)
-{
+int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps=0.0;
   int k=pmb->ks;
-  for(int j=pmb->js; j<=pmb->je; j++) {
-    for(int i=pmb->is; i<=pmb->ie; i++) {
+  for (int j=pmb->js; j<=pmb->je; j++) {
+    for (int i=pmb->is; i<=pmb->ie; i++) {
       Real epsr= (std::abs(w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
                  +std::abs(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
       Real epsp= (std::abs(w(IPR,k,j,i+1)-2.0*w(IPR,k,j,i)+w(IPR,k,j,i-1))
@@ -271,9 +265,9 @@ int RefinementCondition(MeshBlock *pmb)
     }
   }
   // refine : curvature > 0.01
-  if(maxeps > 0.01) return 1;
+  if (maxeps > 0.01) return 1;
   // derefinement: curvature < 0.005
-  if(maxeps < 0.005) return -1;
+  if (maxeps < 0.005) return -1;
   // otherwise, stay
   return 0;
 }

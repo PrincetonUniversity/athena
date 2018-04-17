@@ -20,8 +20,7 @@
 //----------------------------------------------------------------------------------------
 // TaskList constructor
 
-TaskList::TaskList(Mesh *pm)
-{
+TaskList::TaskList(Mesh *pm) {
   pmy_mesh_=pm;
   ntasks = 0;
   nsub_steps = 0;
@@ -29,41 +28,39 @@ TaskList::TaskList(Mesh *pm)
 
 // destructor
 
-TaskList::~TaskList()
-{
+TaskList::~TaskList() {
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
-//  \brief do all tasks that can be done (are not waiting for a dependency to be 
-//  cleared) in this TaskList, return status.  
+//  \brief do all tasks that can be done (are not waiting for a dependency to be
+//  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts)
-{
+enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
-  if(ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
 
-  for(int i=ts.indx_first_task; i<ntasks; i++) {
+  for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmb, step);
-        if(ret!=TASK_FAIL) { // success
+        if (ret!=TASK_FAIL) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
-          if(skip==0) ts.indx_first_task++;
-          if(ts.num_tasks_left==0) return TL_COMPLETE;
-          if(ret==TASK_NEXT) continue;
+          if (skip==0) ts.indx_first_task++;
+          if (ts.num_tasks_left==0) return TL_COMPLETE;
+          if (ret==TASK_NEXT) continue;
           return TL_RUNNING;
         }
       }
       skip++; // increment number of tasks processed
 
-    } else if(skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
@@ -73,8 +70,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
 //! \fn void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
-{
+void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step) {
   MeshBlock *pmb = pmesh->pblock;
   // initialize counters stored in each MeshBlock
   while (pmb != NULL)  {
@@ -100,7 +96,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
 {
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-    for (int i=0; i<nmb; ++i){
+    for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;
       }

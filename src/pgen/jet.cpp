@@ -35,8 +35,7 @@ static Real gm1,x2_0,x3_0;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // initialize global variables
   d_amb  = pin->GetReal("problem", "d");
   p_amb  = pin->GetReal("problem", "p");
@@ -61,7 +60,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   r_jet = pin->GetReal("problem", "rjet");
   x2_0 = 0.5*(mesh_size.x2max + mesh_size.x2min);
   x3_0 = 0.5*(mesh_size.x3max + mesh_size.x3min);
-   
+
   // enroll boundary value function pointers
   EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
   return;
@@ -71,14 +70,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Jet problem
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gm1 = peos->GetGamma() - 1.0;
 
   // initialize conserved variables
-  for(int k=ks; k<=ke; ++k){
-  for(int j=js; j<=je; ++j){
-  for(int i=is; i<=ie; ++i){
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
+  for (int i=is; i<=ie; ++i) {
     phydro->u(IDN,k,j,i) = d_amb;
     phydro->u(IM1,k,j,i) = d_amb*vx_amb;
     phydro->u(IM2,k,j,i) = d_amb*vy_amb;
@@ -123,14 +121,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // set primitive variables in inlet ghost zones
-  for(int k=ks; k<=ke; ++k){
-  for(int j=js; j<=je; ++j){
-    for(int i=1; i<=(NGHOST); ++i){
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
+    for (int i=1; i<=(NGHOST); ++i) {
       Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-      if(rad <= r_jet){
+      if (rad <= r_jet) {
         prim(IDN,k,j,is-i) = d_jet;
         prim(IVX,k,j,is-i) = vx_jet;
         prim(IVY,k,j,is-i) = vy_jet;
@@ -148,12 +145,12 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
   // set magnetic field in inlet ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for(int k=ks; k<=ke; ++k){
-    for(int j=js; j<=je; ++j){
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for(int i=1; i<=(NGHOST); ++i){
+      for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet) {
           b.x1f(k,j,is-i) = bx_jet;
         } else{
           b.x1f(k,j,is-i) = b.x1f(k,j,is);
@@ -166,7 +163,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet) {
           b.x2f(k,j,is-i) = by_jet;
         } else{
           b.x2f(k,j,is-i) = b.x2f(k,j,is);
@@ -179,7 +176,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 #pragma omp simd
       for (int i=1; i<=(NGHOST); ++i) {
         Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if(rad <= r_jet){
+        if (rad <= r_jet) {
           b.x3f(k,j,is-i) = bz_jet;
         } else{
           b.x3f(k,j,is-i) = b.x3f(k,j,is);

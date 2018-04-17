@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file show_config.cpp 
+//! \file show_config.cpp
 
 // C++ headers
 #include <iostream>
@@ -16,8 +16,7 @@
 //! \fn void ShowConfig(void)
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void)
-{
+void ShowConfig(void) {
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;
@@ -28,6 +27,12 @@ void ShowConfig(void)
   }
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
 
+  if (SHEARING_BOX) {
+    std::cout<<"  ShearingBox BCs:            ON" << std::endl;
+  } else {
+    std::cout<<"  ShearingBox BCs:            OFF" << std::endl;
+  }
+
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self Gravity:               FFT" << std::endl;
   } else if (SELF_GRAVITY_ENABLED == 2) {
@@ -36,27 +41,20 @@ void ShowConfig(void)
     std::cout<<"  Self Gravity:               Off" << std::endl;
   }
 
-
-
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
     std::cout<<"  Magnetic fields:            OFF" << std::endl;
   }
   if (RELATIVISTIC_DYNAMICS) {
-    std::cout<<"  Relativistic dynamics:      ON" << std::endl;
+    std::cout<<"  Relativistic dynamics:      ON " << std::endl;
   } else {
-    std::cout<<"  Relativistic dynamics:      OFF" << std::endl;
+    std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
   }
   if (GENERAL_RELATIVITY) {
-    std::cout<<"  General relativity:         ON" << std::endl;
-    if (FRAME_TRANSFORMATIONS) {
-      std::cout<<"  Frame transformations:      ON" << std::endl;
-    } else {
-      std::cout<<"  Frame transformations:      OFF" << std::endl;
-    }
+    std::cout<<"  General Relativity:         ON " << std::endl;
   } else {
-    std::cout<<"  General Relativity:         OFF" << std::endl;
+    std::cout<<"  General Relativity:         OFF " << std::endl;
   }
   if (SINGLE_PRECISION_ENABLED) {
     std::cout<<"  Floating point precision:   single" << std::endl;
@@ -86,8 +84,6 @@ void ShowConfig(void)
 #else
   std::cout<<"  HDF5 Output:                OFF" << std::endl;
 #endif
-  std::cout<<"  Compiler:                   " << COMPILED_WITH << std::endl;
-  std::cout<<"  Compilation command:        " << COMPILER_COMMAND << ' '
-      << COMPILED_WITH_OPTIONS << std::endl;
+
   return;
 }

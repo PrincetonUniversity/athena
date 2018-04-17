@@ -6,6 +6,12 @@
 //! \file gravity.cpp
 //  \brief implementation of functions in class Gravity
 
+// C/C++ headers
+#include <iostream>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
 // Athena++ headers
 #include "gravity.hpp"
 #include "../athena.hpp"
@@ -15,18 +21,12 @@
 #include "../parameter_input.hpp"
 #include "../bvals/bvals_grav.hpp"
 
-#include <iostream>
-#include <sstream>    // sstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
 // constructor, initializes data structures and parameters
 
-Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
-{
+Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
-  if(four_pi_G==0.0) {
+  if (four_pi_G==0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -46,8 +46,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-Gravity::~Gravity()
-{
+Gravity::~Gravity() {
   phi.DeleteAthenaArray();
 }
-

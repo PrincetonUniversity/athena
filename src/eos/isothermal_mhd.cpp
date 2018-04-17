@@ -22,8 +22,7 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   iso_sound_speed_ = pin->GetReal("hydro","iso_sound_speed"); // error if missing!
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
@@ -31,8 +30,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
 }
 
 //----------------------------------------------------------------------------------------
@@ -46,15 +44,14 @@ EquationOfState::~EquationOfState()
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc, Coordinates *pco,
-    int il, int iu, int jl, int ju, int kl, int ku)
-{
+    int il, int iu, int jl, int ju, int kl, int ku) {
   pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   // Convert to Primitives
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);
       Real& u_m2 = cons(IVY,k,j,i);
@@ -89,12 +86,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int il, int iu, int jl, int ju, int kl, int ku)
-{
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+     int il, int iu, int jl, int ju, int kl, int ku) {
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -119,8 +115,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
-{
+Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return iso_sound_speed_;
 }
 
@@ -129,8 +124,7 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 
-Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
-{
+Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
   Real asq = (iso_sound_speed_*iso_sound_speed_);
   Real vaxsq = bx*bx/prim[IDN];
   Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ])/prim[IDN];
@@ -144,8 +138,7 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
-{
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 
   // apply density floor

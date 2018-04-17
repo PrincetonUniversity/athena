@@ -35,8 +35,7 @@ static void CalculateTransformation(const AthenaArray<Real> &g,
 //   flag: true if object is for coarse grid only in an AMR calculation
 
 GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   // Set object names
   pmy_block = pmb;
   Mesh *pm = pmy_block->pmy_mesh;
@@ -453,8 +452,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 //----------------------------------------------------------------------------------------
 // Destructor
 
-GRUser::~GRUser()
-{
+GRUser::~GRUser() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
@@ -500,8 +498,7 @@ GRUser::~GRUser()
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void GRUser::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
+    AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^1
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -511,8 +508,7 @@ void GRUser::Edge1Length(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
+    AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^2
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -522,8 +518,7 @@ void GRUser::Edge2Length(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
+    AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^3
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -535,20 +530,17 @@ void GRUser::Edge3Length(const int k, const int j, const int il, const int iu,
 //----------------------------------------------------------------------------------------
 // GetEdgeXLength functions: return length of edge-X at (i,j,k)
 
-Real GRUser::GetEdge1Length(const int k, const int j, const int i)
-{
+Real GRUser::GetEdge1Length(const int k, const int j, const int i) {
   // \Delta L \approx \sqrt{-g} \Delta x^1
   return coord_len1_kji_(k,j,i);
 }
 
-Real GRUser::GetEdge2Length(const int k, const int j, const int i)
-{
+Real GRUser::GetEdge2Length(const int k, const int j, const int i) {
   // \Delta L \approx \sqrt{-g} \Delta x^2
   return coord_len2_kji_(k,j,i);
 }
 
-Real GRUser::GetEdge3Length(const int k, const int j, const int i)
-{
+Real GRUser::GetEdge3Length(const int k, const int j, const int i) {
   // \Delta L \approx \sqrt{-g} \Delta x^3
   return coord_len3_kji_(k,j,i);
 }
@@ -557,8 +549,7 @@ Real GRUser::GetEdge3Length(const int k, const int j, const int i)
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void GRUser::CenterWidth1(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx1)
-{
+    AthenaArray<Real> &dx1) {
   // \Delta W \approx \sqrt{g_{11}} \Delta x^1
   #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -568,8 +559,7 @@ void GRUser::CenterWidth1(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::CenterWidth2(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx2)
-{
+    AthenaArray<Real> &dx2) {
   // \Delta W \approx \sqrt{g_{22}} \Delta x^2
   #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -579,8 +569,7 @@ void GRUser::CenterWidth2(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::CenterWidth3(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx3)
-{
+    AthenaArray<Real> &dx3) {
   // \Delta W \approx \sqrt{g_{33}} \Delta x^3
   #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -598,8 +587,7 @@ void GRUser::CenterWidth3(const int k, const int j, const int il, const int iu,
 //   areas: 1D array of interface areas orthogonal to X-face
 
 void GRUser::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
+    AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^2 \Delta x^3
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -609,8 +597,7 @@ void GRUser::Face1Area(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
+    AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^3
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -620,8 +607,7 @@ void GRUser::Face2Area(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
+    AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^2
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -637,20 +623,17 @@ void GRUser::Face3Area(const int k, const int j, const int il, const int iu,
 // return:
 //   interface area orthogonal to X-face
 
-Real GRUser::GetFace1Area(const int k, const int j, const int i)
-{
+Real GRUser::GetFace1Area(const int k, const int j, const int i) {
   // \Delta A \approx \sqrt{-g} \Delta x^2 \Delta x^3
   return coord_area1_kji_(k,j,i);
 }
 
-Real GRUser::GetFace2Area(const int k, const int j, const int i)
-{
+Real GRUser::GetFace2Area(const int k, const int j, const int i) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^3
   return coord_area2_kji_(k,j,i);
 }
 
-Real GRUser::GetFace3Area(const int k, const int j, const int i)
-{
+Real GRUser::GetFace3Area(const int k, const int j, const int i) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^2
   return coord_area3_kji_(k,j,i);
 }
@@ -664,8 +647,7 @@ Real GRUser::GetFace3Area(const int k, const int j, const int i)
 //   volumes: 1D array of cell volumes
 
 void GRUser::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes)
-{
+    AthenaArray<Real> &volumes) {
   // \Delta V \approx \sqrt{-g} \Delta x^1 \Delta x^2 \Delta x^3
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -681,8 +663,7 @@ void GRUser::CellVolume(const int k, const int j, const int il, const int iu,
 // Outputs:
 //   returned value: cell volume
 
-Real GRUser::GetCellVolume(const int k, const int j, const int i)
-{
+Real GRUser::GetCellVolume(const int k, const int j, const int i) {
   // \Delta V \approx \sqrt{-g} \Delta x^1 \Delta x^2 \Delta x^3
   return coord_vol_kji_(k,j,i);
 }
@@ -699,8 +680,7 @@ Real GRUser::GetCellVolume(const int k, const int j, const int i)
 
 void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
-    AthenaArray<Real> &cons)
-{
+    AthenaArray<Real> &cons) {
   // Extract indices
   int is = pmy_block->is;
   int ie = pmy_block->ie;
@@ -839,8 +819,7 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 //   g_inv: array of inverse metric components in 1D
 
 void GRUser::CellMetric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
     for (int i = il; i <= iu; ++i) {
@@ -852,8 +831,7 @@ void GRUser::CellMetric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face1Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
     for (int i = il; i <= iu; ++i) {
@@ -865,8 +843,7 @@ void GRUser::Face1Metric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face2Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
     for (int i = il; i <= iu; ++i) {
@@ -878,8 +855,7 @@ void GRUser::Face2Metric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
     for (int i = il; i <= iu; ++i) {
@@ -913,8 +889,7 @@ void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
 
 void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1086,8 +1061,7 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 
 void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1259,8 +1233,7 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 
 void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1429,8 +1402,7 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
 
 void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1542,8 +1514,7 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
 
 void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1655,8 +1626,7 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
 
 void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
@@ -1757,8 +1727,7 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
 
 void GRUser::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   // Extract metric coefficients
   const Real &g00 = metric_cell_kji_(1,I00,k,j,i);
   const Real &g01 = metric_cell_kji_(1,I01,k,j,i);
@@ -1794,8 +1763,7 @@ void GRUser::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int 
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
 
 void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
-{
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
   // Extract metric coefficients
   const Real &g_00 = metric_cell_kji_(0,I00,k,j,i);
   const Real &g_01 = metric_cell_kji_(0,I01,k,j,i);
@@ -1831,8 +1799,7 @@ void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, i
 // Outputs:
 //   returned value: determinant
 
-static Real Determinant(const AthenaArray<Real> &g)
-{
+static Real Determinant(const AthenaArray<Real> &g) {
   const Real &a11 = g(I00);
   const Real &a12 = g(I01);
   const Real &a13 = g(I02);
@@ -1857,16 +1824,14 @@ static Real Determinant(const AthenaArray<Real> &g)
 }
 
 static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
-    Real a31, Real a32, Real a33)
-{
+    Real a31, Real a32, Real a33) {
   Real det = a11 * Determinant(a22, a23, a32, a33)
            - a12 * Determinant(a21, a23, a31, a33)
            + a13 * Determinant(a21, a22, a31, a32);
   return det;
 }
 
-static Real Determinant(Real a11, Real a12, Real a21, Real a22)
-{
+static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
   return a11 * a22 - a12 * a21;
 }
 
@@ -1879,8 +1844,7 @@ static Real Determinant(Real a11, Real a12, Real a21, Real a22)
 //   transformation: array of transformation coefficients
 
 static void CalculateTransformation(const AthenaArray<Real> &g,
-    const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation)
-{
+    const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation) {
   // Prepare indices
   int index[4][4];
   index[0][0] = I00;

@@ -36,8 +36,7 @@ static Real gm1, iso_cs;
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
@@ -48,9 +47,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
   Real du[NWAVE],a[NWAVE],u[NWAVE];
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
-  for (int i=il; i<=iu; ++i){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -90,7 +89,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     RoeEigensystem(wroe,ev,rem,lem);
 
-//--- Step 4.  Compute L/R fluxes 
+//--- Step 4.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -264,14 +263,14 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
-    if(ev[0] >= 0.0){
+    if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
       flxi[IVY] = fl[IVY];
       flxi[IVZ] = fl[IVZ];
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fl[IEN];
     }
-    if(ev[NWAVE-1] <= 0.0){
+    if (ev[NWAVE-1] <= 0.0) {
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];
@@ -326,8 +325,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 
 inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
-{
+  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -364,7 +362,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
 
     right_eigenmatrix[0][2] = 0.0;
     right_eigenmatrix[1][2] = 0.0;
-    right_eigenmatrix[2][2] = 0.0; 
+    right_eigenmatrix[2][2] = 0.0;
     right_eigenmatrix[3][2] = 1.0;
     right_eigenmatrix[4][2] = v3;
 
@@ -387,7 +385,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[0][2] = -na*gm1*v2;
     left_eigenmatrix[0][3] = -na*gm1*v3;
     left_eigenmatrix[0][4] = na*gm1;
-  
+
     left_eigenmatrix[1][0] = -v2;
     left_eigenmatrix[1][1] = 0.0;
     left_eigenmatrix[1][2] = 1.0;
@@ -398,7 +396,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[2][1] = 0.0;
     left_eigenmatrix[2][2] = 0.0;
     left_eigenmatrix[2][3] = 1.0;
-    left_eigenmatrix[2][4] = 0.0; 
+    left_eigenmatrix[2][4] = 0.0;
 
     Real qa = gm1/asq;
     left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;

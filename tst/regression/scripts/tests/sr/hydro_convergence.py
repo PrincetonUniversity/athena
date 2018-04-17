@@ -23,28 +23,29 @@ vy = 0.3
 vz = -0.05
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('s',
       prob='gr_linear_wave',
       coord='cartesian',
-      flux='hllc')
+      flux='hllc', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   wavespeeds = wavespeeds_hydro()
   for wave_flag in wave_flags:
     time = 1.0 / abs(wavespeeds[wave_flag])
     arguments = [
-        'job/problem_id=sr_hydro_wave_{0}_low'.format(wave_flag),
-        'mesh/nx1=' + repr(res_low),
-        'meshblock/nx1=' + repr(res_low),
-        'time/tlim=' + repr(time),
-        'output1/dt=' + repr(time),
-        'hydro/gamma=' + repr(gamma_adi),
-        'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
-        'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
-        'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp)]
+      'job/problem_id=sr_hydro_wave_{0}_low'.format(wave_flag),
+      'mesh/nx1=' + repr(res_low),
+      'meshblock/nx1=' + repr(res_low),
+      'time/tlim=' + repr(time),
+      'output1/dt=' + repr(time),
+      'hydro/gamma=' + repr(gamma_adi),
+      'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
+      'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
+      'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp),
+      'time/ncycle_out=100']
     athena.run('hydro_sr/athinput.linear_wave', arguments)
     arguments[0] = 'job/problem_id=sr_hydro_wave_{0}_high'.format(wave_flag)
     arguments[1] = 'mesh/nx1=' + repr(res_high)

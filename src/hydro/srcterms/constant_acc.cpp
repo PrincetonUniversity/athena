@@ -18,8 +18,7 @@
 //  \brief Adds source terms for constant acceleration to conserved variables
 
 void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-{
+  const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // acceleration in 1-direction

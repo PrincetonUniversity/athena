@@ -23,8 +23,7 @@
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
   // do nothing
   return;
 }
@@ -32,12 +31,11 @@ void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin)
 //========================================================================================
 //! \fn void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in MeshBlock class.  Can also be
-//  used to initialize variables which are global to other functions in this file. 
+//  used to initialize variables which are global to other functions in this file.
 //  Called in MeshBlock constructor before ProblemGenerator.
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
-{
+void __attribute__((weak)) MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   // do nothing
   return;
 }
@@ -47,9 +45,8 @@ void __attribute__((weak)) MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //  \brief Should be used to set initial conditions.
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
-  // In practice, this function should *always* be replaced by a version 
+void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  // In practice, this function should *always* be replaced by a version
   // that sets the initial conditions for the problem of interest.
   return;
 }
@@ -59,8 +56,7 @@ void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Function called once every time step for user-defined work.
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::UserWorkInLoop(void)
-{
+void __attribute__((weak)) MeshBlock::UserWorkInLoop(void) {
   // do nothing
   return;
 }
@@ -70,8 +66,7 @@ void __attribute__((weak)) MeshBlock::UserWorkInLoop(void)
 //  \brief Function called before generating output files
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
-{
+void __attribute__((weak)) MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   // do nothing
   return;
 }
@@ -81,8 +76,7 @@ void __attribute__((weak)) MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
 //  \brief Function called after main loop is finished for user-defined work.
 //========================================================================================
 
-void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // do nothing
   return;
 }

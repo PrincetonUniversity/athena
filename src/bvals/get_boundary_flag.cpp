@@ -3,10 +3,10 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file get_boundary_flag.cpp 
+//! \file get_boundary_flag.cpp
 
 // C++ headers
-#include <iostream> 
+#include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 
@@ -18,8 +18,7 @@
 //! \fn GetBoundaryFlag(std::string input_string)
 //  \brief Parses input string to return integer flag specifying boundary condition
 
-enum BoundaryFlag GetBoundaryFlag(std::string input_string)
-{
+enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
   if (input_string == "reflecting") {
     return REFLECTING_BNDRY;
   } else if (input_string == "outflow") {
@@ -28,6 +27,8 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string)
     return USER_BNDRY;
   } else if (input_string == "periodic") {
     return PERIODIC_BNDRY;
+  } else if (input_string == "shear_periodic") {
+    return SHEAR_PERIODIC_BNDRY;
   } else if (input_string == "polar") {
     return POLAR_BNDRY;
   } else if (input_string == "polar_wedge") {

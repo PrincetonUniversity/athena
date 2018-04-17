@@ -14,19 +14,19 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='orszag_tang',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
-  arguments = ['time/nlim=80']
+def run(**kwargs):
+  arguments = ['time/ncycle_out=0', 'time/nlim=80']
   athena.run('mhd/athinput.test_outputs', arguments)
-  arguments = ['time/nlim=330']
+  arguments = ['time/ncycle_out=0', 'time/nlim=330']
   athena.restart('TestOutputs.00001.rst', arguments)
-  arguments = ['time/nlim=-1']
+  arguments = ['time/ncycle_out=0', 'time/nlim=-1']
   athena.restart('TestOutputs.00004.rst', arguments)
 
 # Analyze outputs

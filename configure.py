@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-#-----------------------------------------------------------------------------------------
+#!/usr/bin/env python
+#---------------------------------------------------------------------------------------
 # configure.py: Athena++ configuration script in python. Original version by CJW.
 #
 # When configure.py is run, it uses the command line options and default settings to
@@ -17,6 +17,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
+#   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
@@ -105,6 +106,12 @@ parser.add_argument('-t',
     action='store_true',
     default=False,
     help='enable interface frame transformations for GR')
+
+# -shear argument
+parser.add_argument('-shear',
+    action='store_true',
+    default=False,
+    help='enable shearing box')
 
 # -debug argument
 parser.add_argument('-debug',
@@ -298,6 +305,12 @@ if args['g']:
   makefile_options['RSOLVER_FILE'] += '_rel'
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+# -shear argument
+if args['shear']:
+  definitions['SHEARING_BOX'] = '1'
+else:
+  definitions['SHEARING_BOX'] = '0'
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
@@ -529,6 +542,7 @@ print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])

@@ -13,37 +13,34 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('mpi','fft',
-      prob='jeans',
-      grav='fft'
-      )
+                   prob='jeans',
+                   grav='fft', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi_fft')
 
   athena.configure('mpi',
-      prob='jeans',
-      grav='mg'
-      )
+                   prob='jeans',
+                   grav='mg', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi_mg')
 
   athena.configure('fft',
-      prob='jeans',
-      grav='fft'
-      )
+                   prob='jeans',
+                   grav='fft',
+                   **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_fft')
 
-  athena.configure(
-      prob='jeans',
-      grav='mg'
-      )
+  athena.configure(prob='jeans',
+                   grav='mg',
+                   **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
-  arguments = [
+def run(**kwargs):
+  arguments = ['time/ncycle_out=10',
     'mesh/nx1=64','mesh/nx2=32','mesh/nx3=32',
     'meshblock/nx1=16',
     'meshblock/nx2=16',
@@ -55,14 +52,14 @@ def run():
   athena.run('hydro/athinput.jeans_3d', arguments)
 
   os.system('mv bin/athena_mpi_mg bin/athena')
-  athena.mpirun(1,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(2,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(4,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1, 'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2, 'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4,'hydro/athinput.jeans_3d', arguments)
 
   os.system('mv bin/athena_mpi_fft bin/athena')
-  athena.mpirun(1,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(2,'hydro/athinput.jeans_3d', arguments)
-  athena.mpirun(4,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2,'hydro/athinput.jeans_3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4,'hydro/athinput.jeans_3d', arguments)
 
 # Analyze outputs
 def analyze():

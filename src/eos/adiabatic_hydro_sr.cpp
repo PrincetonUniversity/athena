@@ -26,8 +26,7 @@
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
@@ -78,8 +77,7 @@ EquationOfState::~EquationOfState() {}
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
   AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-  int ku)
-{
+  int ku) {
   // Parameters
   const Real max_velocity = std::sqrt(1.0 - 1.0/SQR(gamma_max_));
 
@@ -141,8 +139,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           Real y0;
           if (c3 >= 0.0) {
             y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
-          }
-          else {
+          } else {
             y0 = 2.0 * cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
           }
@@ -221,8 +218,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku)
-{
+     int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
@@ -281,8 +277,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 void EquationOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
-    Real *plambda_plus, Real *plambda_minus)
-{
+    Real *plambda_plus, Real *plambda_minus) {
   const Real gamma_adi = gamma_;
   Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
   Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
@@ -297,8 +292,7 @@ void EquationOfState::SoundSpeedsSR(
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i)
-{
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
 

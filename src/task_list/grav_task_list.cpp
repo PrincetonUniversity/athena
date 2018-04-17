@@ -30,8 +30,7 @@
 //  GravitySolverTaskList constructor
 
 GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm)
-{
+  : TaskList(pm) {
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace GravitySolverTaskNames;
@@ -47,37 +46,36 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
 
 //----------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
-void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
-{
+void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
   using namespace GravitySolverTaskNames;
   switch((id)) {
     case (START_GRAV_RECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::StartGravityReceive);
       break;
     case (CLEAR_GRAV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::ClearGravityBoundary);
       break;
     case (SEND_GRAV_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::SendGravityBoundary);
       break;
     case (RECV_GRAV_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::ReceiveGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&GravitySolverTaskList::PhysicalBoundary);
       break;
@@ -98,34 +96,29 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
 //----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
 
-enum TaskStatus GravitySolverTaskList::StartGravityReceive(MeshBlock *pmb, int step)
-{
+enum TaskStatus GravitySolverTaskList::StartGravityReceive(MeshBlock *pmb, int step) {
   pmb->pgbval->StartReceivingGravity();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int step)
-{
+enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int step) {
   pmb->pgbval->ClearBoundaryGravity();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int step)
-{
-  if(pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int step) {
+  if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
-enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int step)
-{
-  if(pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int step) {
+  if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
-enum TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int step)
-{
+enum TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int step) {
   pmb->pgbval->ApplyPhysicalBoundaries();
   return TASK_NEXT;
 }

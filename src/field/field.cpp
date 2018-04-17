@@ -15,8 +15,7 @@
 
 // constructor, initializes data structures and parameters
 
-Field::Field(MeshBlock *pmb, ParameterInput *pin)
-{
+Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   // Allocate memory for interface fields, but only when needed.
@@ -36,7 +35,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
     // If user-requested time integrator is type 3S*, allocate additional memory registers
     std::string integrator = pin->GetOrAddString("time","integrator","vl2");
-    if (integrator == "ssprk5_4"){
+    if (integrator == "ssprk5_4") {
       // future extension may add "int nregister" to Hydro class
       b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
       b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
@@ -76,8 +75,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-Field::~Field()
-{
+Field::~Field() {
   b.x1f.DeleteAthenaArray();
   b.x2f.DeleteAthenaArray();
   b.x3f.DeleteAthenaArray();
@@ -118,13 +116,12 @@ Field::~Field()
 // \! brief
 
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k=ks; k<=ke; ++k){
-    for (int j=js; j<=je; ++j){
+            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
     // calc cell centered fields first
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         const Real& b1_i   = bf.x1f(k,j,i  );
         const Real& b1_ip1 = bf.x1f(k,j,i+1);
         const Real& b2_j   = bf.x2f(k,j  ,i);

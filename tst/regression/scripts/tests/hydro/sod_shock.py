@@ -13,18 +13,18 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure(
       prob='shock_tube',
       coord='cartesian',
-      flux='hllc')
+      flux='hllc', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # run in X1 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=' + repr(i), 'mesh/nx2=1', 'mesh/nx3=1',
       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
@@ -33,7 +33,7 @@ def run():
     athena.run('hydro/athinput.sod', arguments)
   # run in X2 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=' + repr(i), 'mesh/nx3=1',
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
@@ -42,7 +42,7 @@ def run():
     athena.run('hydro/athinput.sod', arguments)
   # run in X3 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=4', 'mesh/nx3=' + repr(i),
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',

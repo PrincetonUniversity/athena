@@ -12,20 +12,20 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # L-going fast/Alfven/slow waves
   for w in (0,1,2):
     tlim = max(0.5,w)
     for i in (32,64):
-      arguments = [
+      arguments = ['time/ncycle_out=0',
         'problem/wave_flag=' + repr(w),'problem/vflow=0.0','mesh/refinement=static',
         'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
         'meshblock/nx1=' + repr(i/4),
@@ -35,7 +35,7 @@ def run():
       athena.run('mhd/athinput.linear_wave3d', arguments)
   # entropy wave
   for i in (32,64):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'problem/wave_flag=3','problem/vflow=1.0','mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4),
@@ -45,7 +45,7 @@ def run():
     athena.run('mhd/athinput.linear_wave3d', arguments)
   # L/R-going fast wave
   for w in (0,6):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'problem/wave_flag=' + repr(w),
       'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=true']
     athena.run('mhd/athinput.linear_wave3d', arguments)

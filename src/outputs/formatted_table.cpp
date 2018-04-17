@@ -28,8 +28,7 @@
 // destructor not required for this derived class
 
 FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-  : OutputType(oparams) 
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -37,8 +36,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 //  \brief writes OutputData to file in tabular format using C style fprintf
 //         Writes one file per MeshBlock
 
-void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
 
   // Loop over MeshBlocks
@@ -69,7 +67,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     sprintf(number,"%05d",output_params.file_number);
     char blockid[12];
     sprintf(blockid,"block%d",pmb->gid);
-  
+
     fname.assign(output_params.file_basename);
     fname.append(".");
     fname.append(blockid);
@@ -82,7 +80,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = fopen(fname.c_str(),"w")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
