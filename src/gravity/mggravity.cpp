@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mggravity.cpp
-//  \brief implementation of functions in class MGGravity
+//  \brief create multigrid solver for gravity
 
 // C/C++ headers
 #include <iostream>
@@ -46,7 +46,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
   if (mode_>=2 && eps_<0.0) {
    std::stringstream msg;
@@ -55,7 +54,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
         << "using the SetGravitatyThreshold for the iterative mode." << std::endl
         << "Set the threshold = 0.0 for automatic convergence control." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
 
   // Allocate multigrid objects
@@ -67,7 +65,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
   lroot.lx1=0, lroot.lx2=0, lroot.lx3=0, lroot.level=0;
   mgroot_= new MGGravity(this,lroot,-1,-1,root_size,MGBoundary,pmy_mesh_->mesh_bcs,true);
   pmg_=NULL;
-  Multigrid *pfirst;
+  // Multigrid *pfirst;
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   RegionSize block_size;
