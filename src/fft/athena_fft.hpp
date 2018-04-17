@@ -12,6 +12,13 @@
 // C/C++ headers
 #include <iostream>
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../globals.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh/mesh.hpp"
+#include "../mesh/meshblock_tree.hpp"
+
 #ifdef FFT
 #include "fftw3.h"
 #ifdef MPI_PARALLEL
@@ -20,13 +27,6 @@
 #include "plimpton/fft_2d.h"
 #endif // MPI_PARALLEL
 #endif
-
-// Athena++ headers
-#include "../athena.hpp"
-#include "../globals.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../mesh/meshblock_tree.hpp"
 
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
 
