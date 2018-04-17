@@ -8,8 +8,11 @@
 //! \file io_wrapper.hpp
 //  \brief defines a set of small wrapper functions for MPI versus Serial Output.
 
-#include "../athena.hpp"
+// C headers
 #include <stdio.h>
+
+// Athena++ headers
+#include "../athena.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -21,16 +24,15 @@ typedef FILE * IOWrapperFile;
 typedef int64_t IOWrapperSize_t;
 enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
-class IOWrapper
-{
+class IOWrapper {
 public:
 #ifdef MPI_PARALLEL
-  IOWrapper() {comm=MPI_COMM_WORLD;};
-  void SetCommunicator(MPI_Comm scomm) { comm=scomm;};
+  IOWrapper() {comm=MPI_COMM_WORLD;}
+  void SetCommunicator(MPI_Comm scomm) { comm=scomm;}
 #else
-  IOWrapper() {};
+  IOWrapper() {}
 #endif
-  ~IOWrapper() {};
+  ~IOWrapper() {}
 
   // wrapper functions for basic I/O tasks
   int Open(const char* fname, enum rwmode rw);
