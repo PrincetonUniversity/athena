@@ -21,7 +21,7 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
-time python ./run_tests.py pgen --mpirun=srun --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
+time python ./run_tests.py pgen --mpirun=srun --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
 time python ./run_tests.py grav --mpirun=srun
 time python ./run_tests.py mpi --mpirun=srun
 time python ./run_tests.py hydro --mpirun=srun

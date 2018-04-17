@@ -100,7 +100,7 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
+  - python2 run_tests.py pgen --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
   - python2 run_tests.py mpi
   - python2 run_tests.py grav # requires FFTW library
   - python2 run_tests.py amr
