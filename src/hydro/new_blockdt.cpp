@@ -35,7 +35,6 @@
 
 Real Hydro::NewBlockTimeStep(void) {
   MeshBlock *pmb=pmy_block;
-  int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;

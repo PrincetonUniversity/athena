@@ -671,7 +671,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   //allocate the idlist buffer
   char *idlist = new char [listsize*nbtotal];
   if (Globals::my_rank==0) { // only the master process reads the ID list
-    if (resfile.Read(idlist,listsize,nbtotal)!=nbtotal) {
+    if (resfile.Read(idlist,listsize,nbtotal)!=static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -758,7 +758,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   int nbe=nbs+nb-1;
   char *mbdata = new char [datasize*nb];
   // load MeshBlocks (parallel)
-  if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize)!=nb) {
+  if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
+      static_cast<unsigned int>(nb)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
@@ -915,7 +916,9 @@ void Mesh::OutputMeshStructure(int dim) {
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n",ll,lx1,lx2,lx3);
+        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n", ll,
+                static_cast<long long int>(lx1), static_cast<long long int>(lx2),
+                static_cast<long long int>(lx3));
         if (dim==2) {
           fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
@@ -1201,7 +1204,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   do {
     // initialize a vector of MeshBlock pointers
     nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
-    if (nmb!=pmb_array.size()) pmb_array.resize(nmb);
+    if (static_cast<unsigned int>(nmb)!=pmb_array.size()) pmb_array.resize(nmb);
     MeshBlock *pmbl = pblock;
     for (int i=0; i<nmb; ++i) {
       pmb_array[i] = pmbl;

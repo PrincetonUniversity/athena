@@ -64,8 +64,8 @@ public:
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata,
-            int igflag);
+            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost,
+            char *mbdata, int igflag);
   ~MeshBlock();
 
   //data
@@ -154,7 +154,7 @@ class Mesh {
 #endif
 
 public:
-  Mesh(ParameterInput *pin, int test_flag=0);
+  explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 

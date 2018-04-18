@@ -42,7 +42,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
   //
   // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
-  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator.
+  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator
   //
   // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
   // another weighted average / caching of these terms each stage.
@@ -232,8 +232,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
         AddTimeIntegratorTask(RECV_EMFSH,RECV_FLDFLX);
         AddTimeIntegratorTask(RMAP_EMFSH,RECV_EMFSH);
         AddTimeIntegratorTask(INT_FLD,RMAP_EMFSH);
-      } else
+      } else {
         AddTimeIntegratorTask(INT_FLD,RECV_FLDFLX);
+      }
 
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
@@ -291,6 +292,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //---------------------------------------------------------------------------------------
 //  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
 //  ntask.
+
 void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;

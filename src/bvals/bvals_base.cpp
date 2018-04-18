@@ -84,13 +84,14 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   if (block_bcs[INNER_X2] == POLAR_BNDRY
    || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
-    int num_north_polar_blocks = pmy_mesh_->nrbx3 * (1 << level);
+    // possible loss of precision to 32 bit int, if int64_t nrbx3 is large
+    int num_north_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY
    || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
-    int num_south_polar_blocks = pmy_mesh_->nrbx3 * (1 << level);
+    int num_south_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
 
@@ -474,7 +475,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // polar neighbors
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
-    int num_north_polar_blocks = nrbx3 * (1 << level);
+    int num_north_polar_blocks = static_cast<int>(nrbx3 * (1 << level));
     for (int n = 0; n < num_north_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;
       neighbor_loc.lx1 = loc.lx1;
@@ -491,7 +492,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
-    int num_south_polar_blocks = nrbx3 * (1 << level);
+    int num_south_polar_blocks = static_cast<int>(nrbx3 * (1 << level));
     for (int n = 0; n < num_south_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;
       neighbor_loc.lx1 = loc.lx1;
