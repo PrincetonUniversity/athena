@@ -27,7 +27,6 @@ set_warning_cflag () {
     elif [ "$1" == "icc" ]; then
 	warn_flags+=("-diag-disable=175"
 		     "-Wno-unused-variable"
-		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function"
 		     )
     else
