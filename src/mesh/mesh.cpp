@@ -9,6 +9,7 @@
 // C headers
 #include <stdlib.h>
 #include <string.h>  // memcpy
+#include <inttypes.h> // int64_t format macro PRId64
 
 // C++ headers
 #include <algorithm>  // sort
@@ -921,9 +922,9 @@ void Mesh::OutputMeshStructure(int dim) {
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n", ll,
-                static_cast<long long int>(lx1), static_cast<long long int>(lx2),
-                static_cast<long long int>(lx3));
+        fprintf(fp,
+                "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
+                ll, lx1, lx2, lx3);
         if (dim==2) {
           fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
