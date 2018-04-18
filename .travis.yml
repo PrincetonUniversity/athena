@@ -76,6 +76,7 @@ matrix:
 # Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
+  # Cache Travis CI build matrix compiler
   - export TEMP_CXX=$CXX
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
@@ -90,7 +91,6 @@ install:
   - cd tst/regression
   # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
-  - export CXX=$TEMP_CXX # Reset CXX to Travis CI build matrix val, now that MPI is installed
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - pip install --user numpy || true
@@ -102,18 +102,18 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --ccmd=$CXX --cflag=$(../ci/set_warning_cflag.sh $CXX)
-  - python2 run_tests.py mpi --ccmd=$CXX
-  - python2 run_tests.py grav --ccmd=$CXX # requires FFTW library
-  - python2 run_tests.py amr --ccmd=$CXX
+  - python2 run_tests.py pgen --cxx=$TEMP_CXX --cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
+  - python2 run_tests.py mpi --cxx=$TEMP_CXX
+  - python2 run_tests.py grav --cxx=$TEMP_CXX # requires FFTW library
+  - python2 run_tests.py amr --cxx=$TEMP_CXX
   # Longest set of tests. Timeout after 10 m
   #- python2 run_tests.py mhd
-  - python2 run_tests.py hydro --ccmd=$CXX
-  - python2 run_tests.py outputs --ccmd=$CXX
-  - python2 run_tests.py curvilinear --ccmd=$CXX
-  - python2 run_tests.py gr --ccmd=$CXX
-  - python2 run_tests.py sr --ccmd=$CXX
-  - python2 run_tests.py shearingbox --ccmd=$CXX
+  - python2 run_tests.py hydro --cxx=$TEMP_CXX
+  - python2 run_tests.py outputs --cxx=$TEMP_CXX
+  - python2 run_tests.py curvilinear --cxx=$TEMP_CXX
+  - python2 run_tests.py gr --cxx=$TEMP_CXX
+  - python2 run_tests.py sr --cxx=$TEMP_CXX
+  - python2 run_tests.py shearingbox --cxx=$TEMP_CXX
   - set +e
 # Codecov coverage analysis
 after_success:
