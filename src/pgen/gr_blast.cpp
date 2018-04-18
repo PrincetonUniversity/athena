@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -54,8 +55,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  // Real gamma_adi = peos->GetGamma();
+  // Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
   Real num_x = pin->GetReal("problem", "num_x");
