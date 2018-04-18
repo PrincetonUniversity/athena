@@ -21,7 +21,7 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
-time python ./run_tests.py pgen --mpirun=srun --cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py pgen --mpirun=srun --cflag="$(../ci/set_warning_cflag.sh g++)"
 time python ./run_tests.py grav --mpirun=srun
 time python ./run_tests.py mpi --mpirun=srun
 time python ./run_tests.py hydro --mpirun=srun
