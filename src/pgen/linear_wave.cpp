@@ -433,16 +433,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     a3.DeleteAthenaArray();
   }
 
+//[diffusion
+  Real kappa = pin->GetOrAddReal("problem","kiso",0.0);
+  Real nu  = pin->GetOrAddReal("problem","nuiso",0.0);
+//diffusion]
+
   // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
+//[diffusion
+      Real cosine = cos(k_par*x);
+      Real gfact = (gm1*gm1)/gam;
+      Real diffact = gfact*kappa - 4.0*nu/3.0;
 
       phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
+      //phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag] - amp*k_par*gfact*cosine*kappa;
 
       Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
+      //Real mx = d0*vflow + amp*sn*rem[1][wave_flag] + amp*k_par*diffact*cosine/2.0;
+//diffusion]
       Real my = amp*sn*rem[2][wave_flag];
       Real mz = amp*sn*rem[3][wave_flag];
 

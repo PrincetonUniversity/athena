@@ -33,9 +33,8 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
 
   Divv(prim,divv_);
 
-// step-2. calculate the flux across each face
+// Calculate the flux across each face.
 // i-direction
-// set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
     if(pmb_->block_size.nx2 > 1) {
@@ -47,15 +46,12 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
   }
   for (int k=kl; k<=ku; ++k){
     for (int j=jl; j<=ju; ++j){
-      // compute fluxes
       FaceXdx(k,j,is,ie+1,prim,fx_);
       FaceXdy(k,j,is,ie+1,prim,fy_);
       FaceXdz(k,j,is,ie+1,prim,fz_);
-      // store fluxes
       for (int i=is; i<=ie+1; ++i){
-        nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k,j,i-1));   //nuiso1(prim,IM1,k,j,i);
+        nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
-        //if (i==10 && j==10 && k==10) std::cout << "nu1(i-1/2)[10,10,10] = " << nu1 << std::endl;
         flx1 = -denf*nu1*(fx_(i)+nuiso2*0.5*(divv_(k,j,i)+divv_(k,j,i-1)));
         flx2 = -denf*nu1*fy_(i);
         flx3 = -denf*nu1*fz_(i);
@@ -70,7 +66,6 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
   }}
 
 // j-direction
-// set the loop limits
   il=is, iu=ie, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
     if(pmb_->block_size.nx3 == 1) // 2D
