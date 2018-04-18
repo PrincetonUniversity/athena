@@ -6,22 +6,22 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file gravity.hpp
-//  \brief defines Gravity class which implements data and functions for gravitational potential
+//! \file multigrid.hpp
+//  \brief
 
-// Athena++ classes headers
+// C/C++ headers
+#include <iostream>
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals_mg.hpp"
 #include "../task_list/mg_task_list.hpp"
-
-#include <iostream>
-#ifdef MPI_PARALLEL
-#include <mpi.h>
-#endif
-
 
 class Mesh;
 class MeshBlock;
@@ -75,12 +75,12 @@ public:
   void SubtractAverage(int type, int n, Real ave);
 
   // small functions
-  int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
-  int GetNumberOfLevels(void) { return nlevel_; };
-  int GetCurrentLevel(void) { return current_level_; };
-  AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
-  AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
-  Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
+  int GetCurrentNumberOfCells(void) { return 1<<current_level_; }
+  int GetNumberOfLevels(void) { return nlevel_; }
+  int GetCurrentLevel(void) { return current_level_; }
+  AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; }
+  AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; }
+  Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); }
 
   // pure virtual functions
   virtual void Smooth(int color) = 0;
@@ -108,8 +108,7 @@ private:
 //! \class MultigridDriver
 //  \brief Multigrid driver
 
-class MultigridDriver
-{
+class MultigridDriver {
 public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
   virtual ~MultigridDriver();
@@ -131,7 +130,7 @@ public:
   Multigrid* FindMultigrid(int tgid);
 
   // small functions
-  int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; };
+  int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
   virtual void Solve(int step) = 0;

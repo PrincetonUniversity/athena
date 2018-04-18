@@ -75,7 +75,7 @@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
 #define NGHOST @NUMBER_GHOST_CELLS@
-#define MAX_NSTEP 4
+#define MAX_NSTEP 5
 
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)

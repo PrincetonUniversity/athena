@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
         narg_flag = 1;
         break;
       case 'm':
-        mesh_flag = std::strtol(argv[++i],NULL,10);
+        mesh_flag = static_cast<int>(std::strtol(argv[++i],NULL,10));
         break;
       case 't':
         int wth, wtm, wts;
