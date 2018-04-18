@@ -15,6 +15,9 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "srcterms/hydro_srcterms.hpp"
+//[diffusion
+#include "hydro_diffusion/hydro_diffusion.hpp"
+//diffusion]
 
 // constructor, initializes data structures and parameters
 
@@ -92,6 +95,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
   psrc  = new HydroSourceTerms(this,pin);
 
+  //[diffusion
+  phdif = new HydroDiffusion(this,pin);
+  //diffusion]
+
 }
 
 // destructor
@@ -148,4 +155,7 @@ Hydro::~Hydro() {
     if (pmy_block->block_size.nx3 > 1) gflx_old[X3DIR].DeleteAthenaArray();
   }
   delete psrc;
+  //[diffusion
+  delete phdif;
+  //diffusion]
 }

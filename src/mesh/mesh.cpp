@@ -41,6 +41,10 @@
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
+//[diffusion
+#include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -218,6 +222,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  ViscosityCoeff_=NULL;
+  ConductionCoeff_=NULL;
+  FieldDiffusivity_=NULL;
   MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
   MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
   MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
@@ -605,6 +612,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  ViscosityCoeff_=NULL;
+  ConductionCoeff_=NULL;
+  FieldDiffusivity_=NULL;
   MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
   MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
   MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
@@ -915,7 +925,7 @@ void Mesh::OutputMeshStructure(int dim) {
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n",ll,lx1,lx2,lx3);
+        fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
         if (dim==2) {
           fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
@@ -1109,6 +1119,35 @@ void Mesh::EnrollUserMetric(MetricFunc_t my_func) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
+//  \brief Enroll a user-defined magnetic field diffusivity function
+
+void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
+{
+  ViscosityCoeff_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
+//  \brief Enroll a user-defined thermal conduction function
+
+void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
+{
+  ConductionCoeff_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func)
+//  \brief Enroll a user-defined magnetic field diffusivity function
+
+void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func)
+{
+  FieldDiffusivity_ = my_func;
+  return;
+}
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
@@ -1314,6 +1353,18 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
     }
+
+//[diffusion
+    // Calc initial diffusion coefficients
+#pragma omp for private(pmb,phydro,pfield)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i]; phydro=pmb->phydro, pfield=pmb->pfield;
+      if (phydro->phdif->hydro_diffusion_defined)
+        phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
+      if (pfield->pfdif->field_diffusion_defined)
+        pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+    }
+//diffusion]
 
     if ((res_flag==0) && (adaptive==true)) {
 #pragma omp for

@@ -30,7 +30,8 @@ class MeshBlock;
 class Coordinates;
 class ParameterInput;
 struct RegionSize;
-
+class HydroDiffusion;
+class FieldDiffusion;
 
 //--------------------------------------------------------------------------------------
 //! \struct LogicalLocation
@@ -131,5 +132,11 @@ typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, int nvar,
 typedef void (*GravityBoundaryFunc_t)(MeshBlock *pmb, Coordinates *pco,
              AthenaArray<Real> &dst, Real time, Real dt,
              int is, int ie, int js, int je, int ks, int ke);
+typedef void (*ViscosityCoeff_t)(HydroDiffusion *phdif, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
+typedef void (*ConductionCoeff_t)(HydroDiffusion *phdif, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
+typedef void (*FieldDiffusionCoeff_t)(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
+             const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
 
 #endif // ATHENA_HPP

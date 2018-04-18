@@ -17,6 +17,10 @@
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
+//[diffusion
+#include "../hydro/hydro.hpp"
+#include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Cylindrical coordinates constructor
@@ -49,6 +53,21 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
+  //[diffusion
+  // allocate arrays for volume- and face-centered geometry coefficients of cells
+  h2f.NewAthenaArray(ncells1);
+  dh2fd1.NewAthenaArray(ncells1);
+  h31f.NewAthenaArray(ncells1);
+  dh31fd1.NewAthenaArray(ncells1);
+  h32f.NewAthenaArray(ncells2);
+  dh32fd2.NewAthenaArray(ncells2);
+  h2v.NewAthenaArray(ncells1);
+  dh2vd1.NewAthenaArray(ncells1);
+  h31v.NewAthenaArray(ncells1);
+  dh31vd1.NewAthenaArray(ncells1);
+  h32v.NewAthenaArray(ncells2);
+  dh32vd2.NewAthenaArray(ncells2);
+  //diffusion]
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -95,6 +114,36 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
+  //[diffusion
+  // initialize geometry coefficients
+  // x1-direction
+  for (int i=il-ng; i<=iu+ng; ++i) {
+    h2v(i) = x1v(i);
+    h2f(i) = x1f(i);
+    h31v(i) = 1.0;
+    h31f(i) = 1.0;
+    dh2vd1(i) = 1.0;
+    dh2fd1(i) = 1.0;
+    dh31vd1(i) = 0.0;
+    dh31fd1(i) = 0.0;
+  }
+
+  // x2-direction
+  if (pmb->block_size.nx2 == 1) {
+    h32v(jl) = 1.0;
+    h32f(jl) = 1.0;
+    dh32vd2(jl) = 0.0;
+    dh32fd2(jl) = 0.0;
+  } else {
+    for (int j=jl-ng; j<=ju+ng; ++j) {
+      h32v(j) = 1.0;
+      h32f(j) = 1.0;
+      dh32vd2(j) = 0.0;
+      dh32fd2(j) = 0.0;
+    }
+  }
+  //diffusion]
+
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
@@ -120,6 +169,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // (note this is skipped if object is for coarse mesh with AMR)
   if (coarse_flag==false) {
     coord_area3_i_.NewAthenaArray(ncells1);
+    coord_area3vc_i_.NewAthenaArray(ncells1);
     coord_vol_i_.NewAthenaArray(ncells1);
     coord_src1_i_.NewAthenaArray(ncells1);
     coord_src2_i_.NewAthenaArray(ncells1);
@@ -147,6 +197,8 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int i=il-ng; i<=iu+(ng-1); ++i) {
        // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
+      // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area3vc_i_(i)= 0.5*(SQR(x1v(i+1)) - SQR(x1v(i)));
     }
   }
 }
@@ -170,6 +222,7 @@ Cylindrical::~Cylindrical() {
   }
   if (coarse_flag==false) {
     coord_area3_i_.DeleteAthenaArray();
+    coord_area3vc_i_.DeleteAthenaArray();
     coord_vol_i_.DeleteAthenaArray();
     coord_src1_i_.DeleteAthenaArray();
     coord_src2_i_.DeleteAthenaArray();
@@ -198,6 +251,21 @@ void Cylindrical::Edge2Length(const int k, const int j, const int il, const int 
 
 Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
   return x1f(i)*dx2f(j);
+}
+
+//----------------------------------------------------------------------------------------
+// VolCenterXLength functions: compute physical length connecting cell centers as vector
+// VolCenter2(i,j,k) located at (i,j+1/2,k), i.e. (x1v(i), x2f(j+1), x3v(k))
+
+void Cylindrical::VolCenter2Length(const int k, const int j, const int il, const int iu,
+                                   AthenaArray<Real> &len)
+{
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
+        // length2 = r d(theta)
+        len(i) = x1v(i)*dx2v(j);
+    }
+    return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -249,6 +317,29 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+// VolCenterFaceXArea functions: compute area of face with normal in X-dir as vector
+// where the faces are joined by cell centers (for non-ideal MHD)
+
+void Cylindrical::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
+                                     AthenaArray<Real> &area) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i){
+    // area1 = r dphi dz
+    area(i) = x1v(i)*dx2v(j)*dx3v(k);
+  }
+  return;
+}
+
+void Cylindrical::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
+                                     AthenaArray<Real> &area) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i){
+    // area3 = dr r dtheta = d(r^2/2) dtheta
+    area(i) = coord_area3vc_i_(i)*dx2v(j);
+  }
+  return;
+}
 // Cell Volume function: compute volume of cell as vector
 
 void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
@@ -273,6 +364,11 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
 void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
+  //[diffusion
+  HydroDiffusion *phd = pmy_block->phydro->phdif;
+  bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
+                            (phd->coeff_nuiso > 0.0 || phd->coeff_nuani > 0.0));
+  //diffusion]
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
@@ -288,7 +384,15 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         if (MAGNETIC_FIELDS_ENABLED) {
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
         }
+        //[diffusion
+        if (do_hydro_diffusion)
+          //m_pp += 0.5*(pmy_block->phydro->phdif->visflx[X2DIR](IM2,k,j+1,i)
+          //            +pmy_block->phydro->phdif->visflx[X2DIR](IM2,k,j,i));
+          m_pp += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
+        //diffusion]
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
+        // in the future:
+        // u(IM1,k,j,i) += dt*coord_src1_i_(i)*0.5*(flux[x2DIR](IM2,k,j,i) + flux[x2DIR](IM2,k,j+1,i));
 
         // src_2 = -< M_{phi r} ><1/r>
         Real& x_i   = x1f(i);

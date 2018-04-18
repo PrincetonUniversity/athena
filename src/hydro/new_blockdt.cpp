@@ -19,6 +19,10 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
+//[diffusion
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -124,6 +128,23 @@ Real Hydro::NewBlockTimeStep(void) {
 
     }
   }
+
+//[diffusion
+  if (phdif->hydro_diffusion_defined) {
+    Real mindt_vis, mindt_cnd;
+    phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
+    min_dt = std::min(min_dt,mindt_vis);
+    min_dt = std::min(min_dt,mindt_cnd);
+  } // hydro diffusion
+
+  if(MAGNETIC_FIELDS_ENABLED &&
+     pmb->pfield->pfdif->field_diffusion_defined) {
+    Real mindt_oa, mindt_h;
+    pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);
+    min_dt = std::min(min_dt,mindt_oa);
+    min_dt = std::min(min_dt,mindt_h);
+  } // field diffusion
+//diffusion]
 
   min_dt *= pmb->pmy_mesh->cfl_number;
 

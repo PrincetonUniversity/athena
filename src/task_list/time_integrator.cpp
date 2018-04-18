@@ -25,6 +25,11 @@
 #include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
+//[diffusion
+#include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
+
 
 //----------------------------------------------------------------------------------------
 //  TimeIntegratorTaskList constructor
@@ -204,8 +209,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   {using namespace HydroIntegratorTaskNames;
     AddTimeIntegratorTask(STARTUP_INT,NONE);
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
+    //[diffusion
+    // calculate hydro/field diffusive fluxes
+    AddTimeIntegratorTask(DIFFUSE_HYD,START_ALLRECV);
+    if (MAGNETIC_FIELDS_ENABLED)
+      AddTimeIntegratorTask(DIFFUSE_FLD,START_ALLRECV);
+    //diffusion]
     // compute hydro fluxes, integrate hydro variables
-    AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
+    //[diffusion
+    //AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
+    AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD));
+    //diffusion]
     if (pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -224,7 +238,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+      //[diffusion
+      //AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+      AddTimeIntegratorTask(CALC_FLDFLX,(DIFFUSE_FLD|CALC_HYDFLX));
+      //diffusion]
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
       if (SHEARING_BOX) {// Shearingbox BC for EMF
@@ -277,7 +294,11 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //    } else {
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
 //    }
-    AddTimeIntegratorTask(NEW_DT,USERWORK);
+//[diffusion
+    AddTimeIntegratorTask(CALC_DIFFUSIVITY,USERWORK);
+    //AddTimeIntegratorTask(NEW_DT,USERWORK);
+    AddTimeIntegratorTask(NEW_DT,CALC_DIFFUSIVITY);
+//diffusion]
     if (pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
       AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
@@ -462,6 +483,24 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         (&TimeIntegratorTaskList::UpdateTimeStep);
       break;
 
+    //[diffusion
+    case (DIFFUSE_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroDiffusion);
+      break;
+    case (DIFFUSE_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldDiffusion);
+      break;
+    case (CALC_DIFFUSIVITY):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalcDiffusivity);
+      break;
+    //diffusion]
+
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
@@ -618,6 +657,74 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   return TASK_NEXT;
 }
 
+//[diffusion
+//----------------------------------------------------------------------------------------
+// Functions to calculate hydro diffusion fluxes
+
+enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
+{
+  Hydro *ph=pmb->phydro;
+
+// return if there are no diffusion to be added
+  if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
+
+  // *** this must be changed for the RK3 integrator
+  if(step <= nsub_steps) {
+    ph->phdif->CalcHydroDiffusionFlux(ph->w,ph->u,ph->flux);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_NEXT;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to calculate diffusion EMF
+
+enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
+{
+  Field *pf=pmb->pfield;
+
+// return if there are no diffusion to be added
+  if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
+
+  // *** this must be changed for the RK3 integrator
+  if(step <= nsub_steps) {
+    pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_NEXT;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to calculate hydro and field diffusion coefficients
+
+enum TaskStatus TimeIntegratorTaskList::CalcDiffusivity(MeshBlock *pmb, int step)
+{
+  Hydro *ph=pmb->phydro;
+  Field *pf=pmb->pfield;
+  Mesh  *pm=pmb->pmy_mesh;
+
+  bool do_hydro_diff=ph->phdif->hydro_diffusion_defined;
+  bool do_field_diff=pf->pfdif->field_diffusion_defined;
+
+  if (do_hydro_diff) {
+    if(step <= nsub_steps) {
+      ph->phdif->SetHydroDiffusivity(ph->w,pf->bcc);
+    } else {
+      return TASK_FAIL;
+    }
+  }
+  if (do_field_diff) {
+    if(step <= nsub_steps) {
+      pf->pfdif->SetFieldDiffusivity(ph->w,pf->bcc);
+    } else {
+      return TASK_FAIL;
+    }
+  }
+  return TASK_NEXT;
+}
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks

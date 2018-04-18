@@ -19,6 +19,10 @@
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../gravity/gravity.hpp"
+//[diffusion
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -190,6 +194,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 
   if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
+
+//[diffusion
+  if (phdif->hydro_diffusion_defined) {
+    if (phdif->coeff_nuiso > 0.0 || phdif->coeff_nuani > 0.0)
+      phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
+
+    if (NON_BAROTROPIC_EOS &&
+        (phdif->coeff_kiso > 0.0 || phdif->coeff_kani > 0.0))
+      phdif->AddHydroDiffusionEnergyFlux(phdif->cndflx,flux);
+  }
+  if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS &&
+      pmb->pfield->pfdif->field_diffusion_defined)
+    pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
+//diffusion]
 
   return;
 }

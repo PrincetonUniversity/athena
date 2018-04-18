@@ -15,6 +15,10 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
+//[diffusion
+#include "../hydro/hydro.hpp"
+#include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+//diffusion]
 #include "../bvals/bvals.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -356,6 +360,37 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
+// VolCenterXLength functions: compute physical length connecting cell centers as vector
+// VolCenter1(i,j,k) located at (i+1/2,j,k), i.e. (x1f(i+1), x2v(j), x3v(k))
+void Coordinates::VolCenter1Length(const int k, const int j, const int il, const int iu,
+                              AthenaArray<Real> &len)
+{
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
+        len(i) = dx1v(i);
+    }
+    return;
+}
+void Coordinates::VolCenter2Length(const int k, const int j, const int il, const int iu,
+                              AthenaArray<Real> &len)
+{
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
+        len(i) = dx2v(j);
+    }
+    return;
+}
+void Coordinates::VolCenter3Length(const int k, const int j, const int il, const int iu,
+                              AthenaArray<Real> &len)
+{
+#pragma omp simd
+    for (int i=il; i<=iu; ++i){
+        len(i) = dx3v(k);
+    }
+    return;
+}
+
+//----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void Coordinates::CenterWidth1(const int k, const int j, const int il, const int iu,
@@ -434,6 +469,43 @@ Real Coordinates::GetFace2Area(const int k, const int j, const int i) {
 
 Real Coordinates::GetFace3Area(const int k, const int j, const int i) {
   return dx1f(i)*dx2f(j);
+}
+
+//----------------------------------------------------------------------------------------
+// VolCenterFaceXArea functions: compute area of face with normal in X-dir as vector
+// where the faces are joined by cell centers (for non-ideal MHD)
+
+void Coordinates::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
+                        AthenaArray<Real> &area)
+{
+#pragma omp simd
+  for (int i=il; i<=iu; ++i){
+    Real& area_i = area(i);
+    area_i = dx2v(j)*dx3v(k);
+  }
+  return;
+}
+
+void Coordinates::VolCenterFace2Area(const int k, const int j, const int il, const int iu,
+                        AthenaArray<Real> &area)
+{
+#pragma omp simd
+  for (int i=il; i<=iu; ++i){
+    Real& area_i = area(i);
+    area_i = dx1v(i)*dx3v(k);
+  }
+  return;
+}
+
+void Coordinates::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
+                        AthenaArray<Real> &area)
+{
+#pragma omp simd
+  for (int i=il; i<=iu; ++i){
+    Real& area_i = area(i);
+    area_i = dx1v(i)*dx2v(j);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------
