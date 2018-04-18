@@ -46,21 +46,25 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real sqrtd = sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = sqrt(cfsq);
 
-        Real cssq = asq*vaxsq/cfsq;
+        cssq *= id;
         Real cs = sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = sqrt(asq);
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
@@ -133,18 +137,21 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real sqrtd = sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = sqrt(cfsq);
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
+        cssq *= id;
         Real cs = sqrt(cssq);
 
         // Compute beta(s) (eq A17)
@@ -283,21 +290,25 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = sqrt(cfsq);
 
-        Real cssq = asq*vaxsq/cfsq;
+        cssq *= id;
         Real cs = sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = sqrt(asq);
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
@@ -366,18 +377,21 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real id = 1.0/w(IDN,i);
         Real sqrtd = sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = sqrt(cfsq);
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
+        cssq *= id;
         Real cs = sqrt(cssq);
 
         // Compute beta(s) (eq A17)
