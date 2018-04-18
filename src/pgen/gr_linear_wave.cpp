@@ -16,16 +16,16 @@
 #include <string>     // string
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../globals.hpp"                  // Globals
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
+#include "../globals.hpp"                  // Globals
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not RELATIVISTIC_DYNAMICS

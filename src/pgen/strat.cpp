@@ -31,13 +31,13 @@
 //============================================================================
 
 // C/C++ headers
+#include <algorithm>
+#include <cfloat>     // DBL_EPSILON
+#include <cstdlib>    // exit()
 #include <iostream>
-#include <cfloat>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstdlib>    // exit()
-#include <cfloat>     // DBL_EPSILON
 
 // Athena++ headers
 #include "../athena.hpp"

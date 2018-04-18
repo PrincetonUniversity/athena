@@ -3,20 +3,21 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 
-// C/C++ headers
-#include <iostream>
+// C++ headers
+#include <algorithm>
 #include <cmath>
+#include <cstring>    // memset
+#include <iostream>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memset
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "./multigrid.hpp"
 
 //----------------------------------------------------------------------------------------

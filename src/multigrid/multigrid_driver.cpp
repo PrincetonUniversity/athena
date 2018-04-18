@@ -7,19 +7,20 @@
 //  \brief implementation of functions in class MultigridDriver
 
 // C/C++ headers
+#include <algorithm>
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals_mg.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "multigrid.hpp"
 
 #ifdef MPI_PARALLEL

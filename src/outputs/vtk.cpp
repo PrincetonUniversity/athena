@@ -8,21 +8,24 @@
 //  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
 //  Writes one file per MeshBlock.
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C++ headers
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------

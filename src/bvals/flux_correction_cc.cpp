@@ -7,17 +7,17 @@
 //  \brief functions that perform flux correction for CELL_CENTERED variables
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
-#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"

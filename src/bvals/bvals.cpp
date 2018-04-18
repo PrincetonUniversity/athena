@@ -7,30 +7,32 @@
 //  \brief constructor/destructor and utility functions for BoundaryValues class
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
 #include "bvals.hpp"
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh_refinement.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../multigrid/multigrid.hpp"
+#include "../globals.hpp"
 #include "../gravity/mggravity.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../utils/buffer_utils.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../mesh/mesh_refinement.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
+#include "../utils/buffer_utils.hpp"
+
 
 // MPI header
 #ifdef MPI_PARALLEL

@@ -8,14 +8,15 @@
 
 // C/C++ headers
 #include <cmath>
+#include <algorithm>   // max
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
