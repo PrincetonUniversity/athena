@@ -195,7 +195,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         std::cout << "processor configuration = "
                   << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
         std::cout << "cpu time used  = " << cpu_time << std::endl;
-        std::cout << "cpu time used/cycle  = " << cpu_time/static_cast<Real>(ncycle) << std::endl;
+        std::cout << "cpu time used/cycle  = " << cpu_time/static_cast<Real>(ncycle)
+                  << std::endl;
         std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
         std::cout << "zone-cycles(NlogN)/cpu_second = " << zc_cpus2 << std::endl;
 #ifdef OPENMP_PARALLEL
