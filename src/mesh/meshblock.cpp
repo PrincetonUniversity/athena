@@ -40,7 +40,8 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag) {
+                     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
+                     int igflag, bool ref_flag) {
   std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
@@ -402,4 +403,3 @@ size_t MeshBlock::GetBlockSizeInBytes(void) {
 
   return size;
 }
-

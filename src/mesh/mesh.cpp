@@ -364,7 +364,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
-            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+            tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level,
+                              nnew);
           }
         }
         if (dim==2) {
@@ -373,7 +374,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
-              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+              tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+                                root_level, nnew);
             }
           }
         }
@@ -384,7 +386,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
                 LogicalLocation nloc;
                 nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
                 int nnew;
-                tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+                tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+                                  root_level, nnew);
               }
             }
           }
@@ -1167,7 +1170,8 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 //                                                   GravityBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc) {
+void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
+                                             GravityBoundaryFunc_t my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1987,7 +1991,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-      } else if ((loclist[on].level < newloc[n].level) && (ranklist[on]==Globals::my_rank)) {
+      } else if ((loclist[on].level < newloc[n].level) &&
+                 (ranklist[on]==Globals::my_rank)) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob=FindMeshBlock(on);
         MeshRefinement *pmr=pmb->pmr;

@@ -152,13 +152,16 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
           pco->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
           for (int ci=csi; ci<=cei; ci++) {
             int i=(ci-pmb->cis)*2+pmb->is;
-            Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1)
-                     +fvol_[1][0](i)+fvol_[1][0](i+1)+fvol_[1][1](i)+fvol_[1][1](i+1);
-            coarse(n,ck,cj,ci)=
-              (fine(n,k  ,j  ,i)*fvol_[0][0](i)+fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
-              +fine(n,k  ,j+1,i)*fvol_[0][1](i)+fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
-              +fine(n,k+1,j  ,i)*fvol_[1][0](i)+fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
-              +fine(n,k+1,j+1,i)*fvol_[1][1](i)+fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1))/tvol;
+            Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1)
+                      + fvol_[0][1](i) + fvol_[0][1](i+1)
+                      + fvol_[1][0](i) + fvol_[1][0](i+1)
+                      + fvol_[1][1](i) + fvol_[1][1](i+1);
+            coarse(n,ck,cj,ci) =
+                (fine(n,k  ,j  ,i)*fvol_[0][0](i) + fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
+               + fine(n,k  ,j+1,i)*fvol_[0][1](i) + fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
+               + fine(n,k+1,j  ,i)*fvol_[1][0](i) + fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
+               + fine(n,k+1,j+1,i)*fvol_[1][1](i) + fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1))
+                / tvol;
           }
         }
       }
@@ -775,8 +778,10 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
   } else {
     for (int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
-      Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))/(pcoarsec->x1s3(si)-pcoarsec->x1s3(si-1));
-      Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))/(pcoarsec->x1s3(si+1)-pcoarsec->x1s3(si));
+      Real gxm = (coarse(0,0,si)   - coarse(0,0,si-1)) / (pcoarsec->x1s3(si) -
+                                                          pcoarsec->x1s3(si-1));
+      Real gxp = (coarse(0,0,si+1) - coarse(0,0,si)) / (pcoarsec->x1s3(si+1) -
+                                                        pcoarsec->x1s3(si));
       Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       fine(0,0,fi  )=fine(1,0,fi  )
                     =coarse(0,0,si)-gxc*(pcoarsec->x1s3(si)-pco->x1s3(fi));
