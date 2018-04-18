@@ -462,16 +462,16 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     // Step 2: Calculate correct root of cubic equation
     Real phi, eee, ll, v_sq;
     if (n%3 != 2) {
-      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                      // (NH 5.10)
-      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));                // (NH 5.11)
-      ll = eee - bb_sq;                                                        // (NH 5.5)
-      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll));  // (NH 5.2)
+      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
+      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
+      ll = eee - bb_sq;                                                       // (NH 5.5)
+      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
       v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
-      Real gamma_sq = 1.0/(1.0-v_sq);                                          // (NH 3.1)
-      Real gamma = std::sqrt(gamma_sq);                                        // (NH 3.1)
-      Real wgas = ll/gamma_sq;                                                 // (NH 5.1)
-      Real rho = dd/gamma;                                                     // (NH 4.5)
-      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);                // (NH 4.1)
+      Real gamma_sq = 1.0/(1.0-v_sq);                                         // (NH 3.1)
+      Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
+      Real wgas = ll/gamma_sq;                                                // (NH 5.1)
+      Real rho = dd/gamma;                                                    // (NH 4.5)
+      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);               // (NH 4.1)
       pgas[(n+1)%3] = std::max(pgas[(n+1)%3], pgas_min);
     }
 
@@ -555,7 +555,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma omp simd
+      //#pragma omp simd // fn is too long to inline
       for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }

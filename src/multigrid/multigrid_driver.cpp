@@ -117,9 +117,9 @@ MultigridDriver::~MultigridDriver() {
 //! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
 //  \brief add a Multigrid object to the linked list
 void MultigridDriver::AddMultigrid(Multigrid *nmg) {
-  if (pmg_==NULL)
+  if (pmg_==NULL) {
     pmg_=nmg;
-  else {
+  } else {
     Multigrid *pg=pmg_;
     while(pg->next!=NULL) pg=pg->next;
     pg->next=nmg;
@@ -151,7 +151,9 @@ void MultigridDriver::SetupMultigrid(void) {
     FillRootGridSource();
     mgroot_->RestrictFMGSource();
     current_level_=0;
-  } else current_level_=ntotallevel_-1;
+  } else {
+    current_level_=ntotallevel_-1;
+  }
   return;
 }
 
@@ -395,7 +397,7 @@ void MultigridDriver::SolveIterative(void) {
     if (niter>100) {
       if (Globals::my_rank==0) {
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-          << "Aborting because the number of iterations is too large, niter > 100." << std::endl
+          << "Aborting because the # iterations is too large, niter > 100." << std::endl
           << "Check the solution as it may not be accurate enough." << std::endl;
       }
       break;
@@ -482,12 +484,10 @@ Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
 
 Multigrid* MultigridDriver::FindMultigrid(int tgid) {
   Multigrid *pmg=pmg_;
-  while(pmg!=NULL)
-  {
+  while(pmg!=NULL) {
     if (pmg->gid_==tgid)
       break;
     pmg=pmg->next;
   }
   return pmg;
 }
-

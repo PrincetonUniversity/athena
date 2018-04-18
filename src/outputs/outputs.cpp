@@ -188,16 +188,17 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
         // read ghost cell option
         if (COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
-          op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
+          op.cartesian_vector=pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
+                                                   false);
         else
           op.cartesian_vector=false;
 
         // set output variable and optional data format string used in formatted writes
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
-          op.variable = pin->GetString(op.block_name,"variable");
+          op.variable = pin->GetString(op.block_name, "variable");
         }
-        op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12.5e");
-        op.data_format.insert(0," "); // prepend with blank to separate columns
+        op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
+        op.data_format.insert(0, " "); // prepend with blank to separate columns
 
         // Construct new OutputType according to file format
         // NEW_OUTPUT_TYPES: Add block to construct new types here
@@ -479,7 +480,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "Bcc_xyz";
-        pod->data.NewAthenaArray(3,pfld->bcc.GetDim3(),pfld->bcc.GetDim2(),pfld->bcc.GetDim1());
+        pod->data.NewAthenaArray(3, pfld->bcc.GetDim3(), pfld->bcc.GetDim2(),
+                                 pfld->bcc.GetDim1());
         CalculateCartesianVector(src, pod->data, pmb->pcoord);
         AppendOutputDataNode(pod);
         num_vars_+=3;
