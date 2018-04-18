@@ -21,6 +21,7 @@ set_warning_cflag () {
 	warn_flags+=("-Wno-unused-private-field"
 		     "-Wno-address"
 		     "-Wno-unused-variable"
+		     "-Wno-unused-parameter"
 		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function")
     elif [ "$1" == "icc" ]; then
