@@ -54,7 +54,8 @@ void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd) {
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskState &ts) {
+enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
+                                                           TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -78,8 +79,9 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
       }
       skip++; // increment number of tasks processed
 
-    } else if (skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) { // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
+    }
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
 }
