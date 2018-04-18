@@ -38,7 +38,7 @@ struct MGTask {
 
 class MultigridTaskList {
 public:
-  MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {};
+  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {};
   ~MultigridTaskList() {};
 
   // data

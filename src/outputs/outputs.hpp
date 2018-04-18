@@ -69,7 +69,7 @@ typedef struct OutputData {
 
 class OutputType {
 public:
-  OutputType(OutputParameters oparams);
+  explicit OutputType(OutputParameters oparams);
   virtual ~OutputType();
 
   // data
@@ -102,7 +102,7 @@ protected:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputParameters oparams);
+  explicit HistoryOutput(OutputParameters oparams);
   ~HistoryOutput() {};
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
@@ -113,7 +113,7 @@ public:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputParameters oparams);
+  explicit FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {};
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
@@ -124,7 +124,7 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputParameters oparams);
+  explicit VTKOutput(OutputParameters oparams);
   ~VTKOutput() {};
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
@@ -135,7 +135,7 @@ public:
 
 class RestartOutput : public OutputType {
 public:
-  RestartOutput(OutputParameters oparams);
+  explicit RestartOutput(OutputParameters oparams);
   ~RestartOutput() {};
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
@@ -148,7 +148,7 @@ public:
 class ATHDF5Output : public OutputType {
 public:
   // Function declarations
-  ATHDF5Output(OutputParameters oparams);
+  explicit ATHDF5Output(OutputParameters oparams);
   ~ATHDF5Output() {};
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
   void MakeXDMF();
