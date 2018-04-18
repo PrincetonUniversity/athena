@@ -39,7 +39,7 @@ def make(clean_first=True, obj_only=False):
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         if obj_only:
-            make_command = ['make', '-j', 'obj', exe_dir, obj_dir]
+            make_command = ['make', '-j', 'objs', exe_dir, obj_dir]
         else:
             make_command = ['make', '-j', exe_dir, obj_dir]
         try:
