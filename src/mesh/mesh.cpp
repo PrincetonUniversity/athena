@@ -6,38 +6,40 @@
 //! \file mesh.cpp
 //  \brief implementation of functions in Mesh class
 
-// C/C++ headers
+// C headers
+#include <stdlib.h>
+#include <string.h>  // memcpy
+
+// C++ headers
+#include <algorithm>  // sort
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // std::abs(), pow()
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <algorithm>  // sort
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>  // memcpy
 #include <vector>
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
+#include "../globals.hpp"
 #include "../gravity/fftgravity.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
 #include "../gravity/mggravity.hpp"
-#include "../bvals/bvals.hpp"
-#include "../eos/eos.hpp"
-#include "../parameter_input.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../outputs/io_wrapper.hpp"
-#include "../utils/buffer_utils.hpp"
+#include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../utils/buffer_utils.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
