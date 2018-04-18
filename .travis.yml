@@ -102,7 +102,7 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --ccmd=$CXX --cflag=$(./tst/ci/set_warning_cflag.sh $CXX)
+  - python2 run_tests.py pgen --ccmd=$CXX --cflag=$(../ci/set_warning_cflag.sh $CXX)
   - python2 run_tests.py mpi --ccmd=$CXX
   - python2 run_tests.py grav --ccmd=$CXX # requires FFTW library
   - python2 run_tests.py amr --ccmd=$CXX
