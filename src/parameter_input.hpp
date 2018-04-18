@@ -1,5 +1,5 @@
-#ifndef PARAMETER_INPUT_HPP
-#define PARAMETER_INPUT_HPP
+#ifndef PARAMETER_INPUT_HPP_
+#define PARAMETER_INPUT_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors

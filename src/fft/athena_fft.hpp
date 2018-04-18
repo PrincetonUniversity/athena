@@ -1,5 +1,5 @@
-#ifndef ATHENA_FFT_HPP
-#define ATHENA_FFT_HPP
+#ifndef ATHENA_FFT_HPP_
+#define ATHENA_FFT_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -219,4 +219,4 @@ namespace DecompositionNames{
 };
 #endif
 
-#endif // ATHENA_FFT_HPP
+#endif // ATHENA_FFT_HPP_

@@ -1,5 +1,5 @@
-#ifndef GLOBALS_HPP
-#define GLOBALS_HPP
+#ifndef GLOBALS_HPP_
+#define GLOBALS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -13,4 +13,4 @@ namespace Globals
   extern int my_rank, nranks;
 }
 
-#endif // GLOBALS_HPP
+#endif // GLOBALS_HPP_

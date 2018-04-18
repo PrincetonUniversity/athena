@@ -1,5 +1,5 @@
-#ifndef ATHENA_ARRAYS_HPP
-#define ATHENA_ARRAYS_HPP
+#ifndef ATHENA_ARRAYS_HPP_
+#define ATHENA_ARRAYS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -307,4 +307,4 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
   array2.pdata_ = tmp_pdata_;
 }
 
-#endif // ATHENA_ARRAYS_HPP
+#endif // ATHENA_ARRAYS_HPP_

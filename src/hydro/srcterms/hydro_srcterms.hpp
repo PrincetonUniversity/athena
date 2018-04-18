@@ -1,5 +1,5 @@
-#ifndef HYDRO_SRCTERMS_HPP
-#define HYDRO_SRCTERMS_HPP
+#ifndef HYDRO_SRCTERMS_HPP_
+#define HYDRO_SRCTERMS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors

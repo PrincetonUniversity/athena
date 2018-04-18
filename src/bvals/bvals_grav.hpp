@@ -1,5 +1,5 @@
-#ifndef BVALS_GRAV_HPP
-#define BVALS_GRAV_HPP
+#ifndef BVALS_GRAV_HPP_
+#define BVALS_GRAV_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -67,4 +67,4 @@ private:
   GravityBoundaryData bd_gravity_;
 };
 
-#endif // BVALS_GRAV_HPP
+#endif // BVALS_GRAV_HPP_

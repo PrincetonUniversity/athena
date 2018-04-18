@@ -1,5 +1,5 @@
-#ifndef OUTPUTS_HPP
-#define OUTPUTS_HPP
+#ifndef OUTPUTS_HPP_
+#define OUTPUTS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors

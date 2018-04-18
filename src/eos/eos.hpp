@@ -1,5 +1,5 @@
-#ifndef EOS_HPP
-#define EOS_HPP
+#ifndef EOS_HPP_
+#define EOS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors

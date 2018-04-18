@@ -1,5 +1,5 @@
-#ifndef BOUNDARY_VALUES_HPP
-#define BOUNDARY_VALUES_HPP
+#ifndef BOUNDARY_VALUES_HPP_
+#define BOUNDARY_VALUES_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -368,4 +368,4 @@ private:
   friend class Mesh;
 };
 
-#endif // BOUNDARY_VALUES_HPP
+#endif // BOUNDARY_VALUES_HPP_

@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef UTILS_HPP_
+#define UTILS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -32,4 +32,4 @@ namespace SignalHandler {
   void CancelWallTimeAlarm(void);
 }
 
-#endif // UTILS_HPP
+#endif // UTILS_HPP_
