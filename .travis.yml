@@ -10,15 +10,19 @@ os:
   - linux
 dist: trusty
 sudo: false # use faster container-based build
-
+addons:
+  apt:
+    packages:
+      - "python3"
+      - "python3-pip"
 # OpenMPI and MPICH implementations:
 env:
   matrix:
   - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
   - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
 compiler:
-  - gcc
-  - clang
+  - g++
+  - clang++
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
@@ -94,7 +98,8 @@ install:
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
-  - pip install --user numpy || true
+  - pip install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user numpy || true
 # Run regression test suite:
 # Do not use "python run_tests.py" to run all tests, so that:
 # - Each set/directory of tests are timed separately
