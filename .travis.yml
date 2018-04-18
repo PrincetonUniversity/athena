@@ -100,18 +100,18 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
-  - python2 run_tests.py mpi
-  - python2 run_tests.py grav # requires FFTW library
-  - python2 run_tests.py amr
+  - python2 run_tests.py pgen --ccmd=$CC --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
+  - python2 run_tests.py mpi --ccmd=$CC
+  - python2 run_tests.py grav --ccmd=$CC # requires FFTW library
+  - python2 run_tests.py amr --ccmd=$CC
   # Longest set of tests. Timeout after 10 m
   #- python2 run_tests.py mhd
-  - python2 run_tests.py hydro
-  - python2 run_tests.py outputs
-  - python2 run_tests.py curvilinear
-  - python2 run_tests.py gr
-  - python2 run_tests.py sr
-  - python2 run_tests.py shearingbox
+  - python2 run_tests.py hydro --ccmd=$CC
+  - python2 run_tests.py outputs --ccmd=$CC
+  - python2 run_tests.py curvilinear --ccmd=$CC
+  - python2 run_tests.py gr --ccmd=$CC
+  - python2 run_tests.py sr --ccmd=$CC
+  - python2 run_tests.py shearingbox --ccmd=$CC
   - set +e
 # Codecov coverage analysis
 after_success:
