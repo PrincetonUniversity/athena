@@ -8,10 +8,15 @@
 //! \file athena.hpp
 //  \brief contains Athena++ general purpose types, structures, enums, etc.
 
-#include "defs.hpp"
-#include "athena_arrays.hpp"
+// C headers
 #include <math.h>
 #include <stdint.h>  // int64_t
+
+// C++ headers
+
+// Athena++ headers
+#include "athena_arrays.hpp"
+#include "defs.hpp"
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED

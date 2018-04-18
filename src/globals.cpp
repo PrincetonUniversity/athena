@@ -11,6 +11,7 @@
 // global variables are wrapped in their own namespace.
 
 #include "athena.hpp"
+#include "globals.hpp"
 
 namespace Globals
 {

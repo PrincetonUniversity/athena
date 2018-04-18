@@ -18,8 +18,8 @@
 
 // Athena++ headers
 #include "athena.hpp"
-#include "outputs/io_wrapper.hpp"
 #include "defs.hpp"
+#include "outputs/io_wrapper.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

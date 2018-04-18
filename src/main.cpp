@@ -16,9 +16,10 @@
 // 2014-2016.  Contributions from many others have continued to the present.
 //========================================================================================
 
-// C/C++ headers
+// C headers
 #include <stdint.h>   // int64_t
 
+// C++ headers
 #include <csignal>
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
@@ -28,7 +29,6 @@
 #include <iostream>   // cout, endl
 #include <new>        // bad_alloc
 #include <string>     // string
-
 
 // Athena++ headers
 #include "athena.hpp"
