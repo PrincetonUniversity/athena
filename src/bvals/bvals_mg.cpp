@@ -70,8 +70,10 @@ MGBoundaryValues::~MGBoundaryValues() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type)
+//! \fn void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd,
+//                                              enum BoundaryType type)
 //  \brief Initialize MGBoundaryData structure
+
 void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type) {
  int size;
   bd.nbmax=maxneighbor_;
@@ -94,7 +96,8 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
         if (pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
           int nc=block_size_.nx1;
           if (BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
-          else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
+          else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh +
+                                                                  (nc*ngh*ngh)/2;
           else if (BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
         } else { // uniform - NGHOST=1
           size=((BoundaryValues::ni[n].ox1==0)?block_size_.nx1:ngh)
@@ -408,7 +411,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (test==false) {
+        if (static_cast<bool>(test) == false) {
           bflag=false;
           continue;
         }

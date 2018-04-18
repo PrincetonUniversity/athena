@@ -41,8 +41,8 @@
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb)
 //  \brief Load shearingbox hydro boundary buffers
-void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf,
-                                       int nb) {
+
+void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb) {
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -104,7 +104,7 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf,
 //  \brief Send shearingbox boundary buffers for hydro variables
 
 void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
-                                              bool conserved_values) {
+                                                                bool conserved_values) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -169,7 +169,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
 //  \brief Send shearingbox boundary buffers for hydro variables
 
 void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
-                                              bool conserved_values) {
+                                                         bool conserved_values) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -371,8 +371,9 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real>
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst)
+//! \fn bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real>&dst)
 //  \brief receive shearingbox boundary data for hydro variables
+
 bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst) {
   MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -390,7 +391,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             flagi=false;
             continue;
           }
@@ -418,7 +419,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             flago=false;
             continue;
           }
@@ -701,7 +702,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
     send_outersize_hydro_[1] = recv_outersize_hydro_[1];
     shbox_outer_hydro_flag_[1]=BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED) {
-      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1)+NGHOST*ncells3;
+      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1) +
+          NGHOST*ncells3;
       recv_outersize_field_[1] = send_outersize_field_[1];
       shbox_outer_field_flag_[1] = BNDRY_WAITING;
       send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1)+nx3;
@@ -852,7 +854,10 @@ void BoundaryValues::FindShearBlock(const Real time) {
 //     AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping adopted from 2nd
 //  order RemapFlux of Athena4.0
-void BoundaryValues::RemapFlux(const int n, const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+
+void BoundaryValues::RemapFlux(const int n, const int k, const int jinner,
+                               const int jouter, const int i, const Real eps,
+                               const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 

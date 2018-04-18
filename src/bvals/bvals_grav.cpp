@@ -39,7 +39,8 @@ class FFTBlock;
 class FFTDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb, enum BoundaryFlag *input_bcs)
+//! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb,
+//                                                   enum BoundaryFlag *input_bcs)
 //  \brief Constructor of the GravityBoundaryValues class
 
 GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
@@ -89,8 +90,8 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
         *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
         *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
 
-    bd.send[n]=new Real [size];
-    bd.recv[n]=new Real [size];
+    bd.send[n] = new Real[size];
+    bd.recv[n] = new Real[size];
   }
 }
 
@@ -218,8 +219,8 @@ void GravityBoundaryValues::ClearBoundaryGravity(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
-//                                                 Real *buf, const NeighborBlock& nb)
+//! \fn int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real>
+//                                 &src, Real *buf, const NeighborBlock& nb)
 //  \brief Set gravity boundary buffers for sending to a block on the same level
 
 int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
@@ -273,7 +274,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
-    else {// MPI
+    else { // MPI
       tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
@@ -335,7 +336,7 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (test==false) {
+        if (static_cast<bool>(test)==false) {
           flag=false;
           continue;
         }
