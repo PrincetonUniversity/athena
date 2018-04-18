@@ -29,7 +29,7 @@ hydro_probs = pgen_choices - gr_probs - mhd_probs - shear_probs
 # Curvilinear problems
 
 # Define configure flags for each set:
-gr_args = ['g']
+gr_args = ['g', 't']
 mhd_args = ['b']
 shear_args = ['b', 'shear']
 hydro_args = []
@@ -39,9 +39,10 @@ hydro_args = []
 def prepare(**kwargs):
     # Check that code compiles all pgen files in single or double precision
     for single_precision in [True, False]:
-        # Skipping GR Hydro tests for now
-        for pgen_set, args in zip([mhd_probs, shear_probs, hydro_probs],
-                                  [mhd_args, shear_args, hydro_args]):
+        for pgen_set, args in zip([gr_probs, mhd_probs,
+                                   shear_probs, hydro_probs],
+                                  [gr_args, mhd_args,
+                                   shear_args, hydro_args]):
             if single_precision:
                 args.extend(['float'])
             # "make clean" only for the first problem in the set that shares
