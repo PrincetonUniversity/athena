@@ -44,8 +44,8 @@ def main(**kwargs):
     mpirun_cmd = kwargs.pop('mpirun')
 
     # Get args to pass to scripts.utils.athena as list of strings
-    athena_config_args = kwargs.get('config')
-    athena_run_args = kwargs.get('run')
+    athena_config_args = kwargs.pop('config')
+    athena_run_args = kwargs.pop('run')
 
     if len(tests) == 0:  # run all tests
         for _, directory, ispkg in iter_modules(path=['scripts/tests']):
