@@ -11,6 +11,7 @@ saved_files = []
 global_config_args = []
 global_run_args = []
 
+
 # Function for configuring Athena++
 def configure(*args, **kwargs):
     current_dir = os.getcwd()
