@@ -17,6 +17,7 @@ Notes:
 from __future__ import print_function
 
 # Prevent generation of .pyc files
+# This should be set before importing any user modules
 import sys
 sys.dont_write_bytecode = True
 
@@ -28,6 +29,7 @@ import argparse
 import os
 from pkgutil import iter_modules
 import traceback
+
 
 # Main function
 def main(**kwargs):
@@ -42,8 +44,8 @@ def main(**kwargs):
     mpirun_cmd = kwargs.pop('mpirun')
 
     # Get args to pass to scripts.utils.athena as list of strings
-    athena_config_args = kwargs.pop('c')
-    athena_run_args = kwargs.pop('r')
+    athena_config_args = kwargs.get('config')
+    athena_run_args = kwargs.get('run')
 
     if len(tests) == 0:  # run all tests
         for _, directory, ispkg in iter_modules(path=['scripts/tests']):
@@ -155,41 +157,21 @@ if __name__ == '__main__':
                         default=None,
                         nargs='*',
                         help=help_msg)
+
     parser.add_argument('--mpirun',
                         default='mpirun',
                         choices=['mpirun', 'srun'],
                         help='select MPI run command')
 
-    # Flags to pass to ./configure.py
-    # Manually keep these in sync with ./configure.py choices
-    cxx_choices = ['g++', 'g++-simd', 'icc', 'cray', 'bgxl', 'icc-phi',
-                   'clang++']
-    # --cxx=[name] argument
-    parser.add_argument('--cxx',
-                        default='g++',
-                        choices=cxx_choices,
-                        help='select C++ compiler')
-    # --ccmd=[name] argument
-    parser.add_argument('--ccmd',
-                        default=None,
-                        help='override for command to call C++ compiler')
-    # --cflag=[string] argument
-    parser.add_argument('--cflag',
-                        default=None,
-                        help=('additional string of flags to append'
-                              'to compiler/linker calls'))
+    parser.add_argument("--config", "-c",
+                        default=[],
+                        action='append',
+                        help=('arguments to pass to athena.configure'))
 
-    parser.add_argument("-c",
-                        type=str, 
-                        default=[],  
-                        nargs='*',
-                        help=('arguments to pass to athena.configure'))   
+    parser.add_argument("--run", "-r",
+                        default=[],
+                        action='append',
+                        help=('arguments to pass to athena.run'))
 
-    parser.add_argument("-r",
-                        type=str, 
-                        default=[],  
-                        nargs='*',
-                        help=('arguments to pass to athena.run'))   
-    
     args = parser.parse_args()
     main(**vars(args))
