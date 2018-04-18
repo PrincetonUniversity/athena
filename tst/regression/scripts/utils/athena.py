@@ -31,14 +31,17 @@ def configure(*args, **kwargs):
 
 
 # Function for compiling Athena++
-def make(clean_first=True):
+def make(clean_first=True, obj_only=False):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
     try:
         exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
-        make_command = ['make', '-j', exe_dir, obj_dir]
+        if obj_only:
+            make_command = ['make', '-j', 'obj', exe_dir, obj_dir]
+        else:
+            make_command = ['make', '-j', exe_dir, obj_dir]
         try:
             if clean_first:
                 subprocess.check_call(clean_command)
