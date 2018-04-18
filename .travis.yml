@@ -98,6 +98,7 @@ install:
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install python3; fi
   - pip install --user numpy || true # --user is necessary, since no virtualenv
   - pip3 install --user numpy || true
 # Run regression test suite:
