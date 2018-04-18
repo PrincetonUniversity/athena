@@ -76,6 +76,7 @@ matrix:
 # Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
+  - export TEMP_CXX=$CXX
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
 install:
@@ -87,8 +88,9 @@ install:
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
   - cd tst/regression
-  # Fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
+  # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
+  - export CXX=$TEMP_CXX # Reset CXX to Travis CI build matrix val, now that MPI is installed
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - pip install --user numpy || true
@@ -100,18 +102,18 @@ before_script:
 script:
   - set -e # fail at first error
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --ccmd=$CC --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
-  - python2 run_tests.py mpi --ccmd=$CC
-  - python2 run_tests.py grav --ccmd=$CC # requires FFTW library
-  - python2 run_tests.py amr --ccmd=$CC
+  - python2 run_tests.py pgen --ccmd=$CXX --cflag=$(./tst/ci/set_warning_cflag.sh $CXX)
+  - python2 run_tests.py mpi --ccmd=$CXX
+  - python2 run_tests.py grav --ccmd=$CXX # requires FFTW library
+  - python2 run_tests.py amr --ccmd=$CXX
   # Longest set of tests. Timeout after 10 m
   #- python2 run_tests.py mhd
-  - python2 run_tests.py hydro --ccmd=$CC
-  - python2 run_tests.py outputs --ccmd=$CC
-  - python2 run_tests.py curvilinear --ccmd=$CC
-  - python2 run_tests.py gr --ccmd=$CC
-  - python2 run_tests.py sr --ccmd=$CC
-  - python2 run_tests.py shearingbox --ccmd=$CC
+  - python2 run_tests.py hydro --ccmd=$CXX
+  - python2 run_tests.py outputs --ccmd=$CXX
+  - python2 run_tests.py curvilinear --ccmd=$CXX
+  - python2 run_tests.py gr --ccmd=$CXX
+  - python2 run_tests.py sr --ccmd=$CXX
+  - python2 run_tests.py shearingbox --ccmd=$CXX
   - set +e
 # Codecov coverage analysis
 after_success:

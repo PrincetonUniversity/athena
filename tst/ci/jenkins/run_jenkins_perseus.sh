@@ -21,7 +21,7 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
-time python ./run_tests.py pgen --mpirun=srun --cflag="-Wall -Wextra -Wno-unused-private-field -Wno-maybe-uninitialized -Wno-address -Wno-unused-but-set-variable -Wno-comment -Wno-unused-variable -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-function -Werror"
+time python ./run_tests.py pgen --mpirun=srun --cflag=$(../set_warning_cflag.sh icc)
 time python ./run_tests.py grav --mpirun=srun
 time python ./run_tests.py mpi --mpirun=srun
 time python ./run_tests.py hydro --mpirun=srun
@@ -42,7 +42,7 @@ module load fftw/gcc/3.3.4
 module load rh
 module list
 
-time python ./run_tests.py pgen --cxx=icc --mpirun=srun --cflag="-Wall -Wextra -diag-disable=175 -Wno-unused-private-field -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function -Werror"
+time python ./run_tests.py pgen --cxx=icc --mpirun=srun --cflag=$(../set_warning_cflag.sh icc)
 time python ./run_tests.py grav --cxx=icc --mpirun=srun
 time python ./run_tests.py mpi --cxx=icc --mpirun=srun
 time python ./run_tests.py hydro --cxx=icc --mpirun=srun
