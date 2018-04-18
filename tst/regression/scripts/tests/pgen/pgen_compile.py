@@ -29,7 +29,7 @@ hydro_probs = pgen_choices - gr_probs - mhd_probs - shear_probs
 # Curvilinear problems
 
 # Define configure flags for each set:
-gr_args = ['g', 't']
+gr_args = ['g', 't', '-coord=minkowski']
 mhd_args = ['b']
 shear_args = ['b', 'shear']
 hydro_args = []
