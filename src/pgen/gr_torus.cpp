@@ -1700,8 +1700,8 @@ static Real CalculateBetaMin() {
       for (int i = 0; i < sample_n_r; ++i) {
 
         // Calculate r values
+        r_m = r_min;
         if (i == 0) {
-          r_m = r_min;
           Real ratio_power = 1.0;
           Real ratio_sum = 1.0;
           for (int ii = 1; ii < sample_n_r; ++ii) {
@@ -1710,7 +1710,6 @@ static Real CalculateBetaMin() {
           }
           delta_r = (r_max-r_min) / ratio_sum;
         } else {
-          r_m = r_p;
           delta_r *= sample_r_rat;
         }
         r_p = r_m + delta_r;
