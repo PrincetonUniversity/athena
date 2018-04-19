@@ -21,6 +21,7 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
