@@ -608,7 +608,7 @@ void AthenaFFTIndex::PermuteProc(int npermute) {
 }
 
 void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
-  int tmp[dim_];
+  int tmp[3];
   for (int i=0; i<dim_; i++) tmp[i]=arr[i];
   for (int i=0; i<dim_; i++) {
     if (dir>0) arr[loc[i]]=tmp[i];
