@@ -56,7 +56,6 @@ Real delta_v[4];              // perturbations to 3-velocity
 Real lambda;                  // wavespeed
 Real wavenumber;              // wavenumber
 AthenaArray<Real> g, gi;      // metric and inverse
-int num_vars;                 // number of variables to use in calculating errors
 AthenaArray<Real> bcc;        // cell-centered initial magnetic fields
 AthenaArray<Real> initial;    // initial conditions
 AthenaArray<Real> volume;     // 1D array of volumes
@@ -441,8 +440,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (compute_error) {
 
     // Prepare error calculation variables
-    Real errors[num_vars+1];
-    for (int n = 0; n < num_vars+1; ++n) {
+    Real errors[(NHYDRO+NFIELD)+1];
+    for (int n = 0; n < (NHYDRO+NFIELD)+1; ++n) {
       errors[n] = 0.0;
     }
 
@@ -463,7 +462,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                     - initial(pmb->lid,NHYDRO+n,k,j,i)) * volume(i);
               }
             }
-            errors[num_vars] += volume(i);
+            errors[(NHYDRO+NFIELD)] += volume(i);
           }
         }
       }
@@ -474,10 +473,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     #ifdef MPI_PARALLEL
     {
       if (Globals::my_rank == 0) {
-        MPI_Reduce(MPI_IN_PLACE, errors, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0,
+        MPI_Reduce(MPI_IN_PLACE, errors, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
             MPI_COMM_WORLD);
       } else {
-        MPI_Reduce(errors, 0, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(errors, 0, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
+                   MPI_COMM_WORLD);
       }
     }
     #endif
@@ -486,16 +486,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     if (Globals::my_rank == 0) {
 
       // Divide volume-weighted errors by total volume
-      for (int n = 0; n < num_vars; ++n) {
-        errors[n] /= errors[num_vars];
+      for (int n = 0; n < (NHYDRO+NFIELD); ++n) {
+        errors[n] /= errors[(NHYDRO+NFIELD)];
       }
 
       // Calculate RMS of volume-averaged errors
       Real total_error = 0.0;
-      for (int n = 0; n < num_vars; ++n) {
+      for (int n = 0; n < (NHYDRO+NFIELD); ++n) {
         total_error += SQR(errors[n]);
       }
-      total_error = std::sqrt(total_error/num_vars);
+      total_error = std::sqrt(total_error/(NHYDRO+NFIELD));
 
       // Prepare output file
       std::string filename;
@@ -814,14 +814,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare arrays for comparing to initial conditions (only once per Mesh)
   if (compute_error and lid == 0) {
     int num_blocks = pmy_mesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-    num_vars = NHYDRO + NFIELD;
     int nx1 = block_size.nx1;
     int nx2 = block_size.nx2;
     int nx3 = block_size.nx3;
     if (MAGNETIC_FIELDS_ENABLED) {
       bcc.NewAthenaArray(NFIELD, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
     }
-    initial.NewAthenaArray(num_blocks, num_vars, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
+    initial.NewAthenaArray(num_blocks, (NHYDRO+NFIELD), nx3+NGHOST, nx2+NGHOST,
+                           nx1+NGHOST);
     volume.NewAthenaArray(nx1+NGHOST);
   }
 
