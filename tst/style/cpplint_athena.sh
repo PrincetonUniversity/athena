@@ -13,4 +13,4 @@
 #        the same directory, and that CPPLINT.cfg is in root directory
 # ========================================
 
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -print | xargs ./cpplint.py --counting=detailed
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
