@@ -107,12 +107,12 @@ before_script:
 # - Script fails after first broken set of tests
 # (Could alternatively group sets of tests with && operator)
 script:
-  - set -x # trace execution of all commands;
   # Test Google C++ Style Guide adherence
   - cd ../style
   - set -e # fail at first error
   - ./cpplint_athena.sh
   - set +e; cd ../regression/; set -e;
+  - set -x # trace execution of all commands;
   - python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
   - python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
   - python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library
