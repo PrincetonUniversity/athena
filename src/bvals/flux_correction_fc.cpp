@@ -1237,9 +1237,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
           if (nb.rank==Globals::my_rank) { // on the same process
             flag=false;
             continue;
-          }
 #ifdef MPI_PARALLEL
-        } else { // MPI boundary
+          } else { // MPI boundary
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
             MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -1248,6 +1247,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
               continue;
             }
             bd_emfcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+          }
+#else
           }
 #endif
         }
