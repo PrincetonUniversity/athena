@@ -297,9 +297,9 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
 void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
   ClearTaskList();
   // nsmooth==0 should not be used
-  if (flag==1) // first time on the block level
+  if (flag==1) { // first time on the block level
     AddMultigridTask(MG_PROLONG,    NONE);
-  else {
+  } else {
     AddMultigridTask(MG_STARTRECV0, NONE);
     AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
     AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
@@ -424,9 +424,9 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
 
 void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
   ClearTaskList();
-  if (flag==1) // first time on the block level
+  if (flag==1) { // first time on the block level
     AddMultigridTask(MG_FMGPROLONG,    NONE);
-  else {
+  } else {
     AddMultigridTask(MG_STARTRECV0, NONE);
     AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
     AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);

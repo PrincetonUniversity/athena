@@ -969,8 +969,9 @@ void MeshRefinement::CheckRefinementCondition(void) {
     if (pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
   } else if (aret<0) {
-    if (pmb->loc.level == pmb->pmy_mesh->root_level) refine_flag_=0;
-    else {
+    if (pmb->loc.level == pmb->pmy_mesh->root_level) {
+      refine_flag_=0;
+    } else {
       deref_count_++;
       int ec=0, js, je, ks, ke;
       if (pmb->block_size.nx2 > 1) js=-1, je=1;
@@ -983,8 +984,9 @@ void MeshRefinement::CheckRefinementCondition(void) {
             if (pmb->pbval->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
         }
       }
-      if (ec>0) refine_flag_=0;
-      else {
+      if (ec>0) {
+        refine_flag_=0;
+      } else {
         if (deref_count_ >= deref_threshold_) refine_flag_=-1;
         else refine_flag_=0;
       }

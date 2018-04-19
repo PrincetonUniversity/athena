@@ -38,8 +38,8 @@ struct MGTask {
 
 class MultigridTaskList {
 public:
-  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {};
-  ~MultigridTaskList() {};
+  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {}
+  ~MultigridTaskList() {}
 
   // data
   int ntasks;     // number of tasks in this list
@@ -47,7 +47,7 @@ public:
   // functions
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
   void DoTaskListOneSubStep(MultigridDriver *pmd);
-  void ClearTaskList(void) {ntasks=0;};
+  void ClearTaskList(void) {ntasks=0;}
   void AddMultigridTask(uint64_t id, uint64_t dep);
 
   // functions

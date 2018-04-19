@@ -25,7 +25,7 @@ class MeshBlock;
 class GravitySolverTaskList : public TaskList {
 public:
   GravitySolverTaskList(ParameterInput *pin, Mesh *pm);
-  ~GravitySolverTaskList() {};
+  ~GravitySolverTaskList() {}
 
   void AddGravitySolverTask(uint64_t id, uint64_t dep);
 

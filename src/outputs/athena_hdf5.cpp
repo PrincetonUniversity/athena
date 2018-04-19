@@ -155,8 +155,9 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
-    } else
+    } else {
       std::strncpy(variable_names[n_variable++], pod->name.c_str(), max_name_length+1);
+    }
     pod=pod->pnext;
   }
 

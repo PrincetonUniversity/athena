@@ -557,9 +557,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     for (int n = ns; n <= ne; ++n) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      if (pmb->user_out_var_names_[n].length()!=0)
+      if (pmb->user_out_var_names_[n].length()!=0) {
         pod->name=pmb->user_out_var_names_[n];
-      else {
+      } else {
         char vn[16];
         sprintf(vn, "user_out_var%d", n);
         pod->name = vn;

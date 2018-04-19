@@ -1337,8 +1337,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       iflag=false;
       int onb=nbtotal;
       AdaptiveMeshRefinement(pin);
-      if (nbtotal==onb) iflag=true;
-      else if (nbtotal < onb && Globals::my_rank==0) {
+      if (nbtotal==onb) {
+        iflag=true;
+      } else if (nbtotal < onb && Globals::my_rank==0) {
          std::cout << "### Warning in Mesh::Initialize" << std::endl
          << "The number of MeshBlocks decreased during AMR grid initialization."
          << std::endl
@@ -1699,9 +1700,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     int on=newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level=newloc[n].level;
-    if (newloc[n].level>=loclist[on].level) // same or refined
+    if (newloc[n].level>=loclist[on].level) { // same or refined
       newcost[n]=costlist[on];
-    else {
+    } else {
       Real acost=0.0;
       for (int l=0; l<nlbl; l++)
         acost+=costlist[on+l];

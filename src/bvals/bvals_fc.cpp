@@ -185,7 +185,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   if (nb.ox1==0) {
     if (nb.fi1==1)   si=pmb->is+pmb->block_size.nx1/2-pmb->cnghost, ei=pmb->ie+1;
     else            si=pmb->is, ei=pmb->ie+1-pmb->block_size.nx1/2+pmb->cnghost;
-  } else if (nb.ox1>0) si=pmb->ie+1-pmb->cnghost, ei=pmb->ie+1;
+  } else if (nb.ox1>0) { si=pmb->ie+1-pmb->cnghost, ei=pmb->ie+1;}
   else              si=pmb->is,                ei=pmb->is+pmb->cnghost;
   if (nb.ox2==0) {
     sj=pmb->js,    ej=pmb->je;
@@ -198,7 +198,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
         else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je-cn, ej=pmb->je;
+  } else if (nb.ox2>0) { sj=pmb->je-cn, ej=pmb->je;}
   else              sj=pmb->js,    ej=pmb->js+cn;
   if (nb.ox3==0) {
     sk=pmb->ks,    ek=pmb->ke;
@@ -211,7 +211,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
         else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
       }
     }
-  } else if (nb.ox3>0) sk=pmb->ke-cn, ek=pmb->ke;
+  } else if (nb.ox3>0) { sk=pmb->ke-cn, ek=pmb->ke;}
   else              sk=pmb->ks,    ek=pmb->ks+cn;
   BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
@@ -219,7 +219,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   if (nb.ox1==0) {
     if (nb.fi1==1)   si=pmb->is+pmb->block_size.nx1/2-pmb->cnghost, ei=pmb->ie;
     else            si=pmb->is, ei=pmb->ie-pmb->block_size.nx1/2+pmb->cnghost;
-  } else if (nb.ox1>0) si=pmb->ie-cn, ei=pmb->ie;
+  } else if (nb.ox1>0) { si=pmb->ie-cn, ei=pmb->ie;}
   else              si=pmb->is,    ei=pmb->is+cn;
   if (nb.ox2==0) {
     sj=pmb->js,    ej=pmb->je;
@@ -233,7 +233,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
         else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je+1-pmb->cnghost, ej=pmb->je+1;
+  } else if (nb.ox2>0) { sj=pmb->je+1-pmb->cnghost, ej=pmb->je+1;}
   else              sj=pmb->js,                ej=pmb->js+pmb->cnghost;
   BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
@@ -249,7 +249,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
         else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je-cn, ej=pmb->je;
+  } else if (nb.ox2>0) { sj=pmb->je-cn, ej=pmb->je;}
   else              sj=pmb->js,    ej=pmb->js+cn;
   if (nb.ox3==0) {
     sk=pmb->ks,    ek=pmb->ke;
@@ -263,7 +263,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
         else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
       }
     }
-  } else if (nb.ox3>0) sk=pmb->ke+1-pmb->cnghost, ek=pmb->ke+1;
+  } else if (nb.ox3>0) { sk=pmb->ke+1-pmb->cnghost, ek=pmb->ke+1;}
   else              sk=pmb->ks,                ek=pmb->ks+pmb->cnghost;
   BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
@@ -338,8 +338,9 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
           dst.x1f(k,j,i)=sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+  }
 
   // bx2
   if (nb.ox1==0)      si=pmb->is,         ei=pmb->ie;
@@ -363,8 +364,9 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
           dst.x2f(k,j,i)=sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
+  }
   if (pmb->block_size.nx2==1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
@@ -393,8 +395,9 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
           dst.x3f(k,j,i)=sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
+  }
   if (pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
@@ -423,7 +426,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     si=pmb->cis, ei=pmb->cie+1;
     if ((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng;
-  } else if (nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+1+cng;
+  } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+1+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis;
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
@@ -431,7 +434,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       if ((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng;
     }
-  } else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
+  } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
@@ -439,7 +442,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       if ((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng;
     }
-  } else if (nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
+  } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+cng;}
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   if (nb.polar) {
@@ -451,15 +454,16 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
           pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
+  }
 
   // bx2
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
     if ((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng;
-  } else if (nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
+  } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis-1;
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
@@ -468,7 +472,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       if ((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng;
     }
-  } else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+1+cng;
+  } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+1+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs;
 
   if (nb.polar) {
@@ -496,7 +500,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       if ((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng;
     }
-  } else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
+  } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
@@ -505,7 +509,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       if ((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng;
     }
-  } else if (nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+1+cng;
+  } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+1+cng;}
   else               sk=pmb->cks-cng, ek=pmb->cks;
 
   if (nb.polar) {
@@ -546,7 +550,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
     si=pmb->is, ei=pmb->ie+1;
     if (nb.fi1==1)   si+=pmb->block_size.nx1/2;
     else            ei-=pmb->block_size.nx1/2;
-  } else if (nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
+  } else if (nb.ox1>0) { si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;}
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.type != NEIGHBOR_FACE) {
@@ -564,7 +568,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
         else          ej-=pmb->block_size.nx2/2;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  } else if (nb.ox2>0) { sj=pmb->je+1,      ej=pmb->je+NGHOST;}
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   if (nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
@@ -577,7 +581,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
         else          ek-=pmb->block_size.nx3/2;
       }
     }
-  } else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  } else if (nb.ox3>0) { sk=pmb->ke+1,      ek=pmb->ke+NGHOST;}
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   if (nb.polar) {
@@ -589,15 +593,16 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
           dst.x1f(k,j,i) = sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+  }
 
   // bx2
   if (nb.ox1==0) {
     si=pmb->is, ei=pmb->ie;
     if (nb.fi1==1)   si+=pmb->block_size.nx1/2;
     else            ei-=pmb->block_size.nx1/2;
-  } else if (nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+  } else if (nb.ox1>0) { si=pmb->ie+1,      ei=pmb->ie+NGHOST;}
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   if (nb.ox2==0) {
     sj=pmb->js, ej=pmb->je;
@@ -611,7 +616,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
         else          ej-=pmb->block_size.nx2/2;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
+  } else if (nb.ox2>0) { sj=pmb->je+2,      ej=pmb->je+NGHOST+1;}
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.type != NEIGHBOR_FACE) {
@@ -628,8 +633,9 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
           dst.x2f(k,j,i) = sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
+  }
   if (pmb->block_size.nx2==1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
@@ -648,7 +654,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
         else          ej-=pmb->block_size.nx2/2;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  } else if (nb.ox2>0) { sj=pmb->je+1,      ej=pmb->je+NGHOST;}
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   if (nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
@@ -662,7 +668,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
         else          ek-=pmb->block_size.nx3/2;
       }
     }
-  } else if (nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
+  } else if (nb.ox3>0) { sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;}
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.type != NEIGHBOR_FACE) {
@@ -679,8 +685,9 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
           dst.x3f(k,j,i) = sign*buf[p++];
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
+  }
   if (pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
@@ -707,17 +714,18 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
       if (nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
-      }
 #ifdef MPI_PARALLEL
-      else { // MPI boundary
+      } else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(bd_field_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (test==false) {
+        if (static_cast<bool>(test)==false) {
           flag=false;
           continue;
         }
         bd_field_.flag[nb.bufid] = BNDRY_ARRIVED;
+      }
+#else
       }
 #endif
     }

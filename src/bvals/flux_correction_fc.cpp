@@ -1239,7 +1239,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
             continue;
           }
 #ifdef MPI_PARALLEL
-          else { // MPI boundary
+        } else { // MPI boundary
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
             MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -1274,9 +1274,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
         if (nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
-        }
 #ifdef MPI_PARALLEL
-        else { // MPI boundary
+        } else { // MPI boundary
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -1285,6 +1284,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
             continue;
           }
           bd_emfcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+        }
+#else
         }
 #endif
       }
@@ -1301,9 +1302,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
-      }
 #ifdef MPI_PARALLEL
-      else {
+      } else {
         int recv_flag;
         MPI_Test(&req_emf_north_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
         if (not recv_flag) {
@@ -1311,6 +1311,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
           continue;
         }
         emf_north_flag_[n] = BNDRY_ARRIVED;
+      }
+#else
       }
 #endif
     }
@@ -1321,9 +1323,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
-      }
 #ifdef MPI_PARALLEL
-      else {
+      } else {
         int recv_flag;
         MPI_Test(&req_emf_south_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
         if (not recv_flag) {
@@ -1331,6 +1332,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
           continue;
         }
         emf_south_flag_[n] = BNDRY_ARRIVED;
+      }
+#else
       }
 #endif
     }
