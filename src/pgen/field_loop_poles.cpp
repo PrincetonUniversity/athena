@@ -264,8 +264,7 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 2-compnent of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3)
- {
+static Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);

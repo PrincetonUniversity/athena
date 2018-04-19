@@ -114,8 +114,8 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
       }
       break;
     }
-    bd.send[n]=new Real [size];
-    bd.recv[n]=new Real [size];
+    bd.send[n]=new Real[size];
+    bd.recv[n]=new Real[size];
   }
 }
 

@@ -83,7 +83,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int max_blocks_global = pm->nbtotal;
   int max_blocks_local=pm->nblist[Globals::my_rank];
   int first_block = pm->nslist[Globals::my_rank];
-  bool *active_flags = new bool [max_blocks_local];
+  bool *active_flags = new bool[max_blocks_local];
   std::string variable = output_params.variable;
 
   for (int i=0; i<max_blocks_local; i++)
@@ -832,15 +832,13 @@ void ATHDF5Output::MakeXDMF() {
       for (int n_variable = 0; n_variable < num_variables[n_dataset]; ++n_variable) {
         xdmf << "    <Attribute Name=\"" << variable_names[n_quantity++]
             << "\" Center=\"Cell\">\n";
-        if (nx3 > 1)
-        {
+        if (nx3 > 1) {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx3 << " "
               << nx2 << " " << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
               << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " "
               << nx2 << " " << nx1 << " </DataItem>\n";
-        } else
-        {
+        } else {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx2 << " "
               << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "

@@ -427,14 +427,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
   if (adaptive==true) { // allocate arrays for AMR
-    nref = new int [Globals::nranks];
-    nderef = new int [Globals::nranks];
-    rdisp = new int [Globals::nranks];
-    ddisp = new int [Globals::nranks];
-    bnref = new int [Globals::nranks];
-    bnderef = new int [Globals::nranks];
-    brdisp = new int [Globals::nranks];
-    bddisp = new int [Globals::nranks];
+    nref = new int[Globals::nranks];
+    nderef = new int[Globals::nranks];
+    rdisp = new int[Globals::nranks];
+    ddisp = new int[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
@@ -675,7 +675,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // read the ID list
   listsize=sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
-  char *idlist = new char [listsize*nbtotal];
+  char *idlist = new char[listsize*nbtotal];
   if (Globals::my_rank==0) { // only the master process reads the ID list
     if (resfile.Read(idlist,listsize,nbtotal)!=static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -733,14 +733,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 #endif
 
   if (adaptive==true) { // allocate arrays for AMR
-    nref = new int [Globals::nranks];
-    nderef = new int [Globals::nranks];
-    rdisp = new int [Globals::nranks];
-    ddisp = new int [Globals::nranks];
-    bnref = new int [Globals::nranks];
-    bnderef = new int [Globals::nranks];
-    brdisp = new int [Globals::nranks];
-    bddisp = new int [Globals::nranks];
+    nref = new int[Globals::nranks];
+    nderef = new int[Globals::nranks];
+    rdisp = new int[Globals::nranks];
+    ddisp = new int[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
@@ -762,7 +762,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   int nb=nblist[Globals::my_rank];
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nb-1;
-  char *mbdata = new char [datasize*nb];
+  char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
       static_cast<unsigned int>(nb)) {
@@ -1369,8 +1369,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
   MeshBlock *pbl=pblock;
-  while(pbl!=NULL)
-  {
+  while (pbl!=NULL) {
     if (pbl->gid==tgid)
       break;
     pbl=pbl->next;

@@ -124,8 +124,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   }
 
   // allocate memory for the ID list and the data
-  char *idlist = new char [listsize*mynb];
-  char *data = new char [mynb*datasize];
+  char *idlist = new char[listsize*mynb];
+  char *data = new char[mynb*datasize];
 
   // Loop over MeshBlocks and pack the meta data
   pmb=pm->pblock;

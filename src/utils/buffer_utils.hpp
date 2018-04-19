@@ -11,8 +11,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 
-namespace BufferUtility
-{
+namespace BufferUtility {
 void Pack4DData(AthenaArray<Real> &src, Real *buf, int sn, int en,
                int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 void Unpack4DData(Real *buf, AthenaArray<Real> &dst, int sn, int en,

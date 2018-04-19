@@ -8,8 +8,7 @@
 //! \file globals.hpp
 //  \brief namespace containing external global variables
 
-namespace Globals
-{
+namespace Globals {
   extern int my_rank, nranks;
 }
 
