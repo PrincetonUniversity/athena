@@ -20,9 +20,9 @@
 #include "../mesh/meshblock_tree.hpp"
 
 #ifdef FFT
-#include "fftw3.h"
+#include <fftw3.h>
 #ifdef MPI_PARALLEL
-#include "mpi.h"
+#include <mpi.h>
 #include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
 #endif // MPI_PARALLEL

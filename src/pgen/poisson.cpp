@@ -33,7 +33,7 @@
 #include "../parameter_input.hpp"
 
 #ifdef OPENMP_PARALLEL
-#include "omp.h"
+#include <omp.h>
 #endif
 
 #ifdef MPI_PARALLEL

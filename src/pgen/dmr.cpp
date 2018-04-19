@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <algorithm>
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -32,9 +33,6 @@
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
 #endif
-
-#include <iostream>
-#include <cmath>
 
 // DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.
