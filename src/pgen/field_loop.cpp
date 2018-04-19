@@ -86,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (x1size == x3size) {
       ang_2 = PI/4.0;
       cos_a2 = sin_a2 = sqrt(0.5);
-    } else{
+    } else {
       ang_2 = atan(x1size/x3size);
       sin_a2 = sin(ang_2);
       cos_a2 = cos(ang_2);
