@@ -1,5 +1,5 @@
-#ifndef BVALS_MG_HPP
-#define BVALS_MG_HPP
+#ifndef BVALS_MG_HPP_
+#define BVALS_MG_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -72,4 +72,4 @@ private:
   friend class Multigrid;
 };
 
-#endif // BVALS_MG_HPP
+#endif // BVALS_MG_HPP_

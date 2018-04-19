@@ -1,5 +1,5 @@
-#ifndef BOUNDARY_VALUES_HPP
-#define BOUNDARY_VALUES_HPP
+#ifndef BOUNDARY_VALUES_HPP_
+#define BOUNDARY_VALUES_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -33,11 +33,12 @@ struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
 enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
-  INNER_X3=4, OUTER_X3=5};
+                   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
 enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6, SHEAR_PERIODIC_BNDRY=7};
+                   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6,
+                   SHEAR_PERIODIC_BNDRY=7};
 
 // identifiers for types of neighbor blocks
 enum NeighborType {NEIGHBOR_NONE=0, NEIGHBOR_FACE=1, NEIGHBOR_EDGE=2, NEIGHBOR_CORNER=3};
@@ -367,4 +368,4 @@ private:
   friend class Mesh;
 };
 
-#endif // BOUNDARY_VALUES_HPP
+#endif // BOUNDARY_VALUES_HPP_

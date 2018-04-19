@@ -1,5 +1,5 @@
-#ifndef ATHENA_FFT_HPP
-#define ATHENA_FFT_HPP
+#ifndef ATHENA_FFT_HPP_
+#define ATHENA_FFT_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -20,9 +20,9 @@
 #include "../mesh/meshblock_tree.hpp"
 
 #ifdef FFT
-#include "fftw3.h"
+#include <fftw3.h>
 #ifdef MPI_PARALLEL
-#include "mpi.h"
+#include <mpi.h>
 #include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
 #endif // MPI_PARALLEL
@@ -186,7 +186,7 @@ public:
   void QuickCreatePlan();
   void InitializeFFTBlock(bool set_norm);
 // small functions
-  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; };
+  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; }
 
   friend class FFTBlock;
   friend class Mesh;
@@ -219,4 +219,4 @@ namespace DecompositionNames{
 };
 #endif
 
-#endif // ATHENA_FFT_HPP
+#endif // ATHENA_FFT_HPP_

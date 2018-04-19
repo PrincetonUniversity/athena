@@ -1,5 +1,5 @@
-#ifndef TURBULENCE_HPP
-#define TURBULENCE_HPP
+#ifndef TURBULENCE_HPP_
+#define TURBULENCE_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -42,4 +42,4 @@ private:
   AthenaArray<Real> *vel;
 };
 
-#endif // TURBULENCE_HPP
+#endif // TURBULENCE_HPP_

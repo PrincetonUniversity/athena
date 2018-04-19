@@ -8,19 +8,21 @@
 //  3D data sets as this format is very slow and memory intensive.  Most useful for 1D
 //  slices and/or sums.  Writes one file per Meshblock.
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C++ headers
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------

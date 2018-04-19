@@ -10,8 +10,7 @@
 #include "../athena_arrays.hpp"
 #include "buffer_utils.hpp"
 
-namespace BufferUtility
-{
+namespace BufferUtility {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Pack4DData(AthenaArray<Real> &src, Real *buf, int sn, int en,

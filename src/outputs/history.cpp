@@ -7,22 +7,24 @@
 //  \brief writes history output data, volume-averaged quantities that are output
 //         frequently in time to trace their history.
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C++ headers
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../globals.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 

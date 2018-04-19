@@ -6,6 +6,9 @@
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 
+// C++ headers
+#include <string>
+
 // Athena++ headers
 #include "field.hpp"
 #include "../athena.hpp"

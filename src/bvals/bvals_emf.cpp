@@ -8,24 +8,25 @@
 //======================================================================================
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
@@ -207,8 +208,10 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb)
+//! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf,
+//                                                              const int nb)
 //  \brief Set EMF shearingbox boundary received from a block on the same level
+
 void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
                                                         buf, const int nb) {
   MeshBlock *pmb=pmy_block_;
@@ -283,6 +286,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 //  \brief receive shearingbox boundary data for EMF correction
+
 bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
   MeshBlock *pmb=pmy_block_;
   bool flagi=true, flago=true;
@@ -300,7 +304,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_emf_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test) == false) {
             flagi=false;
             continue;
           }
@@ -329,7 +333,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_emf_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             flago=false;
             continue;
           }
@@ -351,6 +355,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::RemapEMFShearingboxBoundary(void)
 //  \brief Set EMF boundary received from a block on the finer level
+
 void BoundaryValues::RemapEMFShearingboxBoundary(void) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
@@ -404,6 +409,7 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void) {
 //! \fn void BoundaryValues::ClearEMFShearing(void)
 //  \brief Clear the working array for EMFs on the surface/edge contacting with
 //  a shearing periodic boundary
+
 void BoundaryValues::ClearEMFShearing(EdgeField &work) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=work.x2e;
@@ -426,7 +432,10 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work) {
 //  eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping
 //  adopted from 2nd order RemapFlux of Athena4.0
-void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+
+void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int jouter,
+                                  const Real eps, const AthenaArray<Real> &U,
+                                  AthenaArray<Real> &Flux) {
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 

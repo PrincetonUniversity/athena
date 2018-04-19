@@ -1,5 +1,5 @@
-#ifndef IO_WRAPPER_HPP
-#define IO_WRAPPER_HPP
+#ifndef IO_WRAPPER_HPP_
+#define IO_WRAPPER_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -52,4 +52,4 @@ private:
   MPI_Comm comm;
 #endif
 };
-#endif // IO_WRAPPER_HPP
+#endif // IO_WRAPPER_HPP_

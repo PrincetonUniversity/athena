@@ -27,7 +27,7 @@
 #include "../utils/utils.hpp"
 
 #ifdef OPENMP_PARALLEL
-#include "omp.h"
+#include <omp.h>
 #endif
 
 

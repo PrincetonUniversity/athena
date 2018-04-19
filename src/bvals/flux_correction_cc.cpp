@@ -7,25 +7,25 @@
 //  \brief functions that perform flux correction for CELL_CENTERED variables
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
-#include "bvals.hpp"
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
@@ -94,9 +94,8 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
           for (int nn=ns; nn<=ne; nn++)
             sbuf[p++]=x1flux(nn, k, j, i);
         }
-      }
-      // x2 direction
-      else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+        // x2 direction
+      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=ns; nn<=ne; nn++) {
@@ -123,9 +122,8 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
             }
           }
         }
-      }
-      // x3 direction - 3D only
-      else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+        // x3 direction - 3D only
+      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
         for (int nn=ns; nn<=ne; nn++) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
@@ -186,17 +184,18 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
-        }
 #ifdef MPI_PARALLEL
-        else { // MPI boundary
+        } else { // MPI boundary
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             bflag=false;
             continue;
           }
           pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+        }
+#else
         }
 #endif
       }

@@ -1,5 +1,5 @@
-#ifndef HYDRO_HPP
-#define HYDRO_HPP
+#ifndef HYDRO_HPP_
+#define HYDRO_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -78,4 +78,4 @@ private:
 
   TimeStepFunc_t UserTimeStep_;
 };
-#endif // HYDRO_HPP
+#endif // HYDRO_HPP_

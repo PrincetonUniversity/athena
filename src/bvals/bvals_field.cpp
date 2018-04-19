@@ -8,24 +8,25 @@
 //======================================================================================
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
@@ -112,14 +113,16 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb) {
 //  \brief Send shearingbox boundary buffers for field variables
 //  Currently not used. As we only correct vy at t=0.
 
-void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons) {
+void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src,
+                                                                bool cons) {
   return;
 }
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src)
 //  \brief Send shearingbox boundary buffers for field variables
 
-void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool conserved_values) {
+void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
+                                                         bool conserved_values) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -169,25 +172,28 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k,js,je+2,i,eps_,shboxvar_inner_field_.x1f,flx_inner_field_.x1f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_field_.x1f(k,j,i) -= flx_inner_field_.x1f(j+1)-flx_inner_field_.x1f(j);
+          shboxvar_inner_field_.x1f(k,j,i) -= (flx_inner_field_.x1f(j+1) -
+                                               flx_inner_field_.x1f(j));
         }
     }}
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k,js,je+3,i,eps_,shboxvar_inner_field_.x2f,flx_inner_field_.x2f);
         for (int j=js; j<=je+2; j++) {
-          shboxvar_inner_field_.x2f(k,j,i) -= flx_inner_field_.x2f(j+1)-flx_inner_field_.x2f(j);
+          shboxvar_inner_field_.x2f(k,j,i) -= (flx_inner_field_.x2f(j+1) -
+                                               flx_inner_field_.x2f(j));
         }
     }}
     for (int k=kl; k<=ku+1; k++) { // bx3
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k,js,je+2,i,eps_,shboxvar_inner_field_.x3f,flx_inner_field_.x3f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_field_.x3f(k,j,i) -= flx_inner_field_.x3f(j+1)-flx_inner_field_.x3f(j);
+          shboxvar_inner_field_.x3f(k,j,i) -= (flx_inner_field_.x3f(j+1) -
+                                               flx_inner_field_.x3f(j));
         }
     }}
 
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
+    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
         LoadFieldShearing(shboxvar_inner_field_, send_innerbuf_field_[n], n);
@@ -237,27 +243,33 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFluxField(k,js-1,je+1,i,-eps_,shboxvar_outer_field_.x1f,flx_outer_field_.x1f);
+        RemapFluxField(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x1f,
+                       flx_outer_field_.x1f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_field_.x1f(k,j,i) -= flx_outer_field_.x1f(j+1)-flx_outer_field_.x1f(j);
+          shboxvar_outer_field_.x1f(k,j,i) -= (flx_outer_field_.x1f(j+1) -
+                                               flx_outer_field_.x1f(j));
         }
     }}
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFluxField(k,js-1,je+2,i,-eps_,shboxvar_outer_field_.x2f,flx_outer_field_.x2f);
+        RemapFluxField(k, js-1, je+2, i, -eps_, shboxvar_outer_field_.x2f,
+                       flx_outer_field_.x2f);
         for (int j=js-1; j<=je+1; j++) {
-          shboxvar_outer_field_.x2f(k,j,i) -= flx_outer_field_.x2f(j+1)-flx_outer_field_.x2f(j);
+          shboxvar_outer_field_.x2f(k,j,i) -= (flx_outer_field_.x2f(j+1) -
+                                               flx_outer_field_.x2f(j));
         }
     }}
     for (int k=kl; k<=ku+1; k++) {  // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFluxField(k,js-1,je+1,i,-eps_,shboxvar_outer_field_.x3f,flx_outer_field_.x3f);
+        RemapFluxField(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x3f,
+                       flx_outer_field_.x3f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_field_.x3f(k,j,i) -= flx_outer_field_.x3f(j+1)-flx_outer_field_.x3f(j);
+          shboxvar_outer_field_.x3f(k,j,i) -= (flx_outer_field_.x3f(j+1) -
+                                               flx_outer_field_.x3f(j));
         }
     }}
 
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
+    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
@@ -353,8 +365,6 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 //! \fn bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 //  \brief receive shearingbox boundary data for field(face-centered) variables
 bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
-  MeshBlock *pmb=pmy_block_;
-  Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 
   if (shbb_.inner == true) { // check inner boundaries
@@ -369,7 +379,7 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_field_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             flagi=false;
             continue;
           }
@@ -396,7 +406,7 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_field_[n],&test,MPI_STATUS_IGNORE);
-          if (test==false) {
+          if (static_cast<bool>(test)==false) {
             flago=false;
             continue;
           }
@@ -414,15 +424,21 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RemapFluxField(int k, int jinner, int jouter, int i, Real eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
-//  \brief compute the flux along j indices for remapping
-//  adopted from 2nd order RemapFlux of Athena4.0
-void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+//! \fn void BoundaryValues::RemapFluxField(const int k, const int jinner,
+///                                         const int jouter, int i,
+//                                          Real eps, static AthenaArray<Real> &U,
+//                                          AthenaArray<Real> &Flux)
+//  \brief compute the flux along j indices for remapping adopted from 2nd order RemapFlux
+//         of Athena4.0
+
+void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jouter,
+                                    const int i, const Real eps,
+                                    const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 
-// jinner,jouter are index range over which flux must be returned.  Set loop
-// limits depending on direction of upwind differences
+  // jinner,jouter are index range over which flux must be returned.  Set loop
+  // limits depending on direction of upwind differences
 
   if (eps > 0.0) { //eps always > 0 for inner i boundary
     jl = jinner-1;
@@ -452,4 +468,3 @@ void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jou
 
   return;
 }
-

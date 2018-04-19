@@ -106,7 +106,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (pcoord->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phydro->u(IM2,k,j,i) = (1.0+cos(kx*pcoord->x1v(i)))*(1.0+cos(ky*pcoord->x2v(j)))/4.0;
+          phydro->u(IM2,k,j,i) = (1.0 + cos(kx*pcoord->x1v(i)))*
+              (1.0 + cos(ky*pcoord->x2v(j)))/4.0;
         } else {
           phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pcoord->x2v(j)));
         }

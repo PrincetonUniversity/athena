@@ -6,38 +6,41 @@
 //! \file mesh.cpp
 //  \brief implementation of functions in Mesh class
 
-// C/C++ headers
+// C headers
+#include <stdlib.h>
+#include <string.h>  // memcpy
+#include <inttypes.h> // int64_t format macro PRId64
+
+// C++ headers
+#include <algorithm>  // sort
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // std::abs(), pow()
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <algorithm>  // sort
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>  // memcpy
 #include <vector>
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
+#include "../globals.hpp"
 #include "../gravity/fftgravity.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
 #include "../gravity/mggravity.hpp"
-#include "../bvals/bvals.hpp"
-#include "../eos/eos.hpp"
-#include "../parameter_input.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../outputs/io_wrapper.hpp"
-#include "../utils/buffer_utils.hpp"
+#include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../utils/buffer_utils.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
@@ -364,7 +367,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
-            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+            tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level,
+                              nnew);
           }
         }
         if (dim==2) {
@@ -373,7 +377,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
-              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+              tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+                                root_level, nnew);
             }
           }
         }
@@ -384,7 +389,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
                 LogicalLocation nloc;
                 nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
                 int nnew;
-                tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+                tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+                                  root_level, nnew);
               }
             }
           }
@@ -421,14 +427,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
   if (adaptive==true) { // allocate arrays for AMR
-    nref = new int [Globals::nranks];
-    nderef = new int [Globals::nranks];
-    rdisp = new int [Globals::nranks];
-    ddisp = new int [Globals::nranks];
-    bnref = new int [Globals::nranks];
-    bnderef = new int [Globals::nranks];
-    brdisp = new int [Globals::nranks];
-    bddisp = new int [Globals::nranks];
+    nref = new int[Globals::nranks];
+    nderef = new int[Globals::nranks];
+    rdisp = new int[Globals::nranks];
+    ddisp = new int[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
@@ -669,7 +675,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // read the ID list
   listsize=sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
-  char *idlist = new char [listsize*nbtotal];
+  char *idlist = new char[listsize*nbtotal];
   if (Globals::my_rank==0) { // only the master process reads the ID list
     if (resfile.Read(idlist,listsize,nbtotal)!=static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -727,14 +733,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 #endif
 
   if (adaptive==true) { // allocate arrays for AMR
-    nref = new int [Globals::nranks];
-    nderef = new int [Globals::nranks];
-    rdisp = new int [Globals::nranks];
-    ddisp = new int [Globals::nranks];
-    bnref = new int [Globals::nranks];
-    bnderef = new int [Globals::nranks];
-    brdisp = new int [Globals::nranks];
-    bddisp = new int [Globals::nranks];
+    nref = new int[Globals::nranks];
+    nderef = new int[Globals::nranks];
+    rdisp = new int[Globals::nranks];
+    ddisp = new int[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
@@ -756,7 +762,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   int nb=nblist[Globals::my_rank];
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nb-1;
-  char *mbdata = new char [datasize*nb];
+  char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
       static_cast<unsigned int>(nb)) {
@@ -916,9 +922,9 @@ void Mesh::OutputMeshStructure(int dim) {
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,"#  Logical level %d, location = (%lld %lld %lld)\n", ll,
-                static_cast<long long int>(lx1), static_cast<long long int>(lx2),
-                static_cast<long long int>(lx3));
+        fprintf(fp,
+                "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
+                ll, lx1, lx2, lx3);
         if (dim==2) {
           fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
@@ -1167,7 +1173,8 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 //                                                   GravityBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc) {
+void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
+                                             GravityBoundaryFunc_t my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1330,8 +1337,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       iflag=false;
       int onb=nbtotal;
       AdaptiveMeshRefinement(pin);
-      if (nbtotal==onb) iflag=true;
-      else if (nbtotal < onb && Globals::my_rank==0) {
+      if (nbtotal==onb) {
+        iflag=true;
+      } else if (nbtotal < onb && Globals::my_rank==0) {
          std::cout << "### Warning in Mesh::Initialize" << std::endl
          << "The number of MeshBlocks decreased during AMR grid initialization."
          << std::endl
@@ -1362,8 +1370,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
   MeshBlock *pbl=pblock;
-  while(pbl!=NULL)
-  {
+  while (pbl!=NULL) {
     if (pbl->gid==tgid)
       break;
     pbl=pbl->next;
@@ -1693,9 +1700,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     int on=newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level=newloc[n].level;
-    if (newloc[n].level>=loclist[on].level) // same or refined
+    if (newloc[n].level>=loclist[on].level) { // same or refined
       newcost[n]=costlist[on];
-    else {
+    } else {
       Real acost=0.0;
       for (int l=0; l<nlbl; l++)
         acost+=costlist[on+l];
@@ -1987,7 +1994,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-      } else if ((loclist[on].level < newloc[n].level) && (ranklist[on]==Globals::my_rank)) {
+      } else if ((loclist[on].level < newloc[n].level) &&
+                 (ranklist[on]==Globals::my_rank)) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob=FindMeshBlock(on);
         MeshRefinement *pmr=pmb->pmr;

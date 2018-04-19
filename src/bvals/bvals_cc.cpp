@@ -35,8 +35,8 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
-//                                  int ns, int ne, Real *buf, const NeighborBlock& nb)
+//! \fn int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real>
+//                     &src, int ns, int ne, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
 int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
@@ -56,8 +56,9 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &s
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
-//          int ns, int ne, AthenaArray<Real> &cbuf, Real *buf, const NeighborBlock& nb)
+//! \fn int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real>
+//                     &src, int ns, int ne, AthenaArray<Real> &cbuf, Real *buf,
+//                     const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the coarser level
 
 int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
@@ -161,7 +162,8 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
     if (nb.level==mylevel)
       ssize=LoadCellCenteredBoundaryBufferSameLevel(src, ns, ne, pbd->send[nb.bufid], nb);
     else if (nb.level<mylevel)
-      ssize=LoadCellCenteredBoundaryBufferToCoarser(src, ns, ne, pbd->send[nb.bufid], cbuf, nb);
+      ssize=LoadCellCenteredBoundaryBufferToCoarser(src, ns, ne, pbd->send[nb.bufid],
+                                                    cbuf, nb);
     else
       ssize=LoadCellCenteredBoundaryBufferToFiner(src, ns, ne, pbd->send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {
@@ -264,25 +266,34 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
     if ((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else             si-=cng;
-  } else if (nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
-  else               si=pmb->cis-cng, ei=pmb->cis-1;
+    else                       si-=cng;
+  } else if (nb.ox1>0)  {
+    si=pmb->cie+1,   ei=pmb->cie+cng;
+  } else {
+    si=pmb->cis-cng, ei=pmb->cis-1;
+  }
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
       if ((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng;
+      else                       sj-=cng;
     }
-  } else if (nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
-  else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
+  } else if (nb.ox2>0) {
+    sj=pmb->cje+1,   ej=pmb->cje+cng;
+  } else {
+    sj=pmb->cjs-cng, ej=pmb->cjs-1;
+  }
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
       if ((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else             sk-=cng;
+      else                       sk-=cng;
     }
-  } else if (nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
-  else               sk=pmb->cks-cng, ek=pmb->cks-1;
+  } else if (nb.ox3>0)  {
+    sk=pmb->cke+1,   ek=pmb->cke+cng;
+  } else {
+    sk=pmb->cks-cng, ek=pmb->cks-1;
+  }
 
   int p=0;
   if (nb.polar) {
@@ -297,8 +308,9 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
         }
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack4DData(buf, cbuf, ns, ne, si, ei, sj, ej, sk, ek, p);
+  }
   return;
 }
 
@@ -318,8 +330,11 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
     si=pmb->is, ei=pmb->ie;
     if (nb.fi1==1)   si+=pmb->block_size.nx1/2;
     else            ei-=pmb->block_size.nx1/2;
-  } else if (nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
-  else              si=pmb->is-NGHOST, ei=pmb->is-1;
+  } else if (nb.ox1>0) {
+    si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+  } else {
+    si=pmb->is-NGHOST, ei=pmb->is-1;
+  }
   if (nb.ox2==0) {
     sj=pmb->js, ej=pmb->je;
     if (pmb->block_size.nx2 > 1) {
@@ -331,8 +346,11 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
         else          ej-=pmb->block_size.nx2/2;
       }
     }
-  } else if (nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
-  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  } else if (nb.ox2>0) {
+    sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  } else {
+    sj=pmb->js-NGHOST, ej=pmb->js-1;
+  }
   if (nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
     if (pmb->block_size.nx3 > 1) {
@@ -344,8 +362,11 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
         else          ek-=pmb->block_size.nx3/2;
       }
     }
-  } else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
-  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  } else if (nb.ox3>0) {
+    sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  } else {
+    sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  }
 
   int p=0;
   if (nb.polar) {
@@ -360,8 +381,9 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
         }
       }
     }
-  } else
+  } else {
     BufferUtility::Unpack4DData(buf, dst, ns, ne, si, ei, sj, ej, sk, ek, p);
+  }
   return;
 }
 
@@ -398,18 +420,19 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
       if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
-      }
 #ifdef MPI_PARALLEL
-      else { // MPI boundary
+      } else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (test==false) {
+        if (static_cast<bool>(test)==false) {
           bflag=false;
           continue;
         }
         pbd->flag[nb.bufid] = BNDRY_ARRIVED;
       }
+#else
+    }
 #endif
     }
     if (nb.level==pmb->loc.level)
@@ -433,7 +456,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
 //  \brief receive the boundary data for initialization
 
 void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                                enum CCBoundaryType type) {
+                                                                enum CCBoundaryType
+                                                                type) {
   MeshBlock *pmb=pmy_block_;
   bool *flip=NULL;
   AthenaArray<Real> cbuf;

@@ -1,5 +1,5 @@
-#ifndef ATHENA_HPP
-#define ATHENA_HPP
+#ifndef ATHENA_HPP_
+#define ATHENA_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -8,10 +8,15 @@
 //! \file athena.hpp
 //  \brief contains Athena++ general purpose types, structures, enums, etc.
 
-#include "defs.hpp"
-#include "athena_arrays.hpp"
+// C headers
 #include <math.h>
 #include <stdint.h>  // int64_t
+
+// C++ headers
+
+// Athena++ headers
+#include "athena_arrays.hpp"
+#include "defs.hpp"
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
@@ -132,4 +137,4 @@ typedef void (*GravityBoundaryFunc_t)(MeshBlock *pmb, Coordinates *pco,
              AthenaArray<Real> &dst, Real time, Real dt,
              int is, int ie, int js, int je, int ks, int ke);
 
-#endif // ATHENA_HPP
+#endif // ATHENA_HPP_

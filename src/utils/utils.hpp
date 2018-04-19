@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef UTILS_HPP_
+#define UTILS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -8,8 +8,10 @@
 //! \file utils.hpp
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
-#include <csignal>
+// C headers
 #include <stdint.h>  // int64_t
+// C++ headers
+#include <csignal>
 
 void ChangeRunDir(const char *pdir);
 double ran2(int64_t *idum);
@@ -30,6 +32,6 @@ namespace SignalHandler {
   void SetSignalFlag(int s);
   void SetWallTimeAlarm(int t);
   void CancelWallTimeAlarm(void);
-}
+} // namespace SignalHandler
 
-#endif // UTILS_HPP
+#endif // UTILS_HPP_

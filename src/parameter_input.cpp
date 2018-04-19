@@ -36,19 +36,19 @@
 //========================================================================================
 
 // C++ headers
+#include <algorithm>  // transform
 #include <cstdlib>    // atoi(), atof(), NULL, size_t
 #include <fstream>    // ifstream
 #include <iostream>   // endl, ostream
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <algorithm>  // transform
 #include <string>     // string
 
 // Athena headers
-#include "parameter_input.hpp"
 #include "athena.hpp"
-#include "globals.hpp"
 #include "defs.hpp"
+#include "globals.hpp"
+#include "parameter_input.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
