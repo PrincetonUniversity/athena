@@ -161,6 +161,12 @@ parser.add_argument('-hdf5',
     default=False,
     help='enable HDF5 Output')
 
+# -h5double argument
+parser.add_argument('-h5double',
+    action='store_true',
+    default=False,
+    help='enable double precision HDF5 output')
+
 # --hdf5_path argument
 parser.add_argument('--hdf5_path',
     default='',
@@ -482,8 +488,14 @@ if args['hdf5']:
         ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib' \
         + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
+    # -h5double argument (ignored if no -hdf5)
+    if args['h5double']:
+      definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
+    else:
+      definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
+
 
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
