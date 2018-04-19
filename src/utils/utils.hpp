@@ -8,8 +8,10 @@
 //! \file utils.hpp
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
-#include <csignal>
+// C headers
 #include <stdint.h>  // int64_t
+// C++ headers
+#include <csignal>
 
 void ChangeRunDir(const char *pdir);
 double ran2(int64_t *idum);

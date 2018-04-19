@@ -6,23 +6,26 @@
 //! \file restart.cpp
 //  \brief writes restart files
 
-// C/C++ headers
+// C headers
+#include <string.h>
+
+// C++ headers
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <stdexcept>
-#include <fstream>
-#include <string.h>
+#include <string>
+
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------

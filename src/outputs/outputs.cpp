@@ -47,24 +47,26 @@
 // text 'ADD NEW OUTPUT TYPES HERE'.
 //========================================================================================
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C/C++ headers
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../coordinates/coordinates.hpp" // Coordinates
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------

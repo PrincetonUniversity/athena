@@ -12,10 +12,12 @@
 //
 // Code must be configured using -shear
 //======================================================================================
-//
+
+// C headers
+#include <stdlib.h>   // exit
+
 // C++ headers
 #include <iostream>   // cout, endl
-#include <stdlib.h>   // exit
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -23,12 +25,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #if !SHEARING_BOX
 #error "This problem generator requires shearing box"
