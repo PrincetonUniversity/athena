@@ -32,6 +32,6 @@ namespace SignalHandler {
   void SetSignalFlag(int s);
   void SetWallTimeAlarm(int t);
   void CancelWallTimeAlarm(void);
-}
+} // namespace SignalHandler
 
 #endif // UTILS_HPP_
