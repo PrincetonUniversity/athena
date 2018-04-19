@@ -473,6 +473,7 @@ if args['fft']:
 # -hdf5 argument
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
+
   if args['hdf5_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(args['hdf5_path'])
     makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
@@ -488,14 +489,14 @@ if args['hdf5']:
         ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib' \
         + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
-    # -h5double argument (ignored if no -hdf5)
-    if args['h5double']:
-      definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
-    else:
-      definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
 
+# -h5double argument (does nothing if no -hdf5)
+if args['h5double']:
+  definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
+else:
+  definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
@@ -563,6 +564,7 @@ print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
+print('  HDF5 precision:          ' + ('double' if args['h5double'] else 'single'))
 print('  Compiler:                ' + args['cxx'])
 print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' ' \
     + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
