@@ -33,6 +33,21 @@
 #include <mpi.h>   // MPI_COMM_WORLD, MPI_INFO_NULL
 #endif
 
+// typedefs that allow HDF5 output written in either floats or doubles
+#if H5_DOUBLE_PRECISION_ENABLED
+  typedef double H5Real;
+#if SINGLE_PRECISION_ENABLED
+#error "Cannot create HDF5 output at higher precision than internal representation"
+#endif
+#define H5T_NATIVE_REAL H5T_NATIVE_DOUBLE
+#define H5T_IEEE_REAL H5T_IEEE_F64BE
+
+#else
+  typedef float H5Real;
+#define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
+#define H5T_IEEE_REAL H5T_IEEE_F32BE
+#endif
+
 //----------------------------------------------------------------------------------------
 // ATHDF5Output constructor
 // destructor - not needed for this derived class
@@ -70,13 +85,13 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int num_blocks_local;                       // number of MeshBlocks on this Mesh
   int *levels_mesh;                           // array of refinement levels on Mesh
   int64_t *locations_mesh;                   // array of logical locations on Mesh
-  float *x1f_mesh;                            // array of x1 values on Mesh
-  float *x2f_mesh;                            // array of x2 values on Mesh
-  float *x3f_mesh;                            // array of x3 values on Mesh
-  float *x1v_mesh;                            // array of x1 values on Mesh
-  float *x2v_mesh;                            // array of x2 values on Mesh
-  float *x3v_mesh;                            // array of x3 values on Mesh
-  float **data_buffers;                       // array of data buffers
+  H5Real *x1f_mesh;                            // array of x1 values on Mesh
+  H5Real *x2f_mesh;                            // array of x2 values on Mesh
+  H5Real *x3f_mesh;                            // array of x3 values on Mesh
+  H5Real *x1v_mesh;                            // array of x1 values on Mesh
+  H5Real *x2v_mesh;                            // array of x2 values on Mesh
+  H5Real *x3v_mesh;                            // array of x3 values on Mesh
+  H5Real **data_buffers;                       // array of data buffers
 
   MeshBlock *pmb=pm->pblock;
   OutputData* pod;
@@ -234,15 +249,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // Allocate contiguous buffers for data in memory
   levels_mesh = new int[num_blocks_local];
   locations_mesh = new int64_t[num_blocks_local * 3];
-  x1f_mesh = new float[num_blocks_local * (nx1+1)];
-  x2f_mesh = new float[num_blocks_local * (nx2+1)];
-  x3f_mesh = new float[num_blocks_local * (nx3+1)];
-  x1v_mesh = new float[num_blocks_local * nx1];
-  x2v_mesh = new float[num_blocks_local * nx2];
-  x3v_mesh = new float[num_blocks_local * nx3];
-  data_buffers = new float *[num_datasets];
+  x1f_mesh = new H5Real[num_blocks_local * (nx1+1)];
+  x2f_mesh = new H5Real[num_blocks_local * (nx2+1)];
+  x3f_mesh = new H5Real[num_blocks_local * (nx3+1)];
+  x1v_mesh = new H5Real[num_blocks_local * nx1];
+  x2v_mesh = new H5Real[num_blocks_local * nx2];
+  x3v_mesh = new H5Real[num_blocks_local * nx3];
+  data_buffers = new H5Real *[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    data_buffers[n] = new float[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
+    data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
   int nb=0, nba=0;
   while(pmb!=NULL) {
@@ -277,10 +292,10 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
       // Load coordinates
       if (output_params.output_slicex1) {
-        x1f_mesh[nba*(nx1+1)]=static_cast<float>(pmb->pcoord->x1f(output_params.islice));
-        x1f_mesh[nba*(nx1+1)+1]=static_cast<float>(
+        x1f_mesh[nba*(nx1+1)]=static_cast<H5Real>(pmb->pcoord->x1f(output_params.islice));
+        x1f_mesh[nba*(nx1+1)+1]=static_cast<H5Real>(
             pmb->pcoord->x1f(output_params.islice+1));
-        x1v_mesh[nba*nx1]=static_cast<float>(pmb->pcoord->x1v(output_params.islice));
+        x1v_mesh[nba*nx1]=static_cast<H5Real>(pmb->pcoord->x1v(output_params.islice));
       } else if (output_params.output_sumx1) {
         x1f_mesh[nba*(nx1+1)] = pmb->pcoord->x1f(pmb->is);
         x1f_mesh[nba*(nx1+1)+1] = pmb->pcoord->x1f(pmb->ie+1);
@@ -291,17 +306,17 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int i=out_is, index=0; i <= out_ie+1; ++i, ++index)
-          x1f_mesh[nba*(nx1+1) + index] = static_cast<float>(pmb->pcoord->x1f(i));
+          x1f_mesh[nba*(nx1+1) + index] = static_cast<H5Real>(pmb->pcoord->x1f(i));
         for (int i=out_is, index=0; i <= out_ie; ++i, ++index)
-          x1v_mesh[nba*nx1 + index] = static_cast<float>(pmb->pcoord->x1v(i));
+          x1v_mesh[nba*nx1 + index] = static_cast<H5Real>(pmb->pcoord->x1v(i));
       }
       if (output_params.output_slicex2) {
         x2f_mesh[nba*(nx2+1)]
-            =static_cast<float>(pmb->pcoord->x2f(output_params.jslice));
+            =static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice));
         x2f_mesh[nba*(nx2+1)+1]
-            =static_cast<float>(pmb->pcoord->x2f(output_params.jslice+1));
+            =static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice+1));
         x2v_mesh[nba*nx2]
-            =static_cast<float>(pmb->pcoord->x2v(output_params.jslice));
+            =static_cast<H5Real>(pmb->pcoord->x2v(output_params.jslice));
       } else if (output_params.output_sumx2) {
         x2f_mesh[nba*(nx2+1)] = pmb->pcoord->x2f(pmb->js);
         x2f_mesh[nba*(nx2+1)+1] = pmb->pcoord->x2f(pmb->je+1);
@@ -312,17 +327,17 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int j=out_js, index=0; j <= out_je+1; ++j, ++index)
-          x2f_mesh[nba*(nx2+1) + index] = static_cast<float>(pmb->pcoord->x2f(j));
+          x2f_mesh[nba*(nx2+1) + index] = static_cast<H5Real>(pmb->pcoord->x2f(j));
         for (int j=out_js, index=0; j <= out_je; ++j, ++index)
-          x2v_mesh[nba*nx2 + index] = static_cast<float>(pmb->pcoord->x2v(j));
+          x2v_mesh[nba*nx2 + index] = static_cast<H5Real>(pmb->pcoord->x2v(j));
       }
       if (output_params.output_slicex3) {
         x3f_mesh[nba*(nx3+1)]
-            =static_cast<float>(pmb->pcoord->x3f(output_params.kslice));
+            =static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice));
         x3f_mesh[nba*(nx3+1)+1]
-            =static_cast<float>(pmb->pcoord->x3f(output_params.kslice+1));
+            =static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice+1));
         x3v_mesh[nba*nx3]
-            =static_cast<float>(pmb->pcoord->x3v(output_params.kslice));
+            =static_cast<H5Real>(pmb->pcoord->x3v(output_params.kslice));
       } else if (output_params.output_sumx3) {
         x3f_mesh[nba*(nx3+1)] = pmb->pcoord->x3f(pmb->ks);
         x3f_mesh[nba*(nx3+1)+1] = pmb->pcoord->x3f(pmb->ke+1);
@@ -333,9 +348,9 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int k=out_ks, index=0; k <= out_ke+1; ++k, ++index)
-          x3f_mesh[nba*(nx3+1) + index] = static_cast<float>(pmb->pcoord->x3f(k));
+          x3f_mesh[nba*(nx3+1) + index] = static_cast<H5Real>(pmb->pcoord->x3f(k));
         for (int k=out_ks, index=0; k <= out_ke; ++k, ++index)
-          x3v_mesh[nba*nx3 + index] = static_cast<float>(pmb->pcoord->x3v(k));
+          x3v_mesh[nba*nx3 + index] = static_cast<H5Real>(pmb->pcoord->x3v(k));
       }
 
       // store the data into the data_buffers
@@ -438,7 +453,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
-  code_time = static_cast<float>(time); // output time for xdmf
+  code_time = static_cast<H5Real>(time); // output time for xdmf
 
   // Write coordinate system
   if (std::strlen(COORDINATE_SYSTEM) > max_name_length) {
@@ -569,21 +584,21 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   dataset_locations = H5Dcreate(file, "LogicalLocations", H5T_STD_I64BE,
       filespace_blocks_3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1f = H5Dcreate(file, "x1f", H5T_IEEE_F32BE, filespace_blocks_nx1,
+  dataset_x1f = H5Dcreate(file, "x1f", H5T_IEEE_REAL, filespace_blocks_nx1,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2f = H5Dcreate(file, "x2f", H5T_IEEE_F32BE, filespace_blocks_nx2,
+  dataset_x2f = H5Dcreate(file, "x2f", H5T_IEEE_REAL, filespace_blocks_nx2,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3f = H5Dcreate(file, "x3f", H5T_IEEE_F32BE, filespace_blocks_nx3,
+  dataset_x3f = H5Dcreate(file, "x3f", H5T_IEEE_REAL, filespace_blocks_nx3,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1v = H5Dcreate(file, "x1v", H5T_IEEE_F32BE, filespace_blocks_nx1v,
+  dataset_x1v = H5Dcreate(file, "x1v", H5T_IEEE_REAL, filespace_blocks_nx1v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2v = H5Dcreate(file, "x2v", H5T_IEEE_F32BE, filespace_blocks_nx2v,
+  dataset_x2v = H5Dcreate(file, "x2v", H5T_IEEE_REAL, filespace_blocks_nx2v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3v = H5Dcreate(file, "x3v", H5T_IEEE_F32BE, filespace_blocks_nx3v,
+  dataset_x3v = H5Dcreate(file, "x3v", H5T_IEEE_REAL, filespace_blocks_nx3v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   datasets_celldata = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_IEEE_F32BE,
+    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_IEEE_REAL,
         filespaces_vars_blocks_nx3_nx2_nx1[n], H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Prepare local (hyperslabbed) dataspaces for writing datasets to file
@@ -669,22 +684,22 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       property_list, locations_mesh);
 
   // Write coordinates
-  H5Dwrite(dataset_x1f, H5T_NATIVE_FLOAT, memspace_blocks_nx1, filespace_blocks_nx1,
+  H5Dwrite(dataset_x1f, H5T_NATIVE_REAL, memspace_blocks_nx1, filespace_blocks_nx1,
       property_list, x1f_mesh);
-  H5Dwrite(dataset_x2f, H5T_NATIVE_FLOAT, memspace_blocks_nx2, filespace_blocks_nx2,
+  H5Dwrite(dataset_x2f, H5T_NATIVE_REAL, memspace_blocks_nx2, filespace_blocks_nx2,
       property_list, x2f_mesh);
-  H5Dwrite(dataset_x3f, H5T_NATIVE_FLOAT, memspace_blocks_nx3, filespace_blocks_nx3,
+  H5Dwrite(dataset_x3f, H5T_NATIVE_REAL, memspace_blocks_nx3, filespace_blocks_nx3,
       property_list, x3f_mesh);
-  H5Dwrite(dataset_x1v, H5T_NATIVE_FLOAT, memspace_blocks_nx1v, filespace_blocks_nx1v,
+  H5Dwrite(dataset_x1v, H5T_NATIVE_REAL, memspace_blocks_nx1v, filespace_blocks_nx1v,
       property_list, x1v_mesh);
-  H5Dwrite(dataset_x2v, H5T_NATIVE_FLOAT, memspace_blocks_nx2v, filespace_blocks_nx2v,
+  H5Dwrite(dataset_x2v, H5T_NATIVE_REAL, memspace_blocks_nx2v, filespace_blocks_nx2v,
       property_list, x2v_mesh);
-  H5Dwrite(dataset_x3v, H5T_NATIVE_FLOAT, memspace_blocks_nx3v, filespace_blocks_nx3v,
+  H5Dwrite(dataset_x3v, H5T_NATIVE_REAL, memspace_blocks_nx3v, filespace_blocks_nx3v,
       property_list, x3v_mesh);
 
   // Write cell data
   for (int n = 0; n < num_datasets; ++n)
-    H5Dwrite(datasets_celldata[n], H5T_NATIVE_FLOAT,
+    H5Dwrite(datasets_celldata[n], H5T_NATIVE_REAL,
         memspaces_vars_blocks_nx3_nx2_nx1[n], filespaces_vars_blocks_nx3_nx2_nx1[n],
         property_list, data_buffers[n]);
 
