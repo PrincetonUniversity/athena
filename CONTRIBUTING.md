@@ -27,7 +27,7 @@ There are three possible levels of [permissions for a repository belonging to an
 * **Write**: a handful of experienced Athena++ developers who frequently contribute to significant portions of the codebase and/or work directly on a branch.
   * These users may push directly to the private repository's branches, with some caveats. See below section on the [Code review policy](#code-review-policy).
 * **Read**: a larger group of users, developers, and students who have a compelling need for the latest development version of Athena++.
- * Read access allows the user to create a private forked repository, `<username>/athena`. The collaborator has complete freedom to experiment with changes within the fork without affecting the original project.
+  * Read access allows the user to create a private forked repository, `<username>/athena`. The collaborator has complete freedom to experiment with changes within the fork without affecting the original project.
  * **Note**: the user's private fork will be deleted on GitHub if the individual is ever removed as a [collaborator](https://help.github.com/articles/adding-outside-collaborators-to-repositories-in-your-organization/).
 
 [GitHub Teams](https://help.github.com/articles/organizing-members-into-teams/), `Athena++_PP` (Write) and `Athena++` (Admin), were originally used to control permission levels for groups of users; however, this is being phased out in favor of setting individual collaborator permissions.
@@ -138,7 +138,7 @@ git config --global pull.rebase true
 ```
 
 ### Pull requests
-When your changes are ready for submission, you may [open a new pull request to `master`](https://github.com/PrincetonUniversity/athena/pull/new/master) from a branch on either your fork or the main repository. Fill out the relevant sections of the [`PULL_REQUEST_TEMPLATE.md`](https://github.com/PrincetonUniversity/athena/blob/master/.github/PULL_REQUEST_TEMPLATE.md) to the best of your ability when submitting a new PR.
+When your changes are ready for submission, you may open a new pull request to `master` [from a branch on the main repository (Write access)](https://github.com/PrincetonUniversity/athena/pull/new/master) or from a branch on your private forked repository. For the latter, go to the page for your fork on GitHub, select your development branch, and click the pull request button. Fill out the relevant sections of the [`PULL_REQUEST_TEMPLATE.md`](https://github.com/PrincetonUniversity/athena/blob/master/.github/PULL_REQUEST_TEMPLATE.md) to the best of your ability when submitting a new PR.
 
 We will discuss the proposed changes and may request that you make modifications to your code before merging. To do so, simply commit to the feature branch and push your changes to GitHub, and your pull request will reflect these updates.
 
