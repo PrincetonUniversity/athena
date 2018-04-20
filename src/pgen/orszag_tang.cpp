@@ -33,7 +33,9 @@
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Problem Generator for the Orszag-Tang test
+//  \brief Problem Generator for the Orszag-Tang test.  The initial conditions are
+//  constructed assuming the domain extends over [-0.5x0.5, -0.5x0.5], so that exact
+//  symmetry can be enforced across x=0 and y=0.
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -47,12 +49,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real B0 = 1.0/sqrt(4.0*PI);
   Real d0 = 25.0/(36.0*PI);
   Real v0 = 1.0;
-  Real p0 = 5.0/(12*PI);
+  Real p0 = 5.0/(12.0*PI);
 
   // Initialize vector potential
   for (int j=js; j<=je+1; ++j) {
   for (int i=is; i<=ie+1; ++i) {
-    az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pcoord->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pcoord->x2f(j));
+    az(j,i) = B0/(4.0*PI)*(cos(4.0*PI*pcoord->x1f(i)) - 2.0*cos(2.0*PI*pcoord->x2f(j)));
   }}
 
   // Initialize density, momentum, face-centered fields
@@ -60,8 +62,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     phydro->u(IDN,k,j,i) = d0;
-    phydro->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pcoord->x2v(j));
-    phydro->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pcoord->x1v(i));
+    phydro->u(IM1,k,j,i) =  d0*v0*sin(2.0*PI*pcoord->x2v(j));
+    phydro->u(IM2,k,j,i) = -d0*v0*sin(2.0*PI*pcoord->x1v(i));
     phydro->u(IM3,k,j,i) = 0.0;
   }}}
 
