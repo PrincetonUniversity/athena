@@ -63,6 +63,9 @@
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
+// HDF5 floating point ouptut precision option
+#define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
+
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
 #define COMPILER_COMMAND "@COMPILER_COMMAND@"
