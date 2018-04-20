@@ -1,5 +1,5 @@
-#ifndef EOS_HPP_
-#define EOS_HPP_
+#ifndef EOS_EOS_HPP_
+#define EOS_EOS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -119,4 +119,4 @@ private:
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
 };
 
-#endif
+#endif // EOS_EOS_HPP_

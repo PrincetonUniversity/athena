@@ -112,4 +112,4 @@ private:
   void EndWriting(void);
 
 };
-#endif
+#endif // PARAMETER_INPUT_HPP_

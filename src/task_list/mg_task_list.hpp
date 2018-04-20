@@ -1,5 +1,5 @@
-#ifndef MG_TASK_LIST_HPP_
-#define MG_TASK_LIST_HPP_
+#ifndef TASK_LIST_MG_TASK_LIST_HPP_
+#define TASK_LIST_MG_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -123,4 +123,4 @@ namespace MultigridTaskNames {
   const uint64_t MG_FMGPROLONG  = 1LL<<40;
 }; // namespace MultigridTaskNames
 
-#endif // MG_TASK_LIST_HPP_
+#endif // TASK_LIST_MG_TASK_LIST_HPP_

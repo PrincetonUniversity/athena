@@ -1,5 +1,5 @@
-#ifndef MGGRAVITY_HPP_
-#define MGGRAVITY_HPP_
+#ifndef GRAVITY_MGGRAVITY_HPP_
+#define GRAVITY_MGGRAVITY_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -51,4 +51,4 @@ private:
   Real four_pi_G_;
 };
 
-#endif // MGGRAVITY_HPP_
+#endif // GRAVITY_MGGRAVITY_HPP_

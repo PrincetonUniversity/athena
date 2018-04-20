@@ -1,5 +1,5 @@
-#ifndef DEFINITIONS_HPP
-#define DEFINITIONS_HPP
+#ifndef DEFS_HPP_
+#define DEFS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -90,4 +90,4 @@
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
-#endif
+#endif // DEFS_HPP_

@@ -1,5 +1,5 @@
-#ifndef MULTIGRID_HPP_
-#define MULTIGRID_HPP_
+#ifndef MULTIGRID_MULTIGRID_HPP_
+#define MULTIGRID_MULTIGRID_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -160,4 +160,4 @@ private:
 };
 
 
-#endif // MULTIGRID_HPP_
+#endif // MULTIGRID_MULTIGRID_HPP_

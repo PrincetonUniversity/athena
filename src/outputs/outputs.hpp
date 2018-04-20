@@ -1,5 +1,5 @@
-#ifndef OUTPUTS_HPP_
-#define OUTPUTS_HPP_
+#ifndef OUTPUTS_OUTPUTS_HPP_
+#define OUTPUTS_OUTPUTS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -184,4 +184,4 @@ public:
 private:
   OutputType *pfirst_type_; // ptr to first OutputType in linked list
 };
-#endif
+#endif // OUTPUTS_OUTPUTS_HPP_

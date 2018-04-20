@@ -1,5 +1,5 @@
-#ifndef GRAVITY_HPP_
-#define GRAVITY_HPP_
+#ifndef GRAVITY_GRAVITY_HPP_
+#define GRAVITY_GRAVITY_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -43,4 +43,4 @@ private:
 
 };
 
-#endif // GRAVITY_HPP_
+#endif // GRAVITY_GRAVITY_HPP_

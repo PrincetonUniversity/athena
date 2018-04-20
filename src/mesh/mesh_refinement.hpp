@@ -1,5 +1,5 @@
-#ifndef MESH_REFINEMENT_HPP_
-#define MESH_REFINEMENT_HPP_
+#ifndef MESH_MESH_REFINEMENT_HPP_
+#define MESH_MESH_REFINEMENT_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -71,4 +71,4 @@ private:
   AMRFlagFunc_t AMRFlag_;
 };
 
-#endif // MESH_REFINEMENT_HPP_
+#endif // MESH_MESH_REFINEMENT_HPP_

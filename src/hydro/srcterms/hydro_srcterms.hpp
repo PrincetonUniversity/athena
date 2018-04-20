@@ -1,5 +1,5 @@
-#ifndef HYDRO_SRCTERMS_HPP_
-#define HYDRO_SRCTERMS_HPP_
+#ifndef HYDRO_SRCTERMS_HYDRO_SRCTERMS_HPP_
+#define HYDRO_SRCTERMS_HYDRO_SRCTERMS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -58,4 +58,4 @@ private:
   Real Omega_0_, qshear_; // Orbital freq and shear rate
   int  ShBoxCoord_;       // ShearCoordinate type: 1=xy (default), 2=xz
 };
-#endif
+#endif // HYDRO_SRCTERMS_HYDRO_SRCTERMS_HPP_

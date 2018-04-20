@@ -1,5 +1,5 @@
-#ifndef MESH_HPP_
-#define MESH_HPP_
+#ifndef MESH_MESH_HPP_
+#define MESH_MESH_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -322,4 +322,4 @@ inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
   return (static_cast<Real> (0.5)-x)*rs.x3min + (static_cast<Real>(0.5)+x)*rs.x3max;
 }
 
-#endif  // MESH_HPP_
+#endif  // MESH_MESH_HPP_

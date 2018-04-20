@@ -1,5 +1,5 @@
-#ifndef COORDINATES_HPP_
-#define COORDINATES_HPP_
+#ifndef COORDINATES_COORDINATES_HPP_
+#define COORDINATES_COORDINATES_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -650,4 +650,4 @@ public:
       Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
 };
 
-#endif // COORDINATES_HPP_
+#endif // COORDINATES_COORDINATES_HPP_

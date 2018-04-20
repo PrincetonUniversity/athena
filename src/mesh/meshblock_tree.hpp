@@ -1,5 +1,5 @@
-#ifndef MESHBLOCK_TREE_HPP_
-#define MESHBLOCK_TREE_HPP_
+#ifndef MESH_MESHBLOCK_TREE_HPP_
+#define MESH_MESHBLOCK_TREE_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -59,4 +59,4 @@ private:
   int gid;
 };
 
-#endif // MESHBLOCK_TREE_HPP_
+#endif // MESH_MESHBLOCK_TREE_HPP_

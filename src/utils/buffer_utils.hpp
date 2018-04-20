@@ -1,5 +1,5 @@
-#ifndef BUFFER_UTILS_HPP_
-#define BUFFER_UTILS_HPP_
+#ifndef UTILS_BUFFER_UTILS_HPP_
+#define UTILS_BUFFER_UTILS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -21,4 +21,4 @@ void Pack3DData(AthenaArray<Real> &src, Real *buf,
 void Unpack3DData(Real *buf, AthenaArray<Real> &dst,
                   int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 }
-#endif // BUFFER_UTILS_HPP_
+#endif // UTILS_BUFFER_UTILS_HPP_
