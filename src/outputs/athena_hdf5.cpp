@@ -40,12 +40,10 @@
 #error "Cannot create HDF5 output at higher precision than internal representation"
 #endif
 #define H5T_NATIVE_REAL H5T_NATIVE_DOUBLE
-#define H5T_IEEE_REAL H5T_IEEE_F64BE
 
 #else
   typedef float H5Real;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
-#define H5T_IEEE_REAL H5T_IEEE_F32BE
 #endif
 
 //----------------------------------------------------------------------------------------
@@ -449,7 +447,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   // Write simulation time
   double time = pm->time;
-  attribute = H5Acreate2(file, "Time", H5T_IEEE_F64BE, dataspace_scalar, H5P_DEFAULT,
+  attribute = H5Acreate2(file, "Time", H5T_NATIVE_REAL, dataspace_scalar, H5P_DEFAULT,
       H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
@@ -472,7 +470,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   coord_range[0] = pm->mesh_size.x1min;
   coord_range[1] = pm->mesh_size.x1max;
   coord_range[2] = pm->mesh_size.x1rat;
-  attribute = H5Acreate2(file, "RootGridX1", H5T_IEEE_F64BE, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX1", H5T_NATIVE_REAL, dataspace_triple,
       H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -481,7 +479,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   coord_range[0] = pm->mesh_size.x2min;
   coord_range[1] = pm->mesh_size.x2max;
   coord_range[2] = pm->mesh_size.x2rat;
-  attribute = H5Acreate2(file, "RootGridX2", H5T_IEEE_F64BE, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX2", H5T_NATIVE_REAL, dataspace_triple,
       H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -490,7 +488,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   coord_range[0] = pm->mesh_size.x3min;
   coord_range[1] = pm->mesh_size.x3max;
   coord_range[2] = pm->mesh_size.x3rat;
-  attribute = H5Acreate2(file, "RootGridX3", H5T_IEEE_F64BE, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX3", H5T_NATIVE_REAL, dataspace_triple,
       H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -584,21 +582,21 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   dataset_locations = H5Dcreate(file, "LogicalLocations", H5T_STD_I64BE,
       filespace_blocks_3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1f = H5Dcreate(file, "x1f", H5T_IEEE_REAL, filespace_blocks_nx1,
+  dataset_x1f = H5Dcreate(file, "x1f", H5T_NATIVE_REAL, filespace_blocks_nx1,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2f = H5Dcreate(file, "x2f", H5T_IEEE_REAL, filespace_blocks_nx2,
+  dataset_x2f = H5Dcreate(file, "x2f", H5T_NATIVE_REAL, filespace_blocks_nx2,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3f = H5Dcreate(file, "x3f", H5T_IEEE_REAL, filespace_blocks_nx3,
+  dataset_x3f = H5Dcreate(file, "x3f", H5T_NATIVE_REAL, filespace_blocks_nx3,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1v = H5Dcreate(file, "x1v", H5T_IEEE_REAL, filespace_blocks_nx1v,
+  dataset_x1v = H5Dcreate(file, "x1v", H5T_NATIVE_REAL, filespace_blocks_nx1v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2v = H5Dcreate(file, "x2v", H5T_IEEE_REAL, filespace_blocks_nx2v,
+  dataset_x2v = H5Dcreate(file, "x2v", H5T_NATIVE_REAL, filespace_blocks_nx2v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3v = H5Dcreate(file, "x3v", H5T_IEEE_REAL, filespace_blocks_nx3v,
+  dataset_x3v = H5Dcreate(file, "x3v", H5T_NATIVE_REAL, filespace_blocks_nx3v,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   datasets_celldata = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_IEEE_REAL,
+    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_NATIVE_REAL,
         filespaces_vars_blocks_nx3_nx2_nx1[n], H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Prepare local (hyperslabbed) dataspaces for writing datasets to file
