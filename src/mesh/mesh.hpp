@@ -248,6 +248,28 @@ private:
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }
 };
 
+
+//----------------------------------------------------------------------------------------
+// \!fn Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool unit_interval)
+// \brief wrapper fn to compute Real x logical location for either [0, 1] or [-0.5, 0.5]
+//        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
+
+inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool unit_interval) {
+  // index is typically 0, ... nrange for non-ghost boundaries
+  if (unit_interval == true) {
+    // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
+    return static_cast<Real>(index)/static_cast<Real>(nrange);
+  } else {
+    // to map to a [-0.5, 0.5] range, rescale int indices around 0 before FP conversion
+    // if nrange is even, there is a central index; map it to 0
+    // if nrange is odd, the center 0.0 is between two indices; map them to -1, 1
+    int64_t noffset = index - (nrange)/2;
+    int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
+    // average the (possibly) biased integer indexing
+    return static_cast<Real>(noffset + noffset_ceil)/(2.0*nrange);
+  }
+}
+
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0, 1]
@@ -262,6 +284,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
+  // linear interp, equally weighted from left (x(xmin)=0.0) and right (x(xmax)=1.0)
   return rs.x1min*lw+rs.x1max*rw;
 }
 
@@ -304,6 +327,7 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
 // \brief x1 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
+  // linear interp, equally weighted from left (x(xmin)=-0.5) and right (x(xmax)=0.5)
   return (static_cast<Real>(0.5)-x)*rs.x1min + (static_cast<Real>(0.5)+x)*rs.x1max;
 }
 
