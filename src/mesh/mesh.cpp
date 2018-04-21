@@ -200,7 +200,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-  //initialize user-enrollable functions
+  // initialize user-enrollable functions
   if (mesh_size.x1rat!=1.0)
     use_uniform_meshgen_fn_[X1DIR]=false;
   else
@@ -772,7 +772,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     throw std::runtime_error(msg.str().c_str());
   }
   for (i=nbs;i<=nbe;i++) {
-    int buff_os = datasize * (i-nbs);
+    // Match fixed-width integer precision of IOWrapperSize_t datasize
+    uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if (i==nbs) {
