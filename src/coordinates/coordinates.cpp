@@ -70,7 +70,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       } else {
         noffset = static_cast<int64_t>((i-is)*2 + lx1*block_size.nx1);
       }
-      Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
+      Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
       x1f(i) = pm->MeshGenerator_[X1DIR](rx, mesh_size);
     }
     x1f(is) = block_size.x1min;
@@ -101,7 +101,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       } else {
         noffset = static_cast<int64_t>((i-is)*2 + lx1*block_size.nx1);
       }
-      Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
+      Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
       x1f(i) = pm->MeshGenerator_[X1DIR](rx, mesh_size);
     }
     x1f(is) = block_size.x1min;
@@ -140,7 +140,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = static_cast<int64_t>((j-js)*2 + lx2*block_size.nx2);
         }
-        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
+        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
         x2f(j) = pm->MeshGenerator_[X2DIR](rx, mesh_size);
       }
       x2f(js) = block_size.x2min;
@@ -170,7 +170,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = static_cast<int64_t>((j-js)*2 + lx2*block_size.nx2);
         }
-        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
+        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
         x2f(j) = pm->MeshGenerator_[X2DIR](rx, mesh_size);
       }
       x2f(js) = block_size.x2min;
@@ -218,7 +218,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = static_cast<int64_t>((k-ks)*2 + lx3*block_size.nx3);
         }
-        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
+        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
         x3f(k) = pm->MeshGenerator_[X3DIR](rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;
@@ -248,7 +248,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
         } else {
           noffset = static_cast<int64_t>((k-ks)*2 + lx3*block_size.nx3);
         }
-        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
+        Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
         x3f(k) = pm->MeshGenerator_[X3DIR](rx, mesh_size);
       }
       x3f(ks) = block_size.x3min;
