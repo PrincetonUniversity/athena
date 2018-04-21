@@ -58,7 +58,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   RegionSize block_size;
   MeshBlock *pfirst;
   enum BoundaryFlag block_bcs[6];
-  int nbmax, dim;
+  int64_t nbmax;
+  int dim;
 
   // mesh test
   if (mesh_test>0) Globals::nranks=mesh_test;
