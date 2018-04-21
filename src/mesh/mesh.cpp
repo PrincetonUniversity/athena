@@ -202,17 +202,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   //initialize user-enrollable functions
   if (mesh_size.x1rat!=1.0)
-    use_meshgen_fn_[X1DIR]=true;
+    use_uniform_meshgen_fn_[X1DIR]=false;
   else
-    use_meshgen_fn_[X1DIR]=false;
+    use_uniform_meshgen_fn_[X1DIR]=true;
   if (mesh_size.x2rat!=1.0)
-    use_meshgen_fn_[X2DIR]=true;
+    use_uniform_meshgen_fn_[X2DIR]=false;
   else
-    use_meshgen_fn_[X2DIR]=false;
+    use_uniform_meshgen_fn_[X2DIR]=true;
   if (mesh_size.x3rat!=1.0)
-    use_meshgen_fn_[X3DIR]=true;
+    use_uniform_meshgen_fn_[X3DIR]=false;
   else
-    use_meshgen_fn_[X3DIR]=false;
+    use_uniform_meshgen_fn_[X3DIR]=true;
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
@@ -590,19 +590,19 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   nrbx2=mesh_size.nx2/block_size.nx2;
   nrbx3=mesh_size.nx3/block_size.nx3;
 
-  //initialize user-enrollable functions
+  // initialize user-enrollable functions
   if (mesh_size.x1rat!=1.0)
-    use_meshgen_fn_[X1DIR]=true;
+    use_uniform_meshgen_fn_[X1DIR]=false;
   else
-    use_meshgen_fn_[X1DIR]=false;
+    use_uniform_meshgen_fn_[X1DIR]=true;
   if (mesh_size.x2rat!=1.0)
-    use_meshgen_fn_[X2DIR]=true;
+    use_uniform_meshgen_fn_[X2DIR]=false;
   else
-    use_meshgen_fn_[X2DIR]=false;
+    use_uniform_meshgen_fn_[X2DIR]=true;
   if (mesh_size.x3rat!=1.0)
-    use_meshgen_fn_[X3DIR]=true;
+    use_uniform_meshgen_fn_[X3DIR]=false;
   else
-    use_meshgen_fn_[X3DIR]=false;
+    use_uniform_meshgen_fn_[X3DIR]=true;
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
@@ -1058,7 +1058,7 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
         " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  use_meshgen_fn_[dir]=true;
+  use_uniform_meshgen_fn_[dir]=false;
   MeshGenerator_[dir]=my_mg;
   return;
 }

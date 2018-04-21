@@ -61,7 +61,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
   nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
 
-  if (pm->use_meshgen_fn_[X1DIR]==true) { // use nonuniform or user-defined meshgen fn
+  // use nonuniform or user-defined meshgen fn
+  if (pm->use_uniform_meshgen_fn_[X1DIR]==false) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
@@ -91,7 +92,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
   } else {
-    // uniform grid: even though use_mesghen_fn[X1DIR]=false, use UniformMeshGeneratorX1()
+    // uniform grid: use UniformMeshGeneratorX1()
     Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
@@ -134,10 +135,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 //--- X2-DIRECTION: initialize coordinates and spacing of cell FACES (x2f,dx2f)
 
   if (ncells2 > 1) {
-
     nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
 
-    if (pm->use_meshgen_fn_[X2DIR]==true) { // use nonuniform or user-defined meshgen fn
+    // use nonuniform or user-defined meshgen fn
+    if (pm->use_uniform_meshgen_fn_[X2DIR]==false) {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
@@ -167,7 +168,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
     } else {
-      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX2()
+      // uniform grid: use UniformMeshGeneratorX2()
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for (int j=js-ng; j<=je+ng+1; ++j) {
         if (coarse_flag == false) {
@@ -215,10 +216,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 //--- X3-DIRECTION: initialize coordinates and spacing of cell FACES (x3f,dx3f)
 
   if (ncells3 > 1) {
-
     nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
 
-    if (pm->use_meshgen_fn_[X3DIR]==true) {  // use nonuniform or user-defined meshgen fn
+    // use nonuniform or user-defined meshgen fn
+    if (pm->use_uniform_meshgen_fn_[X3DIR]==false) {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
@@ -248,7 +249,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
     } else {
-      // uniform grid: even though use_mesghen_fn is false, use UniformMeshGeneratorX3()
+      // uniform grid: use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         if (coarse_flag == false) {

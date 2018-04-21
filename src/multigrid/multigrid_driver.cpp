@@ -42,8 +42,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  if (pmy_mesh_->use_meshgen_fn_[X1DIR]==true || pmy_mesh_->use_meshgen_fn_[X2DIR]==true
-  || pmy_mesh_->use_meshgen_fn_[X3DIR]==true) {
+  if (pmy_mesh_->use_uniform_meshgen_fn_[X1DIR]==false
+      || pmy_mesh_->use_uniform_meshgen_fn_[X2DIR]==false
+      || pmy_mesh_->use_uniform_meshgen_fn_[X3DIR]==false) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
