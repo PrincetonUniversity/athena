@@ -202,21 +202,28 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
   // initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0)
+  if (mesh_size.x1rat!=1.0) {
     use_uniform_meshgen_fn_[X1DIR]=false;
-  else
+    MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
+  } else {
     use_uniform_meshgen_fn_[X1DIR]=true;
-  if (mesh_size.x2rat!=1.0)
+    MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
+  }
+  if (mesh_size.x2rat!=1.0) {
     use_uniform_meshgen_fn_[X2DIR]=false;
-  else
+    MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
+  } else {
     use_uniform_meshgen_fn_[X2DIR]=true;
-  if (mesh_size.x3rat!=1.0)
+    MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
+  }
+  if (mesh_size.x3rat!=1.0) {
     use_uniform_meshgen_fn_[X3DIR]=false;
-  else
+    MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  } else {
     use_uniform_meshgen_fn_[X3DIR]=true;
-  MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
-  MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
-  MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+    MeshGenerator_[X3DIR]=UniformMeshGeneratorX3;
+  }
+
   for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
@@ -592,21 +599,28 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   nrbx3=mesh_size.nx3/block_size.nx3;
 
   // initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0)
+  if (mesh_size.x1rat!=1.0) {
     use_uniform_meshgen_fn_[X1DIR]=false;
-  else
+    MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
+  } else {
     use_uniform_meshgen_fn_[X1DIR]=true;
-  if (mesh_size.x2rat!=1.0)
+    MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
+  }
+  if (mesh_size.x2rat!=1.0) {
     use_uniform_meshgen_fn_[X2DIR]=false;
-  else
+    MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
+  } else {
     use_uniform_meshgen_fn_[X2DIR]=true;
-  if (mesh_size.x3rat!=1.0)
+    MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
+  }
+  if (mesh_size.x3rat!=1.0) {
     use_uniform_meshgen_fn_[X3DIR]=false;
-  else
+    MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  } else {
     use_uniform_meshgen_fn_[X3DIR]=true;
-  MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
-  MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
-  MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+    MeshGenerator_[X3DIR]=UniformMeshGeneratorX3;
+  }
+
   for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
