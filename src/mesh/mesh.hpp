@@ -261,8 +261,8 @@ inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool unit_inter
     return static_cast<Real>(index)/static_cast<Real>(nrange);
   } else {
     // to map to a [-0.5, 0.5] range, rescale int indices around 0 before FP conversion
-    // if nrange is even, there is a central index; map it to 0
-    // if nrange is odd, the center 0.0 is between two indices; map them to -1, 1
+    // if nrange is even, there is an index at center x=0.0; map it to (int) 0
+    // if nrange is odd, the center x=0.0 is between two indices; map them to -1, 1
     int64_t noffset = index - (nrange)/2;
     int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
     // average the (possibly) biased integer indexing
