@@ -187,19 +187,19 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (block_size.nx1 <4 || (block_size.nx2<4 && dim>=2)
-     || (block_size.nx3<4 && dim==3)) {
+  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
+     || (block_size.nx3 < 4 && dim==3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 meshes." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
   // calculate the number of the blocks
-  nrbx1=mesh_size.nx1/block_size.nx1;
-  nrbx2=mesh_size.nx2/block_size.nx2;
-  nrbx3=mesh_size.nx3/block_size.nx3;
-  nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
-  nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
+  nrbx1 = mesh_size.nx1/block_size.nx1;
+  nrbx2 = mesh_size.nx2/block_size.nx2;
+  nrbx3 = mesh_size.nx3/block_size.nx3;
+  nbmax = (nrbx1>nrbx2) ? nrbx1:nrbx2;
+  nbmax = (nbmax>nrbx3) ? nbmax:nrbx3;
 
   // initialize user-enrollable functions
   if (mesh_size.x1rat!=1.0) {
@@ -1473,7 +1473,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_size.x1min=mesh_size.x1min;
     block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx_ll);
+    Real rx = ComputeMeshGeneratorX(lx1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
   }
@@ -1481,7 +1481,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_size.x1max=mesh_size.x1max;
     block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx_ll);
+    Real rx = ComputeMeshGeneratorX(lx1+1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
   }
@@ -1498,7 +1498,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x2min=mesh_size.x2min;
       block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx_ll);
+      Real rx = ComputeMeshGeneratorX(lx2, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
     }
@@ -1506,7 +1506,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x2max=mesh_size.x2max;
       block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx_ll);
+      Real rx = ComputeMeshGeneratorX(lx2+1, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
     }
@@ -1524,7 +1524,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x3min=mesh_size.x3min;
       block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx_ll);
+      Real rx = ComputeMeshGeneratorX(lx3, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
     }
@@ -1532,7 +1532,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x3max=mesh_size.x3max;
       block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx_ll);
+      Real rx = ComputeMeshGeneratorX(lx3+1, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }
