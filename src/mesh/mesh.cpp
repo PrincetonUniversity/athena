@@ -180,9 +180,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     block_size.nx3=mesh_size.nx3;
 
   // check consistency of the block and mesh
-  if (mesh_size.nx1%block_size.nx1 != 0
-  || mesh_size.nx2%block_size.nx2 != 0
-  || mesh_size.nx3%block_size.nx3 != 0) {
+  if (mesh_size.nx1 % block_size.nx1 != 0
+  || mesh_size.nx2 % block_size.nx2 != 0
+  || mesh_size.nx3 % block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -266,8 +266,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   InitUserMeshData(pin);
 
   if (multilevel==true) {
-    if (block_size.nx1%2==1 || (block_size.nx2%2==1 && block_size.nx2>1)
-                           || (block_size.nx3%2==1 && block_size.nx3>1)) {
+    if (block_size.nx1 % 2==1 || (block_size.nx2 % 2==1 && block_size.nx2>1)
+                           || (block_size.nx3 % 2==1 && block_size.nx3>1)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
       << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
       << std::endl;
@@ -328,46 +328,46 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
         int64_t lxmax=nrbx1*(1L<<ref_lev);
         for (lx1min=0;lx1min<lxmax;lx1min++) {
-          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1min+1)/lxmax,mesh_size)
-              > ref_size.x1min)
+          Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
             break;
         }
         for (lx1max=lx1min;lx1max<lxmax;lx1max++) {
-          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1max+1)/lxmax,mesh_size)
-              >= ref_size.x1max)
+          Real rx=ComputeMeshGeneratorX(lx1max+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          if (MeshGenerator_[X1DIR](rx, mesh_size) >= ref_size.x1max)
             break;
         }
-        if (lx1min%2==1) lx1min--;
-        if (lx1max%2==0) lx1max++;
+        if (lx1min % 2==1) lx1min--;
+        if (lx1max % 2==0) lx1max++;
         if (dim>=2) { // 2D or 3D
           lxmax=nrbx2*(1L<<ref_lev);
           for (lx2min=0;lx2min<lxmax;lx2min++) {
-            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2min+1)/lxmax,mesh_size)
-                > ref_size.x2min)
+            Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
               break;
           }
           for (lx2max=lx2min;lx2max<lxmax;lx2max++) {
-            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2max+1)/lxmax,mesh_size)
-                >= ref_size.x2max)
+            Real rx=ComputeMeshGeneratorX(lx2max+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            if (MeshGenerator_[X2DIR](rx, mesh_size) >= ref_size.x2max)
               break;
           }
-          if (lx2min%2==1) lx2min--;
-          if (lx2max%2==0) lx2max++;
+          if (lx2min % 2==1) lx2min--;
+          if (lx2max % 2==0) lx2max++;
         }
         if (dim==3) { // 3D
           lxmax=nrbx3*(1L<<ref_lev);
           for (lx3min=0;lx3min<lxmax;lx3min++) {
-            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3min+1)/lxmax,mesh_size)
-                > ref_size.x3min)
+            Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
               break;
           }
           for (lx3max=lx3min;lx3max<lxmax;lx3max++) {
-            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3max+1)/lxmax,mesh_size)
-                >= ref_size.x3max)
+            Real rx=ComputeMeshGeneratorX(lx3max+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            if (MeshGenerator_[X3DIR](rx, mesh_size) >= ref_size.x3max)
               break;
           }
-          if (lx3min%2==1) lx3min--;
-          if (lx3max%2==0) lx3max++;
+          if (lx3min % 2==1) lx3min--;
+          if (lx3max % 2==0) lx3max++;
         }
         // create the finest level
         if (dim==1) {
