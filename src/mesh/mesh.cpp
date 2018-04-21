@@ -1450,20 +1450,22 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   int64_t &lx2=loc.lx2;
   int64_t &lx3=loc.lx3;
   int &ll=loc.level;
+  int64_t nrbx_ll = nrbx1<<(ll-root_level);
+
   // calculate physical block size, x1
   if (lx1==0) {
     block_size.x1min=mesh_size.x1min;
     block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx1<<(ll-root_level));
+    Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx_ll);
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
   }
-  if (lx1==(nrbx1<<(ll-root_level))-1) {
+  if (lx1==nrbx_ll-1) {
     block_size.x1max=mesh_size.x1max;
     block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx1<<(ll-root_level));
+    Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx_ll);
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
   }
@@ -1475,19 +1477,20 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
   } else {
+    nrbx_ll = nrbx2<<(ll-root_level);
     if (lx2==0) {
       block_size.x2min=mesh_size.x2min;
       block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx2<<(ll-root_level));
+      Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx_ll);
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
     }
-    if (lx2==(nrbx2<<(ll-root_level))-1) {
+    if (lx2==(nrbx_ll)-1) {
       block_size.x2max=mesh_size.x2max;
       block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx2<<(ll-root_level));
+      Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx_ll);
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
     }
@@ -1500,19 +1503,20 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
   } else {
+    nrbx_ll = nrbx3<<(ll-root_level);
     if (lx3==0) {
       block_size.x3min=mesh_size.x3min;
       block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx3<<(ll-root_level));
+      Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx_ll);
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
     }
-    if (lx3==(nrbx3<<(ll-root_level))-1) {
+    if (lx3==(nrbx_ll)-1) {
       block_size.x3max=mesh_size.x3max;
       block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx3<<(ll-root_level));
+      Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx_ll);
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }

@@ -249,7 +249,7 @@ private:
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location; x=i/nx1
+// \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
@@ -266,7 +266,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location; x=j/nx2
+// \brief x2 mesh generator function, x is the logical location; x=j/nx2, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
@@ -283,7 +283,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location; x=k/nx3
+// \brief x3 mesh generator function, x is the logical location; x=k/nx3, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
