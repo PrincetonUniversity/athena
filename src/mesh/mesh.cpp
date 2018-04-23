@@ -9,6 +9,7 @@
 // C headers
 #include <stdlib.h>
 #include <string.h>  // memcpy
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h> // int64_t format macro PRId64
 
 // C++ headers
