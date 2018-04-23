@@ -264,6 +264,7 @@ inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interv
     // if nrange is odd, the center x=0.0 is between two indices; map them to -1, 1
     int64_t noffset = index - (nrange)/2;
     int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
+    //std::cout << "noffset, noffset_ceil = " << noffset << ", " << noffset_ceil << "\n";
     // average the (possibly) biased integer indexing
     return static_cast<Real>(noffset + noffset_ceil)/(2.0*nrange);
   }
@@ -327,7 +328,7 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
 
 inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
   // linear interp, equally weighted from left (x(xmin)=-0.5) and right (x(xmax)=0.5)
-  return (static_cast<Real>(0.5)-x)*rs.x1min + (static_cast<Real>(0.5)+x)*rs.x1max;
+  return static_cast<Real>(0.5)*(rs.x1min+rs.x1max) + (x*rs.x1max - x*rs.x1min);
 }
 
 //----------------------------------------------------------------------------------------
@@ -335,7 +336,7 @@ inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
 // \brief x2 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
-  return (static_cast<Real>(0.5)-x)*rs.x2min + (static_cast<Real>(0.5)+x)*rs.x2max;
+  return static_cast<Real>(0.5)*(rs.x2min+rs.x2max) + (x*rs.x2max - x*rs.x2min);
 }
 
 //----------------------------------------------------------------------------------------
@@ -343,7 +344,7 @@ inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
 // \brief x3 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
-  return (static_cast<Real> (0.5)-x)*rs.x3min + (static_cast<Real>(0.5)+x)*rs.x3max;
+  return static_cast<Real>(0.5)*(rs.x3min+rs.x3max) + (x*rs.x3max - x*rs.x3min);
 }
 
 #endif  // MESH_MESH_HPP_
