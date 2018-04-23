@@ -42,6 +42,7 @@ struct RegionSize;
 //  \brief stores logical location and level of meshblock
 
 typedef struct LogicalLocation {
+  // These values can exceed the range of int32_t if >= 30 levels of AMR are used
   int64_t lx1, lx2, lx3;
   int level;
 
@@ -66,6 +67,7 @@ typedef struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
   Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  // the size of the root grid or a MeshBlock should not exceed int32_t limits
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 

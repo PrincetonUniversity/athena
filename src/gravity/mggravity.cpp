@@ -58,9 +58,10 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
 
   // Allocate multigrid objects
   RegionSize root_size=pmy_mesh_->mesh_size;
-  root_size.nx1=pmy_mesh_->nrbx1;
-  root_size.nx2=pmy_mesh_->nrbx2;
-  root_size.nx3=pmy_mesh_->nrbx3;
+  // int64_t nrbxi are unlikely to exceed int32_t limits when Multigrid is used
+  root_size.nx1 = static_cast<int>(pmy_mesh_->nrbx1);
+  root_size.nx2 = static_cast<int>(pmy_mesh_->nrbx2);
+  root_size.nx3 = static_cast<int>(pmy_mesh_->nrbx3);
   LogicalLocation lroot;
   lroot.lx1=0, lroot.lx2=0, lroot.lx3=0, lroot.level=0;
   mgroot_= new MGGravity(this,lroot,-1,-1,root_size,MGBoundary,pmy_mesh_->mesh_bcs,true);
