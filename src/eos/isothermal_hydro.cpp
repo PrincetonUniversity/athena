@@ -23,7 +23,7 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   iso_sound_speed_ = pin->GetReal("hydro","iso_sound_speed"); // error if missing!
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",sqrt(1024*(FLT_MIN)));
 }
 
 // destructor

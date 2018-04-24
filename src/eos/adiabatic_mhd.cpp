@@ -25,8 +25,8 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro","gamma");
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
-  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
+  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
 }
 
 // destructor
@@ -150,12 +150,12 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
-  Real asq = GetGamma()*prim[IPR]/prim[IDN];
-  Real vaxsq = bx*bx/prim[IDN];
-  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ])/prim[IDN];
+  Real asq = GetGamma()*prim[IPR];
+  Real vaxsq = bx*bx;
+  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
   Real qsq = vaxsq + ct2 + asq;
   Real tmp = vaxsq + ct2 - asq;
-  return std::sqrt(0.5*(qsq + std::sqrt(tmp*tmp + 4.0*asq*ct2)));
+  return std::sqrt(0.5*(qsq + std::sqrt(tmp*tmp + 4.0*asq*ct2))/prim[IDN]);
 }
 
 //---------------------------------------------------------------------------------------

@@ -45,8 +45,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", sqrt(1024*(FLT_MIN)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);

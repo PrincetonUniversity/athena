@@ -6,9 +6,6 @@
 //! \file characteristic.cpp
 //  \brief Functions to transform vectors between primitive and characteristic variables
 
-// C++ headers
-#include <cmath>
-
 // Athena++ headers
 #include "reconstruction.hpp"
 #include "../athena.hpp"
@@ -49,21 +46,25 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real sqrtd = std::sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = std::sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = std::sqrt(cfsq);
 
-        Real cssq = asq*vaxsq/cfsq;
+        cssq *= id;
         Real cs = std::sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = std::sqrt(asq);
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
@@ -76,7 +77,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -136,18 +137,21 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real sqrtd = std::sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = std::sqrt(cfsq);
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
+        cssq *= id;
         Real cs = std::sqrt(cssq);
 
         // Compute beta(s) (eq A17)
@@ -161,7 +165,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq-cssq) == 0.0) {
+        if ((cfsq-cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {
@@ -286,21 +290,25 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real id = 1.0/w(IDN,i);
         Real sqrtd = std::sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = std::sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = std::sqrt(cfsq);
 
-        Real cssq = asq*vaxsq/cfsq;
+        cssq *= id;
         Real cs = std::sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = std::sqrt(asq);
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
@@ -313,7 +321,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -369,18 +377,21 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real id = 1.0/w(IDN,i);
         Real sqrtd = std::sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
+
+        cfsq *= id;
         Real cf = std::sqrt(cfsq);
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
+        cssq *= id;
         Real cs = std::sqrt(cssq);
 
         // Compute beta(s) (eq A17)
@@ -394,7 +405,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {

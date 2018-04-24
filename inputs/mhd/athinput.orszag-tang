@@ -19,20 +19,20 @@ dt         = 0.01      # time increment between outputs
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
 tlim       = 1.0       # time limit
-integrator  = vl2       # time integration algorithm
-xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 1         # interval for stdout summary info
+integrator  = vl2      # time integration algorithm
+xorder      = 2        # order of spatial reconstruction
+ncycle_out  = 1        # interval for stdout summary info
 
 <mesh>
-nx1        = 200       # Number of zones in X1-direction
-x1min      = 0.0       # minimum value of X1
-x1max      = 1.0       # maximum value of X1
+nx1        = 256       # Number of zones in X1-direction
+x1min      = -0.5      # minimum value of X1
+x1max      = 0.5       # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # outer-X1 boundary flag
 
-nx2        = 200       # Number of zones in X2-direction
-x2min      = 0.0       # minimum value of X2
-x2max      = 1.0       # maximum value of X2
+nx2        = 256       # Number of zones in X2-direction
+x2min      = -0.5      # minimum value of X2
+x2max      = 0.5       # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # outer-X2 boundary flag
 
@@ -43,6 +43,11 @@ ix3_bc     = periodic  # inner-X3 boundary flag
 ox3_bc     = periodic  # outer-X3 boundary flag
 
 num_threads = 1        # maximum number of OMP threads
+
+<meshblock>
+nx1 = 256
+nx2 = 256
+nx3 = 1
 
 <hydro>
 iso_sound_speed = 1.0        # isothermal sound speed
