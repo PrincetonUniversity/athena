@@ -19,6 +19,7 @@
 //========================================================================================
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -109,7 +110,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // cloud interior
-    Real diag = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
+    Real diag = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j))
+                          + SQR(pcoord->x3v(k)));
     if (diag < rad) {
       phydro->u(IDN,k,j,i) = dr*drat;
       phydro->u(IM1,k,j,i) = ur*dr*drat;

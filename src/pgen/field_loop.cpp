@@ -25,6 +25,7 @@
 //========================================================================================
 
 // C/C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -114,7 +115,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
-        az(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)));
+        az(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)-x0) +
+                                         SQR(pcoord->x2f(j)-y0)));
       } else {
         az(k,j,i) = 0.0;
       }
