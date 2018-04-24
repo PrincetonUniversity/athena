@@ -100,7 +100,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
-  v_perp = b_perp/sqrt(den);
+  v_perp = b_perp/std::sqrt(den);
 
   if (dir == 1) // right polarization
     fac = 1.0;
@@ -172,7 +172,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
-  rms_err = sqrt(rms_err);
+  rms_err = std::sqrt(rms_err);
 
   // open output file and write out errors
   std::string fname;

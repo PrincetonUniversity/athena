@@ -62,7 +62,7 @@ void bifactor(int n, int *factor1, int *factor2)
 {
   int n1,n2,facmax;
 
-  facmax = sqrt((double) n);
+  facmax = std::sqrt((double) n);
 
   for (n1 = facmax; n1 > 0; n1--) {
     n2 = n/n1;

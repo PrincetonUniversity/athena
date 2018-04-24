@@ -74,8 +74,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
     wroe[IDN] = sqrtdl*sqrtdr;
@@ -481,25 +481,25 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real ct2 = bt_starsq/d;
     Real tsum = vaxsq + ct2 + twid_asq;
     Real tdif = vaxsq + ct2 - twid_asq;
-    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
+    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
     Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real cf = sqrt(cfsq);
+    Real cf = std::sqrt(cfsq);
 
     Real cssq = twid_asq*vaxsq/cfsq;
-    Real cs = sqrt(cssq);
+    Real cs = std::sqrt(cssq);
 
     // Compute beta(s) (eqs. A17, B20, B28)
-    Real bt = sqrt(btsq);
-    Real bt_star = sqrt(bt_starsq);
+    Real bt = std::sqrt(btsq);
+    Real bt_star = std::sqrt(bt_starsq);
     Real bet2=1.0;
     Real bet3=0.0;
     if (bt != 0.0) {
       bet2 = b2/bt;
       bet3 = b3/bt;
     }
-    Real bet2_star = bet2/sqrt(gm1 - (gm1-1.0)*y);
-    Real bet3_star = bet3/sqrt(gm1 - (gm1-1.0)*y);
+    Real bet2_star = bet2/std::sqrt(gm1 - (gm1-1.0)*y);
+    Real bet3_star = bet3/std::sqrt(gm1 - (gm1-1.0)*y);
     Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
     Real vbet = v2*bet2_star + v3*bet3_star;
 
@@ -513,15 +513,15 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
       alpha_f = 1.0;
       alpha_s = 0.0;
     } else if ((cfsq-cssq) != 0.0) {
-      alpha_f = sqrt((twid_asq - cssq)/(cfsq - cssq));
-      alpha_s = sqrt((cfsq - twid_asq)/(cfsq - cssq));
+      alpha_f = std::sqrt((twid_asq - cssq)/(cfsq - cssq));
+      alpha_s = std::sqrt((cfsq - twid_asq)/(cfsq - cssq));
     }
 
     // Compute Q(s) and A(s) (eq. A14-15), etc.
-    Real sqrtd = sqrt(d);
+    Real sqrtd = std::sqrt(d);
     Real isqrtd = 1.0/sqrtd;
     Real s = SIGN(b1);
-    Real twid_a = sqrt(twid_asq);
+    Real twid_a = std::sqrt(twid_asq);
     Real qf = cf*alpha_f*s;
     Real qs = cs*alpha_s*s;
     Real af_prime = twid_a*alpha_f*isqrtd;
@@ -530,7 +530,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real aspbb = as_prime*bt_star*bet_starsq;
 
     // Compute eigenvalues (eq. B17)
-    Real vax = sqrt(vaxsq);
+    Real vax = std::sqrt(vaxsq);
     eigenvalues[0] = v1 - cf;
     eigenvalues[1] = v1 - vax;
     eigenvalues[2] = v1 - cs;
@@ -694,25 +694,25 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real ct2 = bt_starsq*di;
     Real tsum = vaxsq + ct2 + twid_csq;
     Real tdif = vaxsq + ct2 - twid_csq;
-    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
+    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_csq*ct2);
 
     Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real cf = sqrt(cfsq);
+    Real cf = std::sqrt(cfsq);
 
     Real cssq = twid_csq*vaxsq/cfsq;
-    Real cs = sqrt(cssq);
+    Real cs = std::sqrt(cssq);
 
     // Compute beta's (eqs. A17, B28, B40)
-    Real bt = sqrt(btsq);
-    Real bt_star = sqrt(bt_starsq);
+    Real bt = std::sqrt(btsq);
+    Real bt_star = std::sqrt(bt_starsq);
     Real bet2 = 1.0;
     Real bet3 = 0.0;
     if (bt != 0.0) {
       bet2 = b2/bt;
       bet3 = b3/bt;
     }
-    Real bet2_star = bet2/sqrt(y);
-    Real bet3_star = bet3/sqrt(y);
+    Real bet2_star = bet2/std::sqrt(y);
+    Real bet3_star = bet3/std::sqrt(y);
     Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
 
     // Compute alpha's (eq. A16)
@@ -725,21 +725,21 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
       alpha_f = 1.0;
       alpha_s = 0.0;
     } else if ((cfsq-cssq) != 0.0) {
-      alpha_f = sqrt((twid_csq - cssq)/(cfsq - cssq));
-      alpha_s = sqrt((cfsq - twid_csq)/(cfsq - cssq));
+      alpha_f = std::sqrt((twid_csq - cssq)/(cfsq - cssq));
+      alpha_s = std::sqrt((cfsq - twid_csq)/(cfsq - cssq));
     }
 
     // Compute Q's (eq. A14-15), etc.
-    Real sqrtd = sqrt(d);
+    Real sqrtd = std::sqrt(d);
     Real s = SIGN(b1);
-    Real twid_c = sqrt(twid_csq);
+    Real twid_c = std::sqrt(twid_csq);
     Real qf = cf*alpha_f*s;
     Real qs = cs*alpha_s*s;
     Real af_prime = twid_c*alpha_f/sqrtd;
     Real as_prime = twid_c*alpha_s/sqrtd;
 
     // Compute eigenvalues (eq. B38)
-    Real vax  = sqrt(vaxsq);
+    Real vax  = std::sqrt(vaxsq);
     eigenvalues[0] = v1 - cf;
     eigenvalues[1] = v1 - vax;
     eigenvalues[2] = v1 - cs;

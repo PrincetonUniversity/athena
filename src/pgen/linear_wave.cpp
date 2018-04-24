@@ -119,7 +119,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real v0 = 0.0;
   Real w0 = 0.0;
   bx0 = 1.0;
-  by0 = sqrt(2.0);
+  by0 = std::sqrt(2.0);
   bz0 = 0.5;
   Real xfact = 0.0;
   Real yfact = 1.0;
@@ -252,7 +252,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
        rms_err += SQR(l1_err[i]);
        max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
-    rms_err = sqrt(rms_err);
+    rms_err = std::sqrt(rms_err);
 
     // open output file and write out errors
     std::string fname;
@@ -532,17 +532,17 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       ct2 = bt_starsq/d;
       tsum = vaxsq + ct2 + twid_asq;
       tdif = vaxsq + ct2 - twid_asq;
-      cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
+      cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
       cfsq = 0.5*(tsum + cf2_cs2);
-      cf = sqrt(cfsq);
+      cf = std::sqrt(cfsq);
 
       cssq = twid_asq*vaxsq/cfsq;
-      cs = sqrt(cssq);
+      cs = std::sqrt(cssq);
 
       // Compute beta(s) (eqs. A17, B20, B28)
-      bt = sqrt(btsq);
-      bt_star = sqrt(bt_starsq);
+      bt = std::sqrt(btsq);
+      bt_star = std::sqrt(bt_starsq);
       if (bt == 0.0) {
         bet2 = 1.0;
         bet3 = 0.0;
@@ -550,8 +550,8 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
         bet2 = b2/bt;
         bet3 = b3/bt;
       }
-      bet2_star = bet2/sqrt(gm1 - (gm1-1.0)*y);
-      bet3_star = bet3/sqrt(gm1 - (gm1-1.0)*y);
+      bet2_star = bet2/std::sqrt(gm1 - (gm1-1.0)*y);
+      bet3_star = bet3/std::sqrt(gm1 - (gm1-1.0)*y);
       bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
       vbet = v2*bet2_star + v3*bet3_star;
 
@@ -566,15 +566,15 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
         alpha_f = 1.0;
         alpha_s = 0.0;
       } else {
-        alpha_f = sqrt((twid_asq - cssq)/(cfsq - cssq));
-        alpha_s = sqrt((cfsq - twid_asq)/(cfsq - cssq));
+        alpha_f = std::sqrt((twid_asq - cssq)/(cfsq - cssq));
+        alpha_s = std::sqrt((cfsq - twid_asq)/(cfsq - cssq));
       }
 
       // Compute Q(s) and A(s) (eq. A14-15), etc.
-      sqrtd = sqrt(d);
+      sqrtd = std::sqrt(d);
       isqrtd = 1.0/sqrtd;
       s = SIGN(b1);
-      twid_a = sqrt(twid_asq);
+      twid_a = std::sqrt(twid_asq);
       qf = cf*alpha_f*s;
       qs = cs*alpha_s*s;
       af_prime = twid_a*alpha_f*isqrtd;
@@ -583,7 +583,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       aspbb = as_prime*bt_star*bet_starsq;
 
       // Compute eigenvalues (eq. B17)
-      vax = sqrt(vaxsq);
+      vax = std::sqrt(vaxsq);
       eigenvalues[0] = v1 - cf;
       eigenvalues[1] = v1 - vax;
       eigenvalues[2] = v1 - cs;
@@ -752,17 +752,17 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       ct2 = bt_starsq*di;
       tsum = vaxsq + ct2 + twid_csq;
       tdif = vaxsq + ct2 - twid_csq;
-      cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
+      cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_csq*ct2);
 
       cfsq = 0.5*(tsum + cf2_cs2);
-      cf = sqrt(cfsq);
+      cf = std::sqrt(cfsq);
 
       cssq = twid_csq*vaxsq/cfsq;
-      cs = sqrt(cssq);
+      cs = std::sqrt(cssq);
 
       // Compute beta's (eqs. A17, B28, B40)
-      bt = sqrt(btsq);
-      bt_star = sqrt(bt_starsq);
+      bt = std::sqrt(btsq);
+      bt_star = std::sqrt(bt_starsq);
       if (bt == 0.0) {
         bet2 = 1.0;
         bet3 = 0.0;
@@ -770,8 +770,8 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
         bet2 = b2/bt;
         bet3 = b3/bt;
       }
-      bet2_star = bet2/sqrt(y);
-      bet3_star = bet3/sqrt(y);
+      bet2_star = bet2/std::sqrt(y);
+      bet3_star = bet3/std::sqrt(y);
       bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
 
       // Compute alpha's (eq. A16)
@@ -785,21 +785,21 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
         alpha_f = 1.0;
         alpha_s = 0.0;
       } else {
-        alpha_f = sqrt((twid_csq - cssq)/(cfsq - cssq));
-        alpha_s = sqrt((cfsq - twid_csq)/(cfsq - cssq));
+        alpha_f = std::sqrt((twid_csq - cssq)/(cfsq - cssq));
+        alpha_s = std::sqrt((cfsq - twid_csq)/(cfsq - cssq));
       }
 
       // Compute Q's (eq. A14-15), etc.
-      sqrtd = sqrt(d);
+      sqrtd = std::sqrt(d);
       s = SIGN(b1);
-      twid_c = sqrt(twid_csq);
+      twid_c = std::sqrt(twid_csq);
       qf = cf*alpha_f*s;
       qs = cs*alpha_s*s;
       af_prime = twid_c*alpha_f/sqrtd;
       as_prime = twid_c*alpha_s/sqrtd;
 
       // Compute eigenvalues (eq. B38)
-      vax  = sqrt(vaxsq);
+      vax  = std::sqrt(vaxsq);
       eigenvalues[0] = v1 - cf;
       eigenvalues[1] = v1 - vax;
       eigenvalues[2] = v1 - cs;
@@ -915,7 +915,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
     if (NON_BAROTROPIC_EOS) {
       Real vsq = v1*v1 + v2*v2 + v3*v3;
       Real asq = gm1*std::max((h-0.5*vsq), TINY_NUMBER);
-      Real a = sqrt(asq);
+      Real a = std::sqrt(asq);
 
       // Compute eigenvalues (eq. B2)
       eigenvalues[0] = v1 - a;

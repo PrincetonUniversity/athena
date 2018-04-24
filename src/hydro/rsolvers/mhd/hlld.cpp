@@ -158,8 +158,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     urst.d = ur.d * sdr * sdmr_inv;
     Real ulst_d_inv = 1.0/ulst.d;
     Real urst_d_inv = 1.0/urst.d;
-    Real sqrtdl = sqrt(ulst.d);
-    Real sqrtdr = sqrt(urst.d);
+    Real sqrtdl = std::sqrt(ulst.d);
+    Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
     spd[1] = spd[2] - fabs(bxi)/sqrtdl;

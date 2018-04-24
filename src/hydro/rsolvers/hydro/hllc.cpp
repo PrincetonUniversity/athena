@@ -59,8 +59,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step2.  Compute Roe-averaged state
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
 
@@ -81,7 +81,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-    Real a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
+    Real a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
