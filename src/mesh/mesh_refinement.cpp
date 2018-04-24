@@ -174,14 +174,15 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
         pco->CellVolume(0,j  ,si,ei,fvol_[0][0]);
         pco->CellVolume(0,j+1,si,ei,fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
-          int i=(ci-pmb->cis)*2+pmb->is;
+          int i=(ci-pmb->cis)*2 + pmb->is;
           // KGF: add the off-centered quantities first to preserve FP symmetry
-          Real tvol=(fvol_[0][0](i)+fvol_[0][1](i))+(fvol_[0][0](i+1)+fvol_[0][1](i+1));
+          Real tvol = (fvol_[0][0](i) + fvol_[0][1](i)) +
+              (fvol_[0][0](i+1) + fvol_[0][1](i+1));
 
           // KGF: add the off-centered quantities first to preserve FP symmetry
           coarse(n,0,cj,ci)=
-              ((fine(n,0,j  ,i)*fvol_[0][0](i)+fine(n,0,j+1,i)*fvol_[0][1](i))
-              +(fine(n,0,j  ,i+1)*fvol_[0][0](i+1)+fine(n,0,j+1,i+1)*fvol_[0][1](i+1)))
+              ((fine(n,0,j  ,i)*fvol_[0][0](i) + fine(n,0,j+1,i)*fvol_[0][1](i))
+               + (fine(n,0,j ,i+1)*fvol_[0][0](i+1) + fine(n,0,j+1,i+1)*fvol_[0][1](i+1)))
               /tvol;
         }
       }
@@ -191,10 +192,10 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
     for (int n=sn; n<=en; ++n) {
       pco->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
-        int i=(ci-pmb->cis)*2+pmb->is;
-        Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1);
+        int i = (ci-pmb->cis)*2 + pmb->is;
+        Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1);
         coarse(n,ck,cj,ci)
-          =(fine(n,k,j,i)*fvol_[0][0](i)+fine(n,k,j,i+1)*fvol_[0][0](i+1))/tvol;
+          = (fine(n,k,j,i)*fvol_[0][0](i) + fine(n,k,j,i+1)*fvol_[0][0](i+1))/tvol;
       }
     }
   }
@@ -448,14 +449,14 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
                         std::min(std::abs(gx3m),std::abs(gx3p));
 
             // interpolate onto the finer grid
-            fine(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
-            fine(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm-gx3c*dx3fm;
-            fine(n,fk  ,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp-gx3c*dx3fm;
-            fine(n,fk  ,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp-gx3c*dx3fm;
-            fine(n,fk+1,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm+gx3c*dx3fp;
-            fine(n,fk+1,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm+gx3c*dx3fp;
-            fine(n,fk+1,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp+gx3c*dx3fp;
-            fine(n,fk+1,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp+gx3c*dx3fp;
+            fine(n,fk  ,fj  ,fi  ) = ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
+            fine(n,fk  ,fj  ,fi+1) = ccval + gx1c*dx1fp-gx2c*dx2fm-gx3c*dx3fm;
+            fine(n,fk  ,fj+1,fi  ) = ccval-gx1c*dx1fm + gx2c*dx2fp-gx3c*dx3fm;
+            fine(n,fk  ,fj+1,fi+1) = ccval + gx1c*dx1fp + gx2c*dx2fp-gx3c*dx3fm;
+            fine(n,fk+1,fj  ,fi  ) = ccval-gx1c*dx1fm-gx2c*dx2fm + gx3c*dx3fp;
+            fine(n,fk+1,fj  ,fi+1) = ccval + gx1c*dx1fp-gx2c*dx2fm + gx3c*dx3fp;
+            fine(n,fk+1,fj+1,fi  ) = ccval-gx1c*dx1fm + gx2c*dx2fp + gx3c*dx3fp;
+            fine(n,fk+1,fj+1,fi+1) = ccval + gx1c*dx1fp + gx2c*dx2fp + gx3c*dx3fp;
           }
         }
       }
@@ -496,10 +497,10 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
           Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
 
           // KGF: add the off-centered quantities first to preserve FP symmetry
-          fine(n,fk  ,fj  ,fi  ) = ccval-(gx1c*dx1fm+gx2c*dx2fm);
-          fine(n,fk  ,fj  ,fi+1) = ccval+(gx1c*dx1fp-gx2c*dx2fm);
-          fine(n,fk  ,fj+1,fi  ) = ccval-(gx1c*dx1fm-gx2c*dx2fp);
-          fine(n,fk  ,fj+1,fi+1) = ccval+(gx1c*dx1fp+gx2c*dx2fp);
+          fine(n,fk  ,fj  ,fi  ) = ccval - (gx1c*dx1fm + gx2c*dx2fm);
+          fine(n,fk  ,fj  ,fi+1) = ccval + (gx1c*dx1fp - gx2c*dx2fm);
+          fine(n,fk  ,fj+1,fi  ) = ccval - (gx1c*dx1fm - gx2c*dx2fp);
+          fine(n,fk  ,fj+1,fi+1) = ccval + (gx1c*dx1fp + gx2c*dx2fp);
         }
       }
     }
@@ -507,7 +508,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
     int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
     for (int n=sn; n<=en; n++) {
       for (int i=si; i<=ei; i++) {
-        int fi=(i-pmb->cis)*2+pmb->is;
+        int fi = (i-pmb->cis)*2 + pmb->is;
         const Real& x1m = pcoarsec->x1v(i-1);
         const Real& x1c = pcoarsec->x1v(i);
         const Real& x1p = pcoarsec->x1v(i+1);
@@ -520,13 +521,14 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
         Real ccval=coarse(n,k,j,i);
 
         // calculate 1D gradient using the min-mod limiter
-        Real gx1m = (ccval-coarse(n,k,j,i-1))/dx1m;
-        Real gx1p = (coarse(n,k,j,i+1)-ccval)/dx1p;
-        Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
+        Real gx1m = (ccval - coarse(n,k,j,i-1))/dx1m;
+        Real gx1p = (coarse(n,k,j,i+1) - ccval)/dx1p;
+        Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
 
         // interpolate on to the finer grid
-        fine(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm;
-        fine(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp;
+        // KGF: add the off-centered quantities first to preserve FP symmetry
+        fine(n,fk  ,fj  ,fi  ) = ccval - gx1c*dx1fm;
+        fine(n,fk  ,fj  ,fi+1) = ccval + gx1c*dx1fp;
       }
     }
   }
