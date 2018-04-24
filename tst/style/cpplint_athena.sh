@@ -13,4 +13,19 @@
 #        the same directory, and that CPPLINT.cfg is in root directory
 # ========================================
 
+# src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
+
+# Apply Google C++ Style Linter to all source code files at once:
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
+
+# Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
+echo "Starting std::sqrt(), std::cbrt() test"
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | while read -r file; do
+    [ $(grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | wc -l) -eq 0 ]
+    echo "Checking $file...."
+    # echo $?  # silent return
+    [ $(grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//" | wc -l) -eq 0 ]
+    # ./cpplint.py --counting=detailed "$file" # for linting each src/ file separately
+done
+
+echo "End of std::sqrt(), std::cbrt() test"
