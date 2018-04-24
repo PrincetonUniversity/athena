@@ -30,6 +30,8 @@
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
+#include <cmath>
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -55,6 +57,8 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 // made global to share with BC functions
 static Real grav_acc;
 
+int RefinementCondition(MeshBlock *pmb);
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
@@ -63,6 +67,8 @@ static Real grav_acc;
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
     EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
@@ -456,4 +462,23 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   }
 
   return;
+}
+
+
+// refinement condition: velocity gradient
+int RefinementCondition(MeshBlock *pmb) {
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real vgmax=0.0;
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
+        Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
+        if (vgy > vgmax) vgmax=vgy;
+        if (vgx > vgmax) vgmax=vgx;
+      }
+    }
+  }
+  if (vgmax > 0.01) return 1;
+  return -1;
 }
