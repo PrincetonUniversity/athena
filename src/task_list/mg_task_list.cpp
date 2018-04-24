@@ -21,7 +21,7 @@
 // this class header
 #include "mg_task_list.hpp"
 
-using namespace MultigridTaskNames;
+using namespace MultigridTaskNames; // NOLINT (build/namespace)
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)

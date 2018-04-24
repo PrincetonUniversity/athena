@@ -200,7 +200,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   pm->cfl_number = cfl_number;
 
   // Now assemble list of tasks for each step of time integrator
-  {using namespace HydroIntegratorTaskNames;
+  {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     AddTimeIntegratorTask(STARTUP_INT,NONE);
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
     // compute hydro fluxes, integrate hydro variables
@@ -296,7 +296,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace HydroIntegratorTaskNames;
+  using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   switch((id)) {
     case (START_ALLRECV):
       task_list_[ntasks].TaskFunc=
