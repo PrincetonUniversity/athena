@@ -153,16 +153,19 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
           pco->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
           for (int ci=csi; ci<=cei; ci++) {
             int i=(ci-pmb->cis)*2+pmb->is;
-            Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1)
-                      + fvol_[0][1](i) + fvol_[0][1](i+1)
-                      + fvol_[1][0](i) + fvol_[1][0](i+1)
-                      + fvol_[1][1](i) + fvol_[1][1](i+1);
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            Real tvol = ((fvol_[0][0](i) + fvol_[0][1](i))
+                         + (fvol_[0][0](i+1) + fvol_[0][1](i+1)))
+                + ((fvol_[1][0](i) + fvol_[1][1](i))
+                   + (fvol_[1][0](i+1) + fvol_[1][1](i+1)));
+            // KGF: add the off-centered quantities first to preserve FP symmetry
             coarse(n,ck,cj,ci) =
-                (fine(n,k  ,j  ,i)*fvol_[0][0](i) + fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
-               + fine(n,k  ,j+1,i)*fvol_[0][1](i) + fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
-               + fine(n,k+1,j  ,i)*fvol_[1][0](i) + fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
-               + fine(n,k+1,j+1,i)*fvol_[1][1](i) + fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1))
-                / tvol;
+                (((fine(n,k  ,j  ,i)*fvol_[0][0](i) + fine(n,k  ,j+1,i)*fvol_[0][1](i))
+                  + (fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1) +
+                     fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)))
+                 + ((fine(n,k+1,j  ,i)*fvol_[1][0](i) + fine(n,k+1,j+1,i)*fvol_[1][1](i))
+                    + (fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1) +
+                       fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1)))) / tvol;
           }
         }
       }
