@@ -16,8 +16,11 @@
 // 2014-2016.  Contributions from many others have continued to the present.
 //========================================================================================
 
-// C/C++ headers
+// C headers
 #include <stdint.h>   // int64_t
+
+// C++ headers
+#include <csignal>
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
@@ -26,19 +29,18 @@
 #include <iostream>   // cout, endl
 #include <new>        // bad_alloc
 #include <string>     // string
-#include <csignal>
 
 // Athena++ headers
 #include "athena.hpp"
-#include "globals.hpp"
-#include "mesh/mesh.hpp"
-#include "parameter_input.hpp"
-#include "outputs/outputs.hpp"
-#include "outputs/io_wrapper.hpp"
-#include "utils/utils.hpp"
-#include "gravity/mggravity.hpp"
-#include "gravity/fftgravity.hpp"
 #include "fft/turbulence.hpp"
+#include "globals.hpp"
+#include "gravity/fftgravity.hpp"
+#include "gravity/mggravity.hpp"
+#include "mesh/mesh.hpp"
+#include "outputs/io_wrapper.hpp"
+#include "outputs/outputs.hpp"
+#include "parameter_input.hpp"
+#include "utils/utils.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL

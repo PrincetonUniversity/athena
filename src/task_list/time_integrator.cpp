@@ -14,18 +14,17 @@
 #include <string>     // c_str()
 
 // Athena++ classes headers
-#include "task_list.hpp"
 #include "../athena.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../reconstruct/reconstruction.hpp"
 #include "../bvals/bvals.hpp"
-#include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
+#include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
-
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../reconstruct/reconstruction.hpp"
+#include "task_list.hpp"
 //----------------------------------------------------------------------------------------
 //  TimeIntegratorTaskList constructor
 

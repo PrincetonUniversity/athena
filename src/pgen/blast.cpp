@@ -12,20 +12,22 @@
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
 // C++ headers
-#include <sstream>
+#include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)

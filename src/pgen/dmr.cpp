@@ -11,6 +11,8 @@
 // fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
 
 // C++ headers
+#include <algorithm>
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -19,7 +21,6 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -27,13 +28,11 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
+#include "../parameter_input.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
 #endif
-
-#include <iostream>
-#include <cmath>
 
 // DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.

@@ -8,14 +8,15 @@
 
 // C/C++ headers
 #include <cmath>
+#include <algorithm>   // max
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -152,13 +153,16 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
           pco->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
           for (int ci=csi; ci<=cei; ci++) {
             int i=(ci-pmb->cis)*2+pmb->is;
-            Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1)
-                     +fvol_[1][0](i)+fvol_[1][0](i+1)+fvol_[1][1](i)+fvol_[1][1](i+1);
-            coarse(n,ck,cj,ci)=
-              (fine(n,k  ,j  ,i)*fvol_[0][0](i)+fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
-              +fine(n,k  ,j+1,i)*fvol_[0][1](i)+fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
-              +fine(n,k+1,j  ,i)*fvol_[1][0](i)+fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
-              +fine(n,k+1,j+1,i)*fvol_[1][1](i)+fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1))/tvol;
+            Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1)
+                      + fvol_[0][1](i) + fvol_[0][1](i+1)
+                      + fvol_[1][0](i) + fvol_[1][0](i+1)
+                      + fvol_[1][1](i) + fvol_[1][1](i+1);
+            coarse(n,ck,cj,ci) =
+                (fine(n,k  ,j  ,i)*fvol_[0][0](i) + fine(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
+               + fine(n,k  ,j+1,i)*fvol_[0][1](i) + fine(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
+               + fine(n,k+1,j  ,i)*fvol_[1][0](i) + fine(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
+               + fine(n,k+1,j+1,i)*fvol_[1][1](i) + fine(n,k+1,j+1,i+1)*fvol_[1][1](i+1))
+                / tvol;
           }
         }
       }
@@ -775,8 +779,10 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
   } else {
     for (int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
-      Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))/(pcoarsec->x1s3(si)-pcoarsec->x1s3(si-1));
-      Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))/(pcoarsec->x1s3(si+1)-pcoarsec->x1s3(si));
+      Real gxm = (coarse(0,0,si)   - coarse(0,0,si-1)) / (pcoarsec->x1s3(si) -
+                                                          pcoarsec->x1s3(si-1));
+      Real gxp = (coarse(0,0,si+1) - coarse(0,0,si)) / (pcoarsec->x1s3(si+1) -
+                                                        pcoarsec->x1s3(si));
       Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       fine(0,0,fi  )=fine(1,0,fi  )
                     =coarse(0,0,si)-gxc*(pcoarsec->x1s3(si)-pco->x1s3(fi));
@@ -963,8 +969,9 @@ void MeshRefinement::CheckRefinementCondition(void) {
     if (pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
   } else if (aret<0) {
-    if (pmb->loc.level == pmb->pmy_mesh->root_level) refine_flag_=0;
-    else {
+    if (pmb->loc.level == pmb->pmy_mesh->root_level) {
+      refine_flag_=0;
+    } else {
       deref_count_++;
       int ec=0, js, je, ks, ke;
       if (pmb->block_size.nx2 > 1) js=-1, je=1;
@@ -977,8 +984,9 @@ void MeshRefinement::CheckRefinementCondition(void) {
             if (pmb->pbval->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
         }
       }
-      if (ec>0) refine_flag_=0;
-      else {
+      if (ec>0) {
+        refine_flag_=0;
+      } else {
         if (deref_count_ >= deref_threshold_) refine_flag_=-1;
         else refine_flag_=0;
       }

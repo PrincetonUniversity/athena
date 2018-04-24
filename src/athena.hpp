@@ -1,5 +1,5 @@
-#ifndef ATHENA_HPP
-#define ATHENA_HPP
+#ifndef ATHENA_HPP_
+#define ATHENA_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -8,10 +8,15 @@
 //! \file athena.hpp
 //  \brief contains Athena++ general purpose types, structures, enums, etc.
 
-#include "defs.hpp"
-#include "athena_arrays.hpp"
+// C headers
 #include <math.h>
 #include <stdint.h>  // int64_t
+
+// C++ headers
+
+// Athena++ headers
+#include "athena_arrays.hpp"
+#include "defs.hpp"
 
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
@@ -37,6 +42,7 @@ struct RegionSize;
 //  \brief stores logical location and level of meshblock
 
 typedef struct LogicalLocation {
+  // These values can exceed the range of int32_t if >= 30 levels of AMR are used
   int64_t lx1, lx2, lx3;
   int level;
 
@@ -61,6 +67,7 @@ typedef struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
   Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  // the size of the root grid or a MeshBlock should not exceed int32_t limits
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
@@ -132,4 +139,4 @@ typedef void (*GravityBoundaryFunc_t)(MeshBlock *pmb, Coordinates *pco,
              AthenaArray<Real> &dst, Real time, Real dt,
              int is, int ie, int js, int je, int ks, int ke);
 
-#endif // ATHENA_HPP
+#endif // ATHENA_HPP_

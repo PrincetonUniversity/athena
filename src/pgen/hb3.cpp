@@ -25,23 +25,26 @@
 //  REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //
 //======================================================================================
-// C++ headers
-#include <iostream>   // cout, endl
+
+// C headers
 #include <stdlib.h>   // exit
+
+// C++ headers
+#include <cfloat>     // DBL_EPSILON
+#include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cfloat>     // DBL_EPSILON
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp" // ran2()
 
 

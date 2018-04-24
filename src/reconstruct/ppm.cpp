@@ -24,14 +24,17 @@
 // methods in cylindrical and spherical coordinates", JCP, 270, 784 (2014)
 //========================================================================================
 
+// C++ headers
+#include <algorithm>
+
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseParabolicX1()

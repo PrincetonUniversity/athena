@@ -6,6 +6,9 @@
 //! \file hydro.cpp
 //  \brief implementation of functions in class Hydro
 
+// C/C++ headers
+#include <string>
+
 // Athena++ headers
 #include "hydro.hpp"
 #include "../athena.hpp"
@@ -74,7 +77,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     gi_.NewAthenaArray(NMETRIC,ncells1);
     cons_.NewAthenaArray(NWAVE,ncells1);
   }
-  if (SELF_GRAVITY_ENABLED == 3) { // for one-time potential calcuation and correction (old Athena)
+  // for one-time potential calcuation and correction (old Athena)
+  if (SELF_GRAVITY_ENABLED == 3) {
     gflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
     if (pmy_block->block_size.nx2 > 1)
       gflx[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
@@ -125,21 +129,20 @@ Hydro::~Hydro() {
   }
   cell_volume_.DeleteAthenaArray();
   dflx_.DeleteAthenaArray();
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
-  {
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) {  // only used in (SR/GR)MHD
     bb_normal_.DeleteAthenaArray();
     lambdas_p_l_.DeleteAthenaArray();
     lambdas_m_l_.DeleteAthenaArray();
     lambdas_p_r_.DeleteAthenaArray();
     lambdas_m_r_.DeleteAthenaArray();
   }
-  if (GENERAL_RELATIVITY)
-  {
+  if (GENERAL_RELATIVITY) {
     g_.DeleteAthenaArray();
     gi_.DeleteAthenaArray();
     cons_.DeleteAthenaArray();
   }
-  if (SELF_GRAVITY_ENABLED == 3) { // for one-time potential calcuation and correction (old Athena)
+  // for one-time potential calcuation and correction (old Athena)
+  if (SELF_GRAVITY_ENABLED == 3) {
     gflx[X1DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx2 > 1) gflx[X2DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx3 > 1) gflx[X3DIR].DeleteAthenaArray();

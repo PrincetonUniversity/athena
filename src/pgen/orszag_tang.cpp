@@ -93,8 +93,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
                SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
                SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
-          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) + SQR(phydro->u(IM3,k,j,i)))
-          /phydro->u(IDN,k,j,i);
+          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i))
+           + SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
     }}}
   }
 

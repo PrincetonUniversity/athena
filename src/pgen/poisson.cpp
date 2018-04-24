@@ -8,32 +8,32 @@
 //
 
 // C++ headers
+#include <algorithm>
 #include <cmath>
-#include <stdexcept>
-#include <ctime>
-#include <iostream>
-#include <iomanip>
 #include <cstring>    // memset
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
-#include "../gravity/gravity.hpp"
-#include "../mesh/mesh.hpp"
-#include "../gravity/mggravity.hpp"
-#include "../multigrid/multigrid.hpp"
-#include "../gravity/fftgravity.hpp"
 #include "../fft/athena_fft.hpp"
-
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../gravity/fftgravity.hpp"
+#include "../gravity/gravity.hpp"
+#include "../gravity/mggravity.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../parameter_input.hpp"
 
 #ifdef OPENMP_PARALLEL
-#include "omp.h"
+#include <omp.h>
 #endif
 
 #ifdef MPI_PARALLEL
@@ -195,7 +195,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         std::cout << "processor configuration = "
                   << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
         std::cout << "cpu time used  = " << cpu_time << std::endl;
-        std::cout << "cpu time used/cycle  = " << cpu_time/static_cast<Real>(ncycle) << std::endl;
+        std::cout << "cpu time used/cycle  = " << cpu_time/static_cast<Real>(ncycle)
+                  << std::endl;
         std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
         std::cout << "zone-cycles(NlogN)/cpu_second = " << zc_cpus2 << std::endl;
 #ifdef OPENMP_PARALLEL

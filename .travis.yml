@@ -10,15 +10,19 @@ os:
   - linux
 dist: trusty
 sudo: false # use faster container-based build
-
+addons:
+  apt:
+    packages:
+      - "python3"
+      - "python3-pip"
 # OpenMPI and MPICH implementations:
 env:
   matrix:
   - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
   - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
 compiler:
-  - gcc
-  - clang
+  - g++
+  - clang++
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
@@ -94,27 +98,33 @@ install:
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
-  - pip install --user numpy || true
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
+  - pip install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user numpy || true
 # Run regression test suite:
 # Do not use "python run_tests.py" to run all tests, so that:
 # - Each set/directory of tests are timed separately
 # - Script fails after first broken set of tests
 # (Could alternatively group sets of tests with && operator)
 script:
+  # Test Google C++ Style Guide adherence
+  - cd ../style
   - set -e # fail at first error
+  - ./cpplint_athena.sh
+  - set +e; cd ../regression/; set -e;
   - set -x # trace execution of all commands;
-  - python2 run_tests.py pgen --cxx=$TEMP_CXX --cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
-  - python2 run_tests.py mpi --cxx=$TEMP_CXX
-  - python2 run_tests.py grav --cxx=$TEMP_CXX # requires FFTW library
-  - python2 run_tests.py amr --cxx=$TEMP_CXX
+  - python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
+  - python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library
+  - python3 run_tests.py amr --config=--cxx=$TEMP_CXX
   # Longest set of tests. Timeout after 10 m
-  #- python2 run_tests.py mhd
-  - python2 run_tests.py hydro --cxx=$TEMP_CXX
-  - python2 run_tests.py outputs --cxx=$TEMP_CXX
-  - python2 run_tests.py curvilinear --cxx=$TEMP_CXX
-  - python2 run_tests.py gr --cxx=$TEMP_CXX
-  - python2 run_tests.py sr --cxx=$TEMP_CXX
-  - python2 run_tests.py shearingbox --cxx=$TEMP_CXX
+  #- python3 run_tests.py mhd
+  - python3 run_tests.py hydro --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py outputs --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py gr --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py sr --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX
   - set +e
 # Codecov coverage analysis
 after_success:

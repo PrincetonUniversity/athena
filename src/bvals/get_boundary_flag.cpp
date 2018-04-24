@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
+#include <string>
 
 // Athena headers
 #include "../athena.hpp"
@@ -42,4 +43,3 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
     throw std::runtime_error(msg.str().c_str());
   }
 }
-

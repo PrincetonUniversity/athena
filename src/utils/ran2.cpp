@@ -7,7 +7,7 @@
 
 // C++ headers
 #include <iostream>
-#include "float.h"  // DBL_EPSILON
+#include <cfloat>
 
 // Athena headers
 #include "../athena.hpp"

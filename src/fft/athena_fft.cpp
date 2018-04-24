@@ -515,23 +515,23 @@ void FFTBlock::MpiInitialize() {
 AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize,
                                RegionSize bsize) {
   dim_=dim;
-
+  // loc.lxi are int64_t in general, but w/o AMR, they are unilikely to overflow int32_t
   Lx[0] = msize.x1max-msize.x1min;
   Nx[0] = msize.nx1;
   np[0] = msize.nx1/bsize.nx1;
-  ip[0] = loc.lx1;
+  ip[0] = static_cast<int>(loc.lx1);
   iloc[0]=0;
   ploc[0]=0;
   Lx[1] = msize.x2max-msize.x2min;
   Nx[1] = msize.nx2;
   np[1] = msize.nx2/bsize.nx2;
-  ip[1] = loc.lx2;
+  ip[1] = static_cast<int>(loc.lx2);
   iloc[1]=1;
   ploc[1]=1;
   Lx[2] = msize.x3max-msize.x3min;
   Nx[2] = msize.nx3;
   np[2] = msize.nx3/bsize.nx3;
-  ip[2] = loc.lx3;
+  ip[2] = static_cast<int>(loc.lx3);
   iloc[2]=2;
   ploc[2]=2;
 
@@ -608,7 +608,7 @@ void AthenaFFTIndex::PermuteProc(int npermute) {
 }
 
 void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
-  int tmp[dim_];
+  int tmp[3];
   for (int i=0; i<dim_; i++) tmp[i]=arr[i];
   for (int i=0; i<dim_; i++) {
     if (dir>0) arr[loc[i]]=tmp[i];

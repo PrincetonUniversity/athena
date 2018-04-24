@@ -45,14 +45,14 @@ def prepare(**kwargs):
                                    shear_args, hydro_args]):
             if single_precision:
                 args.extend(['float'])
-            # "make clean" only for the first problem in the set that shares
-            # ./configure.py flags (except --pgen)
+            # "make clean" and link into executable only for the first problem
+            # in the set that shares ./configure.py flags (except --pgen)
             pgen = pgen_set.pop()
             athena.configure(*args, prob=pgen, **kwargs)
-            athena.make(clean_first=True)
+            athena.make(clean_first=True, obj_only=False)
             for pgen in pgen_set:
                 athena.configure(*args, prob=pgen, **kwargs)
-                athena.make(clean_first=False)
+                athena.make(clean_first=False, obj_only=True)
 
 
 # Run Athena++

@@ -8,21 +8,24 @@
 //  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
 //  Writes one file per MeshBlock.
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C++ headers
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -122,9 +125,13 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     int ncells1 = out_ie - out_is + 1;
     int ncells2 = out_je - out_js + 1;
     int ncells3 = out_ke - out_ks + 1;
-    int ncoord1 = ncells1; if (ncells1 > 1) ncoord1++;
-    int ncoord2 = ncells2; if (ncells2 > 1) ncoord2++;
-    int ncoord3 = ncells3; if (ncells3 > 1) ncoord3++;
+
+    int ncoord1 = ncells1;
+    if (ncells1 > 1) ncoord1++;
+    int ncoord2 = ncells2;
+    if (ncells2 > 1) ncoord2++;
+    int ncoord3 = ncells3;
+    if (ncells3 > 1) ncoord3++;
 
     float *data;
     int ndata = std::max(ncoord1,ncoord2);

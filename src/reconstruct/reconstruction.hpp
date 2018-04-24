@@ -1,5 +1,5 @@
-#ifndef RECONSTRUCTION_HPP
-#define RECONSTRUCTION_HPP
+#ifndef RECONSTRUCT_RECONSTRUCTION_HPP_
+#define RECONSTRUCT_RECONSTRUCTION_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -92,4 +92,4 @@ private:
   AthenaArray<Real> scr1_ni_, scr2_ni_, scr3_ni_, scr4_ni_, scr5_ni_;
   AthenaArray<Real> scr6_ni_, scr7_ni_, scr8_ni_;
 };
-#endif // RECONSTRUCTION_HPP
+#endif // RECONSTRUCT_RECONSTRUCTION_HPP_

@@ -294,7 +294,7 @@ static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *
     Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
   // Find location in interpolation table
   int n;
-  Real fraction;
+  Real fraction = 0.0;
   if (r < interp_values(0,0)) {
     n = 0;
     fraction = 0.0;

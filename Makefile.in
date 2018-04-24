@@ -52,6 +52,8 @@ VPATH := $(SRC_DIR)
 
 all : dirs $(EXECUTABLE)
 
+objs : dirs $(OBJ_FILES)
+
 dirs : $(EXE_DIR) $(OBJ_DIR)
 
 $(EXE_DIR):

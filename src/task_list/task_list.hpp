@@ -1,5 +1,5 @@
-#ifndef TASK_LIST_HPP
-#define TASK_LIST_HPP
+#ifndef TASK_LIST_TASK_LIST_HPP_
+#define TASK_LIST_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -224,4 +224,4 @@ namespace HydroIntegratorTaskNames {
   const uint64_t RMAP_EMFSH=1LL<<53;
 }; // namespace HydroIntegratorTaskNames
 
-#endif // TASK_LIST_HPP
+#endif // TASK_LIST_TASK_LIST_HPP_

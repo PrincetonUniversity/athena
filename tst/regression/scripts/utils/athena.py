@@ -8,6 +8,8 @@ import subprocess
 athena_rel_path = '../../'
 saved_filenames = ['src/defs.hpp', 'Makefile']
 saved_files = []
+global_config_args = []
+global_run_args = []
 
 
 # Function for configuring Athena++
@@ -22,7 +24,7 @@ def configure(*args, **kwargs):
             if val:
                 configure_command.append('--{0}={1}'.format(key, val))
         try:
-            subprocess.check_call(configure_command)
+            subprocess.check_call(configure_command + global_config_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -31,14 +33,17 @@ def configure(*args, **kwargs):
 
 
 # Function for compiling Athena++
-def make(clean_first=True):
+def make(clean_first=True, obj_only=False):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
     try:
         exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
-        make_command = ['make', '-j', exe_dir, obj_dir]
+        if obj_only:
+            make_command = ['make', '-j', 'objs', exe_dir, obj_dir]
+        else:
+            make_command = ['make', '-j', exe_dir, obj_dir]
         try:
             if clean_first:
                 subprocess.check_call(clean_command)
@@ -59,7 +64,7 @@ def run(input_filename, arguments):
                               input_filename
         run_command = ['./athena', '-i', input_filename_full]
         try:
-            subprocess.check_call(run_command + arguments)
+            subprocess.check_call(run_command + arguments + global_run_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))

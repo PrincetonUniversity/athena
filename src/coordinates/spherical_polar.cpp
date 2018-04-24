@@ -406,7 +406,8 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
            m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
+           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i))
+                         - SQR(bcc(IB3,k,j,i)) );
         }
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
