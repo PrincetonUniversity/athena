@@ -71,6 +71,20 @@ public:
   virtual Real GetFace2Area(const int k, const int j, const int i);
   virtual Real GetFace3Area(const int k, const int j, const int i);
 
+  // ...to compute Laplacian of quantities in the coord system and orthogonal subspaces
+  virtual void Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int il, const int iu, const int jl, const int ju, const int kl, const int ku,
+    const int nl, const int nu);
+  virtual void LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int il, const int iu, const int jl, const int ju, const int kl, const int ku,
+    const int nl, const int nu);
+  virtual void LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int il, const int iu, const int jl, const int ju, const int kl, const int ku,
+    const int nl, const int nu);
+  virtual void LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int il, const int iu, const int jl, const int ju, const int kl, const int ku,
+    const int nl, const int nu);
+
   // ...to compute volume of cells
   virtual void CellVolume(const int k, const int j, const int il, const int iu,
       AthenaArray<Real> &vol);
