@@ -33,6 +33,7 @@
 // C/C++ headers
 #include <algorithm>
 #include <cfloat>     // DBL_EPSILON
+#include <cmath>      // sqrt()
 #include <cstdlib>    // exit()
 #include <iostream>
 #include <sstream>    // stringstream

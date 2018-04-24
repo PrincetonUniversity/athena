@@ -39,6 +39,7 @@
 
 
 // C/C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

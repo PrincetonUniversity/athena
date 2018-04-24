@@ -7,6 +7,9 @@
 //  \brief Sets up a jet introduced through L-x1 boundary (left edge)
 //========================================================================================
 
+// C++ headers
+#include <cmath>      // sqrt()
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

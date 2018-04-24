@@ -31,6 +31,7 @@
 
 // C++ headers
 #include <cfloat>     // DBL_EPSILON
+#include <cmath>      // sqrt()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

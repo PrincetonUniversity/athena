@@ -17,6 +17,7 @@
 #include <stdlib.h>   // exit
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

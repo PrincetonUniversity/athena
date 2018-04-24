@@ -10,6 +10,9 @@
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
+// C++ headers
+#include <cmath>      // sqrt()
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
