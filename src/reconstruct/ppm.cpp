@@ -328,6 +328,7 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
         wl(n,k,j,i+1) = ql_iph(n,i);
         wr(n,k,j,i  ) = qr_imh(n,i);
         // Reapply EOS floors to both L/R reconstructed primitive states
+        // TODO(kfelker): only needs to be called 1x for all NHYDRO
         pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
@@ -629,6 +630,7 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
         wl(n,k,j+1,i) = ql_jph(n,i);
         wr(n,k,j  ,i) = qr_jmh(n,i);
         // Reapply EOS floors to both L/R reconstructed primitive states
+        // TODO(kfelker): only needs to be called 1x for all NHYDRO
         pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
@@ -931,6 +933,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
         wl(n,k+1,j,i) = ql_kph(n,i);
         wr(n,k  ,j,i) = qr_kmh(n,i);
         // Reapply EOS floors to both L/R reconstructed primitive states
+        // TODO(kfelker): only needs to be called 1x for all NHYDRO
         pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
