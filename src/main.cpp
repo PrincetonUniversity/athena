@@ -204,16 +204,12 @@ int main(int argc, char *argv[]) {
       restartfile.Open(restart_filename, IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(restartfile);
       // leave the restart file open for later use
-      // if both -r and -i are specified, make sure next_time gets corrected
-      if (iarg_flag==1) pinput->RollbackNextTime();
     }
     if (iarg_flag==1) {
       // if both -r and -i are specified, override the parameters using the input file
       infile.Open(input_filename, IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(infile);
       infile.Close();
-      // if both -r and -i are specified, make sure next_time gets corrected
-      if (res_flag==1) pinput->ForwardNextTime();
     }
     pinput->ModifyFromCmdline(argc,argv);
   }
@@ -229,16 +225,6 @@ int main(int argc, char *argv[]) {
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message
-    if (res_flag==1) restartfile.Close();
-#ifdef MPI_PARALLEL
-    MPI_Finalize();
-#endif
-    return(0);
-  }
-
-  // Dump input parameters and quit if code was run with -n option.
-  if (narg_flag) {
-    if (Globals::my_rank==0) pinput->ParameterDump(std::cout);
     if (res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
@@ -276,6 +262,24 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+
+  // With current mesh time possibly read from restart file, correct next_time for outputs
+  if (iarg_flag == 1 && res_flag == 1) {
+    // if both -r and -i are specified, override the restart parameters with input file
+    pinput->RollbackNextTime();
+    pinput->ForwardNextTime(pmesh->time);
+  }
+
+  // Dump input parameters and quit if code was run with -n option.
+  if (narg_flag) {
+    if (Globals::my_rank==0) pinput->ParameterDump(std::cout);
+    if (res_flag==1) restartfile.Close();
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+
   if (res_flag==1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
