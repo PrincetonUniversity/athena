@@ -37,8 +37,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   w1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
   // fourth-order hydro cell-centered approximations
-  u_center.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
-  w_center.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+  u_cc.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+  w_cc.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
@@ -98,6 +98,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   }
   // fourth-order hydro
   // 4D scratch arrays
+  wl_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wr_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  flux_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
   scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   scr2_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
@@ -119,8 +122,8 @@ Hydro::~Hydro() {
   u2.DeleteAthenaArray();
 
   // fourth-order hydro
-  u_center.DeleteAthenaArray();
-  w_center.DeleteAthenaArray();
+  u_cc.DeleteAthenaArray();
+  w_cc.DeleteAthenaArray();
 
   flux[X1DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();
@@ -166,6 +169,9 @@ Hydro::~Hydro() {
   }
   // fourth-order hydro
   // 4D scratch arrays
+  wl_fc_.DeleteAthenaArray();
+  wr_fc_.DeleteAthenaArray();
+  flux_fc_.DeleteAthenaArray();
   scr1_nkji_.DeleteAthenaArray();
   scr2_nkji_.DeleteAthenaArray();
 

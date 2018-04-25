@@ -173,9 +173,9 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered conserved and primitive variables
-  AthenaArray<Real> u_center, w_center;
-  u_center.InitWithShallowCopy(ph->u_center);
-  w_center.InitWithShallowCopy(ph->w_center);
+  AthenaArray<Real> u_cc, w_cc;
+  u_cc.InitWithShallowCopy(ph->u_cc);
+  w_cc.InitWithShallowCopy(ph->w_cc);
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
   AthenaArray<Real> laplacian_cc;
   laplacian_cc.InitWithShallowCopy(ph->scr1_nkji_);
@@ -191,7 +191,7 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
         for (int i=il; i<=iu; ++i) {
           // We do not actually need to store all cell-centered conserved variables,
           // but the ConservedToPrimitive() implementation operates on 4D arrays
-          u_center(n,k,j,i) = cons(n,k,j,i) - C*laplacian_cc(n,k,j,i);
+          u_cc(n,k,j,i) = cons(n,k,j,i) - C*laplacian_cc(n,k,j,i);
         }
       }
     }
@@ -201,7 +201,7 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
   pco->Laplacian(prim, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
 
   // Convert cell-centered conserved values to cell-centered primitive values
-  ConservedToPrimitive(u_center, prim_old, b, w_center, bcc, pco, il, iu,
+  ConservedToPrimitive(u_cc, prim_old, b, w_cc, bcc, pco, il, iu,
                        jl, ju, kl, ku);
 
   for (int n=nl; n<=nu; ++n) {
@@ -210,7 +210,7 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           // Compute fourth-order approximation to cell-averaged primitive variables
-          prim(n,k,j,i) = w_center(n,k,j,i) + C*laplacian_cc(n,k,j,i);
+          prim(n,k,j,i) = w_cc(n,k,j,i) + C*laplacian_cc(n,k,j,i);
         }
       }
     }

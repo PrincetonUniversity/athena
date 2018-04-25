@@ -37,7 +37,7 @@ public:
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> u_center, w_center;      // cell-centered approximations
+  AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
   HydroSourceTerms *psrc;
 
@@ -81,6 +81,7 @@ private:
 
   // fourth-order hydro
   // 4D scratch arrays
+  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
 
   TimeStepFunc_t UserTimeStep_;
