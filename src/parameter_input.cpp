@@ -691,7 +691,8 @@ void ParameterInput::RollbackNextTime() {
       }
       next_time -= static_cast<Real>(atof(pl->param_value.c_str()));
       msg << next_time;
-      AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+      //AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+      SetReal(pb->block_name, "next_time", next_time);
     }
     pb = pb->pnext;
   }
@@ -705,7 +706,7 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
   InputBlock *pb = pfirst_block;
   InputLine* pl;
   Real next_time;
-  Real dt;
+  Real dt0, dt;
 
   while (pb != NULL) {
     if (pb->block_name.compare(0, 6, "output") == 0) {
@@ -723,9 +724,12 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
             << pb->block_name << "'";
         throw std::runtime_error(msg.str().c_str());
       }
-      dt = static_cast<Real>(atof(pl->param_value.c_str()));
-      dt = dt * static_cast<int>((mesh_time - next_time) / dt);
-      if (dt > 0) next_time += dt;
+      dt0 = static_cast<Real>(atof(pl->param_value.c_str()));
+      dt = dt0 * static_cast<int>((mesh_time - next_time) / dt0) + dt0;
+      if (dt > 0) {
+        next_time += dt;
+        next_time -= std::fmod(next_time, dt0);
+      }
       msg << next_time;
       AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
     }
