@@ -86,9 +86,9 @@ private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
   // scratch arrays used in PLM and PPM reconstruction functions
-  AthenaArray<Real> scr01_i_,scr02_i_,scr03_i_,scr04_i_,scr05_i_;
-  AthenaArray<Real> scr06_i_,scr07_i_,scr08_i_,scr09_i_,scr10_i_;
-  AthenaArray<Real> scr11_i_,scr12_i_,scr13_i_,scr14_i_;
+  AthenaArray<Real> scr01_i_, scr02_i_, scr03_i_, scr04_i_, scr05_i_;
+  AthenaArray<Real> scr06_i_, scr07_i_, scr08_i_, scr09_i_, scr10_i_;
+  AthenaArray<Real> scr11_i_, scr12_i_, scr13_i_, scr14_i_;
   AthenaArray<Real> scr1_ni_, scr2_ni_, scr3_ni_, scr4_ni_, scr5_ni_;
   AthenaArray<Real> scr6_ni_, scr7_ni_, scr8_ni_;
 };

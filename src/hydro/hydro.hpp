@@ -36,7 +36,7 @@ public:
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> u_centered, w_centered;      // cell-centered approximations
+  AthenaArray<Real> u_center, w_center;      // cell-centered approximations
 
   HydroSourceTerms *psrc;
 
