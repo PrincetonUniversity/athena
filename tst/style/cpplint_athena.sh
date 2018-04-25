@@ -22,10 +22,15 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/p
 set -e
 echo "Starting std::sqrt(), std::cbrt() test"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | while read -r file; do
-    [ $(grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | wc -l) -eq 0 ]
     echo "Checking $file...."
+
+    grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
+    [ $(grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | wc -l) -eq 0 ]
     # echo $?  # silent return
+
+    grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
     [ $(grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//" | wc -l) -eq 0 ]
+
     # ./cpplint.py --counting=detailed "$file" # for linting each src/ file separately
 done
 
