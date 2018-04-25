@@ -90,7 +90,7 @@ public:
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
   void RollbackNextTime();
-  void ForwardNextTime();
+  void ForwardNextTime(Real time);
 
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads

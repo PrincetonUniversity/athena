@@ -673,7 +673,7 @@ void ParameterInput::RollbackNextTime() {
   Real next_time;
 
   while (pb != NULL) {
-    if (pb->block_name.compare(0,6,"output") == 0) {
+    if (pb->block_name.compare(0, 6, "output") == 0) {
       pl = pb->GetPtrToLine("next_time");
       if (pl == NULL) {
         msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
@@ -699,24 +699,20 @@ void ParameterInput::RollbackNextTime() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ForwardNextTime()
-//  \brief add dt to next_time until next_time > start_time - dt for each output block
+//  \brief add dt to next_time until next_time >  mesh_time - dt for each output block
 
-void ParameterInput::ForwardNextTime() {
+void ParameterInput::ForwardNextTime(Real mesh_time) {
   InputBlock *pb = pfirst_block;
   InputLine* pl;
-  Real start_time;
   Real next_time;
   Real dt;
 
-  // TODO(kfelker): make sure start_time >= mesh time
-  start_time = GetOrAddReal("time", "start_time", 0);
-
   while (pb != NULL) {
-    if (pb->block_name.compare(0,6,"output") == 0) {
+    if (pb->block_name.compare(0, 6, "output") == 0) {
       std::stringstream msg;
       pl = pb->GetPtrToLine("next_time");
       if (pl == NULL) {
-        next_time = start_time;
+        next_time = mesh_time;
       } else {
         next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       }
@@ -728,7 +724,7 @@ void ParameterInput::ForwardNextTime() {
         throw std::runtime_error(msg.str().c_str());
       }
       dt = static_cast<Real>(atof(pl->param_value.c_str()));
-      dt = dt * (int)((start_time - next_time) / dt);
+      dt = dt * static_cast<int>((mesh_time - next_time) / dt);
       if (dt > 0) next_time += dt;
       msg << next_time;
       AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
