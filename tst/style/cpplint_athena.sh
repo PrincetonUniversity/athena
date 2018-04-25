@@ -19,6 +19,7 @@
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
+set -e
 echo "Starting std::sqrt(), std::cbrt() test"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | while read -r file; do
     [ $(grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | wc -l) -eq 0 ]
@@ -29,3 +30,4 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/p
 done
 
 echo "End of std::sqrt(), std::cbrt() test"
+set +e
