@@ -25,6 +25,7 @@
 //========================================================================================
 
 // C/C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -85,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     if (x1size == x3size) {
       ang_2 = PI/4.0;
-      cos_a2 = sin_a2 = sqrt(0.5);
+      cos_a2 = sin_a2 = std::sqrt(0.5);
     } else {
       ang_2 = atan(x1size/x3size);
       sin_a2 = sin(ang_2);
@@ -114,7 +115,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
-        az(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)));
+        az(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)-x0) +
+                                         SQR(pcoord->x2f(j)-y0)));
       } else {
         az(k,j,i) = 0.0;
       }
@@ -123,7 +125,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
     if (iprob==2) {
       if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ax(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
+        ax(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
       } else {
         ax(k,j,i) = 0.0;
       }
@@ -134,7 +136,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
     if (iprob==3) {
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
+        ay(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
@@ -160,7 +162,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
       if ((x*x + y*y) < rad*rad) {
-        ax(k,j,i) = amp*(rad - sqrt(x*x + y*y))*(-sin_a2);
+        ax(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(-sin_a2);
       } else {
         ax(k,j,i) = 0.0;
       }
@@ -172,7 +174,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
       if ((x*x + y*y) < rad*rad) {
-        az(k,j,i) = amp*(rad - sqrt(x*x + y*y))*(cos_a2);
+        az(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(cos_a2);
       } else {
         az(k,j,i) = 0.0;
       }
@@ -182,13 +184,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (iprob==5) {
       ax(k,j,i) = 0.0;
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) +
+        ay(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) +
                                   SQR(pcoord->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
       if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
-        az(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) +
+        az(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) +
                                   SQR(pcoord->x3v(k))));
       } else {
         az(k,j,i) = 0.0;
@@ -203,7 +205,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   Real x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
   Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-  Real diag = sqrt(x1size*x1size + x2size*x2size + x3size*x3size);
+  Real diag = std::sqrt(x1size*x1size + x2size*x2size + x3size*x3size);
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {

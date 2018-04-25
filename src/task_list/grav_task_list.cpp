@@ -32,7 +32,7 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm) {
 
   // Now assemble list of tasks for each step of time integrator
-  {using namespace GravitySolverTaskNames;
+  {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     AddGravitySolverTask(START_GRAV_RECV,NONE);
 
     // compute hydro fluxes, integrate hydro variables
@@ -52,7 +52,7 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace GravitySolverTaskNames;
+  using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
   switch((id)) {
     case (START_GRAV_RECV):
       task_list_[ntasks].TaskFunc=

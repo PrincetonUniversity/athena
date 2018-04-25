@@ -12,6 +12,7 @@
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -121,7 +122,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // rho component of U^{hll} from Mignone eqn. (15); uses F_L and F_R from eqn. (6)
     Real dhll = (spd[4]*ur.d - spd[0]*ul.d - fr.d + fl.d)*idspd;
     dhll = std::max(dhll, dfloor);
-    Real sqrtdhll = sqrt(dhll);
+    Real sqrtdhll = std::sqrt(dhll);
 
     // rho and mx components of F^{hll} from Mignone eqn. (17)
     Real fdhll  = (spd[4]*fl.d  - spd[0]*fr.d  + spd[4]*spd[0]*(ur.d -ul.d ))*idspd;

@@ -130,7 +130,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
-  return sqrt(gamma_*prim[IPR]/prim[IDN]);
+  return std::sqrt(gamma_*prim[IPR]/prim[IDN]);
 }
 
 //---------------------------------------------------------------------------------------

@@ -25,8 +25,8 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro","gamma");
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",sqrt(1024*(FLT_MIN)));
-  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",sqrt(1024*(FLT_MIN)));
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
+  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
 }
 
 // destructor
@@ -141,7 +141,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
-  return sqrt(GetGamma()*prim[IPR]/prim[IDN]);
+  return std::sqrt(GetGamma()*prim[IPR]/prim[IDN]);
 }
 
 //----------------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
   Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
   Real qsq = vaxsq + ct2 + asq;
   Real tmp = vaxsq + ct2 - asq;
-  return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2))/prim[IDN]);
+  return std::sqrt(0.5*(qsq + std::sqrt(tmp*tmp + 4.0*asq*ct2))/prim[IDN]);
 }
 
 //---------------------------------------------------------------------------------------

@@ -17,6 +17,7 @@
 #include <stdlib.h>   // exit
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -85,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
-    iso_cs = sqrt((gm1+1.0)*p0/d0);
+    iso_cs = std::sqrt((gm1+1.0)*p0/d0);
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);

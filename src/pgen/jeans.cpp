@@ -94,7 +94,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   kwave = 2.0*PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
-  omega = sqrt(fabs(omega2));
+  omega = std::sqrt(fabs(omega2));
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
@@ -257,7 +257,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
        rms_err += SQR(l1_err[i]);
        max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
-    rms_err = sqrt(rms_err);
+    rms_err = std::sqrt(rms_err);
 
     // open output file and write out errors
     std::string fname;

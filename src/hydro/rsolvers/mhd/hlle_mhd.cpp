@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -55,8 +56,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 2.  Compute Roe-averaged state
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
     wroe[IDN] = sqrtdl*sqrtdr;
@@ -101,10 +102,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real ct2 = bt_starsq/wroe[IDN];
     Real tsum = vaxsq + ct2 + twid_asq;
     Real tdif = vaxsq + ct2 - twid_asq;
-    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
+    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
     Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real a = sqrt(cfsq);
+    Real a = std::sqrt(cfsq);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 

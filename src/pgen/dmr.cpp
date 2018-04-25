@@ -82,13 +82,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // shock according to the volume fraction of the upstream/downstream states
   Real d0 = 8.0;
   Real e0 = 291.25;
-  Real u0 =  8.25*sqrt(3.0)/2.0;
+  Real u0 =  8.25*std::sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       // x-positions of shock at top and bottom of cell
-      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  )/sqrt(static_cast<Real>(3.0));
-      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1)/sqrt(static_cast<Real>(3.0));
+      Real shock_xpos_btm = 0.1666666666 + pcoord->x2f(j  ) /
+          std::sqrt(static_cast<Real>(3.0));
+      Real shock_xpos_top = 0.1666666666 + pcoord->x2f(j+1) /
+          std::sqrt(static_cast<Real>(3.0));
       phydro->u(IM3,ks,j,i) = 0.0;
 
       if (pcoord->x1f(i) > shock_xpos_top) {
@@ -100,7 +102,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else if (pcoord->x1f(i) > shock_xpos_btm) {
         // shock cuts upper L corner of cell
         Real dx = shock_xpos_top - pcoord->x1f(i);
-        Real fracl = 0.5*sqrt(3.0)*dx*dx/(pcoord->dx1f(i)*pcoord->dx2f(j));
+        Real fracl = 0.5*std::sqrt(3.0)*dx*dx/(pcoord->dx1f(i)*pcoord->dx2f(j));
         Real fracr = 1.0 - fracl;
         phydro->u(IDN,ks,j,i) = fracl*d0 + fracr*1.4;
         phydro->u(IEN,ks,j,i) = fracl*e0 + fracr*2.5;
@@ -117,7 +119,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else if (pcoord->x1f(i+1) < shock_xpos_top) {
         // shock cuts lower R corner of cell
         Real dx = pcoord->x1f(i+1) - shock_xpos_btm;
-        Real fracr = 0.5*sqrt(3.0)*dx*dx/(pcoord->dx1f(i)*pcoord->dx2f(j));
+        Real fracr = 0.5*std::sqrt(3.0)*dx*dx/(pcoord->dx1f(i)*pcoord->dx2f(j));
         Real fracl = 1.0 - fracr;
         phydro->u(IDN,ks,j,i) = fracl*d0 + fracr*1.4;
         phydro->u(IEN,ks,j,i) = fracl*e0 + fracr*2.5;
@@ -128,7 +130,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         // complicated case of shock crossing top and bottom of cell
         Real dx = shock_xpos_top - shock_xpos_btm;
-        Real fracr = 0.5*sqrt(3.0)*dx*dx;
+        Real fracr = 0.5*std::sqrt(3.0)*dx*dx;
         fracr += (pcoord->x1f(i+1) - shock_xpos_top)*pcoord->dx2f(j);
         fracr /= (pcoord->dx1f(i)*pcoord->dx2f(j));
         Real fracl = 1.0 - fracr;
@@ -154,7 +156,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
-  Real u0 =  8.25*sqrt(3.0)/2.0;
+  Real u0 =  8.25*std::sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
@@ -180,7 +182,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
-  Real u0 =  8.25*sqrt(3.0)/2.0;
+  Real u0 =  8.25*std::sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
@@ -217,9 +219,9 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   Real d0 = 8.0;
   Real e0 = 291.25;
-  Real u0 =  8.25*sqrt(3.0)/2.0;
+  Real u0 =  8.25*std::sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real shock_pos = 0.1666666666 + (1. + 20.*time)/sqrt(3.0);
+  Real shock_pos = 0.1666666666 + (1. + 20.*time)/std::sqrt(3.0);
   Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
   Real p1=2.5*(gamma-1.0);

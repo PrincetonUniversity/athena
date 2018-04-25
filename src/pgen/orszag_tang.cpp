@@ -11,6 +11,7 @@
 //========================================================================================
 
 // C/C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -46,7 +47,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int nx2 = (je-js)+1 + 2*(NGHOST);
   az.NewAthenaArray(nx2,nx1);
 
-  Real B0 = 1.0/sqrt(4.0*PI);
+  Real B0 = 1.0/std::sqrt(4.0*PI);
   Real d0 = 25.0/(36.0*PI);
   Real v0 = 1.0;
   Real p0 = 5.0/(12.0*PI);

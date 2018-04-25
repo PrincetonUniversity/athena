@@ -445,65 +445,64 @@ void FFTBlock::MpiInitialize() {
 
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
-      {using namespace DecompositionNames;
-      if (decomp_ == x_decomp) {
-        permute0_ = 1;
-      } else if (decomp_ == y_decomp) {
-        permute0_ = 2;
-      } else if (decomp_ == z_decomp) {
-        permute0_ = 0;
-      } else if (decomp_ == xy_decomp) {
-        permute0_ = 2;
-      } else if (decomp_ == yz_decomp) {
-        permute0_ = 0;
-      } else if (decomp_ == xz_decomp) {
-        permute0_ = 1;
-      } else {
-        msg << "Something wrong with " << pdim_ << "D decomposition!" << std::endl
-        << "Current MPI Configuration is "
-        << orig_idx_->np[0] << " x " << orig_idx_->np[1]
-        << " x " << orig_idx_->np[2] << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }}
+    if (decomp_ == DecompositionNames::x_decomp) {
+      permute0_ = 1;
+    } else if (decomp_ == DecompositionNames::y_decomp) {
+      permute0_ = 2;
+    } else if (decomp_ == DecompositionNames::z_decomp) {
+      permute0_ = 0;
+    } else if (decomp_ == DecompositionNames::xy_decomp) {
+      permute0_ = 2;
+    } else if (decomp_ == DecompositionNames::yz_decomp) {
+      permute0_ = 0;
+    } else if (decomp_ == DecompositionNames::xz_decomp) {
+      permute0_ = 1;
     } else {
-// For 3D block decompsition, simply set indices as in original Athena Array.
-// two additional remapping will be performed to prepare and recover indices.
-      swap1_ = false; swap2_ = false;
-      permute0_ = 0; permute1_ = 0; permute2_ = 0;
+      msg << "Something wrong with " << pdim_ << "D decomposition!" << std::endl
+          << "Current MPI Configuration is "
+          << orig_idx_->np[0] << " x " << orig_idx_->np[1]
+          << " x " << orig_idx_->np[2] << std::endl;
+      throw std::runtime_error(msg.str().c_str());
     }
+  } else {
+    // For 3D block decompsition, simply set indices as in original Athena Array.
+    // two additional remapping will be performed to prepare and recover indices.
+    swap1_ = false; swap2_ = false;
+    permute0_ = 0; permute1_ = 0; permute2_ = 0;
+  }
 
-// permute axes and procs & swap mid <-> slow indices to prepare forward FFT
-    f_in_ = new AthenaFFTIndex(orig_idx_);
-    f_in_->PermuteAxis(permute0_);
-    f_in_->PermuteProc(permute0_);
-    if (swap1_) {
-      f_in_->SwapAxis(0);
-      f_in_->SwapProc(0);
-    }
-    f_in_->SetLocalIndex();
+  // permute axes and procs & swap mid <-> slow indices to prepare forward FFT
+  f_in_ = new AthenaFFTIndex(orig_idx_);
+  f_in_->PermuteAxis(permute0_);
+  f_in_->PermuteProc(permute0_);
+  if (swap1_) {
+    f_in_->SwapAxis(0);
+    f_in_->SwapProc(0);
+  }
+  f_in_->SetLocalIndex();
 
-// set output indices of forward FFT;
-// keep global mesh size as input,
-// reverse permutation for MPI configurations to get correct indices
-    f_out_ = new AthenaFFTIndex(f_in_);
-    f_out_->PermuteAxis(permute1_);
-    f_out_->SetLocalIndex();
+  // set output indices of forward FFT;
+  // keep global mesh size as input,
+  // reverse permutation for MPI configurations to get correct indices
+  f_out_ = new AthenaFFTIndex(f_in_);
+  f_out_->PermuteAxis(permute1_);
+  f_out_->SetLocalIndex();
 
-// prepare backward FFT;
-// now permute fast, mid, and slow axes twice
-    b_in_ = new AthenaFFTIndex(f_out_);
-    if (swap2_) {
-      b_in_->SwapAxis(0);
-      b_in_->SwapProc(0);
-    }
-    b_in_->SetLocalIndex();
+  // prepare backward FFT;
+  // now permute fast, mid, and slow axes twice
+  b_in_ = new AthenaFFTIndex(f_out_);
+  if (swap2_) {
+    b_in_->SwapAxis(0);
+    b_in_->SwapProc(0);
+  }
+  b_in_->SetLocalIndex();
 
-// set output indices of backward FFT;
-// keep global mesh size as input,
-// reverse permutation for MPI configurations to get correct indices
-    b_out_ = new AthenaFFTIndex(b_in_);
-    b_out_->PermuteAxis(permute2_);
-    b_out_->SetLocalIndex();
+  // set output indices of backward FFT;
+  // keep global mesh size as input,
+  // reverse permutation for MPI configurations to get correct indices
+  b_out_ = new AthenaFFTIndex(b_in_);
+  b_out_->PermuteAxis(permute2_);
+  b_out_->SetLocalIndex();
 
 #endif
 }
@@ -564,7 +563,7 @@ void AthenaFFTIndex::SetLocalIndex() {
     is[i] = ip[i]*nx[i];
     ie[i] = is[i]+nx[i]-1;
   }
-//  PrintIndex();
+  //  PrintIndex();
 }
 
 void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {

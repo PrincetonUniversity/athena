@@ -13,6 +13,7 @@
 //========================================================================================
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -58,7 +59,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,k,j,i) = 0.0;
 
       // reset density, velocity if cell is inside rotor
-      Real rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
+      Real rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
       if (rad <= r0) {
         phydro->u(IDN,k,j,i) = 10.0;
         phydro->u(IM1,k,j,i) = -100.0*v0*pcoord->x2v(j);

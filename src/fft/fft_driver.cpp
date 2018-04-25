@@ -137,20 +137,19 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
 #ifdef MPI_PARALLEL
-  {using namespace DecompositionNames;
   decomp_ = 0; pdim_ = 0;
   if (npx1 > 1) {
-    decomp_ = decomp_ | x_decomp;
+    decomp_ = decomp_ | DecompositionNames::x_decomp;
     pdim_++;
   }
   if (npx2 > 1) {
-    decomp_ = decomp_ | y_decomp;
+    decomp_ = decomp_ | DecompositionNames::y_decomp;
     pdim_++;
   }
   if (npx3 > 1) {
-    decomp_ = decomp_ | z_decomp;
+    decomp_ = decomp_ | DecompositionNames::z_decomp;
     pdim_++;
-  }}
+  }
 #endif
 
 }
