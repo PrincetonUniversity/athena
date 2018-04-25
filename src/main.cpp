@@ -203,6 +203,9 @@ int main(int argc, char *argv[]) {
     if (res_flag==1) {
       restartfile.Open(restart_filename, IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(restartfile);
+      // If both -r and -i are specified, make sure next_time gets corrected.
+      // This needs to be corrected on the restart file because we need the old dt.
+      if(iarg_flag==1) pinput->RollbackNextTime();
       // leave the restart file open for later use
     }
     if (iarg_flag==1) {
@@ -265,8 +268,7 @@ int main(int argc, char *argv[]) {
 
   // With current mesh time possibly read from restart file, correct next_time for outputs
   if (iarg_flag == 1 && res_flag == 1) {
-    // if both -r and -i are specified, override the restart parameters with input file
-    pinput->RollbackNextTime();
+    // if both -r and -i are specified, ensure that next_time  >= mesh_time - dt
     pinput->ForwardNextTime(pmesh->time);
   }
 
