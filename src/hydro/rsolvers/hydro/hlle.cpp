@@ -21,6 +21,7 @@
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
