@@ -118,6 +118,10 @@ Hydro::~Hydro() {
   // only allocated if integrator was 3S* integrator
   u2.DeleteAthenaArray();
 
+  // fourth-order hydro
+  u_center.DeleteAthenaArray();
+  w_center.DeleteAthenaArray();
+
   flux[X1DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx3 > 1) flux[X3DIR].DeleteAthenaArray();
@@ -160,5 +164,10 @@ Hydro::~Hydro() {
     if (pmy_block->block_size.nx2 > 1) gflx_old[X2DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx3 > 1) gflx_old[X3DIR].DeleteAthenaArray();
   }
+  // fourth-order hydro
+  // 4D scratch arrays
+  scr1_nkji_.DeleteAthenaArray();
+  scr2_nkji_.DeleteAthenaArray();
+
   delete psrc;
 }
