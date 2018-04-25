@@ -1324,20 +1324,20 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     time, 0.0);
 
-      int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-      if (pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
-      if (pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
+      int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+      if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
+      if (pbval->nblevel[1][1][2]!=-1) iu+=NGHOST;
       if (pmb->block_size.nx2 > 1) {
-        if (pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
-        if (pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
+        if (pbval->nblevel[1][0][1]!=-1) jl-=NGHOST;
+        if (pbval->nblevel[1][2][1]!=-1) ju+=NGHOST;
       }
       if (pmb->block_size.nx3 > 1) {
-        if (pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
-        if (pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
+        if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
+        if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
       }
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
-                                      is, ie, js, je, ks, ke);
+                                      il, iu, jl, ju, kl, ku);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
     }
