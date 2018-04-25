@@ -6,6 +6,9 @@
 //! \file characteristic.cpp
 //  \brief Functions to transform vectors between primitive and characteristic variables
 
+// C++ headers
+#include <cmath>
+
 // Athena++ headers
 #include "reconstruction.hpp"
 #include "../athena.hpp"
