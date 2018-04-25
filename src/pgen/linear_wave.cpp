@@ -180,68 +180,150 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   }
 
   MeshBlock *pmb = pblock;
+  BoundaryValues *pbval;
+  // begin fourth order error calculation
+  //------------------------------------------------
+  // Save analytic solution of conserved variables in 4D scratch array
+  AthenaArray<Real> cons_;
+  // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
+  AthenaArray<Real> delta_cons_;
   while (pmb != NULL) {
-    //  Compute errors
-    for (int k=pmb->ks; k<=pmb->ke; k++) {
-    for (int j=pmb->js; j<=pmb->je; j++) {
-      for (int i=pmb->is; i<=pmb->ie; i++) {
+    pbval=pmb->pbval;
+    // BEGIN MOL4 CORRECTIONS
+    int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+    // INCREASE loop limits on all sides
+	if(pbval->nblevel[1][1][0]!=-1) il-=1;
+    if(pbval->nblevel[1][1][2]!=-1) iu+=1;
+    if(pbval->nblevel[1][0][1]!=-1) jl-=1;
+    if(pbval->nblevel[1][2][1]!=-1) ju+=1;
+    if(pbval->nblevel[0][1][1]!=-1) kl-=1;
+    if(pbval->nblevel[2][1][1]!=-1) ku+=1;
+
+    // Allocate memory for 4D Laplacian and cell-centered approximations
+	// Even for MHD, there are only cell-centered mesh variables
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    int ncells2 = 1, ncells3 = 1;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+    int ncells4 = NHYDRO+NFIELD;
+    int nl = 0;
+    int nu = ncells4-1;
+    cons_.NewAthenaArray(ncells4,ncells3,ncells2,ncells1);
+    delta_cons_.NewAthenaArray(ncells4,ncells3,ncells2,ncells1);
+
+    //  Compute errors at cell centers
+    for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++) {
         Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                        + pmb->pcoord->x3v(k)*sin_a2;
         Real sn = sin(k_par*x);
-        Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
         Real d1 = d0 + amp*sn*rem[0][wave_flag];
-        l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-        max_err[IDN] = std::max(static_cast<Real>(fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
-                                max_err[IDN]);
-
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
         Real my = amp*sn*rem[2][wave_flag];
         Real mz = amp*sn*rem[3][wave_flag];
         Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
         Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
         Real m3 = mx*sin_a2                    + mz*cos_a2;
-        l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
-        l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
-        l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-        max_err[IM1] = std::max(static_cast<Real>(fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
-                                max_err[IM1]);
-        max_err[IM2] = std::max(static_cast<Real>(fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
-                                max_err[IM2]);
-        max_err[IM3] = std::max(static_cast<Real>(fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
-                                max_err[IM3]);
+
+        // Store analytic solution at cell-centers
+        cons_(IDN,k,j,i) = d1;
+        cons_(IM1,k,j,i) = m1;
+        cons_(IM2,k,j,i) = m2;
+        cons_(IM3,k,j,i) = m3;
 
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
           if (MAGNETIC_FIELDS_ENABLED) {
             e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+			Real bx = bx0;
+			Real by = by0 + amp*sn*rem[5][wave_flag];
+			Real bz = bz0 + amp*sn*rem[6][wave_flag];
+			Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+			Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+			Real b3 = bx*sin_a2                    + bz*cos_a2;
+			cons_(NHYDRO+IB1,k,j,i) = b1;
+			cons_(NHYDRO+IB2,k,j,i) = b2;
+			cons_(NHYDRO+IB3,k,j,i) = b3;
           }
-          l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-          max_err[IEN] = std::max(static_cast<Real>(fabs(e0-pmb->phydro->u(IEN,k,j,i))),
-                                  max_err[IEN]);
-        }
-
-        if (MAGNETIC_FIELDS_ENABLED) {
-          Real bx = bx0;
-          Real by = by0 + amp*sn*rem[5][wave_flag];
-          Real bz = bz0 + amp*sn*rem[6][wave_flag];
-          Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
-          Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
-          Real b3 = bx*sin_a2                    + bz*cos_a2;
-          Real db1 = fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-          Real db2 = fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-          Real db3 = fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
-          l1_err[NHYDRO + IB1] += db1*vol;
-          l1_err[NHYDRO + IB2] += db2*vol;
-          l1_err[NHYDRO + IB3] += db3*vol;
-          max_err[NHYDRO + IB1] = std::max(db1, max_err[NHYDRO+IB1]);
-          max_err[NHYDRO + IB2] = std::max(db2, max_err[NHYDRO+IB2]);
-          max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
+          cons_(IEN,k,j,i) = e0;
         }
       }
     }}
+
+    // Restore loop limits to real cells only
+    il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+    // Compute and store Laplacian of cell-averaged conserved variables
+	// HYDRO AND BCC
+    pmb->pcoord->Laplacian(cons_,delta_cons_,il,iu,jl,ju,kl,ku,nl,nu);
+    // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+    // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+    Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+    Real C = (h*h)/24.0;
+
+    // Compute fourth-order approximation to cell-centered conserved variables
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
+            cons_(n,k,j,i) = cons_(n,k,j,i) + C*delta_cons_(n,k,j,i);
+		  }
+        }
+      }
+    }
+
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=il; i<=iu; ++i) {
+          // Load corrected cell-averaged analytic <U>
+          Real d1 = cons_(IDN,k,j,i);
+          Real m1 = cons_(IM1,k,j,i);
+          Real m2 = cons_(IM2,k,j,i);
+          Real m3 = cons_(IM3,k,j,i);
+          Real vol = pmb->pcoord->GetCellVolume(k, j, i);
+
+          l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
+          max_err[IDN] = std::max(static_cast<Real>(fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
+                                max_err[IDN]);
+
+          l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
+          l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
+          l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
+          max_err[IM1] = std::max(static_cast<Real>(fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
+                                  max_err[IM1]);
+          max_err[IM2] = std::max(static_cast<Real>(fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
+                                  max_err[IM2]);
+          max_err[IM3] = std::max(static_cast<Real>(fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
+                                  max_err[IM3]);
+
+          if (NON_BAROTROPIC_EOS) {
+            Real e0 = cons_(IEN,k,j,i);
+            l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
+            max_err[IEN] = std::max(static_cast<Real>(fabs(e0-pmb->phydro->u(IEN,k,j,i))),
+                                    max_err[IEN]);
+          }
+
+          if (MAGNETIC_FIELDS_ENABLED) {
+			Real b1 = cons_(NHYDRO+IB1,k,j,i);
+			Real b2 = cons_(NHYDRO+IB2,k,j,i);
+			Real b3 = cons_(NHYDRO+IB3,k,j,i);
+            Real db1 = fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+            Real db2 = fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+            Real db3 = fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+
+            l1_err[NHYDRO + IB1] += db1*vol;
+            l1_err[NHYDRO + IB2] += db2*vol;
+            l1_err[NHYDRO + IB3] += db3*vol;
+            max_err[NHYDRO + IB1] = std::max(db1, max_err[NHYDRO+IB1]);
+            max_err[NHYDRO + IB2] = std::max(db2, max_err[NHYDRO+IB2]);
+            max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
+          }
+        }
+      }}
     pmb=pmb->next;
   }
+  // ------- end fourth-order error calculation
 
   Real rms_err = 0.0, max_max_over_l1=0.0;
 
