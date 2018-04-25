@@ -759,13 +759,13 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-  if (pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
-  if (pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
-  if (pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
-  if (pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
-  if (pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
-  if (pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
+  int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+  if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
+  if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
+  if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
+  if (pbval->nblevel[1][2][1] != -1) ju+=NGHOST;
+  if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
+  if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
 
   if (step <= nsub_steps) {
     // At beginning of this task, phydro->w contains previous substep W(U) output
@@ -776,7 +776,7 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
     // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
-                                    is, ie, js, je, ks, ke);
+                                    il, iu, jl, ju, kl, ku);
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
   } else {
