@@ -22,12 +22,11 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/p
 echo "Starting std::sqrt(), std::cbrt() test"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | while read -r file; do
     echo "Checking $file...."
+    grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit 1; fi
 
-    count=`grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | tee /dev/tty | wc -l`
-    if [ $count -ne 0 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit $count; fi
-
-    count=`grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//" | tee /dev/tty | wc -l`
-    if [ $count -ne 0 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit $count; fi
+    grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
 
     # ./cpplint.py --counting=detailed "$file" # for linting each src/ file separately
 done
