@@ -19,20 +19,17 @@
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
-set -e
 echo "Starting std::sqrt(), std::cbrt() test"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | while read -r file; do
     echo "Checking $file...."
 
-    grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
-    [ $(grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | wc -l) -eq 0 ]
-    # echo $?  # silent return
+    count=`grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//" | tee /dev/tty | wc -l`
+    if [ $count -ne 0 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit $count; fi
 
-    grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
-    [ $(grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//" | wc -l) -eq 0 ]
+    count=`grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//" | tee /dev/tty | wc -l`
+    if [ $count -ne 0 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit $count; fi
 
     # ./cpplint.py --counting=detailed "$file" # for linting each src/ file separately
 done
 
 echo "End of std::sqrt(), std::cbrt() test"
-set +e
