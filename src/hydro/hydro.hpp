@@ -30,10 +30,13 @@ public:
   // data
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
   // conserved and primitive variables
-  AthenaArray<Real> u,w;      // time-integrator memory register #1
-  AthenaArray<Real> u1,w1;    // time-integrator memory register #2
+  AthenaArray<Real> u, w;      // time-integrator memory register #1
+  AthenaArray<Real> u1, w1;    // time-integrator memory register #2
   AthenaArray<Real> u2;       // time-integrator memory register #3
   AthenaArray<Real> flux[3];  // face-averaged flux vector
+
+  // fourth-order intermediate quantities
+  AthenaArray<Real> u_centered, w_centered;      // cell-centered approximations
 
   HydroSourceTerms *psrc;
 
@@ -56,7 +59,7 @@ public:
   void CorrectGravityFlux(void);
 
 private:
-  AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
+  AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
   AthenaArray<Real> wl_, wr_;
   AthenaArray<Real> dxw_;
@@ -75,6 +78,9 @@ private:
   // self-gravity
   AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor (old Athena style)
 
+  // fourth-order hydro
+  // 4D scratch arrays
+  AthenaArray<Real> scr1_nkji_, scr2_nkji_,
 
   TimeStepFunc_t UserTimeStep_;
 };
