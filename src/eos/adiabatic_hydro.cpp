@@ -24,9 +24,9 @@
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro","gamma");
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",sqrt(1024*(FLT_MIN)));
-  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",sqrt(1024*(FLT_MIN)));
+  gamma_ = pin->GetReal("hydro", "gamma");
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor", std::sqrt(1024*(FLT_MIN)));
+  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", std::sqrt(1024*(FLT_MIN)));
 }
 
 // destructor
