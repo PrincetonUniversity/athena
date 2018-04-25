@@ -666,8 +666,7 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
 //! \fn void ParameterInput::RollbackNextTime()
 //  \brief rollback next_time by dt for each output block
 
-void ParameterInput::RollbackNextTime()
-{
+void ParameterInput::RollbackNextTime() {
   InputBlock *pb = pfirst_block;
   InputLine* pl;
   std::stringstream msg;
@@ -677,18 +676,20 @@ void ParameterInput::RollbackNextTime()
     if (pb->block_name.compare(0,6,"output") == 0) {
       pl = pb->GetPtrToLine("next_time");
       if (pl == NULL) {
-        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]" << std::endl
-            << "Parameter name 'next_time' not found in block '" << pb->block_name << "'";
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
+            << std::endl << "Parameter name 'next_time' not found in block '"
+            << pb->block_name << "'";
         throw std::runtime_error(msg.str().c_str());
       }
-      next_time = (Real)atof(pl->param_value.c_str());
+      next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       pl = pb->GetPtrToLine("dt");
       if (pl == NULL) {
-        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]" << std::endl
-            << "Parameter name 'dt' not found in block '" << pb->block_name << "'";
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
+            << std::endl << "Parameter name 'dt' not found in block '"
+            << pb->block_name << "'";
         throw std::runtime_error(msg.str().c_str());
       }
-      next_time -= (Real)atof(pl->param_value.c_str());
+      next_time -= static_cast<Real>(atof(pl->param_value.c_str()));
       msg << next_time;
       AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
     }
@@ -698,18 +699,16 @@ void ParameterInput::RollbackNextTime()
 
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ForwardNextTime()
-//  \brief add dt to next_time until next_time > start_time - dt for each
-//  output block
+//  \brief add dt to next_time until next_time > start_time - dt for each output block
 
-void ParameterInput::ForwardNextTime()
-{
+void ParameterInput::ForwardNextTime() {
   InputBlock *pb = pfirst_block;
   InputLine* pl;
   Real start_time;
   Real next_time;
   Real dt;
 
-  # TODO: make sure start_time >= mesh time
+  // TODO(kfelker): make sure start_time >= mesh time
   start_time = GetOrAddReal("time", "start_time", 0);
 
   while (pb != NULL) {
@@ -718,17 +717,17 @@ void ParameterInput::ForwardNextTime()
       pl = pb->GetPtrToLine("next_time");
       if (pl == NULL) {
         next_time = start_time;
-      }
-      else {
-        next_time = (Real)atof(pl->param_value.c_str());
+      } else {
+        next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       }
       pl = pb->GetPtrToLine("dt");
       if (pl == NULL) {
-        msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]" << std::endl
-            << "Parameter name 'dt' not found in block '" << pb->block_name << "'";
+        msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]"
+            << std::endl << "Parameter name 'dt' not found in block '"
+            << pb->block_name << "'";
         throw std::runtime_error(msg.str().c_str());
       }
-      dt = (Real)atof(pl->param_value.c_str());
+      dt = static_cast<Real>(atof(pl->param_value.c_str()));
       dt = dt * (int)((start_time - next_time) / dt);
       if (dt > 0) next_time += dt;
       msg << next_time;
