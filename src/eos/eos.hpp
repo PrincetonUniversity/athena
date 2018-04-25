@@ -23,6 +23,7 @@ struct FaceField;
 //  \brief data and functions that implement EoS
 
 class EquationOfState {
+  friend class Hyrdo;
 public:
   EquationOfState(MeshBlock *pmb, ParameterInput *pin);
   ~EquationOfState();
@@ -34,6 +35,14 @@ public:
        AthenaArray<Real> &cons, Coordinates *pco,
        int il, int iu, int jl, int ju, int kl, int ku);
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+
+  void ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
+    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+    AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
+    int kl, int ku);
+  // void PrimitiveToConservedCellAverage(const AthenaArray<Real> &prim,
+  //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+  //   int iu, int jl, int ju, int kl, int ku);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op

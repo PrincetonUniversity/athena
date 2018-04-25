@@ -22,7 +22,8 @@ struct IntegratorWeight;
 //  \brief hydro data and functions
 
 class Hydro {
-friend class Field;
+  friend class Field;
+  friend class EquationOfState;
 public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
   ~Hydro();
@@ -80,7 +81,7 @@ private:
 
   // fourth-order hydro
   // 4D scratch arrays
-  AthenaArray<Real> scr1_nkji_, scr2_nkji_,
+  AthenaArray<Real> scr1_nkji_, scr2_nkji_;
 
   TimeStepFunc_t UserTimeStep_;
 };
