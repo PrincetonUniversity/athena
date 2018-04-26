@@ -877,8 +877,9 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
-    // (if using a 3S* time-integrator)
-    ph->u2 = ph->u;
+    // (if using a 3S* or 3N time-integrator)
+    if (integrator == "ssprk5_4")
+      ph->u2 = ph->u;
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;
