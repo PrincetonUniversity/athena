@@ -75,6 +75,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
+  // TODO(kfelker): fix loop limits for fourth-order hydro
   //  if (MAGNETIC_FIELDS_ENABLED) {
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) // 2D
@@ -172,6 +173,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
+    // TODO(kfelker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx3 == 1) // 2D
       il=is-1, iu=ie+1, kl=ks, ku=ke;
@@ -269,8 +271,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // set the loop limits
     il=is, iu=ie, jl=js, ju=je;
-    if (MAGNETIC_FIELDS_ENABLED)
-      il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    // TODO(kfelker): fix loop limits for fourth-order hydro
+    //    if (MAGNETIC_FIELDS_ENABLED)
+    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
     // reconstruct L/R states at k
     if (order == 1) {
