@@ -33,7 +33,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // First, define each time-integrator by setting weights for each step of the algorithm
   // and the CFL number stability limit when coupled to the single-stage spatial operator.
   // Currently, the time-integrators must be expressed as 2S-type algorithms as in
-  // Ketchenson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
+  // Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
   // popular 2-register low-storage RK methods. The 2S-type integrators depend on a
   // bidiagonally sparse Shu-Osher representation; at each stage l:
   //
@@ -114,7 +114,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     //} else if (integrator == "ssprk5_3") {
     //} else if (integrator == "ssprk10_4") {
   } else if (integrator == "rk4") {
-    // RK4()4[2S] from Table 2 of Ketchenson (2010)
+    // RK4()4[2S] from Table 2 of Ketcheson (2010)
     // Non-SSP, explicit four-stage, fourth-order RK
     nsub_steps = 4;
     // Stability properties are similar to classical RK4
@@ -145,30 +145,34 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[3].gamma_3 = 0.0;
     step_wghts[3].beta = 0.310665766509336;
   } else if (integrator == "ssprk5_4") {
-    // SSPRK (5,4): Gottlieb (2009) section 3.1
+    // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
     // 3N method, but there is no 3S* formulation due to irregular sparsity
     // of Shu-Osher form matrix, alpha
     nsub_steps = 5;
     cfl_limit = 1.3925;
+    // u^(1)
     step_wghts[0].delta = 1.0;
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
     step_wghts[0].gamma_3 = 0.0;
     step_wghts[0].beta = 0.391752226571890;
 
+    // u^(2)
     step_wghts[1].delta = 0.0; // u1 = u^n
     step_wghts[1].gamma_1 = 0.555629506348765;
     step_wghts[1].gamma_2 = 0.444370493651235;
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 0.368410593050371;
 
+    // u^(3)
     step_wghts[2].delta = 0.0;
     step_wghts[2].gamma_1 = 0.379898148511597;
     step_wghts[2].gamma_2 = 0.0;
     step_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
     step_wghts[2].beta = 0.251891774271694;
 
+    // u^(4)
     step_wghts[3].delta = 0.0;
     step_wghts[3].gamma_1 = TWO_3RD;
     step_wghts[3].gamma_2 = ONE_3RD;
@@ -559,7 +563,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
     ave_wghts[0] = 1.0;
     ave_wghts[1] = step_wghts[step-1].delta;
     ave_wghts[2] = 0.0;
-    ph->WeightedAveU(ph->u1,ph->u,ph->u2,ave_wghts);
+    ph->WeightedAveU(ph->u1, ph->u, ph->u2, ave_wghts);
 
     ave_wghts[0] = step_wghts[step-1].gamma_1;
     ave_wghts[1] = step_wghts[step-1].gamma_2;
@@ -860,7 +864,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
     // (if using a 3S* time-integrator)
-    // ph->u2 = ph->u;
+    ph->u2 = ph->u;
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;
