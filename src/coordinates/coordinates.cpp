@@ -446,6 +446,123 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i) {
   return dx1f(i)*dx2f(j)*dx3f(k);
 }
 
+//-------------------------------------------------------------------------------------
+// Laplacian: calculate total Laplacian of 4D scalar array s() to second order accuracy
+// may need to replace dx*f with dx*v for nonuniform coordinates for some applications
+
+void Coordinates::Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                            const int il, const int iu, const int jl, const int ju,
+                            const int kl, const int ku, const int nl, const int nu) {
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+              /(dx1f(i)*dx1f(i));
+        }
+        if (pmy_block->block_size.nx2 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
+                /(dx2f(j)*dx2f(j));
+          }
+        }
+        if (pmy_block->block_size.nx3 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
+                /(dx3f(k)*dx3f(k));
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//-------------------------------------------------------------------------------------
+// LaplacianX* functions: calculate Laplacian in subspaces orthogonal to X-dir
+
+void Coordinates::LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                              const int il, const int iu, const int jl, const int ju,
+                              const int kl, const int ku, const int nl, const int nu) {
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        if (pmy_block->block_size.nx2 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
+                /(dx2f(j)*dx2f(j));
+          }
+        } else { // 1D domain
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = 0.0;
+          }
+        }
+        if (pmy_block->block_size.nx3 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
+                /(dx3f(k)*dx3f(k));
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                              const int il, const int iu, const int jl, const int ju,
+                              const int kl, const int ku, const int nl, const int nu) {
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+              /(dx1f(i)*dx1f(i));
+        }
+        if (pmy_block->block_size.nx3 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
+                /(dx3f(k)*dx3f(k));
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                              const int il, const int iu, const int jl, const int ju,
+                              const int kl, const int ku, const int nl, const int nu) {
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+              /(dx1f(i)*dx1f(i));
+        }
+        if (pmy_block->block_size.nx2 > 1) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
+                /(dx2f(j)*dx2f(j));
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
