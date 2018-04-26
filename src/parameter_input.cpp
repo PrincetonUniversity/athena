@@ -707,6 +707,7 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
   InputLine* pl;
   Real next_time;
   Real dt0, dt;
+  bool fresh = false;
 
   while (pb != NULL) {
     if (pb->block_name.compare(0, 6, "output") == 0) {
@@ -714,6 +715,8 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
       pl = pb->GetPtrToLine("next_time");
       if (pl == NULL) {
         next_time = mesh_time;
+        // This is a freshly added output
+        fresh = true;
       } else {
         next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       }
@@ -728,7 +731,10 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
       dt = dt0 * static_cast<int>((mesh_time - next_time) / dt0) + dt0;
       if (dt > 0) {
         next_time += dt;
-        next_time -= std::fmod(next_time, dt0);
+        // If the user has added a new/fresh output round to multiple of dt0,
+        // and make sure that mesh_time - dt0 < next_time < mesh_time,
+        // to ensure immediate writing
+        if (fresh) next_time -= std::fmod(next_time, dt0) + dt0;
       }
       msg << next_time;
       AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
