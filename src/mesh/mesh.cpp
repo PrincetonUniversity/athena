@@ -1433,8 +1433,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (pbval->nblevel[2][1][1] != -1) ku-=1;
       // for MHD, shrink buffer by 3
       // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
-      pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
-                                                 phydro->w1, pfield->bcc, pmb->pcoord,
+      pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                 phydro->w, pfield->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
