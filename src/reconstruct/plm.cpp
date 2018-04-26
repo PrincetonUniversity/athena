@@ -15,7 +15,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 
-#define SMALL_NUMBER 1.0e-8
 #if defined(__AVX512F__)
 #define SIMD_WIDTH 8
 #elif defined(__AVX__)
