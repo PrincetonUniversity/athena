@@ -30,6 +30,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   uniform_limiter[1] = true;
   uniform_limiter[2] = true;
   std::string input_recon = pin->GetOrAddString("time","xorder","2");
+  // read fourth-order solver switches
+  correct_ic = pin->GetOrAddBoolean("time", "correct_ic", false);
+  correct_err = pin->GetOrAddBoolean("time", "correct_err", false);
+
   if (input_recon == "1") {
     xorder = 1;
   } else if (input_recon == "2") {

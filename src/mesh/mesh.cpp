@@ -66,10 +66,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   if (mesh_test>0) Globals::nranks=mesh_test;
 
   // read time and cycle limits from input file
-  start_time = pin->GetOrAddReal("time","start_time",0.0);
-  tlim       = pin->GetReal("time","tlim");
-  cfl_number = pin->GetReal("time","cfl_number");
-  ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
+  start_time = pin->GetOrAddReal("time", "start_time", 0.0);
+  tlim       = pin->GetReal("time", "tlim");
+  cfl_number = pin->GetReal("time", "cfl_number");
+  ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
@@ -78,14 +78,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   turb_flag = 0;
 
-  nlim = pin->GetOrAddInteger("time","nlim",-1);
+  nlim = pin->GetOrAddInteger("time", "nlim", -1);
   ncycle = 0;
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
 
   // read number of OpenMP threads for mesh
-  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
