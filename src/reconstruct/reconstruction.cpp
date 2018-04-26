@@ -41,11 +41,21 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   } else if (input_recon == "2c") {
     xorder = 2;
     characteristic_reconstruction = true;
-  } else if ((input_recon == "3") || (input_recon == "4")) {
-    xorder = 4;
-  } else if ((input_recon == "3c") || (input_recon == "4c")) {
-    xorder = 4;
+  } else if (input_recon == "3") {
+    // PPM approximates interfaces with 4th-order accurate stencils, but use xorder=3
+    // to denote that the overall scheme is "between 2nd and 4th" order w/o flux terms
+    xorder = 3;
+  } else if (input_recon == "3c") {
+    xorder = 3;
     characteristic_reconstruction = true;
+  } else if ((input_recon == "4") || (input_recon == "4c")) {
+    // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
+    xorder = 4;
+    if (input_recon == "4c")
+      characteristic_reconstruction = true;
+    // perform checks of solver configuration restrictions, NGHOST, etc:
+    // TODO(kfelker): add NGHOST and uniform Cartesian mesh checks
+
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -53,8 +63,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // check that there are the necessary number of ghost zones for PPM
-  if (xorder == 4) {
+  // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
+  if (xorder == 3) {
     int req_nghost = 3;
     if (MAGNETIC_FIELDS_ENABLED)
       req_nghost += 1;
@@ -96,7 +106,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   scr3_ni_.NewAthenaArray(NWAVE,ncells1);
   scr4_ni_.NewAthenaArray(NWAVE,ncells1);
 
-  if (xorder == 4) {
+  if ((xorder == 3) || (xorder == 4)) {
     scr03_i_.NewAthenaArray(ncells1);
     scr04_i_.NewAthenaArray(ncells1);
     scr05_i_.NewAthenaArray(ncells1);
