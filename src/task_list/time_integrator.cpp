@@ -152,7 +152,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     nsub_steps = 5;
     cfl_limit = 1.3925;
     // u^(1)
-    step_wghts[0].delta = 1.0;
+    step_wghts[0].delta = 1.0; // u1 = u^n
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
     step_wghts[0].gamma_3 = 0.0;
@@ -166,24 +166,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].beta = 0.368410593050371;
 
     // u^(3)
-    step_wghts[2].delta = 0.0;
+    step_wghts[2].delta = 0.517231671970585; // u1 <- (u^n + d*u^(2))
     step_wghts[2].gamma_1 = 0.379898148511597;
     step_wghts[2].gamma_2 = 0.0;
-    step_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
+    step_wghts[2].gamma_3 = 0.620101851488403; // u^(n) coeff =  u2
     step_wghts[2].beta = 0.251891774271694;
 
     // u^(4)
-    step_wghts[3].delta = 0.0;
-    step_wghts[3].gamma_1 = TWO_3RD;
-    step_wghts[3].gamma_2 = ONE_3RD;
-    step_wghts[3].gamma_3 = 0.178079954393132; // u2 = u^n
+    step_wghts[3].delta = 0.096059710526147; // u1 <- (u^n + d*u^(2) + d'*u^(3))
+    step_wghts[3].gamma_1 = 0.821920045606868;
+    step_wghts[3].gamma_2 = 0.0;
+    step_wghts[3].gamma_3 = 0.178079954393132; // u^(n) coeff =  u2
     step_wghts[3].beta = 0.544974750228521;
 
+    // u^(n+1) partial expression
     step_wghts[4].delta = 0.0;
-    step_wghts[4].gamma_1 = 0.386708617503268; // from Gottlieb (2009), u^(4) coeff.
-    step_wghts[4].gamma_2 = ONE_3RD;
-    step_wghts[4].gamma_3 = 0.0;
-    step_wghts[4].beta = 0.226007483236906; // from Gottlieb (2009), F(u^(4)) coeff.
+    step_wghts[4].gamma_1 = 0.386708617503268; // u^(4) coeff.
+    step_wghts[4].gamma_2 = 1.0; // u1 <- (u^n + d*u^(2) + d'*u^(3))
+    step_wghts[4].gamma_3 = 1.0; // partial sum from hardcoded extra step=4
+    step_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
@@ -568,9 +569,22 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
     ave_wghts[0] = step_wghts[step-1].gamma_1;
     ave_wghts[1] = step_wghts[step-1].gamma_2;
     ave_wghts[2] = step_wghts[step-1].gamma_3;
-    ph->WeightedAveU(ph->u,ph->u1,ph->u2,ave_wghts);
-    ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[step-1].beta,ph->u);
+    ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, step_wghts[step-1].beta, ph->u);
 
+    // Hardcode an additional flux divergence weighted average for the penultimate
+    // substep of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+    if (step==4 && integrator == "ssprk5_4") {
+      // From Gottlieb (2009), u^(n+1) partial calculation
+      ave_wghts[0] = -1.0; // -u^(n) coeff.
+      ave_wghts[1] = 0.0;
+      ave_wghts[2] = 0.0;
+      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      // writing out to u2 register
+      ph->WeightedAveU(ph->u2, ph->u1, ph->u2, ave_wghts);
+
+      ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, beta, ph->u2);
+    }
     return TASK_NEXT;
   }
 
