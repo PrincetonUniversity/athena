@@ -39,6 +39,7 @@
 static Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
 static int wave_flag;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
+static bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
 static Real gam,gm1,iso_cs,vflow;
@@ -67,18 +68,21 @@ int RefinementCondition(MeshBlock *pmb);
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // read global parameters
-  wave_flag = pin->GetInteger("problem","wave_flag");
-  amp = pin->GetReal("problem","amp");
-  vflow = pin->GetOrAddReal("problem","vflow",0.0);
-  ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
-  ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
+  wave_flag = pin->GetInteger("problem", "wave_flag");
+  amp = pin->GetReal("problem", "amp");
+  vflow = pin->GetOrAddReal("problem", "vflow", 0.0);
+  ang_2 = pin->GetOrAddReal("problem", "ang_2", -999.9);
+  ang_3 = pin->GetOrAddReal("problem", "ang_3", -999.9);
+
+  ang_2_vert = pin->GetOrAddBoolean("problem", "ang_2_vert", false);
+  ang_3_vert = pin->GetOrAddBoolean("problem", "ang_3_vert", false);
 
   // initialize global variables
   if (NON_BAROTROPIC_EOS) {
-    gam   = pin->GetReal("hydro","gamma");
+    gam   = pin->GetReal("hydro", "gamma");
     gm1 = (gam - 1.0);
   } else {
-    iso_cs = pin->GetReal("hydro","iso_sound_speed");
+    iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   }
 
   // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
@@ -95,9 +99,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
 
+  // Override ang_3 input and hardcode vertical (along x2 axis) wavevector
+  if (ang_3_vert == true) {
+    sin_a3 = 1.0;
+    cos_a3 = 0.0;
+    ang_3 = 0.5*M_PI;
+  }
+
   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
   sin_a2 = sin(ang_2);
   cos_a2 = cos(ang_2);
+
+  // Override ang_2 input and hardcode vertical (along x3 axis) wavevector
+  if (ang_2_vert == true) {
+    sin_a2 = 1.0;
+    cos_a2 = 0.0;
+    ang_2 = 0.5*M_PI;
+  }
 
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;

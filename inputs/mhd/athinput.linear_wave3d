@@ -109,3 +109,5 @@ amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 nuiso     = 0.0       # isotropic viscosity
 eta_O     = 0.0       # spatial constant resistivity
+ang_2_vert= false     # set to 'true' to make ang_2=pi/2
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2
