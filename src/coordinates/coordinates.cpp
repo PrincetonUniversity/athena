@@ -526,8 +526,8 @@ void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &del
           delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
               /(dx1f(i)*dx1f(i));
         }
-#pragma omp simd
         if (pmy_block->block_size.nx3 > 1) {
+#pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
                 /(dx3f(k)*dx3f(k));
@@ -550,8 +550,8 @@ void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &del
           delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
               /(dx1f(i)*dx1f(i));
         }
-#pragma omp simd
         if (pmy_block->block_size.nx2 > 1) {
+#pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
                 /(dx2f(j)*dx2f(j));
