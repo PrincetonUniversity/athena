@@ -37,6 +37,7 @@
 
 // C++ headers
 #include <algorithm>  // transform
+#include <cmath>      // fmod()
 #include <cstdlib>    // atoi(), atof(), NULL, size_t
 #include <fstream>    // ifstream
 #include <iostream>   // endl, ostream
