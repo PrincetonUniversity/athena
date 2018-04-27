@@ -41,8 +41,7 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary functions
   EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
   return;
@@ -58,8 +57,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Notes:
 //   assumes x3 is axisymmetric direction
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -144,8 +142,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   return;
 }
 
@@ -159,8 +156,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   conversion is trivial in all currently implemented coordinate systems
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi)
-{
+    Real *ptheta, Real *pphi) {
   if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
     *pr = x1;
     *ptheta = x2;

@@ -10,7 +10,7 @@
 // hardwired to be 2.0 in 2D, and is set by the input parameter <problem>/rhoh in 3D
 // (default value is 3.0). This reproduces 2D results of Liska & Wendroff, 3D results of
 // Dimonte et al.
-// 
+//
 // FOR 2D HYDRO:
 // Problem domain should be -1/6 < x < 1/6; -0.5 < y < 0.5 with gamma=1.4 to match Liska
 // & Wendroff. Interface is at y=0; perturbation added to Vy. Gravity acts in y-dirn.
@@ -29,6 +29,8 @@
 //
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
+
+#include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -55,6 +57,8 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 // made global to share with BC functions
 static Real grav_acc;
 
+int RefinementCondition(MeshBlock *pmb);
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
@@ -62,14 +66,14 @@ static Real grav_acc;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
     EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
     EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
-  }
-  else { // 3D problem
+  } else { // 3D problem
     // Enroll special BCs
     EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
     EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
@@ -82,12 +86,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Problem Generator for the Rayleigh-Taylor instability test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
-  long int iseed = -1;
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  int64_t iseed = -1;
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
-  
+
   Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);
   Real ky = 2.0*(PI)/(pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min);
   Real kz = 2.0*(PI)/(pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min);
@@ -109,7 +112,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         if (pcoord->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phydro->u(IM2,k,j,i) = (1.0+cos(kx*pcoord->x1v(i)))*(1.0+cos(ky*pcoord->x2v(j)))/4.0;
+          phydro->u(IM2,k,j,i) = (1.0 + cos(kx*pcoord->x1v(i)))*
+              (1.0 + cos(ky*pcoord->x2v(j)))/4.0;
         } else {
           phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pcoord->x2v(j)));
         }
@@ -229,8 +233,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
@@ -242,7 +245,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i) 
+          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i)
              - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
@@ -289,8 +292,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
@@ -302,7 +304,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i) 
+          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i)
              + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
@@ -349,8 +351,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
@@ -362,7 +363,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       } else if (n==(IPR)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i) 
+          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i)
              - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
@@ -409,8 +410,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je; ++j) {
@@ -462,4 +462,23 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
   }
 
   return;
+}
+
+
+// refinement condition: velocity gradient
+int RefinementCondition(MeshBlock *pmb) {
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real vgmax=0.0;
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
+        Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
+        if (vgy > vgmax) vgmax=vgy;
+        if (vgx > vgmax) vgmax=vgx;
+      }
+    }
+  }
+  if (vgmax > 0.01) return 1;
+  return -1;
 }

@@ -1,5 +1,5 @@
-#ifndef EOS_HPP
-#define EOS_HPP
+#ifndef EOS_EOS_HPP_
+#define EOS_EOS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -36,16 +36,17 @@ public:
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const FaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
-    Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,
-       int is, int ie, int js, int je, int ks, int ke);
+       int il, int iu, int jl, int ju, int kl, int ku);
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
     Real SoundSpeed(const Real prim[(NHYDRO)]);
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
-      Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+      Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
     #else  // MHD
       Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx);
     #endif  // !MAGNETIC_FIELDS_ENABLED
@@ -58,8 +59,8 @@ public:
     void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real, Real *,
         Real *) {return;}
   #elif !GENERAL_RELATIVITY  // SR: Newtonian, GR defined as no-op
-    Real SoundSpeed(const Real []) {return 0.0;}
-    Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+    Real SoundSpeed(const Real[]) {return 0.0;}
+    Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
@@ -77,8 +78,8 @@ public:
     void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
         Real *, Real *) {return;}
   #else  // GR: Newtonian defined as no-op
-    Real SoundSpeed(const Real []) {return 0.0;}
-    Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+    Real SoundSpeed(const Real[]) {return 0.0;}
+    Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
@@ -172,4 +173,4 @@ private:
 
 };
 
-#endif
+#endif // EOS_EOS_HPP_

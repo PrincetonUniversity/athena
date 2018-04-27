@@ -7,7 +7,7 @@ in order to make this file self-explanatory, but the actual working code is only
 lines long.
 
 There are three functions defined here:
-    prepare()
+    prepare(**kwargs)
     run()
     analyze()
 All three must be defined with the same names and no inputs in order to make a working
@@ -31,7 +31,7 @@ import scripts.utils.comparison as comparison  # more utilities explicitly for t
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 import athena_read                             # utilities for reading Athena++ data
 
-def prepare():
+def prepare(**kwargs):
   """
   Configure and make the executable.
 
@@ -47,8 +47,9 @@ def prepare():
   # be supplied. Note athena.configure() expects the values only to be quoted, e.g.
   # --<key>='<value>'.
   athena.configure('g', 't',
-      prob='gr_shock_tube',
-      coord='minkowski')
+                   prob='gr_shock_tube',
+                   coord='minkowski',
+                   **kwargs)
 
   # Call make as though we ran
   #     make clean
@@ -56,7 +57,7 @@ def prepare():
   # from the athena/ directory.
   athena.make()
 
-def run():
+def run(**kwargs):
   """
   Run the executable.
 
@@ -67,7 +68,7 @@ def run():
   # Create list of runtime arguments to override the athinput file. Each element in the
   # list is simply a string of the form '<block>/<field>=<value>', where the contents of
   # the string are exactly what one would type on the command line run running Athena++.
-  arguments = [
+  arguments = ['time/ncycle_out=0',
       'job/problem_id=gr_shock_tube',
       'output1/file_type=vtk',
       'output1/variable=cons',

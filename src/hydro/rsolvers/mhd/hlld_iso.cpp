@@ -12,6 +12,7 @@
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -20,7 +21,7 @@
 #include "../../../eos/eos.hpp"
 
 // container to store (density, momentum, tranverse magnetic field)
-// minimizes changes required to adopt athena4.2 version of this solver 
+// minimizes changes required to adopt athena4.2 version of this solver
 typedef struct Cons1D {
   Real d,mx,my,mz,by,bz;
 } Cons1D;
@@ -33,24 +34,23 @@ typedef struct Cons1D {
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
-  Real spd[5];                    // signal speeds, left to right 
-  Cons1D ulst,urst,ucst;          // Conserved variable for all states 
+  Real spd[5];                    // signal speeds, left to right
+  Cons1D ulst,urst,ucst;          // Conserved variable for all states
   Cons1D fl,fr;                   // Fluxes for left & right states
 
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -122,7 +122,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // rho component of U^{hll} from Mignone eqn. (15); uses F_L and F_R from eqn. (6)
     Real dhll = (spd[4]*ur.d - spd[0]*ul.d - fr.d + fl.d)*idspd;
     dhll = std::max(dhll, dfloor);
-    Real sqrtdhll = sqrt(dhll);
+    Real sqrtdhll = std::sqrt(dhll);
 
     // rho and mx components of F^{hll} from Mignone eqn. (17)
     Real fdhll  = (spd[4]*fl.d  - spd[0]*fr.d  + spd[4]*spd[0]*(ur.d -ul.d ))*idspd;
@@ -194,7 +194,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 6.  Compute flux
 
-    if(spd[0] >= 0.0){
+    if (spd[0] >= 0.0) {
       // return Fl if flow is supersonic, eqn. (38a) of Mignone
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -202,7 +202,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fl.mz;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if(spd[4] <= 0.0){
+    } else if (spd[4] <= 0.0) {
       // return Fr if flow is supersonic, eqn. (38e) of Mignone
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;
@@ -210,7 +210,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fr.mz;
       flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
-    } else if(spd[1] >= 0.0) {
+    } else if (spd[1] >= 0.0) {
       // return (Fl+Sl*(Ulst-Ul)), eqn. (38b) of Mignone
       flxi[IDN] = fl.d  + spd[0]*(ulst.d  - ul.d);
       flxi[IVX] = fl.mx + spd[0]*(ulst.mx - ul.mx);
@@ -218,7 +218,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IVZ] = fl.mz + spd[0]*(ulst.mz - ul.mz);
       flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
       flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
-    } else if(spd[3] <= 0.0) {
+    } else if (spd[3] <= 0.0) {
       // return (Fr+Sr*(Urst-Ur)), eqn. (38d) of Mignone
       flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
       flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);
@@ -243,7 +243,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-  }      
+  }
   }}
 
   return;

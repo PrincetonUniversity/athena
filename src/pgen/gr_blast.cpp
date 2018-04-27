@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -36,8 +37,7 @@ static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, R
 // Inputs:
 //   pin: parameters
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -55,8 +55,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  // Real gamma_adi = peos->GetGamma();
+  // Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
   Real num_x = pin->GetReal("problem", "num_x");
@@ -227,8 +227,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz)
-{
+    Real *px, Real *py, Real *pz) {
   if (COORDINATE_SYSTEM == "minkowski") {
     *pt = x0;
     *px = x1;
@@ -250,8 +249,7 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (COORDINATE_SYSTEM == "minkowski") {
     *pa0 = at;
     *pa1 = ax;
@@ -271,9 +269,8 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 // Notes:
 //   distance function is Euclidean in Minkowski coordinates
 
-static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3)
-{
-  Real distance;
+static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
+  Real distance = 0.0;
   if (COORDINATE_SYSTEM == "minkowski") {
     distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
   }

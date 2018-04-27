@@ -51,8 +51,7 @@ static Real bsq_over_rho;  // b^2/rho at inner radius
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read problem parameters
   k_adi = pin->GetReal("hydro", "k_adi");
   r_crit = pin->GetReal("problem", "r_crit");
@@ -76,8 +75,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //   sets primitive and conserved variables according to input primitives
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Parameters
   const Real temp_min = 1.0e-2;  // lesser temperature root must be greater than this
   const Real temp_max = 1.0e1;   // greater temperature root must be less than this
@@ -240,8 +238,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   return;
 }
 
@@ -255,8 +252,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   conversion is trivial in all currently implemented coordinate systems
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi)
-{
+    Real *ptheta, Real *pphi) {
   if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
     *pr = x1;
     *ptheta = x2;
@@ -276,15 +272,13 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (COORDINATE_SYSTEM == "schwarzschild") {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
     *pa2 = a2_bl;
     *pa3 = a3_bl;
-  }
-  else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
     Real delta = SQR(r) - 2.0*m*r + SQR(a);
     *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
     *pa1 = a1_bl;
@@ -308,8 +302,7 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
-    Real *ppgas, Real *put, Real *pur)
-{
+    Real *ppgas, Real *put, Real *pur) {
   // Calculate solution to (HSW 76)
   Real temp_neg_res = TemperatureMin(r, temp_min, temp_max);
   Real temp;
@@ -345,8 +338,7 @@ static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs golden section search (cf. Numerical Recipes, 3rd ed., 10.2)
 
-static Real TemperatureMin(Real r, Real t_min, Real t_max)
-{
+static Real TemperatureMin(Real r, Real t_min, Real t_max) {
   // Parameters
   const Real ratio = 0.3819660112501051;  // (3+\sqrt{5})/2
   const int max_iterations = 30;          // maximum number of iterations
@@ -400,8 +392,7 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max)
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs bisection search
 
-static Real TemperatureBisect(Real r, Real t_min, Real t_max)
-{
+static Real TemperatureBisect(Real r, Real t_min, Real t_max) {
   // Parameters
   const int max_iterations = 20;
   const Real tol_residual = 1.0e-6;
@@ -452,8 +443,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max)
 // Notes:
 //   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
 
-static Real TemperatureResidual(Real t, Real r)
-{
+static Real TemperatureResidual(Real t, Real r) {
   return SQR(1.0 + (n_adi+1.0) * t)
       * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
 }

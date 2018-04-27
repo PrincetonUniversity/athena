@@ -7,22 +7,24 @@
 //  \brief writes history output data, volume-averaged quantities that are output
 //         frequently in time to trace their history.
 
-// C/C++ headers
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
+// C headers
 #include <stdio.h>
+#include <stdlib.h>
+
+// C++ headers
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../globals.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
@@ -33,16 +35,14 @@
 // destructor - not needed for this derived class
 
 HistoryOutput::HistoryOutput(OutputParameters oparams)
-  : OutputType(oparams)
-{
+  : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
 //  \brief Writes a history file
 
-void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-{
+void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
   AthenaArray<Real> vol;
 
@@ -90,8 +90,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         }
       }
     }}
-    for(int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
-      if(pm->user_history_func_[n]!=NULL)
+    for (int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
+      if (pm->user_history_func_[n]!=NULL)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
     pmb=pmb->next;
@@ -118,7 +118,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if((pfile = fopen(fname.c_str(),"a")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"a")) == NULL) {
       msg << "### FATAL ERROR in function [OutputType::HistoryFile]" << std::endl
           << "Output file '" << fname << "' could not be opened";
       throw std::runtime_error(msg.str().c_str());
@@ -143,7 +143,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         fprintf(pfile,"[%d]=2-ME    ", iout++);
         fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
-      for(int n=0; n<pm->nuser_history_output_; n++)
+      for (int n=0; n<pm->nuser_history_output_; n++)
         fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
       fprintf(pfile,"\n");                              // terminate line
     }

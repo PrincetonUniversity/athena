@@ -7,19 +7,20 @@
 //  \brief implementation of functions in class MultigridDriver
 
 // C/C++ headers
+#include <algorithm>
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals_mg.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "multigrid.hpp"
 
 #ifdef MPI_PARALLEL
@@ -28,22 +29,22 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar)
-{
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar) {
   pmy_mesh_=pm;
   nvar_=invar;
   eps_=-1.0;
   mode_=0; // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
 
-  if(pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
+  if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Currently the Multigrid solver works only in 3D." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  if(pmy_mesh_->use_meshgen_fn_[X1DIR]==true || pmy_mesh_->use_meshgen_fn_[X2DIR]==true
-  || pmy_mesh_->use_meshgen_fn_[X3DIR]==true) {
+  if (pmy_mesh_->use_uniform_meshgen_fn_[X1DIR]==false
+      || pmy_mesh_->use_uniform_meshgen_fn_[X2DIR]==false
+      || pmy_mesh_->use_uniform_meshgen_fn_[X3DIR]==false) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
@@ -53,7 +54,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   int nbx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
   int nbx2=pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
   int nbx3=pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
-  if(nbx1 != nbx2 || nbx1 != nbx3) {
+  if (nbx1 != nbx2 || nbx1 != nbx3) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
@@ -62,7 +63,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   }
 
   fperiodic_=false;
-  if(MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
+  if (MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
   && MGBoundary[INNER_X2]==MGPeriodicInnerX2 && MGBoundary[OUTER_X2]==MGPeriodicOuterX2
   && MGBoundary[INNER_X3]==MGPeriodicInnerX3 && MGBoundary[OUTER_X3]==MGPeriodicOuterX3)
     fperiodic_=true;
@@ -71,7 +72,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
   ranklist_  = new int[pmy_mesh_->nbtotal];
-  for(int n=0; n<pmy_mesh_->nbtotal; n++)
+  for (int n=0; n<pmy_mesh_->nbtotal; n++)
     ranklist_[n]=pmy_mesh_->ranklist[n];
   nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
@@ -81,7 +82,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
 #endif
-  for(int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
     nvslist_[n] = nslist_[n]*nvar_;
@@ -89,13 +90,13 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   }
   rootbuf_=new Real[pm->nbtotal*nvar_];
   mgtlist_ = new MultigridTaskList(this);
-  rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
+  rootsrc_.NewAthenaArray(nvar_, static_cast<int>(pm->nrbx3), static_cast<int>(pm->nrbx2),
+                          static_cast<int>(pm->nrbx1));
 }
 
 // destructor
 
-MultigridDriver::~MultigridDriver()
-{
+MultigridDriver::~MultigridDriver() {
   delete mgroot_;
   delete [] ranklist_;
   delete [] nslist_;
@@ -105,7 +106,7 @@ MultigridDriver::~MultigridDriver()
   delete [] rootbuf_;
   rootsrc_.DeleteAthenaArray();
   delete mgtlist_;
-  if(pmg_!=NULL) {
+  if (pmg_!=NULL) {
     while(pmg_->prev != NULL) // should not be true
       delete pmg_->prev;
     while(pmg_->next != NULL)
@@ -118,11 +119,10 @@ MultigridDriver::~MultigridDriver()
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
 //  \brief add a Multigrid object to the linked list
-void MultigridDriver::AddMultigrid(Multigrid *nmg)
-{
-  if(pmg_==NULL)
+void MultigridDriver::AddMultigrid(Multigrid *nmg) {
+  if (pmg_==NULL) {
     pmg_=nmg;
-  else {
+  } else {
     Multigrid *pg=pmg_;
     while(pg->next!=NULL) pg=pg->next;
     pg->next=nmg;
@@ -135,8 +135,7 @@ void MultigridDriver::AddMultigrid(Multigrid *nmg)
 //! \fn void MultigridDriver::SetupMultigrid(void)
 //  \brief initialize the source assuming that the source terms are already loaded
 
-void MultigridDriver::SetupMultigrid(void)
-{
+void MultigridDriver::SetupMultigrid(void) {
   Multigrid *pmg=pmg_;
 
   nrootlevel_=mgroot_->GetNumberOfLevels();
@@ -144,9 +143,9 @@ void MultigridDriver::SetupMultigrid(void)
   ntotallevel_=nrootlevel_+nmblevel_-1;
   current_level_=ntotallevel_-1;
 
-  if(fperiodic_)
+  if (fperiodic_)
     SubtractAverage(0);
-  if(mode_<=1) { // FMG
+  if (mode_<=1) { // FMG
     pmg=pmg_;
     while(pmg!=NULL) {
       pmg->RestrictFMGSource();
@@ -155,8 +154,9 @@ void MultigridDriver::SetupMultigrid(void)
     FillRootGridSource();
     mgroot_->RestrictFMGSource();
     current_level_=0;
+  } else {
+    current_level_=ntotallevel_-1;
   }
-  else current_level_=ntotallevel_-1;
   return;
 }
 
@@ -165,11 +165,10 @@ void MultigridDriver::SetupMultigrid(void)
 //! \fn void MultigridDriver::SubtractAverage(int type)
 //  \brief Calculate the global average and subtract it
 
-void MultigridDriver::SubtractAverage(int type)
-{
+void MultigridDriver::SubtractAverage(int type) {
   Multigrid *pmg=pmg_;
   while(pmg!=NULL) {
-    for(int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->CalculateTotal(type, v);
     pmg=pmg->next;
   }
@@ -180,9 +179,9 @@ void MultigridDriver::SubtractAverage(int type)
   Real vol=(pmy_mesh_->mesh_size.x1max-pmy_mesh_->mesh_size.x1min)
           *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
           *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
-  for(int v=0; v<nvar_; v++) {
+  for (int v=0; v<nvar_; v++) {
     Real total=0.0;
-    for(int n=0; n<pmy_mesh_->nbtotal; n++)
+    for (int n=0; n<pmy_mesh_->nbtotal; n++)
       total+=rootbuf_[n*nvar_+v];
     last_ave_=total/vol;
     pmg=pmg_;
@@ -200,11 +199,10 @@ void MultigridDriver::SubtractAverage(int type)
 //! \fn void MultigridDriver::FillRootGridSource(void)
 //  \brief collect the coarsest data and fill the root grid
 
-void MultigridDriver::FillRootGridSource(void)
-{
+void MultigridDriver::FillRootGridSource(void) {
   Multigrid *pmg=pmg_;
   while(pmg!=NULL) {
-    for(int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->GetRootSource(v);
     pmg=pmg->next;
   }
@@ -212,16 +210,16 @@ void MultigridDriver::FillRootGridSource(void)
   MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
                  rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
-  if(pmy_mesh_->multilevel) {
+  if (pmy_mesh_->multilevel) {
     // *** implement later
-  }
-  else { // uniform
-    for(int n=0; n<pmy_mesh_->nbtotal; n++) {
+  } else { // uniform
+    for (int n=0; n<pmy_mesh_->nbtotal; n++) {
       LogicalLocation &loc=pmy_mesh_->loclist[n];
-      for(int v=0; v<nvar_; v++)
-        rootsrc_(v,loc.lx3,loc.lx2,loc.lx1)=rootbuf_[n*nvar_+v];
+      for (int v=0; v<nvar_; v++)
+        rootsrc_(v, static_cast<int>(loc.lx3), static_cast<int>(loc.lx2),
+                 static_cast<int>(loc.lx1))=rootbuf_[n*nvar_+v];
     }
-    mgroot_->LoadSource(rootsrc_,0,0,1.0);
+    mgroot_->LoadSource(rootsrc_, 0, 0, 1.0);
   }
   return;
 }
@@ -231,18 +229,16 @@ void MultigridDriver::FillRootGridSource(void)
 //! \fn void MultigridDriver::FMGProlongate(void)
 //  \brief Prolongation for FMG Cycle
 
-void MultigridDriver::FMGProlongate(void)
-{
+void MultigridDriver::FMGProlongate(void) {
   int flag=0;
-  if(current_level_==nrootlevel_-1) {
+  if (current_level_==nrootlevel_-1) {
     TransferFromRootToBlocks();
     flag=1;
   }
-  if(current_level_ >= nrootlevel_-1) {
+  if (current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListFMGProlongate(flag);
     mgtlist_->DoTaskListOneSubStep(this);
-  }
-  else { // root grid
+  } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->FMGProlongate();
   }
@@ -255,18 +251,17 @@ void MultigridDriver::FMGProlongate(void)
 //! \fn void MultigridDriver::TransferFromRootToBlocks(void)
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
-void MultigridDriver::TransferFromRootToBlocks(void)
-{
+void MultigridDriver::TransferFromRootToBlocks(void) {
   Multigrid *pmg=pmg_;
   AthenaArray<Real> &src=mgroot_->GetCurrentData();
   mgroot_->pmgbval->ApplyPhysicalBoundaries();
-  if(pmy_mesh_->multilevel) {
+  if (pmy_mesh_->multilevel) {
     // *** implement later ***
-  }
-  else {
+  } else {
     while(pmg!=NULL) {
       LogicalLocation &loc=pmg->loc_;
-      pmg->SetFromRootGrid(src, loc.lx1, loc.lx2, loc.lx3);
+      pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
+                           static_cast<int>(loc.lx3));
       pmg=pmg->next;
     }
   }
@@ -278,23 +273,21 @@ void MultigridDriver::TransferFromRootToBlocks(void)
 //! \fn void MultigridDriver::OneStepToFiner(int nsmooth)
 //  \brief smoothing and restriction one level
 
-void MultigridDriver::OneStepToFiner(int nsmooth)
-{
+void MultigridDriver::OneStepToFiner(int nsmooth) {
   int ngh=mgroot_->ngh_;
   int flag=0;
-  if(current_level_==nrootlevel_-1) {
+  if (current_level_==nrootlevel_-1) {
     TransferFromRootToBlocks();
     flag=1;
   }
-  if(current_level_ >= nrootlevel_-1) {
-    if(current_level_==ntotallevel_-2) flag=2;
+  if (current_level_ >= nrootlevel_-1) {
+    if (current_level_==ntotallevel_-2) flag=2;
     mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, flag);
     mgtlist_->DoTaskListOneSubStep(this);
-  }
-  else { // root grid
+  } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrect();
-    for(int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -309,19 +302,17 @@ void MultigridDriver::OneStepToFiner(int nsmooth)
 //! \fn void MultigridDriver::OneStepToCoarser(int nsmooth)
 //  \brief smoothing and restriction one level
 
-void MultigridDriver::OneStepToCoarser(int nsmooth)
-{
+void MultigridDriver::OneStepToCoarser(int nsmooth) {
   int ngh=mgroot_->ngh_;
-  if(current_level_ >= nrootlevel_) {
+  if (current_level_ >= nrootlevel_) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneSubStep(this);
-    if(current_level_==nrootlevel_) {
+    if (current_level_==nrootlevel_) {
       FillRootGridSource();
       mgroot_->ZeroClearData();
     }
-  }
-  else { // root grid
-    for(int n=0; n<nsmooth; n++) {
+  } else { // root grid
+    for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -338,8 +329,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
 //! \fn void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
 //  \brief Solve the V-cycle starting from the current level
 
-void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
-{
+void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
   while(current_level_>0)
     OneStepToCoarser(npresmooth);
@@ -354,13 +344,12 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
 //! \fn void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 //  \brief Solve the F-cycle starting from the current level
 
-void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
-{
+void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
   int turnlevel;
-  if(startlevel==0) turnlevel=0;
+  if (startlevel==0) turnlevel=0;
   else turnlevel=1;
-  for(; turnlevel<=startlevel; turnlevel++) {
+  for (; turnlevel<=startlevel; turnlevel++) {
     while(current_level_>0)
       OneStepToCoarser(npresmooth);
     SolveCoarsestGrid();
@@ -375,16 +364,15 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 //! \fn void MultigridDriver::SolveFMGCycle(void)
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
-void MultigridDriver::SolveFMGCycle(void)
-{
-  for(int lev=0; lev<ntotallevel_; lev++) {
-    if(mode_==0)
+void MultigridDriver::SolveFMGCycle(void) {
+  for (int lev=0; lev<ntotallevel_; lev++) {
+    if (mode_==0)
       SolveVCycle(1, 1);
-    else if(mode_==1)
+    else if (mode_==1)
       SolveFCycle(0, 1);
-    if(lev!=ntotallevel_-1) FMGProlongate();
+    if (lev!=ntotallevel_-1) FMGProlongate();
   }
-  if(fperiodic_)
+  if (fperiodic_)
     SubtractAverage(1);
   return;
 }
@@ -394,8 +382,7 @@ void MultigridDriver::SolveFMGCycle(void)
 //! \fn void MultigridDriver::SolveIterative(void)
 //  \brief Solve iteratively until the convergence is achieved
 
-void MultigridDriver::SolveIterative(void)
-{
+void MultigridDriver::SolveIterative(void) {
   Real def=eps_+1e-10;
   int niter=0;
   std::cout << std::scientific;
@@ -403,26 +390,26 @@ void MultigridDriver::SolveIterative(void)
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
-    for(int n=0; n<nvar_; n++)
+    for (int n=0; n<nvar_; n++)
       def+=CalculateDefectNorm(n, 2);
-    if(niter > 0 && def/olddef > 0.5) {
-      if(eps_==0.0) break;
-      if(Globals::my_rank==0)
+    if (niter > 0 && def/olddef > 0.5) {
+      if (eps_==0.0) break;
+      if (Globals::my_rank==0)
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
           << "Slow multigrid convergence : defect norm = " << def
           << ", convergence factor = " << def/olddef << "." << std::endl;
     }
-    if(niter>100) {
-      if(Globals::my_rank==0) {
+    if (niter>100) {
+      if (Globals::my_rank==0) {
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-          << "Aborting because the number of iterations is too large, niter > 100." << std::endl
+          << "Aborting because the # iterations is too large, niter > 100." << std::endl
           << "Check the solution as it may not be accurate enough." << std::endl;
       }
       break;
     }
     niter++;
   }
-  if(fperiodic_)
+  if (fperiodic_)
     SubtractAverage(1);
   return;
 }
@@ -432,36 +419,36 @@ void MultigridDriver::SolveIterative(void)
 //! \fn void MultigridDriver::SolveCoarsestGrid(void)
 //  \brief Solve the coarsest root grid
 
-void MultigridDriver::SolveCoarsestGrid(void)
-{
+void MultigridDriver::SolveCoarsestGrid(void) {
   Mesh *pm=pmy_mesh_;
-  int ni=std::max(pm->nrbx1, std::max(pm->nrbx2, pm->nrbx3)) >> (nrootlevel_-1);
-  if(fperiodic_ && ni==1) { // trivial case - all zero
+  int ni = (std::max(static_cast<int>(pm->nrbx1),
+                     std::max(static_cast<int>(pm->nrbx2), static_cast<int>(pm->nrbx3)))
+            >> (nrootlevel_-1));
+  if (fperiodic_ && ni==1) { // trivial case - all zero
     mgroot_->ZeroClearData();
     return;
-  }
-  else {
-    if(fperiodic_) {
+  } else {
+    if (fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
-      for(int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
       }
     }
-    for(int i=0; i<ni; i++) { // iterate ni times
+    for (int i=0; i<ni; i++) { // iterate ni times
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
     }
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    if(fperiodic_) {
+    if (fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
-      for(int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
       }
@@ -475,24 +462,23 @@ void MultigridDriver::SolveCoarsestGrid(void)
 //! \fn Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
 //  \brief calculate the defect norm
 
-Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
-{
+Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
   Multigrid *pmg=pmg_;
   Real norm=0.0;
   while(pmg!=NULL) {
-    if(nrm==0)
+    if (nrm==0)
       norm=std::max(norm, pmg->CalculateDefectNorm(n, nrm));
     else
       norm+=pmg->CalculateDefectNorm(n, nrm);
     pmg=pmg->next;
   }
 #ifdef MPI_PARALLEL
-  if(nrm==0)
+  if (nrm==0)
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_MAX,MPI_COMM_MULTIGRID);
   else
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_MULTIGRID);
 #endif
-  if(nrm==2)
+  if (nrm==2)
     norm=std::sqrt(norm);
 
   return norm;
@@ -503,15 +489,12 @@ Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
 //! \fn Multigrid* MultigridDriver::FindMultigrid(int tgid)
 //  \brief return the Multigrid whose gid is tgid
 
-Multigrid* MultigridDriver::FindMultigrid(int tgid)
-{
+Multigrid* MultigridDriver::FindMultigrid(int tgid) {
   Multigrid *pmg=pmg_;
-  while(pmg!=NULL)
-  {
-    if(pmg->gid_==tgid)
+  while(pmg!=NULL) {
+    if (pmg->gid_==tgid)
       break;
     pmg=pmg->next;
   }
   return pmg;
 }
-

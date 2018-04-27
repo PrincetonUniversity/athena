@@ -19,6 +19,9 @@ dt         = 0.01      # time increment between outputs
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
 tlim       = 5.0       # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
@@ -104,3 +107,7 @@ compute_error = false # set value to 'true' to compute L1 error compared to init
 wave_flag = 0         # Wave family number (0 - 6 for adiabatic MHD)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
+nuiso     = 0.0       # isotropic viscosity
+eta_O     = 0.0       # spatial constant resistivity
+ang_2_vert= false     # set to 'true' to make ang_2=pi/2
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2

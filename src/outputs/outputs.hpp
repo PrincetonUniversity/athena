@@ -1,5 +1,5 @@
-#ifndef OUTPUTS_HPP
-#define OUTPUTS_HPP
+#ifndef OUTPUTS_OUTPUTS_HPP_
+#define OUTPUTS_OUTPUTS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -10,7 +10,7 @@
 
 // C/C++ headers
 #include <stdio.h>  // size_t
-#include <string> 
+#include <string>
 
 // Athena++ headers
 #include "io_wrapper.hpp"
@@ -45,9 +45,9 @@ typedef struct OutputParameters {
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
 
-  OutputParameters() : output_sumx1(false), output_sumx2(false), output_sumx3(false),
-     output_slicex1(false), output_slicex2(false), output_slicex3(false),
-     include_ghost_zones(false) {};
+  OutputParameters() : output_slicex1(false),output_slicex2(false),output_slicex3(false),
+                       output_sumx1(false), output_sumx2(false), output_sumx3(false),
+                       include_ghost_zones(false) {}
 } OutputParameters;
 
 //----------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ typedef struct OutputData {
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
 
-  OutputData() : pnext(NULL), pprev(NULL) {};
+  OutputData() : pnext(NULL),  pprev(NULL) {}
 } OutputData;
 
 //----------------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ typedef struct OutputData {
 
 class OutputType {
 public:
-  OutputType(OutputParameters oparams);
+  explicit OutputType(OutputParameters oparams);
   virtual ~OutputType();
 
   // data
@@ -102,8 +102,8 @@ protected:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputParameters oparams);
-  ~HistoryOutput() {};
+  explicit HistoryOutput(OutputParameters oparams);
+  ~HistoryOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
@@ -113,8 +113,8 @@ public:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputParameters oparams);
-  ~FormattedTableOutput() {};
+  explicit FormattedTableOutput(OutputParameters oparams);
+  ~FormattedTableOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
@@ -124,8 +124,8 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputParameters oparams);
-  ~VTKOutput() {};
+  explicit VTKOutput(OutputParameters oparams);
+  ~VTKOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
@@ -135,8 +135,8 @@ public:
 
 class RestartOutput : public OutputType {
 public:
-  RestartOutput(OutputParameters oparams);
-  ~RestartOutput() {};
+  explicit RestartOutput(OutputParameters oparams);
+  ~RestartOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
@@ -148,8 +148,8 @@ public:
 class ATHDF5Output : public OutputType {
 public:
   // Function declarations
-  ATHDF5Output(OutputParameters oparams);
-  ~ATHDF5Output() {};
+  explicit ATHDF5Output(OutputParameters oparams);
+  ~ATHDF5Output() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
   void MakeXDMF();
 
@@ -159,6 +159,7 @@ private:
 
   // Metadata
   std::string filename;                       // name of athdf file
+  float code_time;                            // time in code unit for XDMF
   int num_blocks_global;                      // number of MeshBlocks in simulation
   int nx1, nx2, nx3;                          // sizes of MeshBlocks
   int num_datasets;                           // count of datasets to output
@@ -183,4 +184,4 @@ public:
 private:
   OutputType *pfirst_type_; // ptr to first OutputType in linked list
 };
-#endif
+#endif // OUTPUTS_OUTPUTS_HPP_

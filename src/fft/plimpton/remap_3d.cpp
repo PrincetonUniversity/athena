@@ -6,7 +6,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "mpi.h"
+#include <mpi.h>
 #include "assert.h"
 
 #include "pack_3d.h"
@@ -33,9 +33,9 @@
    my subsection must not overlap with any other proc's subsection,
      i.e. the union of all proc's input (or output) subsections must
      exactly tile the global Nfast x Nmid x Nslow data set
-   when called from C, all subsection indices are 
+   when called from C, all subsection indices are
      C-style from 0 to N-1 where N = Nfast or Nmid or Nslow
-   when called from F77, all subsection indices are 
+   when called from F77, all subsection indices are
      F77-style from 1 to N where N = Nfast or Nmid or Nslow
    a proc can own 0 elements on input or output
      by specifying hi index < lo index
@@ -55,7 +55,7 @@
    buf          extra memory required for remap
                 if memory=0 was used in call to remap_3d_create_plan
 		  then buf must be big enough to hold output result
-		  i.e. nqty * (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * 
+		  i.e. nqty * (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) *
 		              (out_khi-out_klo+1)
 		if memory=1 was used in call to remap_3d_create_plan
 		  then buf is not used, can just be a dummy pointer
@@ -89,7 +89,7 @@ void remap_3d(double *in, double *out, double *buf,
 	       plan->sendbuf,&plan->packplan[isend]);
     MPI_Send(plan->sendbuf,plan->send_size[isend],MPI_DOUBLE,
 	     plan->send_proc[isend],0,plan->comm);
-  }       
+  }
 
 /* copy in -> scratch -> out for self data */
 
@@ -224,10 +224,10 @@ struct remap_plan_3d *remap_3d_create_plan(
     plan->send_offset = (int *) malloc(nsend*sizeof(int));
     plan->send_size = (int *) malloc(nsend*sizeof(int));
     plan->send_proc = (int *) malloc(nsend*sizeof(int));
-    plan->packplan = (struct pack_plan_3d *) 
+    plan->packplan = (struct pack_plan_3d *)
       malloc(nsend*sizeof(struct pack_plan_3d));
 
-    if (plan->send_offset == NULL || plan->send_size == NULL || 
+    if (plan->send_offset == NULL || plan->send_size == NULL ||
 	plan->send_proc == NULL || plan->packplan == NULL) return NULL;
   }
 
@@ -240,8 +240,8 @@ struct remap_plan_3d *remap_3d_create_plan(
     if (iproc == nprocs) iproc = 0;
     if (remap_3d_collide(&in,&array[iproc],&overlap)) {
       plan->send_proc[nsend] = iproc;
-      plan->send_offset[nsend] = nqty * 
-	((overlap.klo-in.klo)*in.jsize*in.isize + 
+      plan->send_offset[nsend] = nqty *
+	((overlap.klo-in.klo)*in.jsize*in.isize +
 	((overlap.jlo-in.jlo)*in.isize + overlap.ilo-in.ilo));
       plan->packplan[nsend].nfast = nqty*overlap.isize;
       plan->packplan[nsend].nmid = overlap.jsize;
@@ -275,7 +275,7 @@ struct remap_plan_3d *remap_3d_create_plan(
     if (iproc == nprocs) iproc = 0;
     nrecv += remap_3d_collide(&out,&array[iproc],&overlap);
   }
-  
+
 /* malloc space for recv info */
 
   if (nrecv) {
@@ -289,8 +289,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	  plan->unpack = NULL;
 	else
 	  plan->unpack = NULL;
-      }
-      else if (permute == 2) {
+      } else if (permute == 2) {
 	if (nqty == 1)
 	  plan->unpack = NULL;
 	else if (nqty == 2)
@@ -298,8 +297,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	else
 	  plan->unpack = NULL;
       }
-    }
-    else if (precision == 2) {
+    } else if (precision == 2) {
       if (permute == 0)
 	plan->unpack = unpack_3d;
       else if (permute == 1) {
@@ -309,8 +307,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	  plan->unpack = unpack_3d_permute1_2;
 	else
 	  plan->unpack = unpack_3d_permute1_n;
-      }
-      else if (permute == 2) {
+      } else if (permute == 2) {
 	if (nqty == 1)
 	  plan->unpack = unpack_3d_permute2_1;
 	else if (nqty == 2)
@@ -325,10 +322,10 @@ struct remap_plan_3d *remap_3d_create_plan(
     plan->recv_proc = (int *) malloc(nrecv*sizeof(int));
     plan->recv_bufloc = (int *) malloc(nrecv*sizeof(int));
     plan->request = (MPI_Request *) malloc(nrecv*sizeof(MPI_Request));
-    plan->unpackplan = (struct pack_plan_3d *) 
+    plan->unpackplan = (struct pack_plan_3d *)
       malloc(nrecv*sizeof(struct pack_plan_3d));
 
-    if (plan->recv_offset == NULL || plan->recv_size == NULL || 
+    if (plan->recv_offset == NULL || plan->recv_size == NULL ||
 	plan->recv_proc == NULL || plan->recv_bufloc == NULL ||
 	plan->request == NULL || plan->unpackplan == NULL) return NULL;
   }
@@ -356,8 +353,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	plan->unpackplan[nrecv].nstride_line = nqty*out.isize;
 	plan->unpackplan[nrecv].nstride_plane = nqty*out.jsize*out.isize;
 	plan->unpackplan[nrecv].nqty = nqty;
-      }
-      else if (permute == 1) {
+      } else if (permute == 1) {
 	plan->recv_offset[nrecv] = nqty *
 	  ((overlap.ilo-out.ilo)*out.ksize*out.jsize +
 	   (overlap.klo-out.klo)*out.jsize + (overlap.jlo-out.jlo));
@@ -367,8 +363,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 	plan->unpackplan[nrecv].nstride_line = nqty*out.jsize;
 	plan->unpackplan[nrecv].nstride_plane = nqty*out.ksize*out.jsize;
 	plan->unpackplan[nrecv].nqty = nqty;
-      }
-      else {
+      } else {
 	plan->recv_offset[nrecv] = nqty *
 	  ((overlap.jlo-out.jlo)*out.isize*out.ksize +
 	   (overlap.ilo-out.ilo)*out.ksize + (overlap.klo-out.klo));
@@ -504,8 +499,8 @@ int remap_3d_collide(struct extent_3d *block1, struct extent_3d *block2,
   overlap->jhi = MIN(block1->jhi,block2->jhi);
   overlap->klo = MAX(block1->klo,block2->klo);
   overlap->khi = MIN(block1->khi,block2->khi);
-  
-  if (overlap->ilo > overlap->ihi || 
+
+  if (overlap->ilo > overlap->ihi ||
       overlap->jlo > overlap->jhi ||
       overlap->klo > overlap->khi) return 0;
 

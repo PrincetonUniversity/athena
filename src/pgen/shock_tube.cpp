@@ -10,30 +10,33 @@
 // shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //========================================================================================
 
+// C headers
+#include <stdio.h>
+
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>
-#include <stdio.h>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
@@ -59,11 +62,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   // Errors in RJ2a test (Dai & Woodward 1994 Tables Ia and Ib)
   if (MAGNETIC_FIELDS_ENABLED) {
     Real xfp = 2.2638*tlim;
-    Real xrp = (0.53432 + 1.0/sqrt(PI*1.309))*tlim;
+    Real xrp = (0.53432 + 1.0/std::sqrt(PI*1.309))*tlim;
     Real xsp = (0.53432 + 0.48144/1.309)*tlim;
     Real xc = 0.57538*tlim;
     Real xsm = (0.60588 - 0.51594/1.4903)*tlim;
-    Real xrm = (0.60588 - 1.0/sqrt(PI*1.4903))*tlim;
+    Real xrm = (0.60588 - 1.0/std::sqrt(PI*1.4903))*tlim;
     Real xfm = (1.2 - 2.3305/1.08)*tlim;
 #if !EOS_TABLE_ENABLED
     Real gm1 = pmb->peos->GetGamma() - 1.0;
@@ -76,14 +79,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         if (shk_dir == 2) r = pmb->pcoord->x2v(j);
         if (shk_dir == 3) r = pmb->pcoord->x3v(k);
 
-        bx = 2.0/sqrt(4.0*PI);
+        bx = 2.0/std::sqrt(4.0*PI);
         if (r > xfp) {
           d0 = 1.0;
           mx = 0.0;
           my = 0.0;
           mz = 0.0;
-          by = 4.0/sqrt(4.0*PI);
-          bz = 2.0/sqrt(4.0*PI);
+          by = 4.0/std::sqrt(4.0*PI);
+          bz = 2.0/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 0 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.0) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.0)
@@ -96,8 +99,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.53432*d0;
           my = -0.094572*d0;
           mz = -0.047286*d0;
-          by = 5.3452/sqrt(4.0*PI);
-          bz = 2.6726/sqrt(4.0*PI);
+          by = 5.3452/std::sqrt(4.0*PI);
+          bz = 2.6726/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 1 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
@@ -110,8 +113,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.53432*d0;
           my = -0.18411*d0;
           mz = 0.17554*d0;
-          by = 5.7083/sqrt(4.0*PI);
-          bz = 1.7689/sqrt(4.0*PI);
+          by = 5.7083/std::sqrt(4.0*PI);
+          bz = 1.7689/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 2 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
@@ -124,8 +127,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.57538*d0;
           my = 0.047601*d0;
           mz = 0.24734*d0;
-          by = 5.0074/sqrt(4.0*PI);
-          bz = 1.5517/sqrt(4.0*PI);
+          by = 5.0074/std::sqrt(4.0*PI);
+          bz = 1.5517/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 3 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
@@ -138,8 +141,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.57538*d0;
           my = 0.047601*d0;
           mz = 0.24734*d0;
-          by = 5.0074/sqrt(4.0*PI);
-          bz = 1.5517/sqrt(4.0*PI);
+          by = 5.0074/std::sqrt(4.0*PI);
+          bz = 1.5517/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 4 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
@@ -152,8 +155,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.60588*d0;
           my = 0.22157*d0;
           mz = 0.30125*d0;
-          by = 5.5713/sqrt(4.0*PI);
-          bz = 1.7264/sqrt(4.0*PI);
+          by = 5.5713/std::sqrt(4.0*PI);
+          bz = 1.7264/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 5 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
@@ -166,8 +169,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 0.60588*d0;
           my = 0.11235*d0;
           mz = 0.55686*d0;
-          by = 5.0987/sqrt(4.0*PI);
-          bz = 2.8326/sqrt(4.0*PI);
+          by = 5.0987/std::sqrt(4.0*PI);
+          bz = 2.8326/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 6 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
@@ -180,8 +183,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           mx = 1.2*d0;
           my = 0.01*d0;
           mz = 0.5*d0;
-          by = 3.6/sqrt(4.0*PI);
-          bz = 2.0/sqrt(4.0*PI);
+          by = 3.6/std::sqrt(4.0*PI);
+          bz = 2.0/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
           std::cout << 7 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 0.95) << "\n";
           e0 = pmb->peos->GetEgasFromRhoPres(d0, 0.95)
@@ -250,10 +253,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
 
   // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    err[i] = err[i]/static_cast<Real>(GetTotalCells());
+  }
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
-  rms_err = sqrt(rms_err);
+  rms_err = std::sqrt(rms_err);
 
   // open output file and write out errors
   std::string fname;
@@ -262,8 +267,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   FILE *pfile;
 
   // The file exists -- reopen the file in append mode
-  if((pfile = fopen(fname.c_str(),"r")) != NULL){
-    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+  if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+    if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -271,7 +276,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   // The file does not exist -- open the file in write mode and add headers
   } else {
-    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -299,8 +304,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Problem Generator for the shock tube tests
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}

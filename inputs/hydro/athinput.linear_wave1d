@@ -19,8 +19,9 @@ dt         = 0.01      # time increment between outputs
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
 tlim       = 5.0       # time limit
-integrator = vl2       # time integration algorithm
-xorder     = 2         # spatial order of reconstruction
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1        = 128       # Number of zones in X1-direction
@@ -48,5 +49,5 @@ compute_error = true  # when 'true' outputs L1 error compared to initial data
 wave_flag = 0         # Wave family number (0 - 4 for adiabatic hydro)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
-ang_2     = 0.0       # rotation of k around x2 axis
-ang_3     = 0.0       # rotation of k around x3 axis
+ang_2     = 0.0       # rotation of k around x3 axis
+ang_3     = 0.0       # rotation of k around x2 axis

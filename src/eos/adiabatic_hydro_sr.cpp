@@ -26,12 +26,11 @@
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
@@ -47,7 +46,7 @@ EquationOfState::~EquationOfState() {}
 //   prim_old: primitive quantities from previous half timestep (not used)
 //   bb: face-centered magnetic field (not used)
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field (not used)
@@ -77,9 +76,8 @@ EquationOfState::~EquationOfState() {}
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
-  int ke)
-{
+  AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
+  int ku) {
   // Parameters
   const Real max_velocity = std::sqrt(1.0 - 1.0/SQR(gamma_max_));
 
@@ -93,10 +91,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   prim_copy.InitWithShallowCopy(prim);
 
   // Go through cells
-  for (int k = ks; k <= ke; k++) {
-    for (int j = js; j <= je; j++) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       #pragma omp simd
-      for (int i = is; i <= ie; i++) {
+      for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
         Real &d = cons_copy(IDN,k,j,i);
@@ -107,7 +105,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Extract primitives
         Real &rho = prim_copy(IDN,k,j,i);
-        Real &pgas = prim_copy(IEN,k,j,i);
+        Real &pgas = prim_copy(IPR,k,j,i);
         Real &vx = prim_copy(IVX,k,j,i);
         Real &vy = prim_copy(IVY,k,j,i);
         Real &vz = prim_copy(IVZ,k,j,i);
@@ -140,10 +138,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           // Step 4: Find real root of new cubic
           Real y0;
           if (c3 >= 0.0) {
-            y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
-          }
-          else {
-            y0 = 2.0 * cbrt(SQR(c2) + c3)
+            y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
+          } else {
+            y0 = 2.0 * std::cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
           }
 
@@ -212,7 +209,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field (unused)
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: conserved variables
 // Notes:
@@ -220,21 +217,20 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //       than having duplicate code
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
-     int ie, int js, int je, int ks, int ke)
-{
+     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+     int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
 
         // Extract primitives
         const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
+        const Real &pgas = prim(IPR,k,j,i);
         const Real &v1 = prim(IVX,k,j,i);
         const Real &v2 = prim(IVY,k,j,i);
         const Real &v3 = prim(IVZ,k,j,i);
@@ -281,13 +277,29 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 
 void EquationOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
-    Real *plambda_plus, Real *plambda_minus)
-{
+    Real *plambda_plus, Real *plambda_minus) {
   const Real gamma_adi = gamma_;
   Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
   Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
   Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - SQR(vx)));
   *plambda_plus = 1.0/(1.0+sigma_s) * (vx + relative_speed);             // (MB 23)
   *plambda_minus = 1.0/(1.0+sigma_s) * (vx - relative_speed);            // (MB 23)
+  return;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+
   return;
 }

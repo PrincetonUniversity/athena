@@ -32,6 +32,7 @@
 #endif
 
 // Declarations
+enum b_configs {vertical, normal, renorm};
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
@@ -62,7 +63,7 @@ static Real psi, sin_psi, cos_psi;                 // tilt parameters
 static Real log_h_edge, log_h_peak;                // calculated torus parameters
 static Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
 static Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
-static std::string field_config;                   // type of magnetic field
+static b_configs field_config;                     // type of magnetic field
 static Real potential_cutoff;                      // sets region of torus to magnetize
 static Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
 static Real beta_min;                              // min ratio of gas to mag pressure
@@ -82,8 +83,7 @@ static Real pert_amp, pert_kr, pert_kz;            // parameters for initial per
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read problem-specific parameters from input file
   rho_min = pin->GetReal("hydro", "rho_min");
   rho_pow = pin->GetReal("hydro", "rho_pow");
@@ -98,8 +98,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   sin_psi = std::sin(psi);
   cos_psi = std::cos(psi);
   if (MAGNETIC_FIELDS_ENABLED) {
-    field_config = pin->GetString("problem", "field_config");
-    if (field_config != "vertical") {
+    std::string field_config_str = pin->GetString("problem",
+                                                  "field_config");
+    if (field_config_str == "vertical") {
+      field_config = vertical;
+    } else if (field_config_str == "normal") {
+      field_config = normal;
+    } else if (field_config_str == "renorm") {
+      field_config = renorm;
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Problem Generator\n"
+          << "unrecognized field_config="
+          << field_config_str << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+    if (field_config != vertical) {
       potential_cutoff = pin->GetReal("problem", "potential_cutoff");
       potential_r_pow = pin->GetReal("problem", "potential_r_pow");
       potential_rho_pow = pin->GetReal("problem", "potential_rho_pow");
@@ -139,8 +154,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Notes:
 //   user arrays are metric and its inverse
 
-void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
-{
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   if (MAGNETIC_FIELDS_ENABLED) {
     AllocateUserOutputVariables(2);
     SetUserOutputVariableName(0, "gamma");
@@ -168,8 +182,7 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //              Fishbone 1977, ApJ 215 323 (F)
 //   assumes x3 is axisymmetric direction
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -330,7 +343,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     AthenaArray<Real> a_phi_edges, a_phi_cells;
     AthenaArray<Real> a_theta_0, a_theta_1, a_theta_2, a_theta_3;
     AthenaArray<Real> a_phi_0, a_phi_1, a_phi_2, a_phi_3;
-    if (field_config != "vertical") {
+    if (field_config != vertical) {
       if (psi == 0.0) {
         a_phi_edges.NewAthenaArray(ju+2, iu+2);
         a_phi_cells.NewAthenaArray(ju+1, iu+1);
@@ -348,7 +361,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     Real normalization;
 
     // Calculate vector potential in normal case
-    if (field_config == "normal") {
+    if (field_config == normal) {
 
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
@@ -362,7 +375,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_edges(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -383,7 +396,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_cells(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -441,7 +454,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 }
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 Real a_varphi = std::pow(r_vals[p], potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
                 Real dvarphi_dtheta = -sin_psi * sin_phi / SQR(sin_vartheta);
@@ -480,7 +493,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
 
     // Calculate vector potential in renormalized case
-    } else if (field_config == "renorm") {
+    } else if (field_config == renorm) {
 
       // Check that this is not a tilted disk
       if (psi != 0.0) {
@@ -827,7 +840,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       bbr_theta_faces.DeleteAthenaArray();
 
     // Calculate normalization in vertical case
-    } else if (field_config == "vertical") {
+    } else if (field_config == vertical) {
 
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
@@ -846,7 +859,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // Set magnetic fields according to vector potential in vertical case
-    if (field_config == "vertical") {
+    if (field_config == vertical) {
 
       // Set B^1
       for (int k = kl; k <= ku; ++k) {
@@ -1209,7 +1222,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // Free vector potential arrays
-    if (field_config != "vertical") {
+    if (field_config != vertical) {
       if (psi == 0.0) {
         a_phi_edges.DeleteAthenaArray();
         a_phi_cells.DeleteAthenaArray();
@@ -1275,8 +1288,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //     0: gamma (normal-frame Lorentz factor)
 //     1: p_mag (magnetic pressure)
 
-void MeshBlock::UserWorkInLoop()
-{
+void MeshBlock::UserWorkInLoop() {
   // Create aliases for metric
   AthenaArray<Real> g, gi;
   g.InitWithShallowCopy(ruser_meshblock_data[0]);
@@ -1347,8 +1359,7 @@ void MeshBlock::UserWorkInLoop()
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   return;
 }
 
@@ -1363,15 +1374,14 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   bb: face-centered magnetic field set in ghost zones
 
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // Set hydro variables
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is-NGHOST; i <= is-1; ++i) {
         prim(IDN,k,j,i) = prim(IDN,k,j,is);
         prim(IEN,k,j,i) = prim(IEN,k,j,is);
-        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), (Real)0.0);
+        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), static_cast<Real>(0.0));
         prim(IM2,k,j,i) = prim(IM2,k,j,is);
         prim(IM3,k,j,i) = prim(IM3,k,j,is);
       }
@@ -1420,8 +1430,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 //   conversion is trivial in all currently implemented coordinate systems
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi)
-{
+    Real *ptheta, Real *pphi) {
   if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
     *pr = x1;
     *ptheta = x2;
@@ -1441,8 +1450,7 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (COORDINATE_SYSTEM == "schwarzschild") {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -1474,8 +1482,7 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   assumes corotation
 //   see CalculateRPeakFromL()
 
-static Real CalculateLFromRPeak(Real r)
-{
+static Real CalculateLFromRPeak(Real r) {
   Real num = SQR(SQR(r)) + SQR(a*r) - 2.0*m*SQR(a)*r - a*(SQR(r)-SQR(a))*std::sqrt(m*r);
   Real denom = SQR(r) - 3.0*m*r + 2.0*a*std::sqrt(m*r);
   return 1.0/r * std::sqrt(m/r) * num/denom;
@@ -1498,8 +1505,7 @@ static Real CalculateLFromRPeak(Real r)
 //   returns NAN in case of failure (e.g. root not bracketed)
 //   see CalculateLFromRPeak()
 
-static Real CalculateRPeakFromL(Real l_target)
-{
+static Real CalculateRPeakFromL(Real l_target) {
   // Parameters
   const Real tol_r = 1.0e-10;      // absolute tolerance on abscissa r_peak
   const Real tol_l = 1.0e-10;      // absolute tolerance on ordinate l
@@ -1546,8 +1552,7 @@ static Real CalculateRPeakFromL(Real l_target)
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //   implements first half of (FM 3.6)
 
-static Real LogHAux(Real r, Real sin_theta)
-{
+static Real LogHAux(Real r, Real sin_theta) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1577,8 +1582,7 @@ static Real LogHAux(Real r, Real sin_theta)
 //   The formula for u^3 as a function of u_{(\phi)} is tedious to derive, but this
 //       matches the formula used in Harm (init.c).
 
-static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3)
-{
+static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1619,8 +1623,7 @@ static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu
 //   finally transforms that velocity into coordinates in which torus is tilted
 
 static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
-    Real *pu1, Real *pu2, Real *pu3)
-{
+    Real *pu1, Real *pu2, Real *pu3) {
   // Calculate corresponding location
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);
@@ -1684,8 +1687,7 @@ static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *p
 //   grid is not necessarily the same as used for the problem proper
 //   calculation is done entirely in Boyer-Lindquist coordinates
 
-static Real CalculateBetaMin()
-{
+static Real CalculateBetaMin() {
   // Prepare container to hold minimum
   Real beta_min_actual = std::numeric_limits<Real>::max();
 
@@ -1710,7 +1712,8 @@ static Real CalculateBetaMin()
       Real theta_c = 0.5 * (theta_m + theta_p);
 
       // Go through sample grid in r
-      Real r_m, r_p, delta_r;
+      Real r_m, delta_r;
+      Real r_p = 0.0;
       for (int i = 0; i < sample_n_r; ++i) {
 
         // Calculate r values
@@ -1755,8 +1758,7 @@ static Real CalculateBetaMin()
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-    Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta)
-{
+    Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta) {
   // Assemble arrays of points
   Real r_vals[7], theta_vals[7], phi_vals[7];
   r_vals[0] = r_c; theta_vals[0] = theta_c; phi_vals[0] = phi_c;
@@ -1786,14 +1788,14 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
       Real vary = y;
       Real varz = sin_psi * x + cos_psi * z;
       sin_vartheta_vals[p] = std::sqrt(SQR(varx) + SQR(vary));
-      if (field_config == "vertical") {
+      if (field_config == vertical) {
         break;
       }
       cos_vartheta_vals[p] = varz;
       varphi = std::atan2(vary, varx);
     } else {
       sin_vartheta_vals[p] = std::abs(sin_theta_vals[p]);
-      if (field_config == "vertical") {
+      if (field_config == vertical) {
         break;
       }
       cos_vartheta_vals[p] = cos_theta_vals[p];
@@ -1813,7 +1815,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     if (log_h_vals[p] < 0.0) {
       return false;
     }
-    if (field_config == "vertical") {
+    if (field_config == vertical) {
       break;
     }
   }
@@ -1830,10 +1832,10 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     if (p == 0) {
       pgas = pgas_over_rho * rho;
     }
-    if (field_config == "vertical") {
+    if (field_config == vertical) {
       break;
     }
-    Real rho_cutoff = std::max(rho-potential_cutoff, (Real)0.0);
+    Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
     a_varphi_vals[p] =
         std::pow(r_vals[p], potential_r_pow) * std::pow(rho_cutoff, potential_rho_pow);
     if (a_varphi_vals[p] == 0.0) {
@@ -1843,7 +1845,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
 
   // Account for tilt
   Real a_theta_vals[7], a_phi_vals[7];
-  if (field_config != "vertical") {
+  if (field_config != vertical) {
     for (int p = 0; p < 7; ++p) {
       if (psi != 0.0) {
         Real dvarphi_dtheta = -sin_psi * sin_phi_vals[p] / SQR(sin_vartheta_vals[p]);
@@ -1862,7 +1864,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
   // Calculate cell-centered 3-magnetic field
   Real det = (SQR(r_c) + SQR(a) * SQR(cos_theta_vals[0])) * std::abs(sin_theta_vals[0]);
   Real bb1, bb2, bb3;
-  if (field_config != "vertical") {
+  if (field_config != vertical) {
     bb1 = 1.0/det * ((a_phi_vals[4]-a_phi_vals[3]) / (theta_p-theta_m)
         - (a_theta_vals[6]-a_theta_vals[5]) / (phi_p-phi_m));
     bb2 = -1.0/det * (a_phi_vals[2]-a_phi_vals[1]) / (r_p-r_m);
@@ -1894,8 +1896,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-    Real theta_p, Real a_cm, Real a_cp, Real a_mc, Real a_pc, Real *pbeta)
-{
+    Real theta_p, Real a_cm, Real a_cp, Real a_mc, Real a_pc, Real *pbeta) {
   // Calculate trigonometric functions of theta
   Real sin_theta_c = std::sin(theta_c);
   Real cos_theta_c = std::cos(theta_c);
@@ -1940,8 +1941,7 @@ static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p, Real theta_m, Real 
 //   returned value: magnetic pressure
 
 static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
-    Real phi)
-{
+    Real phi) {
   // Calculate Boyer-Lindquist metric
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);

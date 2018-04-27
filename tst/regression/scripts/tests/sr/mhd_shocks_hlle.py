@@ -9,22 +9,23 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('bs',
       prob='gr_shock_tube',
       coord='cartesian',
-      flux='hlle')
+      flux='hlle', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = [
-      'job/problem_id=',
-      'output1/file_type=vtk',
-      'output1/variable=cons',
-      'output1/dt=',
-      'time/tlim=',
-      'mesh/nx1=']
+    'job/problem_id=',
+    'output1/file_type=vtk',
+    'output1/variable=cons',
+    'output1/dt=',
+    'time/tlim=',
+    'mesh/nx1=',
+    'time/ncycle_out=100']
   times = [0.4, 0.55, 0.5]
   zones = [400, 800, 800]
   for i,time,zone in zip([1,2,4],times,zones):

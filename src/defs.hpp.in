@@ -1,5 +1,5 @@
-#ifndef DEFINITIONS_HPP
-#define DEFINITIONS_HPP
+#ifndef DEFS_HPP_
+#define DEFS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -18,6 +18,9 @@
 
 // coordinate system
 #define COORDINATE_SYSTEM "@COORDINATE_SYSTEM@"
+
+// enable shearing box? default=0 (false)
+#define SHEARING_BOX @SHEARING_BOX@
 
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
@@ -63,6 +66,9 @@
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
+// HDF5 floating point ouptut precision option
+#define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
+
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
 #define COMPILER_COMMAND "@COMPILER_COMMAND@"
@@ -75,7 +81,7 @@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
 #define NGHOST @NUMBER_GHOST_CELLS@
-#define MAX_NSTEP 4
+#define MAX_NSTEP 5
 
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)
@@ -90,4 +96,4 @@
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
-#endif
+#endif // DEFS_HPP_

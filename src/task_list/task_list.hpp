@@ -1,5 +1,5 @@
-#ifndef TASK_LIST_HPP
-#define TASK_LIST_HPP
+#ifndef TASK_LIST_TASK_LIST_HPP_
+#define TASK_LIST_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,6 +9,7 @@
 //    \brief provides functionality to control dynamic execution using tasks
 
 #include <stdint.h>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -57,7 +58,7 @@ class TaskState {
     indx_first_task = 0;
     num_tasks_left = ntasks;
     finished_tasks = 0LL;
-  };
+  }
 };
 
 
@@ -69,7 +70,7 @@ class TaskList {
 friend class TimeIntegratorTaskList;
 friend class GravitySolverTaskList;
 public:
-  TaskList(Mesh *pm);
+  explicit TaskList(Mesh *pm);
   virtual ~TaskList();
 
   // data
@@ -92,7 +93,7 @@ private:
 class TimeIntegratorTaskList : public TaskList {
 public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
-  ~TimeIntegratorTaskList() {};
+  ~TimeIntegratorTaskList() {}
 
   // data
   std::string integrator;
@@ -124,6 +125,14 @@ public:
 
   enum TaskStatus HydroReceive(MeshBlock *pmb, int step);
   enum TaskStatus FieldReceive(MeshBlock *pmb, int step);
+
+  enum TaskStatus HydroShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus HydroShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus FieldShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus FieldShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearRemap(MeshBlock *pmb, int step);
 
   enum TaskStatus Prolongation(MeshBlock *pmb, int step);
   enum TaskStatus Primitives(MeshBlock *pmb, int step);
@@ -204,7 +213,15 @@ namespace HydroIntegratorTaskNames {
   const uint64_t CORR_GFLX=1LL<<44;
 
   const uint64_t STARTUP_INT=1LL<<45;
-  const uint64_t UPDATE_DT=1LL<<46;
-};
+  const uint64_t UPDATE_DT  =1LL<<46;
 
-#endif // TASK_LIST_HPP
+  const uint64_t SEND_HYDSH=1LL<<47;
+  const uint64_t SEND_EMFSH=1LL<<48;
+  const uint64_t SEND_FLDSH=1LL<<49;
+  const uint64_t RECV_HYDSH=1LL<<50;
+  const uint64_t RECV_EMFSH=1LL<<51;
+  const uint64_t RECV_FLDSH=1LL<<52;
+  const uint64_t RMAP_EMFSH=1LL<<53;
+}; // namespace HydroIntegratorTaskNames
+
+#endif // TASK_LIST_TASK_LIST_HPP_

@@ -33,10 +33,8 @@
 // \!fn Real Hydro::NewBlockTimeStep(void)
 // \brief calculate the minimum timestep within a MeshBlock
 
-Real Hydro::NewBlockTimeStep(void)
-{
+Real Hydro::NewBlockTimeStep(void) {
   MeshBlock *pmb=pmy_block;
-  int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;
@@ -56,14 +54,14 @@ Real Hydro::NewBlockTimeStep(void)
 
   Real min_dt = (FLT_MAX);
 
-  for (int k=ks; k<=ke; ++k){
-    for (int j=js; j<=je; ++j){
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
-      if(!RELATIVISTIC_DYNAMICS) {
+      if (!RELATIVISTIC_DYNAMICS) {
 #pragma ivdep
-        for (int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           wi[IDN]=w(IDN,k,j,i);
           wi[IVX]=w(IVX,k,j,i);
           wi[IVY]=w(IVY,k,j,i);
@@ -102,14 +100,14 @@ Real Hydro::NewBlockTimeStep(void)
       }
 
       // compute minimum of (v1 +/- C)
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         Real& dt_1 = dt1(i);
         min_dt = std::min(min_dt,dt_1);
       }
 
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
-        for (int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           Real& dt_2 = dt2(i);
           min_dt = std::min(min_dt,dt_2);
         }
@@ -117,7 +115,7 @@ Real Hydro::NewBlockTimeStep(void)
 
       // if grid is 3D, compute minimum of (v3 +/- C)
       if (pmb->block_size.nx3 > 1) {
-        for (int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           Real& dt_3 = dt3(i);
           min_dt = std::min(min_dt,dt_3);
         }
@@ -128,7 +126,7 @@ Real Hydro::NewBlockTimeStep(void)
 
   min_dt *= pmb->pmy_mesh->cfl_number;
 
-  if(UserTimeStep_!=NULL) {
+  if (UserTimeStep_!=NULL) {
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
   }
 

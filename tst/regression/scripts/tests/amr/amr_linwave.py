@@ -12,17 +12,17 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # L-going fast wave (set by default in input)
-  arguments = ['output1/dt=-1']
+  arguments = ['time/ncycle_out=10', 'output1/dt=-1']
   athena.run('mhd/athinput.linear_wave2d_amr', arguments)
 
 # Analyze outputs

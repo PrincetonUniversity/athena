@@ -5,10 +5,10 @@
 //========================================================================================
 //! \file shu_osher.cpp
 //  \brief Problem generator for Shu-Osher shocktube test, involving
-//   interaction of a Mach 3 shock with a sine wave density distribution.  
+//   interaction of a Mach 3 shock with a sine wave density distribution.
 //
 // REFERENCE: C.W. Shu & S. Osher, "Efficient implementation of essentially
-//   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
+//   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)
 //========================================================================================
 
 // C/C++ headers
@@ -33,8 +33,7 @@
 //  \brief Shu-Osher test problem generator
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // setup dependent variables
   Real dl = 3.857143;
   Real pl = 10.33333;
@@ -55,8 +54,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM2,k,j,i) = vl*dl;
         phydro->u(IM3,k,j,i) = wl*dl;
         phydro->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
-      }
-      else {
+      } else {
         phydro->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pcoord->x1v(i)));
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;

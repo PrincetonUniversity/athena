@@ -13,18 +13,18 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure(
       prob='shock_tube',
       coord='cartesian',
-      flux='hllc')
+      flux='hllc', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   # run in X1 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=' + repr(i), 'mesh/nx2=1', 'mesh/nx3=1',
       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
@@ -33,7 +33,7 @@ def run():
     athena.run('hydro/athinput.sod', arguments)
   # run in X2 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=' + repr(i), 'mesh/nx3=1',
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
@@ -42,7 +42,7 @@ def run():
     athena.run('hydro/athinput.sod', arguments)
   # run in X3 direction
   for i in (128,256):
-    arguments = [
+    arguments = ['time/ncycle_out=0',
       'mesh/nx1=4', 'mesh/nx2=4', 'mesh/nx3=' + repr(i),
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
@@ -72,26 +72,26 @@ def analyze():
 
   # check absolute error and convergence in x1
   if data[0][4] > 0.011:
-    print "error in x1 too large",data[0][4]
+    print("error in x1 too large", data[0][4])
     return False
-  if data[1][4]/data[0][4] > 0.6:
-    print("not converging in x1",data[0][4],data[1][4])
+  if data[1][4] / data[0][4] > 0.6:
+    print("not converging in x1", data[0][4], data[1][4])
     return False
 
   # check absolute error and convergence in x2
   if data[2][4] > 0.011:
-    print "error in x2 too large",data[2][4]
+    print("error in x2 too large", data[2][4])
     return False
-  if data[3][4]/data[2][4] > 0.6:
-    print("not converging in x2",data[2][4],data[3][4])
+  if data[3][4] / data[2][4] > 0.6:
+    print("not converging in x2", data[2][4], data[3][4])
     return False
 
   # check absolute error and convergence in x3
   if data[4][4] > 0.011:
-    print "error in x3 too large",data[4][4]
+    print("error in x3 too large", data[4][4])
     return False
-  if data[5][4]/data[4][4] > 0.6:
-    print("not converging in x3",data[4][4],data[5][4])
+  if data[5][4] / data[4][4] > 0.6:
+    print("not converging in x3", data[4][4], data[5][4])
     return False
 
   return True

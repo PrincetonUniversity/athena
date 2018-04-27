@@ -1,5 +1,5 @@
-#ifndef FIELD_HPP
-#define FIELD_HPP
+#ifndef FIELD_FIELD_HPP_
+#define FIELD_FIELD_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -28,6 +28,7 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+
   // face-centered magnetic fields
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2
@@ -54,4 +55,4 @@ private:
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;
   AthenaArray<Real> g_, gi_;  // only used in GR
 };
-#endif // FIELD_HPP
+#endif // FIELD_FIELD_HPP_

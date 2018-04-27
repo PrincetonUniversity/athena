@@ -1,5 +1,5 @@
-#ifndef FFTGRAVITY_HPP
-#define FFTGRAVITY_HPP
+#ifndef GRAVITY_FFTGRAVITY_HPP_
+#define GRAVITY_FFTGRAVITY_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -26,10 +26,10 @@ class GravitySolverTaskList;
 
 class FFTGravity : public FFTBlock {
 public:
-  FFTGravity(FFTDriver *pfd, LogicalLocation iloc, int igid, 
+  FFTGravity(FFTDriver *pfd, LogicalLocation iloc, int igid,
            RegionSize msize, RegionSize bsize)
-  : FFTBlock(pfd, iloc, igid, msize, bsize) {};
-  ~FFTGravity() {};
+  : FFTBlock(pfd, iloc, igid, msize, bsize) {}
+  ~FFTGravity() {}
   void ApplyKernel(int mode);
 };
 
@@ -45,7 +45,7 @@ public:
 
 private:
   Real four_pi_G_;
-  GravitySolverTaskList *gtlist_; 
+  GravitySolverTaskList *gtlist_;
 };
 
-#endif // FFTGRAVITY_HPP
+#endif // GRAVITY_FFTGRAVITY_HPP_

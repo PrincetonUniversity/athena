@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -21,18 +22,17 @@
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez)
-{
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
@@ -56,8 +56,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 2.  Compute Roe-averaged state
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
     wroe[IDN] = sqrtdl*sqrtdr;
@@ -102,10 +102,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real ct2 = bt_starsq/wroe[IDN];
     Real tsum = vaxsq + ct2 + twid_asq;
     Real tdif = vaxsq + ct2 - twid_asq;
-    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
+    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
     Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real a = sqrt(cfsq);
+    Real a = std::sqrt(cfsq);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 

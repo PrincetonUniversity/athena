@@ -1,5 +1,5 @@
-#ifndef MGGRAVITY_HPP
-#define MGGRAVITY_HPP
+#ifndef GRAVITY_MGGRAVITY_HPP_
+#define GRAVITY_MGGRAVITY_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -29,7 +29,7 @@ public:
             enum BoundaryFlag *input_bcs, bool root)
    : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
-  ~MGGravity() {};
+  ~MGGravity() {}
   void Smooth(int color);
   void CalculateDefect(void);
 
@@ -44,11 +44,11 @@ private:
 class MGGravityDriver : public MultigridDriver{
 public:
   MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
-  ~MGGravityDriver() {};
+  ~MGGravityDriver() {}
   void Solve(int step);
 
 private:
   Real four_pi_G_;
 };
 
-#endif // MGGRAVITY_HPP
+#endif // GRAVITY_MGGRAVITY_HPP_

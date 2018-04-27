@@ -1,5 +1,5 @@
-#ifndef GRAV_TASK_LIST_HPP
-#define GRAV_TASK_LIST_HPP
+#ifndef TASK_LIST_GRAV_TASK_LIST_HPP_
+#define TASK_LIST_GRAV_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -25,7 +25,7 @@ class MeshBlock;
 class GravitySolverTaskList : public TaskList {
 public:
   GravitySolverTaskList(ParameterInput *pin, Mesh *pm);
-  ~GravitySolverTaskList() {};
+  ~GravitySolverTaskList() {}
 
   void AddGravitySolverTask(uint64_t id, uint64_t dep);
 
@@ -51,4 +51,4 @@ namespace GravitySolverTaskNames {
   const uint64_t GRAV_PHYS_BND=1LL<<4;
 };
 
-#endif // GRAV_TASK_LIST_HPP
+#endif // TASK_LIST_GRAV_TASK_LIST_HPP_
