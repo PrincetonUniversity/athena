@@ -47,7 +47,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j) {
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma omp simd simdlen(SIMD_WIDTH)
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         dwl(n,i) = (w(n,k,j,i  ) - w(n,k,j,i-1));
         dwr(n,i) = (w(n,k,j,i+1) - w(n,k,j,i  ));
@@ -148,7 +148,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   for (int j=jl-1; j<=ju; ++j) {
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma omp simd simdlen(SIMD_WIDTH)
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dwl(n,i) = (w(n,k,j  ,i) - w(n,k,j-1,i));
         dwr(n,i) = (w(n,k,j+1,i) - w(n,k,j  ,i));
@@ -249,7 +249,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   for (int j=jl; j<=ju; ++j) {
     // compute L/R slopes for each variable
     for (int n=0; n<(NHYDRO); ++n) {
-#pragma omp simd simdlen(SIMD_WIDTH)
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         dwl(n,i) = (w(n,k  ,j,i) - w(n,k-1,j,i));
         dwr(n,i) = (w(n,k+1,j,i) - w(n,k  ,j,i));
