@@ -217,3 +217,111 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+// \! fn
+// \! brief
+
+void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
+                                             AthenaArray<Real> &bc_center,
+                                             Coordinates *pco, int il, int iu, int jl,
+                                             int ju, int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+  for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+#pragma omp simd
+      for (int i=il; i<=iu; ++i){
+		const Real& b1_im1 = bf_center.x1f(k  , j  , i-1);
+        const Real& b1_i   = bf_center.x1f(k  , j  , i  );
+        const Real& b1_ip1 = bf_center.x1f(k  , j  , i+1);
+        const Real& b1_ip2 = bf_center.x1f(k  , j  , i+2);
+        const Real& b2_j   = bf_center.x2f(k  , j  , i);
+        const Real& b2_jp1 = bf_center.x2f(k  , j+1, i);
+        const Real& b3_k   = bf_center.x3f(k  , j  , i);
+		const Real& b3_kp1 = bf_center.x3f(k+1, j  , i);
+
+        Real& bcc1 = bc_center(IB1,k,j,i);
+        Real& bcc2 = bc_center(IB2,k,j,i);
+        Real& bcc3 = bc_center(IB3,k,j,i);
+
+        // cell center B-fields are defined as spatial interpolation at the volume center
+        const Real& x1f_i  = pco->x1f(i);
+        const Real& x1f_ip = pco->x1f(i+1);
+        const Real& x1v_i  = pco->x1v(i);
+        const Real& dx1_i  = pco->dx1f(i);
+        Real lw=(x1f_ip-x1v_i)/dx1_i;
+        Real rw=(x1v_i -x1f_i)/dx1_i;
+		bcc1 = -1.0/16.0*(b1_im1 + b1_ip2) + 9.0/16.0*(b1_i + b1_ip1);
+
+        const Real& x2f_j  = pco->x2f(j);
+        const Real& x2f_jp = pco->x2f(j+1);
+        const Real& x2v_j  = pco->x2v(j);
+        const Real& dx2_j  = pco->dx2f(j);
+        lw=(x2f_jp-x2v_j)/dx2_j;
+        rw=(x2v_j -x2f_j)/dx2_j;
+		if (pmb->block_size.nx2 > 1) {
+		  const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
+		  const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
+		  bcc2 = -1.0/16.0*(b2_jm1 + b2_jp2) + 9.0/16.0*(b2_j + b2_jp1);
+		}
+		else // default to second-order cell-centered field reconstruction in 1D:
+		  bcc2 = 0.5*(b2_j + b2_jp1);
+
+        const Real& x3f_k  = pco->x3f(k);
+        const Real& x3f_kp = pco->x3f(k+1);
+        const Real& x3v_k  = pco->x3v(k);
+        const Real& dx3_k  = pco->dx3f(k);
+        lw=(x3f_kp-x3v_k)/dx3_k;
+        rw=(x3v_k -x3f_k)/dx3_k;
+		if (pmb->block_size.nx3 > 1) {
+		  const Real& b3_km1 = bf_center.x3f(k-1,j,i);
+		  const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
+		  bcc3 = -1.0/16.0*(b3_km1 + b3_kp2) + 9.0/16.0*(b3_k + b3_kp1);
+		}
+		else
+		  bcc3 = 0.5*(b3_k + b3_kp1);
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \! fn
+// \! brief
+
+void Field::CalculateCellAveragedField(const AthenaArray<Real> &bc_center,
+                                       AthenaArray<Real> &bc, Coordinates *pco,
+                                       int il, int iu, int jl, int ju, int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+  // Transform cell-centered B to cell-averaged <B>
+  // No need to add +1 ghost to longitudinal directions here as with FaceField
+  AthenaArray<Real> laplacian_cc;
+  laplacian_cc.InitWithShallowCopy(scr1_nkji_cc_);
+
+  pmb->pcoord->Laplacian(bc_center, laplacian_cc, il, iu, jl, ju, kl, ku, 0, 2);
+
+  // TODO(kfelker): deal with this usage of C
+  Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
+  Real C = (h*h)/24.0;
+
+  for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+      for (int i=il; i<=iu; ++i){
+        Real& bc1 = bc(IB1,k,j,i);
+        Real& bc2 = bc(IB2,k,j,i);
+        Real& bc3 = bc(IB3,k,j,i);
+		const Real& bcc1 = bc_center(IB1,k,j,i);
+        const Real& bcc2 = bc_center(IB2,k,j,i);
+        const Real& bcc3 = bc_center(IB3,k,j,i);
+
+        bc1 = bcc1 + C*laplacian_cc(0,k,j,i);
+        bc2 = bcc2 + C*laplacian_cc(1,k,j,i);
+        bc3 = bcc3 + C*laplacian_cc(2,k,j,i);
+      }
+    }
+  }
+
+  return;
+}
+
