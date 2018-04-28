@@ -48,7 +48,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     int il, int iu, int jl, int ju, int kl, int ku) {
   Real gm1 = GetGamma() - 1.0;
 
-  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
+  //  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
@@ -171,6 +171,97 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
   // apply pressure floor
   w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+
+  return;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
+//           const AthenaArray<Real> &prim_old, const FaceField &b,
+//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//           int il, int iu, int jl, int ju, int kl, int ku)
+// \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
+// at fourth order accuracy. Wrapper function for specific pointwise conversion routine
+
+void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
+  const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
+  int kl, int ku) {
+
+  MeshBlock *pmb = pmy_block_;
+  Hydro *ph = pmb->phydro;
+  Real gm1 = GetGamma() - 1.0;
+  int nl = 0;
+  int nu = NHYDRO-1;
+  // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
+  // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+  Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
+  Real C = (h*h)/24.0;
+
+  // Fourth-order accurate approx to cell-centered conserved and primitive variables
+  AthenaArray<Real> u_cc, w_cc;
+  u_cc.InitWithShallowCopy(ph->u_cc);
+  w_cc.InitWithShallowCopy(ph->w_cc);
+  // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
+  AthenaArray<Real> laplacian_cc;
+  laplacian_cc.InitWithShallowCopy(ph->scr1_nkji_);
+
+  // Compute and store Laplacian of cell-averaged conserved variables
+  pco->Laplacian(cons, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
+
+  // Compute fourth-order approximation to cell-centered conserved variables
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          // We do not actually need to store all cell-centered conserved variables,
+          // but the ConservedToPrimitive() implementation operates on 4D arrays
+          u_cc(n,k,j,i) = cons(n,k,j,i) - C*laplacian_cc(n,k,j,i);
+        }
+      }
+    }
+  }
+
+  // Compute Laplacian of 2nd-order approximation to cell-averaged primitive variables
+  pco->Laplacian(prim, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
+
+  // Convert cell-centered conserved values to cell-centered primitive values
+  ConservedToPrimitive(u_cc, prim_old, b, w_cc, bcc, pco, il, iu,
+                       jl, ju, kl, ku);
+
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          // Compute fourth-order approximation to cell-averaged primitive variables
+          prim(n,k,j,i) = w_cc(n,k,j,i) + C*laplacian_cc(n,k,j,i);
+        }
+      }
+    }
+  }
+
+  // Reapply primitive variable floors
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        // apply density floor, without changing momentum or energy
+        prim(IDN,k,j,i) = (prim(IDN,k,j,i) > density_floor_) ?
+            prim(IDN,k,j,i) : density_floor_;
+        cons(IDN,k,j,i) = prim(IDN,k,j,i);
+        Real di = 1.0/cons(IDN,k,j,i);
+        Real e_k = 0.5*prim(IDN,k,j,i)*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
+                                        + SQR(prim(IVZ,k,j,i)));
+        // apply pressure floor, correct total energy
+        cons(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
+            cons(IPR,k,j,i) : ((pressure_floor_/gm1) + e_k);
+        prim(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
+            prim(IPR,k,j,i) : pressure_floor_;
+      }
+    }
+  }
 
   return;
 }
