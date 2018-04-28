@@ -29,12 +29,34 @@ public:
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
-  // face-centered magnetic fields
+  // face-averaged (or 2nd order face-centered approx.) magnetic fields
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2
   FaceField b2;      // time-integrator memory register #3
-  // cell-centered magnetic fields
+
+  //-------- begin fourth-order MHD
+  // fourth-order approximations to face-centered magnetic fields
+  FaceField b_fc;
+
+  // cell-averaged (or 2nd order cell-centered approx.) magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1
+
+  // fourth-order approximations to cell-centered magnetic fields
+  AthenaArray<Real> bcc_center;
+
+  // fourth-order UCT reconstructions at corners
+  // TODO(kfelker) move to private class variables
+  AthenaArray<Real> by_W;
+  AthenaArray<Real> by_E;
+  AthenaArray<Real> bx_S;
+  AthenaArray<Real> bx_N;
+  AthenaArray<Real> v_NE;
+  AthenaArray<Real> v_SE;
+  AthenaArray<Real> v_NW;
+  AthenaArray<Real> v_SW;
+  AthenaArray<Real> vl_temp_;
+  AthenaArray<Real> vr_temp_;
+  //-------- end fourth-order MHD
 
   EdgeField e;    // edge-centered electric fields used in CT
   FaceField wght; // weights used to integrate E to corner using GS algorithm
