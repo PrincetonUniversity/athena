@@ -80,6 +80,7 @@ private:
 
   // fourth-order MHD:
   // 4D scratch arrays
-  AthenaArray<Real> scr1_nkji_;
+  AthenaArray<Real> scr1_nkji_cc_;
+  AthenaArray<Real> scr1_kji_x1fc_, scr2_kji_x2fc_, scr3_kji_x3fc_;
 };
 #endif // FIELD_FIELD_HPP_

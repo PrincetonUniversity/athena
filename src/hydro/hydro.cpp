@@ -37,6 +37,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   w1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
   // fourth-order hydro cell-centered approximations
+  // TODO(kfelker): add xorder==4 switch for array allocation
   u_cc.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   w_cc.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
