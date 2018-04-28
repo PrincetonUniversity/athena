@@ -500,49 +500,69 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
         }
       }
-    } else {
-      for (int k=ks; k<=ke+1; k++) {
-        for (int j=js; j<=je+1; j++) {
+      // Initialize interface fields by difference midpoint approx. of A vector
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if (i != ie+1)
-              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-            if (j != je+1)
-              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-            if (k != ke+1)
-              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+                (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+          }
+        }}
+
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+                               (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+          }
+        }}
+
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+                (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+          }
+        }}
+      a1.DeleteAthenaArray();
+      a2.DeleteAthenaArray();
+      a3.DeleteAthenaArray();
+    } else { // 1D or 2D
+      // Initialize interface fields directly
+      // TODO(kfelker): add 3D implementation
+
+      // B1 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = A3_ave_diff2(pcoord->x1f(i), pcoord->x2f(j),
+                                                pcoord->x2f(j+1));
+          }
+        }}
+
+      // B2 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = - A3_ave_diff1(pcoord->x1f(i), pcoord-> x1f(i+1),
+                                                  pcoord->x2f(j));
+          }
+        }}
+
+      // B3 initialization
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) =
+                A2_ave_diff1(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
+                             pcoord->x2f(j+1))
+                - A1_ave_diff2(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
+                               pcoord->x2f(j+1));
           }
         }
       }
-    }
-
-    // Initialize interface fields
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie+1; i++) {
-        pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-                               (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
-      }
-    }}
-
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je+1; j++) {
-      for (int i=is; i<=ie; i++) {
-        pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-                               (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
-      }
-    }}
-
-    for (int k=ks; k<=ke+1; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-       pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-                              (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
-      }
-    }}
-    a1.DeleteAthenaArray();
-    a2.DeleteAthenaArray();
-    a3.DeleteAthenaArray();
-  }
+    } // end if 2D or 1D
+  } // end if (MAGNETIC_FIELDS_ENABLED)
 
   // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
