@@ -34,18 +34,19 @@ public:
   FaceField b1;      // time-integrator memory register #2
   FaceField b2;      // time-integrator memory register #3
 
-  //-------- begin fourth-order MHD
-  // fourth-order approximations to face-centered magnetic fields
-  FaceField b_fc;
-
   // cell-averaged (or 2nd order cell-centered approx.) magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1
 
+  //-------- begin fourth-order MHD
+  // TODO(kfelker): consider moving to private class variables
+  // fourth-order approximations to face-centered magnetic fields
+  FaceField b_fc;
+
   // fourth-order approximations to cell-centered magnetic fields
+  // TODO(kfelker): renmae bcc and bcc_center, bc and bcc?
   AthenaArray<Real> bcc_center;
 
   // fourth-order UCT reconstructions at corners
-  // TODO(kfelker) move to private class variables
   AthenaArray<Real> by_W;
   AthenaArray<Real> by_E;
   AthenaArray<Real> bx_S;

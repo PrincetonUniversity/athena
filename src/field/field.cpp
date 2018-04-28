@@ -45,7 +45,30 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
     }
 
-    bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
+    bcc.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
+
+    //-------- begin allocations for fourth-order MHD
+    b_fc.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b_fc.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b_fc.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    bcc_center.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
+
+    // fourth-order UCT reconstructions at corners
+    // TODO(kfelker): cut down on these temporary arrays
+    // TODO(kfelker): check array limits-- add +1 for upper face?
+    by_W.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_E.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_S.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_N.NewAthenaArray(ncells3, ncells2, ncells1);
+
+    // TODO(kfelker): expand to 3D
+    v_NE.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_SE.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_NW.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_SW.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    vl_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    vr_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    //-------- end allocations for fourth-order MHD
 
     e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
     e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
@@ -90,6 +113,25 @@ Field::~Field() {
   b2.x2f.DeleteAthenaArray();
   b2.x3f.DeleteAthenaArray();
   bcc.DeleteAthenaArray();
+
+  //-------- begin deallocations for fourth-order MHD
+  b_fc.x1f.DeleteAthenaArray();
+  b_fc.x2f.DeleteAthenaArray();
+  b_fc.x3f.DeleteAthenaArray();
+  bcc_center.DeleteAthenaArray();
+
+  by_W.DeleteAthenaArray();
+  by_E.DeleteAthenaArray();
+  bx_N.DeleteAthenaArray();
+  bx_S.DeleteAthenaArray();
+
+  v_NE.DeleteAthenaArray();
+  v_SE.DeleteAthenaArray();
+  v_NW.DeleteAthenaArray();
+  v_SW.DeleteAthenaArray();
+  vl_temp_.DeleteAthenaArray();
+  vr_temp_.DeleteAthenaArray();
+  //----------end deallocations for fourth-order MHD
 
   e.x1e.DeleteAthenaArray();
   e.x2e.DeleteAthenaArray();
