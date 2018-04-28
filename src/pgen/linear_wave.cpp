@@ -50,6 +50,13 @@ static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 static Real A1(const Real x1, const Real x2, const Real x3);
 static Real A2(const Real x1, const Real x2, const Real x3);
 static Real A3(const Real x1, const Real x2, const Real x3);
+// edge-averaged and differenced values of vector potential
+static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                         const Real x2f_jp1);
+static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                         const Real x2f_jp1);
+static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
+static Real A3_ave_diff2(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
 
 // function to compute eigenvectors of linear waves
 static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
@@ -604,6 +611,121 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
   Real Az = -by0*x + (dby/k_par)*cos(k_par*(x)) + bx0*y;
 
   return Az*cos_a2;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//                               const Real x2f_jp1)
+//  \brief A1_ave_diff2: 1-component of vector potential on x2-x3 edges, averaged along
+//         x1, and differenced between x2 faces (x3f constant). Used to compute B3
+
+static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                         const Real x2f_jp1) {
+  // xl_i, xl_ip1 are lower (x2f_j) x2-x3 edge x endpoints
+  Real xl_i =  x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_ip1 =  x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  // xu_i, xu_ip1 are upper (x2f_jp1) x2-x3 edge x1 endpoints
+  Real xu_i =  x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  Real xu_ip1 =  x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  Real Ay;
+  if (cos_a3 != 0.0) {
+	// O(bz0) linear term
+	Ay = -bz0*SQR(sin_a3);
+	Ay += dbz*sin_a3/(SQR(k_par)*cos_a3*dx1f*dx2f)
+        *((sin(k_par*xu_ip1) - sin(k_par*xu_i))	- (sin(k_par*xl_ip1) - sin(k_par*xl_i)));
+  } else { // vertical coordinate aligned wave--- uniform on the x1 edge
+	// O(bz0) linear term
+	Ay = -bz0;
+	// O(amp) perturbative term
+	// Using the difference of cosine trig identity, with angles x+/-dx1f/2
+	Ay -= (2.0*dbz/(k_par*dx2f))*sin(k_par*dx2f/2.0)*sin(k_par*(x2f_j+dx2f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fnstatic Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f,
+//                              const Real x2f_jp1)
+//  \brief A2_ave_diff1: 2-component of vector potential on x1-x3 edges, averaged along
+//         x2, and differenced between x1 faces (x3f constant). Used to compute B3
+
+static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                         const Real x2f_jp1) {
+  // xl_j, xl_jp1 are lower (x1f_i) x1-x3 edge x2 endpoints
+  Real xl_j =  x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_jp1 =  x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  // xu_j, xu_jp1 are upper (x1f_ip1) x1-x3 edge x2 endpoints
+  Real xu_j =  x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  Real xu_jp1 =  x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+  Real Ay;
+  if (sin_a3 != 0.0) {
+	// O(bz0) linear term
+	Ay = bz0*SQR(cos_a3);
+	Ay -= dbz*cos_a3/(SQR(k_par)*sin_a3*dx1f*dx2f)
+        *((sin(k_par*xu_jp1) - sin(k_par*xu_j)) - (sin(k_par*xl_jp1) - sin(k_par*xl_j)));
+  } else { // horizontal coordinate aligned wave--- uniform on the x2 edge
+	// O(bz0) linear term
+	Ay = bz0;
+	// O(amp) perturbative term
+	// Using the difference of cosine trig identity, with angles x+/-dx1f/2
+	Ay += (2.0*dbz/(k_par*dx1f))*sin(k_par*dx1f/2.0)*sin(k_par*(x1f_i+dx1f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f)
+//  \brief A3_ave_diff1: 3-component of vector potential on x1-x2 edges, averaged along
+//         x3, and differenced between x1 faces (x2f constant). Used to compute B2
+
+static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j) {
+  // xl is lower (x1f_i) x1-x2 edge x3 midpoint
+  // (no need for endpoints due to lack of x3 dependence)
+  Real xl =  x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x1f_ip1) x1-x2 edge x3 midpoint
+  Real xu =  x1f_ip1*cos_a3 + x2f_j*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*cos_a3 - bx0*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx1f))*(cos(k_par*xu) - cos(k_par*xl));
+
+  return Az;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A3_ave_diff2(const Real x1f, const Real x2f_j, const Real x2f_jp1)
+//  \brief A3_ave_diff2: 3-component of vector potential on x1-x2 edges, averaged along
+//         x3, and differenced between x2 faces (x1f constant). Used to compute B1
+
+static Real A3_ave_diff2(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
+  // xl is lower (x2f_j) x1-x2 edge x3 midpoint (no need for endpoints due to
+  // lack of x3 dependence)
+  Real xl =  x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x2f_jp1) x1-x2 edge x3 midpoint
+  Real xu =  x1f_i*cos_a3 + x2f_jp1*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*sin_a3 + bx0*cos_a3;
+
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx2f))*(cos(k_par*xu) - cos(k_par*xl));
+
+  return Az;
 }
 
 //----------------------------------------------------------------------------------------
