@@ -77,5 +77,9 @@ private:
   AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;
   AthenaArray<Real> g_, gi_;  // only used in GR
+
+  // fourth-order MHD:
+  // 4D scratch arrays
+  AthenaArray<Real> scr2_nkji_;
 };
 #endif // FIELD_FIELD_HPP_

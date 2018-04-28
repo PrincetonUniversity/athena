@@ -48,6 +48,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     bcc.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
 
     //-------- begin allocations for fourth-order MHD
+    // TODO(kfelker): add xorder==4 switch for array allocation
     b_fc.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     b_fc.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     b_fc.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
@@ -96,6 +97,9 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
 
+    // fourth-order MHD
+    // 4D scratch arrays
+    scr2_nkji_.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
   }
 }
 
