@@ -99,6 +99,8 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 
     // fourth-order MHD
     // 4D scratch arrays
+    // TODO(kfelker): these could all share the same 4D array, extended
+    // by 1 in all directions
     scr1_nkji_cc_.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
     scr1_kji_x1fc_.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     scr2_kji_x2fc_.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
@@ -227,10 +229,10 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
                                              Coordinates *pco, int il, int iu, int jl,
                                              int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block;
-  for (int k=kl; k<=ku; ++k){
-    for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
+      for (int i=il; i<=iu; ++i) {
 		const Real& b1_im1 = bf_center.x1f(k  , j  , i-1);
         const Real& b1_i   = bf_center.x1f(k  , j  , i  );
         const Real& b1_ip1 = bf_center.x1f(k  , j  , i+1);
@@ -263,9 +265,9 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
 		  const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
 		  const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
 		  bcc2 = -1.0/16.0*(b2_jm1 + b2_jp2) + 9.0/16.0*(b2_j + b2_jp1);
-		}
-		else // default to second-order cell-centered field reconstruction in 1D:
+		} else { // default to second-order cell-centered field reconstruction in 1D:
 		  bcc2 = 0.5*(b2_j + b2_jp1);
+        }
 
         const Real& x3f_k  = pco->x3f(k);
         const Real& x3f_kp = pco->x3f(k+1);
@@ -277,9 +279,9 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
 		  const Real& b3_km1 = bf_center.x3f(k-1,j,i);
 		  const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
 		  bcc3 = -1.0/16.0*(b3_km1 + b3_kp2) + 9.0/16.0*(b3_k + b3_kp1);
-		}
-		else
+		} else {
 		  bcc3 = 0.5*(b3_k + b3_kp1);
+        }
       }
     }
   }
@@ -290,7 +292,7 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
 // \! fn
 // \! brief
 
-void Field::CalculateCellAveragedField(const AthenaArray<Real> &bc_center,
+void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
                                        AthenaArray<Real> &bc, Coordinates *pco,
                                        int il, int iu, int jl, int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block;
@@ -299,15 +301,15 @@ void Field::CalculateCellAveragedField(const AthenaArray<Real> &bc_center,
   AthenaArray<Real> laplacian_cc;
   laplacian_cc.InitWithShallowCopy(scr1_nkji_cc_);
 
-  pmb->pcoord->Laplacian(bc_center, laplacian_cc, il, iu, jl, ju, kl, ku, 0, 2);
+  pco->Laplacian(bc_center, laplacian_cc, il, iu, jl, ju, kl, ku, 0, 2);
 
   // TODO(kfelker): deal with this usage of C
   Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
   Real C = (h*h)/24.0;
 
-  for (int k=kl; k<=ku; ++k){
-    for (int j=jl; j<=ju; ++j){
-      for (int i=il; i<=iu; ++i){
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      for (int i=il; i<=iu; ++i) {
         Real& bc1 = bc(IB1,k,j,i);
         Real& bc2 = bc(IB2,k,j,i);
         Real& bc3 = bc(IB3,k,j,i);
@@ -325,3 +327,129 @@ void Field::CalculateCellAveragedField(const AthenaArray<Real> &bc_center,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+// \! fn
+// \! brief
+// Function now automatically shrinks the transverse loop limits for LaplacianX(),
+// correction and output by 1. E.g. jl+1: ju-1 for Laplacian1() applied to bf.x1f
+// As always, the function automatically extends the longitudinal loop limits to correct
+// the upper FaceField. E.g. iu+1 for bf.x1f()
+
+void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center,
+                                       Coordinates *pco, int il, int iu, int jl, int ju,
+                                       int kl, int ku) {
+  // Convert face-averaged magnetic field to face-centered, even for 1D runs
+  MeshBlock *pmb = pmy_block;
+  BoundaryValues *pbval = pmb->pbval;
+
+  // Laplacians (in orthogonal directions) of face-centered FaceField
+  AthenaArray<Real> laplacian_bx1, laplacian_bx2, laplacian_bx3;
+  laplacian_bx1.InitWithShallowCopy(scr1_kji_x1fc_);
+  laplacian_bx2.InitWithShallowCopy(scr2_kji_x2fc_);
+  laplacian_bx3.InitWithShallowCopy(scr3_kji_x3fc_);
+
+  // Use 1x cell per boundary edge as buffer
+  int il_buf=il, iu_buf=iu, jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku;
+  int nl=0, nu=0;
+  // If the x1 boundaries are periodic, use 1x cell on inner/outer boundary as buffer,
+  // even in 1D. This is because all cells are passed to this function in a peridoic
+  // domain, but only the real cells are passed for a physical boundary
+  if (pbval->nblevel[1][1][0]!=-1) il_buf+=1;
+  if (pbval->nblevel[1][1][2]!=-1) iu_buf-=1;
+
+  if (pmb->block_size.nx2 > 1) {
+	if (pmb->block_size.nx3 == 1) {// 2D
+	  jl_buf+=1, ju_buf-=1;
+    } else { // 3D
+	  jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+    }
+  }
+
+  // Compute and store Laplacian of cell-averaged conserved variables
+  pco->LaplacianX1(bf.x1f, laplacian_bx1, il, iu+1, jl_buf, ju_buf, kl_buf, ku_buf,
+                   nl, nu);
+  pco->LaplacianX2(bf.x2f, laplacian_bx2, il_buf, iu_buf, jl, ju+1, kl_buf, ku_buf,
+                   nl, nu);
+  pco->LaplacianX3(bf.x3f, laplacian_bx3, il_buf, iu_buf, jl_buf, ju_buf, kl, ku+1,
+                   nl, nu);
+
+  // TODO(kfelker): deal with this usage of C
+  Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
+  Real C = (h*h)/24.0;
+
+  // Compute fourth-order approximation to cell-centered conserved variables
+  for (int k=kl_buf; k<=ku_buf; ++k) {
+    for (int j=jl_buf; j<=ju_buf; ++j) {
+      for (int i=il; i<=iu+1; ++i) {
+        bf_center.x1f(k,j,i) =  bf.x1f(k,j,i) - C*laplacian_bx1(k,j,i);
+      }
+    }
+  }
+  for (int k=kl_buf; k<=ku_buf; ++k) {
+    for (int j=jl; j<=ju+1; ++j) {
+      for (int i=il_buf; i<=iu_buf; ++i) {
+        bf_center.x2f(k,j,i) =  bf.x2f(k,j,i) - C*laplacian_bx2(k,j,i);
+      }
+    }
+  }
+
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=jl_buf; j<=ju_buf; ++j) {
+      for (int i=il_buf; i<=iu_buf; ++i) {
+        bf_center.x3f(k,j,i) =  bf.x3f(k,j,i) - C*laplacian_bx3(k,j,i);
+      }
+    }
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \! fn
+// \! brief
+
+void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_center,
+                                            AthenaArray<Real> &bc,
+                                            AthenaArray<Real> &bc_center,
+                                            Coordinates *pco, int il, int iu, int jl,
+                                            int ju, int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+  BoundaryValues *pbval = pmb->pbval;
+  // Assuming all cells (ghost and real) are passed as limits:
+  CalculateFaceCenteredField(bf, bf_center, pco, il, iu, jl, ju, kl, ku);
+  //pbval->ApplyPhysicalBoundariesFaceField(bf_center);
+  // ... output shrinks by 1 in transverse directions
+
+  // Take 1x longitudinal cell as buffer, such that all directions shrink UPON OUTPUT.
+
+  // it is important to emphasize that the local loop limits, il, iu, etc. represent the
+  // validity of the output here.
+
+  // the function receives ALL of the calculated values, but applies to il, iu only due to
+  // stencil width
+  if (pbval->nblevel[1][1][0]!=-1) il+=1;
+  if (pbval->nblevel[1][1][2]!=-1) iu-=1;
+  if (pbval->nblevel[1][0][1]!=-1) jl+=1;
+  if (pbval->nblevel[1][2][1]!=-1) ju-=1;
+  if (pbval->nblevel[0][1][1]!=-1) kl+=1;
+  if (pbval->nblevel[2][1][1]!=-1) ku-=1;
+  // Does this make any sense for outflow conditions? Need to revamp the whole il, iu, etc
+  // buffer,  boundary condition syntax
+  CalculateCellCenteredFieldFourth(bf_center, bc_center, pco, il, iu, jl, ju, kl, ku);
+  //  pbval->ApplyPhysicalBoundariesCellField(bc_center);
+
+  // All directions shrink by 1x again for Laplacian
+  if (pbval->nblevel[1][1][0]!=-1) il+=1;
+  if (pbval->nblevel[1][1][2]!=-1) iu-=1;
+  if (pbval->nblevel[1][0][1]!=-1) jl+=1;
+  if (pbval->nblevel[1][2][1]!=-1) ju-=1;
+  if (pbval->nblevel[0][1][1]!=-1) kl+=1;
+  if (pbval->nblevel[2][1][1]!=-1) ku-=1;
+
+  CellCenteredToAveragedField(bc_center, bc, pco, il, iu, jl, ju, kl, ku);
+  //pbval->ApplyPhysicalBoundariesCellField(bc);
+
+  // .... leading to output that is 2x cells smaller at each real edge
+
+  return;
+}

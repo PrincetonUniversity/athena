@@ -77,10 +77,18 @@ public:
                                         AthenaArray<Real> &bc_center,
                                         Coordinates *pco, int il, int iu, int jl,
                                         int ju, int kl, int ku);
-  void CalculateCellAveragedField(const AthenaArray<Real> &bc_center,
+  void CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
                                   AthenaArray<Real> &bc, Coordinates *pco,
                                   int il, int iu, int jl, int ju, int kl, int ku);
+  void FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_center,
+                                       AthenaArray<Real> &bc,
+                                       AthenaArray<Real> &bc_center, Coordinates *pco,
+                                       int il, int iu, int jl, int ju, int kl, int ku);
+  void CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center,
+                                  Coordinates *pco, int il, int iu, int jl, int ju,
+                                  int kl, int ku);
   //-------end fourth-order MHD functions
+
 private:
   // scratch space used to compute fluxes
   AthenaArray<Real> cc_e_;
