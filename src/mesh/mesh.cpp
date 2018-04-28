@@ -1259,6 +1259,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     MeshBlock *pmb;
     Hydro *phydro;
     Field *pfield;
+    Coordinates *pco;
     BoundaryValues *pbval;
 
     // prepare to receive conserved variables
@@ -1320,12 +1321,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     // --------------------------
     bool correct_ic = pmb->precon->correct_ic;
     if (correct_ic == true) {
-#pragma omp for private(pmb, phydro, pfield, pbval)
+#pragma omp for private(pmb, phydro, pfield, pbval, pco)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i];
         phydro=pmb->phydro;
         pfield=pmb->pfield;
         pbval=pmb->pbval;
+        pco=pmb->pcoord;
+
+        // TODO(kfelker): check if this is necessary:
+        // pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
+        //                                         pfield->bcc,time, 0.0);
 
         // Assume cell-centered analytic value is computed at all real cells, and ghost
         // cells with the cell-centered U have been exchanged
@@ -1403,9 +1409,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     // end fourth-order correction of midpoint initial condition
 
     // Now do prolongation, compute primitives, apply BCs
-#pragma omp for private(pmb,pbval,phydro,pfield)
-      for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
+#pragma omp for private(pmb,pbval,phydro,pfield,pco)
+    for (int i=0; i<nmb; ++i) {
+      pmb=pmb_array[i];
+      pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield, pco=pmb->pcoord;
       if (multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     time, 0.0);
@@ -1421,25 +1428,58 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
         if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
       }
+      int order = pmb->precon->xorder;
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // TODO(kfelker): check if this is necessary:
+        // pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
+        //                                         pfield->bcc,time, 0.0);
+
+        // Compute the cell-centered field everywhere to O(dx^2)
+        // TODO(kfelker): this should operate only on bcc_center if xorder==4
+        pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pco,
+                                           il, iu, jl, ju, kl, ku);
+        // --------------------------
+        if (order == 4) {
+          // Deep copy the second-order accurate bcc, for now.
+          pfield->bcc_center = pfield->bcc;
+          pfield->FaceAveragedToCellAveragedField(pfield->b, pfield->b_fc,
+                                                  pfield->bcc, pfield->bcc_center,
+                                                  pco, il, iu, jl, ju, kl, ku);
+        }
+      }
+
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                      phydro->w, pfield->bcc, pmb->pcoord,
+                                      phydro->w, pfield->bcc, pco,
                                       il, iu, jl, ju, kl, ku);
       // --------------------------
-      int order = pmb->precon->xorder;
       if (order == 4) {
         // fourth-order EOS:
-        // for hydro, shrink buffer by 1 on all sides
-        if (pbval->nblevel[1][1][0] != -1) il+=1;
-        if (pbval->nblevel[1][1][2] != -1) iu-=1;
-        if (pbval->nblevel[1][0][1] != -1) jl+=1;
-        if (pbval->nblevel[1][2][1] != -1) ju-=1;
-        if (pbval->nblevel[0][1][1] != -1) kl+=1;
-        if (pbval->nblevel[2][1][1] != -1) ku-=1;
-        // for MHD, shrink buffer by 3
-        // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
-        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
-                                                   phydro->w, pfield->bcc, pmb->pcoord,
-                                                   il, iu, jl, ju, kl, ku);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          // for MHD, shrink buffer by 3 on all sides:
+          // TODO(kfelker): recheck this adjustment
+          if (pbval->nblevel[1][1][0] != -1) il+=3;
+          if (pbval->nblevel[1][1][2] != -1) iu-=3;
+          if (pbval->nblevel[1][0][1] != -1) jl+=3;
+          if (pbval->nblevel[1][2][1] != -1) ju-=3;
+          if (pbval->nblevel[0][1][1] != -1) kl+=3;
+          if (pbval->nblevel[2][1][1] != -1) ku-=3;
+          // Pass the fourth-order approximation to the cell-centered field, bcc_center,
+          // instead of bcc, to be used with the cell-centered hydro
+          pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                     phydro->w, pfield->bcc, pco,
+                                                     il, iu, jl, ju, kl, ku);
+        } else {
+          // for hydro, shrink buffer by 1 on all sides
+          if (pbval->nblevel[1][1][0] != -1) il+=1;
+          if (pbval->nblevel[1][1][2] != -1) iu-=1;
+          if (pbval->nblevel[1][0][1] != -1) jl+=1;
+          if (pbval->nblevel[1][2][1] != -1) ju-=1;
+          if (pbval->nblevel[0][1][1] != -1) kl+=1;
+          if (pbval->nblevel[2][1][1] != -1) ku-=1;
+          pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                     phydro->w, pfield->bcc, pco,
+                                                     il, iu, jl, ju, kl, ku);
+        }
       }
       // --------------------------
       // end fourth-order EOS
