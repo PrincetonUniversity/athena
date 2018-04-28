@@ -225,12 +225,13 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
         prim(IDN,k,j,i) = (prim(IDN,k,j,i) > density_floor_) ?
             prim(IDN,k,j,i) : density_floor_;
         cons(IDN,k,j,i) = prim(IDN,k,j,i);
-        Real di = 1.0/cons(IDN,k,j,i);
+        // unlike pointwise EOS, not reapplying density floor to velocity
+        // Real di = 1.0/cons(IDN,k,j,i);
         Real e_k = 0.5*prim(IDN,k,j,i)*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
                                         + SQR(prim(IVZ,k,j,i)));
         // apply pressure floor, correct total energy
-        cons(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
-            cons(IPR,k,j,i) : ((pressure_floor_/gm1) + e_k);
+        cons(IEN,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
+            cons(IEN,k,j,i) : ((pressure_floor_/gm1) + e_k);
         prim(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
             prim(IPR,k,j,i) : pressure_floor_;
       }
