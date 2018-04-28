@@ -99,7 +99,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 
     // fourth-order MHD
     // 4D scratch arrays
-    scr2_nkji_.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
+    scr1_nkji_.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
   }
 }
 
@@ -135,6 +135,8 @@ Field::~Field() {
   v_SW.DeleteAthenaArray();
   vl_temp_.DeleteAthenaArray();
   vr_temp_.DeleteAthenaArray();
+  // 4D scratch arrays
+  scr1_nkji.DeleteAthenaArray();
   //----------end deallocations for fourth-order MHD
 
   e.x1e.DeleteAthenaArray();
