@@ -36,7 +36,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    // If user-requested time integrator is type 3S*, allocate additional memory registers
+    // Allocated 3rd registers if user-requested time integrator is type 3N or 3S*
     std::string integrator = pin->GetOrAddString("time","integrator","vl2");
     if (integrator == "ssprk5_4") {
       // future extension may add "int nregister" to Hydro class
