@@ -41,11 +41,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
 
+  // fourth-order indices and variables:
+  int il_buf, iu_buf, jl_buf, ju_buf, kl_buf, ku_buf;
+  AthenaArray<Real> b1_fc, b2_fc, b3_fc;
+
   AthenaArray<Real> b1, b2, b3, w_x1f, w_x2f, w_x3f, e2x1, e3x1, e1x2, e3x2, e1x3, e2x3;
   if (MAGNETIC_FIELDS_ENABLED) {
     b1.InitWithShallowCopy(b.x1f);
     b2.InitWithShallowCopy(b.x2f);
     b3.InitWithShallowCopy(b.x3f);
+    b1_fc.InitWithShallowCopy(b_fc.x1f);
+    b2_fc.InitWithShallowCopy(b_fc.x2f);
+    b3_fc.InitWithShallowCopy(b_fc.x3f);
     w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
     w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
     w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
@@ -76,15 +83,37 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
+  // Set transverse loop limits for quantities calculated to full fourth-order accuracy
+  jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku; // 1D defaults
+
   // TODO(kfelker): fix loop limits for fourth-order hydro
-  //  if (MAGNETIC_FIELDS_ENABLED) {
-  if (pmb->block_size.nx2 > 1) {
-    if (pmb->block_size.nx3 == 1) // 2D
-      jl=js-1, ju=je+1, kl=ks, ku=ke;
-    else // 3D
-      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
-  }
-  //  }
+  if (order != 4) {
+    if (MAGNETIC_FIELDS_ENABLED) {
+      if (pmb->block_size.nx2 > 1) {
+        if (pmb->block_size.nx3 == 1) // 2D
+          jl=js-1, ju=je+1, kl=ks, ku=ke;
+        else // 3D
+          jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+      }
+    }
+  } else { // fourth-order corrections
+    if (MAGNETIC_FIELDS_ENABLED) {
+      if(pmb->block_size.nx3 == 1) { // 2D
+        jl=js-3, ju=je+3, kl=ks, ku=ke;
+        jl_buf+=1, ju_buf-=1;
+      } else { // 3D
+        jl=js-3, ju=je+3, kl=ks-3, ku=ke+3;
+        jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+      }
+    } else { // fourth-order hydro has same reqs as second-order MHD
+      if (pmb->block_size.nx2 > 1) {
+        if (pmb->block_size.nx3 == 1) // 2D
+          jl=js-1, ju=je+1, kl=ks, ku=ke;
+        else // 3D
+          jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+      }
+    }
+  } // end order==4
 
   // reconstruct L/R states
   if (order == 1) {
@@ -100,7 +129,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
   RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1, wl, wr, x1flux, e3x1, e2x1);
 
-  // begin x1 fourth-order hydro:
+  // begin x1 fourth-order hydro and MHD:
   //------------------------------------------------------------------------------
   if (order == 4) {
     // Compute Laplacian of primitive Riemann states on x1 faces
@@ -139,14 +168,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
     // Correct face-averaged fluxes (Guzik eq. 10)
     for(int n=0; n<NWAVE; n++) {
-      for (int k=kl; k<=ku; ++k) {
-        for (int j=jl; j<=ju; ++j) {
-          // Use 1-cell width ghost buffer to correct fluxes
-          if (k>=ks && k<=ke && j>=js && j<=je) {
-            pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
-            for(int i=is; i<=ie+1; i++) {
-              x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
-            }
+      for (int k=kl_buf; k<=ku_buf; ++k) {
+        for (int j=jl_buf; j<=ju_buf; ++j) {
+          pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
+          for(int i=is; i<=ie+1; i++) {
+            x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
           }
         }
       }
