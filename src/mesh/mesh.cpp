@@ -1452,8 +1452,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                       phydro->w, pfield->bcc, pco,
                                       il, iu, jl, ju, kl, ku);
       // --------------------------
+      // fourth-order EOS:
       if (order == 4) {
-        // fourth-order EOS:
         if (MAGNETIC_FIELDS_ENABLED) {
           // for MHD, shrink buffer by 3 on all sides:
           // TODO(kfelker): recheck this adjustment
@@ -1466,7 +1466,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           // Pass the fourth-order approximation to the cell-centered field, bcc_center,
           // instead of bcc, to be used with the cell-centered hydro
           pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
-                                                     phydro->w, pfield->bcc, pco,
+                                                     phydro->w, pfield->bcc_center, pco,
                                                      il, iu, jl, ju, kl, ku);
         } else {
           // for hydro, shrink buffer by 1 on all sides

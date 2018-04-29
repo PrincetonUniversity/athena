@@ -777,6 +777,9 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
+  Coordinates *pco=pmb->pcoord;
+  int order =  pmb->precon->xorder;
+
   int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
   if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
   if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
@@ -792,23 +795,56 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
     // Newton-Raphson solver in GR EOS uses the following abscissae:
     // step=1: W at t^n and
     // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
+    if (MAGNETIC_FIELDS_ENABLED) {
+
+      // Compute the cell-centered field everywhere to O(dx^2)
+      // TODO(kfelker): this should operate only on bcc_center if xorder==4
+      pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pco,
+                                         il, iu, jl, ju, kl, ku);
+      // --------------------------
+      if (order == 4) {
+        // Deep copy the second-order accurate bcc, for now.
+        pfield->bcc_center = pfield->bcc;
+        pfield->FaceAveragedToCellAveragedField(pfield->b, pfield->b_fc,
+                                                pfield->bcc, pfield->bcc_center,
+                                                pco, il, iu, jl, ju, kl, ku);
+      }
+    }
+    // TODO(kfelker): check if this is necessary:
+    // For non-periodic boundary conditions, we need to set the ghost zones b.x1f, etc
+    // pmb->pbval->ApplyPhysicalBoundariesConserved();
+
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
     // fourth-order EOS:
-    if (pmb->precon->xorder == 4) {
-      // for hydro, shrink buffer by 1 on all sides
-      if (pbval->nblevel[1][1][0] != -1) il+=1;
-      if (pbval->nblevel[1][1][2] != -1) iu-=1;
-      if (pbval->nblevel[1][0][1] != -1) jl+=1;
-      if (pbval->nblevel[1][2][1] != -1) ju-=1;
-      if (pbval->nblevel[0][1][1] != -1) kl+=1;
-      if (pbval->nblevel[2][1][1] != -1) ku-=1;
-      // for MHD, shrink buffer by 3
-      // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
-      pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
-                                                 phydro->w1, pfield->bcc, pmb->pcoord,
-                                                 il, iu, jl, ju, kl, ku);
+    if (order == 4) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // for MHD, shrink buffer by 3 on all sides:
+        // TODO(kfelker): recheck this adjustment
+        if (pbval->nblevel[1][1][0] != -1) il+=3;
+        if (pbval->nblevel[1][1][2] != -1) iu-=3;
+        if (pbval->nblevel[1][0][1] != -1) jl+=3;
+        if (pbval->nblevel[1][2][1] != -1) ju-=3;
+        if (pbval->nblevel[0][1][1] != -1) kl+=3;
+        if (pbval->nblevel[2][1][1] != -1) ku-=3;
+        // Pass the fourth-order approximation to the cell-centered field, bcc_center,
+        // instead of bcc, to be used with the cell-centered hydro
+        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                   phydro->w, pfield->bcc_center, pco,
+                                                   il, iu, jl, ju, kl, ku);
+      } else {
+        // for hydro, shrink buffer by 1 on all sides
+        if (pbval->nblevel[1][1][0] != -1) il+=1;
+        if (pbval->nblevel[1][1][2] != -1) iu-=1;
+        if (pbval->nblevel[1][0][1] != -1) jl+=1;
+        if (pbval->nblevel[1][2][1] != -1) ju-=1;
+        if (pbval->nblevel[0][1][1] != -1) kl+=1;
+        if (pbval->nblevel[2][1][1] != -1) ku-=1;
+        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
+                                                   phydro->w1, pfield->bcc, pmb->pcoord,
+                                                   il, iu, jl, ju, kl, ku);
+      }
     }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
