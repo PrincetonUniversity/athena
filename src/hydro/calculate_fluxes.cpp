@@ -141,6 +141,17 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   // begin x1 fourth-order hydro and MHD:
   //------------------------------------------------------------------------------
   if (order == 4) {
+    if (MAGNETIC_FIELDS_ENABLED) {
+      // Copy electric fields back into x1flux array
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=is; i<=ie+1; ++i) {
+            x1flux(IBY,k,j,i) = -e3x1(k,j,i);
+            x1flux(IBZ,k,j,i) = e2x1(k,j,i);
+          }
+        }
+      }
+    }
     // Compute Laplacian of primitive Riemann states on x1 faces
     pmb->pcoord->LaplacianX1(wl, laplacian_l_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
     pmb->pcoord->LaplacianX1(wr, laplacian_r_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
@@ -261,6 +272,17 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     // begin x2 fourth-order hydro
     //------------------------------------------------------------------------------
     if (order == 4) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // Copy electric fields back into x2flux array
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=js; j<=je+1; ++j) {
+            for (int i=il; i<=iu; ++i) {
+              x2flux(IBY,k,j,i) = -e1x2(k,j,i);
+              x2flux(IBZ,k,j,i) = e3x2(k,j,i);
+            }
+          }
+        }
+      }
       // Compute Laplacian of primitive Riemann states on x2 faces
       pmb->pcoord->LaplacianX2(wl, laplacian_l_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
       pmb->pcoord->LaplacianX2(wr, laplacian_r_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
@@ -302,8 +324,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=js; j<=je+1; ++j) {
             pmb->pcoord->CenterWidth2(k, j, il_buf, iu_buf, dxw);
             for(int i=il_buf; i<=iu_buf; i++) {
-              // Use 1-cell width ghost buffer to correct fluxes
-                x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
+              x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
             }
           }
         }
@@ -370,6 +391,17 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     // begin x3 fourth-order hydro
     //------------------------------------------------------------------------------
     if (order == 4) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // Copy electric fields back into x3flux array
+        for (int k=ks; k<=ke+1; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+            for (int i=il; i<=iu; ++i) {
+              x3flux(IBY,k,j,i) = -e2x3(k,j,i);
+              x3flux(IBZ,k,j,i) = e1x3(k,j,i);
+            }
+          }
+        }
+      }
       // Compute Laplacian of primitive Riemann states on x3 faces
       pmb->pcoord->LaplacianX3(wl, laplacian_l_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
       pmb->pcoord->LaplacianX3(wr, laplacian_r_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
@@ -411,15 +443,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=jl_buf; j<=ju_buf; ++j) {
             pmb->pcoord->CenterWidth3(k, j, il_buf, iu_buf, dxw);
             for(int i=il_buf; i<=iu_buf; i++) {
-              // Use 1-cell width ghost buffer to correct fluxes
-              if (i>=is && i<=ie && j>=js && j<=je) {
                 x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
-              }
             }
           }
         }
       }
-       } // end if (order == 4)
+    } // end if (order == 4)
     //------------------------------------------------------------------------------
     // end x3 fourth-order hydro
 
