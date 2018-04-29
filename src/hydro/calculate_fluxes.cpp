@@ -201,9 +201,21 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
       }
     }
+    if (MAGNETIC_FIELDS_ENABLED) {
+      // Copy high-order magnetic x1flux back into electric field arrays
+      for (int k=kl_buf; k<=ku_buf; ++k) {
+        for (int j=jl_buf; j<=ju_buf; ++j) {
+          for (int i=is; i<=ie+1; ++i) {
+            e3x1(k,j,i) = -x1flux(IBY,k,j,i);
+            e2x1(k,j,i) = x1flux(IBZ,k,j,i);
+          }
+        }
+      }
+    }
+
   } // end if (order == 4)
   //------------------------------------------------------------------------------
-  // end x1 fourth-order hydro
+  // end x1 fourth-order hydro and MHD
 
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -272,7 +284,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
     RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2, wl, wr, x2flux, e1x2, e3x2);
 
-    // begin x2 fourth-order hydro
+    // begin x2 fourth-order hydro and MHD
     //------------------------------------------------------------------------------
     if (order == 4) {
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -331,9 +343,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           }
         }
       }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // Copy electric fields back into x2flux array
+        for (int k=kl_buf; k<=ku_buf; ++k) {
+          for (int j=js; j<=je+1; ++j) {
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              e1x2(k,j,i) = -x2flux(IBY,k,j,i);
+              e3x2(k,j,i) = -x2flux(IBZ,k,j,i);
+            }
+          }
+        }
+      }
     } // end if (order == 4)
     //------------------------------------------------------------------------------
-    // end x2 fourth-order hydro
+    // end x2 fourth-order hydro and MHD
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -390,7 +413,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
     RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3, wl, wr, x3flux, e2x3, e1x3);
 
-    // begin x3 fourth-order hydro
+    // begin x3 fourth-order hydro and MHD
     //------------------------------------------------------------------------------
     if (order == 4) {
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -449,9 +472,21 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           }
         }
       }
+
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // Copy high-order magnetic x1flux back into electric field arrays
+        for (int k=ks; k<=ke+1; ++k) {
+          for (int j=jl_buf; j<=ju_buf; ++j) {
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              e2x3(k,j,i) = -x3flux(IBY,k,j,i);
+              e1x3(k,j,i) = x3flux(IBZ,k,j,i);
+            }
+          }
+        }
+      }
     } // end if (order == 4)
     //------------------------------------------------------------------------------
-    // end x3 fourth-order hydro
+    // end x3 fourth-order hydro and MHD
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
