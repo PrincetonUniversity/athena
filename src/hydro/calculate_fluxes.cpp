@@ -160,7 +160,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
     // Compute x1 interface fluxes from face-centered primitive variables
     // TODO(kfelker): check that e3x1,e2x1 arguments added in late 2017 work here
-    RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1, wl_fc_, wr_fc_, flux_fc, e3x1, e2x1);
+    RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1_fc, wl_fc_, wr_fc_, flux_fc,
+                  e3x1, e2x1);
 
     // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
     pmb->pcoord->LaplacianX1(x1flux, laplacian_l_fc, is, ie+1, jl, ju, kl, ku,
@@ -256,7 +257,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
       // Compute x2 interface fluxes from face-centered primitive variables
       // TODO(kfelker): check that e1x2,e3x2 arguments added in late 2017 work here
-      RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2, wl_fc_, wr_fc_, flux_fc,
+      RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2_fc, wl_fc_, wr_fc_, flux_fc,
                     e1x2, e3x2);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -353,7 +354,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
       // Compute x3 interface fluxes from face-centered primitive variables
       // TODO(kfelker): check that e1x3,e3x3 arguments added in late 2017 work here
-      RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3, wl_fc_, wr_fc_, flux_fc,
+      RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3_fc, wl_fc_, wr_fc_, flux_fc,
                     e2x3, e1x3);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
