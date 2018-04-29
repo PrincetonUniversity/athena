@@ -112,10 +112,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     }
   } // end order==4
 
-  // Set transverse loop limits for quantities calculated to full fourth-order accuracy
+  // Set transverse loop limits for quantities calculated to full accuracy
   // TODO(kfelker): check fourth-order MHD dependence
   jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku; // 1D defaults
-  if (order != 4) {
+  if (order == 4) {
     if(pmb->block_size.nx2 > 1) {
       if(pmb->block_size.nx3 == 1) // 2D
         jl_buf+=1, ju_buf-=1;
@@ -193,8 +193,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+    for (int k=kl_buf; k<=ku_buf; ++k) {
+    for (int j=jl_buf; j<=ju_buf; ++j) {
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
@@ -210,16 +210,39 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
-
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
-    // TODO(kfelker): fix loop limits for fourth-order hydro
-    //    if (MAGNETIC_FIELDS_ENABLED) {
-    if (pmb->block_size.nx3 == 1) // 2D
-      il=is-1, iu=ie+1, kl=ks, ku=ke;
-    else // 3D
-      il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
-    //    }
+
+    if (order != 4) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        if (pmb->block_size.nx3 == 1) // 2D
+          il=is-1, iu=ie+1, kl=ks, ku=ke;
+        else // 3D
+          il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+      }
+    } else { // fourth-order corrections
+      if (MAGNETIC_FIELDS_ENABLED) {
+        if(pmb->block_size.nx3 == 1) { // 2D
+          il=is-3, iu=ie+3, kl=ks, ku=ke;
+        } else { // 3D
+          il=is-3, iu=ie+3, kl=ks-3, ku=ke+3;
+        }
+      } else { // fourth-order hydro has same reqs as second-order MHD
+        if (pmb->block_size.nx3 == 1) // 2D
+          il=is-1, iu=ie+1, kl=ks, ku=ke;
+        else // 3D
+          il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+      }
+    } // end order==4
+
+    // Set transverse loop limits for quantities calculated to full accuracy
+    il_buf=il, iu_buf=iu, kl_buf=kl, ku_buf=ku;
+    if (order == 4) {
+      if(pmb->block_size.nx3 == 1) // 2D
+        il_buf+=1, iu_buf-=1;
+      else // 3D
+        il_buf+=1, iu_buf-=1, kl_buf+=1, ku_buf-=1;
+    }
 
     // reconstruct L/R states at j
     if (order == 1) {
@@ -275,14 +298,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
       // Correct face-averaged fluxes (Guzik eq. 10)
       for(int n=0; n<NWAVE; n++) {
-        for (int k=kl; k<=ku; ++k) {
+        for (int k=kl_buf; k<=ku_buf; ++k) {
           for (int j=js; j<=je+1; ++j) {
             pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
-            for(int i=il; i<=iu; i++) {
+            for(int i=il_buf; i<=iu_buf; i++) {
               // Use 1-cell width ghost buffer to correct fluxes
-              if (k>=ks && k<=ke && i>=is && i<=ie) {
                 x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
-              }
             }
           }
         }
@@ -293,11 +314,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-      for (int k=kl; k<=ku; ++k) {
+      for (int k=kl_buf; k<=ku_buf; ++k) {
         for (int j=js; j<=je+1; ++j) {
           pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
 #pragma omp simd
-          for (int i=il; i<=iu; ++i) {
+          for (int i=il_buf; i<=iu_buf; ++i) {
             Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                 / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
             Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
