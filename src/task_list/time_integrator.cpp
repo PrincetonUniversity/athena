@@ -502,10 +502,14 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 
   if (step <= nsub_steps) {
     if ((step == 1) && (integrator == "vl2")) {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
+      // TODO(kfelker): check safety of passing unallocated b_fc, bcc_center when
+      // no fourth-order MHD is enabled
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->b_fc, pfield->bcc,
+                              pfield->bcc_center, 1);
       return TASK_NEXT;
     } else {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->b_fc, pfield->bcc,
+                              pfield->bcc_center, pmb->precon->xorder);
       return TASK_NEXT;
     }
   }
