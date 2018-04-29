@@ -830,8 +830,8 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
         if (pbval->nblevel[2][1][1] != -1) ku-=3;
         // Pass the fourth-order approximation to the cell-centered field, bcc_center,
         // instead of bcc, to be used with the cell-centered hydro
-        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
-                                                   phydro->w, pfield->bcc_center, pco,
+        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
+                                                   phydro->w1, pfield->bcc_center, pco,
                                                    il, iu, jl, ju, kl, ku);
       } else {
         // for hydro, shrink buffer by 1 on all sides
