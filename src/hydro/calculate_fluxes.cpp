@@ -103,8 +103,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //------------------------------------------------------------------------------
   if (order == 4) {
     // Compute Laplacian of primitive Riemann states on x1 faces
-    pmb->pcoord->LaplacianX1(wl, laplacian_l_fc, is, ie+1, jl, ju, kl, ku, 0, NHYDRO-1);
-    pmb->pcoord->LaplacianX1(wr, laplacian_r_fc, is, ie+1, jl, ju, kl, ku, 0, NHYDRO-1);
+    pmb->pcoord->LaplacianX1(wl, laplacian_l_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
+    pmb->pcoord->LaplacianX1(wr, laplacian_r_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
 
     // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
     // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
@@ -112,7 +112,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     Real C = (h*h)/24.0;
 
     // Approximate x1 face-centered primitive Riemann states
-    for (int n=0; n<NHYDRO; ++n) {
+    for (int n=0; n<NWAVE; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
           pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
@@ -120,7 +120,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
             wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
             wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
             // reapply primitive variable floors to face-centered L/R Riemann states
-            // TODO(kfelker): only needs to be called 1x for all NHYDRO
+            // TODO(kfelker): only needs to be called 1x for all NWAVE
             pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
             pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
           }
@@ -134,10 +134,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
     pmb->pcoord->LaplacianX1(x1flux, laplacian_l_fc, is, ie+1, jl, ju, kl, ku,
-                             0, NHYDRO-1);
+                             0, NWAVE-1);
 
     // Correct face-averaged fluxes (Guzik eq. 10)
-    for(int n=0; n<NHYDRO; n++) {
+    for(int n=0; n<NWAVE; n++) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
           // Use 1-cell width ghost buffer to correct fluxes
@@ -202,8 +202,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     //------------------------------------------------------------------------------
     if (order == 4) {
       // Compute Laplacian of primitive Riemann states on x2 faces
-      pmb->pcoord->LaplacianX2(wl, laplacian_l_fc, il, iu, js, je+1, kl, ku, 0, NHYDRO-1);
-      pmb->pcoord->LaplacianX2(wr, laplacian_r_fc, il, iu, js, je+1, kl, ku, 0, NHYDRO-1);
+      pmb->pcoord->LaplacianX2(wl, laplacian_l_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
+      pmb->pcoord->LaplacianX2(wr, laplacian_r_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
 
       // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
       // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
@@ -211,7 +211,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       Real C = (h*h)/24.0;
 
       // Approximate x2 face-centered primitive Riemann states
-      for (int n=0; n<NHYDRO; ++n) {
+      for (int n=0; n<NWAVE; ++n) {
         for (int k=kl; k<=ku; ++k) {
           for (int j=js; j<=je+1; ++j) {
             pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
@@ -219,7 +219,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
-              // TODO(kfelker): only needs to be called 1x for all NHYDRO
+              // TODO(kfelker): only needs to be called 1x for all NWAVE
               pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
               pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
             }
@@ -234,10 +234,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
       pmb->pcoord->LaplacianX2(x2flux, laplacian_l_fc, il, iu, js, je+1, kl, ku,
-                               0, NHYDRO-1);
+                               0, NWAVE-1);
 
       // Correct face-averaged fluxes (Guzik eq. 10)
-      for(int n=0; n<NHYDRO; n++) {
+      for(int n=0; n<NWAVE; n++) {
         for (int k=kl; k<=ku; ++k) {
           for (int j=js; j<=je+1; ++j) {
             pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
@@ -299,8 +299,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     //------------------------------------------------------------------------------
     if (order == 4) {
       // Compute Laplacian of primitive Riemann states on x3 faces
-      pmb->pcoord->LaplacianX3(wl, laplacian_l_fc, il, iu, jl, ju, ks, ke+1, 0, NHYDRO-1);
-      pmb->pcoord->LaplacianX3(wr, laplacian_r_fc, il, iu, jl, ju, ks, ke+1, 0, NHYDRO-1);
+      pmb->pcoord->LaplacianX3(wl, laplacian_l_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
+      pmb->pcoord->LaplacianX3(wr, laplacian_r_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
 
       // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
       // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
@@ -308,7 +308,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       Real C = (h*h)/24.0;
 
       // Approximate x3 face-centered primitive Riemann states
-      for (int n=0; n<NHYDRO; ++n) {
+      for (int n=0; n<NWAVE; ++n) {
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl; j<=ju; ++j) {
             pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
@@ -316,7 +316,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
-              // TODO(kfelker): only needs to be called 1x for all NHYDRO
+              // TODO(kfelker): only needs to be called 1x for all NWAVE
               pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
               pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
             }
@@ -331,10 +331,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
       pmb->pcoord->LaplacianX3(x3flux, laplacian_l_fc, il, iu, jl, ju, ks, ke+1,
-                               0, NHYDRO-1);
+                               0, NWAVE-1);
 
       // Correct face-averaged fluxes (Guzik eq. 10)
-      for(int n=0; n<NHYDRO; n++) {
+      for(int n=0; n<NWAVE; n++) {
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl; j<=ju; ++j) {
             pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
