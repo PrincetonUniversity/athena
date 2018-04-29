@@ -300,7 +300,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       for(int n=0; n<NWAVE; n++) {
         for (int k=kl_buf; k<=ku_buf; ++k) {
           for (int j=js; j<=je+1; ++j) {
-            pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
+            pmb->pcoord->CenterWidth2(k, j, il_buf, iu_buf, dxw);
             for(int i=il_buf; i<=iu_buf; i++) {
               // Use 1-cell width ghost buffer to correct fluxes
                 x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
@@ -316,7 +316,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     if (MAGNETIC_FIELDS_ENABLED) {
       for (int k=kl_buf; k<=ku_buf; ++k) {
         for (int j=js; j<=je+1; ++j) {
-          pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
+          pmb->pcoord->CenterWidth2(k,j,il_buf,iu_buf,dxw);
 #pragma omp simd
           for (int i=il_buf; i<=iu_buf; ++i) {
             Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
@@ -335,9 +335,23 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
     // set the loop limits
     il=is, iu=ie, jl=js, ju=je;
-    // TODO(kfelker): fix loop limits for fourth-order hydro
-    //    if (MAGNETIC_FIELDS_ENABLED)
-    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+
+    if (order != 4) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    } else { // fourth-order corrections
+      if (MAGNETIC_FIELDS_ENABLED) {
+        il=is-3, iu=ie+3, jl=js-3, ju=je+3;
+      } else { // fourth-order hydro has same reqs as second-order MHD
+        il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+      }
+    } // end order==4
+
+    // Set transverse loop limits for quantities calculated to full accuracy
+    il_buf=il, iu_buf=iu, kl_buf=kl, ku_buf=ku;
+    if (order == 4) {
+      il_buf=il+1, iu_buf=iu-1, jl_buf=jl+1, ju_buf=ju-1;
+    }
 
     // reconstruct L/R states at k
     if (order == 1) {
@@ -394,9 +408,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       // Correct face-averaged fluxes (Guzik eq. 10)
       for(int n=0; n<NWAVE; n++) {
         for (int k=ks; k<=ke+1; ++k) {
-          for (int j=jl; j<=ju; ++j) {
-            pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
-            for(int i=il; i<=iu; i++) {
+          for (int j=jl_buf; j<=ju_buf; ++j) {
+            pmb->pcoord->CenterWidth3(k, j, il_buf, iu_buf, dxw);
+            for(int i=il_buf; i<=iu_buf; i++) {
               // Use 1-cell width ghost buffer to correct fluxes
               if (i>=is && i<=ie && j>=js && j<=je) {
                 x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
@@ -412,10 +426,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
       for (int k=ks; k<=ke+1; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
+      for (int j=jl_buf; j<=ju_buf; ++j) {
+        pmb->pcoord->CenterWidth3(k,j,il_buf,iu_buf,dxw);
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
+        for (int i=il_buf; i<=iu_buf; ++i) {
           Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
           Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
