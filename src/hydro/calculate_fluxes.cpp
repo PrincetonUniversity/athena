@@ -349,7 +349,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=js; j<=je+1; ++j) {
             for (int i=il_buf; i<=iu_buf; ++i) {
               e1x2(k,j,i) = -x2flux(IBY,k,j,i);
-              e3x2(k,j,i) = -x2flux(IBZ,k,j,i);
+              e3x2(k,j,i) = x2flux(IBZ,k,j,i);
             }
           }
         }
