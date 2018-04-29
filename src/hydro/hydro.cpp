@@ -47,11 +47,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     // future extension may add "int nregister" to Hydro class
     u2.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
-  flux[X1DIR].NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1+1);
+  flux[X1DIR].NewAthenaArray(NWAVE, ncells3, ncells2, ncells1+1);
   if (pmy_block->block_size.nx2 > 1)
-    flux[X2DIR].NewAthenaArray(NHYDRO, ncells3, ncells2+1, ncells1);
+    flux[X2DIR].NewAthenaArray(NWAVE, ncells3, ncells2+1, ncells1);
   if (pmy_block->block_size.nx3 > 1)
-    flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
+    flux[X3DIR].NewAthenaArray(NWAVE, ncells3+1, ncells2, ncells1);
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(ncells1);
@@ -102,8 +102,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   wl_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
   wr_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
   flux_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
-  scr2_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+  scr1_nkji_.NewAthenaArray(NWAVE, ncells3, ncells2, ncells1);
+  scr2_nkji_.NewAthenaArray(NWAVE, ncells3, ncells2, ncells1);
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 
