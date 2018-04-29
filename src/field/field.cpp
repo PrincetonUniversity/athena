@@ -69,6 +69,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     v_SW.NewAthenaArray(2, ncells3, ncells2, ncells1);
     vl_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
     vr_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    alpha_plus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_plus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
     //-------- end allocations for fourth-order MHD
 
     e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
@@ -140,6 +144,10 @@ Field::~Field() {
   v_SW.DeleteAthenaArray();
   vl_temp_.DeleteAthenaArray();
   vr_temp_.DeleteAthenaArray();
+  alpha_plus_x1_.DeleteAthenaArray();
+  alpha_minus_x1_.DeleteAthenaArray();
+  alpha_plus_x2_.DeleteAthenaArray();
+  alpha_minus_x2_.DeleteAthenaArray();
   // 4D scratch arrays
   scr1_nkji_cc_.DeleteAthenaArray();
   scr1_kji_x1fc_.DeleteAthenaArray();

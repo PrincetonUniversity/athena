@@ -57,6 +57,8 @@ public:
   AthenaArray<Real> v_SW;
   AthenaArray<Real> vl_temp_;
   AthenaArray<Real> vr_temp_;
+  AthenaArray<Real> alpha_plus_x1_,alpha_minus_x1_;
+  AthenaArray<Real> alpha_plus_x2_,alpha_minus_x2_;
   //-------- end fourth-order MHD
 
   EdgeField e;    // edge-centered electric fields used in CT
