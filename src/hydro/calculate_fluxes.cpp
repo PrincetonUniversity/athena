@@ -77,6 +77,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   flux_fc.InitWithShallowCopy(flux_fc_);
   laplacian_l_fc.InitWithShallowCopy(scr1_nkji_);
   laplacian_r_fc.InitWithShallowCopy(scr2_nkji_);
+  // fourth-order MHD quantities:
+  AthenaArray<Real> flux_fc_IBY, flux_fc_IBZ;
+  flux_fc_IBY.InitWithShallowSlice(flux_fc, 4, IBY, 1);
+  flux_fc_IBZ.InitWithShallowSlice(flux_fc, 4, IBZ, 1);
 
 //----------------------------------------------------------------------------------------
 // i-direction
@@ -179,9 +183,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     }
 
     // Compute x1 interface fluxes from face-centered primitive variables
-    // TODO(kfelker): check that e3x1,e2x1 arguments added in late 2017 work here
     RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1_fc, wl_fc_, wr_fc_, flux_fc,
-                  e3x1, e2x1);
+                  flux_fc_IBY, flux_fc_IBZ);
 
     // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
     pmb->pcoord->LaplacianX1(x1flux, laplacian_l_fc, is, ie+1, jl, ju, kl, ku,
@@ -310,9 +313,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       }
 
       // Compute x2 interface fluxes from face-centered primitive variables
-      // TODO(kfelker): check that e1x2,e3x2 arguments added in late 2017 work here
       RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2_fc, wl_fc_, wr_fc_, flux_fc,
-                    e1x2, e3x2);
+                    flux_fc_IBY, flux_fc_IBZ);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
       pmb->pcoord->LaplacianX2(x2flux, laplacian_l_fc, il, iu, js, je+1, kl, ku,
@@ -429,9 +431,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       }
 
       // Compute x3 interface fluxes from face-centered primitive variables
-      // TODO(kfelker): check that e1x3,e3x3 arguments added in late 2017 work here
       RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3_fc, wl_fc_, wr_fc_, flux_fc,
-                    e2x3, e1x3);
+                    flux_fc_IBY, flux_fc_IBZ);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
       pmb->pcoord->LaplacianX3(x3flux, laplacian_l_fc, il, iu, jl, ju, ks, ke+1,
