@@ -83,10 +83,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
-  // Set transverse loop limits for quantities calculated to full fourth-order accuracy
-  jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku; // 1D defaults
 
-  // TODO(kfelker): fix loop limits for fourth-order hydro
   if (order != 4) {
     if (MAGNETIC_FIELDS_ENABLED) {
       if (pmb->block_size.nx2 > 1) {
@@ -98,12 +95,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     }
   } else { // fourth-order corrections
     if (MAGNETIC_FIELDS_ENABLED) {
-      if(pmb->block_size.nx3 == 1) { // 2D
-        jl=js-3, ju=je+3, kl=ks, ku=ke;
-        jl_buf+=1, ju_buf-=1;
-      } else { // 3D
-        jl=js-3, ju=je+3, kl=ks-3, ku=ke+3;
-        jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+      if (pmb->block_size.nx2 > 1) {
+        if(pmb->block_size.nx3 == 1) { // 2D
+          jl=js-3, ju=je+3, kl=ks, ku=ke;
+        } else { // 3D
+          jl=js-3, ju=je+3, kl=ks-3, ku=ke+3;
+        }
       }
     } else { // fourth-order hydro has same reqs as second-order MHD
       if (pmb->block_size.nx2 > 1) {
@@ -114,6 +111,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       }
     }
   } // end order==4
+
+  // Set transverse loop limits for quantities calculated to full fourth-order accuracy
+  // TODO(kfelker): check fourth-order MHD dependence
+  jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku; // 1D defaults
+  if (order != 4) {
+    if(pmb->block_size.nx2 > 1) {
+      if(pmb->block_size.nx3 == 1) // 2D
+        jl_buf+=1, ju_buf-=1;
+      else // 3D
+        jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+    }
+  }
 
   // reconstruct L/R states
   if (order == 1) {
