@@ -337,7 +337,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     il=is, iu=ie, jl=js, ju=je;
 
     if (order != 4) {
-      if (MAGNETIC_FIELDS_ENABLED) {
+      if (MAGNETIC_FIELDS_ENABLED)
         il=is-1, iu=ie+1, jl=js-1, ju=je+1;
     } else { // fourth-order corrections
       if (MAGNETIC_FIELDS_ENABLED) {
