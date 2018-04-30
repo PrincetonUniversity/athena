@@ -615,6 +615,19 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
     pf->CT(step_wghts[step-1].beta, pf->b);
 
+    // Hardcode an additional flux divergence weighted average for the penultimate
+    // substep of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+    if (step==4 && integrator == "ssprk5_4") {
+      // From Gottlieb (2009), u^(n+1) partial calculation
+      ave_wghts[0] = -1.0; // -u^(n) coeff.
+      ave_wghts[1] = 0.0;
+      ave_wghts[2] = 0.0;
+      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      // writing out to b2 register
+      pf->WeightedAveB(pf->b2, pf->b1, pf->b2, ave_wghts);
+      pf->CT(beta, pf->b2);
+    }
+
     return TASK_NEXT;
   }
 
@@ -928,25 +941,25 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;
-      // Cache face-averaged B^n in third memory register, b2, via AthenaArray deep copy
-      // (if using a 3S* time-integrator)
-      // pf->b2.x1f = pf->b.x1f;
-      // pf->b2.x2f = pf->b.x2f;
-      // pf->b2.x3f = pf->b.x3f;
+      // Cache face-averaged <B>^n in third memory register, b2, via AthenaArray deep copy
+      // (if using a 3S* or 3N time-integrator)
+      pf->b2.x1f = pf->b.x1f;
+      pf->b2.x2f = pf->b.x2f;
+      pf->b2.x3f = pf->b.x3f;
 
       // 2nd set of registers, including b1, need to be initialized to 0
       Real ave_wghts[3];
       ave_wghts[0] = 0.0;
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
-      pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
+      pf->WeightedAveB(pf->b1, pf->b, pf->b, ave_wghts);
     }
     // 2nd set of registers, including u1, need to be initialized to 0 each cycle
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = 0.0;
     ave_wghts[2] = 0.0;
-    ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
+    ph->WeightedAveU(ph->u1, ph->u, ph->u, ave_wghts);
     return TASK_SUCCESS;
   }
 }
