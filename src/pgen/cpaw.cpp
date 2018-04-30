@@ -277,6 +277,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
+    // TODO(kfelker): don't de/allocate per MeshBlock
+    cons_.DeleteAthenaArray();
     pmb=pmb->next;
   }
 

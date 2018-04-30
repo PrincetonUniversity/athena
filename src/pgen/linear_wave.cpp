@@ -339,7 +339,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
           }
         }
-      }}
+      }
+    }
+    // TODO(kfelker): don't de/allocate per MeshBlock
+    cons_.DeleteAthenaArray();
     pmb=pmb->next;
   }
   Real rms_err = 0.0, max_max_over_l1=0.0;
