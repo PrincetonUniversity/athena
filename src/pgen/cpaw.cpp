@@ -49,6 +49,10 @@ static Real A1(const Real x1, const Real x2, const Real x3);
 static Real A2(const Real x1, const Real x2, const Real x3);
 static Real A3(const Real x1, const Real x2, const Real x3);
 
+// edge-averaged values
+static Real A1_ave(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3);
+static Real A2_ave(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3);
+static Real A3_ave(const Real x1, const Real x2, const Real x3f, const Real x3f_kp1);
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -397,4 +401,52 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
   Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;
 
   return Az*cos_a2;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A1_ave(const Real x1,const Real x2,const Real x3)
+//  \brief A1_ave: 1-component of vector potential averaged along x1 edge
+//         For 2D, assume that cos_a2=1, sin_a2=0
+// TODO(kfelker): extend to 3D
+
+static Real A1_ave(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3) {
+  Real x =  x1f*cos_a3 + x2*sin_a3;
+  Real x_ip1 =  x1f_ip1*cos_a3 + x2*sin_a3;
+  Real dx1f = x1f_ip1 - x1f;
+  Real Ay;
+  if (cos_a3 != 0.0)
+	Ay =  (fac*b_perp/(SQR(k_par)*cos_a3))*(-cos(k_par*(x_ip1)) + cos(k_par*(x)));
+  else // vertical coordinate aligned wave--- uniform on the x1 edge
+	Ay = dx1f*((fac*b_perp/k_par)*sin(k_par*(x))); // x  = x_ip1
+  return -Ay*sin_a3/dx1f;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A2(const Real x1,const Real x2,const Real x3)
+//  \brief A2_ave: 2-component of vector potential averaged along x2 edge
+
+static Real A2_ave(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3) {
+  Real x =  x1*cos_a3 + x2f*sin_a3;
+  Real x_jp1 =  x1*cos_a3 + x2f_jp1*sin_a3;
+  Real dx2f = x2f_jp1 - x2f;
+  Real Ay;
+  if (sin_a3 != 0.0)
+	Ay =  (fac*b_perp/(SQR(k_par)*sin_a3))*(-cos(k_par*(x_jp1)) + cos(k_par*(x)));
+  else // horizontal coordinate aligned wave--- uniform on the x2 edge
+	Ay = dx2f*((fac*b_perp/k_par)*sin(k_par*(x))); // x = x_jp1
+
+  return Ay*cos_a3/dx2f;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn static Real A3_ave(const Real x1,const Real x2,const Real x3f,const Real x3f_kp1)
+//  \brief A3_ave: 3-component of vector potential averaged along x3 edge
+
+static Real A3_ave(const Real x1, const Real x2, const Real x3f, const Real x3f_kp1) {
+  Real x =  x1*cos_a3 + x2*sin_a3;
+  Real y = -x1*sin_a3        + x2*cos_a3;
+  Real dx3f = x3f_kp1 - x3f;
+  Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;
+
+  return Az;
 }
