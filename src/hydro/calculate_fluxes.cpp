@@ -171,19 +171,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int j=jl; j<=ju; ++j) {
           // pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
           for (int i=is; i<=ie+1; ++i) {
-            wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
-            wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
+            wl_fc(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
+            wr_fc(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
             // reapply primitive variable floors to face-centered L/R Riemann states
             // TODO(kfelker): only needs to be called 1x for all NWAVE
-            pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
-            pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wl_fc, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wr_fc, k, j, i);
           }
         }
       }
     }
 
     // Compute x1 interface fluxes from face-centered primitive variables
-    RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1_fc, wl_fc_, wr_fc_, flux_fc,
+    RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1_fc, wl_fc, wr_fc, flux_fc,
                   flux_fc_IBY, flux_fc_IBZ);
 
     // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -313,19 +313,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=js; j<=je+1; ++j) {
             //pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
             for (int i=il; i<=iu; ++i) {
-              wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
-              wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
+              wl_fc(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
+              wr_fc(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
               // TODO(kfelker): only needs to be called 1x for all NWAVE
-              pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
-              pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
+              pmb->peos->ApplyPrimitiveFloors(wl_fc, k, j, i);
+              pmb->peos->ApplyPrimitiveFloors(wr_fc, k, j, i);
             }
           }
         }
       }
 
       // Compute x2 interface fluxes from face-centered primitive variables
-      RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2_fc, wl_fc_, wr_fc_, flux_fc,
+      RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2_fc, wl_fc, wr_fc, flux_fc,
                     flux_fc_IBY, flux_fc_IBZ);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -442,19 +442,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=jl; j<=ju; ++j) {
             //pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
             for (int i=il; i<=iu; ++i) {
-              wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
-              wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
+              wl_fc(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
+              wr_fc(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
               // TODO(kfelker): only needs to be called 1x for all NWAVE
-              pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
-              pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
+              pmb->peos->ApplyPrimitiveFloors(wl_fc, k, j, i);
+              pmb->peos->ApplyPrimitiveFloors(wr_fc, k, j, i);
             }
           }
         }
       }
 
       // Compute x3 interface fluxes from face-centered primitive variables
-      RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3_fc, wl_fc_, wr_fc_, flux_fc,
+      RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3_fc, wl_fc, wr_fc, flux_fc,
                     flux_fc_IBY, flux_fc_IBZ);
 
       // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
