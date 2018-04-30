@@ -540,8 +540,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
             }
           }
         }
-      }
-    }
+      } // end GS07 CT algorithm
+    } // end if (MAGNETIC_FIELDS_ENABLED)
+  }
 
 //----------------------------------------------------------------------------------------
 // k-direction

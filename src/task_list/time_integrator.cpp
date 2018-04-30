@@ -518,7 +518,10 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 
 enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step) {
   if (step <= nsub_steps) {
-    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+    if (pmb->precon->xorder == 4)
+      pmb->pfield->ComputeCornerE_UCT4(); //pmb->phydro->w,  pmb->pfield->bcc);
+    else
+      pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TASK_NEXT;
   }
   return TASK_FAIL;

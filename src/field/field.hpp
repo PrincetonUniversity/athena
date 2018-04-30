@@ -75,6 +75,7 @@ public:
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
   //-------begin fourth-order MHD functions
+  void ComputeCornerE_UCT4();
   void CalculateCellCenteredFieldFourth(const FaceField &bf_center,
                                         AthenaArray<Real> &bc_center,
                                         Coordinates *pco, int il, int iu, int jl,
