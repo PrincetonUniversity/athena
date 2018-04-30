@@ -32,6 +32,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../reconstruct/reconstruction.hpp"
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -150,46 +151,132 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
 
   MeshBlock *pmb = pblock;
+  BoundaryValues *pbval;
   while (pmb != NULL) {
-    //  Compute errors
-    for (int k=pmb->ks; k<=pmb->ke; k++) {
-    for (int j=pmb->js; j<=pmb->je; j++) {
-      for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
-                       + pmb->pcoord->x3v(k)*sin_a2;
-        Real sn = sin(k_par*x);
-        Real cs = fac*cos(k_par*x);
+    pbval=pmb->pbval;
+    int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+    // adjust loop limits for fourth order error calculation
+    //------------------------------------------------
+    if (pmb->precon->correct_err == true) {
+      // Expand loop limits on all sides by one
+      if (pbval->nblevel[1][1][0]!=-1) il-=1;
+      if (pbval->nblevel[1][1][2]!=-1) iu+=1;
+      if (pbval->nblevel[1][0][1]!=-1) jl-=1;
+      if (pbval->nblevel[1][2][1]!=-1) ju+=1;
+      if (pbval->nblevel[0][1][1]!=-1) kl-=1;
+      if (pbval->nblevel[2][1][1]!=-1) ku+=1;
+    }
+    // Save analytic solution of conserved variables in 4D scratch array
+    AthenaArray<Real> cons_;
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    int ncells2 = 1, ncells3 = 1;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+    // Even for MHD, there are only cell-centered mesh variables
+    int ncells4 = NHYDRO + NFIELD;
+    int nl = 0;
+    int nu = ncells4-1;
+    cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
 
-        err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
+    //  Compute errors at cell centers
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
+          Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
+              + pmb->pcoord->x3v(k)*sin_a2;
+          Real sn = sin(k_par*x);
+          Real cs = fac*cos(k_par*x);
 
-        Real mx = den*v_par;
-        Real my = -fac*den*v_perp*sn;
-        Real mz = -fac*den*v_perp*cs;
-        Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-        Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-        Real m3 = mx*sin_a2                    + mz*cos_a2;
-        err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
-        err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
-        err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+          Real mx = den*v_par;
+          Real my = -fac*den*v_perp*sn;
+          Real mz = -fac*den*v_perp*cs;
+          Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+          Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+          Real m3 = mx*sin_a2                    + mz*cos_a2;
 
-        Real bx = b_par;
-        Real by = b_perp*sn;
-        Real bz = b_perp*cs;
-        Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
-        Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
-        Real b3 = bx*sin_a2                    + bz*cos_a2;
-        err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-        err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-        err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+          // Store analytic solution at cell-centers
+          cons_(IDN,k,j,i) = den;
+          cons_(IM1,k,j,i) = m1;
+          cons_(IM2,k,j,i) = m2;
+          cons_(IM3,k,j,i) = m3;
 
-        if (NON_BAROTROPIC_EOS) {
-          Real e0 = pres/gm1 + 0.5*(m1*m1 + m2*m2 + m3*m3)/den
-            + 0.5*(b1*b1+b2*b2+b3*b3);
-          err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+          Real bx = b_par;
+          Real by = b_perp*sn;
+          Real bz = b_perp*cs;
+          Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+          Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+          Real b3 = bx*sin_a2                    + bz*cos_a2;
+          cons_(NHYDRO+IB1,k,j,i) = b1;
+          cons_(NHYDRO+IB2,k,j,i) = b2;
+          cons_(NHYDRO+IB3,k,j,i) = b3;
+
+          if (NON_BAROTROPIC_EOS) {
+            Real e0 = pres/gm1 + 0.5*(m1*m1 + m2*m2 + m3*m3)/den
+                + 0.5*(b1*b1+b2*b2+b3*b3);
+            cons_(IEN,k,j,i) = e0;
+          }
         }
-
       }
-    }}
+    }
+    // begin fourth-order error correction
+    // -------------------------------
+    if (pmb->precon->correct_err == true) {
+      // Restore loop limits to real cells only
+      il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+
+      // Compute and store Laplacian of cell-centered conserved variables, Hydro and Bcc
+      AthenaArray<Real> delta_cons_;
+      delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+      pmb->pcoord->Laplacian(cons_, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+
+      // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+      // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+      Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+      Real C = (h*h)/24.0;
+
+      // Compute fourth-order approximation to cell-averaged conserved variables
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+            for (int i=il; i<=iu; ++i) {
+              cons_(n,k,j,i) = cons_(n,k,j,i) + C*delta_cons_(n,k,j,i);
+            }
+          }
+        }
+      }
+    } // end if (pmb->precon->correct_err == true)
+    // ------- end fourth-order error calculation
+
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=il; i<=iu; ++i) {
+          // Load cell-averaged <U>, either midpoint approx. or fourth-order approx
+          Real den = cons_(IDN,k,j,i);
+          Real m1 = cons_(IM1,k,j,i);
+          Real m2 = cons_(IM2,k,j,i);
+          Real m3 = cons_(IM3,k,j,i);
+          // Weight l1 error by cell volume
+          // Real vol = pmb->pcoord->GetCellVolume(k, j, i);
+
+          err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
+          err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
+          err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
+          err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+
+          Real b1 = cons_(NHYDRO+IB1,k,j,i);
+          Real b2 = cons_(NHYDRO+IB2,k,j,i);
+          Real b3 = cons_(NHYDRO+IB3,k,j,i);
+          err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+          err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+          err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+
+          if (NON_BAROTROPIC_EOS) {
+            Real e0 = cons_(IEN,k,j,i);
+            err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+          }
+        }
+      }
+    }
     pmb=pmb->next;
   }
 
