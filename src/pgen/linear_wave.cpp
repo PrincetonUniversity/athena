@@ -13,7 +13,7 @@
 
 // C++ headers
 #include <algorithm>  // min, max
-#include <cmath>      // sqrt()
+#include <cmath>      // std::sqrt(), std::fabs()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -302,34 +302,34 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           // Weight l1 error by cell volume
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
-          l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-          max_err[IDN] = std::max(static_cast<Real>(fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
-                                  max_err[IDN]);
+          l1_err[IDN] += std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
+          max_err[IDN] = std::max(static_cast<Real>(
+              std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))), max_err[IDN]);
 
-          l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
-          l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
-          l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-          max_err[IM1] = std::max(static_cast<Real>(fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
-                                  max_err[IM1]);
-          max_err[IM2] = std::max(static_cast<Real>(fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
-                                  max_err[IM2]);
-          max_err[IM3] = std::max(static_cast<Real>(fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
-                                  max_err[IM3]);
+          l1_err[IM1] += std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
+          l1_err[IM2] += std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
+          l1_err[IM3] += std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
+          max_err[IM1] = std::max(static_cast<Real>(
+              std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))), max_err[IM1]);
+          max_err[IM2] = std::max(static_cast<Real>(
+              std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))), max_err[IM2]);
+          max_err[IM3] = std::max(static_cast<Real>(
+              std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))), max_err[IM3]);
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = cons_(IEN,k,j,i);
-            l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-            max_err[IEN] = std::max(static_cast<Real>(fabs(e0-pmb->phydro->u(IEN,k,j,i))),
-                                    max_err[IEN]);
+            l1_err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
+            max_err[IEN] = std::max(static_cast<Real>(
+                std::fabs(e0-pmb->phydro->u(IEN,k,j,i))), max_err[IEN]);
           }
 
           if (MAGNETIC_FIELDS_ENABLED) {
             Real b1 = cons_(NHYDRO+IB1,k,j,i);
             Real b2 = cons_(NHYDRO+IB2,k,j,i);
             Real b3 = cons_(NHYDRO+IB3,k,j,i);
-            Real db1 = fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-            Real db2 = fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-            Real db3 = fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+            Real db1 = std::fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+            Real db2 = std::fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+            Real db3 = std::fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
 
             l1_err[NHYDRO + IB1] += db1*vol;
             l1_err[NHYDRO + IB2] += db2*vol;
@@ -360,7 +360,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   // only the root process outputs the data
   if (Globals::my_rank == 0) {
-    // normalize errors by number of cells
+    // normalize errors by volume
     Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
              *(mesh_size.x3max-mesh_size.x3min);
     for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
