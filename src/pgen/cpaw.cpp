@@ -351,12 +351,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = pres/gm1 +
-          0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) +
-          (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
-                     SQR(phydro->u(IM3,k,j,i)));
+        phydro->u(IEN,k,j,i) = pres/gm1 + 0.5*(b_par*b_par + b_perp*b_perp) +
+            // TODO(kfelker): evaluate the impact of this change for 2nd order
+            // 0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
+            //      SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
+            //      SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) +
+            (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
+                       SQR(phydro->u(IM3,k,j,i)));
       }
     }
   }}
