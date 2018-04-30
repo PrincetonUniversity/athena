@@ -256,23 +256,23 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real m2 = cons_(IM2,k,j,i);
           Real m3 = cons_(IM3,k,j,i);
           // Weight l1 error by cell volume
-          // Real vol = pmb->pcoord->GetCellVolume(k, j, i);
+          Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
-          err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
-          err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
-          err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
-          err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+          err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i))*vol;
+          err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
+          err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
+          err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
 
           Real b1 = cons_(NHYDRO+IB1,k,j,i);
           Real b2 = cons_(NHYDRO+IB2,k,j,i);
           Real b3 = cons_(NHYDRO+IB3,k,j,i);
-          err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-          err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-          err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+          err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i))*vol;
+          err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i))*vol;
+          err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i))*vol;
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = cons_(IEN,k,j,i);
-            err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+            err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
           }
         }
       }
@@ -280,11 +280,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     pmb=pmb->next;
   }
 
-  // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-    err[i] = err[i]/static_cast<Real>(GetTotalCells());
-  }
+  // TODO(kfelker): extend to MPI and l1, lmax errors like linear_wave.cpp
+  // normalize errors by volume
+  Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
+      *(mesh_size.x3max-mesh_size.x3min);
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/vol;
 
+  // compute RMS error
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
   rms_err = std::sqrt(rms_err);
