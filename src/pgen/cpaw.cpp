@@ -41,6 +41,7 @@
 // with functions A1,2,3 which compute vector potentials
 static Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
+static bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
 static Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
 static Real lambda, k_par; // Wavelength, 2*PI/wavelength
 
@@ -73,6 +74,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   v_par = pin->GetReal("problem","v_par");
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
+  ang_2_vert = pin->GetOrAddBoolean("problem", "ang_2_vert", false);
+  ang_3_vert = pin->GetOrAddBoolean("problem", "ang_3_vert", false);
   Real dir = pin->GetOrAddReal("problem","dir",1); // right(1)/left(2) polarization
   if (NON_BAROTROPIC_EOS) {
     Real gam   = pin->GetReal("hydro","gamma");
@@ -90,9 +93,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
 
+  // Override ang_3 input and hardcode vertical (along x2 axis) wavevector
+  if (ang_3_vert == true) {
+    sin_a3 = 1.0;
+    cos_a3 = 0.0;
+    ang_3 = 0.5*M_PI;
+  }
+
   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
   sin_a2 = sin(ang_2);
   cos_a2 = cos(ang_2);
+
+  // Override ang_2 input and hardcode vertical (along x3 axis) wavevector
+  if (ang_2_vert == true) {
+    sin_a2 = 1.0;
+    cos_a2 = 0.0;
+    ang_2 = 0.5*M_PI;
+  }
 
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
@@ -102,6 +119,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   lambda = x1;
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+
+  // If cos_a2 or cos_a3 = 0, need to override lambda
+  if (ang_3_vert == true)
+    lambda = x2;
+  if (ang_2_vert == true)
+    lambda = x3;
 
   // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
