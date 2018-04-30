@@ -150,7 +150,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
           for (int i=is; i<=ie+1; ++i) {
-            x1flux(IBY,k,j,i) = -e3x1(k,j,i);
+            x1flux(IBY,k,j,i) = e3x1(k,j,i); // technically -e3x1
             x1flux(IBZ,k,j,i) = e2x1(k,j,i);
           }
         }
@@ -292,7 +292,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=kl; k<=ku; ++k) {
           for (int j=js; j<=je+1; ++j) {
             for (int i=il; i<=iu; ++i) {
-              x2flux(IBY,k,j,i) = -e1x2(k,j,i);
+              x2flux(IBY,k,j,i) = e1x2(k,j,i); // technically -e1x2
               x2flux(IBZ,k,j,i) = e3x2(k,j,i);
             }
           }
@@ -348,7 +348,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=kl_buf; k<=ku_buf; ++k) {
           for (int j=js; j<=je+1; ++j) {
             for (int i=il_buf; i<=iu_buf; ++i) {
-              e1x2(k,j,i) = -x2flux(IBY,k,j,i);
+              e1x2(k,j,i) = x2flux(IBY,k,j,i); // technically -e1x2
               e3x2(k,j,i) = x2flux(IBZ,k,j,i);
             }
           }
@@ -421,7 +421,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl; j<=ju; ++j) {
             for (int i=il; i<=iu; ++i) {
-              x3flux(IBY,k,j,i) = -e2x3(k,j,i);
+              x3flux(IBY,k,j,i) = e2x3(k,j,i); // technically -e2x3
               x3flux(IBZ,k,j,i) = e1x3(k,j,i);
             }
           }
@@ -478,7 +478,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl_buf; j<=ju_buf; ++j) {
             for (int i=il_buf; i<=iu_buf; ++i) {
-              e2x3(k,j,i) = -x3flux(IBY,k,j,i);
+              e2x3(k,j,i) = x3flux(IBY,k,j,i); // technically -e2x3
               e1x3(k,j,i) = x3flux(IBZ,k,j,i);
             }
           }
