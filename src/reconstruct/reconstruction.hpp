@@ -85,6 +85,19 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
+  // ---- begin functions specific to fourth-order MHD
+  static void PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const int ku,
+    const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  static void PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const int ku,
+    const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  static void PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const int ku,
+    const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
 private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
