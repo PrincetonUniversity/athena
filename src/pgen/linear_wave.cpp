@@ -129,7 +129,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // If cos_a2 or cos_a3 = 0, need to override lambda
   if (ang_3_vert == true)
     lambda = x2;
-  if (ang_3_vert == true)
+  if (ang_2_vert == true)
     lambda = x3;
 
   // Initialize k_parallel
