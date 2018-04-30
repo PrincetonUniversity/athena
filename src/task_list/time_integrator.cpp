@@ -943,9 +943,11 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       Field *pf=pmb->pfield;
       // Cache face-averaged <B>^n in third memory register, b2, via AthenaArray deep copy
       // (if using a 3S* or 3N time-integrator)
-      pf->b2.x1f = pf->b.x1f;
-      pf->b2.x2f = pf->b.x2f;
-      pf->b2.x3f = pf->b.x3f;
+      if (integrator == "ssprk5_4") {
+        pf->b2.x1f = pf->b.x1f;
+        pf->b2.x2f = pf->b.x2f;
+        pf->b2.x3f = pf->b.x3f;
+      }
 
       // 2nd set of registers, including b1, need to be initialized to 0
       Real ave_wghts[3];
