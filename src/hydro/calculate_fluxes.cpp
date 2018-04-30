@@ -81,6 +81,25 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   AthenaArray<Real> flux_fc_IBY, flux_fc_IBZ;
   flux_fc_IBY.InitWithShallowSlice(flux_fc, 4, IBY, 1);
   flux_fc_IBZ.InitWithShallowSlice(flux_fc, 4, IBZ, 1);
+  // Reconstruct (in x2) velocity L/R states along x1 faces to corners
+  AthenaArray<Real> v_SE, v_NE, v_NW, v_SW;
+  v_SE.InitWithShallowCopy(pmb->pfield->v_SE);
+  v_NE.InitWithShallowCopy(pmb->pfield->v_NE);
+  v_NW.InitWithShallowCopy(pmb->pfield->v_NW);
+  v_SW.InitWithShallowCopy(pmb->pfield->v_SW);
+  // Reconstruct (in x2) the single state face-averaged b_x.x1f
+  AthenaArray<Real> bx_N,  bx_S;
+  bx_N.InitWithShallowCopy(pmb->pfield->bx_N);
+  bx_S.InitWithShallowCopy(pmb->pfield->bx_S);
+  // Reconstruct (in x1) velocity L/R states along x2 faces to corners
+  AthenaArray<Real> vl_temp;
+  AthenaArray<Real> vr_temp;
+  vl_temp.InitWithShallowCopy(pmb->pfield->vl_temp_);
+  vr_temp.InitWithShallowCopy(pmb->pfield->vr_temp_);
+  // Reconstruct (in x1) the single state face-averaged b_y.x2f
+  AthenaArray<Real> by_E, by_W;
+  by_E.InitWithShallowCopy(pmb->pfield->by_E);
+  by_W.InitWithShallowCopy(pmb->pfield->by_W);
 
 //----------------------------------------------------------------------------------------
 // i-direction
@@ -217,20 +236,89 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   //------------------------------------------------------------------------------
   // end x1 fourth-order hydro and MHD
 
-  // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl_buf; k<=ku_buf; ++k) {
-    for (int j=jl_buf; j<=ju_buf; ++j) {
-      pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
+    //-------- begin fourth-order upwind constrained transport (UCT4x1)
+    if (order == 4) {
+      // Currently, 2D domain is assumed for UCT4. 1D domains work via trivial copying
+      // of fluid fluxes, but cannot call PPMx2() on 1D domain
+      if (pmb->block_size.nx2 > 1) {
+        // Unlike standard Athena++ E_z^c upwinding, which requires loading
+        // [is-1:ie+1] x [js-1:je+1]
+        // face-states, the UCT e_NE, e_SE, ... quantities are centered on the corner,
+        // so only the real range, including the uppermost corner are required
+        // [is:ie+1] x [js,je+1]
+
+        // Limited transverse reconstructions: call PPMx2() for vx, vy both L/R states
+        // wl_{i-1/2}  is E side of interface --> discontinuous states in x2, L=N,  R=S
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wl, IVX, 0,
+                                             v_NE, v_SE);
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wl, IVY, 1,
+                                             v_NE, v_SE);
+        // wr_{i-1/2}  is W side of interface --> discontinuous states in x2, L=N,  R=S
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wr, IVX, 0,
+                                             v_NW, v_SW);
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wr, IVY, 1,
+                                             v_NW, v_SW);
+        // Limited transverse reconstructions: call PPMx2() for single-state b_x
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, b1, 0, 0,
+                                             bx_N, bx_S);
+        // Repeat calculation of x1 edge-centered wavespeeds as in HLL solver
+        Real wli[(NWAVE)], wri[(NWAVE)];
+        int ivx = IVX;
+        int ivy = IVX + ((ivx-IVX)+1) % 3;
+        int ivz = IVX + ((ivx-IVX)+2) % 3;
+        for (int k=kl_buf; k<=ku_buf; ++k) {
+          for (int j=jl_buf; j<=ju_buf; ++j) {
+            for (int i=is; i<=ie+1; ++i) {
+              //--- Load L/R states into local variables
+              // UCT with face-centered quantities
+              wli[IDN]=wl_fc(IDN,k,j,i);
+              wli[IVX]=wl_fc(ivx,k,j,i);
+              wli[IVY]=wl_fc(ivy,k,j,i);
+              wli[IVZ]=wl_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wli[IPR]=wl_fc(IPR,k,j,i);
+              wli[IBY]=wl_fc(IBY,k,j,i);
+              wli[IBZ]=wl_fc(IBZ,k,j,i);
+
+              wri[IDN]=wr_fc(IDN,k,j,i);
+              wri[IVX]=wr_fc(ivx,k,j,i);
+              wri[IVY]=wr_fc(ivy,k,j,i);
+              wri[IVZ]=wr_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wri[IPR]=wr_fc(IPR,k,j,i);
+              wri[IBY]=wr_fc(IBY,k,j,i);
+              wri[IBZ]=wr_fc(IBZ,k,j,i);
+              Real bxi= b1_fc(k,j,i);
+
+              Real cl=pmb->peos->FastMagnetosonicSpeed(wli,bxi);
+              Real cr=pmb->peos->FastMagnetosonicSpeed(wri,bxi);
+
+              // eq 55 in Londrillo and Del Zanna 2004
+              Real al=std::min((wri[IVX]-cr),(wli[IVX] - cl));
+              Real ar=std::max((wli[IVX] + cl),(wri[IVX] + cr));
+              Real bp=ar > 0.0 ? ar : 0.0;
+              Real bm=al < 0.0 ? al : 0.0;
+              pmb->pfield->alpha_plus_x1_(k,j,i) = bp;
+              pmb->pfield->alpha_minus_x1_(k,j,i) = bm;
+            }
+          }
+        }
+      } // end if 2D or 3D
+    } else { // end if (order == 4) UCT4x1
+      // compute weights for GS07 CT algorithm
+      for (int k=kl_buf; k<=ku_buf; ++k) {
+        for (int j=jl_buf; j<=ju_buf; ++j) {
+          pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
-                      / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-        Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-        w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          for (int i=is; i<=ie+1; ++i) {
+            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
+                / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+            w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
+        }
       }
-    }}
-  }
+    } // end GS07 CT algorithm
+  } // end if (MAGNETIC_FIELDS_ENABLED)
 
 //----------------------------------------------------------------------------------------
 // j-direction
@@ -358,21 +446,102 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     //------------------------------------------------------------------------------
     // end x2 fourth-order hydro and MHD
 
-    // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-      for (int k=kl_buf; k<=ku_buf; ++k) {
-        for (int j=js; j<=je+1; ++j) {
-          pmb->pcoord->CenterWidth2(k,j,il_buf,iu_buf,dxw);
-#pragma omp simd
-          for (int i=il_buf; i<=iu_buf; ++i) {
-            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
-                / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-          w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+      //-------- begin fourth-order upwind constrained transport (UCT4x2)
+      if (order == 4) {
+        // Limited transverse reconstructions: call PPMx1() for vx, vy both L/R states
+        // wl_{i,j-1/2} is N side of interface --> discontinuous states in x1, L=E,  R=W
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wl, IVX, 0,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wl, IVY, 1,
+                                             vl_temp, vr_temp);
+        // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
+        for (int n=0; n<2; ++n) {
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je+1; ++j) {
+              for (int i=is; i<=ie+1; ++i) {
+                v_NE(n,k,j,i) = 0.5*(v_NE(n,k,j,i) + vl_temp(n,k,j,i));
+                v_NW(n,k,j,i) = 0.5*(v_NW(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
         }
-      }}
+        // wr_{i,j-1/2}  is S side of interface --> discontinuous states in x1, L=E, R=W
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wr, IVX, 0,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wr, IVY, 1,
+                                             vl_temp, vr_temp);
+
+        // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
+        for (int n=0; n<2; ++n) {
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je+1; ++j) {
+              for (int i=is; i<=ie+1; ++i) {
+                v_SE(n,k,j,i) = 0.5*(v_SE(n,k,j,i) + vl_temp(n,k,j,i));
+                v_SW(n,k,j,i) = 0.5*(v_SW(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
+        }
+        // Limited transverse reconstructions: call PPMx1() for single-state b_y
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, b2, 0, 0,
+                                             by_E, by_W);
+        // Repeat calculation of x2 edge-centered wavespeeds as in HLL solver
+        Real wli[(NWAVE)], wri[(NWAVE)];
+        int ivx = IVY;
+        int ivy = IVX + ((ivx-IVX)+1) % 3;
+        int ivz = IVX + ((ivx-IVX)+2) % 3;
+        for (int k=kl_buf; k<=ku_buf; ++k) {
+          for (int j=js; j<=je+1; ++j) {
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              //--- Load L/R states into local variables
+              // UCT with face-centered quantities
+              wli[IDN]=wl_fc(IDN,k,j,i);
+              wli[IVX]=wl_fc(ivx,k,j,i);
+              wli[IVY]=wl_fc(ivy,k,j,i);
+              wli[IVZ]=wl_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wli[IPR]=wl_fc(IPR,k,j,i);
+              wli[IBY]=wl_fc(IBY,k,j,i);
+              wli[IBZ]=wl_fc(IBZ,k,j,i);
+
+              wri[IDN]=wr_fc(IDN,k,j,i);
+              wri[IVX]=wr_fc(ivx,k,j,i);
+              wri[IVY]=wr_fc(ivy,k,j,i);
+              wri[IVZ]=wr_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wri[IPR]=wr_fc(IPR,k,j,i);
+              wri[IBY]=wr_fc(IBY,k,j,i);
+              wri[IBZ]=wr_fc(IBZ,k,j,i);
+              Real bxi= b2_fc(k,j,i);
+
+              Real cl=pmb->peos->FastMagnetosonicSpeed(wli,bxi);
+              Real cr=pmb->peos->FastMagnetosonicSpeed(wri,bxi);
+
+              // eq 55 in Londrillo and Del Zanna 2004
+              Real al=std::min((wri[IVX]-cr),(wli[IVX] - cl));
+              Real ar=std::max((wli[IVX] + cl),(wri[IVX] + cr));
+              Real bp=ar > 0.0 ? ar : 0.0;
+              Real bm=al < 0.0 ? al : 0.0;
+              pmb->pfield->alpha_plus_x2_(k,j,i) = bp;
+              pmb->pfield->alpha_minus_x2_(k,j,i) = bm;
+            }
+          }
+        }
+      } else { // end if (order == 4) UCT4x1
+        // compute weights for GS07 CT algorithm
+        for (int k=kl_buf; k<=ku_buf; ++k) {
+          for (int j=js; j<=je+1; ++j) {
+            pmb->pcoord->CenterWidth2(k,j,il_buf,iu_buf,dxw);
+#pragma omp simd
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
+                  / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+              Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+              w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+            }
+          }
+        }
+      }
     }
-  }
 
 //----------------------------------------------------------------------------------------
 // k-direction
