@@ -815,8 +815,19 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
     // Newton-Raphson solver in GR EOS uses the following abscissae:
     // step=1: W at t^n and
     // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
-    if (MAGNETIC_FIELDS_ENABLED) {
 
+    if (order == 4) {
+      // TODO(kfelker): check if this is necessary here or at top of TimeInt::Primitives()
+      // See notes in Mesh::Initialize(). This was originally after 4th order <B> calc.
+
+      // For non-periodic boundary conditions, we need to set the ghost zones b.x1f, etc
+      // (assuming x1 and/or x2 outflow BCs)
+      Real time = 0.0;
+      pmb->pbval->ApplyPhysicalBoundariesConserved(phydro->w1, phydro->u, pfield->b,
+                                                   pfield->bcc, time, 0.0);
+    }
+
+    if (MAGNETIC_FIELDS_ENABLED) {
       // Compute the cell-centered field everywhere to O(dx^2)
       // TODO(kfelker): this should operate only on bcc_center if xorder==4
       pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pco,
@@ -841,9 +852,6 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
                                                 pco, il, iu, jl, ju, kl, ku);
       }
     }
-    // TODO(kfelker): check if this is necessary:
-    // For non-periodic boundary conditions, we need to set the ghost zones b.x1f, etc
-    // pmb->pbval->ApplyPhysicalBoundariesConserved();
 
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
