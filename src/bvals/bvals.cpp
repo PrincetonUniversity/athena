@@ -1800,3 +1800,143 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                     fsi, fei, fsj, fej, fsk, fek);
   }
 }
+
+// begin fourth-order outflow BCs -----------------------------
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst,
+//           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
+//           const Real time, const Real dt)
+//  \brief Apply all the physical boundary conditions for both hydro and field, to the
+//  conserved variables, before any EOS or Field conversions
+
+void BoundaryValues::ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst,
+                     AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
+                     const Real time, const Real dt) {
+  MeshBlock *pmb=pmy_block_;
+  Coordinates *pco=pmb->pcoord;
+  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
+      bks=pmb->ks, bke=pmb->ke;
+  if(BoundaryFunction_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if(BoundaryFunction_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+
+  // Hardcode non-periodic boundaries as OutflowConservedInnerX1(), e.g.
+  // Apply boundary function on inner-x1
+  if (BoundaryFunction_[INNER_X1] != NULL) {
+    OutflowInnerX1(pmb, pco, cdst, bfdst, time, dt,
+                   pmb->is, pmb->ie, bjs, bje, bks, bke);
+  }
+
+  // Apply boundary function on outer-x1
+  if (BoundaryFunction_[OUTER_X1] != NULL) {
+    OutflowOuterX1(pmb, pco, cdst, bfdst, time, dt,
+                                pmb->is, pmb->ie, bjs, bje, bks, bke);
+	// Do not apply EOS here, since this occurs before all cell EOS4
+  }
+
+  if (pmb->block_size.nx2>1) { // 2D or 3D
+    // Apply boundary function on inner-x2
+    if (BoundaryFunction_[INNER_X2] != NULL) {
+      OutflowInnerX2(pmb, pco, cdst, bfdst, time, dt,
+                     bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+    // Apply boundary function on outer-x2
+    if (BoundaryFunction_[OUTER_X2] != NULL) {
+      OutflowOuterX2(pmb, pco, cdst, bfdst, time, dt,
+                     bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+  }
+
+  // if (pmb->block_size.nx3>1) { // 3D
+  // TODO(kfelker): extend to 3D
+  // }
+
+  return;
+}
+
+void BoundaryValues::ApplyPhysicalBoundariesFaceField(FaceField &bfdst) {
+  MeshBlock *pmb=pmy_block_;
+  Coordinates *pco=pmb->pcoord;
+  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
+      bks=pmb->ks, bke=pmb->ke;
+  if(BoundaryFunction_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if(BoundaryFunction_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+
+  // Hardcode non-periodic boundaries as OutflowConservedInnerX1(), e.g.
+  // Apply boundary function on inner-x1
+  if (BoundaryFunction_[INNER_X1] != NULL) {
+    OutflowFaceFieldInnerX1(pmb, pco, bfdst,
+                                pmb->is, pmb->ie, bjs, bje, bks, bke);
+  }
+  // Apply boundary function on outer-x1
+  if (BoundaryFunction_[OUTER_X1] != NULL) {
+    OutflowFaceFieldOuterX1(pmb, pco, bfdst,
+                                pmb->is, pmb->ie, bjs, bje, bks, bke);
+  }
+
+  if (pmb->block_size.nx2>1) { // 2D or 3D
+    // Apply boundary function on inner-x2
+    if (BoundaryFunction_[INNER_X2] != NULL) {
+      OutflowFaceFieldInnerX2(pmb, pco, bfdst,
+                              bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+    // Apply boundary function on outer-x2
+    if (BoundaryFunction_[OUTER_X2] != NULL) {
+      OutflowFaceFieldOuterX2(pmb, pco, bfdst,
+                              bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+  }
+
+  // if (pmb->block_size.nx3>1) { // 3D
+  // TODO(kfelker): extend to 3D
+  // }
+  return;
+}
+
+void BoundaryValues::ApplyPhysicalBoundariesCellField(AthenaArray<Real> &bcdst) {
+  MeshBlock *pmb=pmy_block_;
+  Coordinates *pco=pmb->pcoord;
+  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
+      bks=pmb->ks, bke=pmb->ke;
+  if(BoundaryFunction_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if(BoundaryFunction_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+
+  // Hardcode non-periodic boundaries as OutflowConservedInnerX1(), e.g.
+  // Apply boundary function on inner-x1
+  if (BoundaryFunction_[INNER_X1] != NULL) {
+    OutflowCellFieldInnerX1(pmb, pco, bcdst,
+                            pmb->is, pmb->ie, bjs, bje, bks, bke);
+  }
+  // Apply boundary function on outer-x1
+  if (BoundaryFunction_[OUTER_X1] != NULL) {
+    OutflowCellFieldOuterX1(pmb, pco, bcdst,
+                            pmb->is, pmb->ie, bjs, bje, bks, bke);
+  }
+
+  if (pmb->block_size.nx2>1) { // 2D or 3D
+    // Apply boundary function on inner-x2
+    if (BoundaryFunction_[INNER_X2] != NULL) {
+      OutflowCellFieldInnerX2(pmb, pco, bcdst,
+                              bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+    // Apply boundary function on outer-x2
+    if (BoundaryFunction_[OUTER_X2] != NULL) {
+      OutflowCellFieldOuterX2(pmb, pco, bcdst,
+                              bis, bie, pmb->js, pmb->je, bks, bke);
+    }
+  }
+
+  // if (pmb->block_size.nx3>1) { // 3D
+  // TODO(kfelker): extend to 3D
+  // }
+
+  return;
+}
+
+// end fourth-order outflow BCs -----------------------------
