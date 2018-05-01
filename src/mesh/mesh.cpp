@@ -1330,8 +1330,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pco=pmb->pcoord;
 
         // TODO(kfelker): check if this is necessary:
-        // pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
-        //                                         pfield->bcc,time, 0.0);
+        pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
+                                                pfield->bcc,time, 0.0);
 
         // Assume cell-centered analytic value is computed at all real cells, and ghost
         // cells with the cell-centered U have been exchanged
@@ -1428,16 +1428,27 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
         if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
       }
-      int order = pmb->precon->xorder;
-      if (MAGNETIC_FIELDS_ENABLED) {
-        // TODO(kfelker): check if this is necessary:
-        // pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
-        //                                         pfield->bcc,time, 0.0);
 
+      int order = pmb->precon->xorder;
+      if (order == 4) {
+        // TODO(kfelker): check if this is necessary/sufficient for fourth order
+        // Needed only for 4th order Hydro/MHD since u, b stencils in
+        // FaceAveragedToCellAveragedField(), ConservedToPrimitiveCellAverage()
+        // will reach into non-periodic ghost cells that werent initialized before this
+        pbval->ApplyPhysicalBoundariesConserved(phydro->w, phydro->u, pfield->b,
+                                                pfield->bcc, time, 0.0);
+      }
+
+      if (MAGNETIC_FIELDS_ENABLED) {
         // Compute the cell-centered field everywhere to O(dx^2)
         // TODO(kfelker): this should operate only on bcc_center if xorder==4
         pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pco,
                                            il, iu, jl, ju, kl, ku);
+
+        // TODO(kfelker): this BC was never applied to bf in mhd-mol; check for safety
+        // pbval->ApplyPhysicalBoundariesFaceField(pfield->b);
+        // pbval->ApplyPhysicalBoundariesCellField(pfield->bcc);
+
         // --------------------------
         if (order == 4) {
           // (possibly) reset the range of input indices to all cells, real and ghost
