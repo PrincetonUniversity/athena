@@ -1440,6 +1440,18 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                            il, iu, jl, ju, kl, ku);
         // --------------------------
         if (order == 4) {
+          // (possibly) reset the range of input indices to all cells, real and ghost
+          il = pmb->is - NGHOST;
+          iu = pmb->ie + NGHOST;
+          if (pmb->block_size.nx2 > 1) {
+            jl = pmb->js - NGHOST;
+            ju = pmb->je + NGHOST;
+          }
+          if (pmb->block_size.nx3 > 1) {
+            kl = pmb->ks - NGHOST;
+            ku = pmb->ke + NGHOST;
+          }
+
           // Deep copy the second-order accurate bcc, for now.
           pfield->bcc_center = pfield->bcc;
           pfield->FaceAveragedToCellAveragedField(pfield->b, pfield->b_fc,
@@ -1457,12 +1469,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (MAGNETIC_FIELDS_ENABLED) {
           // for MHD, shrink buffer by 3 on all sides:
           // TODO(kfelker): recheck this adjustment
-          if (pbval->nblevel[1][1][0] != -1) il+=3;
-          if (pbval->nblevel[1][1][2] != -1) iu-=3;
-          if (pbval->nblevel[1][0][1] != -1) jl+=3;
-          if (pbval->nblevel[1][2][1] != -1) ju-=3;
-          if (pbval->nblevel[0][1][1] != -1) kl+=3;
-          if (pbval->nblevel[2][1][1] != -1) ku-=3;
+          // if (pbval->nblevel[1][1][0] != -1) il+=3;
+          il+=3;
+          iu-=3;
+          if (pmb->block_size.nx2 > 1) {
+            jl+=3;
+            ju-=3;
+          }
+          if (pmb->block_size.nx3 > 1) {
+            kl+=3;
+            ku-=3;
+          }
           // Pass the fourth-order approximation to the cell-centered field, bcc_center,
           // instead of bcc, to be used with the cell-centered hydro
           pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
@@ -1470,12 +1487,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                      il, iu, jl, ju, kl, ku);
         } else {
           // for hydro, shrink buffer by 1 on all sides
-          if (pbval->nblevel[1][1][0] != -1) il+=1;
-          if (pbval->nblevel[1][1][2] != -1) iu-=1;
-          if (pbval->nblevel[1][0][1] != -1) jl+=1;
-          if (pbval->nblevel[1][2][1] != -1) ju-=1;
-          if (pbval->nblevel[0][1][1] != -1) kl+=1;
-          if (pbval->nblevel[2][1][1] != -1) ku-=1;
+          il+=1;
+          iu-=1;
+          if (pmb->block_size.nx2 > 1) {
+            jl+=1;
+            ju-=1;
+          }
+          if (pmb->block_size.nx3 > 1) {
+            kl+=1;
+            ku-=1;
+          }
           pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
                                                      phydro->w, pfield->bcc, pco,
                                                      il, iu, jl, ju, kl, ku);
