@@ -129,6 +129,26 @@ void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
+
+// begin fourth-order outflow BCs--------------------
+// Apply outflow boundary conditions to each step of the Field 4th order conversions
+void OutflowFaceFieldInnerX1(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is,
+                             int ie, int js, int je, int ks, int ke);
+void OutflowFaceFieldOuterX1(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is,
+                             int ie, int js, int je, int ks, int ke);
+void OutflowCellFieldInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
+                             int is, int ie, int js, int je, int ks, int ke);
+void OutflowCellFieldOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
+                             int is, int ie, int js, int je, int ks, int ke);
+void OutflowFaceFieldInnerX2(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is,
+                             int ie, int js, int je, int ks, int ke);
+void OutflowFaceFieldOuterX2(MeshBlock *pmb, Coordinates *pco, FaceField &b, int is,
+                             int ie, int js, int je, int ks, int ke);
+void OutflowCellFieldInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
+                             int is, int ie, int js, int je, int ks, int ke);
+void OutflowCellFieldOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
+                             int is, int ie, int js, int je, int ks, int ke);
+
 void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -201,6 +221,13 @@ public:
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+  // begin fourth-order physical boundary conditions
+  void ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+                                        FaceField &bfdst, AthenaArray<Real> &bcdst,
+                                        const Real time, const Real dt);
+  void ApplyPhysicalBoundariesFaceField(FaceField &bfdst);
+  void ApplyPhysicalBoundariesCellField(AthenaArray<Real> &bcdst);
+  // end fourth-order physical boundary conditions
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
 
