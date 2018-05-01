@@ -425,7 +425,7 @@ void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_c
   BoundaryValues *pbval = pmb->pbval;
   // Assuming all cells (ghost and real) are passed as limits:
   CalculateFaceCenteredField(bf, bf_center, pco, il, iu, jl, ju, kl, ku);
-  //pbval->ApplyPhysicalBoundariesFaceField(bf_center);
+  pbval->ApplyPhysicalBoundariesFaceField(bf_center);
   // ... output shrinks by 1 in transverse directions
 
   // Take 1x longitudinal cell as buffer, such that all directions shrink UPON OUTPUT.
@@ -444,7 +444,7 @@ void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_c
   // Does this make any sense for outflow conditions? Need to revamp the whole il, iu, etc
   // buffer,  boundary condition syntax
   CalculateCellCenteredFieldFourth(bf_center, bc_center, pco, il, iu, jl, ju, kl, ku);
-  //  pbval->ApplyPhysicalBoundariesCellField(bc_center);
+  pbval->ApplyPhysicalBoundariesCellField(bc_center);
 
   // All directions shrink by 1x again for Laplacian
   if (pbval->nblevel[1][1][0]!=-1) il+=1;
@@ -455,7 +455,7 @@ void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_c
   if (pbval->nblevel[2][1][1]!=-1) ku-=1;
 
   CellCenteredToAveragedField(bc_center, bc, pco, il, iu, jl, ju, kl, ku);
-  //pbval->ApplyPhysicalBoundariesCellField(bc);
+  pbval->ApplyPhysicalBoundariesCellField(bc);
 
   // .... leading to output that is 2x cells smaller at each real edge
 
