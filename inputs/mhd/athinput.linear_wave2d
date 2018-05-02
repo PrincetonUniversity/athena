@@ -51,4 +51,5 @@ compute_error = false # set value to 'true' to compute L1 error compared to init
 wave_flag = 0         # Wave family number (0 - 6 for adiabatic MHD)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
-ang_2     = 0.0       # rotation of k around x2 axis
+ang_2     = 0.0       # rotation of k around x3 axis
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2

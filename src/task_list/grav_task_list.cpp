@@ -3,9 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file time_integrator.cpp
-//  \brief derived class for time integrator task list.  Can create task lists for one
-//  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
+//! \file grav_task_list.cpp
+//  \brief
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -33,7 +32,7 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm) {
 
   // Now assemble list of tasks for each step of time integrator
-  {using namespace GravitySolverTaskNames;
+  {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     AddGravitySolverTask(START_GRAV_RECV,NONE);
 
     // compute hydro fluxes, integrate hydro variables
@@ -44,7 +43,8 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
   } // end of using namespace block
 }
 
-//----------------------------------------------------------------------------------------//! \fn
+//----------------------------------------------------------------------------------------
+//! \fn void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
@@ -52,7 +52,7 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace GravitySolverTaskNames;
+  using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
   switch((id)) {
     case (START_GRAV_RECV):
       task_list_[ntasks].TaskFunc=

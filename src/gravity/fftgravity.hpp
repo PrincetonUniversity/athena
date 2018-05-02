@@ -1,5 +1,5 @@
-#ifndef FFTGRAVITY_HPP
-#define FFTGRAVITY_HPP
+#ifndef GRAVITY_FFTGRAVITY_HPP_
+#define GRAVITY_FFTGRAVITY_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -48,4 +48,4 @@ private:
   GravitySolverTaskList *gtlist_;
 };
 
-#endif // FFTGRAVITY_HPP
+#endif // GRAVITY_FFTGRAVITY_HPP_

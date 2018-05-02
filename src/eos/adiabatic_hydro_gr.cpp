@@ -37,8 +37,8 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
@@ -275,7 +275,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma omp simd
+      //#pragma omp simd // fn is too long to inline
       for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
       }
@@ -398,8 +398,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   if (root_1 > root_2) {
     *plambda_plus = root_1;
     *plambda_minus = root_2;
-  } else
-  {
+  } else {
     *plambda_plus = root_2;
     *plambda_minus = root_1;
   }

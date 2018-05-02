@@ -12,10 +12,13 @@
 //
 // Code must be configured using -shear
 //======================================================================================
-//
-// C++ headers
-#include <iostream>   // cout, endl
+
+// C headers
 #include <stdlib.h>   // exit
+
+// C++ headers
+#include <cmath>      // sqrt()
+#include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -23,12 +26,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #if !SHEARING_BOX
 #error "This problem generator requires shearing box"
@@ -83,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
-    iso_cs = sqrt((gm1+1.0)*p0/d0);
+    iso_cs = std::sqrt((gm1+1.0)*p0/d0);
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
@@ -148,12 +151,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM3,k,j,i) = -rd*(rvy + qshear*Omega_0*x1);
         }
       } else {
-          std::cout << "[ssheet.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
+          std::cout << "[ssheet.cpp] ipert = " << ipert
+                    << " is unrecognized " <<std::endl;
           exit(0);
       }
       if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = rp/gm1 +0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))+
-                                             SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+                                             SQR(phydro->u(IM2,k,j,i)) +
+                                             SQR(phydro->u(IM3,k,j,i))
+                                             ) / phydro->u(IDN,k,j,i);
       }
     }
   }}

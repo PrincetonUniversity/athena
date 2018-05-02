@@ -38,7 +38,7 @@ void ShowConfig(void) {
   } else if (SELF_GRAVITY_ENABLED == 2) {
     std::cout<<"  Self Gravity:               Multigrid" << std::endl;
   } else {
-    std::cout<<"  Self Gravity:               Off" << std::endl;
+    std::cout<<"  Self Gravity:               OFF" << std::endl;
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -81,6 +81,11 @@ void ShowConfig(void) {
 
 #ifdef HDF5OUTPUT
   std::cout<<"  HDF5 Output:                ON" << std::endl;
+  if (H5_DOUBLE_PRECISION_ENABLED) {
+    std::cout<<"  HDF5 precision:             double" << std::endl;
+  } else {
+    std::cout<<"  HDF5 precision:             single" << std::endl;
+  }
 #else
   std::cout<<"  HDF5 Output:                OFF" << std::endl;
 #endif

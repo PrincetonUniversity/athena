@@ -198,8 +198,9 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         } else if (mesh_bcs[INNER_X2]==POLAR_BNDRY) {
           nloc.lx2=0;
           polar=true;
-        } else
+        } else {
           continue;
+        }
       }
       if (nloc.lx2>=nymax) {
         if (mesh_bcs[OUTER_X2]==PERIODIC_BNDRY) {
@@ -207,8 +208,9 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         } else if (mesh_bcs[OUTER_X2]==POLAR_BNDRY) {
           nloc.lx2=nymax-1;
           polar=true;
-        } else
+        } else {
           continue;
+        }
       }
       if (polar) nloc.lx3=(nloc.lx3+nzmax/2)%nzmax;
       for (ox=oxmin;ox<=oxmax;ox++) {
@@ -259,12 +261,16 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
               if (ox2==-1)     ljs=lje=1;
               else if (ox2==1) ljs=lje=0;
               else            ljs=0, lje=1;
-            } else              ljs=lje=0;
+            } else {
+              ljs=lje=0;
+            }
             if (dim==3) {
               if (ox3==-1)     lks=lke=1;
               else if (ox3==1) lks=lke=0;
               else            lks=0, lke=1;
-            } else              lks=lke=0;
+            } else {
+              lks=lke=0;
+            }
             for (int lk=lks; lk<=lke; lk++) {
               for (int lj=ljs; lj<=lje; lj++) {
                 for (int li=lis; li<=lie; li++) {
@@ -378,7 +384,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     } else if (bcs[INNER_X2]==POLAR_BNDRY) {
       ly=0;
       polar=true;
-    } else return NULL;
+    } else {
+      return NULL;
+    }
   }
   if (ly>=rby<<(ll-rl)) {
     if (bcs[OUTER_X2]==PERIODIC_BNDRY) {
@@ -386,7 +394,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     } else if (bcs[OUTER_X2]==POLAR_BNDRY) {
       ly=(rby<<(ll-rl))-1;
       polar=true;
-    } else return NULL;
+    } else {
+      return NULL;
+    }
   }
   int64_t num_x3 = rbz<<(ll-rl);
   if (lz<0) {

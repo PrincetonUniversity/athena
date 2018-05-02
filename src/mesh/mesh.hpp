@@ -1,5 +1,5 @@
-#ifndef MESH_HPP
-#define MESH_HPP
+#ifndef MESH_MESH_HPP_
+#define MESH_MESH_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -64,8 +64,8 @@ public:
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata,
-            int igflag);
+            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost,
+            char *mbdata, int igflag);
   ~MeshBlock();
 
   //data
@@ -83,7 +83,6 @@ public:
   int nuser_out_var;
   AthenaArray<Real> user_out_var;
   std::string *user_out_var_names_;
-
 
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *ruser_meshblock_data;
@@ -156,7 +155,7 @@ class Mesh {
 #endif
 
 public:
-  Mesh(ParameterInput *pin, int test_flag=0);
+  explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 
@@ -206,7 +205,8 @@ private:
   LogicalLocation *loclist;
   MeshBlockTree tree;
   int64_t nrbx1, nrbx2, nrbx3;
-  bool use_meshgen_fn_[3]; // flag to use non-uniform or user meshgen function
+  // flags are false if using non-uniform or user meshgen function
+  bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
 
   int nuser_history_output_;
@@ -255,9 +255,32 @@ private:
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }
 };
 
+
+//----------------------------------------------------------------------------------------
+// \!fn Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval)
+// \brief wrapper fn to compute Real x logical location for either [0, 1] or [-0.5, 0.5]
+//        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
+
+inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval) {
+  // index is typically 0, ... nrange for non-ghost boundaries
+  if (sym_interval == false) {
+    // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
+    return static_cast<Real>(index)/static_cast<Real>(nrange);
+  } else {
+    // to map to a [-0.5, 0.5] range, rescale int indices around 0 before FP conversion
+    // if nrange is even, there is an index at center x=0.0; map it to (int) 0
+    // if nrange is odd, the center x=0.0 is between two indices; map them to -1, 1
+    int64_t noffset = index - (nrange)/2;
+    int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
+    //std::cout << "noffset, noffset_ceil = " << noffset << ", " << noffset_ceil << "\n";
+    // average the (possibly) biased integer indexing
+    return static_cast<Real>(noffset + noffset_ceil)/(2.0*nrange);
+  }
+}
+
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location; x=i/nx1
+// \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
@@ -269,12 +292,13 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
+  // linear interp, equally weighted from left (x(xmin)=0.0) and right (x(xmax)=1.0)
   return rs.x1min*lw+rs.x1max*rw;
 }
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location; x=j/nx2
+// \brief x2 mesh generator function, x is the logical location; x=j/nx2, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
@@ -291,7 +315,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location; x=k/nx3
+// \brief x3 mesh generator function, x is the logical location; x=k/nx3, real in [0, 1]
 
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
@@ -311,7 +335,8 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
 // \brief x1 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
-  return (static_cast<Real>(0.5)-x)*rs.x1min + (static_cast<Real>(0.5)+x)*rs.x1max;
+  // linear interp, equally weighted from left (x(xmin)=-0.5) and right (x(xmax)=0.5)
+  return static_cast<Real>(0.5)*(rs.x1min+rs.x1max) + (x*rs.x1max - x*rs.x1min);
 }
 
 //----------------------------------------------------------------------------------------
@@ -319,7 +344,7 @@ inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
 // \brief x2 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
-  return (static_cast<Real>(0.5)-x)*rs.x2min + (static_cast<Real>(0.5)+x)*rs.x2max;
+  return static_cast<Real>(0.5)*(rs.x2min+rs.x2max) + (x*rs.x2max - x*rs.x2min);
 }
 
 //----------------------------------------------------------------------------------------
@@ -327,7 +352,7 @@ inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
 // \brief x3 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
-  return (static_cast<Real> (0.5)-x)*rs.x3min + (static_cast<Real>(0.5)+x)*rs.x3max;
+  return static_cast<Real>(0.5)*(rs.x3min+rs.x3max) + (x*rs.x3max - x*rs.x3min);
 }
 
-#endif  // MESH_HPP
+#endif  // MESH_MESH_HPP_

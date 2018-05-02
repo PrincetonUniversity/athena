@@ -10,15 +10,19 @@ os:
   - linux
 dist: trusty
 sudo: false # use faster container-based build
-
+addons:
+  apt:
+    packages:
+      - "python3"
+      - "python3-pip"
 # OpenMPI and MPICH implementations:
 env:
   matrix:
   - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
   - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
 compiler:
-  - gcc
-  - clang
+  - g++
+  - clang++
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
@@ -39,7 +43,7 @@ matrix:
   include:
   - os: osx
     osx_image: xcode9.3 # macOS 10.13 High Sierra
-    compiler: g++
+    compiler: clang++
     env:
     - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
     # Override Linux cache mapping
@@ -58,6 +62,7 @@ matrix:
       - "/usr/local/Cellar/fftw/"
   - os: osx
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+    compiler: clang++
     env:
     - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
     - TMPDIR=/tmp
@@ -76,6 +81,8 @@ matrix:
 # Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
+  # Cache Travis CI build matrix compiler
+  - export TEMP_CXX=$CXX
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
 install:
@@ -87,31 +94,37 @@ install:
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
   - cd tst/regression
-  # Fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
+  # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
-  - pip install --user numpy || true
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
+  - pip install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user numpy || true
 # Run regression test suite:
 # Do not use "python run_tests.py" to run all tests, so that:
 # - Each set/directory of tests are timed separately
 # - Script fails after first broken set of tests
 # (Could alternatively group sets of tests with && operator)
 script:
+  # Test Google C++ Style Guide adherence
+  - cd ../style
   - set -e # fail at first error
+  - ./cpplint_athena.sh
+  - set +e; cd ../regression/; set -e;
   - set -x # trace execution of all commands;
-  - python2 run_tests.py mpi
-  - python2 run_tests.py grav # requires FFTW library
-  - python2 run_tests.py amr
+  - python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
+  - python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library
+  - python3 run_tests.py amr --config=--cxx=$TEMP_CXX
   # Longest set of tests. Timeout after 10 m
-  #- python2 run_tests.py mhd
-  - python2 run_tests.py hydro
-  - python2 run_tests.py outputs
-  - python2 run_tests.py curvilinear
-  - python2 run_tests.py gr
-  - python2 run_tests.py sr
-  - python2 run_tests.py pgen
-  - python2 run_tests.py shearingbox
+  #- python3 run_tests.py mhd
+  - python3 run_tests.py hydro --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py outputs --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py gr --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py sr --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX
   - set +e
 # Codecov coverage analysis
 after_success:

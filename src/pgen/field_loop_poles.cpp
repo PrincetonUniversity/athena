@@ -77,7 +77,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   zc = pin->GetOrAddReal("problem","zc",0.0);
   if (MAGNETIC_FIELDS_ENABLED) {
     beta = pin->GetReal("problem","beta");
-    b0=sqrt(2.*isocs2*rho0/beta);
+    b0=std::sqrt(2.*isocs2*rho0/beta);
   }
 
   // setup boundary condition
@@ -264,8 +264,7 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 2-compnent of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3)
- {
+static Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
   Real x=x1*fabs(sin(x2))*cos(x3);
@@ -275,8 +274,8 @@ static Real A2(const Real x1, const Real x2, const Real x3)
    y=-y;
   }
   Real z=x1*cos(x2);
-  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
-    az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+    az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a2=-az*fabs(sin(x2));
   return a2;
@@ -295,8 +294,8 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
    y=-y;
   }
   Real z=x1*cos(x2);
-  if (sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
-    az=b0*(0.5-sqrt(SQR(x-xc)+SQR(y-yc)));
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+    az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a1=az*cos(x2);
   return a1;

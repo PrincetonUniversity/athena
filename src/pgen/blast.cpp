@@ -12,20 +12,22 @@
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
 // C++ headers
-#include <sstream>
+#include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -64,6 +66,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     x0 = x1_0*std::sin(x2_0)*std::cos(x3_0);
     y0 = x1_0*std::sin(x2_0)*std::sin(x3_0);
     z0 = x1_0*std::cos(x2_0);
+  } else {
+    // Only check legality of COORDINATE_SYSTEM once in this function
+    std::stringstream msg;
+    msg << "### FATAL ERROR in blast.cpp ProblemGenerator" << std::endl
+        << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 
   // setup uniform ambient medium with spherical over-pressured region
@@ -75,18 +83,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real x = pcoord->x1v(i);
       Real y = pcoord->x2v(j);
       Real z = pcoord->x3v(k);
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
     } else if (COORDINATE_SYSTEM == "cylindrical") {
       Real x = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j));
       Real z = pcoord->x3v(k);
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    } else if (COORDINATE_SYSTEM == "spherical_polar") {
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+    } else { // if (COORDINATE_SYSTEM == "spherical_polar")
       Real x = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::cos(pcoord->x3v(k));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::sin(pcoord->x3v(k));
       Real z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
     }
+
     Real den = da;
     if (rad < rout) {
       if (rad < rin) {
@@ -130,7 +139,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real phi = pcoord->x2v(j);
             pfield->b.x1f(k,j,i) =
                 b0 * (std::cos(angle) * std::cos(phi) + std::sin(angle) * std::sin(phi));
-          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x1f(k,j,i) = b0 * std::abs(std::sin(theta))
@@ -148,7 +157,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real phi = pcoord->x2v(j);
             pfield->b.x2f(k,j,i) =
                 b0 * (std::sin(angle) * std::cos(phi) - std::cos(angle) * std::sin(phi));
-          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x2f(k,j,i) = b0 * std::cos(theta)
@@ -164,7 +173,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i = is; i <= ie; ++i) {
           if (COORDINATE_SYSTEM == "cartesian" || COORDINATE_SYSTEM == "cylindrical") {
             pfield->b.x3f(k,j,i) = 0.0;
-          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
             Real phi = pcoord->x3v(k);
             pfield->b.x3f(k,j,i) =
                 b0 * (std::sin(angle) * std::cos(phi) - std::cos(angle) * std::sin(phi));
@@ -215,6 +224,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     x0 = x1_0*std::sin(x2_0)*std::cos(x3_0);
     y0 = x1_0*std::sin(x2_0)*std::sin(x3_0);
     z0 = x1_0*std::cos(x2_0);
+  } else {
+    // Only check legality of COORDINATE_SYSTEM once in this function
+    std::stringstream msg;
+    msg << "### FATAL ERROR in blast.cpp ParameterInput" << std::endl
+        << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 
   // find indices of the center
@@ -288,7 +303,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             kmax=k;
           }
         }
-      } else if (d==5) {
+      } else { // if (d==5) {
         if (kos!=0) continue;
         imax=ic+ios, jmax=jc+jos;
         for (int k=kc; k<=ke; k++) {
@@ -311,7 +326,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         xm = x1m*std::cos(x2m);
         ym = x1m*std::sin(x2m);
         zm = x3m;
-      } else if (COORDINATE_SYSTEM == "spherical_polar") {
+      } else {  // if (COORDINATE_SYSTEM == "spherical_polar") {
         xm = x1m*std::sin(x2m)*std::cos(x3m);
         ym = x1m*std::sin(x2m)*std::sin(x3m);
         zm = x1m*std::cos(x2m);
@@ -336,7 +351,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     dr_max = std::max(std::max(dx1c, dx2c), dx3c);
   } else if (COORDINATE_SYSTEM == "cylindrical") {
     dr_max = std::max(std::max(dx1c, x1c*dx2c), dx3c);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else { // if (COORDINATE_SYSTEM == "spherical_polar") {
     dr_max = std::max(std::max(dx1c, x1c*dx2c), x1c*std::sin(x2c)*dx3c);
   }
   Real deform=(rmax-rmin)/dr_max;

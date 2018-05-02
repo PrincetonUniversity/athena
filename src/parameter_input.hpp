@@ -1,5 +1,5 @@
-#ifndef PARAMETER_INPUT_HPP
-#define PARAMETER_INPUT_HPP
+#ifndef PARAMETER_INPUT_HPP_
+#define PARAMETER_INPUT_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -18,8 +18,8 @@
 
 // Athena++ headers
 #include "athena.hpp"
-#include "outputs/io_wrapper.hpp"
 #include "defs.hpp"
+#include "outputs/io_wrapper.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -89,6 +89,8 @@ public:
   bool SetBoolean(std::string block, std::string name, bool value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
+  void RollbackNextTime();
+  void ForwardNextTime(Real time);
 
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
@@ -112,4 +114,4 @@ private:
   void EndWriting(void);
 
 };
-#endif
+#endif // PARAMETER_INPUT_HPP_

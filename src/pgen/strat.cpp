@@ -31,13 +31,14 @@
 //============================================================================
 
 // C/C++ headers
+#include <algorithm>
+#include <cfloat>     // DBL_EPSILON
+#include <cmath>      // sqrt()
+#include <cstdlib>    // exit()
 #include <iostream>
-#include <cfloat>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstdlib>    // exit()
-#include <cfloat>     // DBL_EPSILON
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -163,7 +164,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //Compute field strength based on beta.
   if (MAGNETIC_FIELDS_ENABLED) {
-    B0 = sqrt(static_cast<Real>(2.0*pres/beta));
+    B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
     std::cout << "B0=" << B0 << std::endl;
   }
 
@@ -191,16 +192,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (rp < pfloor) rp = pfloor;
           }
           rval = amp*(ran2(&iseed) - 0.5);
-          rvx = (0.4/sqrt(3.0)) *rval*1e-3;
+          rvx = (0.4/std::sqrt(3.0)) *rval*1e-3;
           SumRvx += rvx;
 
           rval = amp*(ran2(&iseed) - 0.5);
-          rvy = (0.4/sqrt(3.0)) *rval*1e-3;
-          SumRvy += rvz;
+          rvy = (0.4/std::sqrt(3.0)) *rval*1e-3;
+          SumRvy += rvy;
 
           rval = amp*(ran2(&iseed) - 0.5);
-          rvz = 0.4*rval*sqrt(pres/den);
-          rvz = (0.4/sqrt(3.0)) *rval*1e-3;
+          rvz = 0.4*rval*std::sqrt(pres/den);
+          rvz = (0.4/std::sqrt(3.0)) *rval*1e-3;
           SumRvz += rvz;
         // no perturbations
         } else {
@@ -277,10 +278,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 6) {
             // net toroidal field with constant \beta with height
             pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = sqrt(den*exp(-x3*x3)*SQR(Omega_0)/beta);
+            pfield->b.x2f(k,j,i) = std::sqrt(den*exp(-x3*x3)*SQR(Omega_0)/beta);
             pfield->b.x3f(k,j,i) = 0.0;
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = sqrt(den*exp(-x3*x3)*
+            if (j==je) pfield->b.x2f(k,je+1,i) = std::sqrt(den*exp(-x3*x3)*
                                                     SQR(Omega_0)/beta);
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
@@ -372,7 +373,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
           sign = 1.0;
         }
         xi = z0/x3;
-        fsmooth = SQR( sqrt( SQR(xi+sign) + SQR(xi*lambda) ) + xi*sign );
+        fsmooth = SQR( std::sqrt( SQR(xi+sign) + SQR(xi*lambda) ) + xi*sign );
         //multiply gravitational potential by smoothing function
         cons(IM3,k,j,i) -= dt*den*SQR(Omega_0)*x3*fsmooth;
         if (NON_BAROTROPIC_EOS) {

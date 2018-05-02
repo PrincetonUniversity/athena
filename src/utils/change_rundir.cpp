@@ -6,15 +6,17 @@
 //! \file change_rundir.cpp
 //! \brief executes unix 'chdir' command to change dir in which Athena++ runs
 
-// Athena headers
-#include "../athena.hpp"
+// C headers
+#include <sys/stat.h>  // mkdir()
+#include <unistd.h>    // chdir()
 
 // C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <sys/stat.h>  // mkdir()
-#include <unistd.h>    // chdir()
+
+// Athena headers
+#include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void ChangeRunDir(const char *pdir)

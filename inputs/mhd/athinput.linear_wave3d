@@ -110,3 +110,5 @@ vflow     = 0.0       # background flow velocity
 nuiso     = 0.0       # isotropic viscosity
 kiso      = 0.0       # isotropic thermal conductivity
 coef_o    = 0.0       # spatial constant resistivity
+ang_2_vert= false     # set to 'true' to make ang_2=pi/2
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2

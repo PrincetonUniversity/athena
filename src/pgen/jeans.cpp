@@ -36,7 +36,7 @@
 #endif
 
 #ifdef OPENMP_PARALLEL
-#include "omp.h"
+#include <omp.h>
 #endif
 
 #if MAGNETIC_FIELDS_ENABLED
@@ -94,7 +94,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   kwave = 2.0*PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
-  omega = sqrt(fabs(omega2));
+  omega = std::sqrt(fabs(omega2));
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
@@ -107,8 +107,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
     std::cout << "lambda " << lambda << std::endl;
     std::cout << "period " << (2*PI/omega) << std::endl;
-    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
-    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+    std::cout << "angle2 " << ang_2*180./PI << " "
+              << sin_a2 << " " << cos_a2 << std::endl;
+    std::cout << "angle3 " << ang_3*180./PI << " "
+              << sin_a3 << " " << cos_a3 << std::endl;
   }
 
 
@@ -255,7 +257,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
        rms_err += SQR(l1_err[i]);
        max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
-    rms_err = sqrt(rms_err);
+    rms_err = std::sqrt(rms_err);
 
     // open output file and write out errors
     std::string fname;

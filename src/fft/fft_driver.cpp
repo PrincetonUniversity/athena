@@ -30,8 +30,9 @@
 FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   pmy_mesh_=pm;
 
-  if (pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
-  || pm->use_meshgen_fn_[X3DIR]==true) {
+  if (pm->use_uniform_meshgen_fn_[X1DIR]==false
+      || pm->use_uniform_meshgen_fn_[X2DIR]==false
+      || pm->use_uniform_meshgen_fn_[X3DIR]==false) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
@@ -84,9 +85,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     lx3max = lx3max>lx3?lx3min:lx3;
   }
 
-  int nbx1=lx1max-lx1min+1;
-  int nbx2=lx2max-lx2min+1;
-  int nbx3=lx3max-lx3min+1;
+  int nbx1 = static_cast<int>(lx1max-lx1min+1);
+  int nbx2 = static_cast<int>(lx2max-lx2min+1);
+  int nbx3 = static_cast<int>(lx3max-lx3min+1);
 
   nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
   if (pm->nbtotal/nmb != nranks_) {
@@ -111,9 +112,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1=pm->nrbx1/nbx1;
-  npx2=pm->nrbx2/nbx2;
-  npx3=pm->nrbx3/nbx3;
+  npx1 = static_cast<int>(pm->nrbx1/nbx1);
+  npx2 = static_cast<int>(pm->nrbx2/nbx2);
+  npx3 = static_cast<int>(pm->nrbx3/nbx3);
 
   fft_mesh_size_=pm->mesh_size;
 
@@ -136,20 +137,19 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
 #ifdef MPI_PARALLEL
-  {using namespace DecompositionNames;
   decomp_ = 0; pdim_ = 0;
   if (npx1 > 1) {
-    decomp_ = decomp_ | x_decomp;
+    decomp_ = decomp_ | DecompositionNames::x_decomp;
     pdim_++;
   }
   if (npx2 > 1) {
-    decomp_ = decomp_ | y_decomp;
+    decomp_ = decomp_ | DecompositionNames::y_decomp;
     pdim_++;
   }
   if (npx3 > 1) {
-    decomp_ = decomp_ | z_decomp;
+    decomp_ = decomp_ | DecompositionNames::z_decomp;
     pdim_++;
-  }}
+  }
 #endif
 
 }

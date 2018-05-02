@@ -40,7 +40,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
   for (int j=js; j<=je; j++) {
     if (pcoord->x2v(j) > y0) {
-      y0 = pcoord->x2f(j);
+      // TODO(kfelker): check this condition for multi-meshblock setups
+      // further adjust y0 to be between cell center and lower x2 face
+      y0 = pcoord->x2f(j) + 0.5*pcoord->dx2f(j);
       break;
     }
   }

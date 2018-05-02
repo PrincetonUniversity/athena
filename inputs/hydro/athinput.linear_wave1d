@@ -49,5 +49,5 @@ compute_error = true  # when 'true' outputs L1 error compared to initial data
 wave_flag = 0         # Wave family number (0 - 4 for adiabatic hydro)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
-ang_2     = 0.0       # rotation of k around x2 axis
-ang_3     = 0.0       # rotation of k around x3 axis
+ang_2     = 0.0       # rotation of k around x3 axis
+ang_3     = 0.0       # rotation of k around x2 axis

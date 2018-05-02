@@ -21,7 +21,7 @@
 // this class header
 #include "mg_task_list.hpp"
 
-using namespace MultigridTaskNames;
+using namespace MultigridTaskNames; // NOLINT (build/namespace)
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
@@ -54,7 +54,8 @@ void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd) {
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskState &ts) {
+enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
+                                                           TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -78,8 +79,9 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskS
       }
       skip++; // increment number of tasks processed
 
-    } else if (skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) { // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
+    }
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
 }
@@ -295,9 +297,9 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
 void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
   ClearTaskList();
   // nsmooth==0 should not be used
-  if (flag==1) // first time on the block level
+  if (flag==1) { // first time on the block level
     AddMultigridTask(MG_PROLONG,    NONE);
-  else {
+  } else {
     AddMultigridTask(MG_STARTRECV0, NONE);
     AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
     AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
@@ -422,9 +424,9 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
 
 void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
   ClearTaskList();
-  if (flag==1) // first time on the block level
+  if (flag==1) { // first time on the block level
     AddMultigridTask(MG_FMGPROLONG,    NONE);
-  else {
+  } else {
     AddMultigridTask(MG_STARTRECV0, NONE);
     AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
     AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);

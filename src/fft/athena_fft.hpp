@@ -1,5 +1,5 @@
-#ifndef ATHENA_FFT_HPP
-#define ATHENA_FFT_HPP
+#ifndef FFT_ATHENA_FFT_HPP_
+#define FFT_ATHENA_FFT_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -9,26 +9,32 @@
 //! \file athena_fft.hpp
 //  \brief defines FFT class which implements parallel FFT using MPI/OpenMP
 
-// Athena++ classes headers
+// C/C++ headers
+#include <iostream>
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/meshblock_tree.hpp"
 
-#include <iostream>
+#ifdef FFT
+#include <fftw3.h>
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#include "plimpton/fft_3d.h"
+#include "plimpton/fft_2d.h"
+#endif // MPI_PARALLEL
+#endif
 
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
 
 #ifdef FFT
-#include "fftw3.h"
 typedef fftw_complex AthenaFFTComplex;
 
 #ifdef MPI_PARALLEL
-#include "mpi.h"
-#include "plimpton/fft_3d.h"
-#include "plimpton/fft_2d.h"
-typedef struct AthenaFFTPlan{
+typedef struct AthenaFFTPlan {
   struct fft_plan_3d *plan3d;
   struct fft_plan_2d *plan2d;
   fftw_plan plan;
@@ -36,7 +42,7 @@ typedef struct AthenaFFTPlan{
   int dim;
 } AthenaFFTPlan;
 #else // MPI_PARALLEL
-typedef struct AthenaFFTPlan{
+typedef struct AthenaFFTPlan {
   fftw_plan plan;
   int dir;
   int dim;
@@ -44,7 +50,7 @@ typedef struct AthenaFFTPlan{
 #endif // MPI_PARALLEL
 #else // FFT
 typedef Real AthenaFFTComplex[2];
-typedef struct AthenaFFTPlan{
+typedef struct AthenaFFTPlan {
   void *plan;
   int dir;
   int dim;
@@ -63,7 +69,7 @@ public:
   AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
   ~AthenaFFTIndex();
 
-  AthenaFFTIndex(const AthenaFFTIndex *psrc);
+  explicit AthenaFFTIndex(const AthenaFFTIndex *psrc);
 // mesh size
   Real Lx[3];
   int Nx[3];
@@ -130,13 +136,13 @@ public:
                             AthenaFFTComplex *data,
                             enum AthenaFFTDirection dir);
 
-  void ExecuteForward(void) {Execute(fplan_);};
-  void ExecuteBackward(void) {Execute(bplan_);};
+  void ExecuteForward(void) {Execute(fplan_);}
+  void ExecuteBackward(void) {Execute(bplan_);}
 
   void PrintSource(int in);
-  void PrintNormFactor(void) {std::cout << norm_factor_ << std::endl;};
+  void PrintNormFactor(void) {std::cout << norm_factor_ << std::endl;}
 
-  void SetNormFactor(Real norm) { norm_factor_=norm;};
+  void SetNormFactor(Real norm) { norm_factor_=norm;}
 
   int Nx[3], nx[3], disp[3];
   int kNx[3], knx[3], kdisp[3];
@@ -180,7 +186,7 @@ public:
   void QuickCreatePlan();
   void InitializeFFTBlock(bool set_norm);
 // small functions
-  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; };
+  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; }
 
   friend class FFTBlock;
   friend class Mesh;
@@ -213,4 +219,4 @@ namespace DecompositionNames{
 };
 #endif
 
-#endif // ATHENA_FFT_HPP
+#endif // FFT_ATHENA_FFT_HPP_

@@ -6,28 +6,30 @@
 //! \file mesh.cpp
 //  \brief implementation of functions in MeshBlock class
 
-// C/C++ headers
+// C headers
+#include <stdlib.h>
+#include <string.h>  // memcpy
+
+// C++ headers
+#include <algorithm>  // sort
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <algorithm>  // sort
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>  // memcpy
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../gravity/gravity.hpp"
-#include "../fft/athena_fft.hpp"
 #include "../bvals/bvals.hpp"
 #include "../bvals/bvals_grav.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
+#include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../gravity/gravity.hpp"
+#include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -40,7 +42,8 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag) {
+                     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
+                     int igflag, bool ref_flag) {
   std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
@@ -411,4 +414,3 @@ size_t MeshBlock::GetBlockSizeInBytes(void) {
 
   return size;
 }
-

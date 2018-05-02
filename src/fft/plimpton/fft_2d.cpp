@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "mpi.h"
+#include <mpi.h>
 #include "pack_2d.h"
 #include "remap_2d.h"
 #include "fft_2d.h"

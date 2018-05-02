@@ -1,5 +1,5 @@
-#ifndef TASK_LIST_HPP
-#define TASK_LIST_HPP
+#ifndef TASK_LIST_TASK_LIST_HPP_
+#define TASK_LIST_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,6 +9,7 @@
 //    \brief provides functionality to control dynamic execution using tasks
 
 #include <stdint.h>
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -57,7 +58,7 @@ class TaskState {
     indx_first_task = 0;
     num_tasks_left = ntasks;
     finished_tasks = 0LL;
-  };
+  }
 };
 
 
@@ -69,7 +70,7 @@ class TaskList {
 friend class TimeIntegratorTaskList;
 friend class GravitySolverTaskList;
 public:
-  TaskList(Mesh *pm);
+  explicit TaskList(Mesh *pm);
   virtual ~TaskList();
 
   // data
@@ -92,7 +93,7 @@ private:
 class TimeIntegratorTaskList : public TaskList {
 public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
-  ~TimeIntegratorTaskList() {};
+  ~TimeIntegratorTaskList() {}
 
   // data
   std::string integrator;
@@ -226,12 +227,11 @@ namespace HydroIntegratorTaskNames {
   const uint64_t RECV_EMFSH=1LL<<51;
   const uint64_t RECV_FLDSH=1LL<<52;
   const uint64_t RMAP_EMFSH=1LL<<53;
-
   //[diffusion
   const uint64_t DIFFUSE_HYD=1LL<<54;
   const uint64_t DIFFUSE_FLD=1LL<<55;
   const uint64_t CALC_DIFFUSIVITY=1LL<<56;
   //diffusion]
-};
+}; // namespace HydroIntegratorTaskNames
 
-#endif // TASK_LIST_HPP
+#endif // TASK_LIST_TASK_LIST_HPP_

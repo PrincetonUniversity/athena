@@ -45,8 +45,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
@@ -443,7 +443,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   // Calculate functions of conserved quantities
   Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
   d = std::max(d, 0.0);
-  Real pgas_min = cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
+  Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
   pgas_min = std::max(pgas_min, pgas_uniform_min);
 
   // Iterate until convergence
@@ -462,16 +462,16 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     // Step 2: Calculate correct root of cubic equation
     Real phi, eee, ll, v_sq;
     if (n%3 != 2) {
-      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                      // (NH 5.10)
-      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));                // (NH 5.11)
-      ll = eee - bb_sq;                                                        // (NH 5.5)
-      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll));  // (NH 5.2)
+      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
+      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
+      ll = eee - bb_sq;                                                       // (NH 5.5)
+      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
       v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
-      Real gamma_sq = 1.0/(1.0-v_sq);                                          // (NH 3.1)
-      Real gamma = std::sqrt(gamma_sq);                                        // (NH 3.1)
-      Real wgas = ll/gamma_sq;                                                 // (NH 5.1)
-      Real rho = dd/gamma;                                                     // (NH 4.5)
-      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);                // (NH 4.1)
+      Real gamma_sq = 1.0/(1.0-v_sq);                                         // (NH 3.1)
+      Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
+      Real wgas = ll/gamma_sq;                                                // (NH 5.1)
+      Real rho = dd/gamma;                                                    // (NH 4.5)
+      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);               // (NH 4.1)
       pgas[(n+1)%3] = std::max(pgas[(n+1)%3], pgas_min);
     }
 
@@ -555,7 +555,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma omp simd
+      //#pragma omp simd // fn is too long to inline
       for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }
@@ -769,10 +769,9 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         if (s2 < 0.0) {
           Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
           z0 = -2.0 * std::sqrt(q) * cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
-        } else
-        {
+        } else {
           Real s = std::sqrt(s2);
-          Real aa = -copysign(1.0, r) * cbrt(std::abs(r) + s);  // (NR 5.6.15)
+          Real aa = -copysign(1.0, r) * std::cbrt(std::abs(r) + s);  // (NR 5.6.15)
           Real bb = (aa != 0.0) ? q/aa : 0.0;                   // (NR 5.6.16)
           z0 = aa + bb - c2/3.0;
         }

@@ -36,7 +36,8 @@ TaskList::~TaskList() {
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts) {
+enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step,
+                                                  TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -60,8 +61,9 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
       }
       skip++; // increment number of tasks processed
 
-    } else if (skip==0) // this task is already done AND it is at the top of the list
+    } else if (skip==0) { // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
+    }
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
 }

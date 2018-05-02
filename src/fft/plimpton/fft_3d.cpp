@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include "mpi.h"
+#include <mpi.h>
 #include "pack_3d.h"
 #include "remap_3d.h"
 #include "fft_3d.h"

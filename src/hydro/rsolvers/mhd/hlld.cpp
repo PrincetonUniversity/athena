@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -26,6 +27,15 @@ typedef struct Cons1D {
 } Cons1D;
 
 #define SMALL_NUMBER 1.0e-8
+#if defined(__AVX512F__)
+#define SIMD_WIDTH 8
+#elif defined(__AVX__)
+#define SIMD_WIDTH 4
+#elif defined(__SSE2__)
+#define SIMD_WIDTH 2
+#else
+#define SIMD_WIDTH 4
+#endif
 
 //----------------------------------------------------------------------------------------
 //! \fn
@@ -36,6 +46,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
+
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
@@ -47,7 +58,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
@@ -72,10 +83,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // Compute L/R states for selected conserved variables
     Real bxsq = bxi*bxi;
-    Real pbl = 0.5*(bxsq + SQR(wli[IBY]) + SQR(wli[IBZ]));  // magnetic pressure (l/r)
-    Real pbr = 0.5*(bxsq + SQR(wri[IBY]) + SQR(wri[IBZ]));
-    Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    Real ker = 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    // (KGF): group transverse vector components for floating point associativity symmetry
+    Real pbl = 0.5*(bxsq + (SQR(wli[IBY]) + SQR(wli[IBZ])));  // magnetic pressure (l/r)
+    Real pbr = 0.5*(bxsq + (SQR(wri[IBY]) + SQR(wri[IBZ])));
+    Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + (SQR(wli[IVY]) + SQR(wli[IVZ])));
+    Real ker = 0.5*wri[IDN]*(SQR(wri[IVX]) + (SQR(wri[IVY]) + SQR(wri[IVZ])));
 
     ul.d  = wli[IDN];
     ul.mx = wli[IVX]*ul.d;
@@ -138,25 +150,35 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sdr = spd[4] - wri[IVX];
 
     // S_M: eqn (38) of Miyoshi & Kusano
-    spd[2] = (sdr*ur.mx - sdl*ul.mx - ptr + ptl)/(sdr*ur.d - sdl*ul.d);
+    // (KGF): group ptl, ptr terms for floating point associativity symmetry
+    spd[2] = (sdr*ur.mx - sdl*ul.mx + (ptl - ptr))/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
     Real sdmr   = spd[4] - spd[2];
+    Real sdml_inv = 1.0/sdml;
+    Real sdmr_inv = 1.0/sdmr;
     // eqn (43) of Miyoshi & Kusano
-    ulst.d = ul.d * sdl/sdml;
-    urst.d = ur.d * sdr/sdmr;
-    Real sqrtdl = sqrt(ulst.d);
-    Real sqrtdr = sqrt(urst.d);
+    ulst.d = ul.d * sdl * sdml_inv;
+    urst.d = ur.d * sdr * sdmr_inv;
+    Real ulst_d_inv = 1.0/ulst.d;
+    Real urst_d_inv = 1.0/urst.d;
+    Real sqrtdl = std::sqrt(ulst.d);
+    Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
     spd[1] = spd[2] - fabs(bxi)/sqrtdl;
     spd[3] = spd[2] + fabs(bxi)/sqrtdr;
 
 //--- Step 5.  Compute intermediate states
+    // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
+    // TODO(kfelker): place an assertion that ptstl==ptstr
+    Real ptstl = ptl + ul.d*sdl*(spd[2]-wli[IVX]);
+    Real ptstr = ptr + ur.d*sdr*(spd[2]-wri[IVX]);
+    // Real ptstl = ptl + ul.d*sdl*(sdl-sdml); // these equations had issues when averaged
+    // Real ptstr = ptr + ur.d*sdr*(sdr-sdmr);
+    Real ptst = 0.5*(ptstr + ptstl);  // total pressure (star state)
 
-    Real ptst = ptl + ul.d*sdl*(sdl-sdml);  // total pressure (star state)
-
-  // ul* - eqn (39) of M&K
+    // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
     if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
@@ -176,10 +198,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       ulst.by = ul.by * tmp;
       ulst.bz = ul.bz * tmp;
     }
-    Real vbstl=(ulst.mx*bxi+ulst.my*ulst.by+ulst.mz*ulst.bz)/ulst.d; // v_i* dot B_i*
+    // v_i* dot B_i*
+    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    Real vbstl = (ulst.mx*bxi+(ulst.my*ulst.by+ulst.mz*ulst.bz))*ulst_d_inv;
     // eqn (48) of M&K
+    // (KGF): group transverse by, bz terms for floating point associativity symmetry
     ulst.e = (sdl*ul.e - ptl*wli[IVX] + ptst*spd[2] +
-              bxi*(wli[IVX]*bxi + wli[IVY]*ul.by + wli[IVZ]*ul.bz - vbstl))/sdml;
+              bxi*(wli[IVX]*bxi + (wli[IVY]*ul.by + wli[IVZ]*ul.bz) - vbstl))*sdml_inv;
 
   // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
@@ -201,12 +226,14 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.by = ur.by * tmp;
       urst.bz = ur.bz * tmp;
     }
-    Real vbstr=(urst.mx*bxi+urst.my*urst.by+urst.mz*urst.bz)/urst.d; // v_i* dot B_i*
+    // v_i* dot B_i*
+    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    Real vbstr = (urst.mx*bxi+(urst.my*urst.by+urst.mz*urst.bz))*urst_d_inv;
     // eqn (48) of M&K
+    // (KGF): group transverse by, bz terms for floating point associativity symmetry
     urst.e = (sdr*ur.e - ptr*wri[IVX] + ptst*spd[2] +
-              bxi*(wri[IVX]*bxi + wri[IVY]*ur.by + wri[IVZ]*ur.bz - vbstr))/sdmr;
-
-  // ul** and ur** - if Bx is near zero, same as *-states
+              bxi*(wri[IVX]*bxi + (wri[IVY]*ur.by + wri[IVZ]*ur.bz) - vbstr))*sdmr_inv;
+    // ul** and ur** - if Bx is near zero, same as *-states
     if (0.5*bxsq < (SMALL_NUMBER)*ptst) {
       uldst = ulst;
       urdst = urst;
@@ -221,25 +248,25 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urdst.mx = urst.mx;
 
       // eqn (59) of M&K
-      Real tmp = invsumd*(sqrtdl*(ulst.my/ulst.d) + sqrtdr*(urst.my/urst.d) +
+      Real tmp = invsumd*(sqrtdl*(ulst.my*ulst_d_inv) + sqrtdr*(urst.my*urst_d_inv) +
                  bxsig*(urst.by - ulst.by));
       uldst.my = uldst.d * tmp;
       urdst.my = urdst.d * tmp;
 
       // eqn (60) of M&K
-      tmp = invsumd*(sqrtdl*(ulst.mz/ulst.d) + sqrtdr*(urst.mz/urst.d) +
+      tmp = invsumd*(sqrtdl*(ulst.mz*ulst_d_inv) + sqrtdr*(urst.mz*urst_d_inv) +
             bxsig*(urst.bz - ulst.bz));
       uldst.mz = uldst.d * tmp;
       urdst.mz = urdst.d * tmp;
 
       // eqn (61) of M&K
       tmp = invsumd*(sqrtdl*urst.by + sqrtdr*ulst.by +
-                     bxsig*sqrtdl*sqrtdr*((urst.my/urst.d) - (ulst.my/ulst.d)));
+                     bxsig*sqrtdl*sqrtdr*((urst.my*urst_d_inv) - (ulst.my*ulst_d_inv)));
       uldst.by = urdst.by = tmp;
 
       // eqn (62) of M&K
       tmp = invsumd*(sqrtdl*urst.bz + sqrtdr*ulst.bz +
-                     bxsig*sqrtdl*sqrtdr*((urst.mz/urst.d) - (ulst.mz/ulst.d)));
+                     bxsig*sqrtdl*sqrtdr*((urst.mz*urst_d_inv) - (ulst.mz*ulst_d_inv)));
       uldst.bz = urdst.bz = tmp;
 
       // eqn (63) of M&K
@@ -249,6 +276,37 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     }
 
 //--- Step 6.  Compute flux
+    uldst.d = spd[1] * (uldst.d - ulst.d);
+    uldst.mx = spd[1] * (uldst.mx - ulst.mx);
+    uldst.my = spd[1] * (uldst.my - ulst.my);
+    uldst.mz = spd[1] * (uldst.mz - ulst.mz);
+    uldst.e = spd[1] * (uldst.e - ulst.e);
+    uldst.by = spd[1] * (uldst.by - ulst.by);
+    uldst.bz = spd[1] * (uldst.bz - ulst.bz);
+
+    ulst.d = spd[0] * (ulst.d - ul.d);
+    ulst.mx = spd[0] * (ulst.mx - ul.mx);
+    ulst.my = spd[0] * (ulst.my - ul.my);
+    ulst.mz = spd[0] * (ulst.mz - ul.mz);
+    ulst.e = spd[0] * (ulst.e - ul.e);
+    ulst.by = spd[0] * (ulst.by - ul.by);
+    ulst.bz = spd[0] * (ulst.bz - ul.bz);
+
+    urdst.d = spd[3] * (urdst.d - urst.d);
+    urdst.mx = spd[3] * (urdst.mx - urst.mx);
+    urdst.my = spd[3] * (urdst.my - urst.my);
+    urdst.mz = spd[3] * (urdst.mz - urst.mz);
+    urdst.e = spd[3] * (urdst.e - urst.e);
+    urdst.by = spd[3] * (urdst.by - urst.by);
+    urdst.bz = spd[3] * (urdst.bz - urst.bz);
+
+    urst.d = spd[4] * (urst.d  - ur.d);
+    urst.mx = spd[4] * (urst.mx - ur.mx);
+    urst.my = spd[4] * (urst.my - ur.my);
+    urst.mz = spd[4] * (urst.mz - ur.mz);
+    urst.e = spd[4] * (urst.e - ur.e);
+    urst.by = spd[4] * (urst.by - ur.by);
+    urst.bz = spd[4] * (urst.bz - ur.bz);
 
     if (spd[0] >= 0.0) {
       // return Fl if flow is supersonic
@@ -270,42 +328,40 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBZ] = fr.bz;
     } else if (spd[1] >= 0.0) {
       // return Fl*
-      flxi[IDN] = fl.d  + spd[0]*(ulst.d  - ul.d);
-      flxi[IVX] = fl.mx + spd[0]*(ulst.mx - ul.mx);
-      flxi[IVY] = fl.my + spd[0]*(ulst.my - ul.my);
-      flxi[IVZ] = fl.mz + spd[0]*(ulst.mz - ul.mz);
-      flxi[IEN] = fl.e  + spd[0]*(ulst.e  - ul.e);
-      flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
-      flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
+      flxi[IDN] = fl.d  + ulst.d;
+      flxi[IVX] = fl.mx + ulst.mx;
+      flxi[IVY] = fl.my + ulst.my;
+      flxi[IVZ] = fl.mz + ulst.mz;
+      flxi[IEN] = fl.e  + ulst.e;
+      flxi[IBY] = fl.by + ulst.by;
+      flxi[IBZ] = fl.bz + ulst.bz;
     } else if (spd[2] >= 0.0) {
       // return Fl**
-      Real tmp = spd[1] - spd[0];
-      flxi[IDN] = fl.d  - spd[0]*ul.d  - tmp*ulst.d  + spd[1]*uldst.d;
-      flxi[IVX] = fl.mx - spd[0]*ul.mx - tmp*ulst.mx + spd[1]*uldst.mx;
-      flxi[IVY] = fl.my - spd[0]*ul.my - tmp*ulst.my + spd[1]*uldst.my;
-      flxi[IVZ] = fl.mz - spd[0]*ul.mz - tmp*ulst.mz + spd[1]*uldst.mz;
-      flxi[IEN] = fl.e  - spd[0]*ul.e  - tmp*ulst.e  + spd[1]*uldst.e;
-      flxi[IBY] = fl.by - spd[0]*ul.by - tmp*ulst.by + spd[1]*uldst.by;
-      flxi[IBZ] = fl.bz - spd[0]*ul.bz - tmp*ulst.bz + spd[1]*uldst.bz;
+      flxi[IDN] = fl.d  + ulst.d + uldst.d;
+      flxi[IVX] = fl.mx + ulst.mx + uldst.mx;
+      flxi[IVY] = fl.my + ulst.my + uldst.my;
+      flxi[IVZ] = fl.mz + ulst.mz + uldst.mz;
+      flxi[IEN] = fl.e  + ulst.e + uldst.e;
+      flxi[IBY] = fl.by + ulst.by + uldst.by;
+      flxi[IBZ] = fl.bz + ulst.bz + uldst.bz;
     } else if (spd[3] > 0.0) {
       // return Fr**
-      Real tmp = spd[3] - spd[4];
-      flxi[IDN] = fr.d  - spd[4]*ur.d  - tmp*urst.d  + spd[3]*urdst.d;
-      flxi[IVX] = fr.mx - spd[4]*ur.mx - tmp*urst.mx + spd[3]*urdst.mx;
-      flxi[IVY] = fr.my - spd[4]*ur.my - tmp*urst.my + spd[3]*urdst.my;
-      flxi[IVZ] = fr.mz - spd[4]*ur.mz - tmp*urst.mz + spd[3]*urdst.mz;
-      flxi[IEN] = fr.e  - spd[4]*ur.e  - tmp*urst.e  + spd[3]*urdst.e;
-      flxi[IBY] = fr.by - spd[4]*ur.by - tmp*urst.by + spd[3]*urdst.by;
-      flxi[IBZ] = fr.bz - spd[4]*ur.bz - tmp*urst.bz + spd[3]*urdst.bz;
+      flxi[IDN] = fr.d + urst.d + urdst.d;
+      flxi[IVX] = fr.mx + urst.mx + urdst.mx;
+      flxi[IVY] = fr.my + urst.my + urdst.my;
+      flxi[IVZ] = fr.mz + urst.mz + urdst.mz;
+      flxi[IEN] = fr.e + urst.e + urdst.e;
+      flxi[IBY] = fr.by + urst.by + urdst.by;
+      flxi[IBZ] = fr.bz + urst.bz + urdst.bz;
     } else {
       // return Fr*
-      flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
-      flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);
-      flxi[IVY] = fr.my + spd[4]*(urst.my - ur.my);
-      flxi[IVZ] = fr.mz + spd[4]*(urst.mz - ur.mz);
-      flxi[IEN] = fr.e  + spd[4]*(urst.e  - ur.e);
-      flxi[IBY] = fr.by + spd[4]*(urst.by - ur.by);
-      flxi[IBZ] = fr.bz + spd[4]*(urst.bz - ur.bz);
+      flxi[IDN] = fr.d  + urst.d;
+      flxi[IVX] = fr.mx + urst.mx;
+      flxi[IVY] = fr.my + urst.my;
+      flxi[IVZ] = fr.mz + urst.mz;
+      flxi[IEN] = fr.e  + urst.e;
+      flxi[IBY] = fr.by + urst.by;
+      flxi[IBZ] = fr.bz + urst.bz;
     }
 
     flx(IDN,k,j,i) = flxi[IDN];

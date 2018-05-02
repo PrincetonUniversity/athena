@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -54,8 +55,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  // Real gamma_adi = peos->GetGamma();
+  // Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
   Real num_x = pin->GetReal("problem", "num_x");
@@ -269,7 +270,7 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 //   distance function is Euclidean in Minkowski coordinates
 
 static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
-  Real distance;
+  Real distance = 0.0;
   if (COORDINATE_SYSTEM == "minkowski") {
     distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
   }

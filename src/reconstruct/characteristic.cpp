@@ -6,6 +6,9 @@
 //! \file characteristic.cpp
 //  \brief Functions to transform vectors between primitive and characteristic variables
 
+// C++ headers
+#include <cmath>
+
 // Athena++ headers
 #include "reconstruction.hpp"
 #include "../athena.hpp"
@@ -43,27 +46,31 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
-        Real sqrtd = sqrt(w(IDN,i));
+        Real sqrtd = std::sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
-        Real cf = sqrt(cfsq);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
 
-        Real cssq = asq*vaxsq/cfsq;
-        Real cs = sqrt(cssq);
+        cfsq *= id;
+        Real cf = std::sqrt(cfsq);
+
+        cssq *= id;
+        Real cs = std::sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = std::sqrt(asq);
 
         // Compute beta(s) (eq A17)
-        Real bt  = sqrt(btsq);
+        Real bt  = std::sqrt(btsq);
         Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
@@ -73,7 +80,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -83,8 +90,8 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else {
-          alpha_f = sqrt((asq - cssq)/(cfsq - cssq));
-          alpha_s = sqrt((cfsq - asq)/(cfsq - cssq));
+          alpha_f = std::sqrt((asq - cssq)/(cfsq - cssq));
+          alpha_s = std::sqrt((cfsq - asq)/(cfsq - cssq));
         }
 
         // Compute Q(s) and A(s) (eq. A14-15), etc.
@@ -130,25 +137,28 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
-        Real sqrtd = sqrt(w(IDN,i));
+        Real sqrtd = std::sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
-        Real cf = sqrt(cfsq);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
-        Real cs = sqrt(cssq);
+        cfsq *= id;
+        Real cf = std::sqrt(cfsq);
+
+        cssq *= id;
+        Real cs = std::sqrt(cssq);
 
         // Compute beta(s) (eq A17)
-        Real bt  = sqrt(btsq);
+        Real bt  = std::sqrt(btsq);
         Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
@@ -158,7 +168,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq-cssq) == 0.0) {
+        if ((cfsq-cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {
@@ -168,8 +178,8 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else {
-          alpha_f = sqrt((iso_cs2 - cssq)/(cfsq - cssq));
-          alpha_s = sqrt((cfsq - iso_cs2)/(cfsq - cssq));
+          alpha_f = std::sqrt((iso_cs2 - cssq)/(cfsq - cssq));
+          alpha_s = std::sqrt((cfsq - iso_cs2)/(cfsq - cssq));
         }
 
         // Compute Q(s) and A(s) (eq. A14-15), etc.
@@ -213,7 +223,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IPR,i)/w(IDN,i);
-        Real a   = sqrt(asq);
+        Real a   = std::sqrt(asq);
 
         // Multiply row of L-eigenmatrix with vector using matrix elements from eq. A4
         Real v_0 = 0.5*(vect(IPR,i)/asq - w(IDN,i)*vect(ivx,i)/a);
@@ -281,26 +291,30 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
-        Real sqrtd = sqrt(w(IDN,i));
+        Real sqrtd = std::sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
-        Real asq   = gamma*w(IPR,i)*id;
-        Real a = sqrt(asq);
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = gamma*w(IPR,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - asq;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*asq*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + asq + cf2_cs2);
-        Real cf = sqrt(cfsq);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
 
-        Real cssq = asq*vaxsq/cfsq;
-        Real cs = sqrt(cssq);
+        cfsq *= id;
+        Real cf = std::sqrt(cfsq);
+
+        cssq *= id;
+        Real cs = std::sqrt(cssq);
+
+        Real asq = gamp*id;
+        Real a = std::sqrt(asq);
 
         // Compute beta(s) (eq A17)
-        Real bt  = sqrt(btsq);
+        Real bt  = std::sqrt(btsq);
         Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
@@ -310,7 +324,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (asq - cssq) <= 0.0) {
@@ -320,8 +334,8 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else {
-          alpha_f = sqrt((asq - cssq)/(cfsq - cssq));
-          alpha_s = sqrt((cfsq - asq)/(cfsq - cssq));
+          alpha_f = std::sqrt((asq - cssq)/(cfsq - cssq));
+          alpha_s = std::sqrt((cfsq - asq)/(cfsq - cssq));
         }
 
         // Compute Q(s) and A(s) (eq. A14-15), etc.
@@ -364,24 +378,27 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
-        Real sqrtd = sqrt(w(IDN,i));
+        Real sqrtd = std::sqrt(w(IDN,i));
 
-        Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq*id;
-        Real vaxsq = b1(i)*b1(i)*id;
+        Real btsq = SQR(w(IBY,i)) + SQR(w(IBZ,i));
+        Real bxsq = b1(i)*b1(i);
+        Real gamp = iso_cs2*w(IDN,i);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
-        Real tdif = vaxsq + ct2 - iso_cs2;
-        Real cf2_cs2 = sqrt(tdif*tdif + 4.0*iso_cs2*ct2);
+        Real tdif = bxsq + btsq - gamp;
+        Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*gamp*btsq);
 
-        Real cfsq = 0.5*(vaxsq + ct2 + iso_cs2 + cf2_cs2);
-        Real cf = sqrt(cfsq);
+        Real cfsq = 0.5*(bxsq + btsq + gamp + cf2_cs2);
+        Real cssq = gamp*bxsq/cfsq;
 
-        Real cssq = iso_cs2*vaxsq/cfsq;
-        Real cs = sqrt(cssq);
+        cfsq *= id;
+        Real cf = std::sqrt(cfsq);
+
+        cssq *= id;
+        Real cs = std::sqrt(cssq);
 
         // Compute beta(s) (eq A17)
-        Real bt  = sqrt(btsq);
+        Real bt  = std::sqrt(btsq);
         Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
@@ -391,7 +408,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) == 0.0) {
+        if ((cfsq - cssq) <= 0.0) {
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else if ( (iso_cs2 - cssq) <= 0.0) {
@@ -401,8 +418,8 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else {
-          alpha_f = sqrt((iso_cs2 - cssq)/(cfsq - cssq));
-          alpha_s = sqrt((cfsq - iso_cs2)/(cfsq - cssq));
+          alpha_f = std::sqrt((iso_cs2 - cssq)/(cfsq - cssq));
+          alpha_s = std::sqrt((cfsq - iso_cs2)/(cfsq - cssq));
         }
 
         // Compute Q(s) and A(s) (eq. A14-15), etc.
@@ -444,7 +461,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IPR,i)/w(IDN,i);
-        Real a   = sqrt(asq);
+        Real a   = std::sqrt(asq);
 
         // Multiply row of R-eigenmatrix with vector using matrix elements from eq. A3
         // Components of vect() are addressed directly as they are input in permuted order

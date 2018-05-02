@@ -7,28 +7,28 @@
 //  \brief functions that apply BCs for gravitational potential
 
 // C++ headers
-#include <iostream>   // endl
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ classes headers
 #include "bvals_grav.hpp"
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../gravity/gravity.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
-#include "../gravity/gravity.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -39,7 +39,8 @@ class FFTBlock;
 class FFTDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb, enum BoundaryFlag *input_bcs)
+//! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb,
+//                                                   enum BoundaryFlag *input_bcs)
 //  \brief Constructor of the GravityBoundaryValues class
 
 GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
@@ -89,8 +90,8 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
         *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
         *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
 
-    bd.send[n]=new Real [size];
-    bd.recv[n]=new Real [size];
+    bd.send[n] = new Real[size];
+    bd.recv[n] = new Real[size];
   }
 }
 
@@ -218,8 +219,8 @@ void GravityBoundaryValues::ClearBoundaryGravity(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
-//                                                 Real *buf, const NeighborBlock& nb)
+//! \fn int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real>
+//                                 &src, Real *buf, const NeighborBlock& nb)
 //  \brief Set gravity boundary buffers for sending to a block on the same level
 
 int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
@@ -271,12 +272,13 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
     if (nb.rank == Globals::my_rank) { // on the same process
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
-    }
 #ifdef MPI_PARALLEL
-    else {// MPI
+    } else { // MPI
       tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
+    }
+#else
     }
 #endif
     pbd->sflag[nb.bufid] = BNDRY_COMPLETED;
@@ -329,17 +331,18 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
       if (nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
-      }
 #ifdef MPI_PARALLEL
-      else { // MPI boundary
+      } else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (test==false) {
+        if (static_cast<bool>(test)==false) {
           flag=false;
           continue;
         }
         pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+      }
+#else
       }
 #endif
     }

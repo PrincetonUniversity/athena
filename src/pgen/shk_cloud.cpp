@@ -19,6 +19,7 @@
 //========================================================================================
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -85,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   dl = dr*jump1;
   pl = pr*jump2;
-  ul = ur + jump3*mach*sqrt(gmma*pr/dr);
+  ul = ur + jump3*mach*std::sqrt(gmma*pr/dr);
 
   // Initialize the grid
   for (int k=ks; k<=ke; k++) {
@@ -109,7 +110,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // cloud interior
-    Real diag = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
+    Real diag = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j))
+                          + SQR(pcoord->x3v(k)));
     if (diag < rad) {
       phydro->u(IDN,k,j,i) = dr*drat;
       phydro->u(IM1,k,j,i) = ur*dr*drat;
@@ -121,10 +123,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize interface B, assuming longitudinal field only B=(1,0,0)
   if (MAGNETIC_FIELDS_ENABLED) {
-    Real bxr = sqrt(2.0/beta);
+    Real bxr = std::sqrt(2.0/beta);
     Real byr = 0.0;
     Real bzr = 0.0;
-    bxl = sqrt(2.0/beta);
+    bxl = std::sqrt(2.0/beta);
     byl = 0.0;
     bzl = 0.0;
 

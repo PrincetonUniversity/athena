@@ -25,23 +25,27 @@
 //  REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //
 //======================================================================================
-// C++ headers
-#include <iostream>   // cout, endl
+
+// C headers
 #include <stdlib.h>   // exit
+
+// C++ headers
+#include <cfloat>     // DBL_EPSILON
+#include <cmath>      // sqrt()
+#include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cfloat>     // DBL_EPSILON
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp" // ran2()
 
 
@@ -110,13 +114,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
-    iso_cs = sqrt((gm1+1.0)*p0/d0);
+    iso_cs = std::sqrt((gm1+1.0)*p0/d0);
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
   }
 
-  B0 = sqrt(static_cast<Real>(2.0*p0/beta));
+  B0 = std::sqrt(static_cast<Real>(2.0*p0/beta));
   std::cout << "iso_cs = " << iso_cs << std::endl;
   std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
@@ -163,9 +167,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rp = p0;
         rd = d0*(1.0+0.1*sin(static_cast<Real>(kx)*x1));
         if (NON_BAROTROPIC_EOS) {
-          rvx = amp*sqrt((gm1+1.0)*p0/d0);
+          rvx = amp*std::sqrt((gm1+1.0)*p0/d0);
         } else {
-          rvx = amp*sqrt(p0/d0);
+          rvx = amp*std::sqrt(p0/d0);
         }
       } else {
           std::cout << "[hb3.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
