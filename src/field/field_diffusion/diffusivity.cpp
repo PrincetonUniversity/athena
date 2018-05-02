@@ -29,8 +29,6 @@
 //
 //    ConstDiffusivity          - magnetic diffusivity with constant proportional
 //                                 coefficients (default choice)
-//    SetFieldDiffusivity       - compute the diffusivities using either ConsDiffusivity
-//                                or user-defined function(enroll in mesh)
 //    NewFieldDiffusionDt       - timestep constraint due to non-ideal MHD terms
 //    CalcCurrent               - calculate current density
 //
@@ -82,42 +80,6 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Set magnetic diffusion coefficients
-
-void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bc)
-{
-  MeshBlock *pmb = pmy_block;
-  int il = pmb->is-NGHOST; int jl = pmb->js; int kl = pmb->ks;
-  int iu = pmb->ie+NGHOST; int ju = pmb->je; int ku = pmb->ke;
-  if (pmb->block_size.nx2 > 1) {
-    jl -= NGHOST; ju += NGHOST;
-  }
-  if (pmb->block_size.nx3 > 1) {
-    kl -= NGHOST; ku += NGHOST;
-  }
-
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
-
-  for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
-    for (int j=jl; j<=ju; ++j){
-#pragma simd
-      for (int i=il; i<=iu; ++i){
-        Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
-        bmag_(k,j,i) = sqrt(Bsq);
-      }
-    }
-  }
-  // set diffusivities
-  CalcMagDiffCoeff_(this, w, bmag_, il, iu, jl, ju, kl, ku);
-
-} // end of omp parallel region
-
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 // Get the non-ideal MHD timestep

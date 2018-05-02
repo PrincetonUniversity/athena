@@ -126,7 +126,10 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &cons, AthenaArray<Real> *flux)
 {
 
-  Mesh *pm = pmb_->pmy_mesh;
+  Hydro *ph=pmb_->phydro;
+  Field *pf=pmb_->pfield;
+
+  SetHydroDiffusivity(ph->w,pf->bcc);
 
   if (coeff_nuiso > 0.0 || coeff_nuani > 0.0) ClearHydroFlux(visflx);
   if (coeff_nuiso > 0.0) ViscousFlux_iso(prim, cons, visflx);
@@ -135,6 +138,7 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
   if (coeff_kiso > 0.0 || coeff_kani > 0.0) ClearHydroFlux(cndflx);
   if (coeff_kiso > 0.0) ThermalFlux_iso(prim, cons, cndflx);
   if (coeff_kani > 0.0) ThermalFlux_aniso(prim, cons, cndflx);
+
 
   return;
 }

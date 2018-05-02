@@ -1361,8 +1361,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb=pmb_array[i]; phydro=pmb->phydro, pfield=pmb->pfield;
       if (phydro->phdif->hydro_diffusion_defined)
         phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
-      if (pfield->pfdif->field_diffusion_defined)
-        pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        if (pfield->pfdif->field_diffusion_defined)
+          pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+      }
     }
 //diffusion]
 

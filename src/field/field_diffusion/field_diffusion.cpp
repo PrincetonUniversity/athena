@@ -12,6 +12,7 @@
 #include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../field.hpp"
+#include "../../hydro/hydro.hpp"
 #include "../../parameter_input.hpp"
 
 // FieldDiffusion constructor
@@ -120,10 +121,13 @@ FieldDiffusion::~FieldDiffusion()
 void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
      const AthenaArray<Real> &bc, EdgeField &e)
 {
-  Field *pfield = pmy_block->pfield;
-  Mesh  *pm     = pmy_block->pmy_mesh;
+  Field *pf = pmy_block->pfield;
+  Hydro *ph = pmy_block->phydro;
+  Mesh  *pm = pmy_block->pmy_mesh;
 
   if((coeff_o==0.0) && (coeff_a==0.0)) return;
+
+  SetFieldDiffusivity(ph->w,pf->bcc);
 
   //CalcCurrent(pfield->b);
   CalcCurrent(bi);
@@ -189,6 +193,44 @@ void FieldDiffusion::ClearEMF(EdgeField &e)
 #pragma simd
   for (int i=0; i<size3; ++i)
     e.x3e(i) = 0.0;
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+// Set magnetic diffusion coefficients
+
+void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bc)
+{
+  MeshBlock *pmb = pmy_block;
+  int il = pmb->is-NGHOST; int jl = pmb->js; int kl = pmb->ks;
+  int iu = pmb->ie+NGHOST; int ju = pmb->je; int ku = pmb->ke;
+  if (pmb->block_size.nx2 > 1) {
+    jl -= NGHOST; ju += NGHOST;
+  }
+  if (pmb->block_size.nx3 > 1) {
+    kl -= NGHOST; ku += NGHOST;
+  }
+
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) num_threads(nthreads)
+{
+
+  for (int k=kl; k<=ku; ++k){
+#pragma omp for schedule(static)
+    for (int j=jl; j<=ju; ++j){
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
+        bmag_(k,j,i) = sqrt(Bsq);
+      }
+    }
+  }
+  // set diffusivities
+  CalcMagDiffCoeff_(this, w, bmag_, il, iu, jl, ju, kl, ku);
+
+} // end of omp parallel region
 
   return;
 }

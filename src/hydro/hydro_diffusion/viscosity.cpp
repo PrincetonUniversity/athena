@@ -342,15 +342,15 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
 {
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32f(j)
-               -prim(IM3,k,j-1,i)/pco_->h32f(j-1))/pco_->h2v(i)/pco_->dx2v(j-1)
+      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32v(j)
+               -prim(IM3,k,j-1,i)/pco_->h32v(j-1))/pco_->h2v(i)/pco_->dx2v(j-1)
                +0.5*(prim(IM2,k+1,j,i)+prim(IM2,k+1,j-1,i)
                -prim(IM2,k-1,j,i)-prim(IM2,k-1,j-1,i))/pco_->h31v(i)
                /pco_->h32f(j)/(pco_->dx3v(k-1)+pco_->dx3v(k));
     }
   } else if (pmb_->block_size.nx2 > 1) {
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32f(j)-prim(IM3,k,j-1,i)/pco_->h32f(j-1))
+      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32v(j)-prim(IM3,k,j-1,i)/pco_->h32v(j-1))
                /pco_->h2v(i)/pco_->dx2v(j-1);
     }
   } else {
@@ -411,12 +411,12 @@ void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int i
     for (int i=il; i<=iu; ++i){
       len(i) = 2.0*(prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pco_->dx3v(k-1)/pco_->h31v(i)/pco_->h32v(j)
                + (prim(IM1,k,j,i)+prim(IM1,k-1,j,i))*pco_->dh31vd1(i)/pco_->h31v(i) +
-                 (prim(IM2,k,j,i)+prim(IM2,k-1,j,i))*pco_->dh32vd2(j)/pco_->h32v(j);
+                 (prim(IM2,k,j,i)+prim(IM2,k-1,j,i))*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
     }
   } else {
     for (int i=il; i<=iu; ++i){
       len(i) = 2.0*prim(IM1,k,j,i)*pco_->dh31vd1(i)/pco_->h31v(i) +
-               2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)/pco_->h32v(j);
+               2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
     }
   }
   return;

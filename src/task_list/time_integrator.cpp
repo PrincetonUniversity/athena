@@ -294,11 +294,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //    } else {
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
 //    }
-//[diffusion
-    AddTimeIntegratorTask(CALC_DIFFUSIVITY,USERWORK);
-    //AddTimeIntegratorTask(NEW_DT,USERWORK);
-    AddTimeIntegratorTask(NEW_DT,CALC_DIFFUSIVITY);
-//diffusion]
+    AddTimeIntegratorTask(NEW_DT,USERWORK);
     if (pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
       AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
@@ -494,11 +490,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldDiffusion);
       break;
-    case (CALC_DIFFUSIVITY):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::CalcDiffusivity);
-      break;
+    //case (CALC_DIFFUSIVITY):
+    //  task_list_[ntasks].TaskFunc=
+    //    static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //    (&TimeIntegratorTaskList::CalcDiffusivity);
+    //  break;
     //diffusion]
 
     default:
@@ -698,32 +694,34 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
 
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro and field diffusion coefficients
-
-enum TaskStatus TimeIntegratorTaskList::CalcDiffusivity(MeshBlock *pmb, int step)
-{
-  Hydro *ph=pmb->phydro;
-  Field *pf=pmb->pfield;
-  Mesh  *pm=pmb->pmy_mesh;
-
-  bool do_hydro_diff=ph->phdif->hydro_diffusion_defined;
-  bool do_field_diff=pf->pfdif->field_diffusion_defined;
-
-  if (do_hydro_diff) {
-    if(step <= nsub_steps) {
-      ph->phdif->SetHydroDiffusivity(ph->w,pf->bcc);
-    } else {
-      return TASK_FAIL;
-    }
-  }
-  if (do_field_diff) {
-    if(step <= nsub_steps) {
-      pf->pfdif->SetFieldDiffusivity(ph->w,pf->bcc);
-    } else {
-      return TASK_FAIL;
-    }
-  }
-  return TASK_NEXT;
-}
+//
+//enum TaskStatus TimeIntegratorTaskList::CalcDiffusivity(MeshBlock *pmb, int step)
+//{
+//  Hydro *ph=pmb->phydro;
+//  Field *pf=pmb->pfield;
+//  Mesh  *pm=pmb->pmy_mesh;
+//
+//  bool do_hydro_diff=ph->phdif->hydro_diffusion_defined;
+//
+//  if (do_hydro_diff) {
+//    if(step <= nsub_steps) {
+//      ph->phdif->SetHydroDiffusivity(ph->w,pf->bcc);
+//    } else {
+//      return TASK_FAIL;
+//    }
+//  }
+//  if (MAGNETIC_FIELDS_ENABLED) {
+//    bool do_field_diff=pf->pfdif->field_diffusion_defined;
+//    if (do_field_diff) {
+//      if(step <= nsub_steps) {
+//        pf->pfdif->SetFieldDiffusivity(ph->w,pf->bcc);
+//      } else {
+//        return TASK_FAIL;
+//      }
+//    }
+//  }
+//  return TASK_NEXT;
+//}
 //diffusion]
 
 //----------------------------------------------------------------------------------------

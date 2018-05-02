@@ -12,10 +12,10 @@ import athena_read                             # utilities for reading Athena++ 
 from scipy.optimize import curve_fit
 
 def prepare(**kwargs):
-  athena.configure('b',
+  athena.configure(
       prob='linear_wave',
-      flux='hlld',
-      eos='adiabatic') #isothermal')
+      flux='hllc',
+      eos='adiabatic')
   athena.make()
 
 def run(**kwargs):
@@ -31,18 +31,17 @@ def run(**kwargs):
       'mesh/num_threads=1','mesh/refinement=none',
       'meshblock/nx1=64','meshblock/nx2=32','meshblock/nx3=32',
       'hydro/gamma=1.666666666666667', 'hydro/iso_sound_speed=1.0',
-      # L-going slow wave
-      'problem/compute_error=false','problem/wave_flag=2',
+      # L-going fast wave
+      'problem/compute_error=false','problem/wave_flag=0',
       'problem/amp=1.0e-4','problem/vflow=0.0',
-      'problem/nuiso=0.01','problem/coef_o=0.02','problem/kiso=0.02']
+      'problem/nuiso=0.00','problem/coef_o=0.00','problem/kiso=0.04']
   arguments = arguments0+['job/problem_id=DecayLinWave']
   athena.run('mhd/athinput.linear_wave3d', arguments)
 
 def analyze():
   ksqr = (2.0*np.pi)**2
-  # fast mode decay rate = (19\nu/4+3\eta+3(\gamma-1)^2*kappa/gamma/4)*(2/15)*k^2
-  # slow mode decay rate = (4\nu/+3\eta/4+3(\gamma-1)^2*kappa/gamma/4)*(2/15)*k^2
-  rate = 2.0*(4.0*0.01+3.0*0.02/4.0+0.02*4.0/5.0)/15.0*ksqr #(4nu/3+(gamma-1)^2/gamma*kappa)*k^2/2 decay rate of sound wave with thermal conduction
+  # decay rate = (19\nu/4+3\eta+3(\gamma-1)^2*kappa/gamma/4)*(2/15)*k^2
+  rate = 2.0*0.04/15.0*ksqr #(4nu/3+(gamma-1)^2/gamma*kappa)*k^2/2 decay rate of sound wave with thermal conduction
 
   basename='bin/DecayLinWave.block0.out2.'
   nframe = 101
