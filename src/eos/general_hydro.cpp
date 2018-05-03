@@ -22,32 +22,30 @@
 #if EOS_TABLE_ENABLED
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   SimplePres_ = NULL;
   SimpleEgas_ = NULL;
   AsqFromPres_ = NULL;
   AsqFromHint_ = NULL;
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
   // MSBC: tweak floor
   if (pin->DoesParameterExist("hydro","efloor")){
     energy_floor_ = pin->GetReal("hydro","efloor") * 1.5;
   }
   else{
-    energy_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
+    energy_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
     energy_floor_ /= pin->GetOrAddReal("hydro","gamma", 2.) - 1.;
   }
   GetEosFn = NULL;
   PrepEOS(pin);
-  pressure_floor_ = sqrt(-1);
-  gamma_ = sqrt(-1);
+  pressure_floor_ = std::sqrt(-1);
+  gamma_ = std::sqrt(-1);
 }
 
 // destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
   #if EOS_TABLE_ENABLED
   CleanEOS();
   #endif
@@ -60,7 +58,7 @@ void EquationOfState::EnrollSimpleAsq(SimpleEosFun_t func){AsqFromPres_ = func;}
 void EquationOfState::EnrollAsqFromHint(SimpleEosFun_t func){AsqFromHint_ = func;}
 
 // Ensure user EOS functions are set
-int EquationOfState::QueryEnrolled(){
+int EquationOfState::QueryEnrolled() {
   if (SimplePres_==NULL) throw std::runtime_error("Eos function 'SimplePres_' unset. This is usually set in 'InitUserMeshBlockData'");
   if (SimpleEgas_==NULL) throw std::runtime_error("Eos function 'SimpleEgas_' unset. This is usually set in 'InitUserMeshBlockData'");
   if (AsqFromPres_==NULL) throw std::runtime_error("Eos function 'AsqFromPres_' unset. This is usually set in 'InitUserMeshBlockData'");
@@ -72,17 +70,16 @@ int EquationOfState::QueryEnrolled(){
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //           const AthenaArray<Real> &prim_old, const FaceField &b,
 //           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke)
+//           int il, int iu, int jl, int ju, int kl, int ku)
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int is,int ie, int js,int je, int ks,int ke)
-{
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
+  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -120,19 +117,18 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke);
+//           int il, int iu, int jl, int ju, int kl, int ku);
 // \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
-{
+     int il, int iu, int jl, int ju, int kl, int ku) {
   #pragma omp simd
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
     //#pragma omp simd
     #pragma novector
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -160,9 +156,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
-{
-  return sqrt(GetEosData(prim[IDN], prim[IEN], axisPres, iASqEOS) * prim[IEN] / prim[IDN]);
+Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
+  return std::sqrt(GetEosData(prim[IDN], prim[IEN], axisPres, iASqEOS) * prim[IEN] / prim[IDN]);
 }
 #endif
 
@@ -176,4 +171,21 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint){
 
 Real EquationOfState::GetEgasFromRhoPres(Real rho, Real pres){
   return (*SimpleEgas_)(rho, pres, this);
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > energy_floor_) ?  w_p : pressure_floor_;
+
+  return;
 }
