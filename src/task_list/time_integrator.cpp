@@ -216,7 +216,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     // compute hydro fluxes, integrate hydro variables
     //[diffusion
     //AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
-    AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD));
+    AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD|DIFFUSE_FLD));
     //diffusion]
     if (pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
@@ -238,7 +238,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       //[diffusion
       //AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-      AddTimeIntegratorTask(CALC_FLDFLX,(DIFFUSE_FLD|CALC_HYDFLX));
+      ///AddTimeIntegratorTask(CALC_FLDFLX,(DIFFUSE_FLD|CALC_HYDFLX));
+      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
       //diffusion]
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
