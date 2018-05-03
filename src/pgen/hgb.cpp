@@ -17,7 +17,7 @@
 //- ifield = 1 - Bz=B0sin(kx*x1) field with zero-net-flux [default] (kx input)
 //- ifield = 2 - uniform Bz
 //- ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
-//- ifield = 4 - B=(0,B0/sqrt(2),B0/sqrt(2))= net toroidal+vertical field
+//- ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
 //- ifield = 5 - uniform By
 //
 //- ipert = 1 - random perturbations to P and V [default, used by HGB]
@@ -39,6 +39,7 @@
 
 
 // C/C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -122,7 +123,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Compute field strength based on beta.
   Real B0  = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
-    B0 = sqrt(static_cast<Real>(2.0*pres/beta));
+    B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
 
 // Ensure a different initial random seed for each meshblock.
   int64_t iseed = -1 - gid;
@@ -146,7 +147,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Rescale amp to sound speed for ipert 2,3
   if (NON_BAROTROPIC_EOS) {
     if (ipert == 2 || ipert == 3)
-      amp *= sqrt(gamma*pres/den);
+      amp *= std::sqrt(gamma*pres/den);
   } else {
     if (ipert == 2 || ipert == 3)
       amp *= iso_cs;
@@ -183,20 +184,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           rd = den; //den*(1.0 + 2.0*rval);
         }
         // Follow HGB: the perturbations to V/Cs are
-        // (1/5)amp/sqrt(gamma)
+        // (1/5)amp/std::sqrt(gamma)
         rval = amp*(ran2(&iseed) - 0.5);
-        rvx = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
-        //rvx = 0.4*rval*sqrt(pres/den);
+        rvx = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+        //rvx = 0.4*rval*std::sqrt(pres/den);
         SumRvx += rvx;
 
         rval = amp*(ran2(&iseed) - 0.5);
-        rvy = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
-        //rvy = 0.4*rval*sqrt(pres/den);
+        rvy = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+        //rvy = 0.4*rval*std::sqrt(pres/den);
         SumRvy += rvy;
 
         rval = amp*(ran2(&iseed) - 0.5);
-        rvz = (0.4/sqrt(3.0)) *rval*1e-3/sqrt(gamma);
-        //rvz = 0.4*rval*sqrt(pres/den);
+        rvz = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+        //rvz = 0.4*rval*std::sqrt(pres/den);
         SumRvz += rvz;
       }
       if (ipert == 2) {
@@ -233,7 +234,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rbz = -0.320324e-7;
         rbz *= cos(static_cast<Real>(kx*x1 + ky*x2 +
                                      kz*(x3-0.5*pcoord->dx3f(k)) - PI/4.));
-        rbz += (sqrt(15.0)/16.0)*(Omega_0/kz);
+        rbz += (std::sqrt(15.0)/16.0)*(Omega_0/kz);
       }
       if (ipert == 6) {
         ifield = 0;
@@ -284,7 +285,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // ifield = 1 - Bz=B0sin(x1) field with zero-net-flux[default]
 // ifield = 2 - uniform Bz
 // ifield = 3 - B=(0,B0cos(kx*x1),B0sin(kx*x1))=zero-net flux w helicity
-// ifield = 4 - B=(0,B0/sqrt(2),B0/sqrt(2))= net toroidal+vertical field
+// ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 0) {
           pfield->b.x1f(k,j,i) = rbx;
@@ -336,11 +337,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
         if (ifield == 4) {
           pfield->b.x1f(k,j,i) = 0.0;
-          pfield->b.x2f(k,j,i) = B0/sqrt(2);
-          pfield->b.x3f(k,j,i) = B0/sqrt(2);
+          pfield->b.x2f(k,j,i) = B0/std::sqrt(2);
+          pfield->b.x3f(k,j,i) = B0/std::sqrt(2);
           if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-          if (j==je) pfield->b.x2f(k,je+1,i) = B0/sqrt(2);
-          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0/sqrt(2);
+          if (j==je) pfield->b.x2f(k,je+1,i) = B0/std::sqrt(2);
+          if (k==ke) pfield->b.x3f(ke+1,j,i) = B0/std::sqrt(2);
         }
         if (ifield == 5) {
           pfield->b.x1f(k,j,i) = 0.0;

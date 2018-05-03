@@ -323,14 +323,14 @@ if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = 'g++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
   definitions['COMPILER_CHOICE'] = 'g++-simd' # gcc version > 4.9
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -fopenmp-simd -fwhole-program' \
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -fopenmp-simd -fwhole-program' \
                                        + ' -march=skylake-avx512 -flto'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
@@ -338,7 +338,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline' \
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -ipo -xhost -inline-forceinline' \
                                        + ' -qopenmp-simd -qopt-prefetch=4'
                                        #-qopt-zmm-usage=high'
   makefile_options['LINKER_FLAGS'] = ''
@@ -347,7 +347,7 @@ if args['cxx'] == 'cray':
   definitions['COMPILER_CHOICE'] = 'cray'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -h aggress -h vector3 -hfp3'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -h aggress -h vector3 -hfp3'
   makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
   makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'bgxl':
@@ -373,7 +373,7 @@ if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -381,7 +381,7 @@ if args['cxx'] == 'clang++':
   definitions['COMPILER_CHOICE'] = 'clang++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -560,6 +560,7 @@ print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  Precision:               ' + ('single' if args['float'] else 'double'))
+print('  Number of ghost cells:   ' + args['nghost'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))

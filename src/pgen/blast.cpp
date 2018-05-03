@@ -83,17 +83,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real x = pcoord->x1v(i);
       Real y = pcoord->x2v(j);
       Real z = pcoord->x3v(k);
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
     } else if (COORDINATE_SYSTEM == "cylindrical") {
       Real x = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j));
       Real z = pcoord->x3v(k);
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
     } else { // if (COORDINATE_SYSTEM == "spherical_polar")
       Real x = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::cos(pcoord->x3v(k));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::sin(pcoord->x3v(k));
       Real z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
-      rad = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
     }
 
     Real den = da;

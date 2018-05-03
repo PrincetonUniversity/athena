@@ -45,8 +45,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
@@ -443,7 +443,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   // Calculate functions of conserved quantities
   Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
   d = std::max(d, 0.0);
-  Real pgas_min = cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
+  Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
   pgas_min = std::max(pgas_min, pgas_uniform_min);
 
   // Iterate until convergence
@@ -771,7 +771,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
           z0 = -2.0 * std::sqrt(q) * cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
         } else {
           Real s = std::sqrt(s2);
-          Real aa = -copysign(1.0, r) * cbrt(std::abs(r) + s);  // (NR 5.6.15)
+          Real aa = -copysign(1.0, r) * std::cbrt(std::abs(r) + s);  // (NR 5.6.15)
           Real bb = (aa != 0.0) ? q/aa : 0.0;                   // (NR 5.6.16)
           z0 = aa + bb - c2/3.0;
         }

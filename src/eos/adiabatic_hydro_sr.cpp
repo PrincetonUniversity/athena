@@ -29,8 +29,8 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
@@ -138,9 +138,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           // Step 4: Find real root of new cubic
           Real y0;
           if (c3 >= 0.0) {
-            y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
+            y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
           } else {
-            y0 = 2.0 * cbrt(SQR(c2) + c3)
+            y0 = 2.0 * std::cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
           }
 

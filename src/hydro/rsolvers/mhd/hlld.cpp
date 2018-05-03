@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -45,6 +46,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
+
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
@@ -81,10 +83,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // Compute L/R states for selected conserved variables
     Real bxsq = bxi*bxi;
-    Real pbl = 0.5*(bxsq + SQR(wli[IBY]) + SQR(wli[IBZ]));  // magnetic pressure (l/r)
-    Real pbr = 0.5*(bxsq + SQR(wri[IBY]) + SQR(wri[IBZ]));
-    Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    Real ker = 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    // (KGF): group transverse vector components for floating point associativity symmetry
+    Real pbl = 0.5*(bxsq + (SQR(wli[IBY]) + SQR(wli[IBZ])));  // magnetic pressure (l/r)
+    Real pbr = 0.5*(bxsq + (SQR(wri[IBY]) + SQR(wri[IBZ])));
+    Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + (SQR(wli[IVY]) + SQR(wli[IVZ])));
+    Real ker = 0.5*wri[IDN]*(SQR(wri[IVX]) + (SQR(wri[IVY]) + SQR(wri[IVZ])));
 
     ul.d  = wli[IDN];
     ul.mx = wli[IVX]*ul.d;
@@ -147,7 +150,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sdr = spd[4] - wri[IVX];
 
     // S_M: eqn (38) of Miyoshi & Kusano
-    spd[2] = (sdr*ur.mx - sdl*ul.mx - ptr + ptl)/(sdr*ur.d - sdl*ul.d);
+    // (KGF): group ptl, ptr terms for floating point associativity symmetry
+    spd[2] = (sdr*ur.mx - sdl*ul.mx + (ptl - ptr))/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
     Real sdmr   = spd[4] - spd[2];
@@ -158,18 +162,23 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     urst.d = ur.d * sdr * sdmr_inv;
     Real ulst_d_inv = 1.0/ulst.d;
     Real urst_d_inv = 1.0/urst.d;
-    Real sqrtdl = sqrt(ulst.d);
-    Real sqrtdr = sqrt(urst.d);
+    Real sqrtdl = std::sqrt(ulst.d);
+    Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
     spd[1] = spd[2] - fabs(bxi)/sqrtdl;
     spd[3] = spd[2] + fabs(bxi)/sqrtdr;
 
 //--- Step 5.  Compute intermediate states
+    // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
+    // TODO(kfelker): place an assertion that ptstl==ptstr
+    Real ptstl = ptl + ul.d*sdl*(spd[2]-wli[IVX]);
+    Real ptstr = ptr + ur.d*sdr*(spd[2]-wri[IVX]);
+    // Real ptstl = ptl + ul.d*sdl*(sdl-sdml); // these equations had issues when averaged
+    // Real ptstr = ptr + ur.d*sdr*(sdr-sdmr);
+    Real ptst = 0.5*(ptstr + ptstl);  // total pressure (star state)
 
-    Real ptst = ptl + ul.d*sdl*(sdl-sdml);  // total pressure (star state)
-
-  // ul* - eqn (39) of M&K
+    // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
     if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
@@ -189,10 +198,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       ulst.by = ul.by * tmp;
       ulst.bz = ul.bz * tmp;
     }
-    Real vbstl=(ulst.mx*bxi+ulst.my*ulst.by+ulst.mz*ulst.bz)*ulst_d_inv; // v_i* dot B_i*
+    // v_i* dot B_i*
+    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    Real vbstl = (ulst.mx*bxi+(ulst.my*ulst.by+ulst.mz*ulst.bz))*ulst_d_inv;
     // eqn (48) of M&K
+    // (KGF): group transverse by, bz terms for floating point associativity symmetry
     ulst.e = (sdl*ul.e - ptl*wli[IVX] + ptst*spd[2] +
-              bxi*(wli[IVX]*bxi + wli[IVY]*ul.by + wli[IVZ]*ul.bz - vbstl))*sdml_inv;
+              bxi*(wli[IVX]*bxi + (wli[IVY]*ul.by + wli[IVZ]*ul.bz) - vbstl))*sdml_inv;
 
   // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
@@ -214,12 +226,14 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.by = ur.by * tmp;
       urst.bz = ur.bz * tmp;
     }
-    Real vbstr=(urst.mx*bxi+urst.my*urst.by+urst.mz*urst.bz)*urst_d_inv; // v_i* dot B_i*
+    // v_i* dot B_i*
+    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    Real vbstr = (urst.mx*bxi+(urst.my*urst.by+urst.mz*urst.bz))*urst_d_inv;
     // eqn (48) of M&K
+    // (KGF): group transverse by, bz terms for floating point associativity symmetry
     urst.e = (sdr*ur.e - ptr*wri[IVX] + ptst*spd[2] +
-              bxi*(wri[IVX]*bxi + wri[IVY]*ur.by + wri[IVZ]*ur.bz - vbstr))*sdmr_inv;
-
-  // ul** and ur** - if Bx is near zero, same as *-states
+              bxi*(wri[IVX]*bxi + (wri[IVY]*ur.by + wri[IVZ]*ur.bz) - vbstr))*sdmr_inv;
+    // ul** and ur** - if Bx is near zero, same as *-states
     if (0.5*bxsq < (SMALL_NUMBER)*ptst) {
       uldst = ulst;
       urdst = urst;

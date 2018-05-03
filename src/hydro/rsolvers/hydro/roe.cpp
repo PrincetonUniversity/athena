@@ -67,8 +67,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
     wroe[IDN]  = sqrtdl*sqrtdr;
@@ -338,7 +338,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
     Real asq = (q < 0.0) ? 0.0 : gm1*q;
-    Real a = sqrt(asq);
+    Real a = std::sqrt(asq);
 
     // Compute eigenvalues (eq. B2)
     eigenvalues[0] = v1 - a;

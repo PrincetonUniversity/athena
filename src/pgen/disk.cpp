@@ -160,7 +160,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
   Real p_over_r = p0_over_r0;
   if (NON_BAROTROPIC_EOS) p_over_r = PoverR(rad, phi, z);
   Real denmid = rho0*pow(rad/r0,dslope);
-  Real dentem = denmid*exp(gm0/p_over_r*(1./sqrt(SQR(rad)+SQR(z))-1./rad));
+  Real dentem = denmid*exp(gm0/p_over_r*(1./std::sqrt(SQR(rad)+SQR(z))-1./rad));
   den = dentem;
   return std::max(den,dfloor);
 }
@@ -181,8 +181,8 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
                           Real &v1, Real &v2, Real &v3) {
   Real p_over_r = PoverR(rad, phi, z);
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
-             - pslope*rad/sqrt(rad*rad+z*z);
-  vel = sqrt(gm0/rad)*sqrt(vel);
+             - pslope*rad/std::sqrt(rad*rad+z*z);
+  vel = std::sqrt(gm0/rad)*std::sqrt(vel);
   if (COORDINATE_SYSTEM == "cylindrical") {
     v1=0.0;
     v2=vel;

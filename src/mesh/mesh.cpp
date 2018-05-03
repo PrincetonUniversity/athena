@@ -9,6 +9,7 @@
 // C headers
 #include <stdlib.h>
 #include <string.h>  // memcpy
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h> // int64_t format macro PRId64
 
 // C++ headers
@@ -58,7 +59,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   RegionSize block_size;
   MeshBlock *pfirst;
   enum BoundaryFlag block_bcs[6];
-  int nbmax, dim;
+  int64_t nbmax;
+  int dim;
 
   // mesh test
   if (mesh_test>0) Globals::nranks=mesh_test;
@@ -179,43 +181,50 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     block_size.nx3=mesh_size.nx3;
 
   // check consistency of the block and mesh
-  if (mesh_size.nx1%block_size.nx1 != 0
-  || mesh_size.nx2%block_size.nx2 != 0
-  || mesh_size.nx3%block_size.nx3 != 0) {
+  if (mesh_size.nx1 % block_size.nx1 != 0
+  || mesh_size.nx2 % block_size.nx2 != 0
+  || mesh_size.nx3 % block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (block_size.nx1 <4 || (block_size.nx2<4 && dim>=2)
-     || (block_size.nx3<4 && dim==3)) {
+  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
+     || (block_size.nx3 < 4 && dim==3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 meshes." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
   // calculate the number of the blocks
-  nrbx1=mesh_size.nx1/block_size.nx1;
-  nrbx2=mesh_size.nx2/block_size.nx2;
-  nrbx3=mesh_size.nx3/block_size.nx3;
-  nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
-  nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
+  nrbx1 = mesh_size.nx1/block_size.nx1;
+  nrbx2 = mesh_size.nx2/block_size.nx2;
+  nrbx3 = mesh_size.nx3/block_size.nx3;
+  nbmax = (nrbx1>nrbx2) ? nrbx1:nrbx2;
+  nbmax = (nbmax>nrbx3) ? nbmax:nrbx3;
 
-  //initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0)
-    use_meshgen_fn_[X1DIR]=true;
-  else
-    use_meshgen_fn_[X1DIR]=false;
-  if (mesh_size.x2rat!=1.0)
-    use_meshgen_fn_[X2DIR]=true;
-  else
-    use_meshgen_fn_[X2DIR]=false;
-  if (mesh_size.x3rat!=1.0)
-    use_meshgen_fn_[X3DIR]=true;
-  else
-    use_meshgen_fn_[X3DIR]=false;
-  MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
-  MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
-  MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  // initialize user-enrollable functions
+  if (mesh_size.x1rat!=1.0) {
+    use_uniform_meshgen_fn_[X1DIR]=false;
+    MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
+  } else {
+    use_uniform_meshgen_fn_[X1DIR]=true;
+    MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
+  }
+  if (mesh_size.x2rat!=1.0) {
+    use_uniform_meshgen_fn_[X2DIR]=false;
+    MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
+  } else {
+    use_uniform_meshgen_fn_[X2DIR]=true;
+    MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
+  }
+  if (mesh_size.x3rat!=1.0) {
+    use_uniform_meshgen_fn_[X3DIR]=false;
+    MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  } else {
+    use_uniform_meshgen_fn_[X3DIR]=true;
+    MeshGenerator_[X3DIR]=UniformMeshGeneratorX3;
+  }
+
   for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
@@ -258,8 +267,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   InitUserMeshData(pin);
 
   if (multilevel==true) {
-    if (block_size.nx1%2==1 || (block_size.nx2%2==1 && block_size.nx2>1)
-                           || (block_size.nx3%2==1 && block_size.nx3>1)) {
+    if (block_size.nx1 % 2==1 || (block_size.nx2 % 2==1 && block_size.nx2>1)
+                           || (block_size.nx3 % 2==1 && block_size.nx3>1)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
       << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
       << std::endl;
@@ -320,46 +329,46 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
         int64_t lxmax=nrbx1*(1L<<ref_lev);
         for (lx1min=0;lx1min<lxmax;lx1min++) {
-          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1min+1)/lxmax,mesh_size)
-              > ref_size.x1min)
+          Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
             break;
         }
         for (lx1max=lx1min;lx1max<lxmax;lx1max++) {
-          if (MeshGenerator_[X1DIR](static_cast<Real>(lx1max+1)/lxmax,mesh_size)
-              >= ref_size.x1max)
+          Real rx=ComputeMeshGeneratorX(lx1max+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          if (MeshGenerator_[X1DIR](rx, mesh_size) >= ref_size.x1max)
             break;
         }
-        if (lx1min%2==1) lx1min--;
-        if (lx1max%2==0) lx1max++;
+        if (lx1min % 2==1) lx1min--;
+        if (lx1max % 2==0) lx1max++;
         if (dim>=2) { // 2D or 3D
           lxmax=nrbx2*(1L<<ref_lev);
           for (lx2min=0;lx2min<lxmax;lx2min++) {
-            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2min+1)/lxmax,mesh_size)
-                > ref_size.x2min)
+            Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
               break;
           }
           for (lx2max=lx2min;lx2max<lxmax;lx2max++) {
-            if (MeshGenerator_[X2DIR](static_cast<Real>(lx2max+1)/lxmax,mesh_size)
-                >= ref_size.x2max)
+            Real rx=ComputeMeshGeneratorX(lx2max+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            if (MeshGenerator_[X2DIR](rx, mesh_size) >= ref_size.x2max)
               break;
           }
-          if (lx2min%2==1) lx2min--;
-          if (lx2max%2==0) lx2max++;
+          if (lx2min % 2==1) lx2min--;
+          if (lx2max % 2==0) lx2max++;
         }
         if (dim==3) { // 3D
           lxmax=nrbx3*(1L<<ref_lev);
           for (lx3min=0;lx3min<lxmax;lx3min++) {
-            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3min+1)/lxmax,mesh_size)
-                > ref_size.x3min)
+            Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
               break;
           }
           for (lx3max=lx3min;lx3max<lxmax;lx3max++) {
-            if (MeshGenerator_[X3DIR](static_cast<Real>(lx3max+1)/lxmax,mesh_size)
-                >= ref_size.x3max)
+            Real rx=ComputeMeshGeneratorX(lx3max+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            if (MeshGenerator_[X3DIR](rx, mesh_size) >= ref_size.x3max)
               break;
           }
-          if (lx3min%2==1) lx3min--;
-          if (lx3max%2==0) lx3max++;
+          if (lx3min % 2==1) lx3min--;
+          if (lx3max % 2==0) lx3max++;
         }
         // create the finest level
         if (dim==1) {
@@ -590,22 +599,29 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   nrbx2=mesh_size.nx2/block_size.nx2;
   nrbx3=mesh_size.nx3/block_size.nx3;
 
-  //initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0)
-    use_meshgen_fn_[X1DIR]=true;
-  else
-    use_meshgen_fn_[X1DIR]=false;
-  if (mesh_size.x2rat!=1.0)
-    use_meshgen_fn_[X2DIR]=true;
-  else
-    use_meshgen_fn_[X2DIR]=false;
-  if (mesh_size.x3rat!=1.0)
-    use_meshgen_fn_[X3DIR]=true;
-  else
-    use_meshgen_fn_[X3DIR]=false;
-  MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
-  MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
-  MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  // initialize user-enrollable functions
+  if (mesh_size.x1rat!=1.0) {
+    use_uniform_meshgen_fn_[X1DIR]=false;
+    MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
+  } else {
+    use_uniform_meshgen_fn_[X1DIR]=true;
+    MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
+  }
+  if (mesh_size.x2rat!=1.0) {
+    use_uniform_meshgen_fn_[X2DIR]=false;
+    MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
+  } else {
+    use_uniform_meshgen_fn_[X2DIR]=true;
+    MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
+  }
+  if (mesh_size.x3rat!=1.0) {
+    use_uniform_meshgen_fn_[X3DIR]=false;
+    MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+  } else {
+    use_uniform_meshgen_fn_[X3DIR]=true;
+    MeshGenerator_[X3DIR]=UniformMeshGeneratorX3;
+  }
+
   for (int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
@@ -772,7 +788,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     throw std::runtime_error(msg.str().c_str());
   }
   for (i=nbs;i<=nbe;i++) {
-    int buff_os = datasize * (i-nbs);
+    // Match fixed-width integer precision of IOWrapperSize_t datasize
+    uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if (i==nbs) {
@@ -1058,7 +1075,7 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
         " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  use_meshgen_fn_[dir]=true;
+  use_uniform_meshgen_fn_[dir]=false;
   MeshGenerator_[dir]=my_mg;
   return;
 }
@@ -1307,20 +1324,20 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     time, 0.0);
 
-      int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-      if (pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
-      if (pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
+      int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+      if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
+      if (pbval->nblevel[1][1][2]!=-1) iu+=NGHOST;
       if (pmb->block_size.nx2 > 1) {
-        if (pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
-        if (pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
+        if (pbval->nblevel[1][0][1]!=-1) jl-=NGHOST;
+        if (pbval->nblevel[1][2][1]!=-1) ju+=NGHOST;
       }
       if (pmb->block_size.nx3 > 1) {
-        if (pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
-        if (pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
+        if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
+        if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
       }
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
-                                      is, ie, js, je, ks, ke);
+                                      il, iu, jl, ju, kl, ku);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
     }
@@ -1450,20 +1467,22 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   int64_t &lx2=loc.lx2;
   int64_t &lx3=loc.lx3;
   int &ll=loc.level;
+  int64_t nrbx_ll = nrbx1<<(ll-root_level);
+
   // calculate physical block size, x1
   if (lx1==0) {
     block_size.x1min=mesh_size.x1min;
     block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1)/static_cast<Real>(nrbx1<<(ll-root_level));
+    Real rx = ComputeMeshGeneratorX(lx1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
   }
-  if (lx1==(nrbx1<<(ll-root_level))-1) {
+  if (lx1==nrbx_ll-1) {
     block_size.x1max=mesh_size.x1max;
     block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
   } else {
-    Real rx=static_cast<Real>(lx1+1)/static_cast<Real>(nrbx1<<(ll-root_level));
+    Real rx = ComputeMeshGeneratorX(lx1+1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
   }
@@ -1475,19 +1494,20 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
   } else {
+    nrbx_ll = nrbx2<<(ll-root_level);
     if (lx2==0) {
       block_size.x2min=mesh_size.x2min;
       block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2)/static_cast<Real>(nrbx2<<(ll-root_level));
+      Real rx = ComputeMeshGeneratorX(lx2, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
     }
-    if (lx2==(nrbx2<<(ll-root_level))-1) {
+    if (lx2==(nrbx_ll)-1) {
       block_size.x2max=mesh_size.x2max;
       block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
     } else {
-      Real rx=static_cast<Real>(lx2+1)/static_cast<Real>(nrbx2<<(ll-root_level));
+      Real rx = ComputeMeshGeneratorX(lx2+1, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
     }
@@ -1500,19 +1520,20 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
   } else {
+    nrbx_ll = nrbx3<<(ll-root_level);
     if (lx3==0) {
       block_size.x3min=mesh_size.x3min;
       block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3)/static_cast<Real>(nrbx3<<(ll-root_level));
+      Real rx = ComputeMeshGeneratorX(lx3, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
     }
-    if (lx3==(nrbx3<<(ll-root_level))-1) {
+    if (lx3==(nrbx_ll)-1) {
       block_size.x3max=mesh_size.x3max;
       block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
     } else {
-      Real rx=static_cast<Real>(lx3+1)/static_cast<Real>(nrbx3<<(ll-root_level));
+      Real rx = ComputeMeshGeneratorX(lx3+1, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }

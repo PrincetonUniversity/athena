@@ -30,8 +30,9 @@
 FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   pmy_mesh_=pm;
 
-  if (pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
-  || pm->use_meshgen_fn_[X3DIR]==true) {
+  if (pm->use_uniform_meshgen_fn_[X1DIR]==false
+      || pm->use_uniform_meshgen_fn_[X2DIR]==false
+      || pm->use_uniform_meshgen_fn_[X3DIR]==false) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
@@ -136,20 +137,19 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
 #ifdef MPI_PARALLEL
-  {using namespace DecompositionNames;
   decomp_ = 0; pdim_ = 0;
   if (npx1 > 1) {
-    decomp_ = decomp_ | x_decomp;
+    decomp_ = decomp_ | DecompositionNames::x_decomp;
     pdim_++;
   }
   if (npx2 > 1) {
-    decomp_ = decomp_ | y_decomp;
+    decomp_ = decomp_ | DecompositionNames::y_decomp;
     pdim_++;
   }
   if (npx3 > 1) {
-    decomp_ = decomp_ | z_decomp;
+    decomp_ = decomp_ | DecompositionNames::z_decomp;
     pdim_++;
-  }}
+  }
 #endif
 
 }

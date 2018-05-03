@@ -58,11 +58,11 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         bx(i) = bcc(IB1,k,j,i);
-    
+
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
         wc(IBY,i) = bcc(IB2,k,j,i);
-    
+
         dwl(IBZ,i) = (bcc(IB3,k,j,i  ) - bcc(IB3,k,j,i-1));
         dwr(IBZ,i) = (bcc(IB3,k,j,i+1) - bcc(IB3,k,j,i  ));
         wc(IBZ,i) = bcc(IB3,k,j,i);
@@ -160,11 +160,11 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB2,k,j,i);
-      
+
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
         wc(IBY,i) = bcc(IB3,k,j,i);
-      
+
         dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
         dwr(IBZ,i) = (bcc(IB1,k,j+1,i) - bcc(IB1,k,j  ,i));
         wc(IBZ,i) = bcc(IB1,k,j,i);
@@ -260,11 +260,11 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB3,k,j,i);
-      
+
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
         wc(IBY,i) = bcc(IB1,k,j,i);
-      
+
         dwl(IBZ,i) = (bcc(IB2,k  ,j,i) - bcc(IB2,k-1,j,i));
         dwr(IBZ,i) = (bcc(IB2,k+1,j,i) - bcc(IB2,k  ,j,i));
         wc(IBZ,i) = bcc(IB2,k,j,i);

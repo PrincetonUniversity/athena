@@ -83,7 +83,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             Real x = pcoord->x1v(i);
             Real y = pcoord->x2v(j);
             Real z = pcoord->x3v(k);
-            r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+            r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
           }
           src(k,j,i)= std::exp(-r2);
         }
@@ -140,7 +140,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
-        r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+        r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
       }
       src(k,j,i) = std::exp(-r2);
     }}}
