@@ -575,6 +575,7 @@ print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  Precision:               ' + ('single' if args['float'] else 'double'))
+print('  Number of ghost cells:   ' + args['nghost'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))

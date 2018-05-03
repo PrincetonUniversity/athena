@@ -126,6 +126,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
+  // If cos_a2 or cos_a3 = 0, need to override lambda
+  if (ang_3_vert == true)
+    lambda = x2;
+  if (ang_2_vert == true)
+    lambda = x3;
+
   // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
 
