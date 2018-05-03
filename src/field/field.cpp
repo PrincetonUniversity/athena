@@ -121,6 +121,12 @@ Field::~Field() {
 
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
+  // Defer to Reconstruction class to check if uniform Cartesian formula can be used
+  // (unweighted average)
+  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[0];
+  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[1];
+  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[2];
+
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
     // calc cell centered fields first
@@ -139,8 +145,7 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
         Real lw, rw; // linear interpolation coefficients from lower and upper cell faces
 
         // cell center B-fields are defined as spatial interpolation at the volume center
-        // Defer to Reconstruction class to check if uniform Cartesian formula can be used
-        if (pmy_block->precon->uniform_limiter[0] == true) {
+        if (uniform_ave_x1 == true) {
           lw = 0.5;
           rw = 0.5;
         } else {
@@ -153,7 +158,7 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
         }
         bcc1 = lw*b1_i + rw*b1_ip1;
 
-        if (pmy_block->precon->uniform_limiter[1] == true) {
+        if (uniform_ave_x2 == true) {
           lw = 0.5;
           rw = 0.5;
         } else {
@@ -165,7 +170,7 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
           rw = (x2v_j  - x2f_j)/dx2_j;
         }
         bcc2 = lw*b2_j + rw*b2_jp1;
-        if (pmy_block->precon->uniform_limiter[2] == true) {
+        if (uniform_ave_x3 == true) {
           lw = 0.5;
           rw = 0.5;
         } else {
