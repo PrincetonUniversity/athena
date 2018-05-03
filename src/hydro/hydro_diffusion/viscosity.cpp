@@ -441,7 +441,7 @@ void ConstViscosity(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
   if (phdif->coeff_nuiso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           phdif->nu(ISO,k,j,i) = phdif->coeff_nuiso;
       }
@@ -450,7 +450,7 @@ void ConstViscosity(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
   if (phdif->coeff_nuani > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           phdif->nu(ANI,k,j,i) = phdif->coeff_nuani;
       }

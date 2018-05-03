@@ -118,7 +118,7 @@ void ConstConduction(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
   if (phdif->coeff_kiso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           phdif->kappa(ISO,k,j,i) = phdif->coeff_kiso;
       }
@@ -127,7 +127,7 @@ void ConstConduction(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
   if (phdif->coeff_kani > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           phdif->kappa(ANI,k,j,i) = phdif->coeff_kani;
       }

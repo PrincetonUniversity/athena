@@ -157,15 +157,15 @@ void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des)
   int size2 = e_src.x2e.GetSize();
   int size3 = e_src.x3e.GetSize();
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size1; ++i)
     e_des.x1e(i) += e_src.x1e(i);
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size2; ++i)
     e_des.x2e(i) += e_src.x2e(i);
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size3; ++i)
     e_des.x3e(i) += e_src.x3e(i);
 
@@ -182,15 +182,15 @@ void FieldDiffusion::ClearEMF(EdgeField &e)
   int size2 = e.x2e.GetSize();
   int size3 = e.x3e.GetSize();
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size1; ++i)
     e.x1e(i) = 0.0;
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size2; ++i)
     e.x2e(i) = 0.0;
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size3; ++i)
     e.x3e(i) = 0.0;
 
@@ -220,7 +220,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const Athen
   for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
-#pragma simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i){
         Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
         bmag_(k,j,i) = sqrt(Bsq);

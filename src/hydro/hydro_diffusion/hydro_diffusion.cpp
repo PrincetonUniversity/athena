@@ -186,19 +186,19 @@ void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src, AthenaAr
 {
 
   int size1 = flux_des[X1DIR].GetSize();
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size1; ++i)
     flux_des[X1DIR](i) += flux_src[X1DIR](i);
 
   if (pmb_->block_size.nx2 > 1) {
     int size2 = flux_des[X2DIR].GetSize();
-#pragma simd
+#pragma omp simd
     for (int i=0; i<size2; ++i)
       flux_des[X2DIR](i) += flux_src[X2DIR](i);
   }
   if (pmb_->block_size.nx3 > 1) {
     int size3 = flux_des[X3DIR].GetSize();
-#pragma simd
+#pragma omp simd
     for (int i=0; i<size3; ++i)
       flux_des[X3DIR](i) += flux_src[X3DIR](i);
   }
@@ -217,15 +217,15 @@ void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux)
   int size2 = flux[X2DIR].GetSize();
   int size3 = flux[X3DIR].GetSize();
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size1; ++i)
     flux[X1DIR](i) = 0.0;
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size2; ++i)
     flux[X2DIR](i) = 0.0;
 
-#pragma simd
+#pragma omp simd
   for (int i=0; i<size3; ++i)
     flux[X3DIR](i) = 0.0;
 
@@ -298,42 +298,42 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
   for (int k=ks; k<=ke; ++k){
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         nu_t(i) = 0.0;
         kappa_t(i) = 0.0;
       }
       if (coeff_nuiso > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ISO,k,j,i);
       }
       if (coeff_nuani > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ANI,k,j,i);
       }
       if (coeff_kiso > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ISO,k,j,i);
       }
       if (coeff_kani > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ANI,k,j,i);
       }
       pmb_->pcoord->CenterWidth1(k,j,is,ie,len);
       pmb_->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb_->pcoord->CenterWidth3(k,j,is,ie,dx3);
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
       if ((coeff_nuiso > 0.0) || (coeff_nuani > 0.0)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           ptd_mindt_vis[tid] = std::min(ptd_mindt_vis[tid], SQR(len(i))*fac/(nu_t(i)+TINY_NUMBER));
       }
       if ((coeff_kiso > 0.0) || (coeff_kani > 0.0)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           ptd_mindt_cnd[tid]= std::min(ptd_mindt_cnd[tid], SQR(len(i))*fac/(kappa_t(i)+TINY_NUMBER));
       }

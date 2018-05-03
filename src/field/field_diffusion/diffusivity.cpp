@@ -50,7 +50,7 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
   if (pfdif->coeff_o > 0.0) { // Ohmic resistivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
-#pragma simd
+#pragma omp simd
         for(int i=is; i<=ie; i++)
           pfdif->etaB(I_O, k,j,i) = pfdif->coeff_o;
       }
@@ -60,7 +60,7 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
   if (pfdif->coeff_h != 0.0) { // Hall diffusivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
-#pragma simd
+#pragma omp simd
         for(int i=is; i<=ie; i++)
           pfdif->etaB(I_H, k,j,i) = pfdif->coeff_h*bmag(k,j,i)/w(IDN,k,j,i);
       }
@@ -70,7 +70,7 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
   if (pfdif->coeff_a > 0.0) { // ambipolar diffusivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
-#pragma simd
+#pragma omp simd
         for(int i=is; i<=ie; i++)
           pfdif->etaB(I_A, k,j,i) = pfdif->coeff_a*SQR(bmag(k,j,i));
       }
@@ -129,18 +129,18 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
 
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         eta_t(i) = 0.0;
       }
       if (coeff_o > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i){
           eta_t(i) += etaB(I_O,k,j,i);
         }
       }
       if (coeff_a > 0.0){
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i){
           eta_t(i) += etaB(I_A,k,j,i);
         }
@@ -148,18 +148,18 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i){
         len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
       if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid], fac_oa*SQR(len(i))/(eta_t(i)+TINY_NUMBER));
       }
       if (coeff_h > 0.0) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i)
           ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], fac_h*SQR(len(i))/(fabs(etaB(I_H,k,j,i))+TINY_NUMBER));
       }
@@ -220,7 +220,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
   for (int j=js-2*ext2; j<=je+2*ext2; ++j) {
     pco->VolCenterFace2Area(k-ext3,j,is-2,ie+1,area);
     pco->VolCenter3Length(k-ext3,j,is-2,ie+2,len);
-#pragma simd
+#pragma omp simd
     for (int i=is-1; i<=ie+2; ++i) {
       J2(k,j,i) = -(len(i)*b3i(k,j,i) - len(i-1)*b3i(k,j,i-1))/area(i-1);
     }
@@ -231,7 +231,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
   for (int j=js-ext2; j<=je+2*ext2; ++j) {
     pco->VolCenterFace3Area(k,j-ext2,is-2,ie+1,area);
     pco->VolCenter2Length(k,j-ext2,is-2,ie+2,len);
-#pragma simd
+#pragma omp simd
     for (int i=is-1; i<=ie+2; ++i) {
       J3(k,j,i) = (len(i)*b2i(k,j,i) - len(i-1)*b2i(k,j,i-1))/area(i-1);
     }
@@ -244,7 +244,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
       pco->VolCenterFace1Area(k-ext3,j-1,is-2,ie+2,area);
       pco->VolCenter3Length(k-ext3,j-1,is-2,ie+2,len_m1);
       pco->VolCenter3Length(k-ext3,j  ,is-2,ie+2,len);
-#pragma simd
+#pragma omp simd
       for (int i=is-2; i<=ie+2; ++i) {
         J1(k,j,i) = (len(i)*b3i(k,j,i) - len_m1(i)*b3i(k,j-1,i))/area(i);
       }
@@ -256,7 +256,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
       pco->VolCenterFace3Area(k,j-1,is-2,ie+1,area);
       pco->VolCenter1Length(k,j-1,is-2,ie+1,len_m1);
       pco->VolCenter1Length(k,j  ,is-2,ie+1,len);
-#pragma simd
+#pragma omp simd
       for (int i=is-1; i<=ie+2; ++i) {
         J3(k,j,i) -= (len(i-1)*b1i(k,j,i) - len_m1(i-1)*b1i(k,j-1,i))/area(i-1);
       }
@@ -271,7 +271,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
       pco->VolCenterFace1Area(k-1,j-1,is-2,ie+2,area);
       pco->VolCenter2Length(k-1,j-1,is-2,ie+2,len_m1);
       pco->VolCenter2Length(k  ,j-1,is-2,ie+2,len);
-#pragma simd
+#pragma omp simd
       for (int i=is-2; i<=ie+2; ++i) {
         J1(k,j,i) -= (len(i)*b2i(k,j,i) - len_m1(i)*b2i(k-1,j,i))/area(i);
       }
@@ -283,7 +283,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
       pco->VolCenterFace2Area(k-1,j,is-2,ie+1,area);
       pco->VolCenter1Length(k-1,j,is-2,ie+1,len_m1);
       pco->VolCenter1Length(k  ,j,is-2,ie+1,len);
-#pragma simd
+#pragma omp simd
       for (int i=is-1; i<=ie+2; ++i) {
         J2(k,j,i) += (len(i-1)*b1i(k,j,i) - len_m1(i-1)*b1i(k-1,j,i))/area(i-1);
       }
@@ -332,7 +332,7 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc, E
   if (pmb->block_size.nx3 == 1) {
 #pragma omp for schedule(static)
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         Real eta_O = 0.5*(etaB(I_O,ks,j,i)+etaB(I_O,ks,j-1,i));
         e1(ks  ,j,i) += eta_O * J1(ks,j,i);
@@ -355,7 +355,7 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc, E
   for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
   for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
       Real eta_O = 0.25*(etaB(I_O,k  ,j,i)+etaB(I_O,k  ,j-1,i)
                         +etaB(I_O,k-1,j,i)+etaB(I_O,k-1,j-1,i));
@@ -423,7 +423,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
   if (pmb->block_size.nx3 == 1) {
 #pragma omp for schedule(static)
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         // emf.x
         Real eta_A = 0.5*(etaB(I_A,ks,j,i)+etaB(I_A,ks,j-1,i));
@@ -488,7 +488,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
   for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
   for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
       // emf.x
       Real eta_A = 0.25*(etaB(I_A,k  ,j,i)+etaB(I_A,k  ,j-1,i)
@@ -575,7 +575,7 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc)
 
 // 1D update:
   if (pmb->block_size.nx2 == 1) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
       f1(ks,js,i) = -0.5*(bc(IB2,ks,js,i)+bc(IB2,ks,js,i-1))*e3(ks,js,i)
                     +0.5*(bc(IB3,ks,js,i)+bc(IB3,ks,js,i-1))*e2(ks,js,i);
@@ -590,7 +590,7 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc)
   if (pmb->block_size.nx3 == 1) {
 #pragma omp for schedule(static)
     for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         f1(ks,j,i) = -0.25*(bc(IB2,ks,j,i)+bc(IB2,ks,j,i-1))
                           *(e3(ks,j,i) + e3(ks,j+1,i))
@@ -608,7 +608,7 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc)
   for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
   for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
       f1(k,j,i) = -0.25*(bc(IB2,k,j,i)+bc(IB2,k,j,i-1))
                        *(e3(k,j,i) + e3(k,j+1,i))
@@ -649,7 +649,7 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
 
   // 1D update:
   if (pmb->block_size.nx2 == 1) {
-#pragma simd
+#pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
       x1flux(IEN,ks,js,i) += f1(ks,js,i);
     }
@@ -663,7 +663,7 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
     if (pmb->block_size.nx3 == 1) {
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           x1flux(IEN,ks,j,i) += f1(ks,j,i);
           x2flux(IEN,ks,j,i) += f2(ks,j,i);
@@ -676,7 +676,7 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
     for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           x1flux(IEN,k,j,i) += f1(k,j,i);
           x2flux(IEN,k,j,i) += f2(k,j,i);
