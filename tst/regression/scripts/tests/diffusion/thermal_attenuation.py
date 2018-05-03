@@ -9,7 +9,6 @@ import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 import athena_read                             # utilities for reading Athena++ data
-from scipy.optimize import curve_fit
 
 def prepare(**kwargs):
   athena.configure(
@@ -54,20 +53,8 @@ def analyze():
     tt[i]     = i*dumprate
 
   # estimate the decay rate from simulation
-  #def func(x,a,b,c):
-  #    return a*np.exp(-b*x)+c
-  #popt,pcov = curve_fit(func,tt,max_vy)
-  #new_rate = popt[1]
-  #print '[Decaying Linear Wave-3D]: Ref(decay_rate) = ',rate
-  #print '[Decaying Linear Wave-3D]: New(decay_rate) = ',new_rate
-  #print 'optimal parameter values: (a,b,c) = ',popt[0],popt[1],popt[2] 
-
-  #def func(x,b):
-  #    return max_vy[0]*np.exp(-b*x)
-  def func(x,a,b):
-      return a*np.exp(-b*x)
-  popt,pcov = curve_fit(func,tt,max_vy)
-  new_rate = popt[1]
+  new_rate,coeff = np.polyfit(tt,np.log(np.abs(max_vy)),1,w=np.sqrt(np.abs(max_vy)))
+  new_rate = -new_rate
   print '[Decaying Linear Wave-3D]: Ref(decay_rate) = ',rate
   print '[Decaying Linear Wave-3D]: New(decay_rate) = ',new_rate
 
