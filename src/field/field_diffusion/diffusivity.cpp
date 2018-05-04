@@ -9,7 +9,6 @@
 #include "field_diffusion.hpp"
 
 // C++ headers
-#include <algorithm>  // min()
 #include <iostream>   // cout, endl
 
 // Athena headers

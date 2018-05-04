@@ -5,6 +5,7 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the induction equations
 
+#include <algorithm>  // min()
 #include <cfloat>     // FLT_MA
 
 // Athena++ headers

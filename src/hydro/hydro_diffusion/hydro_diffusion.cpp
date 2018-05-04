@@ -5,8 +5,11 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the hydro equations
 
-// Athena++ headers
+// C/C++ headers
+#include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
+
+// Athena++ headers
 #include "hydro_diffusion.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
