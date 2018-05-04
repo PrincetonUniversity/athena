@@ -65,6 +65,13 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   h32v.NewAthenaArray(ncells2);
   dh32vd2.NewAthenaArray(ncells2);
 
+  h2fi.NewAthenaArray(ncells1);
+  h2vi.NewAthenaArray(ncells1);
+  h31fi.NewAthenaArray(ncells1);
+  h31vi.NewAthenaArray(ncells1);
+  h32fi.NewAthenaArray(ncells2);
+  h32vi.NewAthenaArray(ncells2);
+
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
@@ -120,6 +127,10 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     h2f(i) = x1f(i);
     h31v(i) = x1v(i);
     h31f(i) = x1f(i);
+    h2vi(i) = 1.0/x1v(i);
+    h2fi(i) = 1.0/x1f(i);
+    h31vi(i) = 1.0/x1v(i);
+    h31fi(i) = 1.0/x1f(i);
     dh2vd1(i) = 1.0;
     dh2fd1(i) = 1.0;
     dh31vd1(i) = 1.0;
@@ -130,12 +141,16 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   if (pmb->block_size.nx2 == 1) {
     h32v(jl) = sin(x2v(jl));
     h32f(jl) = sin(x2f(jl));
+    h32vi(jl) = 1.0/sin(x2v(jl));
+    h32fi(jl) = 1.0/sin(x2f(jl));
     dh32vd2(jl) = cos(x2v(jl));
     dh32fd2(jl) = cos(x2f(jl));
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
       h32v(j) = sin(x2v(j));
       h32f(j) = sin(x2f(j));
+      h32vi(j) = 1.0/sin(x2v(j));
+      h32fi(j) = 1.0/sin(x2f(j));
       dh32vd2(j) = cos(x2v(j));
       dh32fd2(j) = cos(x2f(j));
     }

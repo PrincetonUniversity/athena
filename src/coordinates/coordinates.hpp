@@ -42,6 +42,8 @@ public:
   // geometry coefficient
   AthenaArray<Real> h2f,dh2fd1,h31f,h32f,dh31fd1,dh32fd2;
   AthenaArray<Real> h2v,dh2vd1,h31v,h32v,dh31vd1,dh32vd2;
+  AthenaArray<Real> h2fi,h31fi,h32fi;
+  AthenaArray<Real> h2vi,h31vi,h32vi;
 
   // functions...
   // ...to compute length of edges

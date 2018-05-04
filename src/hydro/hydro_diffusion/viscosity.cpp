@@ -273,16 +273,16 @@ void HydroDiffusion::FaceXdy(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx2 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h2f(i)*(prim(IM2,k,j,i)/pco_->h2v(i)
-                      -prim(IM2,k,j,i-1)/pco_->h2v(i-1))/pco_->dx1v(i-1)
+      len(i) = pco_->h2f(i)*(prim(IM2,k,j,i)*pco_->h2vi(i)
+                      -prim(IM2,k,j,i-1)*pco_->h2vi(i-1))/pco_->dx1v(i-1)
                +0.5*(prim(IM1,k,j+1,i)+prim(IM1,k,j+1,i-1)-prim(IM1,k,j-1,i)-prim(IM1,k,j-1,i-1))
-                /pco_->h2f(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
+                *pco_->h2fi(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h2f(i)*(prim(IM2,k,j,i)/pco_->h2v(i)
-                      -prim(IM2,k,j,i-1)/pco_->h2v(i-1))/pco_->dx1v(i-1);
+      len(i) = pco_->h2f(i)*(prim(IM2,k,j,i)*pco_->h2vi(i)
+                      -prim(IM2,k,j,i-1)*pco_->h2vi(i-1))/pco_->dx1v(i-1);
     }
   }
   return;
@@ -295,14 +295,14 @@ void HydroDiffusion::FaceXdz(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx3 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h31f(i)*(prim(IM3,k,j,i)/pco_->h31v(i)-prim(IM3,k,j,i-1)/pco_->h31v(i-1))/pco_->dx1v(i-1)
+      len(i) = pco_->h31f(i)*(prim(IM3,k,j,i)*pco_->h31vi(i)-prim(IM3,k,j,i-1)*pco_->h31vi(i-1))/pco_->dx1v(i-1)
                +0.5*(prim(IM1,k+1,j,i)+prim(IM1,k+1,j,i-1)-prim(IM1,k-1,j,i)-prim(IM1,k-1,j,i-1))
-               /pco_->h31f(i)/pco_->h32v(j)/(pco_->dx3v(k-1)+pco_->dx3v(k));
+               *pco_->h31fi(i)*pco_->h32vi(j)/(pco_->dx3v(k-1)+pco_->dx3v(k));
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i)
-      len(i) = pco_->h31f(i)*(prim(IM3,k,j,i)/pco_->h31v(i)-prim(IM3,k,j,i-1)/pco_->h31v(i-1))/pco_->dx1v(i-1);
+      len(i) = pco_->h31f(i)*(prim(IM3,k,j,i)*pco_->h31vi(i)-prim(IM3,k,j,i-1)*pco_->h31vi(i-1))/pco_->dx1v(i-1);
 
   }
   return;
@@ -315,16 +315,16 @@ void HydroDiffusion::FaceYdx(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx2 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1)
-               +pco_->h2v(i)*0.5*((prim(IM2,k,j,i+1)+prim(IM2,k,j-1,i+1))/pco_->h2v(i+1)
-                           -(prim(IM2,k,j,i-1)+prim(IM2,k,j-1,i-1))/pco_->h2v(i-1))
+      len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))*pco_->h2vi(i)/pco_->dx2v(j-1)
+               +pco_->h2v(i)*0.5*((prim(IM2,k,j,i+1)+prim(IM2,k,j-1,i+1))*pco_->h2vi(i+1)
+                           -(prim(IM2,k,j,i-1)+prim(IM2,k,j-1,i-1))*pco_->h2vi(i-1))
                /(pco_->dx1v(i-1)+pco_->dx1v(i));
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h2v(i)*(prim(IM2,k,j,i+1)/pco_->h2v(i+1)
-                            -prim(IM2,k,j,i-1)/pco_->h2v(i-1))
+      len(i) = pco_->h2v(i)*(prim(IM2,k,j,i+1)*pco_->h2vi(i+1)
+                            -prim(IM2,k,j,i-1)*pco_->h2vi(i-1))
                /(pco_->dx1v(i-1)+pco_->dx1v(i));
     }
   }
@@ -338,13 +338,13 @@ void HydroDiffusion::FaceYdy(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx2 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = 2.0*(prim(IM2,k,j,i)-prim(IM2,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1)
-                +(prim(IM1,k,j,i)+prim(IM1,k,j-1,i))/pco_->h2v(i)*pco_->dh2vd1(i);
+      len(i) = 2.0*(prim(IM2,k,j,i)-prim(IM2,k,j-1,i))*pco_->h2vi(i)/pco_->dx2v(j-1)
+                +(prim(IM1,k,j,i)+prim(IM1,k,j-1,i))*pco_->h2vi(i)*pco_->dh2vd1(i);
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i)
-      len(i) = 2.0*prim(IM1,k,j,i)/pco_->h2v(i)*pco_->dh2vd1(i);
+      len(i) = 2.0*prim(IM1,k,j,i)*pco_->h2vi(i)*pco_->dh2vd1(i);
   }
   return;
 }
@@ -356,17 +356,17 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx3 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32v(j)
-               -prim(IM3,k,j-1,i)/pco_->h32v(j-1))/pco_->h2v(i)/pco_->dx2v(j-1)
+      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)*pco_->h32vi(j)
+               -prim(IM3,k,j-1,i)*pco_->h32vi(j-1))*pco_->h2vi(i)/pco_->dx2v(j-1)
                +0.5*(prim(IM2,k+1,j,i)+prim(IM2,k+1,j-1,i)
-               -prim(IM2,k-1,j,i)-prim(IM2,k-1,j-1,i))/pco_->h31v(i)
-               /pco_->h32f(j)/(pco_->dx3v(k-1)+pco_->dx3v(k));
+               -prim(IM2,k-1,j,i)-prim(IM2,k-1,j-1,i))*pco_->h31vi(i)
+               *pco_->h32fi(j)/(pco_->dx3v(k-1)+pco_->dx3v(k));
     }
   } else if (pmb_->block_size.nx2 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32v(j)-prim(IM3,k,j-1,i)/pco_->h32v(j-1))
-               /pco_->h2v(i)/pco_->dx2v(j-1);
+      len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)*pco_->h32vi(j)-prim(IM3,k,j-1,i)*pco_->h32vi(j-1))
+               *pco_->h2vi(i)/pco_->dx2v(j-1);
     }
   } else {
 #pragma omp simd
@@ -383,15 +383,15 @@ void HydroDiffusion::FaceZdx(const int k, const int j, const int il, const int i
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
       len(i) = (prim(IM1,k,j,i)-prim(IM1,k-1,j,i))/pco_->dx3v(k-1)
-               +0.5*pco_->h31v(i)*((prim(IM3,k,j,i+1)+prim(IM3,k-1,j,i+1))/pco_->h31v(i+1)
-               -(prim(IM3,k,j,i-1)+prim(IM3,k-1,j,i-1))/pco_->h31v(i-1))
+               +0.5*pco_->h31v(i)*((prim(IM3,k,j,i+1)+prim(IM3,k-1,j,i+1))*pco_->h31vi(i+1)
+               -(prim(IM3,k,j,i-1)+prim(IM3,k-1,j,i-1))*pco_->h31vi(i-1))
                /(pco_->dx1v(i-1)+pco_->dx1v(i));
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h31v(i)*(prim(IM3,k,j,i+1)/pco_->h31v(i+1)
-               -prim(IM3,k,j,i-1)/pco_->h31v(i-1))
+      len(i) = pco_->h31v(i)*(prim(IM3,k,j,i+1)*pco_->h31vi(i+1)
+               -prim(IM3,k,j,i-1)*pco_->h31vi(i-1))
                /(pco_->dx1v(i-1)+pco_->dx1v(i));
     }
   }
@@ -405,17 +405,17 @@ void HydroDiffusion::FaceZdy(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx3 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))/pco_->h31v(i)/pco_->h32v(j)/pco_->dx3v(k-1)
-               +0.5*pco_->h32v(j)*((prim(IM3,k,j+1,i)+prim(IM3,k-1,j+1,i))/pco_->h32v(j+1)
-                                  -(prim(IM3,k,j-1,i)+prim(IM3,k-1,j-1,i))/pco_->h32v(j-1))
-               /pco_->h2v(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
+      len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))*pco_->h31vi(i)*pco_->h32vi(j)/pco_->dx3v(k-1)
+               +0.5*pco_->h32v(j)*((prim(IM3,k,j+1,i)+prim(IM3,k-1,j+1,i))*pco_->h32vi(j+1)
+                                  -(prim(IM3,k,j-1,i)+prim(IM3,k-1,j-1,i))*pco_->h32vi(j-1))
+               *pco_->h2vi(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
     }
   } else if(pmb_->block_size.nx2 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = pco_->h32v(j)*(prim(IM3,k,j+1,i)/pco_->h32v(j+1)
-                            -prim(IM3,k,j-1,i)/pco_->h32v(j-1))
-               /pco_->h2v(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
+      len(i) = pco_->h32v(j)*(prim(IM3,k,j+1,i)*pco_->h32vi(j+1)
+                             -prim(IM3,k,j-1,i)*pco_->h32vi(j-1))
+               *pco_->h2vi(i)/(pco_->dx2v(j-1)+pco_->dx2v(j));
     }
   } else {
 #pragma omp simd
@@ -431,15 +431,15 @@ void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int i
   if(pmb_->block_size.nx3 > 1) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = 2.0*(prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pco_->dx3v(k-1)/pco_->h31v(i)/pco_->h32v(j)
-               + (prim(IM1,k,j,i)+prim(IM1,k-1,j,i))*pco_->dh31vd1(i)/pco_->h31v(i) +
-                 (prim(IM2,k,j,i)+prim(IM2,k-1,j,i))*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
+      len(i) = 2.0*(prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pco_->dx3v(k-1)*pco_->h31vi(i)*pco_->h32vi(j)
+                + (prim(IM1,k,j,i)+prim(IM1,k-1,j,i))*pco_->dh31vd1(i)*pco_->h31vi(i) +
+                  (prim(IM2,k,j,i)+prim(IM2,k-1,j,i))*pco_->dh32vd2(j)*pco_->h32vi(j)*pco_->h2vi(i);
     }
   } else {
 #pragma omp simd
     for (int i=il; i<=iu; ++i){
-      len(i) = 2.0*prim(IM1,k,j,i)*pco_->dh31vd1(i)/pco_->h31v(i) +
-               2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
+      len(i) = 2.0*prim(IM1,k,j,i)*pco_->dh31vd1(i)*pco_->h31vi(i) +
+               2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)*pco_->h32vi(j)*pco_->h2vi(i);
     }
   }
   return;
