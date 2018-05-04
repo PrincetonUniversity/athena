@@ -23,8 +23,6 @@ class Hydro;
 class ParameterInput;
 struct FaceField;
 typedef std::string (*EosFn_t)();
-typedef Real (*SimpleEosFun_t)(Real dens, Real egas, EquationOfState* peos);
-
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -104,22 +102,19 @@ public:
     #endif  // !MAGNETIC_FIELDS_ENABLED
   #endif  // !RELATIVISTIC_DYNAMICS
 
-  #if EOS_TABLE_ENABLED
+#if EOS_TABLE_ENABLED
   EosFn_t GetEosFn;
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
+  void EnrollEosTable(EosFn_t GenEosTableFilename);
   Real BilinearInterp(Real x, Real y, int var);
   void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
   Real GetEosData(Real rho, Real var, int axis, int kOut);
   //Real GetGamma1FromRhoEgas(Real rho, Real egas);
-  void EnrollEosTable(EosFn_t GenEosTableFilename);
-  void EnrollSimplePres(SimpleEosFun_t func);
-  void EnrollSimpleEgas(SimpleEosFun_t func);
-  void EnrollSimpleAsq(SimpleEosFun_t func);
-  void EnrollAsqFromHint(SimpleEosFun_t func);
-  int QueryEnrolled();
   Real RiemannAsq(Real rho, Real hint);
-  Real GetEgasFromRhoPres(Real rho, Real pres);
+  Real SimplePres(Real rho, Real egas);
+  Real SimpleEgas(Real rho, Real pres);
+  Real SimpleAsq(Real rho, Real pres);
   void EosTestLoop();
   void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
   int iPresEOS;
@@ -129,13 +124,11 @@ public:
   int axisEgas;
   int axisPres;
   int axisHint;
-  #endif // EOS_TABLE_ENABLED
 
-#if EOS_TABLE_ENABLED
   Real GetGamma() const {throw std::invalid_argument("GetGamma is not defined for EOS tables.");}
-#else
+#else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
-#endif
+#endif // EOS_TABLE_ENABLED
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
@@ -165,10 +158,6 @@ private:
   Real egasOverPres_;
   Real EosRatios_[3];
   Real energy_floor_;                    // internal energy floor
-  SimpleEosFun_t SimplePres_;
-  SimpleEosFun_t SimpleEgas_;
-  SimpleEosFun_t AsqFromPres_;
-  SimpleEosFun_t AsqFromHint_;
 #endif // EOS_TABLE_ENABLED
 
 };

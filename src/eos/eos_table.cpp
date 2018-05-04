@@ -34,33 +34,27 @@ std::string DefaultEOS()
   return fn;
 }
 
-Real SimplePres(Real rho, Real egas, EquationOfState* peos)
-{
-  return peos->GetEosData(rho, egas, peos->axisEgas, peos->iPresEOS) * egas;
+Real EquationOfState::SimplePres(Real rho, Real egas) {
+  return GetEosData(rho, egas, axisEgas, iPresEOS) * egas;
 }
 
-Real SimpleEgas(Real rho, Real pres, EquationOfState* peos)
-{
-  return peos->GetEosData(rho, pres, peos->axisPres, peos->iPresEOS) * pres;
+Real EquationOfState::SimpleEgas(Real rho, Real pres) {
+  return GetEosData(rho, pres, axisPres, iPresEOS) * pres;
 }
 
-Real SimpleAsq(Real rho, Real pres, EquationOfState* peos)
-{
-  return peos->GetEosData(rho, pres, peos->axisPres, peos->iASqEOS) * pres / rho;
+Real EquationOfState::SimpleAsq(Real rho, Real pres) {
+  return GetEosData(rho, pres, axisPres, iASqEOS) * pres / rho;
 }
 
-Real RoeAsq(Real rho, Real hint, EquationOfState* peos)
-{
-  return peos->GetEosData(rho, hint, peos->axisHint, peos->iASqEOS) * hint / rho;
+Real EquationOfState::RiemannAsq(Real rho, Real hint) {
+  return GetEosData(rho, hint, axisHint, iASqEOS) * hint;
 }
 
-void EquationOfState::EnrollEosTable(EosFn_t GenEosTableFilename)
-{
+void EquationOfState::EnrollEosTable(EosFn_t GenEosTableFilename) {
   GetEosFn = GenEosTableFilename;
 }
 
-void EquationOfState::PrepEOS(ParameterInput *pin)
-{
+void EquationOfState::PrepEOS(ParameterInput *pin) {
   std::string EosFn;
   GetEosFn = ( GetEosFn == NULL ) ? DefaultEOS : GetEosFn;
   EosFn = pin->GetOrAddString("hydro", "EosFn", (*GetEosFn)());
@@ -113,11 +107,6 @@ void EquationOfState::PrepEOS(ParameterInput *pin)
     std::cout << "\n";
   }
 #endif
-
-  EnrollSimplePres(&SimplePres);
-  EnrollSimpleEgas(&SimpleEgas);
-  EnrollSimpleAsq(&SimpleAsq);
-  EnrollAsqFromHint(&RoeAsq);
 
 #ifdef EOSDEBUG0
   EosTestLoop();
@@ -242,10 +231,10 @@ void EquationOfState::EosTestLoop()
       std::cout << data(i) << ", ";
     }
     std::cout << "\n";
-    std::cout << "P, e, Asq, Asq: " << (*SimplePres_)(rho, egas, this) << ", "
-                                    << (*SimpleEgas_)(rho, data(0), this) << ", "
-                                    << (*AsqFromPres_)(rho, egas, this) << ", "
-                                    << (*AsqFromHint_)(rho, data(1), this) << "\n";
+    std::cout << "P, e, Asq, Asq: " << SimplePres(rho, egas) << ", "
+                                    << SimpleEgas(rho, data(0)) << ", "
+                                    << SimpleAsq(rho, egas) << ", "
+                                    << RiemannAsq(rho, data(1)) << "\n";
     std::cout << "Input rho (g/cc):";
     std::cin >> rho;
     std::cout << "Input egas (erg/cc):";

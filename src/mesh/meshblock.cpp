@@ -135,9 +135,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
-  #if EOS_TABLE_ENABLED
-    peos->QueryEnrolled();
-  #endif
 
   return;
 }
@@ -229,9 +226,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   InitUserMeshBlockData(pin);
-#if EOS_TABLE_ENABLED
-  peos->QueryEnrolled();
-#endif
 
   int os=0;
   // load hydro and field data

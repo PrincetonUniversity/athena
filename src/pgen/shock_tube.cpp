@@ -88,8 +88,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 4.0/std::sqrt(4.0*PI);
           bz = 2.0/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 0 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.0) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.0)
+          std::cout << 0 << ": " << pmb->peos->SimpleEgas(d0, 1.0) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.0)
 #else
           e0 = 1.0/gm1
 #endif
@@ -102,8 +102,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.3452/std::sqrt(4.0*PI);
           bz = 2.6726/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 1 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
+          std::cout << 1 << ": " << pmb->peos->SimpleEgas(d0, 1.5844) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.5844)
 #else
           e0 = 1.5844/gm1
 #endif
@@ -116,8 +116,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.7083/std::sqrt(4.0*PI);
           bz = 1.7689/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 2 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.5844) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.5844)
+          std::cout << 2 << ": " << pmb->peos->SimpleEgas(d0, 1.5844) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.5844)
 #else
           e0 = 1.5844/gm1
 #endif
@@ -130,8 +130,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.0074/std::sqrt(4.0*PI);
           bz = 1.5517/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 3 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
+          std::cout << 3 << ": " << pmb->peos->SimpleEgas(d0, 1.9317) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.9317)
 #else
           e0 = 1.9317/gm1
 #endif
@@ -144,8 +144,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.0074/std::sqrt(4.0*PI);
           bz = 1.5517/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 4 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.9317) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.9317)
+          std::cout << 4 << ": " << pmb->peos->SimpleEgas(d0, 1.9317) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.9317)
 #else
           e0 = 1.9317/gm1
 #endif
@@ -158,8 +158,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.5713/std::sqrt(4.0*PI);
           bz = 1.7264/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 5 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
+          std::cout << 5 << ": " << pmb->peos->SimpleEgas(d0, 1.6558) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.6558)
 #else
           e0 = 1.6558/gm1
 #endif
@@ -172,8 +172,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 5.0987/std::sqrt(4.0*PI);
           bz = 2.8326/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 6 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 1.6558) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 1.6558)
+          std::cout << 6 << ": " << pmb->peos->SimpleEgas(d0, 1.6558) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 1.6558)
 #else
           e0 = 1.6558/gm1
 #endif
@@ -186,8 +186,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           by = 3.6/std::sqrt(4.0*PI);
           bz = 2.0/std::sqrt(4.0*PI);
 #if EOS_TABLE_ENABLED
-          std::cout << 7 << ": " << pmb->peos->GetEgasFromRhoPres(d0, 0.95) << "\n";
-          e0 = pmb->peos->GetEgasFromRhoPres(d0, 0.95)
+          std::cout << 7 << ": " << pmb->peos->SimpleEgas(d0, 0.95) << "\n";
+          e0 = pmb->peos->SimpleEgas(d0, 0.95)
 #else
           e0 = 0.95/gm1
 #endif
@@ -373,7 +373,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+            peos->SimpleEgas(wl[IDN], wl[IEN])
 #else
             wl[IEN]/(peos->GetGamma() - 1.0)
 #endif
@@ -385,7 +385,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+            peos->SimpleEgas(wr[IDN], wr[IEN])
 #else
             wr[IEN]/(peos->GetGamma() - 1.0)
 #endif
@@ -407,7 +407,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+            peos->SimpleEgas(wl[IDN], wl[IEN])
 #else
             wl[IEN]/(peos->GetGamma() - 1.0)
 #endif
@@ -421,7 +421,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+            peos->SimpleEgas(wr[IDN], wr[IEN])
 #else
             wr[IEN]/(peos->GetGamma() - 1.0)
 #endif
@@ -444,7 +444,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wl[IDN], wl[IEN])
+            peos->SimpleEgas(wl[IDN], wl[IEN])
 #else
             wl[IEN]/(peos->GetGamma() - 1.0)
 #endif
@@ -459,7 +459,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
 #if EOS_TABLE_ENABLED
-            peos->GetEgasFromRhoPres(wr[IDN], wr[IEN])
+            peos->SimpleEgas(wr[IDN], wr[IEN])
 #else
             wr[IEN]/(peos->GetGamma() - 1.0)
 #endif
