@@ -13,9 +13,10 @@
 #include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "field_diffusion/field_diffusion.hpp"
+#include "../mesh/mesh.hpp"
+#include "../reconstruct/reconstruction.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -123,6 +124,12 @@ Field::~Field() {
 
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
+  // Defer to Reconstruction class to check if uniform Cartesian formula can be used
+  // (unweighted average)
+  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[0];
+  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[1];
+  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[2];
+
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
     // calc cell centered fields first
@@ -138,28 +145,45 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
         Real& bcc1 = bc(IB1,k,j,i);
         Real& bcc2 = bc(IB2,k,j,i);
         Real& bcc3 = bc(IB3,k,j,i);
+        Real lw, rw; // linear interpolation coefficients from lower and upper cell faces
 
         // cell center B-fields are defined as spatial interpolation at the volume center
-        const Real& x1f_i  = pco->x1f(i);
-        const Real& x1f_ip = pco->x1f(i+1);
-        const Real& x1v_i  = pco->x1v(i);
-        const Real& dx1_i  = pco->dx1f(i);
-        Real lw=(x1f_ip-x1v_i)/dx1_i;
-        Real rw=(x1v_i -x1f_i)/dx1_i;
+        if (uniform_ave_x1 == true) {
+          lw = 0.5;
+          rw = 0.5;
+        } else {
+          const Real& x1f_i  = pco->x1f(i);
+          const Real& x1f_ip = pco->x1f(i+1);
+          const Real& x1v_i  = pco->x1v(i);
+          const Real& dx1_i  = pco->dx1f(i);
+          lw = (x1f_ip - x1v_i)/dx1_i;
+          rw = (x1v_i  - x1f_i)/dx1_i;
+        }
         bcc1 = lw*b1_i + rw*b1_ip1;
-        const Real& x2f_j  = pco->x2f(j);
-        const Real& x2f_jp = pco->x2f(j+1);
-        const Real& x2v_j  = pco->x2v(j);
-        const Real& dx2_j  = pco->dx2f(j);
-        lw=(x2f_jp-x2v_j)/dx2_j;
-        rw=(x2v_j -x2f_j)/dx2_j;
+
+        if (uniform_ave_x2 == true) {
+          lw = 0.5;
+          rw = 0.5;
+        } else {
+          const Real& x2f_j  = pco->x2f(j);
+          const Real& x2f_jp = pco->x2f(j+1);
+          const Real& x2v_j  = pco->x2v(j);
+          const Real& dx2_j  = pco->dx2f(j);
+          lw = (x2f_jp - x2v_j)/dx2_j;
+          rw = (x2v_j  - x2f_j)/dx2_j;
+        }
         bcc2 = lw*b2_j + rw*b2_jp1;
-        const Real& x3f_k  = pco->x3f(k);
-        const Real& x3f_kp = pco->x3f(k+1);
-        const Real& x3v_k  = pco->x3v(k);
-        const Real& dx3_k  = pco->dx3f(k);
-        lw=(x3f_kp-x3v_k)/dx3_k;
-        rw=(x3v_k -x3f_k)/dx3_k;
+        if (uniform_ave_x3 == true) {
+          lw = 0.5;
+          rw = 0.5;
+        } else {
+          const Real& x3f_k  = pco->x3f(k);
+          const Real& x3f_kp = pco->x3f(k+1);
+          const Real& x3v_k  = pco->x3v(k);
+          const Real& dx3_k  = pco->dx3f(k);
+          lw = (x3f_kp - x3v_k)/dx3_k;
+          rw = (x3v_k  - x3f_k)/dx3_k;
+        }
         bcc3 = lw*b3_k + rw*b3_kp1;
       }
     }
