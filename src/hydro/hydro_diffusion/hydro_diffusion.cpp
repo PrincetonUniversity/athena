@@ -287,6 +287,7 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
     ptd_mindt_cnd[n] = (FLT_MAX);
   }
 
+
 #pragma omp parallel default(shared) private(tid) num_threads(nthreads)
 {
 #ifdef OPENMP_PARALLEL
@@ -336,14 +337,14 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
       if ((coeff_nuiso > 0.0) || (coeff_nuani > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_vis[tid] = std::min(ptd_mindt_vis[tid], SQR(len(i))
-                                        *fac/(nu_t(i)+TINY_NUMBER));
+          ptd_mindt_vis[tid] = std::min(ptd_mindt_vis[tid], static_cast<Real>(SQR(len(i))
+                                        *fac/(nu_t(i)+TINY_NUMBER)));
       }
       if ((coeff_kiso > 0.0) || (coeff_kani > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_cnd[tid]= std::min(ptd_mindt_cnd[tid], SQR(len(i))
-                                       *fac/(kappa_t(i)+TINY_NUMBER));
+          ptd_mindt_cnd[tid]= std::min(ptd_mindt_cnd[tid], static_cast<Real>(SQR(len(i))
+                                       *fac/(kappa_t(i)+TINY_NUMBER)));
       }
     }
   }

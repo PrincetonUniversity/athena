@@ -371,12 +371,12 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
       if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid], fac_oa*SQR(len(i))/(eta_t(i)+TINY_NUMBER));
+          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid], static_cast<Real>(fac_oa*SQR(len(i))/(eta_t(i)+TINY_NUMBER)));
       }
       if (coeff_h > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], fac_h*SQR(len(i))/(fabs(etaB(I_H,k,j,i))+TINY_NUMBER));
+          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], static_cast<Real>(fac_h*SQR(len(i))/(fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
       }
     }
   }
