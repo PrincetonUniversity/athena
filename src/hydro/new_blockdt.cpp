@@ -19,10 +19,8 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
-//[diffusion
 #include "hydro_diffusion/hydro_diffusion.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
-//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -128,7 +126,7 @@ Real Hydro::NewBlockTimeStep(void) {
     }
   }
 
-//[diffusion
+// calculate the timestep limited by the diffusion process
   if (phdif->hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
     phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
@@ -143,7 +141,6 @@ Real Hydro::NewBlockTimeStep(void) {
     min_dt = std::min(min_dt,mindt_oa);
     min_dt = std::min(min_dt,mindt_h);
   } // field diffusion
-//diffusion]
 
   min_dt *= pmb->pmy_mesh->cfl_number;
 

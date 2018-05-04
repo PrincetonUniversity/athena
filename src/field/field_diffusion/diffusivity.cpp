@@ -10,16 +10,15 @@
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MA
 #include <iostream>   // cout, endl
 
 // Athena headers
 #include "../../athena.hpp"          // Real
 #include "../../athena_arrays.hpp"   // AthenaArray
 #include "../../coordinates/coordinates.hpp" // Coordinates
-#include "../../mesh/mesh.hpp"            // MeshBlock
-#include "../field.hpp"              // Field
 #include "../../hydro/hydro.hpp"     // Fluid
+#include "../field.hpp"              // Field
+#include "../../mesh/mesh.hpp"       // MeshBlock
 #include "../../parameter_input.hpp" // ParameterInput
 
 //======================================================================================
@@ -29,7 +28,6 @@
 //
 //    ConstDiffusivity          - magnetic diffusivity with constant proportional
 //                                 coefficients (default choice)
-//    NewFieldDiffusionDt       - timestep constraint due to non-ideal MHD terms
 //    CalcCurrent               - calculate current density
 //
 //    OhmicEMF                  - calculate EMF from Ohmic resistivity
@@ -37,15 +35,14 @@
 //    AmbipolarEMF              - calculate EMF from ambipolar diffusion
 //
 //    PoyntingFlux              - calculate the Poynting flux due to dissipation
-//
-//    AddPoyntingFlux           - add Poynting flux to energy flux
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
 // Magnetic diffusivity from constant coefficients
 
 void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
-     const AthenaArray<Real> &bmag, const int is, const int ie, const int js, const int je, const int ks, const int ke)
+     const AthenaArray<Real> &bmag, const int is, const int ie, const int js,
+     const int je, const int ks, const int ke)
 {
   if (pfdif->coeff_o > 0.0) { // Ohmic resistivity is turned on
     for(int k=ks; k<=ke; k++) {
@@ -76,106 +73,6 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
       }
     }
   }
-
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-// Get the non-ideal MHD timestep
-
-void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
-{
-  int tid=0;
-  MeshBlock *pmb = pmy_block;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  Real fac_oa,fac_h;
-  if(pmb->block_size.nx3>1) fac_oa = 1.0/6.0;
-  else if (pmb->block_size.nx2>1) fac_oa = 0.25;
-  else fac_oa = 0.5;
-  if(pmb->block_size.nx2>1) fac_h = 1.0;
-  else fac_h=0.5;
-  //if(pmb->block_size.nx3>1) fac_oa = 1.0/3.0;
-  //else fac_oa=0.5;
-  //if(pmb->block_size.nx2>1) fac_h = 1.0;
-  //else fac_h=0.5;
-
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-  Real *ptd_mindt_oa;
-  Real *ptd_mindt_h;
-  ptd_mindt_oa = new Real [nthreads];
-  ptd_mindt_h  = new Real [nthreads];
-
-  for (int n=0; n<nthreads; ++n) {
-    ptd_mindt_oa[n] = (FLT_MAX);
-    ptd_mindt_h[n]  = (FLT_MAX);
-  }
-
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
-  AthenaArray<Real> eta_t;
-  eta_t.InitWithShallowSlice(eta_tot_,2,tid,1);
-  AthenaArray<Real> len, dx2, dx3;
-  len.InitWithShallowSlice(dx1_,2,tid,1);
-  dx2.InitWithShallowSlice(dx2_,2,tid,1);
-  dx3.InitWithShallowSlice(dx3_,2,tid,1);
-
-  for (int k=ks; k<=ke; ++k){
-
-#pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j){
-#pragma omp simd
-      for (int i=is; i<=ie; ++i){
-        eta_t(i) = 0.0;
-      }
-      if (coeff_o > 0.0){
-#pragma omp simd
-        for (int i=is; i<=ie; ++i){
-          eta_t(i) += etaB(I_O,k,j,i);
-        }
-      }
-      if (coeff_a > 0.0){
-#pragma omp simd
-        for (int i=is; i<=ie; ++i){
-          eta_t(i) += etaB(I_A,k,j,i);
-        }
-      }
-      pmb->pcoord->CenterWidth1(k,j,is,ie,len);
-      pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
-      pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
-#pragma omp simd
-      for (int i=is; i<=ie; ++i){
-        len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
-        len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
-      }
-      if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
-#pragma omp simd
-        for (int i=is; i<=ie; ++i)
-          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid], fac_oa*SQR(len(i))/(eta_t(i)+TINY_NUMBER));
-      }
-      if (coeff_h > 0.0) {
-#pragma omp simd
-        for (int i=is; i<=ie; ++i)
-          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], fac_h*SQR(len(i))/(fabs(etaB(I_H,k,j,i))+TINY_NUMBER));
-      }
-    }
-  }
-} // end of omp parallel region
-
-  dt_oa = ptd_mindt_oa[0];
-  dt_h = ptd_mindt_h[0];
-  for (int n=1; n<nthreads; ++n) {
-    dt_oa = std::min(dt_oa,ptd_mindt_oa[n]);
-    dt_h  = std::min(dt_h, ptd_mindt_h[n]);
-  }
-
-  delete[] ptd_mindt_oa;
-  delete[] ptd_mindt_h;
 
   return;
 }
@@ -298,7 +195,8 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
 //--------------------------------------------------------------------------------------
 // EMF from Ohmic resistivity
 
-void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc, EdgeField &e)
+void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
+                              EdgeField &e)
 {
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -381,7 +279,8 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc, E
 //--------------------------------------------------------------------------------------
 // EMF from ambipolar diffusion
 
-void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc, EdgeField &e)
+void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc,
+                                  EdgeField &e)
 {
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -629,62 +528,3 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc)
 } // end of OMP parallel region
   return;
 }
-
-//--------------------------------------------------------------------------------------
-// Add Poynting flux to the hydro energy flux
-
-void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
-{
-  MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[X3DIR];
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  AthenaArray<Real> f1,f2,f3;
-  f1.InitWithShallowCopy(p_src.x1f);
-  f2.InitWithShallowCopy(p_src.x2f);
-  f3.InitWithShallowCopy(p_src.x3f);
-
-  // 1D update:
-  if (pmb->block_size.nx2 == 1) {
-#pragma omp simd
-    for (int i=is; i<=ie+1; ++i) {
-      x1flux(IEN,ks,js,i) += f1(ks,js,i);
-    }
-    return;
-  }
-
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-  {
-    // 2D update:
-    if (pmb->block_size.nx3 == 1) {
-#pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j) {
-#pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          x1flux(IEN,ks,j,i) += f1(ks,j,i);
-          x2flux(IEN,ks,j,i) += f2(ks,j,i);
-        }
-      }
-      return;
-    }
-
-    // 3D update:
-    for (int k=ks; k<=ke+1; ++k) {
-#pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j) {
-#pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          x1flux(IEN,k,j,i) += f1(k,j,i);
-          x2flux(IEN,k,j,i) += f2(k,j,i);
-          x3flux(IEN,k,j,i) += f3(k,j,i);
-        }
-      }
-    }
-  } // end of OMP parallel region
-  return;
-}
-

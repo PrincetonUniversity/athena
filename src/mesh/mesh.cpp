@@ -45,10 +45,8 @@
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
-//[diffusion
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
-//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -1381,7 +1379,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                      time, 0.0);
     }
 
-//[diffusion
     // Calc initial diffusion coefficients
 #pragma omp for private(pmb,phydro,pfield)
     for (int i=0; i<nmb; ++i) {
@@ -1393,7 +1390,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
       }
     }
-//diffusion]
 
     if ((res_flag==0) && (adaptive==true)) {
 #pragma omp for

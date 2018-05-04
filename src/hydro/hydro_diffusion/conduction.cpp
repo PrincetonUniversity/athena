@@ -39,6 +39,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   }
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
 		    kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
@@ -60,6 +61,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   if(pmb_->block_size.nx2 > 1) { //2D or 3D
     for (int k=kl; k<=ku; ++k) {
       for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
 		      kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j-1,i));
@@ -82,6 +84,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   if(pmb_->block_size.nx3 > 1) { //3D
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
         for (int i=il; i<=iu; ++i){
 	        kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k-1,j,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k-1,j,i));

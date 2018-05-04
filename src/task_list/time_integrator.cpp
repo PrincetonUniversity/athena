@@ -18,13 +18,11 @@
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
-//[diffusion
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
-#include "../field/field_diffusion/field_diffusion.hpp"
-//diffusion]
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -207,17 +205,15 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     AddTimeIntegratorTask(STARTUP_INT,NONE);
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
-    //[diffusion
     // calculate hydro/field diffusive fluxes
     AddTimeIntegratorTask(DIFFUSE_HYD,START_ALLRECV);
     if (MAGNETIC_FIELDS_ENABLED)
       AddTimeIntegratorTask(DIFFUSE_FLD,START_ALLRECV);
-    //diffusion]
     // compute hydro fluxes, integrate hydro variables
-    //[diffusion
-    //AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
-    AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD|DIFFUSE_FLD));
-    //diffusion]
+    if (MAGNETIC_FIELDS_ENABLED)
+      AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD|DIFFUSE_FLD));
+    else
+      AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD));
     if (pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -236,11 +232,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      //[diffusion
-      //AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-      ///AddTimeIntegratorTask(CALC_FLDFLX,(DIFFUSE_FLD|CALC_HYDFLX));
       AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-      //diffusion]
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
       if (SHEARING_BOX) {// Shearingbox BC for EMF
@@ -480,7 +472,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         (&TimeIntegratorTaskList::UpdateTimeStep);
       break;
 
-    //[diffusion
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -491,12 +482,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldDiffusion);
       break;
-    //case (CALC_DIFFUSIVITY):
-    //  task_list_[ntasks].TaskFunc=
-    //    static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //    (&TimeIntegratorTaskList::CalcDiffusivity);
-    //  break;
-    //diffusion]
 
     default:
       std::stringstream msg;
@@ -654,7 +639,6 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   return TASK_NEXT;
 }
 
-//[diffusion
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes
 
@@ -692,38 +676,6 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
   }
   return TASK_NEXT;
 }
-
-//----------------------------------------------------------------------------------------
-// Functions to calculate hydro and field diffusion coefficients
-//
-//enum TaskStatus TimeIntegratorTaskList::CalcDiffusivity(MeshBlock *pmb, int step)
-//{
-//  Hydro *ph=pmb->phydro;
-//  Field *pf=pmb->pfield;
-//  Mesh  *pm=pmb->pmy_mesh;
-//
-//  bool do_hydro_diff=ph->phdif->hydro_diffusion_defined;
-//
-//  if (do_hydro_diff) {
-//    if(step <= nsub_steps) {
-//      ph->phdif->SetHydroDiffusivity(ph->w,pf->bcc);
-//    } else {
-//      return TASK_FAIL;
-//    }
-//  }
-//  if (MAGNETIC_FIELDS_ENABLED) {
-//    bool do_field_diff=pf->pfdif->field_diffusion_defined;
-//    if (do_field_diff) {
-//      if(step <= nsub_steps) {
-//        pf->pfdif->SetFieldDiffusivity(ph->w,pf->bcc);
-//      } else {
-//        return TASK_FAIL;
-//      }
-//    }
-//  }
-//  return TASK_NEXT;
-//}
-//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks

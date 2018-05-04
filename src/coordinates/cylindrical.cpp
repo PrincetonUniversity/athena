@@ -17,10 +17,8 @@
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
-//[diffusion
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
-//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Cylindrical coordinates constructor
@@ -53,7 +51,6 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
-  //[diffusion
   // allocate arrays for volume- and face-centered geometry coefficients of cells
   h2f.NewAthenaArray(ncells1);
   dh2fd1.NewAthenaArray(ncells1);
@@ -67,7 +64,6 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   dh31vd1.NewAthenaArray(ncells1);
   h32v.NewAthenaArray(ncells2);
   dh32vd2.NewAthenaArray(ncells2);
-  //diffusion]
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -114,7 +110,6 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  //[diffusion
   // initialize geometry coefficients
   // x1-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
@@ -142,7 +137,6 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
       dh32fd2(j) = 0.0;
     }
   }
-  //diffusion]
 
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -364,11 +358,10 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
 void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
-  //[diffusion
+
   HydroDiffusion *phd = pmy_block->phydro->phdif;
   bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
                             (phd->coeff_nuiso > 0.0 || phd->coeff_nuani > 0.0));
-  //diffusion]
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
@@ -384,15 +377,10 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         if (MAGNETIC_FIELDS_ENABLED) {
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
         }
-        //[diffusion
         if (do_hydro_diffusion)
-          //m_pp += 0.5*(pmy_block->phydro->phdif->visflx[X2DIR](IM2,k,j+1,i)
-          //            +pmy_block->phydro->phdif->visflx[X2DIR](IM2,k,j,i));
           m_pp += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
-        //diffusion]
+
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
-        // in the future:
-        // u(IM1,k,j,i) += dt*coord_src1_i_(i)*0.5*(flux[x2DIR](IM2,k,j,i) + flux[x2DIR](IM2,k,j+1,i));
 
         // src_2 = -< M_{phi r} ><1/r>
         Real& x_i   = x1f(i);

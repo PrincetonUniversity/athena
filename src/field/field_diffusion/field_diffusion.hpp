@@ -51,19 +51,19 @@ public:
   void AddEMF(const EdgeField &e_src, EdgeField &e_des);
   void ClearEMF(EdgeField &e);
   void CalcCurrent(FaceField &b);
+  void AddPoyntingFlux (FaceField &p_src);
+
+  // functions to calculate diffusivities and timesteps
+  void SetFieldDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bcc);
+  void NewFieldDiffusionDt(Real &dt_oa, Real &dt_h);
 
   // non-ideal MHD EMFs
   void OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc, EdgeField &e);
   //void HallEMF(const FaceField &b, const AthenaArray<Real> &bc, EdgeField &e);
   void AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc, EdgeField &e);
 
-  // functions to calculate diffusivities and timesteps
-  void SetFieldDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bcc);
-  void NewFieldDiffusionDt(Real &dt_oa, Real &dt_h);
-
   // functions for energy flux
   void PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bcc);
-  void AddPoyntingFlux (FaceField &p_src);
 
 private:
   AthenaArray<Real> bmag_; // B field strength

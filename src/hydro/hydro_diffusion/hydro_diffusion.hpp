@@ -58,26 +58,6 @@ public:
   // viscosity
   void ViscousFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
   void ViscousFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
-  // auxiliary functions to calculate viscous flux
-  void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
-  void FaceXdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceXdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceXdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
 
   // thermal conduction
   void ThermalFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
@@ -98,5 +78,25 @@ private:
   ViscosityCoeff_t CalcViscCoeff_;
   ConductionCoeff_t CalcCondCoeff_;
 
+  // auxiliary functions to calculate viscous flux
+  void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
+  void FaceXdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
 };
 #endif

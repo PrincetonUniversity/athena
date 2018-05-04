@@ -45,7 +45,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
-  //[diffusion
   // allocate arrays for volume- and face-centered geometry coefficients of cells
   h2f.NewAthenaArray(ncells1);
   dh2fd1.NewAthenaArray(ncells1);
@@ -59,7 +58,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   dh31vd1.NewAthenaArray(ncells1);
   h32v.NewAthenaArray(ncells2);
   dh32vd2.NewAthenaArray(ncells2);
-  //diffusion]
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -120,7 +118,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
       }
     }
   }
-  //[diffusion
   // initialize geometry coefficients
   // x1-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
@@ -148,7 +145,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
       dh32fd2(j) = 0.0;
     }
   }
-  //diffusion]
 
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
