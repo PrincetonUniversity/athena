@@ -51,14 +51,21 @@ public:
   AthenaArray<Real> by_E;
   AthenaArray<Real> bx_S;
   AthenaArray<Real> bx_N;
-  AthenaArray<Real> v_NE;
-  AthenaArray<Real> v_SE;
-  AthenaArray<Real> v_NW;
-  AthenaArray<Real> v_SW;
+  AthenaArray<Real> bz_R3;
+  AthenaArray<Real> bz_L3;
+  // 2D states
+  AthenaArray<Real> v_NE; // L2 L1
+  AthenaArray<Real> v_SE; // R2 L1
+  AthenaArray<Real> v_NW; // L2 R1
+  AthenaArray<Real> v_SW; // R2 R1
+  // 3D states
+  AthenaArray<Real> v_R3R2, v_R3L2, v_L3R2, v_L3L2;
+  AthenaArray<Real> v_R3R1, v_R3L1, v_L3R1, v_L3L1;
   AthenaArray<Real> vl_temp_;
   AthenaArray<Real> vr_temp_;
   AthenaArray<Real> alpha_plus_x1_,alpha_minus_x1_;
   AthenaArray<Real> alpha_plus_x2_,alpha_minus_x2_;
+  AthenaArray<Real> alpha_plus_x3_,alpha_minus_x3_;
   //-------- end fourth-order MHD
 
   EdgeField e;    // edge-centered electric fields used in CT

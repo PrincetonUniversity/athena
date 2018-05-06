@@ -61,18 +61,33 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     by_E.NewAthenaArray(ncells3, ncells2, ncells1);
     bx_S.NewAthenaArray(ncells3, ncells2, ncells1);
     bx_N.NewAthenaArray(ncells3, ncells2, ncells1);
+    // 3D states
+    bz_R3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_L3.NewAthenaArray(ncells3, ncells2, ncells1);
 
     // TODO(kfelker): expand to 3D
     v_NE.NewAthenaArray(2, ncells3, ncells2, ncells1);
     v_SE.NewAthenaArray(2, ncells3, ncells2, ncells1);
     v_NW.NewAthenaArray(2, ncells3, ncells2, ncells1);
     v_SW.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    // 3D states
+    v_R3R2.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_R3L2.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_L3R2.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_L3L2.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_R3R1.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_R3L1.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_L3R1.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_L3L1.NewAthenaArray(2, ncells3, ncells2, ncells1);
+
     vl_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
     vr_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
     alpha_plus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_plus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_plus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
     //-------- end allocations for fourth-order MHD
 
     e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
@@ -137,17 +152,33 @@ Field::~Field() {
   by_E.DeleteAthenaArray();
   bx_N.DeleteAthenaArray();
   bx_S.DeleteAthenaArray();
+  // 3D states
+  bz_R3.DeleteAthenaArray();
+  bz_L3.DeleteAthenaArray();
 
   v_NE.DeleteAthenaArray();
   v_SE.DeleteAthenaArray();
   v_NW.DeleteAthenaArray();
   v_SW.DeleteAthenaArray();
+  // 3D states
+  v_R3R2.DeleteAthenaArray();
+  v_R3L2.DeleteAthenaArray();
+  v_L3R2.DeleteAthenaArray();
+  v_L3L2.DeleteAthenaArray();
+  v_R3R1.DeleteAthenaArray();
+  v_R3L1.DeleteAthenaArray();
+  v_L3R1.DeleteAthenaArray();
+  v_L3L1.DeleteAthenaArray();
+
   vl_temp_.DeleteAthenaArray();
   vr_temp_.DeleteAthenaArray();
   alpha_plus_x1_.DeleteAthenaArray();
   alpha_minus_x1_.DeleteAthenaArray();
   alpha_plus_x2_.DeleteAthenaArray();
   alpha_minus_x2_.DeleteAthenaArray();
+  // 3D states
+  alpha_plus_x3_.DeleteAthenaArray();
+  alpha_minus_x3_.DeleteAthenaArray();
   // 4D scratch arrays
   scr1_nkji_cc_.DeleteAthenaArray();
   scr1_kji_x1fc_.DeleteAthenaArray();
