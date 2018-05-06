@@ -71,7 +71,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     bx_R3.NewAthenaArray(ncells3, ncells2, ncells1);
     bx_L3.NewAthenaArray(ncells3, ncells2, ncells1);
 
-    // TODO(kfelker): expand to 3D
+    // TODO(kfelker): only 2 velocity components are required at each interface.
     v_NE.NewAthenaArray(3, ncells3, ncells2, ncells1);
     v_SE.NewAthenaArray(3, ncells3, ncells2, ncells1);
     v_NW.NewAthenaArray(3, ncells3, ncells2, ncells1);

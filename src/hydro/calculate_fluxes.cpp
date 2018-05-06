@@ -332,11 +332,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVX,
                                                0, v_L3L1, v_R3L1);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ,
-                                               3, v_L3L1, v_R3L1);
+                                               2, v_L3L1, v_R3L1);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX,
                                                0, v_L3R1, v_R3R1);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ,
-                                               3, v_L3R1, v_R3R1);
+                                               2, v_L3R1, v_R3R1);
 
           // Limited transverse reconstructions: call PPMx3() for single-state b_x
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, b1, 0, 0,
@@ -536,31 +536,31 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
             for (int i=il_buf; i<=iu_buf; ++i) {
               //--- Load L/R states into local variables
               // UCT with face-centered quantities
-              wli[IDN]=wl_fc(IDN,k,j,i);
-              wli[IVX]=wl_fc(ivx,k,j,i);
-              wli[IVY]=wl_fc(ivy,k,j,i);
-              wli[IVZ]=wl_fc(ivz,k,j,i);
-              if (NON_BAROTROPIC_EOS) wli[IPR]=wl_fc(IPR,k,j,i);
-              wli[IBY]=wl_fc(IBY,k,j,i);
-              wli[IBZ]=wl_fc(IBZ,k,j,i);
+              wli[IDN] = wl_fc(IDN,k,j,i);
+              wli[IVX] = wl_fc(ivx,k,j,i);
+              wli[IVY] = wl_fc(ivy,k,j,i);
+              wli[IVZ] = wl_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wli[IPR] = wl_fc(IPR,k,j,i);
+              wli[IBY] = wl_fc(IBY,k,j,i);
+              wli[IBZ] = wl_fc(IBZ,k,j,i);
 
-              wri[IDN]=wr_fc(IDN,k,j,i);
-              wri[IVX]=wr_fc(ivx,k,j,i);
-              wri[IVY]=wr_fc(ivy,k,j,i);
-              wri[IVZ]=wr_fc(ivz,k,j,i);
-              if (NON_BAROTROPIC_EOS) wri[IPR]=wr_fc(IPR,k,j,i);
-              wri[IBY]=wr_fc(IBY,k,j,i);
-              wri[IBZ]=wr_fc(IBZ,k,j,i);
-              Real bxi= b2_fc(k,j,i);
+              wri[IDN] = wr_fc(IDN,k,j,i);
+              wri[IVX] = wr_fc(ivx,k,j,i);
+              wri[IVY] = wr_fc(ivy,k,j,i);
+              wri[IVZ] = wr_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wri[IPR] = wr_fc(IPR,k,j,i);
+              wri[IBY] = wr_fc(IBY,k,j,i);
+              wri[IBZ] = wr_fc(IBZ,k,j,i);
+              Real bxi =  b2_fc(k,j,i);
 
-              Real cl=pmb->peos->FastMagnetosonicSpeed(wli,bxi);
-              Real cr=pmb->peos->FastMagnetosonicSpeed(wri,bxi);
+              Real cl = pmb->peos->FastMagnetosonicSpeed(wli,bxi);
+              Real cr = pmb->peos->FastMagnetosonicSpeed(wri,bxi);
 
               // eq 55 in Londrillo and Del Zanna 2004
-              Real al=std::min((wri[IVX]-cr),(wli[IVX] - cl));
-              Real ar=std::max((wli[IVX] + cl),(wri[IVX] + cr));
-              Real bp=ar > 0.0 ? ar : 0.0;
-              Real bm=al < 0.0 ? al : 0.0;
+              Real al = std::min((wri[IVX]-cr),(wli[IVX] - cl));
+              Real ar = std::max((wli[IVX] + cl),(wri[IVX] + cr));
+              Real bp = ar > 0.0 ? ar : 0.0;
+              Real bm = al < 0.0 ? al : 0.0;
               pmb->pfield->alpha_plus_x2_(k,j,i) = bp;
               pmb->pfield->alpha_minus_x2_(k,j,i) = bm;
             }
@@ -571,11 +571,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVY,
                                                1, v_L3L2, v_R3L2);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVZ,
-                                               3, v_L3L2, v_R3L2);
+                                               2, v_L3L2, v_R3L2);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVY,
                                                1, v_L3R2, v_R3R2);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVZ,
-                                               3, v_L3R2, v_R3R2);
+                                               2, v_L3R2, v_R3R2);
 
           // Limited transverse reconstructions: call PPMx3() for single-state b_x
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, b2, 0, 0,
@@ -713,22 +713,145 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
     //------------------------------------------------------------------------------
     // end x3 fourth-order hydro and MHD
 
-    // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
-      for (int k=ks; k<=ke+1; ++k) {
-      for (int j=jl_buf; j<=ju_buf; ++j) {
-        pmb->pcoord->CenterWidth3(k,j,il_buf,iu_buf,dxw);
-#pragma omp simd
-        for (int i=il_buf; i<=iu_buf; ++i) {
-          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
-                        / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-          w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+      //-------- begin fourth-order upwind constrained transport (UCT4x3)
+      if (order == 4) {
+        // Limited transverse reconstructions: call PPMx1() for x1x3 interfaces
+        // L3 states:
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wl, IVX, 0,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ, 2,
+                                             vl_temp, vr_temp);
+        // Store temporary arrays as average of R_x[R_z[]] and R_z[R_x[]] reconstructions
+        for (int n=0; n<3; n+=2) { // n=0, 2
+          for (int k=ks; k<=ke+1; ++k) {
+            for (int j=js; j<=je; ++j) {
+              for (int i=is; i<=ie+1; ++i) {
+                v_L3L1(n,k,j,i) = 0.5*(v_L3L1(n,k,j,i) + vl_temp(n,k,j,i));
+                v_L3R1(n,k,j,i) = 0.5*(v_L3R1(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
         }
-      }}
-    }
-  }
 
+        // R3 states:
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX, 0,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ, 2,
+                                             vl_temp, vr_temp);
+        // Store temporary arrays as average of R_x[R_z[]] and R_z[R_x[]] reconstructions
+        for (int n=0; n<3; n+=2) { // n=0, 2
+          for (int k=ks; k<=ke+1; ++k) {
+            for (int j=js; j<=je; ++j) {
+              for (int i=is; i<=ie+1; ++i) {
+                v_R3L1(n,k,j,i) = 0.5*(v_R3L1(n,k,j,i) + vl_temp(n,k,j,i));
+                v_R3R1(n,k,j,i) = 0.5*(v_R3R1(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
+        }
+
+        // Limited transverse reconstructions: call PPMx2() for x2x3 interfaces
+        // L3 states:
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wl, IVY, 1,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wl, IVZ, 2,
+                                             vl_temp, vr_temp);
+        // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
+        for (int n=1; n<3; ++n) {
+          for (int k=ks; k<=ke+1; ++k) {
+            for (int j=js; j<=je+1; ++j) {
+              for (int i=is; i<=ie; ++i) {
+                v_L3L2(n,k,j,i) = 0.5*(v_L3L2(n,k,j,i) + vl_temp(n,k,j,i));
+                v_L3R2(n,k,j,i) = 0.5*(v_L3R2(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
+        }
+
+        // R3 states:
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wr, IVY, 1,
+                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wr, IVZ, 2,
+                                             vl_temp, vr_temp);
+        // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
+        for (int n=1; n<3; ++n) {
+          for (int k=ks; k<=ke+1; ++k) {
+            for (int j=js; j<=je+1; ++j) {
+              for (int i=is; i<=ie; ++i) {
+                v_R3L2(n,k,j,i) = 0.5*(v_R3L2(n,k,j,i) + vl_temp(n,k,j,i));
+                v_R3R2(n,k,j,i) = 0.5*(v_R3R2(n,k,j,i) + vr_temp(n,k,j,i));
+              }
+            }
+          }
+        }
+
+        // Limited transverse reconstructions: call PPM for single-state b_z
+        // PPMx1()
+        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, b3, 0, 0,
+                                             bz_L1, bz_R1);
+        // PPMx2()
+        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, b3, 0, 0,
+                                             bz_L2, bz_R2);
+
+        // Repeat calculation of x3 edge-centered wavespeeds as in HLL solver
+        Real wli[(NWAVE)], wri[(NWAVE)];
+        int ivx = IVZ;
+        int ivy = IVX + ((ivx-IVX)+1) % 3;
+        int ivz = IVX + ((ivx-IVX)+2) % 3;
+        for (int k=ks; k<=ke+1; ++k) {
+          for (int j=il_buf; j<=ju_buf; ++j) {
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              //--- Load L/R states into local variables
+              // UCT with face-centered quantities
+              wli[IDN] = wl_fc(IDN,k,j,i);
+              wli[IVX] = wl_fc(ivx,k,j,i);
+              wli[IVY] = wl_fc(ivy,k,j,i);
+              wli[IVZ] = wl_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wli[IPR] = wl_fc(IPR,k,j,i);
+              wli[IBY] = wl_fc(IBY,k,j,i);
+              wli[IBZ] = wl_fc(IBZ,k,j,i);
+
+              wri[IDN] = wr_fc(IDN,k,j,i);
+              wri[IVX] = wr_fc(ivx,k,j,i);
+              wri[IVY] = wr_fc(ivy,k,j,i);
+              wri[IVZ] = wr_fc(ivz,k,j,i);
+              if (NON_BAROTROPIC_EOS) wri[IPR] = wr_fc(IPR,k,j,i);
+              wri[IBY] = wr_fc(IBY,k,j,i);
+              wri[IBZ] = wr_fc(IBZ,k,j,i);
+
+              Real bxi = b3_fc(k,j,i);
+
+              Real cl = pmb->peos->FastMagnetosonicSpeed(wli,bxi);
+              Real cr = pmb->peos->FastMagnetosonicSpeed(wri,bxi);
+
+              // eq 55 in Londrillo and Del Zanna 2004
+              Real al = std::min((wri[IVX]-cr),(wli[IVX] - cl));
+              Real ar = std::max((wli[IVX] + cl),(wri[IVX] + cr));
+              Real bp = ar > 0.0 ? ar : 0.0;
+              Real bm = al < 0.0 ? al : 0.0;
+              pmb->pfield->alpha_plus_x3_(k,j,i) = bp;
+              pmb->pfield->alpha_minus_x3_(k,j,i) = bm;
+            }
+          }
+        }
+      } else { // end if (order == 4) UCT4x1
+        // compute weights for GS07 CT algorithm
+        for (int k=ks; k<=ke+1; ++k) {
+          for (int j=jl_buf; j<=ju_buf; ++j) {
+            pmb->pcoord->CenterWidth3(k,j,il_buf,iu_buf,dxw);
+#pragma omp simd
+            for (int i=il_buf; i<=iu_buf; ++i) {
+              Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
+                  / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+              Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+              w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+            }
+          }
+        }
+      } // end if GS07 second-order MHD in x3
+    } // end if (MAGNETIC_FIELDS_ENABLED)
+  } // end if 3D
 
   if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 
