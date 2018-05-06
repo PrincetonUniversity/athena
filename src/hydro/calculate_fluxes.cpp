@@ -334,9 +334,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ,
                                                3, v_L3L1, v_R3L1);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX,
-                                               0, v_L3L2, v_R3R2);
+                                               0, v_L3R1, v_R3R1);
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ,
-                                               3, v_L3L2, v_R3R2);
+                                               3, v_L3R1, v_R3R1);
 
           // Limited transverse reconstructions: call PPMx3() for single-state b_x
           pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, b1, 0, 0,
