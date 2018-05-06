@@ -72,22 +72,22 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     bx_L3.NewAthenaArray(ncells3, ncells2, ncells1);
 
     // TODO(kfelker): expand to 3D
-    v_NE.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_SE.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_NW.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_SW.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_NE.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_SE.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_NW.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_SW.NewAthenaArray(3, ncells3, ncells2, ncells1);
     // 3D states
-    v_R3R2.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_R3L2.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_L3R2.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_L3L2.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_R3R1.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_R3L1.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_L3R1.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    v_L3L1.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    v_R3R2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3L2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3R2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3L2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3R1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3L1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3R1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3L1.NewAthenaArray(3, ncells3, ncells2, ncells1);
 
-    vl_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
-    vr_temp_.NewAthenaArray(2, ncells3, ncells2, ncells1);
+    vl_temp_.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    vr_temp_.NewAthenaArray(3, ncells3, ncells2, ncells1);
     alpha_plus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_plus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
