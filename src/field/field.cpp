@@ -62,8 +62,14 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     bx_S.NewAthenaArray(ncells3, ncells2, ncells1);
     bx_N.NewAthenaArray(ncells3, ncells2, ncells1);
     // 3D states
-    bz_R3.NewAthenaArray(ncells3, ncells2, ncells1);
-    bz_L3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_R1.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_L1.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_R2.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_L2.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_R3.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_L3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_R3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_L3.NewAthenaArray(ncells3, ncells2, ncells1);
 
     // TODO(kfelker): expand to 3D
     v_NE.NewAthenaArray(2, ncells3, ncells2, ncells1);
@@ -153,8 +159,14 @@ Field::~Field() {
   bx_N.DeleteAthenaArray();
   bx_S.DeleteAthenaArray();
   // 3D states
-  bz_R3.DeleteAthenaArray();
-  bz_L3.DeleteAthenaArray();
+  bz_R1.DeleteAthenaArray();
+  bz_L1.DeleteAthenaArray();
+  bz_R2.DeleteAthenaArray();
+  bz_L2.DeleteAthenaArray();
+  by_R3.DeleteAthenaArray();
+  by_L3.DeleteAthenaArray();
+  bx_R3.DeleteAthenaArray();
+  bx_L3.DeleteAthenaArray();
 
   v_NE.DeleteAthenaArray();
   v_SE.DeleteAthenaArray();

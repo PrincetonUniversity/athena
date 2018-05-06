@@ -47,12 +47,15 @@ public:
   AthenaArray<Real> bcc_center;
 
   // fourth-order UCT reconstructions at corners
-  AthenaArray<Real> by_W;
-  AthenaArray<Real> by_E;
-  AthenaArray<Real> bx_S;
-  AthenaArray<Real> bx_N;
-  AthenaArray<Real> bz_R3;
-  AthenaArray<Real> bz_L3;
+  AthenaArray<Real> by_W; // R1
+  AthenaArray<Real> by_E; // L1
+  AthenaArray<Real> bx_S; // R2
+  AthenaArray<Real> bx_N; // L2
+  // 3D states
+  AthenaArray<Real> bz_R1, bz_L1;
+  AthenaArray<Real> bz_R2, bz_L2;
+  AthenaArray<Real> by_R3, by_L3;
+  AthenaArray<Real> bx_R3, bx_L3;
   // 2D states
   AthenaArray<Real> v_NE; // L2 L1
   AthenaArray<Real> v_SE; // R2 L1
