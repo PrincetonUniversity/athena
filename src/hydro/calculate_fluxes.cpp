@@ -101,6 +101,31 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   by_E.InitWithShallowCopy(pmb->pfield->by_E);
   by_W.InitWithShallowCopy(pmb->pfield->by_W);
 
+  // 3D UCT states:
+  //  AthenaArray<Real> alpha_plus_x3_, alpha_minus_x3_;
+  AthenaArray<Real> v_R3R2, v_R3L2, v_L3R2, v_L3L2;
+  AthenaArray<Real> v_R3R1, v_R3L1, v_L3R1, v_L3L1;
+  AthenaArray<Real> bz_R1, bz_L1;
+  AthenaArray<Real> bz_R2, bz_L2;
+  AthenaArray<Real> by_R3, by_L3;
+  AthenaArray<Real> bx_R3, bx_L3;
+  bz_R1.InitWithShallowCopy(pmb->pfield->bz_R1);
+  bz_L1.InitWithShallowCopy(pmb->pfield->bz_L1);
+  bz_R2.InitWithShallowCopy(pmb->pfield->bz_R2);
+  bz_L2.InitWithShallowCopy(pmb->pfield->bz_L2);
+  by_R3.InitWithShallowCopy(pmb->pfield->by_R3);
+  by_L3.InitWithShallowCopy(pmb->pfield->by_L3);
+  bx_R3.InitWithShallowCopy(pmb->pfield->bx_R3);
+  bx_L3.InitWithShallowCopy(pmb->pfield->bx_L3);
+
+  v_R3R2.InitWithShallowCopy(pmb->pfield->v_R3R2);
+  v_R3L2.InitWithShallowCopy(pmb->pfield->v_R3L2);
+  v_L3R2.InitWithShallowCopy(pmb->pfield->v_L3R2);
+  v_L3L2.InitWithShallowCopy(pmb->pfield->v_L3L2);
+  v_R3R1.InitWithShallowCopy(pmb->pfield->v_R3R1);
+  v_R3L1.InitWithShallowCopy(pmb->pfield->v_R3L1);
+  v_L3R1.InitWithShallowCopy(pmb->pfield->v_L3R1);
+  v_L3L1.InitWithShallowCopy(pmb->pfield->v_L3L1);
 //----------------------------------------------------------------------------------------
 // i-direction
 
@@ -302,6 +327,21 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
             }
           }
         }
+        // Compute states for 3D UCT
+        if (pmb->block_size.nx3 > 1) {
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVX,
+                                               0, v_L3L1, v_R3L1);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ,
+                                               3, v_L3L1, v_R3L1);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX,
+                                               0, v_L3L2, v_R3R2);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ,
+                                               3, v_L3L2, v_R3R2);
+
+          // Limited transverse reconstructions: call PPMx3() for single-state b_x
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, b1, 0, 0,
+                                               bx_L3, bx_R3);
+        } // end UCT if 3D
       } // end if 2D or 3D
     } else { // end if (order == 4) UCT4x1
       // compute weights for GS07 CT algorithm
