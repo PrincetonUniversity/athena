@@ -566,6 +566,21 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
             }
           }
         }
+        // Compute states for 3D UCT
+        if (pmb->block_size.nx3 > 1) {
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVY,
+                                               1, v_L3L2, v_R3L2);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVZ,
+                                               3, v_L3L2, v_R3L2);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVY,
+                                               1, v_L3R2, v_R3R2);
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVZ,
+                                               3, v_L3R2, v_R3R2);
+
+          // Limited transverse reconstructions: call PPMx3() for single-state b_x
+          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, b2, 0, 0,
+                                               by_L3, by_R3);
+        } // end UCT if 3D
       } else { // end if (order == 4) UCT4x1
         // compute weights for GS07 CT algorithm
         for (int k=kl_buf; k<=ku_buf; ++k) {
