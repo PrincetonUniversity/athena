@@ -100,16 +100,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // Boundary
   pbval  = new BoundaryValues(this, input_bcs, pin);
 
- // // physics-related objects
- // phydro = new Hydro(this, pin);
- // if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
- // peos = new EquationOfState(this, pin);
-
-  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-  if (SELF_GRAVITY_ENABLED == 1) {
-    pgbval = new GravityBoundaryValues(this,input_bcs);
-  }
-
   // Coordinates
   if (COORDINATE_SYSTEM == "cartesian") {
     pcoord = new Cartesian(this, pin, false);
@@ -127,13 +117,18 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
+  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  if (SELF_GRAVITY_ENABLED == 1) {
+    pgbval = new GravityBoundaryValues(this,input_bcs);
+  }
+
   // Reconstruction (constructor may implicitly depend on Coordinates, and PPM variable
-  // floors depend on EOS)
+  // floors depend on EOS (but EOS not needed by Reconstruction constructor)
   precon = new Reconstruction(this, pin);
 
   if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
-  // physics-related objects
+  // physics-related objects: may depend on Coordinates for diffusion terms
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
