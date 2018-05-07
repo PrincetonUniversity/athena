@@ -295,6 +295,22 @@ void Field::ComputeCornerE_UCT4() {
         Real alpha_minus_y = std::abs(pmb->pfield->alpha_minus_x2_(k,j,i));
 
         // Following Londrillo and Del Zanna 2004, eq 56 notation
+        // Real e3_L2L1, e3_R2L1, e3_L2R1, e3_R2R1;
+        // Real bx_R2_minus_bx_L2, by_R1_minus_by_L1;
+        // e3_L2L1 = v_L2L1(1,k,j,i)*bx_L2(k,j,i) - v_L2L1(0,k,j,i)*by_L1(k,j,i);
+        // e3_R2L1 = v_R2L1(1,k,j,i)*bx_R2(k,j,i) - v_R2L1(0,k,j,i)*by_L1(k,j,i);
+        // e3_L2R1 = v_L2R1(1,k,j,i)*bx_L2(k,j,i) - v_L2R1(0,k,j,i)*by_R1(k,j,i);
+        // e3_R2R1 = v_R2R1(1,k,j,i)*bx_R2(k,j,i) - v_R2R1(0,k,j,i)*by_R1(k,j,i);
+
+        // bx_R2_minus_bx_L2 = bx_R2(k,j,i) - bx_L2(k,j,i);
+        // by_R1_minus_by_L1 = by_R1(k,j,i) - by_L1(k,j,i);
+        // e3(k,j,i) = (alpha_plus_x*alpha_plus_y*e3_L2L1 +
+        //              alpha_plus_x*alpha_minus_y*e3_R2L1 +
+        //              alpha_minus_x*alpha_plus_y*e3_L2R1 +
+        //              alpha_minus_x*alpha_minus_y*e3_R2R1)
+        //     / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
+        //     - alpha_plus_y*alpha_minus_y*bx_R2_minus_bx_L2/(alpha_plus_y+alpha_minus_y)
+        //     + alpha_plus_x*alpha_minus_x*by_R1_minus_by_L1/(alpha_plus_x+alpha_minus_x)
         Real e3_NE, e3_SE, e3_NW, e3_SW;
         Real bx_S_minus_bx_N, by_W_minus_by_E;
         e3_NE = v_NE(1,k,j,i)*bx_N(k,j,i) - v_NE(0,k,j,i)*by_E(k,j,i);
@@ -315,79 +331,87 @@ void Field::ComputeCornerE_UCT4() {
   // for 2D: copy E1 and E2 to edges and return
   if (pmb->block_size.nx3 == 1) {
     for (int j=js; j<=je; ++j) {
-    for (int i=is; i<=ie+1; ++i) {
-      e2(ks  ,j,i) = e2_x1f(ks,j,i);
-      e2(ke+1,j,i) = e2_x1f(ks,j,i);
-    }}
+      for (int i=is; i<=ie+1; ++i) {
+        e2(ks  ,j,i) = e2_x1f(ks,j,i);
+        e2(ke+1,j,i) = e2_x1f(ks,j,i);
+      }
+    }
     for (int j=js; j<=je+1; ++j) {
-    for (int i=is; i<=ie; ++i) {
-      e1(ks  ,j,i) = e1_x2f(ks,j,i);
-      e1(ke+1,j,i) = e1_x2f(ks,j,i);
-    }}
+      for (int i=is; i<=ie; ++i) {
+        e1(ks  ,j,i) = e1_x2f(ks,j,i);
+        e1(ke+1,j,i) = e1_x2f(ks,j,i);
+      }
+    }
   } else {
+    //---- 3-D update:
+    // integrate E1 to corners using UCT (E3 already done above)
+    // E1=-(v X B)=VzBy-VyBz
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          Real alpha_plus_z = std::abs(pmb->pfield->alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(pmb->pfield->alpha_minus_x3_(k,j,i));
 
-//---- 3-D update:
-    // integrate E1 to corners using GS07 (E3 already done above)
-  //   // E1=-(v X B)=VzBy-VyBz
-  //   for (int k=ks-1; k<=ke+1; ++k) {
-  //   for (int j=js-1; j<=je+1; ++j) {
-  //     for (int i=is; i<=ie; ++i) {
-  //       cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
-  //     }
-  //   }}
+          Real alpha_plus_y = std::abs(pmb->pfield->alpha_plus_x2_(k,j,i));
+          Real alpha_minus_y = std::abs(pmb->pfield->alpha_minus_x2_(k,j,i));
 
-  //   for (int k=ks; k<=ke+1; ++k) {
-  //   for (int j=js; j<=je+1; ++j) {
-  //     for (int i=is; i<=ie; ++i) {
-  //       Real de1_l3 = (ei_x3f(X3E1,k,j  ,i) - cc_e_(k-1,j  ,i)) +
-  //                     (ei_x3f(X3E1,k,j-1,i) - cc_e_(k-1,j-1,i));
+          // Following Londrillo and Del Zanna 2004, eq 56 notation
+          Real e1_L3L2, e1_L3R2, e1_R3L2, e1_R3R2;
+          Real by_R3_minus_by_L3, bz_R2_minus_bz_L2;
+          e1_L3L2 = v_L3L2(2,k,j,i)*by_L3(k,j,i) - v_L3L2(1,k,j,i)*bz_L2(k,j,i);
+          e1_L3R2 = v_L3R2(2,k,j,i)*by_L3(k,j,i) - v_L3R2(1,k,j,i)*bz_R2(k,j,i);
+          e1_R3L2 = v_R3L2(2,k,j,i)*by_R3(k,j,i) - v_R3L2(1,k,j,i)*bz_L2(k,j,i);
+          e1_R3R2 = v_R3R2(2,k,j,i)*by_R3(k,j,i) - v_R3R2(1,k,j,i)*bz_R2(k,j,i);
 
-  //       Real de1_r3 = (ei_x3f(X3E1,k,j  ,i) - cc_e_(k  ,j  ,i)) +
-  //                     (ei_x3f(X3E1,k,j-1,i) - cc_e_(k  ,j-1,i));
+          by_R3_minus_by_L3 = by_R3(k,j,i) - by_L3(k,j,i);
+          bz_R2_minus_bz_L2 = bz_R2(k,j,i) - bz_L2(k,j,i);
+          e1(k,j,i) = (alpha_plus_z*alpha_plus_y*e1_L3L2 +
+                       alpha_plus_z*alpha_minus_y*e1_L3R2 +
+                       alpha_minus_z*alpha_plus_y*e1_R3L2 +
+                       alpha_minus_z*alpha_minus_y*e1_R3R2)
+              / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_y + alpha_minus_y))
+              + alpha_plus_y*alpha_minus_y*bz_R2_minus_bz_L2 /
+              (alpha_plus_y + alpha_minus_y) // flip sign?
+              - alpha_plus_z*alpha_minus_z*by_R3_minus_by_L3 /
+              (alpha_plus_z + alpha_minus_z);
+        }
+      }
+    }
 
-  //       Real de1_l2 = (ei_x2f(X2E1,k  ,j,i) - cc_e_(k  ,j-1,i)) +
-  //                     (ei_x2f(X2E1,k-1,j,i) - cc_e_(k-1,j-1,i));
+    // integrate E2 to corners using UCT (E3 already done above)
+    // E2=-(v X B)=VxBz-VzBx
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
+          Real alpha_plus_z = std::abs(pmb->pfield->alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(pmb->pfield->alpha_minus_x3_(k,j,i));
 
-  //       Real de1_r2 = (ei_x2f(X2E1,k  ,j,i) - cc_e_(k  ,j  ,i)) +
-  //                     (ei_x2f(X2E1,k-1,j,i) - cc_e_(k-1,j  ,i));
+          Real alpha_plus_x = std::abs(pmb->pfield->alpha_plus_x1_(k,j,i));
+          Real alpha_minus_x = std::abs(pmb->pfield->alpha_minus_x1_(k,j,i));
 
-  //       // e1(k,j,i) = -0.25*(cc_e_(k,j,i)+cc_e_(k,j-1,i)+cc_e_(k-1,j,i)+cc_e_(k-1,j-1,i))
-  //   	//   +0.5*(ei_x2f(X2E1,k-1,j,i) + ei_x2f(X2E1,k,j,i) + ei_x3f(X3E1,k,j-1,i) + ei_x3f(X3E1,k,j,i));
-  //   	// Need to add LF diffusive term
-  //     }
-  //   }}
+          // Following Londrillo and Del Zanna 2004, eq 56 notation
+          Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
+          Real bx_R3_minus_bx_L3, bz_R1_minus_bz_L1;
+          e2_L3L1 = v_L3L1(1,k,j,i)*bx_L3(k,j,i) - v_L3L1(3,k,j,i)*bz_L1(k,j,i);
+          e2_L3R1 = v_L3R1(1,k,j,i)*bx_L3(k,j,i) - v_L3R1(3,k,j,i)*bz_R1(k,j,i);
+          e2_R3L1 = v_R3L1(1,k,j,i)*bx_R3(k,j,i) - v_R3L1(3,k,j,i)*bz_L1(k,j,i);
+          e2_R3R1 = v_R3R1(1,k,j,i)*bx_R3(k,j,i) - v_R3R1(3,k,j,i)*bz_R1(k,j,i);
 
-  //   // integrate E2 to corners using GS07 (E3 already done above)
-  //   // E2=-(v X B)=VxBz-VzBx
-  //   for (int k=ks-1; k<=ke+1; ++k) {
-  //   for (int j=js; j<=je; ++j) {
-  //     for (int i=is-1; i<=ie+1; ++i) {
-  //       cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
-  //     }
-  //   }}
+          bx_R3_minus_bx_L3 = bx_R3(k,j,i) - bx_L3(k,j,i);
+          bz_R1_minus_bz_L1 = bz_R1(k,j,i) - bz_L1(k,j,i);
+          e2(k,j,i) = (alpha_plus_z*alpha_plus_x*e2_L3L1 +
+                       alpha_plus_z*alpha_minus_x*e2_L3R1 +
+                       alpha_minus_z*alpha_plus_x*e2_R3L1 +
+                       alpha_minus_z*alpha_minus_x*e2_R3R1)
+              / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_x + alpha_minus_x))
+              - alpha_plus_x*alpha_minus_x*bz_R1_minus_bz_L1 /
+              (alpha_plus_x + alpha_minus_x) // flip sign?
+              + alpha_plus_z*alpha_minus_z*bx_R3_minus_bx_L3 /
+              (alpha_plus_z + alpha_minus_z);
+        }
+      }
+    }
 
-  //   for (int k=ks; k<=ke+1; ++k) {
-  //   for (int j=js; j<=je; ++j) {
-  //     for (int i=is; i<=ie+1; ++i) {
-  //       Real de2_l3 = (ei_x3f(X3E2,k,j,i  ) - cc_e_(k-1,j,i  )) +
-  //                     (ei_x3f(X3E2,k,j,i-1) - cc_e_(k-1,j,i-1));
-
-  //       Real de2_r3 = (ei_x3f(X3E2,k,j,i  ) - cc_e_(k  ,j,i  )) +
-  //                     (ei_x3f(X3E2,k,j,i-1) - cc_e_(k  ,j,i-1));
-
-  //       Real de2_l1 = (ei_x1f(X1E2,k  ,j,i) - cc_e_(k  ,j,i-1)) +
-  //                     (ei_x1f(X1E2,k-1,j,i) - cc_e_(k-1,j,i-1));
-
-  //       Real de2_r1 = (ei_x1f(X1E2,k  ,j,i) - cc_e_(k  ,j,i  )) +
-  //                     (ei_x1f(X1E2,k-1,j,i) - cc_e_(k-1,j,i  ));
-  //       // e2(k,j,i) = -0.25*(cc_e_(k,j,i)+cc_e_(k,j,i-1)+cc_e_(k-1,j,i)+cc_e_(k-1,j,i-1))
-  //   	//   + 0.5*(ei_x3f(X3E2,k,j,i-1)+ei_x3f(X3E2,k,j,i) + ei_x1f(X1E2,k-1,j,i) +
-  //   	//   ei_x1f(X1E2,k,j,i));
-  //   	// Need to add LF diffusive term
-  //     }
-  //   }}
-
-
-  }
+  } // end if 3D
   return;
 }
