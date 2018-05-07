@@ -392,10 +392,10 @@ void Field::ComputeCornerE_UCT4() {
           // Following Londrillo and Del Zanna 2004, eq 56 notation
           Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
           Real bx_R3_minus_bx_L3, bz_R1_minus_bz_L1;
-          e2_L3L1 = v_L3L1(1,k,j,i)*bx_L3(k,j,i) - v_L3L1(3,k,j,i)*bz_L1(k,j,i);
-          e2_L3R1 = v_L3R1(1,k,j,i)*bx_L3(k,j,i) - v_L3R1(3,k,j,i)*bz_R1(k,j,i);
-          e2_R3L1 = v_R3L1(1,k,j,i)*bx_R3(k,j,i) - v_R3L1(3,k,j,i)*bz_L1(k,j,i);
-          e2_R3R1 = v_R3R1(1,k,j,i)*bx_R3(k,j,i) - v_R3R1(3,k,j,i)*bz_R1(k,j,i);
+          e2_L3L1 = - v_L3L1(2,k,j,i)*bx_L3(k,j,i) + v_L3L1(0,k,j,i)*bz_L1(k,j,i);
+          e2_L3R1 = - v_L3R1(2,k,j,i)*bx_L3(k,j,i) + v_L3R1(0,k,j,i)*bz_R1(k,j,i);
+          e2_R3L1 = - v_R3L1(2,k,j,i)*bx_R3(k,j,i) + v_R3L1(0,k,j,i)*bz_L1(k,j,i);
+          e2_R3R1 = - v_R3R1(2,k,j,i)*bx_R3(k,j,i) + v_R3R1(0,k,j,i)*bz_R1(k,j,i);
 
           bx_R3_minus_bx_L3 = bx_R3(k,j,i) - bx_L3(k,j,i);
           bz_R1_minus_bz_L1 = bz_R1(k,j,i) - bz_L1(k,j,i);
