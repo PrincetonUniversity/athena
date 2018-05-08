@@ -1,6 +1,6 @@
-# Regression test based on the decaying Alfven wave due to viscosity
-# and resistivity. The decay rate is fit and then compared with 
-# analytic solution
+# Regression test based on the decaying linear wave due to viscosity,
+# Ohmic resistivity and thermal conduction. The decay rate is fit and 
+# then compared with analytic solution
 
 # Modules
 import numpy as np                             # standard Python module for numerics
@@ -21,12 +21,12 @@ def run(**kwargs):
   arguments0 = ['output1/file_type=hst','output1/dt=0.01',
       'output2/file_type=vtk','output2/variable=prim','output2/dt=0.03',
       'time/cfl_number=0.3','time/tlim=3.0','time/nlim=-1',
-      'mesh/nx1=64','mesh/x1min=0.0','mesh/x1max=3.0','mesh/ix1_bc=periodic',
-      'mesh/ox1_bc=periodic',
-      'mesh/nx2=32','mesh/x2min=0.0','mesh/x2max=1.5','mesh/ix2_bc=periodic',
-      'mesh/ox2_bc=periodic',
-      'mesh/nx3=32','mesh/x3min=0.0','mesh/x3max=1.5','mesh/ix3_bc=periodic', 
-      'mesh/ox3_bc=periodic',
+      'mesh/nx1=64','mesh/x1min=0.0','mesh/x1max=3.0',
+      'mesh/ix1_bc=periodic','mesh/ox1_bc=periodic',
+      'mesh/nx2=32','mesh/x2min=0.0','mesh/x2max=1.5',
+      'mesh/ix2_bc=periodic','mesh/ox2_bc=periodic',
+      'mesh/nx3=32','mesh/x3min=0.0','mesh/x3max=1.5',
+      'mesh/ix3_bc=periodic','mesh/ox3_bc=periodic',
       'mesh/num_threads=1','mesh/refinement=none',
       'meshblock/nx1=64','meshblock/nx2=32','meshblock/nx3=32',
       'hydro/gamma=1.666666666666667', 'hydro/iso_sound_speed=1.0',
@@ -41,7 +41,7 @@ def analyze():
   ksqr = (2.0*np.pi)**2
   # fast mode decay rate = (19\nu/4+3\eta+3(\gamma-1)^2*kappa/gamma/4)*(2/15)*k^2
   # slow mode decay rate = (4\nu/+3\eta/4+3(\gamma-1)^2*kappa/gamma/4)*(2/15)*k^2
-  rate = 2.0*(4.0*0.01+3.0*0.02/4.0+0.02*4.0/5.0)/15.0*ksqr #(4nu/3+(gamma-1)^2/gamma*kappa)*k^2/2 decay rate of sound wave with thermal conduction
+  rate = 2.0*(4.0*0.01+3.0*0.02/4.0+0.02*4.0/5.0)/15.0*ksqr
 
   basename='bin/DecayLinWave.block0.out2.'
   nframe = 101

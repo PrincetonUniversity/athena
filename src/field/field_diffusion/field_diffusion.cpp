@@ -7,6 +7,7 @@
 
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MA
+#include <cmath>      // sqrt(), fabs()
 
 // Athena++ headers
 #include "field_diffusion.hpp"
@@ -226,7 +227,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const Athen
 #pragma omp simd
       for (int i=il; i<=iu; ++i){
         Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
-        bmag_(k,j,i) = sqrt(Bsq);
+        bmag_(k,j,i) = std::sqrt(Bsq);
       }
     }
   }
@@ -376,7 +377,7 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
       if (coeff_h > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], static_cast<Real>(fac_h*SQR(len(i))/(fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
+          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], static_cast<Real>(fac_h*SQR(len(i))/(std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
       }
     }
   }
