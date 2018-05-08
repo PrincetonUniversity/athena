@@ -5,8 +5,6 @@
 //=======================================================================================
 //  \brief functions to calculate diffusion fluxes
 
-// Primary header
-#include "field_diffusion.hpp"
 
 // C++ headers
 #include <iostream>   // cout, endl
@@ -17,6 +15,7 @@
 #include "../../coordinates/coordinates.hpp" // Coordinates
 #include "../../hydro/hydro.hpp"     // Fluid
 #include "../field.hpp"              // Field
+#include "field_diffusion.hpp"
 #include "../../mesh/mesh.hpp"       // MeshBlock
 #include "../../parameter_input.hpp" // ParameterInput
 
@@ -34,15 +33,14 @@
 //    AmbipolarEMF              - calculate EMF from ambipolar diffusion
 //
 //    PoyntingFlux              - calculate the Poynting flux due to dissipation
-//======================================================================================
+//=======================================================================================
 
 //--------------------------------------------------------------------------------------
 // Magnetic diffusivity from constant coefficients
 
 void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
      const AthenaArray<Real> &bmag, const int is, const int ie, const int js,
-     const int je, const int ks, const int ke)
-{
+     const int je, const int ks, const int ke) {
   if (pfdif->coeff_o > 0.0) { // Ohmic resistivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
@@ -80,8 +78,7 @@ void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
 //-------------------------------------------------------------------------------------
 // Calculate current density
 
-void FieldDiffusion::CalcCurrent(FaceField &b)
-{
+void FieldDiffusion::CalcCurrent(FaceField &b) {
   MeshBlock *pmb = pmy_block;
   Coordinates *pco = pmb->pcoord;
 
@@ -195,8 +192,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b)
 // EMF from Ohmic resistivity
 
 void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
-                              EdgeField &e)
-{
+                              EdgeField &e) {
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -279,8 +275,7 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
 // EMF from ambipolar diffusion
 
 void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc,
-                                  EdgeField &e)
-{
+                                  EdgeField &e) {
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -457,8 +452,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
 //--------------------------------------------------------------------------------------
 //Poynting flux from non-ideal MHD
 
-void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc)
-{
+void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

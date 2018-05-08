@@ -1,5 +1,5 @@
-#ifndef HYDRO_DIFFUSION_HPP
-#define HYDRO_DIFFUSION_HPP
+#ifndef HYDRO_HYDRO_DIFFUSION_HYDRO_DIFFUSION_HPP_
+#define HYDRO_HYDRO_DIFFUSION_HYDRO_DIFFUSION_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -48,20 +48,26 @@ public:
   AthenaArray<Real> kappa; // conduction array
 
   // functions
-  void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c, AthenaArray<Real> *flx);
+  void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,
+                                    AthenaArray<Real> *flx);
   void AddHydroDiffusionFlux(AthenaArray<Real> *flx_src, AthenaArray<Real> *flx_des);
-  void AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src, AthenaArray<Real> *flux_des);
+  void AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
+                                   AthenaArray<Real> *flux_des);
   void ClearHydroFlux(AthenaArray<Real> *flx);
   void SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc);
   void NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd);
 
   // viscosity
-  void ViscousFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
-  void ViscousFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
+  void ViscousFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
+                             AthenaArray<Real> *flx);
+  void ViscousFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
+                               AthenaArray<Real> *flx);
 
   // thermal conduction
-  void ThermalFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
-  void ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
+  void ThermalFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
+                             AthenaArray<Real> *flx);
+  void ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
+                               AthenaArray<Real> *flx);
 
 private:
   MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
@@ -99,4 +105,4 @@ private:
   void FaceZdz(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len);
 };
-#endif
+#endif // HYDRO_HYDRO_DIFFUSION_HYDRO_DIFFUSION_HPP_

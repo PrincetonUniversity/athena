@@ -17,8 +17,7 @@
 // Calculate isotropic thermal conduction
 
 void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
-              const AthenaArray<Real> &cons, AthenaArray<Real> *cndflx)
-{
+              const AthenaArray<Real> &cons, AthenaArray<Real> *cndflx) {
   AthenaArray<Real> &x1flux=cndflx[X1DIR];
   AthenaArray<Real> &x2flux=cndflx[X2DIR];
   AthenaArray<Real> &x3flux=cndflx[X3DIR];
@@ -85,7 +84,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i){
+        for (int i=il; i<=iu; ++i) {
 	        kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k-1,j,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k-1,j,i));
           dTdz = (prim(IPR,k,j,i)/prim(IDN,k,j,i)-prim(IPR,k-1,j,i)/
@@ -103,9 +102,8 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
 //---------------------------------------------------------------------------------------
 // Calculate anisotropic thermal conduction
 
-void HydroDiffusion::ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
-                     AthenaArray<Real> *flx)
-{
+void HydroDiffusion::ThermalFlux_aniso(const AthenaArray<Real> &p,
+                 const AthenaArray<Real> &c, AthenaArray<Real> *flx) {
   return;
 }
 
@@ -116,8 +114,7 @@ void HydroDiffusion::ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaAr
 // constant viscosity
 
 void ConstConduction(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke)
-{
+    const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke) {
   if (phdif->coeff_kiso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {

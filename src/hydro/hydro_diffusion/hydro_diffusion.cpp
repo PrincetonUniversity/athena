@@ -21,8 +21,7 @@
 
 // HydroDiffusion constructor
 
-HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin)
-{
+HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   pmy_hydro_ = phyd;
   pmb_ = pmy_hydro_->pmy_block;
   pco_ = pmb_->pcoord;
@@ -90,8 +89,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin)
 
 // destructor
 
-HydroDiffusion::~HydroDiffusion()
-{
+HydroDiffusion::~HydroDiffusion() {
   if (coeff_nuiso > 0.0 || coeff_nuani > 0.0) {
     visflx[X1DIR].DeleteAthenaArray();
     visflx[X2DIR].DeleteAthenaArray();
@@ -126,8 +124,7 @@ HydroDiffusion::~HydroDiffusion()
 //  \brief Calculate diffusion flux for hydro flux
 
 void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &cons, AthenaArray<Real> *flux)
-{
+     const AthenaArray<Real> &cons, AthenaArray<Real> *flux) {
 
   Hydro *ph=pmb_->phydro;
   Field *pf=pmb_->pfield;
@@ -150,8 +147,8 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
 //! \fn void HydroDiffusion::AddHydroDiffusionEnergyFlux
 //  \brief Adds only diffusion energy flux to hydro flux
 
-void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src, AthenaArray<Real> *flux_des)
-{
+void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
+                                                 AthenaArray<Real> *flux_des) {
 
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
@@ -163,10 +160,10 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src, At
   AthenaArray<Real> &x2diflx=flux_src[X2DIR];
   AthenaArray<Real> &x3diflx=flux_src[X3DIR];
 
-  for (int k=ks; k<=ke; ++k){
-    for (int j=js; j<=je; ++j){
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         x1flux(IEN,k,j,i) += x1diflx(k,j,i);
         if(i==ie) x1flux(IEN,k,j,i+1) += x1diflx(k,j,i+1);
         if (pmb_->block_size.nx2 > 1) {
@@ -188,8 +185,8 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src, At
 //! \fn void HydroDiffusion::AddHydroDiffusionFlux
 //  \brief Adds all componenets of diffusion flux to hydro flux
 
-void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src, AthenaArray<Real> *flux_des)
-{
+void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src,
+                                           AthenaArray<Real> *flux_des) {
 
   int size1 = flux_des[X1DIR].GetSize();
 #pragma omp simd
@@ -217,8 +214,7 @@ void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src, AthenaAr
 //! \fn void HydroDiffusion::ClearHydroDiffusionFlux
 //  \brief Reset diffusion flux back to zeros
 
-void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux)
-{
+void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux) {
   int size1 = flux[X1DIR].GetSize();
   int size2 = flux[X2DIR].GetSize();
   int size3 = flux[X3DIR].GetSize();
@@ -242,8 +238,7 @@ void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux)
 //! \fn void HydroDiffusion::SetHydroDiffusivity(Athena<Real> &w, AthenaArray<Real> &bc)
 // Set hydro diffusion coefficients; called in CALC_DIFFUSIVITY in tasklist
 
-void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc)
-{
+void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc) {
   int il = pmb_->is-NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
   int iu = pmb_->ie+NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   if (pmb_->block_size.nx2 > 1) {
@@ -265,22 +260,21 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
 
 // Get the hydro diffusion timestep
 // currently return dt for viscous and conduction processes
-void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
-{
+void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   int tid=0;
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
   Real fac;
-  if(pmb_->block_size.nx3>1) fac = 1.0/6.0;
-  else if(pmb_->block_size.nx2>1) fac = 0.25;
+  if (pmb_->block_size.nx3>1) fac = 1.0/6.0;
+  else if (pmb_->block_size.nx2>1) fac = 0.25;
   else fac = 0.5;
 
   int nthreads = pmb_->pmy_mesh->GetNumMeshThreads();
   Real *ptd_mindt_vis;
   Real *ptd_mindt_cnd;
-  ptd_mindt_vis = new Real [nthreads];
-  ptd_mindt_cnd = new Real [nthreads];
+  ptd_mindt_vis = new Real[nthreads];
+  ptd_mindt_cnd = new Real[nthreads];
 
   for (int n=0; n<nthreads; ++n) {
     ptd_mindt_vis[n] = (FLT_MAX);
@@ -302,27 +296,27 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
   dx2.InitWithShallowSlice(dx2_,2,tid,1);
   dx3.InitWithShallowSlice(dx3_,2,tid,1);
 
-  for (int k=ks; k<=ke; ++k){
+  for (int k=ks; k<=ke; ++k) {
 #pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j){
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         nu_t(i) = 0.0;
         kappa_t(i) = 0.0;
       }
-      if (coeff_nuiso > 0.0){
+      if (coeff_nuiso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ISO,k,j,i);
       }
-      if (coeff_nuani > 0.0){
+      if (coeff_nuani > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ANI,k,j,i);
       }
-      if (coeff_kiso > 0.0){
+      if (coeff_kiso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ISO,k,j,i);
       }
-      if (coeff_kani > 0.0){
+      if (coeff_kani > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ANI,k,j,i);
       }
@@ -330,7 +324,7 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd)
       pmb_->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb_->pcoord->CenterWidth3(k,j,is,ie,dx3);
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }

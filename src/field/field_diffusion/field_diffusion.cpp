@@ -21,8 +21,7 @@
 
 // FieldDiffusion constructor
 
-FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin)
-{
+FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   field_diffusion_defined = false;
 
@@ -81,8 +80,7 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 
-FieldDiffusion::~FieldDiffusion()
-{
+FieldDiffusion::~FieldDiffusion() {
   if ((coeff_o != 0.0) || (coeff_h != 0.0) || (coeff_a != 0.0)) {
     etaB.DeleteAthenaArray();
     e_oa.x1e.DeleteAthenaArray();
@@ -123,8 +121,7 @@ FieldDiffusion::~FieldDiffusion()
 //  \brief Calculate diffusion EMF(Ohmic & Ambipolar for now)
 
 void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
-     const AthenaArray<Real> &bc, EdgeField &e)
-{
+     const AthenaArray<Real> &bc, EdgeField &e) {
   Field *pf = pmy_block->pfield;
   Hydro *ph = pmy_block->phydro;
   Mesh  *pm = pmy_block->pmy_mesh;
@@ -155,8 +152,7 @@ void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
 //! \fn void FieldDiffusion::AddEMF(EdgeField &e_src, EdgeField &e_des)
 //  \brief Add source EMF to destination EMF
 
-void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des)
-{
+void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des) {
   int size1 = e_src.x1e.GetSize();
   int size2 = e_src.x2e.GetSize();
   int size3 = e_src.x3e.GetSize();
@@ -180,8 +176,7 @@ void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des)
 //! \fn void FieldDiffusion::ClearFieldDiffusionEMF(EdgeField &e)
 //  \brief Clear EMF
 
-void FieldDiffusion::ClearEMF(EdgeField &e)
-{
+void FieldDiffusion::ClearEMF(EdgeField &e) {
   int size1 = e.x1e.GetSize();
   int size2 = e.x2e.GetSize();
   int size3 = e.x3e.GetSize();
@@ -205,8 +200,8 @@ void FieldDiffusion::ClearEMF(EdgeField &e)
 //--------------------------------------------------------------------------------------
 // Set magnetic diffusion coefficients
 
-void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bc)
-{
+void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
+                                         const AthenaArray<Real> &bc) {
   MeshBlock *pmb = pmy_block;
   int il = pmb->is-NGHOST; int jl = pmb->js; int kl = pmb->ks;
   int iu = pmb->ie+NGHOST; int ju = pmb->je; int ku = pmb->ke;
@@ -221,12 +216,13 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const Athen
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
 
-  for (int k=kl; k<=ku; ++k){
+  for (int k=kl; k<=ku; ++k) {
 #pragma omp for schedule(static)
-    for (int j=jl; j<=ju; ++j){
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i){
-        Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
+      for (int i=il; i<=iu; ++i) {
+        Real Bsq = SQR(bc(IB1,k,j,i))+SQR(bc(IB2,k,j,i))
+                  +SQR(bc(IB3,k,j,i));
         bmag_(k,j,i) = std::sqrt(Bsq);
       }
     }
@@ -242,8 +238,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w, const Athen
 //--------------------------------------------------------------------------------------
 // Add Poynting flux to the hydro energy flux
 
-void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
-{
+void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
   AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
@@ -300,8 +295,7 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src)
 //--------------------------------------------------------------------------------------
 // Get the non-ideal MHD timestep
 
-void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
-{
+void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
   int tid=0;
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -321,8 +315,8 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   Real *ptd_mindt_oa;
   Real *ptd_mindt_h;
-  ptd_mindt_oa = new Real [nthreads];
-  ptd_mindt_h  = new Real [nthreads];
+  ptd_mindt_oa = new Real[nthreads];
+  ptd_mindt_h  = new Real[nthreads];
 
   for (int n=0; n<nthreads; ++n) {
     ptd_mindt_oa[n] = (FLT_MAX);
@@ -341,23 +335,23 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
   dx2.InitWithShallowSlice(dx2_,2,tid,1);
   dx3.InitWithShallowSlice(dx3_,2,tid,1);
 
-  for (int k=ks; k<=ke; ++k){
+  for (int k=ks; k<=ke; ++k) {
 
 #pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j){
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         eta_t(i) = 0.0;
       }
-      if (coeff_o > 0.0){
+      if (coeff_o > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_O,k,j,i);
         }
       }
-      if (coeff_a > 0.0){
+      if (coeff_a > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_A,k,j,i);
         }
       }
@@ -365,19 +359,24 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h)
       pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
 #pragma omp simd
-      for (int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
         len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
       if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid], static_cast<Real>(fac_oa*SQR(len(i))/(eta_t(i)+TINY_NUMBER)));
+          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid],
+                                       static_cast<Real>(fac_oa
+                                       *SQR(len(i))/(eta_t(i)+TINY_NUMBER)));
       }
       if (coeff_h > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid], static_cast<Real>(fac_h*SQR(len(i))/(std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
+          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid],
+                                     static_cast<Real>(fac_h
+                                     *SQR(len(i))/(std::fabs(etaB(I_H,k,j,i))
+                                                   +TINY_NUMBER)));
       }
     }
   }

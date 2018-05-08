@@ -1,5 +1,5 @@
-#ifndef FIELD_DIFFUSION_HPP
-#define FIELD_DIFFUSION_HPP
+#ifndef FIELD_FIELD_DIFFUSION_FIELD_DIFFUSION_HPP_
+#define FIELD_FIELD_DIFFUSION_FIELD_DIFFUSION_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -76,4 +76,4 @@ private:
   AthenaArray<Real> dx1_,dx2_,dx3_,len_;
   AthenaArray<Real> eta_tot_;
 };
-#endif
+#endif // FIELD_FIELD_DIFFUSION_FIELD_DIFFUSION_HPP_
