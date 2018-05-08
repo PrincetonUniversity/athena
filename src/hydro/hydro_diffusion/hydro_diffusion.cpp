@@ -27,7 +27,6 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   pco_ = pmb_->pcoord;
   hydro_diffusion_defined = false;
 
-  int nthreads = pmb_->pmy_mesh->GetNumMeshThreads();
   int ncells1 = pmb_->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (pmb_->block_size.nx2 > 1) ncells2 = pmb_->block_size.nx2 + 2*(NGHOST);
@@ -79,11 +78,11 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 
   if (hydro_diffusion_defined) {
-    dx1_.NewAthenaArray(nthreads,ncells1);
-    dx2_.NewAthenaArray(nthreads,ncells1);
-    dx3_.NewAthenaArray(nthreads,ncells1);
-    nu_tot_.NewAthenaArray(nthreads,ncells1);
-    kappa_tot_.NewAthenaArray(nthreads,ncells1);
+    dx1_.NewAthenaArray(ncells1);
+    dx2_.NewAthenaArray(ncells1);
+    dx3_.NewAthenaArray(ncells1);
+    nu_tot_.NewAthenaArray(ncells1);
+    kappa_tot_.NewAthenaArray(ncells1);
   }
 }
 
@@ -261,7 +260,6 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
 // Get the hydro diffusion timestep
 // currently return dt for viscous and conduction processes
 void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
-  int tid=0;
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
@@ -270,34 +268,20 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   else if (pmb_->block_size.nx2>1) fac = 0.25;
   else fac = 0.5;
 
-  int nthreads = pmb_->pmy_mesh->GetNumMeshThreads();
-  Real *ptd_mindt_vis;
-  Real *ptd_mindt_cnd;
-  ptd_mindt_vis = new Real[nthreads];
-  ptd_mindt_cnd = new Real[nthreads];
-
-  for (int n=0; n<nthreads; ++n) {
-    ptd_mindt_vis[n] = (FLT_MAX);
-    ptd_mindt_cnd[n] = (FLT_MAX);
-  }
+  dt_vis = (FLT_MAX);
+  dt_cnd = (FLT_MAX);
 
 
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> nu_t;
-  nu_t.InitWithShallowSlice(nu_tot_,2,tid,1);
+  nu_t.InitWithShallowCopy(nu_tot_);
   AthenaArray<Real> kappa_t;
-  kappa_t.InitWithShallowSlice(kappa_tot_,2,tid,1);
+  kappa_t.InitWithShallowCopy(kappa_tot_);
   AthenaArray<Real> len, dx2, dx3;
-  len.InitWithShallowSlice(dx1_,2,tid,1);
-  dx2.InitWithShallowSlice(dx2_,2,tid,1);
-  dx3.InitWithShallowSlice(dx3_,2,tid,1);
+  len.InitWithShallowCopy(dx1_);
+  dx2.InitWithShallowCopy(dx2_);
+  dx3.InitWithShallowCopy(dx3_);
 
   for (int k=ks; k<=ke; ++k) {
-#pragma omp for schedule(static)
     for (int j=js; j<=je; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
@@ -331,28 +315,16 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
       if ((coeff_nuiso > 0.0) || (coeff_nuani > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_vis[tid] = std::min(ptd_mindt_vis[tid], static_cast<Real>(SQR(len(i))
-                                        *fac/(nu_t(i)+TINY_NUMBER)));
+          dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
+                                     *fac/(nu_t(i)+TINY_NUMBER)));
       }
       if ((coeff_kiso > 0.0) || (coeff_kani > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_cnd[tid]= std::min(ptd_mindt_cnd[tid], static_cast<Real>(SQR(len(i))
-                                       *fac/(kappa_t(i)+TINY_NUMBER)));
+          dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))
+                                  *fac/(kappa_t(i)+TINY_NUMBER)));
       }
     }
   }
-} // end of omp parallel region
-
-  dt_vis = ptd_mindt_vis[0];
-  dt_cnd = ptd_mindt_cnd[0];
-  for (int n=1; n<nthreads; ++n) {
-    dt_vis = std::min(dt_vis,ptd_mindt_vis[n]);
-    dt_cnd = std::min(dt_cnd,ptd_mindt_cnd[n]);
-  }
-
-  delete[] ptd_mindt_vis;
-  delete[] ptd_mindt_cnd;
-
   return;
 }

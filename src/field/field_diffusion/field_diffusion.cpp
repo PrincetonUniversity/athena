@@ -25,7 +25,6 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   field_diffusion_defined = false;
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
@@ -55,21 +54,21 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
     jfz.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
     jcc.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
 
-    eta_tot_.NewAthenaArray(nthreads,ncells1);
+    eta_tot_.NewAthenaArray(ncells1);
     bmag_.NewAthenaArray(ncells3,ncells2,ncells1);
 
     jedge_.x1e.NewAthenaArray(ncells3+1,ncells2+1,ncells1);
     jedge_.x2e.NewAthenaArray(ncells3+1,ncells2,ncells1+1);
     jedge_.x3e.NewAthenaArray(ncells3,ncells2+1,ncells1+1);
 
-    face_area_.NewAthenaArray(nthreads,ncells1);
-    face_area_p1_.NewAthenaArray(nthreads,ncells1);
-    edge_length_.NewAthenaArray(nthreads,ncells1);
-    edge_length_m1_.NewAthenaArray(nthreads,ncells1);
-    cell_volume_.NewAthenaArray(nthreads,ncells1);
-    dx1_.NewAthenaArray(nthreads,ncells1);
-    dx2_.NewAthenaArray(nthreads,ncells1);
-    dx3_.NewAthenaArray(nthreads,ncells1);
+    face_area_.NewAthenaArray(ncells1);
+    face_area_p1_.NewAthenaArray(ncells1);
+    edge_length_.NewAthenaArray(ncells1);
+    edge_length_m1_.NewAthenaArray(ncells1);
+    cell_volume_.NewAthenaArray(ncells1);
+    dx1_.NewAthenaArray(ncells1);
+    dx2_.NewAthenaArray(ncells1);
+    dx3_.NewAthenaArray(ncells1);
 
     if(pmb->pmy_mesh->FieldDiffusivity_==NULL)
       CalcMagDiffCoeff_ = ConstDiffusivity;
@@ -130,21 +129,13 @@ void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
 
   SetFieldDiffusivity(ph->w,pf->bcc);
 
-  //CalcCurrent(pfield->b);
   CalcCurrent(bi);
   ClearEMF(e_oa);
-  if (coeff_o != 0.0)
-    //OhmicEMF(pfield->b, pfield->bcc, e_oa);
-    OhmicEMF(bi, bc, e_oa);
-  if (coeff_a != 0.0)
-    //AmbipolarEMF(pfield->b, pfield->bcc, e_oa);
-    AmbipolarEMF(bi, bc, e_oa);
+  if (coeff_o != 0.0) OhmicEMF(bi, bc, e_oa);
+  if (coeff_a != 0.0) AmbipolarEMF(bi, bc, e_oa);
 
   // calculate the Poynting flux pflux and add to energy flux in Hydro class
-  if (NON_BAROTROPIC_EOS) {
-    //PoyntingFlux(e_oa, pfield->bcc);
-    PoyntingFlux(e_oa, bc);
-  }
+  if (NON_BAROTROPIC_EOS) PoyntingFlux(e_oa, bc);
   return;
 }
 
@@ -212,12 +203,12 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
     kl -= NGHOST; ku += NGHOST;
   }
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
+  //int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+//#pragma omp parallel default(shared) num_threads(nthreads)
+//{
 
   for (int k=kl; k<=ku; ++k) {
-#pragma omp for schedule(static)
+//#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -230,7 +221,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
   // set diffusivities
   CalcMagDiffCoeff_(this, w, bmag_, il, iu, jl, ju, kl, ku);
 
-} // end of omp parallel region
+//} // end of omp parallel region
 
   return;
 }
@@ -260,35 +251,29 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
     return;
   }
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-  {
-    // 2D update:
-    if (pmb->block_size.nx3 == 1) {
-#pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j) {
+  // 2D update:
+  if (pmb->block_size.nx3 == 1) {
+    for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          x1flux(IEN,ks,j,i) += f1(ks,j,i);
-          x2flux(IEN,ks,j,i) += f2(ks,j,i);
-        }
+      for (int i=is; i<=ie+1; ++i) {
+        x1flux(IEN,ks,j,i) += f1(ks,j,i);
+        x2flux(IEN,ks,j,i) += f2(ks,j,i);
       }
-      return;
     }
+    return;
+  }
 
-    // 3D update:
-    for (int k=ks; k<=ke+1; ++k) {
-#pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j) {
+  // 3D update:
+  for (int k=ks; k<=ke+1; ++k) {
+    for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          x1flux(IEN,k,j,i) += f1(k,j,i);
-          x2flux(IEN,k,j,i) += f2(k,j,i);
-          x3flux(IEN,k,j,i) += f3(k,j,i);
-        }
+      for (int i=is; i<=ie+1; ++i) {
+        x1flux(IEN,k,j,i) += f1(k,j,i);
+        x2flux(IEN,k,j,i) += f2(k,j,i);
+        x3flux(IEN,k,j,i) += f3(k,j,i);
       }
     }
-  } // end of OMP parallel region
+  }
   return;
 }
 
@@ -296,7 +281,6 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
 // Get the non-ideal MHD timestep
 
 void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
-  int tid=0;
   MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -307,37 +291,18 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
   else fac_oa = 0.5;
   if(pmb->block_size.nx2>1) fac_h = 1.0;
   else fac_h=0.5;
-  //if(pmb->block_size.nx3>1) fac_oa = 1.0/3.0;
-  //else fac_oa=0.5;
-  //if(pmb->block_size.nx2>1) fac_h = 1.0;
-  //else fac_h=0.5;
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-  Real *ptd_mindt_oa;
-  Real *ptd_mindt_h;
-  ptd_mindt_oa = new Real[nthreads];
-  ptd_mindt_h  = new Real[nthreads];
+  dt_oa = (FLT_MAX);
+  dt_h  = (FLT_MAX);
 
-  for (int n=0; n<nthreads; ++n) {
-    ptd_mindt_oa[n] = (FLT_MAX);
-    ptd_mindt_h[n]  = (FLT_MAX);
-  }
-
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
   AthenaArray<Real> eta_t;
-  eta_t.InitWithShallowSlice(eta_tot_,2,tid,1);
+  eta_t.InitWithShallowCopy(eta_tot_);
   AthenaArray<Real> len, dx2, dx3;
-  len.InitWithShallowSlice(dx1_,2,tid,1);
-  dx2.InitWithShallowSlice(dx2_,2,tid,1);
-  dx3.InitWithShallowSlice(dx3_,2,tid,1);
+  len.InitWithShallowCopy(dx1_);
+  dx2.InitWithShallowCopy(dx2_);
+  dx3.InitWithShallowCopy(dx3_);
 
   for (int k=ks; k<=ke; ++k) {
-
-#pragma omp for schedule(static)
     for (int j=js; j<=je; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
@@ -366,31 +331,16 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_oa[tid] = std::min(ptd_mindt_oa[tid],
-                                       static_cast<Real>(fac_oa
-                                       *SQR(len(i))/(eta_t(i)+TINY_NUMBER)));
+          dt_oa = std::min(dt_oa, static_cast<Real>(fac_oa*SQR(len(i))
+                                             /(eta_t(i)+TINY_NUMBER)));
       }
       if (coeff_h > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          ptd_mindt_h[tid]= std::min(ptd_mindt_h[tid],
-                                     static_cast<Real>(fac_h
-                                     *SQR(len(i))/(std::fabs(etaB(I_H,k,j,i))
-                                                   +TINY_NUMBER)));
+          dt_h = std::min(dt_h,static_cast<Real>(fac_h*SQR(len(i))
+                       /(std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
       }
     }
   }
-} // end of omp parallel region
-
-  dt_oa = ptd_mindt_oa[0];
-  dt_h = ptd_mindt_h[0];
-  for (int n=1; n<nthreads; ++n) {
-    dt_oa = std::min(dt_oa,ptd_mindt_oa[n]);
-    dt_h  = std::min(dt_h, ptd_mindt_h[n]);
-  }
-
-  delete[] ptd_mindt_oa;
-  delete[] ptd_mindt_h;
-
   return;
 }
