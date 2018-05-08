@@ -109,3 +109,5 @@ amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 ang_2_vert= false     # set to 'true' to make ang_2=pi/2
 ang_3_vert= false     # set to 'true' to make ang_3=pi/2
+nu_iso    = 0.0       # isotropic viscosity coefficient
+kappa_iso = 0.0       # isotropic thermal conduction coefficient

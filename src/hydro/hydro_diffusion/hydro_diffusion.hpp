@@ -39,11 +39,11 @@ public:
 
   // data
   bool hydro_diffusion_defined;
-  Real coeff_nuiso, coeff_nuani; // viscosity coeff
+  Real nu_iso, nu_aniso; // viscosity coeff
   AthenaArray<Real> visflx[3]; // viscous stress tensor
   AthenaArray<Real> nu; // viscosity array
 
-  Real coeff_kiso, coeff_kani; // thermal conduction coeff
+  Real kappa_iso, kappa_aniso; // thermal conduction coeff
   AthenaArray<Real> cndflx[3]; // thermal stress tensor
   AthenaArray<Real> kappa; // conduction array
 

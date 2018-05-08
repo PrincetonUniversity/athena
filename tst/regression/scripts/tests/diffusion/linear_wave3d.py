@@ -33,7 +33,7 @@ def run(**kwargs):
       # L-going slow wave
       'problem/compute_error=false','problem/wave_flag=2',
       'problem/amp=1.0e-4','problem/vflow=0.0',
-      'problem/nuiso=0.01','problem/coef_o=0.02','problem/kiso=0.02']
+      'problem/nu_iso=0.01','problem/eta_ohm=0.02','problem/kappa_iso=0.02']
   arguments = arguments0+['job/problem_id=DecayLinWave']
   athena.run('mhd/athinput.linear_wave3d', arguments)
 

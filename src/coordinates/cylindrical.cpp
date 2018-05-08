@@ -374,7 +374,7 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
   HydroDiffusion *phd = pmy_block->phydro->phdif;
   bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                            (phd->coeff_nuiso > 0.0 || phd->coeff_nuani > 0.0));
+                            (phd->nu_iso > 0.0 || phd->nu_aniso > 0.0));
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {

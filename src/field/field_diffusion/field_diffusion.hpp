@@ -38,7 +38,7 @@ public:
   // data
   MeshBlock* pmy_block;
   bool field_diffusion_defined;
-  Real coeff_o, coeff_h, coeff_a;
+  Real eta_ohm, eta_hall, eta_ad;
   AthenaArray<Real> etaB; // 4-dim array, covering O/H/A altogether
   EdgeField e_oa,e_h;     // edge-centered electric field from non-ideal MHD
   FaceField pflux;        // face-centered energy (Poynting) flux

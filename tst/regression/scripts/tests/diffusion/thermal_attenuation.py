@@ -34,9 +34,9 @@ def run(**kwargs):
       # L-going fast wave
       'problem/compute_error=false','problem/wave_flag=0',
       'problem/amp=1.0e-4','problem/vflow=0.0',
-      'problem/nuiso=0.00','problem/coef_o=0.00','problem/kiso=0.04']
+      'problem/nu_iso=0.00','problem/kappa_iso=0.04']
   arguments = arguments0+['job/problem_id=DecayLinWave']
-  athena.run('mhd/athinput.linear_wave3d', arguments)
+  athena.run('hydro/athinput.linear_wave3d', arguments)
 
 def analyze():
   ksqr = (2.0*np.pi)**2

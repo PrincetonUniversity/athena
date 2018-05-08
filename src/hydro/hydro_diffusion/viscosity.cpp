@@ -81,7 +81,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceYdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for(int i=il; i<=iu; i++) {
-          nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k,j-1,i)); //nuiso1(prim,IM1,k,j,i);
+          nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j-1,i)+prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*(fy_(i)+nuiso2*0.5*(divv_(k,j-1,i)+divv_(k,j,i)));
@@ -102,7 +102,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
     FaceYdz(ks,js,is,ie,prim,fz_);
     // store fluxes
     for(int i=il; i<=iu; i++) {
-      nu1 = nu(ISO,ks,js,i); //nuiso1(prim,IM1,k,j,i);
+      nu1 = nu(ISO,ks,js,i);
       denf = prim(IDN,ks,js,i);
       flx1 = -denf*nu1*fx_(i);
       flx2 = -denf*nu1*(fy_(i)+nuiso2*divv_(ks,js,i));
@@ -141,7 +141,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceZdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for(int i=il; i<=iu; i++) {
-          nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k-1,j,i)); //nuiso1(prim,IM1,k,j,i);
+          nu1 = 0.5*(nu(ISO,k,j,i)+nu(ISO,k-1,j,i));
           denf = 0.5*(prim(IDN,k-1,j,i)+prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*fy_(i);
@@ -163,7 +163,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
       FaceZdz(ks,j,is,ie,prim,fz_);
       // store fluxes
       for(int i=il; i<=iu; i++) {
-        nu1 = nu(ISO,ks,j,i); //nuiso1(prim,IM1,ks,j,i);
+        nu1 = nu(ISO,ks,j,i);
         denf = prim(IDN,ks,j,i);
         flx1 = -denf*nu1*fx_(i);
         flx2 = -denf*nu1*fy_(i);
@@ -458,21 +458,21 @@ void HydroDiffusion::ViscousFlux_aniso(const AthenaArray<Real> &prim,
 
 void ConstViscosity(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke) {
-  if (phdif->coeff_nuiso > 0.0) {
+  if (phdif->nu_iso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->nu(ISO,k,j,i) = phdif->coeff_nuiso;
+          phdif->nu(ISO,k,j,i) = phdif->nu_iso;
       }
     }
   }
-  if (phdif->coeff_nuani > 0.0) {
+  if (phdif->nu_aniso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->nu(ANI,k,j,i) = phdif->coeff_nuani;
+          phdif->nu(ANI,k,j,i) = phdif->nu_aniso;
       }
     }
   }

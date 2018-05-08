@@ -41,32 +41,32 @@
 void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
      const AthenaArray<Real> &bmag, const int is, const int ie, const int js,
      const int je, const int ks, const int ke) {
-  if (pfdif->coeff_o > 0.0) { // Ohmic resistivity is turned on
+  if (pfdif->eta_ohm > 0.0) { // Ohmic resistivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
 #pragma omp simd
         for(int i=is; i<=ie; i++)
-          pfdif->etaB(I_O, k,j,i) = pfdif->coeff_o;
+          pfdif->etaB(I_O, k,j,i) = pfdif->eta_ohm;
       }
     }
   }
 
-  if (pfdif->coeff_h != 0.0) { // Hall diffusivity is turned on
+  if (pfdif->eta_hall != 0.0) { // Hall diffusivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
 #pragma omp simd
         for(int i=is; i<=ie; i++)
-          pfdif->etaB(I_H, k,j,i) = pfdif->coeff_h*bmag(k,j,i)/w(IDN,k,j,i);
+          pfdif->etaB(I_H, k,j,i) = pfdif->eta_hall*bmag(k,j,i)/w(IDN,k,j,i);
       }
     }
   }
 
-  if (pfdif->coeff_a > 0.0) { // ambipolar diffusivity is turned on
+  if (pfdif->eta_ad > 0.0) { // ambipolar diffusivity is turned on
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je; j++) {
 #pragma omp simd
         for(int i=is; i<=ie; i++)
-          pfdif->etaB(I_A, k,j,i) = pfdif->coeff_a*SQR(bmag(k,j,i));
+          pfdif->etaB(I_A, k,j,i) = pfdif->eta_ad*SQR(bmag(k,j,i));
       }
     }
   }

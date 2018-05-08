@@ -523,7 +523,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
   HydroDiffusion *phd = pmy_block->phydro->phdif;
   bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                            (phd->coeff_nuiso>0.0 || phd->coeff_nuani>0.0));
+                            (phd->nu_iso>0.0 || phd->nu_aniso>0.0));
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {

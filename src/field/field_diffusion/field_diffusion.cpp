@@ -31,11 +31,11 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
   // Check if field diffusion
-  coeff_o = pin->GetOrAddReal("problem","coef_o",0.0);
-  coeff_h = pin->GetOrAddReal("problem","coef_h",0.0);
-  coeff_a = pin->GetOrAddReal("problem","coef_a",0.0);
+  eta_ohm = pin->GetOrAddReal("problem","eta_ohm",0.0);
+  eta_hall = pin->GetOrAddReal("problem","eta_hall",0.0);
+  eta_ad = pin->GetOrAddReal("problem","eta_ad",0.0);
 
-  if ((coeff_o != 0.0) || (coeff_h != 0.0) || (coeff_a != 0.0)) {
+  if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
     field_diffusion_defined = true;
     // Allocate memory for scratch vectors
     etaB.NewAthenaArray(3,ncells3,ncells2,ncells1);
@@ -80,7 +80,7 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 FieldDiffusion::~FieldDiffusion() {
-  if ((coeff_o != 0.0) || (coeff_h != 0.0) || (coeff_a != 0.0)) {
+  if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
     etaB.DeleteAthenaArray();
     e_oa.x1e.DeleteAthenaArray();
     e_oa.x2e.DeleteAthenaArray();
@@ -125,14 +125,14 @@ void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
   Hydro *ph = pmy_block->phydro;
   Mesh  *pm = pmy_block->pmy_mesh;
 
-  if((coeff_o==0.0) && (coeff_a==0.0)) return;
+  if((eta_ohm==0.0) && (eta_ad==0.0)) return;
 
   SetFieldDiffusivity(ph->w,pf->bcc);
 
   CalcCurrent(bi);
   ClearEMF(e_oa);
-  if (coeff_o != 0.0) OhmicEMF(bi, bc, e_oa);
-  if (coeff_a != 0.0) AmbipolarEMF(bi, bc, e_oa);
+  if (eta_ohm != 0.0) OhmicEMF(bi, bc, e_oa);
+  if (eta_ad != 0.0) AmbipolarEMF(bi, bc, e_oa);
 
   // calculate the Poynting flux pflux and add to energy flux in Hydro class
   if (NON_BAROTROPIC_EOS) PoyntingFlux(e_oa, bc);
@@ -308,13 +308,13 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       for (int i=is; i<=ie; ++i) {
         eta_t(i) = 0.0;
       }
-      if (coeff_o > 0.0) {
+      if (eta_ohm > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_O,k,j,i);
         }
       }
-      if (coeff_a > 0.0) {
+      if (eta_ad > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_A,k,j,i);
@@ -328,13 +328,13 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
         len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
-      if ((coeff_o > 0.0) || (coeff_a > 0.0)) {
+      if ((eta_ohm > 0.0) || (eta_ad > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_oa = std::min(dt_oa, static_cast<Real>(fac_oa*SQR(len(i))
                                              /(eta_t(i)+TINY_NUMBER)));
       }
-      if (coeff_h > 0.0) {
+      if (eta_hall > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h,static_cast<Real>(fac_h*SQR(len(i))

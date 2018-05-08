@@ -33,9 +33,9 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   if (pmb_->block_size.nx3 > 1) ncells3 = pmb_->block_size.nx3 + 2*(NGHOST);
 
   // Check if viscous process.
-  coeff_nuiso = pin->GetOrAddReal("problem","nuiso",0.0); // iso viscosity
-  coeff_nuani = pin->GetOrAddReal("problem","nuani",0.0); // aniso viscosity
-  if (coeff_nuiso > 0.0 || coeff_nuani  > 0.0) {
+  nu_iso = pin->GetOrAddReal("problem","nu_iso",0.0); // iso viscosity
+  nu_aniso = pin->GetOrAddReal("problem","nu_aniso",0.0); // aniso viscosity
+  if (nu_iso > 0.0 || nu_aniso  > 0.0) {
     hydro_diffusion_defined = true;
     // Allocate memory for fluxes.
     visflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
@@ -61,9 +61,9 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
 
   // Check if thermal conduction.
   if (NON_BAROTROPIC_EOS) {
-    coeff_kiso  = pin->GetOrAddReal("problem","kiso",0.0); // iso thermal conduction
-    coeff_kani  = pin->GetOrAddReal("problem","kani",0.0); // aniso thermal conduction
-    if (coeff_kiso > 0.0 || coeff_kani > 0.0) {
+    kappa_iso  = pin->GetOrAddReal("problem","kappa_iso",0.0); // iso thermal conduction
+    kappa_aniso  = pin->GetOrAddReal("problem","kappa_aniso",0.0); // aniso conduction
+    if (kappa_iso > 0.0 || kappa_aniso > 0.0) {
       hydro_diffusion_defined = true;
       cndflx[X1DIR].NewAthenaArray(ncells3,ncells2,ncells1+1);
       cndflx[X2DIR].NewAthenaArray(ncells3,ncells2+1,ncells1);
@@ -89,7 +89,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
 // destructor
 
 HydroDiffusion::~HydroDiffusion() {
-  if (coeff_nuiso > 0.0 || coeff_nuani > 0.0) {
+  if (nu_iso > 0.0 || nu_aniso > 0.0) {
     visflx[X1DIR].DeleteAthenaArray();
     visflx[X2DIR].DeleteAthenaArray();
     visflx[X3DIR].DeleteAthenaArray();
@@ -104,7 +104,7 @@ HydroDiffusion::~HydroDiffusion() {
     fz_.DeleteAthenaArray();
     divv_.DeleteAthenaArray();
   }
-  if (coeff_kiso  > 0.0 || coeff_kani > 0.0) {
+  if (kappa_iso  > 0.0 || kappa_aniso > 0.0) {
     cndflx[X1DIR].DeleteAthenaArray();
     cndflx[X2DIR].DeleteAthenaArray();
     cndflx[X3DIR].DeleteAthenaArray();
@@ -130,13 +130,13 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
 
   SetHydroDiffusivity(ph->w,pf->bcc);
 
-  if (coeff_nuiso > 0.0 || coeff_nuani > 0.0) ClearHydroFlux(visflx);
-  if (coeff_nuiso > 0.0) ViscousFlux_iso(prim, cons, visflx);
-  if (coeff_nuani > 0.0) ViscousFlux_aniso(prim, cons, visflx);
+  if (nu_iso > 0.0 || nu_aniso > 0.0) ClearHydroFlux(visflx);
+  if (nu_iso > 0.0) ViscousFlux_iso(prim, cons, visflx);
+  if (nu_aniso > 0.0) ViscousFlux_aniso(prim, cons, visflx);
 
-  if (coeff_kiso > 0.0 || coeff_kani > 0.0) ClearHydroFlux(cndflx);
-  if (coeff_kiso > 0.0) ThermalFlux_iso(prim, cons, cndflx);
-  if (coeff_kani > 0.0) ThermalFlux_aniso(prim, cons, cndflx);
+  if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearHydroFlux(cndflx);
+  if (kappa_iso > 0.0) ThermalFlux_iso(prim, cons, cndflx);
+  if (kappa_aniso > 0.0) ThermalFlux_aniso(prim, cons, cndflx);
 
 
   return;
@@ -248,10 +248,10 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
   }
 
   // set viscosity using func ptr
-  if (coeff_nuiso > 0.0 || coeff_nuani > 0.0)
+  if (nu_iso > 0.0 || nu_aniso > 0.0)
     CalcViscCoeff_(this, w, bc, il, iu, jl, ju, kl, ku);
   // set thermal conduction using func ptr
-  if (coeff_kiso > 0.0 || coeff_kani > 0.0)
+  if (kappa_iso > 0.0 || kappa_aniso > 0.0)
     CalcCondCoeff_(this, w, bc, il, iu, jl, ju, kl, ku);
 
   return;
@@ -288,19 +288,19 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
         nu_t(i) = 0.0;
         kappa_t(i) = 0.0;
       }
-      if (coeff_nuiso > 0.0) {
+      if (nu_iso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ISO,k,j,i);
       }
-      if (coeff_nuani > 0.0) {
+      if (nu_aniso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ANI,k,j,i);
       }
-      if (coeff_kiso > 0.0) {
+      if (kappa_iso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ISO,k,j,i);
       }
-      if (coeff_kani > 0.0) {
+      if (kappa_aniso > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ANI,k,j,i);
       }
@@ -312,13 +312,13 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
         len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
-      if ((coeff_nuiso > 0.0) || (coeff_nuani > 0.0)) {
+      if ((nu_iso > 0.0) || (nu_aniso > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
                                      *fac/(nu_t(i)+TINY_NUMBER)));
       }
-      if ((coeff_kiso > 0.0) || (coeff_kani > 0.0)) {
+      if ((kappa_iso > 0.0) || (kappa_aniso > 0.0)) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))

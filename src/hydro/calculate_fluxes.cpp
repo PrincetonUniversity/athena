@@ -195,11 +195,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 // add diffusion fluxes
   if (phdif->hydro_diffusion_defined) {
-    if (phdif->coeff_nuiso > 0.0 || phdif->coeff_nuani > 0.0)
+    if (phdif->nu_iso > 0.0 || phdif->nu_aniso > 0.0)
       phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
 
     if (NON_BAROTROPIC_EOS) {
-      if (phdif->coeff_kiso > 0.0 || phdif->coeff_kani > 0.0)
+      if (phdif->kappa_iso > 0.0 || phdif->kappa_aniso > 0.0)
         phdif->AddHydroDiffusionEnergyFlux(phdif->cndflx,flux);
     }
   }
