@@ -365,11 +365,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
                              A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
           } else {
-            // hardcode ang_2=0 initialization of <A>
-            if (i != ie+1)
+            if (i != ie+1) {
               a1(k,j,i) = A1_ave(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
                                  pcoord->x3f(k));
-            //a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            }
           }
 
           if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -385,11 +384,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
                              A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
           } else {
-            // hardcode ang_2=0 initialization of <A>
-            if (j != je+1)
+            if (j != je+1) {
               a2(k,j,i) = A2_ave(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
                                  pcoord->x3f(k));
-            //a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            }
           }
 
           if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -405,11 +403,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
                              A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
           } else {
-            // hardcode ang_2=0 initialization of <A>
-            if (k != ke+1)
+            if (k != ke+1) {
               a3(k,j,i) = A3_ave(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
                                  pcoord->x3f(k+1));
-            //a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            }
           }
         }
       }
@@ -544,9 +541,10 @@ static Real A1_ave(const Real x1f, const Real x1f_ip1, const Real x2, const Real
   Real dx1f = x1f_ip1 - x1f;
   Real Ay, Az;
 
-  if (cos_a3 != 0.0) {
-	Ay =  (fac*b_perp/(SQR(k_par)*cos_a3))*(-cos(k_par*x_ip1) + cos(k_par*x));
-  } else { // vertical (+x2) coordinate aligned wave--- Ay uniform on the x1 edge
+  if (cos_a3 != 0.0 && cos_a2 != 0.0) {
+	Ay =  (fac*b_perp/(SQR(k_par)*cos_a3*cos_a2))*(-cos(k_par*x_ip1) + cos(k_par*x));
+  } else {
+    // vertical (+x2) OR polar (+x3) coordinate aligned wave--- Ay uniform on the x1 edge
 	Ay = dx1f*((fac*b_perp/k_par)*sin(k_par*(x))); // x  = x_ip1
   }
   if (cos_a2 != 0.0) {
@@ -556,6 +554,7 @@ static Real A1_ave(const Real x1f, const Real x1f_ip1, const Real x2, const Real
     Az = dx1f*((cos_a3*b_perp/k_par)*cos(k_par*x)); // x = x3
   }
   Az += b_par*cos_a3*(-sin_a3*0.5*(SQR(x1f_ip1) - SQR(x1f)) + dx1f*cos_a3*x2);
+
   return (-Ay*sin_a3 - Az*sin_a2)/dx1f;
 }
 
@@ -569,9 +568,10 @@ static Real A2_ave(const Real x1, const Real x2f, const Real x2f_jp1, const Real
   Real dx2f = x2f_jp1 - x2f;
   Real Ay, Az;
 
-  if (sin_a3 != 0.0) {
-	Ay =  (fac*b_perp/(SQR(k_par)*sin_a3))*(-cos(k_par*x_jp1) + cos(k_par*x));
-  } else { // horizontal (+x1) coordinate aligned wave--- Ay uniform on the x2 edge
+  if (sin_a3 != 0.0 && cos_a2 != 0.0) {
+	Ay =  (fac*b_perp/(SQR(k_par)*cos_a2*sin_a3))*(-cos(k_par*x_jp1) + cos(k_par*x));
+  } else {
+    // horizontal (+x1) OR polar (+x3) coordinate aligned wave--- Ay uniform on x2 edge
 	Ay = dx2f*((fac*b_perp/k_par)*sin(k_par*(x))); // x = x_jp1
   }
   if (cos_a2 != 0.0) {
@@ -580,7 +580,8 @@ static Real A2_ave(const Real x1, const Real x2f, const Real x2f_jp1, const Real
   } else { // polar (+x3) coordinate aligned wave: only linear term in Az changes along x2
     Az = dx2f*((sin_a3*b_perp/k_par)*cos(k_par*x)); // x = x3
   }
-  Az += b_par*cos_a3*(-dx2f*sin_a3*x1 + cos_a3*0.5*(SQR(x2f_jp1) - SQR(x2f)));
+  Az += b_par*sin_a3*(-dx2f*sin_a3*x1 + cos_a3*0.5*(SQR(x2f_jp1) - SQR(x2f)));
+
   return (Ay*cos_a3 - Az*sin_a2)/dx2f;
 }
 
@@ -596,7 +597,8 @@ static Real A3_ave(const Real x1, const Real x2, const Real x3f, const Real x3f_
   Real Az;
 
   if (sin_a2 != 0.0) {
-    Az = cos_a2*b_perp/(SQR(k_par)*sin_a2)*(sin(k_par*x_kp1) - sin(k_par*x));
+    Az = cos_a2*(b_perp/(SQR(k_par)*sin_a2)*(sin(k_par*x_kp1) - sin(k_par*x))
+                 + dx3f*b_par*y); // y never depends on x3
   } else { // wave propagates in x1-x2 plane
     Az = dx3f*((b_perp/k_par)*cos(k_par*(x)) + b_par*y); // x, y do not depend on x3
   }
