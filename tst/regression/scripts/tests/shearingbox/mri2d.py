@@ -1,6 +1,4 @@
-"""
-Regression test of shearingbox with 2d MRI.
-"""
+# Regression test of shearingbox with 2d MRI.
 
 # Modules
 import numpy as np
@@ -22,6 +20,7 @@ def run(**kwargs):
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=62831.853', 'time/cfl_number=0.4',
         'time/tlim=50265.482', 'time/nlim=500000',
+        'time/xorder=2','time/integrator=vl2','time/ncycle_out=10',
         'mesh/nx1=64', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
         'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
         'mesh/nx2=64', 'mesh/x2min=-0.5', 'mesh/x2max=0.5',

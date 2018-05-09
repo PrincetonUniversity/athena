@@ -14,6 +14,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
 
@@ -73,7 +74,8 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       g_.NewAthenaArray(NMETRIC,ncells1);
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
-
+// ptr to diffusion object
+    pfdif = new FieldDiffusion(pmb,pin);
   }
 }
 
@@ -113,6 +115,7 @@ Field::~Field() {
     g_.DeleteAthenaArray();
     gi_.DeleteAthenaArray();
   }
+  delete pfdif;
 }
 
 //----------------------------------------------------------------------------------------

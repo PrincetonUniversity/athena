@@ -148,6 +148,8 @@ class Mesh {
   friend class MultigridDriver;
   friend class MGGravityDriver;
   friend class Gravity;
+  friend class HydroDiffusion;
+  friend class FieldDiffusion;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -221,6 +223,9 @@ private:
   TimeStepFunc_t UserTimeStep_;
   HistoryOutputFunc_t *user_history_func_;
   MetricFunc_t UserMetric_;
+  ViscosityCoeff_t ViscosityCoeff_;
+  ConductionCoeff_t ConductionCoeff_;
+  FieldDiffusionCoeff_t FieldDiffusivity_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
   GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
@@ -242,6 +247,9 @@ private:
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
   void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
                                          GravityBoundaryFunc_t my_bc);
+  void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
+  void EnrollConductionCoefficient(ConductionCoeff_t my_func);
+  void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }
