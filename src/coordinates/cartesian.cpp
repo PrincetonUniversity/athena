@@ -59,13 +59,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   h32v.NewAthenaArray(ncells2);
   dh32vd2.NewAthenaArray(ncells2);
 
-  h2fi.NewAthenaArray(ncells1);
-  h2vi.NewAthenaArray(ncells1);
-  h31fi.NewAthenaArray(ncells1);
-  h31vi.NewAthenaArray(ncells1);
-  h32fi.NewAthenaArray(ncells2);
-  h32vi.NewAthenaArray(ncells2);
-
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
@@ -129,9 +122,7 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // x1-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
     h2v(i) = 1.0;
-    h2vi(i) = 1.0;
     h2f(i) = 1.0;
-    h2fi(i) = 1.0;
     h31v(i) = 1.0;
     h31f(i) = 1.0;
     dh2vd1(i) = 0.0;
@@ -144,16 +135,12 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   if (pmb->block_size.nx2 == 1) {
     h32v(jl) = 1.0;
     h32f(jl) = 1.0;
-    h32vi(jl) = 1.0;
-    h32fi(jl) = 1.0;
     dh32vd2(jl) = 0.0;
     dh32fd2(jl) = 0.0;
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
       h32v(j) = 1.0;
       h32f(j) = 1.0;
-      h32vi(j) = 1.0;
-      h32fi(j) = 1.0;
       dh32vd2(j) = 0.0;
       dh32fd2(j) = 0.0;
     }
