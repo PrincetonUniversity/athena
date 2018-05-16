@@ -25,8 +25,11 @@
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
 
-// include general EOS table default=0 (false).
+// use EOS table default=0 (false).
 #define EOS_TABLE_ENABLED @EOS_TABLE_ENABLED@
+
+// use general EOS framework default=0 (false).
+#define GENERAL_EOS @GENERAL_EOS@
 
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"

@@ -70,7 +70,7 @@ parser.add_argument('--coord',
 # --eos=[name] argument
 parser.add_argument('--eos',
     default='adiabatic',
-    choices=['adiabatic','isothermal', 'general'],
+    choices=['adiabatic','isothermal', 'eos_table'],
     help='select equation of state')
 
 # --flux=[name] argument
@@ -78,12 +78,6 @@ parser.add_argument('--flux',
     default='default',
     choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
-
-# -eos_table argument
-parser.add_argument('-eos_table',
-    action='store_true',
-    default=False,
-    help='enable EOS table')
 
 # --nghost=[value] argument
 parser.add_argument('--nghost',
@@ -213,8 +207,6 @@ parser.add_argument('--lib',
 args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments ---------------------------------------------
-if args['eos'] == 'general':
-    args['eos_table'] = True
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro or any GR
 if args['flux'] == 'default':
@@ -272,14 +264,16 @@ definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['
 definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
-if args['eos'] == 'adiabatic' or args['eos'] == 'general':
-  definitions['NHYDRO_VARIABLES'] = '5'
+definitions['GENERAL_EOS'] = '0'
+definitions['EOS_TABLE_ENABLED'] = '0'
 if args['eos'] == 'isothermal':
   definitions['NHYDRO_VARIABLES'] = '4'
-
-# -eos_table argument
-definitions['EOS_TABLE_ENABLED'] = '0'
-if args['eos_table'] or args['eos'] == 'general':
+elif args['eos'] == 'adiabatic':
+  definitions['NHYDRO_VARIABLES'] = '5'
+else:
+  definitions['GENERAL_EOS'] = '1'
+  definitions['NHYDRO_VARIABLES'] = '5'
+  if args['eos'] == 'eos_table':
     definitions['EOS_TABLE_ENABLED'] = '1'
 
 # --flux=[name] argument
@@ -297,21 +291,21 @@ if args['b']:
   makefile_options['RSOLVER_DIR'] = 'mhd/'
   if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
     makefile_options['RSOLVER_FILE'] += '_mhd'
-  if args['eos'] == 'adiabatic' or args['eos'] == 'general':
-    definitions['NWAVE_VALUE'] = '7'
-  else:
+  if args['eos'] == 'isothermal':
     definitions['NWAVE_VALUE'] = '6'
     if args['flux'] == 'hlld':
       makefile_options['RSOLVER_FILE'] += '_iso'
+  else:
+    definitions['NWAVE_VALUE'] = '7'
 else:
   definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
   makefile_options['EOS_FILE'] += '_hydro'
   definitions['NFIELD_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
-  if args['eos'] == 'adiabatic' or args['eos'] == 'general':
-    definitions['NWAVE_VALUE'] = '5'
-  else:
+  if args['eos'] == 'isothermal':
     definitions['NWAVE_VALUE'] = '4'
+  else:
+    definitions['NWAVE_VALUE'] = '5'
 
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
@@ -563,7 +557,6 @@ print('Your Athena++ distribution has now been configured with the following opt
 print('  Problem generator:       ' + args['prob'])
 print('  Coordinate system:       ' + args['coord'])
 print('  Equation of state:       ' + args['eos'])
-print('  EOS Table:               ' + ('ON' if args['eos_table'] else 'OFF'))
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
