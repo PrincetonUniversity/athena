@@ -11,7 +11,7 @@
 #include <algorithm>  // min
 #include <cstdlib>    // srand
 #include <cfloat>     // FLT_MIN
-#include <cmath>      // std::sqrt
+#include <cmath>      // std::sqrt()
 #include <fstream>
 #include <iostream>   // endl
 #include <stdexcept>  // runtime_error

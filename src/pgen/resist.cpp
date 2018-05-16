@@ -9,6 +9,7 @@
 
 // C/C++ headers
 #include <iostream>   // endl
+#include <cmath>      // std::sqrt()
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
