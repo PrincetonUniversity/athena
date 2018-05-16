@@ -252,10 +252,9 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
 // VolCenter2(i,j,k) located at (i,j+1/2,k), i.e. (x1v(i), x2f(j+1), x3v(k))
 
 void Cylindrical::VolCenter2Length(const int k, const int j, const int il, const int iu,
-                                   AthenaArray<Real> &len)
-{
+                                   AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
         // length2 = r d(theta)
         len(i) = x1v(i)*dx2v(j);
     }
@@ -318,7 +317,7 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
 void Cylindrical::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
                                      AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area1 = r dphi dz
     area(i) = x1v(i)*dx2v(j)*dx3v(k);
   }
@@ -328,7 +327,7 @@ void Cylindrical::VolCenterFace1Area(const int k, const int j, const int il, con
 void Cylindrical::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
                                      AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     // area3 = dr r dtheta = d(r^2/2) dtheta
     area(i) = coord_area3vc_i_(i)*dx2v(j);
   }

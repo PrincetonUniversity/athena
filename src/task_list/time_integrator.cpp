@@ -642,8 +642,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes
 
-enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
-{
+enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step) {
   Hydro *ph=pmb->phydro;
 
 // return if there are no diffusion to be added
@@ -661,8 +660,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
 //----------------------------------------------------------------------------------------
 // Functions to calculate diffusion EMF
 
-enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
-{
+enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step) {
   Field *pf=pmb->pfield;
 
 // return if there are no diffusion to be added

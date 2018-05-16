@@ -34,8 +34,7 @@ static int iprob;
 //  \brief field loop advection problem generator for 2D/3D problems.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
 
