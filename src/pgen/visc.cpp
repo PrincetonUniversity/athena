@@ -8,15 +8,15 @@
 //  iprob = 1 - test viscous spreading of Keplerain ring
 
 // C++ headers
-#include <iostream>   // endl
-#include <fstream>
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-#include <cmath>      // sqrt
 #include <algorithm>  // min
 #include <cstdlib>    // srand
 #include <cfloat>     // FLT_MIN
+#include <cmath>      // std::sqrt
+#include <fstream>
+#include <iostream>   // endl
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+#include <sstream>    // stringstream
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -65,7 +65,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //  Initialize density and momenta in Cartesian grids
   if (iprob == 0) { //visc column
-	if (nuiso == 0) nuiso = 0.03;
+	if (nuiso == 0) {
+      nuiso = 0.03;
+    }
     for(int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
@@ -75,7 +77,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x3=pcoord->x3v(k);
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
-            v2 = v0/sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
           } else if (COORDINATE_SYSTEM == "cylindrical") {
@@ -85,7 +87,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x1=rad*cos(phi);
             x2=rad*sin(phi);
             x3=z;
-            v2 = v0/sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*cos(phi)+v2*sin(phi));
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*sin(phi)+v2*cos(phi));
@@ -98,7 +100,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x1=rad*cos(phi);
             x2=rad*sin(phi);
             x3=z;
-            v2 = v0/sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*cos(phi)*sin(theta)
                                                          +v2*sin(phi)*sin(theta)
@@ -127,7 +129,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           d0 = exp(-SQR(rad-x0)/2.0/SQR(width));
           if (d0 < 1e-6) d0 += 1e-6;
           v1 = -3.0*nuiso*(0.5/rad - (rad-x0)/SQR(width));
-          v2 = sqrt(gm0/rad); // set it to be Mach=100
+          v2 = std::sqrt(gm0/rad); // set it to be Mach=100
           phydro->u(IDN,k,j,i) = d0;
           phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
           phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
