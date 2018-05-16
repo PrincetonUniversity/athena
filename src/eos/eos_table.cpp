@@ -28,12 +28,6 @@
 //#define EOSDEBUG0
 //#define EOSDEBUG1
 
-std::string DefaultEOS()
-{
-  std::string fn("eos_table.data");
-  return fn;
-}
-
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   return GetEosData(rho, egas, axisEgas, iPresEOS) * egas;
 }
@@ -50,14 +44,9 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   return GetEosData(rho, hint, axisHint, iASqEOS) * hint;
 }
 
-void EquationOfState::EnrollEosTable(EosFn_t GenEosTableFilename) {
-  GetEosFn = GenEosTableFilename;
-}
-
 void EquationOfState::PrepEOS(ParameterInput *pin) {
   std::string EosFn;
-  GetEosFn = ( GetEosFn == NULL ) ? DefaultEOS : GetEosFn;
-  EosFn = pin->GetOrAddString("hydro", "EosFn", (*GetEosFn)());
+  EosFn = pin->GetString("hydro", "EosFn");
   std::ifstream eos_table(EosFn.c_str(), std::ios::binary);
   if (eos_table.is_open())
   {

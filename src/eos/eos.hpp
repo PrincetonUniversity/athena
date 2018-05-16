@@ -22,7 +22,6 @@
 class Hydro;
 class ParameterInput;
 struct FaceField;
-typedef std::string (*EosFn_t)();
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -103,10 +102,8 @@ public:
   #endif  // !RELATIVISTIC_DYNAMICS
 
 #if EOS_TABLE_ENABLED
-  EosFn_t GetEosFn;
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
-  void EnrollEosTable(EosFn_t GenEosTableFilename);
   Real BilinearInterp(Real x, Real y, int var);
   void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
   Real GetEosData(Real rho, Real var, int axis, int kOut);
