@@ -16,7 +16,9 @@
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
 # Apply Google C++ Style Linter to all source code files at once:
+set -e
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
+set +e
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
 echo "Starting std::sqrt(), std::cbrt() test"
