@@ -113,9 +113,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   } else if (iprob == 1) { // visc ring gaussian profile at t=0
     if (COORDINATE_SYSTEM != "cylindrical" && gm0 == 0.0) {
-      std::cout << "[visc]: viscous ring test only compatible with cylindrical coord \
-         with point mass in center" << std::endl;
-      exit(0);
+      std::stringstream msg;
+      msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
+          << "viscous ring test only compatible with cylindrical coord"
+          << std::endl << "with point mass in center" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
     }
     Real width = 0.1;
     for(int k=ks; k<=ke; ++k) {
@@ -134,8 +136,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   } else {
-    std::cout << "[visc]: iprob has to be either 0 or 1" << std::endl;
-    exit(0);
+      std::stringstream msg;
+      msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
+          << "viscous iprob has to be either 0 or 1" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
   }
 
   return;
