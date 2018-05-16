@@ -36,7 +36,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-#if not EOS_TABLE_ENABLED
+#if not GENERAL_EOS
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real igm1 = 1.0/gm1;
 #endif
@@ -66,7 +66,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-#if EOS_TABLE_ENABLED
+#if GENERAL_EOS
     wroe[IDN] = sqrtdl*sqrtdr;
 #endif
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
@@ -76,7 +76,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
-#if EOS_TABLE_ENABLED
+#if GENERAL_EOS
     el = pmy_block->peos->SimpleEgas(wli[IDN], wli[IPR]) + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
     er = pmy_block->peos->SimpleEgas(wri[IDN], wri[IPR]) + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
 #else
@@ -90,7 +90,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-#if EOS_TABLE_ENABLED
+#if GENERAL_EOS
     Real a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
 #else
     Real a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
