@@ -27,25 +27,26 @@
 #include "../parameter_input.hpp"
 #include "../field/field.hpp"
 
-#ifdef GENERAL_EOS
+#if GENERAL_EOS
 // EquationOfState constructor
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
-  // MSBC: tweak floor
   if (pin->DoesParameterExist("hydro","efloor")){
-    energy_floor_ = pin->GetReal("hydro","efloor") * 1.5;
+    energy_floor_ = pin->GetReal("hydro","efloor");
+    pressure_floor_ = energy_floor_ * (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
+    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", pressure_floor_);
   }
   else{
-    energy_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
-    energy_floor_ /= pin->GetOrAddReal("hydro","gamma", 2.) - 1.;
+    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
+    energy_floor_ = pressure_floor_ / pin->GetOrAddReal("hydro","gamma", 2.) - 1.;
+    pin->SetReal("hydro","efloor", energy_floor_);
   }
   #if EOS_TABLE_ENABLED
   PrepEOS(pin);
-  #endif
-  pressure_floor_ = std::sqrt(-1);
   gamma_ = std::sqrt(-1);
+  #endif
 }
 
 // destructor
@@ -96,6 +97,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       // apply pressure/energy floor, correct total energy
       u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
       // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point
+      //       i.e. not robust to underflow
       w_p = SimplePres(u_d, u_e - ke);
     }
   }}
@@ -164,7 +166,7 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
   // apply pressure floor
-  w_p = (w_p > energy_floor_) ?  w_p : pressure_floor_;
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
 
   return;
 }
