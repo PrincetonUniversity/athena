@@ -36,7 +36,7 @@ time python ./run_tests.py sr
 time python ./run_tests.py gr
 time python ./run_tests.py curvilinear
 time python ./run_tests.py shearingbox
-time python ./run_tests.py diffusion
+#time python ./run_tests.py diffusion
 
 # Build step #2: Intel compiler and MPI library
 module purge
@@ -57,7 +57,7 @@ time python ./run_tests.py sr --config=--cxx=icc
 time python ./run_tests.py gr --config=--cxx=icc
 time python ./run_tests.py curvilinear --config=--cxx=icc
 time python ./run_tests.py shearingbox --config=--cxx=icc
-time python ./run_tests.py diffusion --config=--cxx=icc
+#time python ./run_tests.py diffusion --config=--cxx=icc
 
 set +e
 # end regression tests
