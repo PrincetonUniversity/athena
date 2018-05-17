@@ -1,5 +1,5 @@
 # Regression test based on the decaying linear wave due to viscosity,
-# Ohmic resistivity and thermal conduction. The decay rate is fit and 
+# Ohmic resistivity and thermal conduction. The decay rate is fit and
 # then compared with analytic solution
 
 # Modules
@@ -57,7 +57,7 @@ def analyze():
   new_rate,coeff = np.polyfit(tt,np.log(np.abs(max_vy)),1,w=np.sqrt(np.abs(max_vy)))
   new_rate = -new_rate
   print('[Decaying Linear Wave-3D]: Ref(decay_rate) = {}'.format(rate))
-  print ('[Decaying Linear Wave-3D]: New(decay_rate) = {}'.format(new_rate))
+  print('[Decaying Linear Wave-3D]: New(decay_rate) = {}'.format(new_rate))
 
   flag = True
   error_rel = np.fabs(rate/new_rate-1.0)
