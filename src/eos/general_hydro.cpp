@@ -40,7 +40,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   }
   else{
     pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
-    energy_floor_ = pressure_floor_ / pin->GetOrAddReal("hydro","gamma", 2.) - 1.;
+    energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pin->SetReal("hydro","efloor", energy_floor_);
   }
   #if EOS_TABLE_ENABLED
