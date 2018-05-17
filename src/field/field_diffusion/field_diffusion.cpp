@@ -304,18 +304,15 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         eta_t(i) = 0.0;
       }
       if (eta_ohm > 0.0) {
-#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_O,k,j,i);
         }
       }
       if (eta_ad > 0.0) {
-#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_A,k,j,i);
         }
@@ -323,19 +320,16 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
-#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
       if ((eta_ohm > 0.0) || (eta_ad > 0.0)) {
-#pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_oa = std::min(dt_oa, static_cast<Real>(fac_oa*SQR(len(i))
                                              /(eta_t(i)+TINY_NUMBER)));
       }
       if (eta_hall > 0.0) {
-#pragma omp simd
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h,static_cast<Real>(fac_h*SQR(len(i))
                        /(std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
