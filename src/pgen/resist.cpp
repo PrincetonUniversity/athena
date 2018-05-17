@@ -9,6 +9,7 @@
 
 // C/C++ headers
 #include <iostream>   // endl
+#include <cmath>      // std::sqrt()
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -34,8 +35,7 @@ static int iprob;
 //  \brief field loop advection problem generator for 2D/3D problems.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
 
@@ -69,7 +69,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         Real x1 = pcoord->x1f(i);
-        pfield->b.x2f(k,j,i) = amp/sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        pfield->b.x2f(k,j,i) = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
@@ -84,19 +84,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        Real cost = Ly/sqrt(SQR(Lx)+SQR(Ly));
-        Real sint = Lx/sqrt(SQR(Lx)+SQR(Ly));
+        Real cost = Ly/std::sqrt(SQR(Lx)+SQR(Ly));
+        Real sint = Lx/std::sqrt(SQR(Lx)+SQR(Ly));
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
-        Real bprim = amp/sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = -bprim*sint;
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        Real cost = Ly/sqrt(SQR(Lx)+SQR(Ly));
-        Real sint = Lx/sqrt(SQR(Lx)+SQR(Ly));
+        Real cost = Ly/std::sqrt(SQR(Lx)+SQR(Ly));
+        Real sint = Lx/std::sqrt(SQR(Lx)+SQR(Ly));
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
-        Real bprim = amp/sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*cost;
       }}}
       for (int k=ks; k<=ke+1; k++) {
@@ -118,7 +118,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real x1=rad*cos(phi);
         Real x2=rad*sin(phi);
         Real x3=z;
-        Real bprim = amp/sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = bprim*sin(phi);
       }}}
       for (int k=ks; k<=ke; k++) {
@@ -130,7 +130,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real x1=rad*cos(phi);
         Real x2=rad*sin(phi);
         Real x3=z;
-        Real bprim = amp/sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*cos(phi);
       }}}
       for (int k=ks; k<=ke+1; k++) {

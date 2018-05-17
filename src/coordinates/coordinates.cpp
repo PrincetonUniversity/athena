@@ -349,28 +349,25 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i) {
 // VolCenterXLength functions: compute physical length connecting cell centers as vector
 // VolCenter1(i,j,k) located at (i+1/2,j,k), i.e. (x1f(i+1), x2v(j), x3v(k))
 void Coordinates::VolCenter1Length(const int k, const int j, const int il, const int iu,
-                              AthenaArray<Real> &len)
-{
+                                   AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
         len(i) = dx1v(i);
     }
     return;
 }
 void Coordinates::VolCenter2Length(const int k, const int j, const int il, const int iu,
-                              AthenaArray<Real> &len)
-{
+                                   AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
         len(i) = dx2v(j);
     }
     return;
 }
 void Coordinates::VolCenter3Length(const int k, const int j, const int il, const int iu,
-                              AthenaArray<Real> &len)
-{
+                                   AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i){
+    for (int i=il; i<=iu; ++i) {
         len(i) = dx3v(k);
     }
     return;
@@ -462,10 +459,9 @@ Real Coordinates::GetFace3Area(const int k, const int j, const int i) {
 // where the faces are joined by cell centers (for non-ideal MHD)
 
 void Coordinates::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
-                        AthenaArray<Real> &area)
-{
+                                     AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     Real& area_i = area(i);
     area_i = dx2v(j)*dx3v(k);
   }
@@ -473,10 +469,9 @@ void Coordinates::VolCenterFace1Area(const int k, const int j, const int il, con
 }
 
 void Coordinates::VolCenterFace2Area(const int k, const int j, const int il, const int iu,
-                        AthenaArray<Real> &area)
-{
+                                     AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     Real& area_i = area(i);
     area_i = dx1v(i)*dx3v(k);
   }
@@ -484,10 +479,9 @@ void Coordinates::VolCenterFace2Area(const int k, const int j, const int il, con
 }
 
 void Coordinates::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
-                        AthenaArray<Real> &area)
-{
+                                     AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i){
+  for (int i=il; i<=iu; ++i) {
     Real& area_i = area(i);
     area_i = dx1v(i)*dx2v(j);
   }

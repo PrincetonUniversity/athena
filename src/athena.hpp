@@ -144,6 +144,6 @@ typedef void (*ViscosityCoeff_t)(HydroDiffusion *phdif, const AthenaArray<Real> 
 typedef void (*ConductionCoeff_t)(HydroDiffusion *phdif, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
 typedef void (*FieldDiffusionCoeff_t)(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
-             const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
+    const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
 
 #endif // ATHENA_HPP_

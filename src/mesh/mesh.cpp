@@ -1147,8 +1147,7 @@ void Mesh::EnrollUserMetric(MetricFunc_t my_func) {
 //! \fn void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
-void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
-{
+void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func) {
   ViscosityCoeff_ = my_func;
   return;
 }
@@ -1157,8 +1156,7 @@ void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
 //! \fn void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
 //  \brief Enroll a user-defined thermal conduction function
 
-void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
-{
+void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func) {
   ConductionCoeff_ = my_func;
   return;
 }
@@ -1167,8 +1165,7 @@ void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
 //! \fn void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func)
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
-void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func)
-{
+void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func) {
   FieldDiffusivity_ = my_func;
   return;
 }
