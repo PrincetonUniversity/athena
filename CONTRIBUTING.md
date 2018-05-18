@@ -118,13 +118,13 @@ If you have modified your forked `master` branch, the last two steps could be re
 ```
 git pull --rebase upstream master
 ```
-See [Developing on `master`](#developing-on-master).
+See [Developing on shared `branch`](#developing-on-shared-branch).
 
-### Developing on `master`
-There are a few practices that should be followed when committing changes to the `master` branch on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) in order to avoid conflicts and headaches.
+### Developing on shared `branch`
+There are a few practices that should be followed when committing changes to a collaborative `branch` on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) in order to avoid conflicts and headaches. These guidelines especially apply to developing on the fast changing `master` branch for those users with Admin permissions.
 
-If you commit to an outdated local copy of `master` (i.e. someone else has pushed changes to GitHub since you last checked), the `git push origin master` command will be rejected by the server and prompt you to execute the `git pull` command. The default `git pull` behavior in this scenario is to create a merge-commit after you resolve any conflicts between your changes and the remote commits. However, these non-descriptive commit messages tend to clutter the repository history unnecessarily.
-<!-- insert image of Network graph -->
+If you commit to an outdated local copy of `branch` (i.e. someone else has pushed changes to GitHub since you last checked), the `git push origin branch` command will be rejected by the server and prompt you to execute the `git pull` command. The default `git pull` behavior in this scenario is to create a merge-commit after you resolve any conflicts between your changes and the remote commits. However, these non-descriptive commit messages tend to clutter the repository history unnecessarily.
+<!-- insert image of Network graph to compare linear and non-linear Git history -->
 
 For example, searching the Athena++ repository history using the [GitHub website](https://github.com/PrincetonUniversity/athena/search?utf8=%E2%9C%93&q=merge+branch+%27master%27+of+https:&type=Commits) or the command line:
 ```
@@ -132,7 +132,7 @@ git log --oneline —grep="Merge branch ‘master' of https://github.com/Princet
 ```
 returns many such commits. Most of them likely could have been avoided by either 1) doing local development on feature branches or 2) using `git pull --rebase` to perform a rebase instead of a merge when pulling conflicting updates.
 
-If you frequently make commits on `master`, it is recommended to enable the latter by default. In git versions >= 1.7.9, this can be accomplished with:
+If you frequently encounter such issues, it is recommended to enable the latter by default. In git versions >= 1.7.9, this can be accomplished with:
 ```
 git config --global pull.rebase true
 ```
@@ -160,10 +160,26 @@ Currently, `master` is a GitHub [protected branch](https://help.github.com/artic
 * Disables force pushing on `master`
 * Prevents `master` from being deleted
 
-Additionally, we have enabled ["Require pull request reviews before merging"](https://help.github.com/articles/enabling-required-reviews-for-pull-requests/) to `master`. This setting ensures that all pull requests require at least 1 code review before being merged to the `master` branch, even for collaborators with Write access. Only Admin collaborators can bypass this restriction.
-<!-- Currently set to 1; and "Dismiss stale PR approvals when new commits are pushed"-->
-<!-- Could also "Restrict who can push to this branch"-->
-<!-- Could "Require status checks to pass before merging" after adding CI-->
+Additionally, we have enabled ["Require pull request reviews before merging"](https://help.github.com/articles/enabling-required-reviews-for-pull-requests/) to `master`. This setting ensures that all pull requests require at least 1 code review before the branch is merged to the `master` branch and effectively prohibits pushing **any** commit directly to `master`, even from users with Write access. Attempting to do so will result in an error such as:
+```
+Total 9 (delta 7), reused 0 (delta 0)
+remote: Resolving deltas: 100% (7/7), completed with 7 local objects.
+remote: error: GH006: Protected branch update failed for refs/heads/master.
+remote: error: At least 1 approving review is required by reviewers with write access.
+To git@github.com:PrincetonUniversity/athena.git
+! [remote rejected] master -> master (protected branch hook declined)
+error: failed to push some refs to 'git@github.com:PrincetonUniversity/athena.git'
+```
+
+Only collaborators with Admin permissions can bypass these restrictions. The decision to force the use of branches and pull requests for all changes, no matter how small, was made in order to:
+1. Allow for isolated testing and human oversight/feedback/discussion of changes
+2. Promote a [readable](https://fangpenlin.com/posts/2013/09/30/keep-a-readable-git-history/), [linear](http://www.bitsnbites.eu/a-tidy-linear-git-history/), and reversible Git history for computational reproducibility and maintainability
+3. Most importantly, prevent any accidental pushes to `master`
+<!-- Currently set # of required reviews to 1; other options to consider enabling in the future include: -->
+<!-- "Dismiss stale PR approvals when new commits are pushed" -->
+<!-- "Restrict who can push to this branch" (redundant with Require PR reviews)-->
+<!-- "Require status checks to pass before merging" after separating CI build steps in new GitHub Checks API-->
+<!-- "Include administrators" -->
 
 When anyone opens a new pull request to `master`, GitHub will automatically request a code review from one or more users defined by the PR's modified files and the rules in the current [`.github/CODEOWNERS`](https://github.com/PrincetonUniversity/athena/blob/master/.github/CODEOWNERS) file. Only users with Admin permissions may modify this file to designate collaborators with at least Write access as "code owners". It is possible to use separate versions of this file on each branch to regulate PRs targeting those branches; see "[About CODEOWNERS](https://help.github.com/articles/about-codeowners/)" for more information.
 
