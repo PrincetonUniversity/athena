@@ -56,8 +56,8 @@ def analyze():
   # estimate the decay rate from simulation
   new_rate,coeff = np.polyfit(tt,np.log(np.abs(max_vy)),1,w=np.sqrt(np.abs(max_vy)))
   new_rate = -new_rate
-  print '[Decaying Linear Wave-3D]: Ref(decay_rate) = ',rate
-  print '[Decaying Linear Wave-3D]: New(decay_rate) = ',new_rate
+  print('[Decaying Linear Wave-3D]: Ref(decay_rate) = {}'.format(rate))
+  print('[Decaying Linear Wave-3D]: New(decay_rate) = {}'.format(new_rate))
 
   flag = True
   error_rel = np.fabs(rate/new_rate-1.0)
