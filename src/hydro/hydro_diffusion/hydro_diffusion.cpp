@@ -283,25 +283,31 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         nu_t(i) = 0.0;
         kappa_t(i) = 0.0;
       }
       if (nu_iso > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ISO,k,j,i);
       }
       if (nu_aniso > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) nu_t(i) += nu(ANI,k,j,i);
       }
       if (kappa_iso > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ISO,k,j,i);
       }
       if (kappa_aniso > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ANI,k,j,i);
       }
       pmb_->pcoord->CenterWidth1(k,j,is,ie,len);
       pmb_->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb_->pcoord->CenterWidth3(k,j,is,ie,dx3);
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);

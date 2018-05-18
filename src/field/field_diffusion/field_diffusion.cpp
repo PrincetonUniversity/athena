@@ -203,12 +203,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
     kl -= NGHOST; ku += NGHOST;
   }
 
-  //int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-//#pragma omp parallel default(shared) num_threads(nthreads)
-//{
-
   for (int k=kl; k<=ku; ++k) {
-//#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -220,8 +215,6 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
   }
   // set diffusivities
   CalcMagDiffCoeff_(this, w, bmag_, il, iu, jl, ju, kl, ku);
-
-//} // end of omp parallel region
 
   return;
 }
@@ -304,15 +297,18 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         eta_t(i) = 0.0;
       }
       if (eta_ohm > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_O,k,j,i);
         }
       }
       if (eta_ad > 0.0) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           eta_t(i) += etaB(I_A,k,j,i);
         }
@@ -320,6 +316,7 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
       pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
       pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
