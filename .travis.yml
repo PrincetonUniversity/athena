@@ -4,7 +4,6 @@ language: cpp
 branches:
   only:
   - master
-  - ci
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
