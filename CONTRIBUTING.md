@@ -184,10 +184,9 @@ Only collaborators with Admin permissions can bypass these restrictions. The dec
 When anyone opens a new pull request to `master`, GitHub will automatically request a code review from one or more users defined by the PR's modified files and the rules in the current [`.github/CODEOWNERS`](https://github.com/PrincetonUniversity/athena/blob/master/.github/CODEOWNERS) file. Only users with Admin permissions may modify this file to designate collaborators with at least Write access as "code owners". It is possible to use separate versions of this file on each branch to regulate PRs targeting those branches; see "[About CODEOWNERS](https://help.github.com/articles/about-codeowners/)" for more information.
 
 ## Testing and continuous integration (CI)
-Automated testing is an essential part of any large software project.
-The [Regression Tesitng](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) page in the Athena++ Wiki describes how to use and write new tests for the framework setup in the `tst/regression/` folder.
+Automated testing is an essential part of any large software project. The [Regression Testing](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) page in the Athena++ Wiki describes how to use and write new tests for the framework setup in the `tst/regression/` folder. Developers should run these tests to ensure that code changes did not break any existing functionalities.
 
-**Coming soon**: Continuous integration via the Princeton Jenkins server and Travis CI.
+Continuous integration is currently provided by both the Princeton Jenkins server and Travis CI service. These services automatically use the [Regression Testing](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) framework to check code functionality and code <a href="https://en.wikipedia.org/wiki/Lint_(software)">linters</a> to ensure that conventions in the [Style Guide](https://github.com/PrincetonUniversity/athena/wiki/Style-Guide) are obeyed. The details of the infrastructure setup and instructions on how to use these services are covered in the [Continuous Integration (CI)](https://github.com/PrincetonUniversity/athena/wiki/Continuous-Integration-%28CI%29) Wiki page.
 
 ## Documentation
 The development repository's [documentation](https://github.com/PrincetonUniversity/athena/wiki) is a [GitHub Wiki](https://help.github.com/articles/about-github-wikis/) and is written largely in Markdown. Limited math typesetting is supported via HTML. See existing Wiki source for examples, e.g. [Editing: Coordinate Systems and Meshes](https://github.com/PrincetonUniversity/athena/wiki/Coordinate-Systems-and-Meshes/_edit).
@@ -196,10 +195,17 @@ Any significant change or new feature requires accompanying documentation before
 > You and your collaborators can create branches when working on wikis, but only changes pushed to the `master` branch will be made live and available to your readers.
 
 ## Community
-The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The `#general` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed.
-<!-- Note, GitHub integration is via a Webhook and "GitHub Notifications (Legacy)
-instead of the GitHub Slack App, which
-<!-- Add Jenkins and/or Travis CI status messages to Slack after integration-->
+The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The default `#general` and `#random` channels are available for free-form discussion and user support, and topic-specific channels and private Direct Messages (DMs) with up to 8 other members can be started by anyone. Issues and pull requests on the GitHub repository should still be the main forum to discuss development details, but the Slack workspace is a useful centralized forum for general discussion, sharing new results, asking questions, and learning what others are working on. This Slack workspace was setup on the Free plan, which essentially limits the amount of file storage to 5GB and message history to 10k messages
+
+### Slack Apps
+The `#development` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed. This channel also receives messages from the Jenkins and TravisCI Slack Apps, which provide summaries of and links to every [Continuous Integration (CI)](https://github.com/PrincetonUniversity/athena/wiki/Continuous-Integration-%28CI%29) build test result.
+
+Note, the GitHub + Slack integration was originally managed via a GitHub Webhook and "GitHub Notifications (Legacy)" Slack App until 5/19/2018. The current [GitHub + Slack App](https://slack.github.com/) interface enables embedded [rich link previews ](https://github.com/integrations/slack) when posting links from GitHub:
+> When a user posts a GitHub link to issues and pull requests, directly linked comments, code blobs with line numbers, as well as organizations, repositories, and users in Slack, a preview of the link will be shown.
+
+You may need to use the `/invite @github` command in private channels and Direct Messages to get rich link previews to work there. Posting links to the private [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) repository requires that you to link your Slack and GitHub accounts with the `/github signin` command. The GitHub + Slack App also allows you to open and close Issues and PRs from Slack with `/github close [issue link]`, for example.
+
+Slack's simple file upload and sharing features are especially useful when compared to GitHub or email. Slack also integrates with cloud file storage apps such as Dropbox, Google Drive, and Box.
 
 At this time, the Slack workspace is closed to the general public, but it is open to anyone who has Read access to the private repository and their associates. The workspace is configured such that anyone with a `@princeton.edu` email can join automatically at [this signup link](https://join.slack.com/t/athena-pp/signup). Any current member may invite new members. If all else fails, send your email address to [kfelker@math.princeton.edu](mailto:kfelker@math.princeton.edu) to request an invite.
 
