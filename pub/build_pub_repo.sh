@@ -11,7 +11,7 @@
 # brackets e.g.
 # incorrect: PRIVATE="{pub}"
 #   correct: PRIVATE="pub"
-PRIVATE="pub"
+PRIVATE="{pub,tst/ci}"
 
 # Repo URLs
 PRIV_REPO_URL="https://github.com/PrincetonUniversity/athena.git"
@@ -94,5 +94,3 @@ git checkout -b $PRIV_REPO_PUB_BRANCH $PUB_REMOTE_NAME/$PUB_REPO_BRANCH
 
 # configure git so it pushes from the public branch to public_repo:master
 git config push.default upstream
-
-
