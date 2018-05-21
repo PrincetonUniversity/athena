@@ -73,8 +73,8 @@ def analyze():
         continue
       data.append([float(val) for val in line.split()])
 
-  print(data[0][4]) #,data[1][4])
-  print(data[2][4],data[3][4],data[4][4])
+  print(data[0][4],data[1][4])
+  print(data[2][4],data[3][4]) #,data[4][4])
   #print(data[5][4],data[6][4],data[7][4])
 
   # check errors between runs w/wo MPI and different numbers of cores
