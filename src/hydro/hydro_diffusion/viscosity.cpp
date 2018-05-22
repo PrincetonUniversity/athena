@@ -456,7 +456,7 @@ void HydroDiffusion::ViscousFlux_aniso(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // constant viscosity
 
-void ConstViscosity(HydroDiffusion *phdif, const AthenaArray<Real> &prim,
+void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke) {
   if (phdif->nu_iso > 0.0) {
     for (int k=ks; k<=ke; ++k) {

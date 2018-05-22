@@ -38,7 +38,7 @@
 //--------------------------------------------------------------------------------------
 // Magnetic diffusivity from constant coefficients
 
-void ConstDiffusivity(FieldDiffusion *pfdif, const AthenaArray<Real> &w,
+void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
      const AthenaArray<Real> &bmag, const int is, const int ie, const int js,
      const int je, const int ks, const int ke) {
   if (pfdif->eta_ohm > 0.0) { // Ohmic resistivity is turned on

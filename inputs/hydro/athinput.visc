@@ -52,4 +52,4 @@ iso_sound_speed = 1.0        # isothermal sound speed
 r0              = 1.0        # initial location of the shear flow
 t0              = 0.5        # time used in initial profile
 iprob           = 0          # viscous shearing density column
-nuiso           = 0.03
+nu_iso          = 0.03

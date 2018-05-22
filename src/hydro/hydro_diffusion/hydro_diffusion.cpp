@@ -249,10 +249,10 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
 
   // set viscosity using func ptr
   if (nu_iso > 0.0 || nu_aniso > 0.0)
-    CalcViscCoeff_(this, w, bc, il, iu, jl, ju, kl, ku);
+    CalcViscCoeff_(this, pmb_, w, bc, il, iu, jl, ju, kl, ku);
   // set thermal conduction using func ptr
   if (kappa_iso > 0.0 || kappa_aniso > 0.0)
-    CalcCondCoeff_(this, w, bc, il, iu, jl, ju, kl, ku);
+    CalcCondCoeff_(this, pmb_, w, bc, il, iu, jl, ju, kl, ku);
 
   return;
 }
