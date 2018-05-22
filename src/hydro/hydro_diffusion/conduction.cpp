@@ -114,7 +114,7 @@ void HydroDiffusion::ThermalFlux_aniso(const AthenaArray<Real> &p,
 // constant viscosity
 
 void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke) {
+     const AthenaArray<Real> &bcc, int is, int ie, int js, int je, int ks, int ke) {
   if (phdif->kappa_iso > 0.0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
