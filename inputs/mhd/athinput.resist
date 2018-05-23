@@ -49,4 +49,4 @@ gamma           = 1.66667   # gamma = C_p/C_v
 <problem>
 amp        = 1.0e-3    # Amplitude of B
 iprob      = 0         # 0: default 1: diagonal B    
-coef_o     = 0.03      # Ohmic resistivity
+eta_ohm    = 0.03      # Ohmic resistivity

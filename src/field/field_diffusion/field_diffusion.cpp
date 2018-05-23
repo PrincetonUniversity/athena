@@ -214,7 +214,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
     }
   }
   // set diffusivities
-  CalcMagDiffCoeff_(this, w, bmag_, il, iu, jl, ju, kl, ku);
+  CalcMagDiffCoeff_(this, pmb, w, bmag_, il, iu, jl, ju, kl, ku);
 
   return;
 }
