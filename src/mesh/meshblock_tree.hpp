@@ -1,5 +1,5 @@
-#ifndef MESHBLOCK_TREE_HPP
-#define MESHBLOCK_TREE_HPP
+#ifndef MESH_MESHBLOCK_TREE_HPP_
+#define MESH_MESHBLOCK_TREE_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -15,25 +15,6 @@
 #include "../defs.hpp"
 #include "../bvals/bvals.hpp"
 
-//--------------------------------------------------------------------------------------
-//! \struct LogicalLocation
-//  \brief stores logical location and level of meshblock
-
-typedef struct LogicalLocation {
-  long int lx1, lx2, lx3;
-  int level;
-
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
-
-  // operators useful for sorting
-  bool operator==(LogicalLocation &ll)
-    { return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3)); }
-  static bool Lesser(const LogicalLocation &left, const LogicalLocation &right)
-    { return left.level < right.level; };
-  static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
-    { return left.level > right.level; };
-
-} LogicalLocation;
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
@@ -42,6 +23,7 @@ typedef struct LogicalLocation {
 class MeshBlockTree {
   friend class Mesh;
   friend class MeshBlock;
+  friend class BoundaryBase;
 public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
@@ -51,21 +33,21 @@ public:
   MeshBlockTree* GetLeaf(int ox, int oy, int oz) {return pleaf[oz][oy][ox];}
 
   // functions
-  void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
+  void CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-       enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
+       enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
        int rl, int &nnew);
-  void AddMeshBlockWithoutRefine(LogicalLocation rloc, 
-                                 long int rbx, long int rby, long int rbz, int rl);
+  void AddMeshBlockWithoutRefine(LogicalLocation rloc,
+                                 int64_t rbx, int64_t rby, int64_t rbz, int rl);
   void Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              long int rbx, long int rby, long int rbz, int rl, int &nnew);
+              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &nnew);
   void Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              long int rbx, long int rby, long int rbz, int rl, int &ndel);
+              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &ndel);
   MeshBlockTree* FindMeshBlock(LogicalLocation tloc);
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                 enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
+                 enum BoundaryFlag* bcs, int64_t rbx, int64_t rby, int64_t rbz,
                  int rl, bool amrflag=false);
 
 private:
@@ -77,4 +59,4 @@ private:
   int gid;
 };
 
-#endif // MESHBLOCK_TREE_HPP
+#endif // MESH_MESHBLOCK_TREE_HPP_

@@ -19,14 +19,13 @@
 //  \brief polar wedge boundary conditions, inner x2 boundary
 
 void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
       for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,k,js-j,i) = sign * prim(n,k,js+j-1,i);
         }
@@ -39,7 +38,7 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(js-j),i) = sign * b.x1f(k,(js+j-1),i);
       }
@@ -48,22 +47,22 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(js-j),i) = sign * b.x2f(k,(js+j  ),i);  
+        b.x2f(k,(js-j),i) = sign * b.x2f(k,(js+j  ),i);
       }
     }}
     for (int k=ks; k<=ke; ++k) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,js,i) = 0.0;  
+        b.x2f(k,js,i) = 0.0;
       }
     }
 
     sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(js-j),i) = sign * b.x3f(k,(js+j-1),i);
       }
@@ -80,14 +79,13 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 //  \brief polar wedge boundary conditions, outer x2 boundary
 
 void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
       for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           prim(n,k,je+j,i) = sign * prim(n,k,je-j+1,i);
         }
@@ -100,7 +98,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(je+j  ),i) = sign * b.x1f(k,(je-j+1),i);
       }
@@ -109,13 +107,13 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+j+1),i) = sign * b.x2f(k,(je-j+1),i);  
+        b.x2f(k,(je+j+1),i) = sign * b.x2f(k,(je-j+1),i);
       }
     }}
     for (int k=ks; k<=ke; ++k) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,(je+1),i) = 0.0;
       }
@@ -125,7 +123,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
     sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=(NGHOST); ++j) {
-#pragma simd
+#pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(je+j  ),i) =  sign * b.x3f(k,(je-j+1),i);
       }

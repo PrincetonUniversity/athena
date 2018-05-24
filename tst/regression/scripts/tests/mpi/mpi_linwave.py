@@ -14,24 +14,24 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++ w/wo MPI
-def prepare():
+def prepare(**kwargs):
   athena.configure('b','mpi',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
   os.system('mv bin/athena bin/athena_mpi')
 
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++ w/wo MPI
-def run():
+def run(**kwargs):
   # L-going fast wave
-  arguments = [
+  arguments = ['time/ncycle_out=0',
     'problem/wave_flag=0','problem/vflow=0.0','mesh/refinement=static',
     'mesh/nx1=32', 'mesh/nx2=16', 'mesh/nx3=16',
     'meshblock/nx1=8',
@@ -41,9 +41,12 @@ def run():
   athena.run('mhd/athinput.linear_wave3d', arguments)
 
   os.system('mv bin/athena_mpi bin/athena')
-  athena.mpirun(1, 'mhd/athinput.linear_wave3d', arguments)
-  athena.mpirun(2, 'mhd/athinput.linear_wave3d', arguments)
-  athena.mpirun(4, 'mhd/athinput.linear_wave3d', arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 1, 'mhd/athinput.linear_wave3d',
+                arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 2, 'mhd/athinput.linear_wave3d',
+                arguments)
+  athena.mpirun(kwargs['mpirun_cmd'], 4, 'mhd/athinput.linear_wave3d',
+                arguments)
 
 # Analyze outputs
 def analyze():
@@ -57,17 +60,17 @@ def analyze():
         continue
       data.append([float(val) for val in line.split()])
 
-  print data[0][4],data[1][4],data[2][4],data[3][4]
+  print(data[0][4],data[1][4],data[2][4],data[3][4])
 
   # check errors between runs w/wo MPI and different numbers of cores
   if data[0][4] != data[1][4]:
-    print "Linear wave error with one core w/wo MPI not identical",data[0][4],data[1][4]
+    print("Linear wave error with one core w/wo MPI not identical",data[0][4],data[1][4])
     return False
   if abs(data[2][4]-data[0][4]) > 5.0e-4:
-    print "Linear wave error between 2 and 1 cores too large",data[2][4],data[0][4]
+    print("Linear wave error between 2 and 1 cores too large",data[2][4],data[0][4])
     return False
   if abs(data[3][4]-data[0][4]) > 5.0e-4:
-    print "Linear wave error between 4 and 1 cores too large",data[2][4],data[0][4]
+    print("Linear wave error between 4 and 1 cores too large",data[2][4],data[0][4])
     return False
 
   return True

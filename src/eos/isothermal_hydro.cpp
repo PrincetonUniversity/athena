@@ -8,6 +8,7 @@
 
 // C/C++ headers
 #include <cfloat>  // FLT_MIN
+#include <cmath>   // sqrt()
 
 // Athena++ headers
 #include "eos.hpp"
@@ -20,38 +21,29 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
-  iso_sound_speed_ = pin->GetReal("hydro","iso_sound_speed"); // error if missing!
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  iso_sound_speed_ = pin->GetReal("hydro", "iso_sound_speed"); // error if missing!
+  density_floor_  = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)));
 }
 
 // destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
 }
 
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //           const AthenaArray<Real> &prim_old, const FaceField &b,
 //           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke)
-// \brief Converts conserved into primitive variables in adiabatic hydro.
-
+//           int il, int iu, int jl, int ju, int kl, int ku)
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
-{
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
-  for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
-  for (int j=js; j<=je; ++j){
-#pragma simd
-    for (int i=is; i<=ie; ++i){
+  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -72,7 +64,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_vz = u_m3*di;
     }
   }}
-}
 
   return;
 }
@@ -80,23 +71,18 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int is, int ie, int js, int je, int ks, int ke);
+//           int il, int iu, int jl, int ju, int kl, int ku);
 // \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
-{
+     int il, int iu, int jl, int ju, int kl, int ku) {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) num_threads(nthreads)
-{
-  for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic)
-  for (int j=js; j<=je; ++j){
-#pragma simd
-    for (int i=is; i<=ie; ++i){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+    for (int i=il; i<=iu; ++i) {
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -113,7 +99,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m3 = w_vz*w_d;
     }
   }}
-}
+
   return;
 }
 
@@ -121,7 +107,20 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
 // \brief returns isothermal sound speed
 
-Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
-{
+Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
   return iso_sound_speed_;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density floor to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+  Real& w_d  = prim(IDN,k,j,i);
+
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+  return;
 }

@@ -29,8 +29,7 @@
 //   flag: true if object is for coarse grid only in an AMR calculation
 
 Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag)
-{
+  : Coordinates(pmb, pin, flag) {
   // Set indices
   pmy_block = pmb;
   coarse_flag = flag;
@@ -137,8 +136,7 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
 //----------------------------------------------------------------------------------------
 // Destructor
 
-Minkowski::~Minkowski()
-{
+Minkowski::~Minkowski() {
   dx1v.DeleteAthenaArray();
   dx2v.DeleteAthenaArray();
   dx3v.DeleteAthenaArray();
@@ -165,9 +163,8 @@ Minkowski::~Minkowski()
 //   g_inv: array of inverse metric components in 1D
 
 void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
-  #pragma simd
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -191,9 +188,8 @@ void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
 //   g_inv: array of inverse metric components in 1D
 
 void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
-  #pragma simd
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -208,9 +204,8 @@ void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu
 }
 
 void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
-  #pragma simd
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -225,9 +220,8 @@ void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu
 }
 
 void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
-{
-  #pragma simd
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -247,8 +241,8 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
+//   prim_l: 3D array of left primitives, using global coordinates
+//   prim_r: 3D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -258,10 +252,9 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 
 void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma simd
+    #pragma omp simd
     for (int i = il; i <= iu; ++i) {
       bbx(i) = bb1(k,j,i);
     }
@@ -271,10 +264,9 @@ void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int i
 
 void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma simd
+    #pragma omp simd
     for (int i = il; i <= iu; ++i) {
       bbx(i) = bb2(k,j,i);
     }
@@ -284,10 +276,9 @@ void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int i
 
 void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-    AthenaArray<Real> &bbx)
-{
+    AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma simd
+    #pragma omp simd
     for (int i = il; i <= iu; ++i) {
       bbx(i) = bb3(k,j,i);
     }
@@ -300,107 +291,48 @@ void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int i
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
-//   flux: array of fluxes in 1D, using local coordinates
+//   cons: 1D array of conserved quantities, using local coordinates (not used)
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (not used)
+//   flux: 3D array of hydrodynamical fluxes, using local coordinates
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields) (not used)
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 
 void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
-{
-  #pragma simd
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    const Real &txt = flux(IEN,i);
-    Real &t10 = flux(IEN,i);
+    const Real &txt = flux(IEN,k,j,i);
+    Real &t10 = flux(IEN,k,j,i);
     t10 = -txt;
   }
   return;
 }
 
 void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
-{
-  #pragma simd
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    const Real &tyt = flux(IEN,i);
-    Real &t20 = flux(IEN,i);
+    const Real &tyt = flux(IEN,k,j,i);
+    Real &t20 = flux(IEN,k,j,i);
     t20 = -tyt;
   }
   return;
 }
 
 void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
-{
-  #pragma simd
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-    const Real &tzt = flux(IEN,i);
-    Real &t30 = flux(IEN,i);
+    const Real &tzt = flux(IEN,k,j,i);
+    Real &t30 = flux(IEN,k,j,i);
     t30 = -tzt;
   }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming cell-centered 4-vector from Minkowski to global
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-
-void Minkowski::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions for transforming face-centered 4-vectors from Minkowski to global
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-
-void Minkowski::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-void Minkowski::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-void Minkowski::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
   return;
 }
 
@@ -413,8 +345,7 @@ void Minkowski::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, 
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
 
 void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   *pa0 = -a_0;
   *pa1 = a_1;
   *pa2 = a_2;
@@ -431,47 +362,10 @@ void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, i
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
 
 void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
-    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
-{
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
   *pa_0 = -a0;
   *pa_1 = a1;
   *pa_2 = a2;
   *pa_3 = a3;
   return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning Minkowski coordinates of given cell in GR
-// Inputs:
-//   x0,x1,x2,x3: global coordinates to be converted
-// Outputs:
-//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
-// Notes:
-//   conversion is trivial
-//   useful to have if other coordinate systems for Minkowski space are developed
-
-void Minkowski::GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz)
-{
-  *pt = x0;
-  *px = x1;
-  *py = x2;
-  *pz = x3;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning spatial separation between points at same time
-// Inputs:
-//   x1,x2,x3: spatial coordinates of one point
-//   y1,y2,y3: spatial coordinates of other point
-// Outputs:
-//   returned value: spatial separation between x and y
-// Notes:
-//   distance function is Euclidean
-
-Real Minkowski::DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2,
-    Real y3)
-{
-  return std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
 }

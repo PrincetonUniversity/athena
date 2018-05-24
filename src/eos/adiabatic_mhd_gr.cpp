@@ -24,7 +24,7 @@
 // Declarations
 static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int is, int ie, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
+    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
 static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
@@ -42,12 +42,11 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
-{
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
@@ -68,8 +67,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 // Destructor
 
-EquationOfState::~EquationOfState()
-{
+EquationOfState::~EquationOfState() {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
   normal_dd_.DeleteAthenaArray();
@@ -86,16 +84,15 @@ EquationOfState::~EquationOfState()
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
-    int ke)
-{
+    AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
+    int ku) {
   // Parameters
   const Real mm_sq_ee_sq_max = 1.0 - 1.0e-12;  // max. of squared momentum over energy
 
@@ -103,21 +100,21 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real &gamma_adi = gamma_;
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js, je, ks, ke);
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
 
   // Go through all rows
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 
       // Calculate metric
-      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      pco->CellMetric(k, j, il, iu, g_, g_inv_);
 
       // Cast problem into normal frame
-      CalculateNormalConserved(cons, bb_cc, g_, g_inv_, k, j, is, ie, normal_dd_,
+      CalculateNormalConserved(cons, bb_cc, g_, g_inv_, k, j, il, iu, normal_dd_,
           normal_ee_, normal_mm_, normal_bb_, normal_tt_);
 
       // Go through cells
-      for (int i = is; i <= ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
 
         // Set flag indicating conserved values need adjusting at end
         bool fixed = false;
@@ -292,7 +289,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   cons: conserved quantities rho u^0, T^0_\mu
 //   bb: cell-centered magnetic field B^i
 //   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,is,ie: indices and index bounds of 1D array to use
+//   k,j,il,iu: indices and index bounds of 1D array to use
 // Outputs:
 //   dd: normal density D
 //   ee: normal energy E
@@ -310,11 +307,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int is, int ie, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt)
-{
+    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
+    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
   // Go through row
-  for (int i = is; i <= ie; ++i) {
+  for (int i=il; i<=iu; ++i) {
 
     // Extract metric
     const Real &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
@@ -422,8 +418,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
     const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
     Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor,
-    Real *p_pmag)
-{
+    Real *p_pmag) {
   // Parameters
   const int max_iterations = 10;
   const Real tol = 1.0e-12;
@@ -448,7 +443,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   // Calculate functions of conserved quantities
   Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
   d = std::max(d, 0.0);
-  Real pgas_min = cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
+  Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
   pgas_min = std::max(pgas_min, pgas_uniform_min);
 
   // Iterate until convergence
@@ -467,16 +462,16 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     // Step 2: Calculate correct root of cubic equation
     Real phi, eee, ll, v_sq;
     if (n%3 != 2) {
-      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                      // (NH 5.10)
-      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));                // (NH 5.11)
-      ll = eee - bb_sq;                                                        // (NH 5.5)
-      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll));  // (NH 5.2)
+      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
+      eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
+      ll = eee - bb_sq;                                                       // (NH 5.5)
+      v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
       v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
-      Real gamma_sq = 1.0/(1.0-v_sq);                                          // (NH 3.1)
-      Real gamma = std::sqrt(gamma_sq);                                        // (NH 3.1)
-      Real wgas = ll/gamma_sq;                                                 // (NH 5.1)
-      Real rho = dd/gamma;                                                     // (NH 4.5)
-      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);                // (NH 4.1)
+      Real gamma_sq = 1.0/(1.0-v_sq);                                         // (NH 3.1)
+      Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
+      Real wgas = ll/gamma_sq;                                                // (NH 5.1)
+      Real rho = dd/gamma;                                                    // (NH 4.5)
+      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);               // (NH 4.1)
       pgas[(n+1)%3] = std::max(pgas[(n+1)%3], pgas_min);
     }
 
@@ -547,7 +542,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
 //   pco: pointer to Coordinates
-//   is,ie,js,je,ks,ke: index bounds of region to be updated
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: conserved variables
 // Notes:
@@ -556,13 +551,12 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pco->CellMetric(k, j, is, ie, g_, g_inv_);
-      #pragma simd
-      for (int i = is; i <= ie; ++i) {
+     int il, int iu, int jl, int ju, int kl, int ku) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      pco->CellMetric(k, j, il, iu, g_, g_inv_);
+      //#pragma omp simd // fn is too long to inline
+      for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }
     }
@@ -585,11 +579,10 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
-    Coordinates *pco)
-{
+    Coordinates *pco) {
   // Extract primitives and magnetic fields
   const Real &rho = prim(IDN,k,j,i);
-  const Real &pgas = prim(IEN,k,j,i);
+  const Real &pgas = prim(IPR,k,j,i);
   const Real &uu1 = prim(IVX,k,j,i);
   const Real &uu2 = prim(IVY,k,j,i);
   const Real &uu3 = prim(IVZ,k,j,i);
@@ -643,8 +636,9 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
-//   prim: 1D array of primitive states
+//   prim: 3D array of primitive states
 //   bbx_vals: 1D array of B^x
+//   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 // Outputs:
@@ -657,9 +651,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   almost same function as in adiabatic_mhd_sr.cpp
 
 void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
-    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
-{
+    const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
+    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m) {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
   const double b_limit = 1.0e-14;  // squared B^x less than this is considered 0
@@ -673,20 +666,20 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract primitives
-    const Real &rho = prim(IDN,i);
-    const Real &pgas = prim(IEN,i);
+    const Real &rho = prim(IDN,k,j,i);
+    const Real &pgas = prim(IPR,k,j,i);
     Real u[4];
-    u[1] = prim(ivx,i);
-    u[2] = prim(ivy,i);
-    u[3] = prim(ivz,i);
+    u[1] = prim(ivx,k,j,i);
+    u[2] = prim(ivy,k,j,i);
+    u[3] = prim(ivz,k,j,i);
     u[0] = std::sqrt(1.0 + SQR(u[1]) + SQR(u[2]) + SQR(u[3]));
     const Real &bbx = bbx_vals(i);
-    const Real &bby = prim(IBY,i);
-    const Real &bbz = prim(IBZ,i);
+    const Real &bby = prim(IBY,k,j,i);
+    const Real &bbz = prim(IBZ,k,j,i);
 
     // Calculate 3-velocity
     Real vx = u[1]/u[0];
@@ -776,11 +769,9 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         if (s2 < 0.0) {
           Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
           z0 = -2.0 * std::sqrt(q) * cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
-        }
-        else
-        {
+        } else {
           Real s = std::sqrt(s2);
-          Real aa = -copysign(1.0, r) * cbrt(std::abs(r) + s);  // (NR 5.6.15)
+          Real aa = -copysign(1.0, r) * std::cbrt(std::abs(r) + s);  // (NR 5.6.15)
           Real bb = (aa != 0.0) ? q/aa : 0.0;                   // (NR 5.6.16)
           z0 = aa + bb - c2/3.0;
         }
@@ -848,8 +839,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 //   variables are named as though 1 is normal direction
 
 void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
-    Real b_sq, Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
-{
+    Real b_sq, Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus) {
   // Parameters and constants
   const Real gamma_adi = gamma_;
 
@@ -873,5 +863,34 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, R
     *plambda_plus = root_2;
     *plambda_minus = root_1;
   }
+  return;
+}
+
+//---------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
+//           int k, int j, int i)
+// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+  // Eventually, may want to check that small field errors don't overwhelm gas floor
+  // Real density_floor_local = density_floor_;
+  // if (sigma_max_ > 0.0) {
+  //   density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+  // }
+  // Real pressure_floor_local = pressure_floor_;
+  // if (beta_min_ > 0.0) {
+  //   pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+  // }
+  // w_d = (w_d > density_floor_local) ?  w_d : density_floor_local;
+  // w_p = (w_p > pressure_floor_local) ?  w_p : pressure_floor_local;
+
+  // Not applying position-dependent floors here in GR, nor using rho_min
+  // apply density floor
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // apply pressure floor
+  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+
   return;
 }

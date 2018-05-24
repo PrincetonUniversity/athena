@@ -16,16 +16,16 @@
 #include <string>     // string
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../globals.hpp"                  // Globals
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
+#include "../globals.hpp"                  // Globals
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not RELATIVISTIC_DYNAMICS
@@ -33,6 +33,10 @@
 #endif
 
 // Declarations
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz);
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real QuadraticRoot(Real a1, Real a0, bool greater_root);
 static Real CubicRootReal(Real a2, Real a1, Real a0);
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
@@ -52,7 +56,6 @@ Real delta_v[4];              // perturbations to 3-velocity
 Real lambda;                  // wavespeed
 Real wavenumber;              // wavenumber
 AthenaArray<Real> g, gi;      // metric and inverse
-int num_vars;                 // number of variables to use in calculating errors
 AthenaArray<Real> bcc;        // cell-centered initial magnetic fields
 AthenaArray<Real> initial;    // initial conditions
 AthenaArray<Real> volume;     // 1D array of volumes
@@ -63,8 +66,7 @@ AthenaArray<Real> volume;     // 1D array of volumes
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read information regarding desired wave and check input
   int wave_flag = pin->GetInteger("problem", "wave_flag");
   if (wave_flag < 0 or wave_flag > NWAVE-1) {
@@ -427,8 +429,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //   pin: parameters
 // Outputs: (none)
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Free metric
   if (GENERAL_RELATIVITY) {
     g.DeleteAthenaArray();
@@ -439,8 +440,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   if (compute_error) {
 
     // Prepare error calculation variables
-    Real errors[num_vars+1];
-    for (int n = 0; n < num_vars+1; ++n) {
+    Real errors[(NHYDRO+NFIELD)+1];
+    for (int n = 0; n < (NHYDRO+NFIELD)+1; ++n) {
       errors[n] = 0.0;
     }
 
@@ -461,7 +462,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
                     - initial(pmb->lid,NHYDRO+n,k,j,i)) * volume(i);
               }
             }
-            errors[num_vars] += volume(i);
+            errors[(NHYDRO+NFIELD)] += volume(i);
           }
         }
       }
@@ -472,10 +473,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     #ifdef MPI_PARALLEL
     {
       if (Globals::my_rank == 0) {
-        MPI_Reduce(MPI_IN_PLACE, errors, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0,
+        MPI_Reduce(MPI_IN_PLACE, errors, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
             MPI_COMM_WORLD);
       } else {
-        MPI_Reduce(errors, 0, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(errors, 0, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
+                   MPI_COMM_WORLD);
       }
     }
     #endif
@@ -484,16 +486,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     if (Globals::my_rank == 0) {
 
       // Divide volume-weighted errors by total volume
-      for (int n = 0; n < num_vars; ++n) {
-        errors[n] /= errors[num_vars];
+      for (int n = 0; n < (NHYDRO+NFIELD); ++n) {
+        errors[n] /= errors[(NHYDRO+NFIELD)];
       }
 
       // Calculate RMS of volume-averaged errors
       Real total_error = 0.0;
-      for (int n = 0; n < num_vars; ++n) {
+      for (int n = 0; n < (NHYDRO+NFIELD); ++n) {
         total_error += SQR(errors[n]);
       }
-      total_error = std::sqrt(total_error/num_vars);
+      total_error = std::sqrt(total_error/(NHYDRO+NFIELD));
 
       // Prepare output file
       std::string filename;
@@ -560,8 +562,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //   references Anton et al. 2010, ApJS 188 1 (A, MHD)
 //              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -588,10 +589,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   {
     Real t_left, x_left, y_left, z_left;
     Real t_right, x_right, y_right, z_right;
-    pcoord->GetMinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left,
-        &y_left, &z_left);
-    pcoord->GetMinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right, &x_right,
-        &y_right, &z_right);
+    GetMinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left, &y_left,
+        &z_left);
+    GetMinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right, &x_right, &y_right,
+        &z_right);
     arg_min = x_left - lambda * t_left;
     arg_max = x_right - lambda * t_right;
   }
@@ -617,8 +618,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real t, x, y, z;
         #if GENERAL_RELATIVITY
         {
-          pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j),
-              pcoord->x3v(k), &t, &x, &y, &z);
+          GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &t,
+              &x, &y, &z);
         }
         #else  // SR
         {
@@ -654,9 +655,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real u_local[4], b_local[4], u_local_low[4], b_local_low[4];
         #if GENERAL_RELATIVITY
         {
-          pcoord->TransformVectorCell(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k, j, i,
+          TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
               &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-          pcoord->TransformVectorCell(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k, j, i,
+          TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
               &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
           pcoord->LowerVectorCell(u_local[0], u_local[1], u_local[2], u_local[3], k, j, i,
               &u_local_low[0], &u_local_low[1], &u_local_low[2], &u_local_low[3]);
@@ -730,8 +731,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             // Set B^1 if needed
             if (j != ju+1 and k != ku+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j),
-                  pcoord->x3v(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -739,18 +740,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace1(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace1(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x1f(k,j,i) = b_local[1] * u_local[0] - b_local[0] * u_local[1];
             }
 
             // Set B^2 if needed
             if (i != iu+1 and k != ku+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -758,18 +759,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace2(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace2(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x2f(k,j,i) = b_local[2] * u_local[0] - b_local[0] * u_local[2];
             }
 
             // Set B^3 if needed
             if (i != iu+1 and j != ju+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j),
-                  pcoord->x3f(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -777,10 +778,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace3(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace3(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x3f(k,j,i) = b_local[3] * u_local[0] - b_local[0] * u_local[3];
             }
           }
@@ -813,14 +814,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // Prepare arrays for comparing to initial conditions (only once per Mesh)
   if (compute_error and lid == 0) {
     int num_blocks = pmy_mesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-    num_vars = NHYDRO + NFIELD;
     int nx1 = block_size.nx1;
     int nx2 = block_size.nx2;
     int nx3 = block_size.nx3;
     if (MAGNETIC_FIELDS_ENABLED) {
       bcc.NewAthenaArray(NFIELD, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
     }
-    initial.NewAthenaArray(num_blocks, num_vars, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
+    initial.NewAthenaArray(num_blocks, (NHYDRO+NFIELD), nx3+NGHOST, nx2+NGHOST,
+                           nx1+NGHOST);
     volume.NewAthenaArray(nx1+NGHOST);
   }
 
@@ -852,6 +853,49 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 //----------------------------------------------------------------------------------------
+// Function for returning corresponding Minkowski coordinates of point
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz) {
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pt = x0;
+    *px = x1;
+    *py = x2;
+    *pz = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Minkowski to desired coordinates
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   x,y,z: Minkowski coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pa0 = at;
+    *pa1 = ax;
+    *pa2 = ay;
+    *pa3 = az;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Function for finding root of monic quadratic equation
 // Inputs:
 //   a1: linear coefficient
@@ -866,8 +910,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
 
-static Real QuadraticRoot(Real a1, Real a0, bool greater_root)
-{
+static Real QuadraticRoot(Real a1, Real a0, bool greater_root) {
   if (a1*a1 < 4.0*a0) {  // no real roots
     return -a1/2.0;
   }
@@ -899,8 +942,7 @@ static Real QuadraticRoot(Real a1, Real a0, bool greater_root)
 //   same function as in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 //   references Numerical Recipes, 3rd ed. (NR)
 
-static Real CubicRootReal(Real a2, Real a1, Real a0)
-{
+static Real CubicRootReal(Real a2, Real a1, Real a0) {
   Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
   Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
   if (r*r - q*q*q < 0.0) {
@@ -908,7 +950,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0)
     return -2.0 * std::sqrt(q) * cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
   } else {
     Real a = -copysign(1.0, r)
-        * cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)
+        * std::cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)
     Real b = (a != 0.0) ? q/a : 0.0;                   // (NR 5.6.16)
     return a + b - a2/3.0;
   }
@@ -939,8 +981,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0)
 //   similar function to those in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-    Real *px3, Real *px4)
-{
+    Real *px3, Real *px4) {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*SQR(a3);
   Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);

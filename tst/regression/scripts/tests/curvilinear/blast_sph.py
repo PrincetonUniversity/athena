@@ -8,15 +8,15 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure(
       prob='blast',
-      coord='spherical_polar')
+      coord='spherical_polar', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
-  arguments = ['problem/compute_error=true']
+def run(**kwargs):
+  arguments = ['time/ncycle_out=0', 'problem/compute_error=true']
   athena.run('hydro/athinput.blast_sph', arguments)
 
 # Analyze output
@@ -33,6 +33,6 @@ def analyze():
 
   # check blast is spherical
   if data[0][3] > 1.0: 
-    print "Distortion of blast wave in spherical coords too large",data[0][3]
+    print("Distortion of blast wave in spherical coords too large",data[0][3])
 
   return True

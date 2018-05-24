@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cmath>      // sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -24,13 +25,19 @@
 #error "This problem generator must be used with general relativity"
 #endif
 
+// Declarations
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz);
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3);
+
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -48,8 +55,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  // Real gamma_adi = peos->GetGamma();
+  // Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
   Real num_x = pin->GetReal("problem", "num_x");
@@ -93,7 +100,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);
-        Real min_separation = pcoord->DistanceBetweenPoints(x1, x2, x3, 0.0, 0.0, 0.0);
+        Real min_separation = DistanceBetweenPoints(x1, x2, x3, 0.0, 0.0, 0.0);
         for (int x_index = -num_x; x_index <= num_x; ++x_index) {
           Real center_x = x_index * x_spacing;
           for (int y_index = -num_y; y_index <= num_y; ++y_index) {
@@ -101,8 +108,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               continue;
             }
             Real center_y = y_index * y_spacing;
-            Real separation = pcoord->DistanceBetweenPoints(x1, x2, x3, center_x,
-                center_y, 0.0);
+            Real separation = DistanceBetweenPoints(x1, x2, x3, center_x, center_y, 0.0);
             min_separation = std::min(min_separation, separation);
           }
         }
@@ -117,13 +123,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           pgas = pgas_outer;
         }
 
+        // Get Minkowski coordinates of point
+        Real t, x, y, z;
+        GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+
         // Set velocity
         Real ut = 1.0;
         Real ux = 0.0;
         Real uy = 0.0;
         Real uz = 0.0;
         Real u0, u1, u2, u3;
-        pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+        TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u1 - gi(I01,i)/gi(I00,i) * u0;
@@ -136,8 +146,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real bcony = by;
         Real bconz = bz;
         Real bcon0, bcon1, bcon2, bcon3;
-        pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0, &bcon1,
-            &bcon2, &bcon3);
+        TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
+            &bcon3);
         b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
@@ -167,21 +177,36 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real u0, u1, u2, u3;
           Real bcon0, bcon1, bcon2, bcon3;
           if (j != ju+1 && k != ku+1) {
-            pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-            pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
-                &bcon1, &bcon2, &bcon3);
+            Real x1 = pcoord->x1f(i);
+            Real x2 = pcoord->x2v(j);
+            Real x3 = pcoord->x3v(k);
+            Real t, x, y, z;
+            GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+            TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+            TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
+                &bcon3);
             pfield->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
           }
           if (i != iu+1 && k != ku+1) {
-            pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-            pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
-                &bcon1, &bcon2, &bcon3);
+            Real x1 = pcoord->x1v(i);
+            Real x2 = pcoord->x2f(j);
+            Real x3 = pcoord->x3v(k);
+            Real t, x, y, z;
+            GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+            TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+            TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
+                &bcon3);
             pfield->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
           }
           if (i != iu+1 && j != ju+1) {
-            pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-            pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
-                &bcon1, &bcon2, &bcon3);
+            Real x1 = pcoord->x1v(i);
+            Real x2 = pcoord->x2v(j);
+            Real x3 = pcoord->x3f(k);
+            Real t, x, y, z;
+            GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+            TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+            TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
+                &bcon3);
             pfield->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
           }
         }
@@ -189,4 +214,65 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Minkowski coordinates of point
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz) {
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pt = x0;
+    *px = x1;
+    *py = x2;
+    *pz = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Minkowski to desired coordinates
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   x,y,z: Minkowski coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pa0 = at;
+    *pa1 = ax;
+    *pa2 = ay;
+    *pa3 = az;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning spatial separation between points at same time
+// Inputs:
+//   x1,x2,x3: spatial coordinates of one point
+//   y1,y2,y3: spatial coordinates of other point
+// Outputs:
+//   returned value: spatial separation between x and y
+// Notes:
+//   distance function is Euclidean in Minkowski coordinates
+
+static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
+  Real distance = 0.0;
+  if (COORDINATE_SYSTEM == "minkowski") {
+    distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
+  }
+  return distance;
 }

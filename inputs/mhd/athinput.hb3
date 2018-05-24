@@ -1,0 +1,67 @@
+<comment>
+problem = 2D MRI
+author  = J.F. Hawley & S.A. Balbus
+journal = ApJ 400, 595-609 (1992)
+config  = -shear -b --eos=isothermal --problem=hb3 
+
+<job>
+problem_id  = HB3       # problem ID: basename of output filenames
+
+<output1>
+file_type   = hst       # History data dump
+dt          = 62.831853 # time increment between outputs
+data_format = %12.5e    # Optional data format string
+
+<output2>
+file_type   = vtk       # Binary data dump
+variable    = prim      # variables to be output
+dt          = 628.31853 # time increment between outputs
+
+<time>
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = 500000    # cycle limit
+tlim        = 50265.482 # time limit (8 orbits)
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 64        # Number of zones in X1-direction
+x1min       = -0.5      # minimum value of X1
+x1max       = 0.5       # maximum value of X1
+ix1_bc      = periodic  # Inner-X1 boundary condition flag
+ox1_bc      = periodic  # Outer-X1 boundary condition flag
+
+nx2         = 64        # Number of zones in X2-direction
+x2min       = -0.5      # minimum value of X2
+x2max       = 0.5       # maximum value of X2
+ix2_bc      = periodic  # Inner-X2 boundary condition flag
+ox2_bc      = periodic  # Outer-X2 boundary condition flag
+
+nx3         = 1         # Number of zones in X3-direction
+x3min       = -0.5      # minimum value of X3
+x3max       = 0.5       # maximum value of X3
+ix3_bc      = periodic  # Inner-X3 boundary condition flag
+ox3_bc      = periodic  # Outer-X3 boundary condition flag
+
+<meshblock>
+nx1         = 64
+nx2         = 64
+nx3         = 1
+
+<hydro>
+gamma = 1.6666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 0.00408  # isothermal sound speed
+
+
+<problem>
+beta       = 4000      # Plasma beta
+amp        = 0.01      # dP/P <= amp
+ipert      = 1         # 1 for random d,P, 2 for uniform Vx
+ifield     = 1         # 1 for zero-net-flux Bz, 2 for constant Bz
+nwx        = 1         # wavenumber in x1
+nwy        = 1         # wavenumber in x2
+Omega0     = 1.0e-3    # orbital freq
+qshear     = 1.5       # shear rate
+shboxcoord = 2         # 1=xy; 2=xz
+

@@ -33,10 +33,10 @@ static Real gm1, iso_cs;
 //----------------------------------------------------------------------------------------
 //! \func
 
-void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx)
-{
+void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
@@ -47,27 +47,28 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
   Real du[NWAVE],a[NWAVE],u[NWAVE];
 
-#pragma simd
-  for (int i=il; i<=iu; ++i){
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+  for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,i);
-    wli[IVX]=wl(ivx,i);
-    wli[IVY]=wl(ivy,i);
-    wli[IVZ]=wl(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
+    wli[IDN]=wl(IDN,k,j,i);
+    wli[IVX]=wl(ivx,k,j,i);
+    wli[IVY]=wl(ivy,k,j,i);
+    wli[IVZ]=wl(ivz,k,j,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
 
-    wri[IDN]=wr(IDN,i);
-    wri[IVX]=wr(ivx,i);
-    wri[IVY]=wr(ivy,i);
-    wri[IVZ]=wr(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
+    wri[IDN]=wr(IDN,k,j,i);
+    wri[IVX]=wr(ivx,k,j,i);
+    wri[IVY]=wr(ivy,k,j,i);
+    wri[IVZ]=wr(ivz,k,j,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
 
 //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
-    Real sqrtdl = sqrt(wli[IDN]);
-    Real sqrtdr = sqrt(wri[IDN]);
+    Real sqrtdl = std::sqrt(wli[IDN]);
+    Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
     wroe[IDN]  = sqrtdl*sqrtdr;
@@ -88,7 +89,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
 
     RoeEigensystem(wroe,ev,rem,lem);
 
-//--- Step 4.  Compute L/R fluxes 
+//--- Step 4.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -262,14 +263,14 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
-    if(ev[0] >= 0.0){
+    if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
       flxi[IVY] = fl[IVY];
       flxi[IVZ] = fl[IVZ];
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fl[IEN];
     }
-    if(ev[NWAVE-1] <= 0.0){
+    if (ev[NWAVE-1] <= 0.0) {
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];
@@ -291,12 +292,13 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
       }
     }
 
-    flx(IDN,i) = flxi[IDN];
-    flx(ivx,i) = flxi[IVX];
-    flx(ivy,i) = flxi[IVY];
-    flx(ivz,i) = flxi[IVZ];
-    if (NON_BAROTROPIC_EOS) flx(IEN,i) = flxi[IEN];
+    flx(IDN,k,j,i) = flxi[IDN];
+    flx(ivx,k,j,i) = flxi[IVX];
+    flx(ivy,k,j,i) = flxi[IVY];
+    flx(ivz,k,j,i) = flxi[IVZ];
+    if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
   }
+  }}
 
   return;
 }
@@ -323,8 +325,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 
 inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
-{
+  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -337,7 +338,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
     Real asq = (q < 0.0) ? 0.0 : gm1*q;
-    Real a = sqrt(asq);
+    Real a = std::sqrt(asq);
 
     // Compute eigenvalues (eq. B2)
     eigenvalues[0] = v1 - a;
@@ -361,7 +362,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
 
     right_eigenmatrix[0][2] = 0.0;
     right_eigenmatrix[1][2] = 0.0;
-    right_eigenmatrix[2][2] = 0.0; 
+    right_eigenmatrix[2][2] = 0.0;
     right_eigenmatrix[3][2] = 1.0;
     right_eigenmatrix[4][2] = v3;
 
@@ -384,7 +385,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[0][2] = -na*gm1*v2;
     left_eigenmatrix[0][3] = -na*gm1*v3;
     left_eigenmatrix[0][4] = na*gm1;
-  
+
     left_eigenmatrix[1][0] = -v2;
     left_eigenmatrix[1][1] = 0.0;
     left_eigenmatrix[1][2] = 1.0;
@@ -395,7 +396,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[2][1] = 0.0;
     left_eigenmatrix[2][2] = 0.0;
     left_eigenmatrix[2][3] = 1.0;
-    left_eigenmatrix[2][4] = 0.0; 
+    left_eigenmatrix[2][4] = 0.0;
 
     Real qa = gm1/asq;
     left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;

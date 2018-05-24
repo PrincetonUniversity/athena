@@ -1,5 +1,5 @@
-#ifndef DEFINITIONS_HPP
-#define DEFINITIONS_HPP
+#ifndef DEFS_HPP_
+#define DEFS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -19,20 +19,25 @@
 // coordinate system
 #define COORDINATE_SYSTEM "@COORDINATE_SYSTEM@"
 
+// enable shearing box? default=0 (false)
+#define SHEARING_BOX @SHEARING_BOX@
+
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
 
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 
-// spatial reconstruction algorithm
-#define RECONSTRUCTION_METHOD "@RECONSTRUCT@"
-
-// hydro time-integration algorithm
-#define HYDRO_TIME_INTEGRATOR "@HYDRO_INTEGRATOR@"
-
 // include magnetic fields? default=0 (false)
 #define MAGNETIC_FIELDS_ENABLED @MAGNETIC_FIELDS_ENABLED@
+
+// include self gravity? default=0 (false)
+#define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
+
+// make use of FFT? default=0 (false)
+#define FFT_ENABLED @FFT_ENABLED@
+
+#define @FFT_DEFINE@
 
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED 0
@@ -46,6 +51,9 @@
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
+// floating point single precision option
+#define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
+
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
 
@@ -54,6 +62,9 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
+
+// HDF5 floating point ouptut precision option
+#define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
@@ -66,8 +77,8 @@
 #define NHYDRO @NHYDRO_VARIABLES@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
-#define NGHOST 2
-#define MAX_NSTEP 4
+#define NGHOST @NUMBER_GHOST_CELLS@
+#define MAX_NSTEP 5
 
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)
@@ -82,4 +93,4 @@
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
-#endif
+#endif // DEFS_HPP_

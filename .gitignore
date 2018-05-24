@@ -45,3 +45,4 @@ meshtest.dat
 
 # editor temp files
 *~
+*.swp

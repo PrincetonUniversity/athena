@@ -1,5 +1,5 @@
-#ifndef PARAMETER_INPUT_HPP
-#define PARAMETER_INPUT_HPP
+#ifndef PARAMETER_INPUT_HPP_
+#define PARAMETER_INPUT_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -18,13 +18,19 @@
 
 // Athena++ headers
 #include "athena.hpp"
+#include "defs.hpp"
 #include "outputs/io_wrapper.hpp"
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 //----------------------------------------------------------------------------------------
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
 
-typedef struct InputLine {   
+typedef struct InputLine {
   std::string param_name;
   std::string param_value;    // value of the parameter is stored as a string!
   std::string param_comment;
@@ -35,7 +41,7 @@ typedef struct InputLine {
 //! \class InputBlock
 //  \brief  node in a linked list of all input blocks contained within input file
 
-class InputBlock { 
+class InputBlock {
 public:
   // constructor/destructor
   InputBlock();
@@ -83,6 +89,8 @@ public:
   bool SetBoolean(std::string block, std::string name, bool value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
+  void RollbackNextTime();
+  void ForwardNextTime(Real time);
 
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
@@ -93,5 +101,17 @@ private:
        std::string& value, std::string& comment);
   void AddParameter(InputBlock *pib, std::string name, std::string value,
        std::string comment);
-};
+
+  // thread safety
+#ifdef OPENMP_PARALLEL
+  omp_lock_t rlock_, wlock_;
+  int reading_;
 #endif
+
+  void StartReading(void);
+  void EndReading(void);
+  void StartWriting(void);
+  void EndWriting(void);
+
+};
+#endif // PARAMETER_INPUT_HPP_

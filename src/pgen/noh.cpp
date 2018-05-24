@@ -10,6 +10,9 @@
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
+// C++ headers
+#include <cmath>      // sqrt()
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -43,8 +46,7 @@ static Real gmma, gmma1;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary value function pointers
   EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
   EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
@@ -59,8 +61,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Problem Generator for the Noh spherical implosion test
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gmma  = peos->GetGamma();
   gmma1 = gmma - 1.0;
 
@@ -70,10 +71,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int i=is; i<=ie; i++) {
     Real rad;
     if (block_size.nx3 > 1) {
-      rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
+      rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
       phydro->u(IM3,k,j,i) = -pcoord->x3v(k)/rad;
     } else {
-      rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
+      rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
       phydro->u(IM3,k,j,i) = 0.0;
     }
     phydro->u(IDN,k,j,i) = 1.0;
@@ -90,23 +91,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, 
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1;  i<=(NGHOST); ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)) 
+        rad = std::sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j))
               + SQR(pco->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
-        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)));
+        rad = std::sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)));
         f_t = (1.0 + pmb->pmy_mesh->time/rad);
       }
       Real d0 = 1.0*f_t;
-   
+
       prim(IDN,k,j,ie+i)  = d0;
       prim(IVX,k,j,ie+i) = -pco->x1v(ie+i)/rad;
       prim(IVY,k,j,ie+i) = -pco->x2v(j   )/rad;
@@ -128,18 +128,17 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)) 
+        rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j))
               + SQR(pco->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
-        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)));
+        rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)));
         f_t = (1.0 + pmb->pmy_mesh->time/rad);
       }
       Real d0 = 1.0*f_t;
@@ -164,13 +163,12 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, 
-     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) 
+      Real rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j))
               + SQR(pco->x3v(ke+k)));
       Real f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       Real d0 = 1.0*f_t;

@@ -23,7 +23,7 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
-    AthenaArray<Real> &flux);
+    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux);
@@ -31,26 +31,30 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
 //----------------------------------------------------------------------------------------
 // Riemann solver
 // Inputs:
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
+//   kl,ku,jl,ju,il,iu: lower and upper x1-, x2-, and x3-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields (not used)
-//   prim_l, prim_r: left and right primitive states
+//   prim_l,prim_r: 3D arrays of left and right primitive states
 // Outputs:
-//   flux: fluxes across interface
+//   flux: 3D array of hydrodynamical fluxes across interfaces
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 
-void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
-{
-  if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
-    LLFNonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
-  } else {
-    LLFTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l, prim_r,
-        cons_, flux);
+void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+    const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
+    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
+        LLFNonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
+      } else {
+        LLFTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
+            prim_r, cons_, flux, ey, ez);
+      }
+    }
   }
   return;
 }
@@ -65,10 +69,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 //   bb: 3D array of normal magnetic fields (not used)
 //   bb_normal: 1D scratch array for normal magnetic fields
 //   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l, prim_r: left and right primitive states
+//   prim_l,prim_r: 3D arrays of left and right primitive states
 //   cons: 1D scratch array for conserved quantities
 // Outputs:
-//   flux: fluxes across interface
+//   flux: 3D array of hydrodynamical fluxes across interfaces
+//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
@@ -78,8 +83,7 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
-    AthenaArray<Real> &flux)
-{
+    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Transform primitives to locally flat coordinates if in GR
   #if GENERAL_RELATIVITY
   {
@@ -105,22 +109,22 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
   const Real gamma_adi = pmb->peos->GetGamma();
 
   // Go through each interface
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IPR,i);
+    const Real &rho_l = prim_l(IDN,k,j,i);
+    const Real &pgas_l = prim_l(IPR,k,j,i);
     Real u_l[4];
     if (GENERAL_RELATIVITY) {
-      u_l[1] = prim_l(ivx,i);
-      u_l[2] = prim_l(ivy,i);
-      u_l[3] = prim_l(ivz,i);
+      u_l[1] = prim_l(ivx,k,j,i);
+      u_l[2] = prim_l(ivy,k,j,i);
+      u_l[3] = prim_l(ivz,k,j,i);
       u_l[0] = std::sqrt(1.0 + SQR(u_l[1]) + SQR(u_l[2]) + SQR(u_l[3]));
     } else {  // SR
-      const Real &vx_l = prim_l(ivx,i);
-      const Real &vy_l = prim_l(ivy,i);
-      const Real &vz_l = prim_l(ivz,i);
+      const Real &vx_l = prim_l(ivx,k,j,i);
+      const Real &vy_l = prim_l(ivy,k,j,i);
+      const Real &vz_l = prim_l(ivz,k,j,i);
       u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
       u_l[1] = u_l[0] * vx_l;
       u_l[2] = u_l[0] * vy_l;
@@ -128,18 +132,18 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     }
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IPR,i);
+    const Real &rho_r = prim_r(IDN,k,j,i);
+    const Real &pgas_r = prim_r(IPR,k,j,i);
     Real u_r[4];
     if (GENERAL_RELATIVITY) {
-      u_r[1] = prim_r(ivx,i);
-      u_r[2] = prim_r(ivy,i);
-      u_r[3] = prim_r(ivz,i);
+      u_r[1] = prim_r(ivx,k,j,i);
+      u_r[2] = prim_r(ivy,k,j,i);
+      u_r[3] = prim_r(ivz,k,j,i);
       u_r[0] = std::sqrt(1.0 + SQR(u_r[1]) + SQR(u_r[2]) + SQR(u_r[3]));
     } else {  // SR
-      const Real &vx_r = prim_r(ivx,i);
-      const Real &vy_r = prim_r(ivy,i);
-      const Real &vz_r = prim_r(ivz,i);
+      const Real &vx_r = prim_r(ivx,k,j,i);
+      const Real &vy_r = prim_r(ivy,k,j,i);
+      const Real &vz_r = prim_r(ivz,k,j,i);
       u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
       u_r[1] = u_r[0] * vx_r;
       u_r[2] = u_r[0] * vy_r;
@@ -195,16 +199,16 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     flux_r[ivy] = wgas_r * u_r[2] * u_r[1];
     flux_r[ivz] = wgas_r * u_r[3] * u_r[1];
 
-    // Set fluxes
-    for (int n = 0; n < NWAVE; ++n) {
-      flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
-    }
-
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
         cons(n,i) = 0.5 * (cons_r[n] + cons_l[n] + (flux_l[n] - flux_r[n]) / lambda);
       }
+    }
+
+    // Set fluxes
+    for (int n = 0; n < NHYDRO; ++n) {
+      flux(n,k,j,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
     }
   }
 
@@ -213,13 +217,13 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
   {
     switch (ivx) {
       case IVX:
-        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux);
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
         break;
       case IVY:
-        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux);
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
         break;
       case IVZ:
-        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux);
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
         break;
     }
   }
@@ -234,9 +238,9 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l, prim_r: left and right primitive states
+//   prim_l,prim_r: 3D arrays of left and right primitive states
 // Outputs:
-//   flux: fluxes across interface
+//   flux: 3D array of hydrodynamical fluxes across interfaces
 // Notes:
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   derived from RiemannSolver() in llf_rel_no_transform.cpp assuming ivx = IVY
@@ -253,7 +257,7 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-  #pragma simd
+  #pragma omp simd
   for (int i = il; i <= iu; ++i) {
 
     // Extract metric
@@ -268,18 +272,18 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IPR,i);
-    const Real &uu1_l = prim_l(IVX,i);
-    const Real &uu2_l = prim_l(IVY,i);
-    const Real &uu3_l = prim_l(IVZ,i);
+    const Real &rho_l = prim_l(IDN,k,j,i);
+    const Real &pgas_l = prim_l(IPR,k,j,i);
+    const Real &uu1_l = prim_l(IVX,k,j,i);
+    const Real &uu2_l = prim_l(IVY,k,j,i);
+    const Real &uu3_l = prim_l(IVZ,k,j,i);
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IPR,i);
-    const Real &uu1_r = prim_r(IVX,i);
-    const Real &uu2_r = prim_r(IVY,i);
-    const Real &uu3_r = prim_r(IVZ,i);
+    const Real &rho_r = prim_r(IDN,k,j,i);
+    const Real &pgas_r = prim_r(IPR,k,j,i);
+    const Real &uu1_r = prim_r(IVX,k,j,i);
+    const Real &uu2_r = prim_r(IVY,k,j,i);
+    const Real &uu3_r = prim_r(IVZ,k,j,i);
 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
@@ -363,8 +367,8 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
     flux_r[IVY] += pgas_r;
 
     // Set fluxes
-    for (int n = 0; n < NWAVE; ++n) {
-      flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+    for (int n = 0; n < NHYDRO; ++n) {
+      flux(n,k,j,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
     }
   }
   return;

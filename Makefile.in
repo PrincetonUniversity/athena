@@ -3,13 +3,12 @@
 
 # Files for conditional compilation
 
+PROBLEM_FILE = @PROBLEM_FILE@
 COORDINATES_FILE = @COORDINATES_FILE@
 EOS_FILE = @EOS_FILE@
-PROBLEM_FILE = @PROBLEM_FILE@
-RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
-HYDRO_INT_FILE = @HYDRO_INT_FILE@
+MPIFFT_FILE = @MPIFFT_FILE@
 
 # General compiler specifications
 
@@ -30,12 +29,18 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
+	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
+	     $(wildcard src/field/field_diffusion/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/mesh/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
 	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
+	     $(wildcard src/fft/*.cpp) \
+	     $(wildcard src/multigrid/*.cpp) \
+	     $(wildcard src/gravity/*.cpp) \
+	     $(MPIFFT_FILE) \
 	     src/pgen/$(PROBLEM_FILE) \
 	     src/pgen/default_pgen.cpp
 OBJ_DIR := obj/
@@ -48,6 +53,8 @@ VPATH := $(SRC_DIR)
 .PHONY : all dirs clean
 
 all : dirs $(EXECUTABLE)
+
+objs : dirs $(OBJ_FILES)
 
 dirs : $(EXE_DIR) $(OBJ_DIR)
 

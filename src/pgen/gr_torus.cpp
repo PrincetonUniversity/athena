@@ -32,10 +32,15 @@
 #endif
 
 // Declarations
+enum b_configs {vertical, normal, renorm};
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi);
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real CalculateLFromRPeak(Real r);
 static Real CalculateRPeakFromL(Real l_target);
 static Real LogHAux(Real r, Real sin_theta);
@@ -58,10 +63,10 @@ static Real psi, sin_psi, cos_psi;                 // tilt parameters
 static Real log_h_edge, log_h_peak;                // calculated torus parameters
 static Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
 static Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
+static b_configs field_config;                     // type of magnetic field
 static Real potential_cutoff;                      // sets region of torus to magnetize
 static Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
 static Real beta_min;                              // min ratio of gas to mag pressure
-static std::string field_config;                   // type of magnetic field
 static int sample_n_r, sample_n_theta;             // number of cells in 2D sample grid
 static int sample_n_phi;                           // number of cells in 3D sample grid
 static Real sample_r_rat;                          // sample grid geometric spacing ratio
@@ -78,8 +83,7 @@ static Real pert_amp, pert_kr, pert_kz;            // parameters for initial per
 //   pin: input parameters (unused)
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read problem-specific parameters from input file
   rho_min = pin->GetReal("hydro", "rho_min");
   rho_pow = pin->GetReal("hydro", "rho_pow");
@@ -94,10 +98,27 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   sin_psi = std::sin(psi);
   cos_psi = std::cos(psi);
   if (MAGNETIC_FIELDS_ENABLED) {
-    field_config = pin->GetString("problem", "field_config");
-    potential_cutoff = pin->GetReal("problem", "potential_cutoff");
-    potential_r_pow = pin->GetReal("problem", "potential_r_pow");
-    potential_rho_pow = pin->GetReal("problem", "potential_rho_pow");
+    std::string field_config_str = pin->GetString("problem",
+                                                  "field_config");
+    if (field_config_str == "vertical") {
+      field_config = vertical;
+    } else if (field_config_str == "normal") {
+      field_config = normal;
+    } else if (field_config_str == "renorm") {
+      field_config = renorm;
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Problem Generator\n"
+          << "unrecognized field_config="
+          << field_config_str << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+    if (field_config != vertical) {
+      potential_cutoff = pin->GetReal("problem", "potential_cutoff");
+      potential_r_pow = pin->GetReal("problem", "potential_r_pow");
+      potential_rho_pow = pin->GetReal("problem", "potential_rho_pow");
+    }
     beta_min = pin->GetReal("problem", "beta_min");
     sample_n_r = pin->GetInteger("problem", "sample_n_r");
     sample_n_theta = pin->GetInteger("problem", "sample_n_theta");
@@ -133,12 +154,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Notes:
 //   user arrays are metric and its inverse
 
-void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
-{
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   if (MAGNETIC_FIELDS_ENABLED) {
     AllocateUserOutputVariables(2);
+    SetUserOutputVariableName(0, "gamma");
+    SetUserOutputVariableName(1, "pmag");
   } else {
     AllocateUserOutputVariables(1);
+    SetUserOutputVariableName(0, "gamma");
   }
   AllocateRealUserMeshBlockDataField(2);
   ruser_meshblock_data[0].NewAthenaArray(NMETRIC, ie+1);
@@ -159,8 +182,7 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //              Fishbone 1977, ApJ 215 323 (F)
 //   assumes x3 is axisymmetric direction
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -210,8 +232,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
         // Calculate Boyer-Lindquist coordinates of cell
         Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-            pcoord->x3v(k), &r, &theta, &phi);
+        GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
+            &theta, &phi);
         Real sin_theta = std::sin(theta);
         Real cos_theta = std::cos(theta);
         Real sin_phi = std::sin(phi);
@@ -268,8 +290,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
           // Transform to preferred coordinates
           Real u0, u1, u2, u3;
-          pcoord->TransformVectorCell(u0_bl, 0.0, u2_bl, u3_bl, k, j, i, &u0, &u1, &u2,
-              &u3);
+          TransformVector(u0_bl, 0.0, u2_bl, u3_bl, r, theta, phi, &u0, &u1, &u2, &u3);
           uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
           uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
           uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
@@ -279,7 +300,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // perturbations
         Real rr = r * sin_vartheta;
         Real z = r * cos_vartheta;
-        Real amp_rel = pert_amp * std::sin(pert_kr*rr) * std::cos(pert_kz*z);
+        Real amp_rel = 0.0;
+        if (in_torus) {
+          amp_rel = pert_amp * std::sin(pert_kr*rr) * std::cos(pert_kz*z);
+        }
         Real amp_abs = amp_rel * uu3;
         Real pert_uur = rr/r * amp_abs;
         Real pert_uutheta = cos_theta/r * amp_abs;
@@ -305,7 +329,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       Real x1_val = (p%2 == 0) ? x1_min : x1_max;
       Real x2_val = ((p/2)%2 == 0) ? x2_min : x2_max;
       Real x3_val = ((p/4)%2 == 0) ? x3_min : x3_max;
-      pcoord->GetBoyerLindquistCoordinates(x1_val, x2_val, x3_val, r_vals+p, theta_vals+p,
+      GetBoyerLindquistCoordinates(x1_val, x2_val, x3_val, r_vals+p, theta_vals+p,
           phi_vals+p);
     }
     r_min = *std::min_element(r_vals, r_vals+8);
@@ -319,37 +343,39 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     AthenaArray<Real> a_phi_edges, a_phi_cells;
     AthenaArray<Real> a_theta_0, a_theta_1, a_theta_2, a_theta_3;
     AthenaArray<Real> a_phi_0, a_phi_1, a_phi_2, a_phi_3;
-    if (psi == 0.0) {
-      a_phi_edges.NewAthenaArray(ju+2, iu+2);
-      a_phi_cells.NewAthenaArray(ju+1, iu+1);
-    } else {
-      a_theta_0.NewAthenaArray(ku+1, ju+1, iu+1);
-      a_theta_1.NewAthenaArray(ku+2, ju+2, iu+1);
-      a_theta_2.NewAthenaArray(ku+2, ju+1, iu+2);
-      a_theta_3.NewAthenaArray(ku+1, ju+2, iu+2);
-      a_phi_0.NewAthenaArray(ku+1, ju+1, iu+1);
-      a_phi_1.NewAthenaArray(ku+2, ju+2, iu+1);
-      a_phi_2.NewAthenaArray(ku+2, ju+1, iu+2);
-      a_phi_3.NewAthenaArray(ku+1, ju+2, iu+2);
+    if (field_config != vertical) {
+      if (psi == 0.0) {
+        a_phi_edges.NewAthenaArray(ju+2, iu+2);
+        a_phi_cells.NewAthenaArray(ju+1, iu+1);
+      } else {
+        a_theta_0.NewAthenaArray(ku+1, ju+1, iu+1);
+        a_theta_1.NewAthenaArray(ku+2, ju+2, iu+1);
+        a_theta_2.NewAthenaArray(ku+2, ju+1, iu+2);
+        a_theta_3.NewAthenaArray(ku+1, ju+2, iu+2);
+        a_phi_0.NewAthenaArray(ku+1, ju+1, iu+1);
+        a_phi_1.NewAthenaArray(ku+2, ju+2, iu+1);
+        a_phi_2.NewAthenaArray(ku+2, ju+1, iu+2);
+        a_phi_3.NewAthenaArray(ku+1, ju+2, iu+2);
+      }
     }
     Real normalization;
 
     // Calculate vector potential in normal case
-    if (field_config.compare("normal") == 0) {
+    if (field_config == normal) {
 
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
         for (int j = jl; j <= ju+1; ++j) {
           for (int i = il; i <= iu+1; ++i) {
             Real r, theta, phi;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(kl), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
+                &r, &theta, &phi);
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_edges(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -363,14 +389,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
             Real r, theta, phi;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(kl), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
+                &r, &theta, &phi);
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_cells(j,i) = std::pow(r, potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
               }
@@ -386,19 +412,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             for (int i = il; i <= iu+1; ++i) {
               Real r_vals[4], theta_vals[4], phi_vals[4];
               if (i != iu+1 and j != ju+1 and k != ku+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), r_vals+0, theta_vals+0, phi_vals+0);
               }
               if (i != iu+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
                     pcoord->x3f(k), r_vals+1, theta_vals+1, phi_vals+1);
               }
               if (j != ju+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
                     pcoord->x3f(k), r_vals+2, theta_vals+2, phi_vals+2);
               }
               if (k != ku+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
+                GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
                     pcoord->x3v(k), r_vals+3, theta_vals+3, phi_vals+3);
               }
               for (int p = 0; p < 4; ++p) {
@@ -428,13 +454,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 }
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
                 Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-                Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+                Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 Real a_varphi = std::pow(r_vals[p], potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
-                Real dvarphi_dtheta =
-                    -sin_psi * SQR(sin_varphi) / (SQR(sin_theta) * sin_phi);
-                Real dvarphi_dphi = SQR(sin_varphi) / SQR(sin_phi)
-                    * (cos_psi - sin_psi * cos_theta * cos_phi / sin_theta);
+                Real dvarphi_dtheta = -sin_psi * sin_phi / SQR(sin_vartheta);
+                Real dvarphi_dphi = sin_theta / SQR(sin_vartheta)
+                    * (cos_psi * sin_theta - sin_psi * cos_theta * cos_phi);
                 switch (p) {
                   case 0:
                     a_theta_0(k,j,i) = dvarphi_dtheta * a_varphi;
@@ -468,7 +493,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
 
     // Calculate vector potential in renormalized case
-    } else if (field_config.compare("renorm") == 0) {
+    } else if (field_config == renorm) {
 
       // Check that this is not a tilted disk
       if (psi != 0.0) {
@@ -525,8 +550,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = 0; j < sample_n_theta/2+1; ++j) {
         for (int i = 0; i < sample_n_r+1; ++i) {
           Real r, theta, phi;
-          pcoord->GetBoyerLindquistCoordinates(r_face(i), theta_face(j), pcoord->x3v(kl),
-              &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(r_face(i), theta_face(j), pcoord->x3v(kl), &r,
+              &theta, &phi);
           Real rho = 0.0;
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
@@ -544,8 +569,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = 0; j < sample_n_theta/2; ++j) {
         for (int i = 0; i < sample_n_r; ++i) {
           Real r, theta, phi;
-          pcoord->GetBoyerLindquistCoordinates(r_cell(i), theta_cell(j), pcoord->x3v(kl),
-              &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(r_cell(i), theta_cell(j), pcoord->x3v(kl), &r,
+              &theta, &phi);
           Real rho = 0.0;
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
@@ -706,8 +731,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = jl; j <= ju+1; ++j) {
         for (int i = il; i <= iu+1; ++i) {
           Real r_c, theta_c, phi;
-          pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-              pcoord->x3v(kl), &r_c, &theta_c, &phi);
+          GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
+              &r_c, &theta_c, &phi);
           if (theta_c > PI/2.0) {
             theta_c = PI - theta_c;
           }
@@ -757,8 +782,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = jl; j <= ju; ++j) {
         for (int i = il; i <= iu; ++i) {
           Real r_c, theta_c, phi;
-          pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-              pcoord->x3v(kl), &r_c, &theta_c, &phi);
+          GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
+              &r_c, &theta_c, &phi);
           if (theta_c > PI/2.0) {
             theta_c = PI - theta_c;
           }
@@ -814,148 +839,226 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       bbr_r_faces.DeleteAthenaArray();
       bbr_theta_faces.DeleteAthenaArray();
 
+    // Calculate normalization in vertical case
+    } else if (field_config == vertical) {
+
+      // Calculate magnetic field normalization
+      if (beta_min < 0.0) {
+        normalization = 0.0;
+      } else {
+        Real beta_min_actual = CalculateBetaMin();
+        normalization = std::sqrt(beta_min_actual/beta_min);
+      }
+
     // Handle unknown input
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Problem Generator\n"
-          << "field_config must be \"normal\" or \"renorm\"" << std::endl;
+          << "field_config must be \"normal\", \"renorm\", or \"vertical\"" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
 
-    // Set magnetic fields according to vector potential for untilted disks
-    if (psi == 0.0) {
-      for (int k = kl; k <= ku+1; ++k) {
-        for (int j = jl; j <= ju+1; ++j) {
+    // Set magnetic fields according to vector potential in vertical case
+    if (field_config == vertical) {
+
+      // Set B^1
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu+1; ++i) {
-
-            // Set B^1
-            if (j != ju+1 and k != ku+1) {
-              Real r, theta, phi;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                  pcoord->x3v(k), &r, &theta, &phi);
-              Real r_1, theta_1, phi_1;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-              Real r_2, theta_2, phi_2;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
-                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              Real cos_theta = std::cos(theta);
-              Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
-              Real bbr =
-                  1.0/det * (a_phi_edges(j+1,i)-a_phi_edges(j,i)) / (theta_2-theta_1);
-              Real a_phi_1, a_phi_2;
-              if (i == il) {
-                a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
-                a_phi_2 = a_phi_cells(j,i);
-                r_1 = r;
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              } else if (i == iu+1) {
-                a_phi_1 = a_phi_cells(j,i-1);
-                a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                r_2 = r;
-              } else {
-                a_phi_1 = a_phi_cells(j,i-1);
-                a_phi_2 = a_phi_cells(j,i);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              }
-              Real bbtheta = -1.0/det * (a_phi_2-a_phi_1) / (r_2-r_1);
-              if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
-                pfield->b.x1f(k,j,i) = 0.0;
-              } else {
-                Real ut, uphi;
-                Real sin_theta = std::sin(theta);
-                CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-                Real sin_sq_theta = SQR(sin_theta);
-                Real cos_sq_theta = 1.0 - sin_sq_theta;
-                Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-                Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
-                Real br = 1.0/ut * bbr;
-                Real btheta = 1.0/ut * bbtheta;
-                Real u0, u1, u2, u3;
-                pcoord->TransformVectorFace1(ut, 0.0, 0.0, uphi, k, j, i, &u0, &u1, &u2,
-                    &u3);
-                Real b0, b1, b2, b3;
-                pcoord->TransformVectorFace1(bt, br, btheta, 0.0, k, j, i, &b0, &b1, &b2,
-                    &b3);
-                pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
-              }
-            }
-
-            // Set B^2
-            if (i != iu+1 and k != ku+1) {
-              Real r, theta, phi;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r, &theta, &phi);
-              Real r_1, theta_1, phi_1;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-              Real r_2, theta_2, phi_2;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
-                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              Real cos_theta = std::cos(theta);
-              Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
-              Real bbtheta = -1.0/det * (a_phi_edges(j,i+1)-a_phi_edges(j,i)) / (r_2-r_1);
-              Real a_phi_1, a_phi_2;
-              if (j == jl) {
-                a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
-                a_phi_2 = a_phi_cells(j,i);
-                theta_1 = theta;
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              } else if (j == ju+1) {
-                a_phi_1 = a_phi_cells(j-1,i);
-                a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
-                    pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                theta_2 = theta;
-              } else {
-                a_phi_1 = a_phi_cells(j-1,i);
-                a_phi_2 = a_phi_cells(j,i);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
-                    pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                    pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-              }
-              Real bbr = 1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
-              if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
-                pfield->b.x2f(k,j,i) = 0.0;
-              } else {
-                Real ut, uphi;
-                Real sin_theta = std::sin(theta);
-                CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-                Real sin_sq_theta = SQR(sin_theta);
-                Real cos_sq_theta = 1.0 - sin_sq_theta;
-                Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-                Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
-                Real br = 1.0/ut * bbr;
-                Real btheta = 1.0/ut * bbtheta;
-                Real u0, u1, u2, u3;
-                pcoord->TransformVectorFace2(ut, 0.0, 0.0, uphi, k, j, i, &u0, &u1, &u2,
-                    &u3);
-                Real b0, b1, b2, b3;
-                pcoord->TransformVectorFace2(bt, br, btheta, 0.0, k, j, i, &b0, &b1, &b2,
-                    &b3);
-                pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
-              }
-            }
-
-            // Set B^3
-            if (i != iu+1 and j != ju+1) {
-              pfield->b.x3f(k,j,i) = 0.0;
+            Real r, theta, phi;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r, &theta, &phi);
+            Real sin_theta = std::sin(theta);
+            Real cos_theta = std::cos(theta);
+            Real rr = r * sin_theta;
+            Real z = r * cos_theta;
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * sin_theta;
+            Real bbr = rr * z / det;
+            Real bbtheta = -SQR(rr) / (r * det);
+            if (rr < r_edge or det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+              pfield->b.x1f(k,j,i) = 0.0;
+            } else {
+              Real ut, uphi;
+              CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
+              Real br = 1.0/ut * bbr;
+              Real btheta = 1.0/ut * bbtheta;
+              Real u0, u1, u2, u3;
+              TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+              Real b0, b1, b2, b3;
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
           }
         }
       }
-    }
+
+      // Set B^2
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju+1; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            Real r, theta, phi;
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r, &theta, &phi);
+            Real sin_theta = std::sin(theta);
+            Real cos_theta = std::cos(theta);
+            Real rr = r * sin_theta;
+            Real z = r * cos_theta;
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * sin_theta;
+            Real bbr = rr * z / det;
+            Real bbtheta = -SQR(rr) / (r * det);
+            if (rr < r_edge or det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+              pfield->b.x2f(k,j,i) = 0.0;
+            } else {
+              Real ut, uphi;
+              CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
+              Real br = 1.0/ut * bbr;
+              Real btheta = 1.0/ut * bbtheta;
+              Real u0, u1, u2, u3;
+              TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+              Real b0, b1, b2, b3;
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
+            }
+          }
+        }
+      }
+
+      // Set B^3
+      for (int k = kl; k <= ku+1; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
+
+    // Set magnetic fields according to vector potential for untilted disks
+    } else if (psi == 0.0) {
+
+      // Set B^1
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu+1; ++i) {
+            Real r, theta, phi;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r, &theta, &phi);
+            Real r_1, theta_1, phi_1;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_1, &theta_1, &phi_1);
+            Real r_2, theta_2, phi_2;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
+                pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            Real cos_theta = std::cos(theta);
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
+            Real bbr =
+                1.0/det * (a_phi_edges(j+1,i)-a_phi_edges(j,i)) / (theta_2-theta_1);
+            Real a_phi_1, a_phi_2;
+            if (i == il) {
+              a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
+              a_phi_2 = a_phi_cells(j,i);
+              r_1 = r;
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            } else if (i == iu+1) {
+              a_phi_1 = a_phi_cells(j,i-1);
+              a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
+              GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              r_2 = r;
+            } else {
+              a_phi_1 = a_phi_cells(j,i-1);
+              a_phi_2 = a_phi_cells(j,i);
+              GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            }
+            Real bbtheta = -1.0/det * (a_phi_2-a_phi_1) / (r_2-r_1);
+            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+              pfield->b.x1f(k,j,i) = 0.0;
+            } else {
+              Real ut, uphi;
+              Real sin_theta = std::sin(theta);
+              CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
+              Real br = 1.0/ut * bbr;
+              Real btheta = 1.0/ut * bbtheta;
+              Real u0, u1, u2, u3;
+              TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+              Real b0, b1, b2, b3;
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
+            }
+          }
+        }
+      }
+
+      // Set B^2
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju+1; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            Real r, theta, phi;
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r, &theta, &phi);
+            Real r_1, theta_1, phi_1;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_1, &theta_1, &phi_1);
+            Real r_2, theta_2, phi_2;
+            GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
+                pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            Real cos_theta = std::cos(theta);
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
+            Real bbtheta = -1.0/det * (a_phi_edges(j,i+1)-a_phi_edges(j,i)) / (r_2-r_1);
+            Real a_phi_1, a_phi_2;
+            if (j == jl) {
+              a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
+              a_phi_2 = a_phi_cells(j,i);
+              theta_1 = theta;
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            } else if (j == ju+1) {
+              a_phi_1 = a_phi_cells(j-1,i);
+              a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
+                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              theta_2 = theta;
+            } else {
+              a_phi_1 = a_phi_cells(j-1,i);
+              a_phi_2 = a_phi_cells(j,i);
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
+                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                  pcoord->x3v(k), &r_2, &theta_2, &phi_2);
+            }
+            Real bbr = 1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
+            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+              pfield->b.x2f(k,j,i) = 0.0;
+            } else {
+              Real ut, uphi;
+              Real sin_theta = std::sin(theta);
+              CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
+              Real br = 1.0/ut * bbr;
+              Real btheta = 1.0/ut * bbtheta;
+              Real u0, u1, u2, u3;
+              TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+              Real b0, b1, b2, b3;
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
+            }
+          }
+        }
+      }
+
+      // Set B^3
+      for (int k = kl; k <= ku+1; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
 
     // Set magnetic fields according to vector potential for tilted disks
-    if (psi != 0.0) {
+    } else {
       for (int k = kl+1; k <= ku; ++k) {
         for (int j = jl+1; j <= ju; ++j) {
           for (int i = il+1; i <= iu; ++i) {
@@ -968,23 +1071,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real bbr, bbtheta, bbphi;
 
             // Set B^1
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k+1), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k+1),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_3(k,j+1,i)-a_phi_3(k,j,i))/delta_theta
                 - (a_theta_2(k+1,j,i)-a_theta_2(k,j,i))/delta_phi);
@@ -1010,39 +1113,37 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
 
             // Set B^2
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k+1), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k+1),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_0(k,j,i)-a_phi_0(k,j-1,i))/delta_theta
                 - (a_theta_1(k+1,j,i)-a_theta_1(k,j,i))/delta_phi);
             bbtheta = -1.0/det * (a_phi_3(k,j,i+1)-a_phi_3(k,j,i))/delta_r;
             bbphi = 1.0/det * (a_theta_3(k,j,i+1)-a_theta_3(k,j,i))/delta_r;
             if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0 and bbphi == 0.0)) {
-              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x2f(k,j,i) = 0.0;
             } else {
               Real ut, ur, utheta, uphi;
               CalculateVelocityInTiltedTorus(r, theta, phi, &ut, &ur, &utheta, &uphi);
@@ -1061,39 +1162,37 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
 
             // Set B^3
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2v(j),
-                pcoord->x3f(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2v(j), pcoord->x3f(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j+1),
-                pcoord->x3f(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j+1), pcoord->x3f(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k-1), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k-1),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_1(k,j+1,i)-a_phi_1(k,j,i))/delta_theta
                 - (a_theta_0(k,j,i)-a_theta_0(k-1,j,i))/delta_phi);
             bbtheta = -1.0/det * (a_phi_2(k,j,i+1)-a_phi_2(k,j,i))/delta_r;
             bbphi = 1.0/det * (a_theta_2(k,j,i+1)-a_theta_2(k,j,i))/delta_r;
             if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0 and bbphi == 0.0)) {
-              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x3f(k,j,i) = 0.0;
             } else {
               Real ut, ur, utheta, uphi;
               CalculateVelocityInTiltedTorus(r, theta, phi, &ut, &ur, &utheta, &uphi);
@@ -1112,11 +1211,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x3f(k,j,i) = (b3 * u0 - b0 * u3) * normalization;
             }
           }
@@ -1125,18 +1222,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
 
     // Free vector potential arrays
-    if (psi == 0.0) {
-      a_phi_edges.DeleteAthenaArray();
-      a_phi_cells.DeleteAthenaArray();
-    } else {
-      a_theta_0.DeleteAthenaArray();
-      a_theta_1.DeleteAthenaArray();
-      a_theta_2.DeleteAthenaArray();
-      a_theta_3.DeleteAthenaArray();
-      a_phi_0.DeleteAthenaArray();
-      a_phi_1.DeleteAthenaArray();
-      a_phi_2.DeleteAthenaArray();
-      a_phi_3.DeleteAthenaArray();
+    if (field_config != vertical) {
+      if (psi == 0.0) {
+        a_phi_edges.DeleteAthenaArray();
+        a_phi_cells.DeleteAthenaArray();
+      } else {
+        a_theta_0.DeleteAthenaArray();
+        a_theta_1.DeleteAthenaArray();
+        a_theta_2.DeleteAthenaArray();
+        a_theta_3.DeleteAthenaArray();
+        a_phi_0.DeleteAthenaArray();
+        a_phi_1.DeleteAthenaArray();
+        a_phi_2.DeleteAthenaArray();
+        a_phi_3.DeleteAthenaArray();
+      }
     }
   }
 
@@ -1145,8 +1244,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
         Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-            pcoord->x3v(kl), &r, &theta, &phi);
+        GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
+            &theta, &phi);
         Real &rho = phydro->w(IDN,k,j,i);
         Real &pgas = phydro->w(IEN,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
@@ -1186,11 +1285,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Outputs: (none)
 // Notes:
 //   writes to user_out_var array the following quantities:
-//     0: gamma (normal frame Lorentz factor)
+//     0: gamma (normal-frame Lorentz factor)
 //     1: p_mag (magnetic pressure)
 
-void MeshBlock::UserWorkInLoop()
-{
+void MeshBlock::UserWorkInLoop() {
   // Create aliases for metric
   AthenaArray<Real> g, gi;
   g.InitWithShallowCopy(ruser_meshblock_data[0]);
@@ -1202,7 +1300,7 @@ void MeshBlock::UserWorkInLoop()
       pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
 
-        // Calculate normal frame Lorentz factor
+        // Calculate normal-frame Lorentz factor
         Real uu1 = phydro->w(IM1,k,j,i);
         Real uu2 = phydro->w(IM2,k,j,i);
         Real uu3 = phydro->w(IM3,k,j,i);
@@ -1261,8 +1359,7 @@ void MeshBlock::UserWorkInLoop()
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   return;
 }
 
@@ -1277,15 +1374,14 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   bb: face-centered magnetic field set in ghost zones
 
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
   // Set hydro variables
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is-NGHOST; i <= is-1; ++i) {
         prim(IDN,k,j,i) = prim(IDN,k,j,is);
         prim(IEN,k,j,i) = prim(IEN,k,j,is);
-        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), 0.0);
+        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), static_cast<Real>(0.0));
         prim(IM2,k,j,i) = prim(IM2,k,j,is);
         prim(IM3,k,j,i) = prim(IM3,k,j,is);
       }
@@ -1325,6 +1421,52 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 }
 
 //----------------------------------------------------------------------------------------
+// Function for returning corresponding Boyer-Lindquist coordinates of point
+// Inputs:
+//   x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pr,ptheta,pphi: variables pointed to set to Boyer-Lindquist coordinates
+// Notes:
+//   conversion is trivial in all currently implemented coordinate systems
+
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi) {
+  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+    *pr = x1;
+    *ptheta = x2;
+    *pphi = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Boyer-Lindquist to desired coordinates
+// Inputs:
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
+//   r,theta,phi: Boyer-Lindquist coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (COORDINATE_SYSTEM == "schwarzschild") {
+    *pa0 = a0_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl;
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    Real delta = SQR(r) - 2.0*m*r + SQR(a);
+    *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl + a/delta * a1_bl;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Function for calculating angular momentum variable l
 // Inputs:
 //   r: desired radius of pressure maximum
@@ -1340,8 +1482,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 //   assumes corotation
 //   see CalculateRPeakFromL()
 
-static Real CalculateLFromRPeak(Real r)
-{
+static Real CalculateLFromRPeak(Real r) {
   Real num = SQR(SQR(r)) + SQR(a*r) - 2.0*m*SQR(a)*r - a*(SQR(r)-SQR(a))*std::sqrt(m*r);
   Real denom = SQR(r) - 3.0*m*r + 2.0*a*std::sqrt(m*r);
   return 1.0/r * std::sqrt(m/r) * num/denom;
@@ -1364,8 +1505,7 @@ static Real CalculateLFromRPeak(Real r)
 //   returns NAN in case of failure (e.g. root not bracketed)
 //   see CalculateLFromRPeak()
 
-static Real CalculateRPeakFromL(Real l_target)
-{
+static Real CalculateRPeakFromL(Real l_target) {
   // Parameters
   const Real tol_r = 1.0e-10;      // absolute tolerance on abscissa r_peak
   const Real tol_l = 1.0e-10;      // absolute tolerance on ordinate l
@@ -1412,8 +1552,7 @@ static Real CalculateRPeakFromL(Real l_target)
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //   implements first half of (FM 3.6)
 
-static Real LogHAux(Real r, Real sin_theta)
-{
+static Real LogHAux(Real r, Real sin_theta) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1443,8 +1582,7 @@ static Real LogHAux(Real r, Real sin_theta)
 //   The formula for u^3 as a function of u_{(\phi)} is tedious to derive, but this
 //       matches the formula used in Harm (init.c).
 
-static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3)
-{
+static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1485,8 +1623,7 @@ static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu
 //   finally transforms that velocity into coordinates in which torus is tilted
 
 static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
-    Real *pu1, Real *pu2, Real *pu3)
-{
+    Real *pu1, Real *pu2, Real *pu3) {
   // Calculate corresponding location
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);
@@ -1521,12 +1658,12 @@ static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *p
   *pu0 = u0_tilt;
   *pu1 = u1_tilt;
   if (psi != 0.0) {
-    Real dtheta_dvartheta = (cos_psi * sin_vartheta + sin_psi * cos_vartheta * cos_varphi)
-        / std::abs(sin_theta);
-    Real dtheta_dvarphi = -sin_psi * sin_vartheta * sin_varphi / std::abs(sin_theta);
-    Real dphi_dvartheta = sin_psi * SQR(sin_phi) / (SQR(sin_vartheta) * sin_varphi);
-    Real dphi_dvarphi = SQR(sin_phi) / SQR(sin_varphi)
-        * (cos_psi + sin_psi * cos_vartheta * cos_varphi / sin_vartheta);
+    Real dtheta_dvartheta =
+        (cos_psi * sin_vartheta + sin_psi * cos_vartheta * cos_varphi) / sin_theta;
+    Real dtheta_dvarphi = -sin_psi * sin_vartheta * sin_varphi / sin_theta;
+    Real dphi_dvartheta = sin_psi * sin_varphi / SQR(sin_theta);
+    Real dphi_dvarphi = sin_vartheta / SQR(sin_theta)
+        * (cos_psi * sin_vartheta + sin_psi * cos_vartheta * cos_varphi);
     *pu2 = dtheta_dvartheta * u2_tilt + dtheta_dvarphi * u3_tilt;
     *pu3 = dphi_dvartheta * u2_tilt + dphi_dvarphi * u3_tilt;
   } else {
@@ -1550,8 +1687,7 @@ static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *p
 //   grid is not necessarily the same as used for the problem proper
 //   calculation is done entirely in Boyer-Lindquist coordinates
 
-static Real CalculateBetaMin()
-{
+static Real CalculateBetaMin() {
   // Prepare container to hold minimum
   Real beta_min_actual = std::numeric_limits<Real>::max();
 
@@ -1576,7 +1712,8 @@ static Real CalculateBetaMin()
       Real theta_c = 0.5 * (theta_m + theta_p);
 
       // Go through sample grid in r
-      Real r_m, r_p, delta_r;
+      Real r_m, delta_r;
+      Real r_p = 0.0;
       for (int i = 0; i < sample_n_r; ++i) {
 
         // Calculate r values
@@ -1621,8 +1758,7 @@ static Real CalculateBetaMin()
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-    Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta)
-{
+    Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta) {
   // Assemble arrays of points
   Real r_vals[7], theta_vals[7], phi_vals[7];
   r_vals[0] = r_c; theta_vals[0] = theta_c; phi_vals[0] = phi_c;
@@ -1652,10 +1788,16 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
       Real vary = y;
       Real varz = sin_psi * x + cos_psi * z;
       sin_vartheta_vals[p] = std::sqrt(SQR(varx) + SQR(vary));
+      if (field_config == vertical) {
+        break;
+      }
       cos_vartheta_vals[p] = varz;
       varphi = std::atan2(vary, varx);
     } else {
       sin_vartheta_vals[p] = std::abs(sin_theta_vals[p]);
+      if (field_config == vertical) {
+        break;
+      }
       cos_vartheta_vals[p] = cos_theta_vals[p];
       varphi = (sin_theta_vals[p] < 0.0) ? phi_vals[p]-PI : phi_vals[p];
     }
@@ -1673,6 +1815,9 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     if (log_h_vals[p] < 0.0) {
       return false;
     }
+    if (field_config == vertical) {
+      break;
+    }
   }
 
   // Calculate vector potential values in torus coordinates
@@ -1687,7 +1832,10 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     if (p == 0) {
       pgas = pgas_over_rho * rho;
     }
-    Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
+    if (field_config == vertical) {
+      break;
+    }
+    Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
     a_varphi_vals[p] =
         std::pow(r_vals[p], potential_r_pow) * std::pow(rho_cutoff, potential_rho_pow);
     if (a_varphi_vals[p] == 0.0) {
@@ -1697,26 +1845,37 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
 
   // Account for tilt
   Real a_theta_vals[7], a_phi_vals[7];
-  for (int p = 0; p < 7; ++p) {
-    if (psi != 0.0) {
-      Real dvarphi_dtheta =
-          -sin_psi * SQR(sin_varphi_vals[p]) / (SQR(sin_theta_vals[p]) * sin_phi_vals[p]);
-      Real dvarphi_dphi = SQR(sin_varphi_vals[p]) / SQR(sin_phi_vals[p])
-          * (cos_psi - sin_psi * cos_theta_vals[p] * cos_phi_vals[p] / sin_theta_vals[p]);
-      a_theta_vals[p] = dvarphi_dtheta * a_varphi_vals[p];
-      a_phi_vals[p] = dvarphi_dphi * a_varphi_vals[p];
-    } else {
-      a_theta_vals[p] = 0.0;
-      a_phi_vals[p] = a_varphi_vals[p];
+  if (field_config != vertical) {
+    for (int p = 0; p < 7; ++p) {
+      if (psi != 0.0) {
+        Real dvarphi_dtheta = -sin_psi * sin_phi_vals[p] / SQR(sin_vartheta_vals[p]);
+        Real dvarphi_dphi = sin_theta_vals[p] / SQR(sin_vartheta_vals[p])
+            * (cos_psi * sin_theta_vals[p]
+            - sin_psi * cos_theta_vals[p] * cos_phi_vals[p]);
+        a_theta_vals[p] = dvarphi_dtheta * a_varphi_vals[p];
+        a_phi_vals[p] = dvarphi_dphi * a_varphi_vals[p];
+      } else {
+        a_theta_vals[p] = 0.0;
+        a_phi_vals[p] = a_varphi_vals[p];
+      }
     }
   }
 
   // Calculate cell-centered 3-magnetic field
   Real det = (SQR(r_c) + SQR(a) * SQR(cos_theta_vals[0])) * std::abs(sin_theta_vals[0]);
-  Real bb1 = 1.0/det * ((a_phi_vals[4]-a_phi_vals[3]) / (theta_p-theta_m)
-      - (a_theta_vals[6]-a_theta_vals[5]) / (phi_p-phi_m));
-  Real bb2 = -1.0/det * (a_phi_vals[2]-a_phi_vals[1]) / (r_p-r_m);
-  Real bb3 = 1.0/det * (a_theta_vals[2]-a_theta_vals[1]) / (r_p-r_m);
+  Real bb1, bb2, bb3;
+  if (field_config != vertical) {
+    bb1 = 1.0/det * ((a_phi_vals[4]-a_phi_vals[3]) / (theta_p-theta_m)
+        - (a_theta_vals[6]-a_theta_vals[5]) / (phi_p-phi_m));
+    bb2 = -1.0/det * (a_phi_vals[2]-a_phi_vals[1]) / (r_p-r_m);
+    bb3 = 1.0/det * (a_theta_vals[2]-a_theta_vals[1]) / (r_p-r_m);
+  } else {
+    Real rr = r_c * std::sin(theta_c);
+    Real z = r_c * std::cos(theta_c);
+    bb1 = rr * z / det;
+    bb2 = -SQR(rr) / (r_c * det);
+    bb3 = 0.0;
+  }
 
   // Calculate beta
   Real pmag = CalculateMagneticPressure(bb1, bb2, bb3, r_c, theta_c, phi_c);
@@ -1737,8 +1896,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-    Real theta_p, Real a_cm, Real a_cp, Real a_mc, Real a_pc, Real *pbeta)
-{
+    Real theta_p, Real a_cm, Real a_cp, Real a_mc, Real a_pc, Real *pbeta) {
   // Calculate trigonometric functions of theta
   Real sin_theta_c = std::sin(theta_c);
   Real cos_theta_c = std::cos(theta_c);
@@ -1783,8 +1941,7 @@ static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p, Real theta_m, Real 
 //   returned value: magnetic pressure
 
 static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
-    Real phi)
-{
+    Real phi) {
   // Calculate Boyer-Lindquist metric
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);

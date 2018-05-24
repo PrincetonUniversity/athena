@@ -4,42 +4,45 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shock_tube.cpp
-//  \brief Problem generator for shock tube problems.  
+//  \brief Problem generator for shock tube problems.
 //
 // Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
 // shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //========================================================================================
 
+// C headers
+#include <stdio.h>
+
 // C++ headers
+#include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>
-#include <stdio.h>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //========================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
-  
+
   // Read shock direction and set array indices
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
   int im1,im2,im3,ib1,ib2,ib3;
   if (shk_dir == 1) {
     im1 = IM1; im2 = IM2; im3 = IM3;
@@ -59,85 +62,85 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   // Errors in RJ2a test (Dai & Woodward 1994 Tables Ia and Ib)
   if (MAGNETIC_FIELDS_ENABLED) {
     Real xfp = 2.2638*tlim;
-    Real xrp = (0.53432 + 1.0/sqrt(PI*1.309))*tlim;
+    Real xrp = (0.53432 + 1.0/std::sqrt(PI*1.309))*tlim;
     Real xsp = (0.53432 + 0.48144/1.309)*tlim;
     Real xc = 0.57538*tlim;
     Real xsm = (0.60588 - 0.51594/1.4903)*tlim;
-    Real xrm = (0.60588 - 1.0/sqrt(PI*1.4903))*tlim;
+    Real xrm = (0.60588 - 1.0/std::sqrt(PI*1.4903))*tlim;
     Real xfm = (1.2 - 2.3305/1.08)*tlim;
     Real gm1 = pmb->peos->GetGamma() - 1.0;
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r, d0, mx, my, mz, e0, bx, by, bz;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
 
-        bx = 2.0/sqrt(4.0*PI);
+        bx = 2.0/std::sqrt(4.0*PI);
         if (r > xfp) {
           d0 = 1.0;
           mx = 0.0;
           my = 0.0;
           mz = 0.0;
-          by = 4.0/sqrt(4.0*PI);
-          bz = 2.0/sqrt(4.0*PI);
+          by = 4.0/std::sqrt(4.0*PI);
+          bz = 2.0/std::sqrt(4.0*PI);
           e0 = 1.0/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xrp) {
           d0 = 1.3090;
           mx = 0.53432*d0;
           my = -0.094572*d0;
           mz = -0.047286*d0;
-          by = 5.3452/sqrt(4.0*PI);
-          bz = 2.6726/sqrt(4.0*PI);
+          by = 5.3452/std::sqrt(4.0*PI);
+          bz = 2.6726/std::sqrt(4.0*PI);
           e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xsp) {
           d0 = 1.3090;
           mx = 0.53432*d0;
           my = -0.18411*d0;
           mz = 0.17554*d0;
-          by = 5.7083/sqrt(4.0*PI);
-          bz = 1.7689/sqrt(4.0*PI);
+          by = 5.7083/std::sqrt(4.0*PI);
+          bz = 1.7689/std::sqrt(4.0*PI);
           e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xc) {
           d0 = 1.4735;
           mx = 0.57538*d0;
           my = 0.047601*d0;
           mz = 0.24734*d0;
-          by = 5.0074/sqrt(4.0*PI);
-          bz = 1.5517/sqrt(4.0*PI);
+          by = 5.0074/std::sqrt(4.0*PI);
+          bz = 1.5517/std::sqrt(4.0*PI);
           e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xsm) {
           d0 = 1.6343;
           mx = 0.57538*d0;
           my = 0.047601*d0;
           mz = 0.24734*d0;
-          by = 5.0074/sqrt(4.0*PI);
-          bz = 1.5517/sqrt(4.0*PI);
+          by = 5.0074/std::sqrt(4.0*PI);
+          bz = 1.5517/std::sqrt(4.0*PI);
           e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xrm) {
           d0 = 1.4903;
           mx = 0.60588*d0;
           my = 0.22157*d0;
           mz = 0.30125*d0;
-          by = 5.5713/sqrt(4.0*PI);
-          bz = 1.7264/sqrt(4.0*PI);
+          by = 5.5713/std::sqrt(4.0*PI);
+          bz = 1.7264/std::sqrt(4.0*PI);
           e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else if (r > xfm) {
           d0 = 1.4903;
           mx = 0.60588*d0;
           my = 0.11235*d0;
           mz = 0.55686*d0;
-          by = 5.0987/sqrt(4.0*PI);
-          bz = 2.8326/sqrt(4.0*PI);
+          by = 5.0987/std::sqrt(4.0*PI);
+          bz = 2.8326/std::sqrt(4.0*PI);
           e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         } else {
           d0 = 1.08;
           mx = 1.2*d0;
           my = 0.01*d0;
           mz = 0.5*d0;
-          by = 3.6/sqrt(4.0*PI);
-          bz = 2.0/sqrt(4.0*PI);
+          by = 3.6/std::sqrt(4.0*PI);
+          bz = 2.0/std::sqrt(4.0*PI);
           e0 = 0.95/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
         }
 
@@ -151,7 +154,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         err[NHYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
     }}
-  
+
   // Errors in Sod solution
   } else {
     // Positions of shock, contact, head and foot of rarefaction for Sod test
@@ -164,10 +167,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real r,d0,m0,e0;
-        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
-  
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);
+
         if (r > xs) {
           d0 = 0.125;
           m0 = 0.0;
@@ -200,10 +203,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
 
   // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    err[i] = err[i]/static_cast<Real>(GetTotalCells());
+  }
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
-  rms_err = sqrt(rms_err);
+  rms_err = std::sqrt(rms_err);
 
   // open output file and write out errors
   std::string fname;
@@ -212,8 +217,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   FILE *pfile;
 
   // The file exists -- reopen the file in append mode
-  if((pfile = fopen(fname.c_str(),"r")) != NULL){
-    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+  if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+    if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -221,7 +226,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   // The file does not exist -- open the file in write mode and add headers
   } else {
-    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -249,15 +254,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Problem Generator for the shock tube tests
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::stringstream msg;
 
   // parse shock direction: {1,2,3} -> {x1,x2,x3}
-  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+  int shk_dir = pin->GetInteger("problem","shock_dir");
 
   // parse shock location (must be inside grid)
-  Real xshock = pin->GetReal("problem","xshock"); 
+  Real xshock = pin->GetReal("problem","xshock");
   if (shk_dir == 1 && (xshock < pmy_mesh->mesh_size.x1min ||
                        xshock > pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="

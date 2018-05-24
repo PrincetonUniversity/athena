@@ -32,6 +32,10 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi);
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
     Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
 
@@ -48,8 +52,7 @@ static int num_lines;                    // number of lines in table
 //   pin: input parameters
 // Outputs: (none)
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read temperature
   temperature = pin->GetReal("problem", "temperature");
 
@@ -88,8 +91,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //   pin: parameters (unused)
 // Outputs: (none)
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Free interpolation table
   interp_values.DeleteAthenaArray();
   return;
@@ -105,8 +107,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //   see Gammie 1999, ApJ 522 L57
 //       Gammie, McKinney, & Toth 2003, ApJ 589 444
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Get mass and spin of black hole
   m = pcoord->GetMass();
   a = pcoord->GetSpin();
@@ -129,10 +130,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real x1 = pcoord->x1f(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3v(k);
-          pcoord->GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
           CalculateFromTable(r, theta, &rho, &ut, &ur, &uphi, &bt, &br, &bphi);
-          pcoord->TransformVectorFace1(ut, ur, 0.0, uphi, k, j, i, &u0, &u1, &u2, &u3);
-          pcoord->TransformVectorFace1(bt, br, 0.0, bphi, k, j, i, &b0, &b1, &b2, &b3);
+          TransformVector(ut, ur, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+          TransformVector(bt, br, 0.0, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
           pfield->b.x1f(k,j,i) = b1*u0 - b0*u1;
         }
       }
@@ -145,10 +146,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2f(j);
           Real x3 = pcoord->x3v(k);
-          pcoord->GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
           CalculateFromTable(r, theta, &rho, &ut, &ur, &uphi, &bt, &br, &bphi);
-          pcoord->TransformVectorFace2(ut, ur, 0.0, uphi, k, j, i, &u0, &u1, &u2, &u3);
-          pcoord->TransformVectorFace2(bt, br, 0.0, bphi, k, j, i, &b0, &b1, &b2, &b3);
+          TransformVector(ut, ur, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+          TransformVector(bt, br, 0.0, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
           pfield->b.x2f(k,j,i) = b2*u0 - b0*u2;
         }
       }
@@ -161,10 +162,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3f(k);
-          pcoord->GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
           CalculateFromTable(r, theta, &rho, &ut, &ur, &uphi, &bt, &br, &bphi);
-          pcoord->TransformVectorFace3(ut, ur, 0.0, uphi, k, j, i, &u0, &u1, &u2, &u3);
-          pcoord->TransformVectorFace3(bt, br, 0.0, bphi, k, j, i, &b0, &b1, &b2, &b3);
+          TransformVector(ut, ur, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+          TransformVector(bt, br, 0.0, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
           pfield->b.x3f(k,j,i) = b3*u0 - b0*u3;
         }
       }
@@ -190,10 +191,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);
-        pcoord->GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
+        GetBoyerLindquistCoordinates(x1, x2, x3, &r, &theta, &phi);
         CalculateFromTable(r, theta, &rho, &ut, &ur, &uphi, &bt, &br, &bphi);
-        pcoord->TransformVectorCell(ut, ur, 0.0, uphi, k, j, i, &u0, &u1, &u2, &u3);
-        pcoord->TransformVectorCell(bt, br, 0.0, bphi, k, j, i, &b0, &b1, &b2, &b3);
+        TransformVector(ut, ur, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
+        TransformVector(bt, br, 0.0, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
         Real pgas = temperature * rho;
         Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
@@ -230,8 +231,53 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
-{
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Boyer-Lindquist coordinates of point
+// Inputs:
+//   x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pr,ptheta,pphi: variables pointed to set to Boyer-Lindquist coordinates
+// Notes:
+//   conversion is trivial in all currently implemented coordinate systems
+
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi) {
+  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+    *pr = x1;
+    *ptheta = x2;
+    *pphi = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Boyer-Lindquist to desired coordinates
+// Inputs:
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
+//   r,theta,phi: Boyer-Lindquist coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (COORDINATE_SYSTEM == "schwarzschild") {
+    *pa0 = a0_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl;
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    Real delta = SQR(r) - 2.0*m*r + SQR(a);
+    *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl + a/delta * a1_bl;
+  }
   return;
 }
 
@@ -245,11 +291,10 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   pbt,pbr,pbphi: values set to interpolated b^\mu in Boyer-Lindquist coordinates
 
 static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-    Real *puphi, Real *pbt, Real *pbr, Real *pbphi)
-{
+    Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
   // Find location in interpolation table
   int n;
-  Real fraction;
+  Real fraction = 0.0;
   if (r < interp_values(0,0)) {
     n = 0;
     fraction = 0.0;

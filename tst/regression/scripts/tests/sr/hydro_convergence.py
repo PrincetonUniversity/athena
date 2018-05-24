@@ -23,28 +23,29 @@ vy = 0.3
 vz = -0.05
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('s',
       prob='gr_linear_wave',
       coord='cartesian',
-      flux='hllc')
+      flux='hllc', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   wavespeeds = wavespeeds_hydro()
   for wave_flag in wave_flags:
     time = 1.0 / abs(wavespeeds[wave_flag])
     arguments = [
-        'job/problem_id=sr_hydro_wave_{0}_low'.format(wave_flag),
-        'mesh/nx1=' + repr(res_low),
-        'meshblock/nx1=' + repr(res_low),
-        'time/tlim=' + repr(time),
-        'output1/dt=' + repr(time),
-        'hydro/gamma=' + repr(gamma_adi),
-        'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
-        'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
-        'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp)]
+      'job/problem_id=sr_hydro_wave_{0}_low'.format(wave_flag),
+      'mesh/nx1=' + repr(res_low),
+      'meshblock/nx1=' + repr(res_low),
+      'time/tlim=' + repr(time),
+      'output1/dt=' + repr(time),
+      'hydro/gamma=' + repr(gamma_adi),
+      'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
+      'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
+      'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp),
+      'time/ncycle_out=100']
     athena.run('hydro_sr/athinput.linear_wave', arguments)
     arguments[0] = 'job/problem_id=sr_hydro_wave_{0}_high'.format(wave_flag)
     arguments[1] = 'mesh/nx1=' + repr(res_high)
@@ -55,34 +56,34 @@ def run():
 def analyze():
 
   # Specify tab file columns
-  headings = ('x', 'rho', 'pgas', 'vx', 'vy', 'vz')
+  columns = (1, 2, 3, 4, 5)
 
   # Check that convergence is attained for each wave
   for wave_flag in wave_flags:
 
     # Read low and high resolution initial and final states
     prim_initial_low = athena_read.tab(
-        'bin/sr_hydro_wave_{0}_low.block0.out1.00000.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_hydro_wave_{0}_low.block0.out1.00000.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_initial_high = athena_read.tab(
-        'bin/sr_hydro_wave_{0}_high.block0.out1.00000.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_hydro_wave_{0}_high.block0.out1.00000.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_final_low = athena_read.tab(
-        'bin/sr_hydro_wave_{0}_low.block0.out1.00001.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_hydro_wave_{0}_low.block0.out1.00001.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_final_high = athena_read.tab(
-        'bin/sr_hydro_wave_{0}_high.block0.out1.00001.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_hydro_wave_{0}_high.block0.out1.00001.tab'.format(wave_flag), raw=True,
+        dimensions=1)
 
     # Calculate overall errors for low and high resolution runs
     epsilons_low = []
     epsilons_high = []
-    for quantity in headings[1:]:
-      qi = prim_initial_low[quantity][0,0,:]
-      qf = prim_final_low[quantity][0,0,:]
+    for column in columns:
+      qi = prim_initial_low[column,:]
+      qf = prim_final_low[column,:]
       epsilons_low.append(math.fsum(abs(qf-qi)) / res_low)
-      qi = prim_initial_high[quantity][0,0,:]
-      qf = prim_final_high[quantity][0,0,:]
+      qi = prim_initial_high[column,:]
+      qf = prim_final_high[column,:]
       epsilons_high.append(math.fsum(abs(qf-qi)) / res_high)
     epsilons_low = np.array(epsilons_low)
     epsilons_high = np.array(epsilons_high)

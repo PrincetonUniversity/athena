@@ -25,6 +25,9 @@ dt        = 100.0
 cfl_number = 0.2
 nlim       = -1
 tlim       = 1.0
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1    = 64    # number of cells in r-direction
@@ -77,7 +80,8 @@ rho_max    = 1.0   # if greater than 0, rescale density to have this peak, and r
 tilt_angle = 0.0   # angle (degrees) at which to incline disk spin axis relative to BH
                    # spin axis (z-axis) in direction of x-axis (theta = pi/2, phi = 0)
 
-field_config      = normal  # normal or renorm (equalize beta then recalculate A_phi)
+field_config      = normal  # normal, renorm (equalize beta then recalculate A_phi), or
+                            # vertical
 potential_cutoff  = 0.2     # amount to subtract from density when calculating potential
                             # (field_config=normal); floor (relative to max) on potential
                             # (field_config=renorm)

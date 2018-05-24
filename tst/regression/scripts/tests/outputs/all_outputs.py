@@ -14,39 +14,41 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('b',
       prob='orszag_tang',
-      flux='hlld')
+      flux='hlld', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
-  arguments = ['time/nlim=80']
+def run(**kwargs):
+  arguments = ['time/ncycle_out=0', 'time/nlim=80']
   athena.run('mhd/athinput.test_outputs', arguments)
-  arguments = ['time/nlim=330']
+  arguments = ['time/ncycle_out=0', 'time/nlim=330']
   athena.restart('TestOutputs.00001.rst', arguments)
-  arguments = ['time/nlim=-1']
+  arguments = ['time/ncycle_out=0', 'time/nlim=-1']
   athena.restart('TestOutputs.00004.rst', arguments)
 
 # Analyze outputs
 def analyze():
   # check density max and Vz and Bz components in tab slice
-  slice_data = athena_read.tab(filename='bin/TestOutputs.block0.out2.00010.tab')
-  if max(slice_data[0,0,:,1]) < 0.25:
+  slice_data = athena_read.tab(filename='bin/TestOutputs.block0.out2.00010.tab', raw=True,
+      dimensions=1)
+  if max(slice_data[1,:]) < 0.25:
     return False
-  if max(slice_data[0,0,:,5]) != 0.0:
+  if max(slice_data[5,:]) != 0.0:
     return False
-  if max(slice_data[0,0,:,8]) != 0.0:
+  if max(slice_data[8,:]) != 0.0:
     return False
 
   # check density max and Vz and Bz components in tab sum
-  sum_data = athena_read.tab(filename='bin/TestOutputs.block0.out3.00010.tab')
-  if max(sum_data[0,0,:,1]) < 15.0 and max(sum_data[0,0,:,1]) > 20.0:
+  sum_data = athena_read.tab(filename='bin/TestOutputs.block0.out3.00010.tab', raw=True,
+      dimensions=1)
+  if max(sum_data[1,:]) < 15.0 and max(sum_data[:,1]) > 20.0:
     return False
-  if max(sum_data[0,0,:,5]) != 0.0:
+  if max(sum_data[5,:]) != 0.0:
     return False
-  if max(sum_data[0,0,:,8]) != 0.0:
+  if max(sum_data[8,:]) != 0.0:
     return False
 
   # check data in VTK dump
@@ -55,8 +57,8 @@ def analyze():
 #    return False
 #  if max(yf) != 1.0 and min(yf) != 0.0:
 #    return False
-#  print vtk_data['dens']
+#  print(vtk_data['dens'])
 
-#  print max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens'])
+#  print(max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens']))
 
   return True

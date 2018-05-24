@@ -9,23 +9,24 @@ sys.path.insert(0, '../../vis/python')
 import athena_read
 
 # Prepare Athena++
-def prepare():
+def prepare(**kwargs):
   athena.configure('gt',
       prob='gr_shock_tube',
       coord='minkowski',
-      flux='llf')
+      flux='llf', **kwargs)
   athena.make()
 
 # Run Athena++
-def run():
+def run(**kwargs):
   arguments = [
-      '',
-      'output1/file_type=vtk',
-      'output1/variable=cons',
-      'output1/dt=0.4',
-      'time/cfl_number=0.4',
-      'time/tlim=0.4',
-      'mesh/nx1=400']
+    '',
+    'output1/file_type=vtk',
+    'output1/variable=cons',
+    'output1/dt=0.4',
+    'time/cfl_number=0.4',
+    'time/tlim=0.4',
+    'mesh/nx1=400',
+    'time/ncycle_out=0']
   for i in range(1,5):
     arguments[0] = 'job/problem_id=gr_hydro_shock' + repr(i)
     athena.run('hydro_sr/athinput.mb_'+repr(i), arguments)

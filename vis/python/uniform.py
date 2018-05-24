@@ -7,10 +7,12 @@ Note: Requires h5py.
 Note: Only works for 3D data.
 """
 
-# Python modules
+# Python standard modules
 import argparse
-import h5py
 import os
+
+# Other Python modules
+import h5py
 
 # Athena++ modules
 import athena_read
@@ -68,7 +70,10 @@ def main(**kwargs):
       # Write attributes
       for key,val in attributes:
         if key == 'RootGridX1' or key == 'RootGridX2' or key == 'RootGridX3':
-          value = [val[0], val[1], val[2]**(1.0/2.0**level)]
+          if val[2] > 0.0:
+            value = [val[0], val[1], val[2]**(1.0/2.0**level)]
+          else:
+            value = [val[0], val[1], val[2]]
         elif key == 'RootGridSize':
           value = [nx1, nx2, nx3]
         elif key == 'NumMeshBlocks':
