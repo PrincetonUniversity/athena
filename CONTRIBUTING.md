@@ -216,7 +216,7 @@ repository based on the versions created in the private repository. See the
 header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and
 release practices for Athena++.
 
-**IMPORTANT**: The version string output by `athena -h` must be manually
+**IMPORTANT**: The version string output by the `athena -h` command must be manually
 updated in `src/main.cpp` before tagging a new version.
 
 In the priave repository, each release is accompanied by an Git annotated (not lightweight) tag. Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
@@ -250,6 +250,8 @@ The above version suffixes may all have an integer appended to them, e.g. `-rc.1
 <!-- Although SemVer isn't so prescriptivist to define a set of suffixes, https://github.com/semver/semver/issues/114, it does define sytnax and how to use the suffixes in pt 9 , so that "pre-release versions have a lower precedence than the associated normal version" -->
 
 <!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API, how to create an annotated/signed tag -->
+
+<!-- very weak/manual relationship between the private repo and the public repo tags and releases; this should be improved -->
 
 <!-- Need to add notes on modifications to pub/ scripts for releasing -->
 

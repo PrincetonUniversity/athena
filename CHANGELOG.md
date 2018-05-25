@@ -8,6 +8,15 @@ We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` 
 
 The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
 
+All major changes to Athena++ between each version/tag are summarized here with the following categories:
+- **Added:** for new features
+- **Fixed/Changed:** for fixed or modified functionality
+- **Removed:** for removed functionality
+
+Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
+<!-- "Implemented enhancements" (enhancement) vs. "Merged pull requests" (feature request, etc.) division doesn't make a ton of sense-->
+<!-- Eventually, need to add label for "backwards-incompatible" and announce "BREAKING CHANGES" -->
+
 ## [Unreleased](https://github.com/PrincetonUniversity/athena/tree/HEAD)
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0...HEAD)
@@ -27,6 +36,30 @@ The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for
 ## [v1.1.0-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.0-dev) (2018-05-23)
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.0.1...v1.1.0-dev)
+
+### Added
+- Self-gravity
+  - FFT
+  - Multigrid
+- Shearing box
+- Viscosity, resistivity, and conduction
+  - Anisotropic viscosity is not implemented, but it can be added as user-defined viscosity function. Can copy function's source code from Athena 4.2.
+- Piecewise parabolic method (PPM) with `time/xorder=3` runtime option
+  - Robust flooring of reconstructed states
+  - Curvilinear and nonuniform mesh terms
+- Characteristic variable reconstruction (PLM and PPM)  with `time/xorder=2c` or `3c` runtime option
+- Redesign of time-integrator to support high-order schemes
+- Turbulence driving
+- Double precision floating point HDF5 output
+
+### Fixed/Changed
+- OpenMP changed to coarse threading over `MeshBlock`; thread-safe MPI now in use.
+- Performance optimizations: improved vectorization, decreased memory traffic, etc.
+- Reflective symmetry preservation (exact to double precision for hydrodynamics)
+
+<!-- ### Removed -->
+
+### Issues and Pull Requests:
 
 #### Implemented enhancements:
 
@@ -116,6 +149,17 @@ The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.0.0-beta...v1.0.1)
 
+### Added
+- Scripts and documentation for releasing from private to public repository
+
+### Fixed/Changed
+- Upgraded left and right reconstructed primitive state `AthenaArray` in `Hydro` class to 3D (from `x1`-sliced 1D arrays)
+- Riemann solvers now directly fill electric field arrays
+
+<!-- ### Removed -->
+
+### Issues and Pull Requests:
+
 #### Implemented enhancements:
 
 - Add code structure diagrams to Wiki [\#34](https://github.com/PrincetonUniversity/athena/issues/34)
@@ -129,6 +173,15 @@ The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for
 ## [v1.0.0-beta](https://github.com/PrincetonUniversity/athena/tree/v1.0.0-beta) (2016-11-28)
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v0.3.0...v1.0.0-beta)
+
+### Added
+- BSD license
+
+### Fixed/Changed
+- Redesigned `Coordinates` class
+<!-- ### Removed -->
+
+### Issues and Pull Requests:
 
 #### Implemented enhancements:
 
@@ -155,6 +208,14 @@ The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v0.2.0...v0.3.0)
 
+### Added
+
+### Fixed/Changed
+
+<!-- ### Removed -->
+
+### Issues and Pull Requests:
+
 #### Fixed bugs:
 
 - Uninitialized variable root\_level is used [\#10](https://github.com/PrincetonUniversity/athena/issues/10)
@@ -162,6 +223,14 @@ The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for
 ## [v0.2.0](https://github.com/PrincetonUniversity/athena/tree/v0.2.0) (2015-04-10)
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v0.1.0...v0.2.0)
+
+### Added
+
+### Fixed/Changed
+
+<!-- ### Removed -->
+
+### Issues and Pull Requests:
 
 #### Fixed bugs:
 
