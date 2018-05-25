@@ -13,7 +13,8 @@ All major changes to Athena++ between each version/tag are summarized here with 
 - **Fixed/Changed:** for fixed or modified functionality
 - **Removed:** for removed functionality
 
-Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
+Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id. At this time, both the private and public GitHub Release Notes are manually generated from this document.
+
 <!-- "Implemented enhancements" (enhancement) vs. "Merged pull requests" (feature request, etc.) division doesn't make a ton of sense-->
 <!-- Eventually, need to add label for "backwards-incompatible" and announce "BREAKING CHANGES" -->
 
@@ -21,6 +22,17 @@ Each version additionally has an **Issues and Pull Requests** section, whose sub
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0...HEAD)
 
+### Added
+Feature branches to merge to `master`:
+- Chemistry (`chemistry`)
+- Fourth-order solvers
+  - Hydrodynamics (`hydro4`)
+  - MHD (`mhd4`, `mhd4_3D`)
+
+<!-- ### Fixed/Changed
+### Removed -->
+
+### Issues and Pull Requests:
 #### Fixed bugs:
 
 - SIMD vectorization disabled for Roe-type Riemann solvers [\#126](https://github.com/PrincetonUniversity/athena/issues/126)
@@ -29,6 +41,13 @@ Each version additionally has an **Issues and Pull Requests** section, whose sub
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0-dev...v1.1.0)
 
+<!-- ### Added
+### Fixed/Changed -->
+
+### Removed
+- Multigrid solver
+
+### Issues and Pull Requests:
 #### Merged pull requests:
 
 - Remove the Multigrid solver from the next public version [\#128](https://github.com/PrincetonUniversity/athena/pull/128) ([tomidakn](https://github.com/tomidakn))
@@ -51,11 +70,18 @@ Each version additionally has an **Issues and Pull Requests** section, whose sub
 - Redesign of time-integrator to support high-order schemes
 - Turbulence driving
 - Double precision floating point HDF5 output
+- Software development tools (mostly) exclusive to private repository:
+  - Continuous integration (Jenkins and Travis CI)
+  - C++ style checker
+  - Expanded regression test suite flexibility and code coverage
+  - Code Reviews, Issue/PR categories, `probot` automated closing of stale Issues/PRs, protected branch status for `master`
+  - Slack workspace, `CONTRIBUTING.md` guide, Issue and PR templates.
 
 ### Fixed/Changed
-- OpenMP changed to coarse threading over `MeshBlock`; thread-safe MPI now in use.
+- Changed OpenMP setup to coarse threading over `MeshBlock`; thread-safe MPI now in use.
 - Performance optimizations: improved vectorization, decreased memory traffic, etc.
-- Reflective symmetry preservation (exact to double precision for hydrodynamics)
+- Fixed reflective symmetry preservation (exact to double precision for hydrodynamics)
+- Fixed all compiler warnings and ensured C++11 compliance
 
 <!-- ### Removed -->
 

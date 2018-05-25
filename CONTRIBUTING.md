@@ -249,11 +249,9 @@ The above version suffixes may all have an integer appended to them, e.g. `-rc.1
 <!-- Note, some projects don't use a period after numbered suffixes, e.g. -rc2-->
 <!-- Although SemVer isn't so prescriptivist to define a set of suffixes, https://github.com/semver/semver/issues/114, it does define sytnax and how to use the suffixes in pt 9 , so that "pre-release versions have a lower precedence than the associated normal version" -->
 
-<!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API, how to create an annotated/signed tag -->
+<!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future, such as conventional-changelog tool), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API, how to create an annotated/signed tag -->
 
-<!-- very weak/manual relationship between the private repo and the public repo tags and releases; this should be improved -->
-
-<!-- Need to add notes on modifications to pub/ scripts for releasing -->
+<!-- very weak/manual relationship between the private repo and the public repo tags and releases; this should be improved along with the "git reset --soft <base>" squash procedure. Need to add notes on modifications to pub/ scripts for releasing; do we want to use the last_public lightweight tag? -->
 
 <!-- # Athena++ Code of Conduct
 (to add here or store in external file, CODE_OF_CONDUCT.md) -->
