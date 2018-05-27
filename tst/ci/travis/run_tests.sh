@@ -6,6 +6,7 @@ set -ev
 # - Each set/directory of tests are timed separately
 # - Script fails after first broken set of tests
 # (Could alternatively group sets of tests with && operator)
+cd regression/
 python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(./ci/set_warning_cflag.sh $TEMP_CXX)"
 python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
 python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library

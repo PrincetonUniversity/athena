@@ -104,7 +104,7 @@ before_script:
 # steps will be executed even if there are non-zero exit codes ---> Failed build
 script:
   # Test Google C++ Style Guide adherence:
-  - ./style/cpplint_athena.sh
+  - cd style/; ./cpplint_athena.sh; cd ..
   # Run regression test suite:
   - ./ci/travis/run_tests.sh
 
