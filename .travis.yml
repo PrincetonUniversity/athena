@@ -92,7 +92,7 @@ install:
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
-  - cd tst/regression
+  - cd tst/
   # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
@@ -100,32 +100,14 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - pip install --user numpy || true # --user is necessary, since no virtualenv
   - pip3 install --user numpy || true
-# Run regression test suite:
-# Do not use "python run_tests.py" to run all tests, so that:
-# - Each set/directory of tests are timed separately
-# - Script fails after first broken set of tests
-# (Could alternatively group sets of tests with && operator)
+# Without "set -e" (which may cause issues with Travis clean up), all script
+# steps will be executed even if there are non-zero exit codes ---> Failed build
 script:
-  # Test Google C++ Style Guide adherence
-  - cd ../style
-  - set -e # fail at first error
-  - ./cpplint_athena.sh
-  - set +e; cd ../regression/; set -e;
-  - set -x # trace execution of all commands;
-  - python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
-  - python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library
-  - python3 run_tests.py amr --config=--cxx=$TEMP_CXX
-  # Longest set of tests. Timeout after 10 m
-  #- python3 run_tests.py mhd
-  - python3 run_tests.py hydro --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py outputs --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py gr --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py sr --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX
-  - set +e
+  # Test Google C++ Style Guide adherence:
+  - ./style/cpplint_athena.sh
+  # Run regression test suite:
+  - ./ci/travis/run_tests.sh
+
 # Codecov coverage analysis
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
