@@ -55,7 +55,7 @@
 //! \fn int main(int argc, char *argv[])
 //  \brief Athena++ main program
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
   std::string athena_version = "version 1.1.0 - May 2018";
   char *input_filename=NULL, *restart_filename=NULL;
   char *prundir = NULL;
