@@ -99,6 +99,10 @@ install:
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
+  - export PATH=$TRAVIS_BUILD_DIR/hdf5/bin/:$PATH
+  - export CPATH=$TRAVIS_BUILD_DIR/hdf5/include/:$CPATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/hdf5/share/:$LD_LIBRARY_PATH
+  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/hdf5/lib/:$LIBRARY_PATH
   - cd tst/
   # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
