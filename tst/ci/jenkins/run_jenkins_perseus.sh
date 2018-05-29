@@ -19,6 +19,7 @@ cd ../style/; ./cpplint_athena.sh; cd ../regression/
 module purge
 module load rh # latest GNU compiler
 module load openmpi/gcc # /1.10.2/64
+module load hdf5/gcc # openmpi-1.10.2/1.8.16
 # grav/ regression tests require MPI and FFTW
 module load fftw/gcc/3.3.4
 module list
@@ -43,6 +44,7 @@ module purge
 module load intel
 module load intel-mpi
 module load fftw/gcc/3.3.4
+module load hdf5/intel-17.0/intel-mpi/1.10.0
 module load rh
 module list
 
