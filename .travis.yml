@@ -118,7 +118,7 @@ script:
   - cd style/; ./cpplint_athena.sh
   - cd ..
   # Run regression test suite:
-  - ./ci/travis/run_tests.sh
+  - ./ci/travis/run_tests_travis.sh
 
 # Codecov coverage analysis
 after_success:
