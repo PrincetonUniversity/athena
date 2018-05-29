@@ -34,6 +34,8 @@ cache:
     - mpich
     - fftw
     - fftw-3.3.7 # stable release as of 11/8/17
+    - hdf5
+    - hdf5-1.10.1 # released on 2017-04-27
 
 # Explicitly includilng the 2x macOS jobs in build matrix
 # Must specify complete build details, or the jobs will inherit
@@ -59,6 +61,8 @@ matrix:
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
+      - hdf5
+      - "/usr/local/Cellar/hdf5/"
   - os: osx
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     compiler: clang++
@@ -77,6 +81,8 @@ matrix:
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
+      - hdf5
+      - "/usr/local/Cellar/hdf5/"
 # Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
@@ -88,6 +94,7 @@ install:
   - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
   - travis_wait 45 bash ./tst/ci/travis/install_openmpi.sh
   - bash ./tst/ci/travis/install_fftw.sh
+  - bash ./tst/ci/travis/install_hdf5.sh
   - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$PATH
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH

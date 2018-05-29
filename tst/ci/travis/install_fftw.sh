@@ -8,7 +8,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     if [ -f "bin/fft-wisdom" ]; then
 	echo "Using cached FFTW"
     else
-        echo "Installing FFTW with homebrew"
+        echo "Installing FFTW with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/fftw
 	brew update
         brew install fftw
