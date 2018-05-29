@@ -46,14 +46,14 @@ ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
-x1min      = 0.0       # minimum value of X1
-x1max      = 1.0       # maximum value of X1
+x1min      = -0.5       # minimum value of X1
+x1max      = 0.5       # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # outer-X1 boundary flag
 
 nx2        = 64        # Number of zones in X2-direction
-x2min      = 0.0       # minimum value of X2
-x2max      = 1.0       # maximum value of X2
+x2min      = -0.5       # minimum value of X2
+x2max      = 0.5       # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # outer-X2 boundary flag
 

@@ -51,14 +51,13 @@ def analyze():
   if max(sum_data[8,:]) != 0.0:
     return False
 
-  # check data in VTK dump
-#  xf,yf,_,vtk_data = athena_read.vtk(filename='bin/TestOutputs.block0.out4.00010.vtk')
-#  if max(xf) != 1.0 and min(xf) != 0.0:
-#    return False
-#  if max(yf) != 1.0 and min(yf) != 0.0:
-#    return False
-#  print(vtk_data['dens'])
-
-#  print(max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens']))
+  # check the domain boundary coordinates in VTK dump
+  xf,yf,_,vtk_data = athena_read.vtk(filename='bin/TestOutputs.block0.out4.00010.vtk')
+  if max(xf) != 0.5 and min(xf) != -0.5:
+    return False
+  if max(yf) != 0.5 and min(yf) != -0.5:
+   return False
+ #  print(vtk_data['dens'])
+ #  print(max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens']))
 
   return True
