@@ -27,10 +27,10 @@ file_type  = vtk       # VTK data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
-#<output5>
-#file_type  = hdf5      # HDF5 data dump
-#variable   = prim      # variables to be output
-#dt         = 0.1       # time increment between outputs
+<output5>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
 
 <output6>
 file_type  = rst       # restart dump
