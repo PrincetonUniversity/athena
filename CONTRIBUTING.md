@@ -217,7 +217,7 @@ header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and
 release practices for Athena++.
 
 **IMPORTANT**: The version string output by the `athena -h` command must be manually
-updated in `src/main.cpp` before tagging a new version.
+updated in `src/main.cpp` before tagging a new version. The user should also manually revert the `README.md` file to the simple (no CI status badges) format before tagging. 
 
 In the priave repository, each release is accompanied by an Git annotated (not lightweight) tag. Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
 
@@ -228,12 +228,12 @@ the following updates should be performed manually:
 - Draft public [Release
   Notes](https://github.com/PrincetonUniversity/athena-public-version/releases)
   based on private [`CHANGELOG.md`](./CHANGELOG.md) entries
-- Update [public Athena++
+- Update the [public Athena++
   Wiki](https://github.com/PrincetonUniversity/athena-public-version/wiki)
-  based on [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki)
+  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki). For now, this consists of manually force-pushing from the latter to the former and then removing any pages/content that are irrelevant to the public repository (e.g. "Continuous Integration"). **TODO**: establish a `public` branch on `athena.wiki` repository that is continually rebased from `master` with a few commits that remove the irrelevant content. Then, the `master` branch of `athena-public-version.wiki` would pull from that private wiki `public` branch without any force-pushing.
 - Announce release on the [Athena++
   website](https://princetonuniversity.github.io/athena/index.html) by
-  modifying the `gh-pages` branch of the private repository
+  modifying the HTML and CSS files on the `gh-pages` branch of the private repository
 
 ### Pre-release versions, release/support branches, tagging practices
 While the release version is ideally drafted from a tagged commit on the `master` branch, it is possible that this development branch contains source code that is not intended to be released to the public. Or, the release may require temporary modifications that should not pollute the history of `master`.  In such cases, the content should be removed and the changes should be made in a separate **release/support branch**. Release branches should be named `release/X.Y.Z`. While these dead-end branches may not be merged back to master, they should be deleted after being tagged/released. The annotated tag at the tip of the branch should ensure that these commits are never garbage collected by Git.
