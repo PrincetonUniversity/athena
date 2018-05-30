@@ -97,7 +97,7 @@ install:
   - bash ./tst/ci/travis/install_hdf5.sh
   - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$TRAVIS_BUILD_DIR/hdf5/bin/:$PATH
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$TRAVIS_BUILD_DIR/hdf5/include/$CPATH
-  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$TRAVIS_BUILD_DIR/hdf5/share/:$LD_LIBRARY_PATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LIBRARY_PATH
   - cd tst/
   # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
