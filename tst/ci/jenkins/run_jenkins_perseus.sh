@@ -11,6 +11,7 @@
 
 set -e # quit at first error
 cd tst/regression
+pip install --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
 
 # Build step #0: Test source code style consistency
 cd ../style/; ./cpplint_athena.sh; cd ../regression/

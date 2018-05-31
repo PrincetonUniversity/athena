@@ -107,8 +107,8 @@ install:
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
-  - pip install --user numpy || true # --user is necessary, since no virtualenv
-  - pip3 install --user numpy || true
+  - pip3 install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
 # Without "set -e" (which may cause issues with Travis clean up), all script
 # steps will be executed even if there are non-zero exit codes ---> Failed build
 script:
