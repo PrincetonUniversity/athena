@@ -28,18 +28,18 @@ module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
 time python ./run_tests.py pgen --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
-time python ./run_tests.py grav --mpirun=srun
-time python ./run_tests.py mpi --mpirun=srun
-time python ./run_tests.py hydro
+time python ./run_tests.py grav --mpirun=srun --silent
+time python ./run_tests.py mpi --mpirun=srun --silent
+time python ./run_tests.py hydro --silent
 # MHD is currenlty the longest regression test set:
-time python ./run_tests.py mhd
-time python ./run_tests.py amr
-time python ./run_tests.py outputs
-time python ./run_tests.py sr
-time python ./run_tests.py gr
-time python ./run_tests.py curvilinear
-time python ./run_tests.py shearingbox
-time python ./run_tests.py diffusion
+time python ./run_tests.py mhd --silent
+time python ./run_tests.py amr --silent
+time python ./run_tests.py outputs --silent
+time python ./run_tests.py sr --silent
+time python ./run_tests.py gr --silent
+time python ./run_tests.py curvilinear --silent
+time python ./run_tests.py shearingbox --silent
+time python ./run_tests.py diffusion --silent
 
 # Build step #2: Intel compiler and MPI library
 module purge
@@ -51,17 +51,17 @@ module load rh
 module list
 
 time python ./run_tests.py pgen --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
-time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun
-time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun
-time python ./run_tests.py hydro --config=--cxx=icc
-time python ./run_tests.py mhd --config=--cxx=icc
-time python ./run_tests.py amr --config=--cxx=icc
-time python ./run_tests.py outputs --config=--cxx=icc
-time python ./run_tests.py sr --config=--cxx=icc
-time python ./run_tests.py gr --config=--cxx=icc
-time python ./run_tests.py curvilinear --config=--cxx=icc
-time python ./run_tests.py shearingbox --config=--cxx=icc
-time python ./run_tests.py diffusion --config=--cxx=icc
+time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py hydro --config=--cxx=icc --silent
+time python ./run_tests.py mhd --config=--cxx=icc --silent
+time python ./run_tests.py amr --config=--cxx=icc --silent
+time python ./run_tests.py outputs --config=--cxx=icc --silent
+time python ./run_tests.py sr --config=--cxx=icc --silent
+time python ./run_tests.py gr --config=--cxx=icc --silent
+time python ./run_tests.py curvilinear --config=--cxx=icc --silent
+time python ./run_tests.py shearingbox --config=--cxx=icc --silent
+time python ./run_tests.py diffusion --config=--cxx=icc --silent
 
 set +e
 # end regression tests
