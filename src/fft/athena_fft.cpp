@@ -141,9 +141,9 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
   is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
   js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
   ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
-  ie = is+bsize.nx1-1,
-      je=bsize.nx2>1 ? js+bsize.nx2-1:js,
-      ke=bsize.nx3>1 ? ks+bsize.nx3-1:ks;
+  ie = is+bsize.nx1-1;
+  je = bsize.nx2>1 ? js+bsize.nx2-1:js;
+  ke = bsize.nx3>1 ? ks+bsize.nx3-1:ks;
   int jl = bsize.nx2>1 ? ngh:0;
   int kl = bsize.nx3>1 ? ngh:0;
 
@@ -176,11 +176,11 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
   is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
   js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
   ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
-  ie = is+bsize.nx1-1,
-      je=bsize.nx2>1 ? js+bsize.nx2-1:js,
-      ke=bsize.nx3>1 ? ks+bsize.nx3-1:ks;
-  int jl=bsize.nx2>1 ? ngh:0;
-  int kl=bsize.nx3>1 ? ngh:0;
+  ie = is+bsize.nx1-1;
+  je = bsize.nx2>1 ? js+bsize.nx2-1:js;
+  ke = bsize.nx3>1 ? ks+bsize.nx3-1:ks;
+  int jl = bsize.nx2>1 ? ngh:0;
+  int kl = bsize.nx3>1 ? ngh:0;
 
   for (int n=0; n<ns; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
