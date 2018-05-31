@@ -3,6 +3,9 @@
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
     cd hdf5
+    # HDF5 dependencies
+    brew link szip || true
+    brew install szip || true
     brew link hdf5 || true
     # check to see if HDF5 is cached from previous build
     if [ -f "bin/h5stat" ]; then
