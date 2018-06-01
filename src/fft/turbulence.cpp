@@ -102,7 +102,7 @@ void TurbulenceDriver::Driving(void) {
       if (new_perturb) Perturb(dtdrive);
       break;
     case 3: // turb_flag == 3 : continuously driven turbulence
-      if (pm->time > 0.0) Perturb(pm->dt);
+      Perturb(pm->dt);
       break;
     default:
       std::stringstream msg;

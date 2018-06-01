@@ -21,7 +21,7 @@ nlim       = 100000     # cycle limit
 tlim       = 0.2        # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 10        # interval for stdout summary info
+ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
 nx1        = 64         # Number of zones in X1-direction
@@ -52,9 +52,9 @@ gamma           = 1.666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.00           # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
 
 <problem>
-turb_flag  = 1    # 1 for decaying or 2/3 for impulsive/continous driven turbulence
+turb_flag  = 1    # 1 for decaying, 2 (impulsive) or 3 (continuous) for driven turbulence
 dedt       = 1.0  # Energy injection rate (for driven) or Total energy (for decaying)
 nlow       = 0    # cut-off wavenumber at low-k
 nhigh      = 16   # cut-off wavenumber at high-k
 expo       = 2.0  # power-law exponent
-dtdrive    = 0.1  # time interval between perturbation generation (not used for decaying)
+dtdrive    = 0.1  # time interval between perturbation generation
