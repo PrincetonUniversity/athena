@@ -20,10 +20,10 @@ class Coordinates;
 class HydroDiffusion;
 
 
-void ConstViscosity(HydroDiffusion *phdif, const AthenaArray<Real> &w,
+void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
 
-void  ConstConduction(HydroDiffusion *phdif, const AthenaArray<Real> &w,
+void  ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
 
 

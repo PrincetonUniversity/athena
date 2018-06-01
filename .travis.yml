@@ -4,7 +4,6 @@ language: cpp
 branches:
   only:
   - master
-  - ci
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
@@ -125,7 +124,7 @@ script:
   - python3 run_tests.py gr --config=--cxx=$TEMP_CXX
   - python3 run_tests.py sr --config=--cxx=$TEMP_CXX
   - python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX
-  #- python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX
+  - python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX
   - set +e
 # Codecov coverage analysis
 after_success:
