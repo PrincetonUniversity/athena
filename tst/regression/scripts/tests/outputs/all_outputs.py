@@ -15,7 +15,7 @@ import athena_read
 
 # Prepare Athena++
 def prepare(**kwargs):
-  athena.configure('b',
+  athena.configure('b', 'hdf5',
       prob='orszag_tang',
       flux='hlld', **kwargs)
   athena.make()
@@ -51,14 +51,27 @@ def analyze():
   if max(sum_data[8,:]) != 0.0:
     return False
 
-  # check data in VTK dump
-#  xf,yf,_,vtk_data = athena_read.vtk(filename='bin/TestOutputs.block0.out4.00010.vtk')
-#  if max(xf) != 1.0 and min(xf) != 0.0:
-#    return False
-#  if max(yf) != 1.0 and min(yf) != 0.0:
-#    return False
-#  print(vtk_data['dens'])
+  # assuming domain is 64x64 w/o ghost zones output, slice near central interface x2=0.0
+  # check density max and Vz and Bz components in VTK dump
+  xf,yf,_,vtk_data = athena_read.vtk(filename='bin/TestOutputs.block0.out4.00010.vtk')
+  if max(vtk_data['rho'][0,32,:]) < 0.25:
+    return False
+  if max(vtk_data['vel'][0,32,:,2]) != 0.0:
+    return False
+  if max(vtk_data['Bcc'][0,32,:,2]) != 0.0:
+    return False
+  # if max(xf) != 0.5 and min(xf) != -0.5:
+  #   return False
+  # if max(yf) != 0.5 and min(yf) != -0.5:
+  #  return False
+  # print(vtk_data['rho'].shape)
 
-#  print(max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens']))
+  hdf5_data = athena_read.athdf('bin/TestOutputs.out5.00010.athdf', dtype=np.float32)
+  if max(hdf5_data['rho'][0,32,:]) < 0.25:
+    return False
+  if max(hdf5_data['vel3'][0,32,:]) != 0.0:
+    return False
+  if max(hdf5_data['Bcc3'][0,32,:]) != 0.0:
+    return False
 
   return True

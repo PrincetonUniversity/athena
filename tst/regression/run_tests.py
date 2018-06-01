@@ -40,9 +40,9 @@ def main(**kwargs):
     # Make list of tests to run
     tests = kwargs.pop('tests')
     test_names = []
-    # Get MPI run syntax
+    # Get MPI run syntax and other flags
     mpirun_cmd = kwargs.pop('mpirun')
-
+    silent_opt = kwargs.pop('global_silent')
     # Get args to pass to scripts.utils.athena as list of strings
     athena_config_args = kwargs.pop('config')
     athena_run_args = kwargs.pop('run')
@@ -88,6 +88,7 @@ def main(**kwargs):
                 # by changing global values through module
                 module.athena.global_config_args = athena_config_args
                 module.athena.global_run_args = athena_run_args
+                module.athena.global_silent = silent_opt
 
                 try:
                     module.prepare(**kwargs)
@@ -162,6 +163,12 @@ if __name__ == '__main__':
                         default='mpirun',
                         choices=['mpirun', 'srun'],
                         help='select MPI run command')
+
+    parser.add_argument('--silent', '-s',
+                        dest='global_silent',
+                        default=False,
+                        action='store_true',
+                        help='redirect stdout of make to devnull (for CI logs)')
 
     parser.add_argument("--config", "-c",
                         default=[],

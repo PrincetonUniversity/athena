@@ -34,6 +34,8 @@ cache:
     - mpich
     - fftw
     - fftw-3.3.7 # stable release as of 11/8/17
+    - hdf5
+    - hdf5-1.10.1 # released on 2017-04-27
 
 # Explicitly includilng the 2x macOS jobs in build matrix
 # Must specify complete build details, or the jobs will inherit
@@ -52,6 +54,7 @@ matrix:
       - "/usr/local/Cellar/mpich/"
       - "/usr/local/Cellar/open-mpi/"
       - "/usr/local/Cellar/libevent/"
+      - "/usr/local/Cellar/szip/"
       # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
       - "/usr/local/opt/libevent"
       # For caching macOS Homebrew installation symlinks:
@@ -59,6 +62,8 @@ matrix:
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
+      - hdf5
+      - "/usr/local/Cellar/hdf5/"
   - os: osx
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     compiler: clang++
@@ -72,11 +77,14 @@ matrix:
       - "/usr/local/Cellar/mpich/"
       - "/usr/local/Cellar/open-mpi/"
       - "/usr/local/Cellar/libevent/"
+      - "/usr/local/Cellar/szip/"
       - "/usr/local/opt/libevent"
       - openmpi
       - mpich
       - fftw
       - "/usr/local/Cellar/fftw/"
+      - hdf5
+      - "/usr/local/Cellar/hdf5/"
 # Prevent conflicts with MPI
 before_install:
   - test -n $CC  && unset CC
@@ -88,44 +96,28 @@ install:
   - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
   - travis_wait 45 bash ./tst/ci/travis/install_openmpi.sh
   - bash ./tst/ci/travis/install_fftw.sh
-  - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$PATH
-  - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$CPATH
-  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$LD_LIBRARY_PATH
-  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$LIBRARY_PATH
-  - cd tst/regression
+  - bash ./tst/ci/travis/install_hdf5.sh
+  - export PATH=$TRAVIS_BUILD_DIR/fftw/bin/:$TRAVIS_BUILD_DIR/hdf5/bin/:$PATH
+  - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$TRAVIS_BUILD_DIR/hdf5/include/$CPATH
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LD_LIBRARY_PATH
+  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LIBRARY_PATH
+  - cd tst/
   # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
-  - pip install --user numpy || true # --user is necessary, since no virtualenv
-  - pip3 install --user numpy || true
-# Run regression test suite:
-# Do not use "python run_tests.py" to run all tests, so that:
-# - Each set/directory of tests are timed separately
-# - Script fails after first broken set of tests
-# (Could alternatively group sets of tests with && operator)
+  - pip3 install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
+# Without "set -e" (which may cause issues with Travis clean up), all script
+# steps will be executed even if there are non-zero exit codes ---> Failed build
 script:
-  # Test Google C++ Style Guide adherence
-  - cd ../style
-  - set -e # fail at first error
-  - ./cpplint_athena.sh
-  - set +e; cd ../regression/; set -e;
-  - set -x # trace execution of all commands;
-  - python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
-  - python3 run_tests.py mpi --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py grav --config=--cxx=$TEMP_CXX # requires FFTW library
-  - python3 run_tests.py amr --config=--cxx=$TEMP_CXX
-  # Longest set of tests. Timeout after 10 m
-  #- python3 run_tests.py mhd
-  - python3 run_tests.py hydro --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py outputs --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py gr --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py sr --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX
-  - python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX
-  - set +e
+  # Test Google C++ Style Guide adherence:
+  - cd style/; ./cpplint_athena.sh
+  - cd ..
+  # Run regression test suite:
+  - ./ci/travis/run_tests_travis.sh
+
 # Codecov coverage analysis
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
