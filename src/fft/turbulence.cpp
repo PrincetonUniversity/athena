@@ -40,7 +40,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
   dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
   dtdrive = pin->GetReal("problem","dtdrive"); // driving interval
-  impulsive = pin->GetOrAddBoolean("problem","impulsive", false); // implusive driving?
   tdrive = pm->time;
 
   if (pm->turb_flag == 0) {
@@ -84,21 +83,34 @@ TurbulenceDriver::~TurbulenceDriver() {
 
 void TurbulenceDriver::Driving(void) {
   Mesh *pm=pmy_mesh_;
+  bool new_perturb = false;
 
 // check driving time interval to generate new perturbation
   if (pm->time >= tdrive) {
-    std::cout << "generating turbulence at " << pm->time << std::endl;
+    if (Globals::my_rank==0)
+      std::cout << "generating turbulence at " << pm->time << std::endl;
     Generate();
     tdrive = pm->time + dtdrive;
-// if impulsive, dt = dtdrive
-    if (impulsive == true) {
-      Perturb(dtdrive);
-      return;
-    }
+    new_perturb = true;
   }
 
-// if not impulsive, dt = pm->dt
-  Perturb(pm->dt);
+  switch(pm->turb_flag) {
+    case 1: // turb_flag == 1 : decaying turbulence
+      Perturb(0);
+      break;
+    case 2: // turb_flag == 2 : impulsively driven turbulence
+      if (new_perturb) Perturb(dtdrive);
+      break;
+    case 3: // turb_flag == 3 : continuously driven turbulence
+      Perturb(pm->dt);
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in TurbulenceDriver::Driving" << std::endl
+          << "Turbulence flag " << pm->turb_flag << " is not supported!" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+  }
+
   return;
 
 }
@@ -287,14 +299,16 @@ void TurbulenceDriver::Perturb(Real dt) {
 #endif // MPI_PARALLEL
 
   // Rescale to give the correct energy injection rate
-  if (pm->turb_flag == 2) {
+  if (pm->turb_flag > 1) {
     // driven turbulence
     de = dedt*dt;
-    std::cout << "driven turbulence with " << de << std::endl;
+    if (Globals::my_rank==0)
+      std::cout << "driven turbulence with " << de << std::endl;
   } else {
     // decaying turbulence (all in one shot)
     de = dedt;
-    std::cout << "decaying turbulence with " << de << std::endl;
+    if (Globals::my_rank==0)
+      std::cout << "decaying turbulence with " << de << std::endl;
   }
   aa = 0.5*m[0];
   aa = std::max(aa,static_cast<Real>(1.0e-20));
