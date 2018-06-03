@@ -13,7 +13,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     if [ -f "bin/mpiexec" ]; then
 	echo "Using cached MPICH"
     else
-        echo "Installing MPICH with homebrew"
+        echo "Installing MPICH with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/mpich
 	# brew update
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix

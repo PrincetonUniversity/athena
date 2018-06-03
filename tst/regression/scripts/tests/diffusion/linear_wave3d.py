@@ -20,7 +20,7 @@ def prepare(**kwargs):
 def run(**kwargs):
   arguments0 = ['output1/file_type=hst','output1/dt=0.01',
       'output2/file_type=vtk','output2/variable=prim','output2/dt=0.03',
-      'time/cfl_number=0.3','time/tlim=3.0','time/nlim=-1',
+      'time/cfl_number=0.3','time/tlim=3.0','time/nlim=-1','time/ncycle_out=0',
       'mesh/nx1=64','mesh/x1min=0.0','mesh/x1max=3.0',
       'mesh/ix1_bc=periodic','mesh/ox1_bc=periodic',
       'mesh/nx2=32','mesh/x2min=0.0','mesh/x2max=1.5',

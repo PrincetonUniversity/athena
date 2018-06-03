@@ -1278,8 +1278,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     }
 
-    // add perturbation from turbulence
-    if ((turb_flag > 0) && (res_flag==0))
+    // add initial perturbation for decaying or impulsive turbulence
+    if (((turb_flag == 1) || (turb_flag == 2)) && (res_flag == 0))
       ptrbd->Driving();
 
     // solve gravity for the first time
