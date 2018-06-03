@@ -1899,7 +1899,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k],
                          pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
-        int *dcp = (int *)&(sendbuf[k][p]);
+        int *dcp = reinterpret_cast<int *>(&(sendbuf[k][p]));
         *dcp=pb->pmr->deref_count_;
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
@@ -2164,7 +2164,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-        int *dcp=(int *)&(recvbuf[k][p]);
+        int *dcp=reinterpret_cast<int *>(&(recvbuf[k][p]));
         pb->pmr->deref_count_=*dcp;
         k++;
       } else if (oloc.level>nloc.level) { // f2c

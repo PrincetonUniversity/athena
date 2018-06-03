@@ -61,11 +61,11 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &a,
                   FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke);
+                  int is, int ie, int js, int je, int ks, int ke, int nghost);
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &a,
                   FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke);
+                  int is, int ie, int js, int je, int ks, int ke, int nghost);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 
@@ -398,26 +398,26 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     AthenaArray<Real> &prim, FaceField &b,
     Real time, Real dt, int is, int ie, int js,
-    int je, int ks, int ke) {
+    int je, int ks, int ke, int nghost) {
 
   // Copy field components from last physical zone
   // zero slope boundary for B field
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
           b.x1f(ks-k,j,i) = b.x1f(ks,j,i);
         }
       }
     }
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
           b.x2f(ks-k,j,i) = b.x2f(ks,j,i);
         }
       }
     }
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           b.x3f(ks-k,j,i) = b.x3f(ks,j,i);
@@ -426,7 +426,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
     }
   } // MHD
 
-  for (int k=1; k<=NGHOST; k++) {
+  for (int k=1; k<=nghost; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real x3 = pco->x3v(ks-k);
@@ -476,24 +476,24 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                   AthenaArray<Real> &prim,
                   FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke) {
+                  int is, int ie, int js, int je, int ks, int ke, int nghost) {
 // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
           b.x1f(ke+k,j,i) = b.x1f(ke,j,i);
         }
       }
     }
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
           b.x2f(ke+k,j,i) = b.x2f(ke,j,i);
         }
       }
     }
-    for (int k=1; k<=NGHOST; k++) {
+    for (int k=1; k<=nghost; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           b.x3f(ke+1+k,j,i) = b.x3f(ke+1,j,i);
@@ -502,7 +502,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
     }
   } // MHD
 
-  for (int k=1; k<=NGHOST; k++) {
+  for (int k=1; k<=nghost; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real x3 = pco->x3v(ke+k);
