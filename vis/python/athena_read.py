@@ -27,7 +27,6 @@ def hst(filename, raw=False):
 
     # Read data
     with open(filename, 'r') as data_file:
-
         # Find header
         header_found = False
         multiple_headers = False
@@ -110,9 +109,9 @@ def tab(filename, raw=False, dimensions=None):
         if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
             headings = headings[1:2] + headings[3:4] + headings[5:]
             dimensions = 3
-        elif (headings[0] == 'i' and headings[2] == 'j') or \
-             (headings[0] == 'i' and headings[2] == 'k') or \
-             (headings[0] == 'j' and headings[2] == 'k'):
+        elif ((headings[0] == 'i' and headings[2] == 'j') or
+              (headings[0] == 'i' and headings[2] == 'k') or
+              (headings[0] == 'j' and headings[2] == 'k')):
             headings = headings[1:2] + headings[3:]
             dimensions = 2
         elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
@@ -212,8 +211,8 @@ def vtk(filename):
     end_of_line_index = current_index + 1
     while raw_data_ascii[end_of_line_index] != '\n':
         end_of_line_index += 1
-    face_dimensions = \
-        list(map(int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
+    face_dimensions = list(map(
+        int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
     current_index = end_of_line_index + 1
 
     # Function for reading interface locations
@@ -362,7 +361,6 @@ class athdf(dict):
 
         # Open file
         with h5py.File(filename, 'r') as f:
-
             # Extract size information
             self.max_level = f.attrs['MaxLevel']
             if self.level is None:
@@ -384,8 +382,8 @@ class athdf(dict):
                         nx_vals.append(1)
                     else:  # nontrivial sum
                         num_blocks_this_dim = 0
-                        for level_this_dim, loc_this_dim in \
-                                zip(self.levels, self.logical_locations[:, d]):
+                        for (level_this_dim, loc_this_dim) in zip(
+                                self.levels, self.logical_locations[:, d]):
                             if level_this_dim <= self.level:
                                 num_blocks_this_dim = max(
                                     num_blocks_this_dim,
@@ -459,15 +457,15 @@ class athdf(dict):
 
             # Set cell center functions for preset coordinates
             if center_func_1 is None:
-                if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
-                        or coord == 'sinusoidal' or coord == 'kerr-schild':
+                if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
+                        or coord == 'sinusoidal' or coord == 'kerr-schild'):
                     def center_func_1(xm, xp): return 0.5 * (xm + xp)
                 elif coord == 'cylindrical':
-                    def center_func_1(xm, xp): return 2.0/3.0 * \
-                                      (xp**3 - xm**3) / (xp**2 - xm**2)
+                    def center_func_1(xm, xp): return (
+                            2.0/3.0 * (xp**3 - xm**3) / (xp**2 - xm**2))
                 elif coord == 'spherical_polar':
-                    def center_func_1(xm, xp): return 3.0/4.0 * \
-                                      (xp**4 - xm**4) / (xp**3 - xm**3)
+                    def center_func_1(xm, xp): return (
+                            3.0/4.0 * (xp**4 - xm**4) / (xp**3 - xm**3))
                 elif coord == 'schwarzschild':
                     def center_func_1(xm, xp): return (0.5 * (xm**3 + xp**3)) ** (1.0/3.0)
                 else:
@@ -583,8 +581,8 @@ class athdf(dict):
             # Populate coordinate arrays
             face_funcs = (face_func_1, face_func_2, face_func_3)
             center_funcs = (center_func_1, center_func_2, center_func_3)
-            for d, nx, face_func, center_func in \
-                    zip(range(1, 4), nx_vals, face_funcs, center_funcs):
+            for d, nx, face_func, center_func in zip(
+                    range(1, 4), nx_vals, face_funcs, center_funcs):
                 if nx == 1:
                     xm = (self.x1m, self.x2m, self.x3m)[d-1]
                     xp = (self.x1p, self.x2p, self.x3p)[d-1]
@@ -738,7 +736,6 @@ class athdf(dict):
 
             # Go through blocks in data file
             for block_num in range(self.num_blocks):
-
                 # Extract location information
                 block_level = self.levels[block_num]
                 block_location = self.logical_locations[block_num, :]
@@ -750,12 +747,12 @@ class athdf(dict):
                     s = 2 ** (self.level - block_level)
 
                     # Calculate destination indices, without selection
-                    il_d = block_location[0] * \
-                        self.block_size[0] * s if self.nx1 > 1 else 0
-                    jl_d = block_location[1] * \
-                        self.block_size[1] * s if self.nx2 > 1 else 0
-                    kl_d = block_location[2] * \
-                        self.block_size[2] * s if self.nx3 > 1 else 0
+                    il_d = (block_location[0] *
+                            self.block_size[0] * s) if self.nx1 > 1 else 0
+                    jl_d = (block_location[1] *
+                            self.block_size[1] * s) if self.nx2 > 1 else 0
+                    kl_d = (block_location[2] *
+                            self.block_size[2] * s) if self.nx3 > 1 else 0
                     iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
                     ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
                     ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
@@ -790,22 +787,21 @@ class athdf(dict):
                                 block_data = np.repeat(block_data, s, axis=1)
                             if self.nx3 > 1:
                                 block_data = np.repeat(block_data, s, axis=0)
-                        self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = \
-                            block_data[kl_s:ku_s, jl_s:ju_s, il_s:iu_s]
+                        self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (
+                            block_data[kl_s:ku_s, jl_s:ju_s, il_s:iu_s])
 
                 # Restrict fine data
                 else:
-
                     # Calculate scale
                     s = 2 ** (block_level - self.level)
 
                     # Calculate destination indices, without selection
-                    il_d = block_location[0] * \
-                        self.block_size[0] / s if self.nx1 > 1 else 0
-                    jl_d = block_location[1] * \
-                        self.block_size[1] / s if self.nx2 > 1 else 0
-                    kl_d = block_location[2] * \
-                        self.block_size[2] / s if self.nx3 > 1 else 0
+                    il_d = (block_location[0] *
+                            self.block_size[0] / s) if self.nx1 > 1 else 0
+                    jl_d = (block_location[1] *
+                            self.block_size[1] / s) if self.nx2 > 1 else 0
+                    kl_d = (block_location[2] *
+                            self.block_size[2] / s) if self.nx3 > 1 else 0
                     iu_d = il_d + self.block_size[0] / s if self.nx1 > 1 else 1
                     ju_d = jl_d + self.block_size[1] / s if self.nx2 > 1 else 1
                     ku_d = kl_d + self.block_size[2] / s if self.nx3 > 1 else 1
@@ -841,7 +837,6 @@ class athdf(dict):
 
                     # Apply subsampling
                     if self.subsample:
-
                         # Calculate fine-level offsets (nearest cell at or below center)
                         o1 = s/2 - 1 if self.nx1 > 1 else 0
                         o2 = s/2 - 1 if self.nx2 > 1 else 0
@@ -858,7 +853,6 @@ class athdf(dict):
 
                     # Apply fast (uniform Cartesian) restriction
                     elif self.fast_restrict:
-
                         # Calculate fine-level offsets
                         io_vals = range(s) if self.nx1 > 1 else (0,)
                         jo_vals = range(s) if self.nx2 > 1 else (0,)
@@ -883,7 +877,6 @@ class athdf(dict):
 
                     # Apply exact (volume-weighted) restriction
                     else:
-
                         # Calculate sets of indices
                         i_s_vals = range(il_s, iu_s)
                         j_s_vals = range(jl_s, ju_s)
@@ -1018,8 +1011,8 @@ def restrict_like(vals, levels, vols=None):
             vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
             vals_sum = np.sum(np.sum(vals_level, axis=3), axis=1)
             vols_sum = np.sum(np.sum(vols_level, axis=3), axis=1)
-            vals_level = \
-                np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
+            vals_level = np.repeat(
+                np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
         else:
             vals_level = np.reshape(vals * vols, (nx1/stride, stride))
             vols_level = np.reshape(vols, (nx1/stride, stride))
