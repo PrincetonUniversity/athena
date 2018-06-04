@@ -136,10 +136,9 @@ def main(**kwargs):
                     if index < 0:
                         theta_grid_stream_pix[i, j] = -1
                     elif index < 2 * nx2 - 1:
-                        theta_grid_stream_pix[i, j] = (index + (theta_val
-                                                                - theta_extended[index])
-                                                       / (theta_extended[index + 1]
-                                                          - theta_extended[index]))
+                        theta_grid_stream_pix[i, j] = (
+                            index + ((theta_val - theta_extended[index])
+                                     / (theta_extended[index+1] - theta_extended[index])))
                     else:
                         theta_grid_stream_pix[i, j] = 2 * nx2 + 2
         r_grid_stream_pix = np.empty_like(r_grid_stream_coord)
@@ -169,7 +168,7 @@ def main(**kwargs):
         else:
             vals_right = 0.5 * (data[kwargs['quantity']]
                                 [-1, :, :] + data[kwargs['quantity']][0, :, :])
-            vals_left = 0.5 * (data[kwargs['quantity']][(nx3/2)-1,:,:]
+            vals_left = 0.5 * (data[kwargs['quantity']][(nx3/2)-1, :, :]
                                + data[kwargs['quantity']][nx3 / 2, :, :])
 
     # Join scalar data through boundaries
@@ -337,17 +336,19 @@ if __name__ == '__main__':
     parser.add_argument('--logr',
                         action='store_true',
                         help='flag indicating data should be logarithmically in radius')
-    parser.add_argument('-c',
-                        '--colormap',
-                        default=None,
-                        help=('name of Matplotlib colormap to use instead of default;'
-                              'highly recommended; try "RdBu_r" or "gist_heat" if '
-                              'looking for suggestions'))
-    parser.add_argument('--vmin',
-                        type=float,
-                        default=None,
-                        help=('data value to correspond to colormap minimum; '
-                              'use --vmin=<val> if <val> has negative sign'))
+    parser.add_argument(
+        '-c',
+        '--colormap',
+        default=None,
+        help=('name of Matplotlib colormap to use instead of default;'
+              'highly recommended; try "RdBu_r" or "gist_heat" if '
+              'looking for suggestions'))
+    parser.add_argument(
+      '--vmin',
+      type=float,
+      default=None,
+      help=('data value to correspond to colormap minimum; '
+            'use --vmin=<val> if <val> has negative sign'))
     parser.add_argument('--vmax',
                         type=float,
                         default=None,
