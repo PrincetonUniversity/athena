@@ -38,7 +38,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    int is, int ie, int js, int je, int ks, int ke, int ghost);
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                     FaceField &bb, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int nghost);
+                    int is, int ie, int js, int je, int ks, int ke, int ngh);
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
@@ -1362,7 +1362,7 @@ void MeshBlock::UserWorkInLoop() {
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int nghost) {
+                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
   return;
 }
 
@@ -1378,11 +1378,11 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                     FaceField &bb, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int nghost) {
+                    int is, int ie, int js, int je, int ks, int ke, int ngh) {
   // Set hydro variables
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
-      for (int i = is-nghost; i <= is-1; ++i) {
+      for (int i = is-ngh; i <= is-1; ++i) {
         prim(IDN,k,j,i) = prim(IDN,k,j,is);
         prim(IEN,k,j,i) = prim(IEN,k,j,is);
         prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), static_cast<Real>(0.0));
@@ -1398,7 +1398,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   // Set radial magnetic field
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
-      for (int i = is-nghost; i <= is-1; ++i) {
+      for (int i = is-ngh; i <= is-1; ++i) {
         bb.x1f(k,j,i) = bb.x1f(k,j,is);
       }
     }
@@ -1407,7 +1407,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   // Set polar magnetic field
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je+1; ++j) {
-      for (int i = is-nghost; i <= is-1; ++i) {
+      for (int i = is-ngh; i <= is-1; ++i) {
         bb.x2f(k,j,i) = bb.x2f(k,j,is);
       }
     }
@@ -1416,7 +1416,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   // Set azimuthal magnetic field
   for (int k = ks; k <= ke+1; ++k) {
     for (int j = js; j <= je; ++j) {
-      for (int i = is-nghost; i <= is-1; ++i) {
+      for (int i = is-ngh; i <= is-1; ++i) {
         bb.x3f(k,j,i) = bb.x3f(k,j,is);
       }
     }
