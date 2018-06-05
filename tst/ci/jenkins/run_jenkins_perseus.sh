@@ -11,12 +11,14 @@
 
 set -e # quit at first error
 # Install Python dependencies
-pip install --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
-pip install --user flake8
+pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
+pip install -q --user flake8
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
 python -m flake8 --exclude=cpplint.py
+echo "Finished linting Python files with flake8"
+
 # step #0b: lint C++ files
 cd tst/style/; ./cpplint_athena.sh
 cd ../regression/
