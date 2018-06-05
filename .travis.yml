@@ -113,7 +113,7 @@ before_script:
 # steps will be executed even if there are non-zero exit codes ---> Failed build
 script:
   # Test PEP 8 style compliance for .py files:
-  - flake8 --exclude=cpplint.py,openmpi-*
+  - python3 -m flake8 --exclude=cpplint.py,openmpi-*
   - echo "Finished linting Python files with flake8"
   # Test Google C++ Style Guide adherence for .cpp, .hpp files:
   - cd tst/style/; ./cpplint_athena.sh
