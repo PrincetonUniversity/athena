@@ -16,19 +16,19 @@ Notes:
 """
 from __future__ import print_function
 
+# Python modules
+import argparse
+import os
+from pkgutil import iter_modules
+import traceback
+
 # Prevent generation of .pyc files
 # This should be set before importing any user modules
 import sys
 sys.dont_write_bytecode = True
 
 # Athena++ modules
-import scripts.utils.athena as athena
-
-# Python modules
-import argparse
-import os
-from pkgutil import iter_modules
-import traceback
+import scripts.utils.athena as athena # noqa
 
 
 # Main function
