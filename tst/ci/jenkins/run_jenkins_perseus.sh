@@ -16,7 +16,7 @@ pip install --user flake8
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
-flake8 --exclude=cpplint.py
+python -m flake8 --exclude=cpplint.py
 # step #0b: lint C++ files
 cd tst/style/; ./cpplint_athena.sh
 cd ../regression/
