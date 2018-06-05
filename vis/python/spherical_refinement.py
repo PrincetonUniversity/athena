@@ -207,6 +207,7 @@ def main(**kwargs):
 
         # Divide region into chunks
         previous_j_lim = -1
+        i_start = None
         for i in range(num_blocks_r+1):
             if i == num_blocks_r:
                 j_lim = -1
