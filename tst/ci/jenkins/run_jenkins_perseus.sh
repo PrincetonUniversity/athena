@@ -7,14 +7,21 @@
 # computer Intel Broadwell worker nodes for continuous integration (CI)
 
 # USAGE: salloc -N1 -n4 --time=0:60:00 ./run_jenkins_perseus.sh
-# or similar command in the Jenkins build "Execute shell" step
+# or similar command in the Jenkins build "Execute shell" step (run from athena/ root dir)
 
 set -e # quit at first error
-cd tst/regression
-pip install --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
+# Install Python dependencies
+pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
+pip install -q --user flake8
 
 # Build step #0: Test source code style consistency
-cd ../style/; ./cpplint_athena.sh; cd ../regression/
+# step #0a: lint Python files
+python -m flake8 --exclude=cpplint.py
+echo "Finished linting Python files with flake8"
+
+# step #0b: lint C++ files
+cd tst/style/; ./cpplint_athena.sh
+cd ../regression/
 
 # Build step #1: GNU compiler and OpenMPI library
 module purge

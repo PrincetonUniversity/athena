@@ -1,38 +1,37 @@
 # Regression test to check whether blast wave remains spherical in spherical_polar coords
 
 # Modules
-import numpy as np
-import math
-import sys
 import scripts.utils.athena as athena
-import scripts.utils.comparison as comparison
+
 
 # Prepare Athena++
 def prepare(**kwargs):
-  athena.configure(
-      prob='blast',
-      coord='spherical_polar', **kwargs)
-  athena.make()
+    athena.configure(
+        prob='blast',
+        coord='spherical_polar', **kwargs)
+    athena.make()
+
 
 # Run Athena++
 def run(**kwargs):
-  arguments = ['time/ncycle_out=0', 'problem/compute_error=true']
-  athena.run('hydro/athinput.blast_sph', arguments)
+    arguments = ['time/ncycle_out=0', 'problem/compute_error=true']
+    athena.run('hydro/athinput.blast_sph', arguments)
+
 
 # Analyze output
 def analyze():
-  # read data from error file
-  filename = 'bin/blastwave-shape.dat'
-  data = []
-  with open(filename, 'r') as f:
-    raw_data = f.readlines()
-    for line in raw_data:
-      if line.split()[0][0] == '#':
-        continue
-      data.append([float(val) for val in line.split()])
+    # read data from error file
+    filename = 'bin/blastwave-shape.dat'
+    data = []
+    with open(filename, 'r') as f:
+        raw_data = f.readlines()
+        for line in raw_data:
+            if line.split()[0][0] == '#':
+                continue
+            data.append([float(val) for val in line.split()])
 
-  # check blast is spherical
-  if data[0][3] > 1.0: 
-    print("Distortion of blast wave in spherical coords too large",data[0][3])
+    # check blast is spherical
+    if data[0][3] > 1.0:
+        print("Distortion of blast wave in spherical coords too large", data[0][3])
 
-  return True
+    return True
