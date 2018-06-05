@@ -124,7 +124,7 @@ enum FluxCorrectionType {FLUX_HYDRO=0};
 
 typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
-                           int is, int ie, int js, int je, int ks, int ke, int nghost);
+                           int is, int ie, int js, int je, int ks, int ke, int ngh);
 typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,

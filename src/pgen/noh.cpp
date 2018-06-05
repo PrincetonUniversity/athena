@@ -30,11 +30,11 @@
 
 // BCs on outer edges of grid in each dimension
 void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost);
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost);
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost);
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 
 // made global to share with BC functions
 static Real gmma, gmma1;
@@ -92,10 +92,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int i=1;  i<=nghost; ++i) {
+    for (int i=1;  i<=ngh; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
         rad = std::sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j))
@@ -128,9 +128,9 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   for (int k=ks; k<=ke; ++k) {
-  for (int j=1; j<=nghost; ++j) {
+  for (int j=1; j<=ngh; ++j) {
     for (int i=is; i<=ie; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
@@ -164,8 +164,8 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int nghost) {
-  for (int k=1; k<=nghost; ++k) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
+  for (int k=1; k<=ngh; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       Real rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j))
