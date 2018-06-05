@@ -28,7 +28,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 else
     # for Ubuntu builds, install OpenMPI from source
     # check to see if OpenMPI is cached from previous build
-    if [ -f "openmpi/bin/mpirun" ] && [ -f "openmpi-2.1.1/config.log" ]; then
+    if [ -f "openmpi/bin/mpirun" ] && [ -f "openmpi-3.1.0/config.log" ]; then
 	echo "Using cached OpenMPI"
 	# This redundant configure step may not be necessary; see install-mpich.sh
 	# ./configure --prefix=$TRAVIS_BUILD_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> openmpi.configure
@@ -36,10 +36,10 @@ else
         # install OpenMPI from source
 	echo "Downloading OpenMPI Source"
 	# Using 2.1.1 on Homebrew for osx Travis builds
-	wget https://www.open-mpi.org/software/ompi/v2.1/downloads/openmpi-2.1.1.tar.gz
-	tar zxf openmpi-2.1.1.tar.gz
+	wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.0.tar.gz
+	tar zxf openmpi-3.1.0.tar.gz
 	echo "Configuring and building OpenMPI"
-	cd openmpi-2.1.1
+	cd openmpi-3.1.0
 	# The configure output is not printed to the Travis CI log due to the redirect
 	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> openmpi.configure #--without-fortran
 	make -j4 &> openmpi.make

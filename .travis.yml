@@ -27,7 +27,7 @@ cache:
   pip: true # Caching NumPy for regression test script
   directories:
     # For caching Linux source directories:
-    - openmpi-2.1.1 # stable release as of 5/10/17
+    - openmpi-3.1.0 # current release as of 5/7/18
     - mpich-3.2 # stable release, checked on 8/14/17
     # Caching Linux install directories:
     - openmpi
