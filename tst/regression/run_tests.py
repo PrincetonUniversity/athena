@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--mpirun',
                         default='mpirun',
-                        choices=['mpirun', 'srun'],
+                        choices=['mpirun', 'srun', 'mpirun --oversubscribe'],
                         help='select MPI run command')
 
     parser.add_argument('--silent', '-s',
