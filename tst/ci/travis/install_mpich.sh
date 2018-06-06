@@ -60,8 +60,4 @@ else
 	# (Optional) Delete MPICH build directory
 	#	rm -rf mpich-3.2.1
     fi
-    # Recommended by Travis CI documentation to unset these for MPI builds
-    # (put in .travis.yml before_install section)
-    # test -n $CC && unset CC
-    # test -n $CXX && unset CXX
 fi

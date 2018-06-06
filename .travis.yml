@@ -85,10 +85,10 @@ matrix:
       - "/usr/local/Cellar/fftw/"
       - hdf5
       - "/usr/local/Cellar/hdf5/"
-# Prevent conflicts with MPI
+# Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
 before_install:
   - test -n $CC  && unset CC
-  # Cache Travis CI build matrix compiler
+  # Cache compiler variable from Travis CI Build Matrix before unsetting
   - export TEMP_CXX=$CXX
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
