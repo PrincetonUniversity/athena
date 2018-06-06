@@ -210,8 +210,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real out[],
-  Real eigenvalues[]){
-
+                                        Real eigenvalues[]) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -283,8 +282,7 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[],
-  int &flag){
-
+                                            int &flag) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -300,7 +298,7 @@ inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Re
     Real a = std::sqrt(asq);
 
     // Multiply row of R-eigenmatrix from eq. B3 with vector and sum into output
-    // Also check density and pressure are positive, and set flag if not 
+    // Also check density and pressure are positive, and set flag if not
     // jump across wave[0]
     out[IDN] += in[IDN];
     out[IVX] += in[IDN]*(v1 - a);
@@ -310,19 +308,19 @@ inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Re
     Real p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
     if (out[IDN] < 0.0) flag=1;
     if (p < 0.0) flag=2;
-    
+
     // jump across wave[1]
     out[IVY] += in[IVX];
     out[IEN] += in[IVX]*v2;
     p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
     if (p < 0.0) flag=2;
-    
+
     // jump across wave[2]
     out[IVZ] += in[IVY];
     out[IEN] += in[IVY]*v3;
     p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
     if (p < 0.0) flag=2;
-    
+
     // jump across wave[3]
     out[IDN] += in[IVZ];
     out[IVX] += in[IVZ]*v1;
@@ -332,7 +330,7 @@ inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Re
     p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
     if (out[IDN] < 0.0) flag=1;
     if (p < 0.0) flag=2;
-    
+
     // jump across wave[4]
     out[IDN] += in[IEN];
     out[IVX] += in[IEN]*(v1+a);
@@ -342,20 +340,20 @@ inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Re
     p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
     if (out[IDN] < 0.0) flag=1;
     if (p < 0.0) flag=2;
-    
+
 //--- Isothermal hydrodynamics
 
   } else {
 
     // Multiply row of R-eigenmatrix from eq. B3 with vector and sum into output
-    // Also check density and pressure are positive, and set flag if not 
+    // Also check density and pressure are positive, and set flag if not
     // jump across wave[0]
     out[IDN] += in[IDN];
     out[IVX] += in[IDN]*(v1 - iso_cs);
     out[IVY] += in[IDN]*v2;
     out[IVZ] += in[IDN]*v3;
     if (out[IDN] < 0.0) flag=1;
-    
+
     // jump across wave[1]
     out[IVY] += in[IVX];
 
