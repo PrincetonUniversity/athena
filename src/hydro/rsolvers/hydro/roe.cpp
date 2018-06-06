@@ -29,11 +29,12 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
 inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[],
   int &flag);
 
-// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
+// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem fns
 static Real gm1, iso_cs;
 
 //----------------------------------------------------------------------------------------
-//! \func
+//! \fn void Hydro::RiemannSolver
+//  \brief The Roe Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,

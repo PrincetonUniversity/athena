@@ -30,12 +30,14 @@
 #include "../../../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \func
+//! \fn void Hydro::RiemannSolver
+//  \brief The HLLE Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];

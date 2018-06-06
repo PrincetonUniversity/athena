@@ -25,13 +25,14 @@
 #include "../../../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \file
-//! \brief
+//! \fn void Hydro::RiemannSolver
+//! \brief The HLLC Riemann solver for adiabatic hydrodynamics (use HLLE for isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -63,7 +64,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
-
 
     //    wroe[IDN] = sqrtdl*sqrtdr; // unused in signal velocity estimates
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
