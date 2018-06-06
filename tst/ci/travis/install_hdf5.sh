@@ -39,7 +39,7 @@ else
 	./configure --prefix=$TRAVIS_BUILD_DIR/hdf5 CC=$C_COMPILER CXX=$CXX_COMPILER &> hdf5.configure
 	# CC=/Users/kfelker/mpich-install/bin/mpicc ./configure --enable-parallel
 	make -j4 &> hdf5.make
-	# make check &> hdf5.makecheck # 2x tests currently broken; should be fixed in 2.8.0
+	# make check &> hdf5.makecheck # (expensive tests)
 	make install &> hdf5.install
 	cd ..
     fi
