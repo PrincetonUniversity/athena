@@ -10,7 +10,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     else
         echo "Installing FFTW with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/fftw
-	brew update
+	# brew update
         brew install fftw
 	brew unlink fftw
 	# /usr/local/opt symlinks to Cellar are preserved, use these:

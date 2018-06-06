@@ -5,6 +5,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     cd mpich
     brew unlink open-mpi || true
     # MPICH and dependencies
+    brew update  # Travis CI's Homebrew is out of date such that MPICH gcc vs. gfortran deps are broken
     # always install dependencies from pre-compiled bottles before attempting to build-from-source
     brew install gcc # Homebrew dependency due to gfrotran (would take 1 hr to build from source)
     rm '/usr/local/include/c++' || true # recommended by Homebrew
@@ -16,7 +17,6 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     else
         echo "Installing MPICH with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/mpich
-	# brew update
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix
 	ln -s `which glibtoolize`  /usr/local/opt/libtool/bin/libtoolize
 	brew install mpich # --HEAD
