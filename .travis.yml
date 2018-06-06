@@ -28,7 +28,7 @@ cache:
   directories:
     # For caching Linux source directories:
     - openmpi-3.0.2 # released 6/1/18
-    - mpich-3.2 # stable release, checked on 8/14/17
+    - mpich-3.2.1 # stable maintenance release from 11/10/17
     # Caching Linux install directories:
     - openmpi
     - mpich

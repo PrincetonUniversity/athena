@@ -5,8 +5,8 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     cd mpich
     brew unlink open-mpi || true
     # MPICH and dependencies
-    brew install gcc # implied Homebrew dependency?
-    rm '/usr/local/include/c++' || true
+    brew install gcc # Homebrew dependency due to gfrotran
+    rm '/usr/local/include/c++' || true # recommended by Homebrew
     brew link --overwrite gcc || true
     brew link mpich || true
     # check to see if MPICH executable is cached from previous build
@@ -19,7 +19,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix
 	ln -s `which glibtoolize`  /usr/local/opt/libtool/bin/libtoolize
 	brew install mpich # --HEAD
-	# brew install mpich --without-fortran --build-from-source --cc=gcc-7
+        # brew install --build-from-source --cc=clang mpich # --without-fortran # --cc=gcc-7
 	# Unlink MPICH to allow for simultaneous installation with OpenMPI
 	brew unlink mpich
 	# /usr/local/opt symlinks to Cellar are preserved, use these:
@@ -36,12 +36,12 @@ else
 	echo "libmpich.so found -- nothing to build."
     else
 	echo "Downloading mpich source."
-	wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
-	tar xfz mpich-3.2.tar.gz
-	rm mpich-3.2.tar.gz
+	wget http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
+	tar xfz mpich-3.2.1.tar.gz
+	rm mpich-3.2.1.tar.gz
 	echo "configuring and building mpich."
-	cd mpich-3.2
-	# Disabled fortran to shorten MPICH install time.
+	cd mpich-3.2.1
+	# Disabled fortran to shorten MPICH install time when building from source
 	# Need to enable romio for MPI-I/O
 	./configure \
             --prefix=`pwd`/../mpich \
@@ -58,7 +58,7 @@ else
 	make install
 	cd -
 	# (Optional) Delete MPICH build directory
-	#	rm -rf mpich-3.2
+	#	rm -rf mpich-3.2.1
     fi
     # Recommended by Travis CI documentation to unset these for MPI builds
     # (put in .travis.yml before_install section)
