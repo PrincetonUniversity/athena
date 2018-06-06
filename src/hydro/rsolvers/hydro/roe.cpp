@@ -175,7 +175,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //--- Step 8.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-      Real a = std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
+      Real a = 0.5*std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
