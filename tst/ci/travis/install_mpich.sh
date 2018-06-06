@@ -5,7 +5,8 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     cd mpich
     brew unlink open-mpi || true
     # MPICH and dependencies
-    brew install gcc # Homebrew dependency due to gfrotran
+    # always install dependencies from pre-compiled bottles before attempting to build-from-source
+    brew install gcc # Homebrew dependency due to gfrotran (would take 1 hr to build from source)
     rm '/usr/local/include/c++' || true # recommended by Homebrew
     brew link --overwrite gcc || true
     brew link mpich || true
@@ -19,7 +20,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix
 	ln -s `which glibtoolize`  /usr/local/opt/libtool/bin/libtoolize
 	brew install mpich # --HEAD
-        # brew install --build-from-source --cc=clang mpich # --without-fortran # --cc=gcc-7
+        # brew install --build-from-source --cc=clang mpich # --cc=gcc-7
 	# Unlink MPICH to allow for simultaneous installation with OpenMPI
 	brew unlink mpich
 	# /usr/local/opt symlinks to Cellar are preserved, use these:
