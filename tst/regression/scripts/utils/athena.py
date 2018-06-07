@@ -100,6 +100,7 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments):
                               input_filename
         run_command = [mpirun_cmd] + mpirun_opts + ['-n', str(nproc), './athena', '-i',
                                                     input_filename_full]
+        run_command = list(filter(None, run_command))  # remove any empty strings
         try:
             subprocess.check_call(run_command + arguments)
         except subprocess.CalledProcessError as err:
