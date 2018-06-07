@@ -47,7 +47,7 @@ matrix:
     compiler: clang++
     env:
     - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
-    - MPI_CHOICE=openmpi
+    - MPI_CHOICE=mpich
     # Override Linux cache mapping
     cache:
       pip: true
