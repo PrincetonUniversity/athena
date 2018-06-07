@@ -17,8 +17,8 @@ addons:
 # OpenMPI and MPICH implementations:
 env:
   matrix:
-  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH; MPI_CHOICE=mpich
-  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH; MPI_CHOICE=openmpi
+  - MPI_CHOICE=mpich
+  - MPI_CHOICE=openmpi
 compiler:
   - g++
   - clang++
@@ -46,7 +46,6 @@ matrix:
     osx_image: xcode9.3 # macOS 10.13 High Sierra
     compiler: clang++
     env:
-    - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
     - MPI_CHOICE=mpich
     # Override Linux cache mapping
     cache:
@@ -69,9 +68,8 @@ matrix:
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     compiler: clang++
     env:
-    - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
-    - TMPDIR=/tmp
     - MPI_CHOICE=openmpi
+    - TMPDIR=/tmp
     # Cache is shared with other osx build with MPICH
     cache:
       pip: true

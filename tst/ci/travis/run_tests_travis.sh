@@ -9,10 +9,12 @@ set -ev
 cd regression/
 # python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(./ci/set_warning_cflag.sh $TEMP_CXX)"
 if [ "$MPI_CHOICE" == "openmpi" ]; then
+    PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
     MPI_OPTS=--oversubscribe
     # Disable OpenMPI 3.1 vader CMA due to namespace permission issues on Travis CI / Docker containers
     export OMPI_MCA_btl_vader_single_copy_mechanism=none
-#else
+else
+    PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
 fi
 
 python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS # --silent
