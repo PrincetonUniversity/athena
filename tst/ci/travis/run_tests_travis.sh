@@ -8,9 +8,12 @@ set -ev
 # (Could alternatively group sets of tests with && operator)
 cd regression/
 # python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(./ci/set_warning_cflag.sh $TEMP_CXX)"
+if [ "$MPI_CHOICE" == "openmpi" ]; then
+    MPI_OPTS=oversubscribe
+fi
 
-python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun='mpirun --oversubscribe' # --silent
-python3 run_tests.py grav/jeans_3d --config=--cxx=$TEMP_CXX --mpirun='mpirun --oversubscribe' # requires FFTW library
+python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS # --silent
+python3 run_tests.py grav/jeans_3d --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS # requires FFTW library
 
 # python3 run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_mg --config=--cxx=$TEMP_CXX --silent # requires FFTW library
 # python3 run_tests.py amr --config=--cxx=$TEMP_CXX --silent
