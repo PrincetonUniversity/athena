@@ -42,6 +42,7 @@ def main(**kwargs):
     test_names = []
     # Get MPI run syntax and other flags
     mpirun_cmd = kwargs.pop('mpirun')
+    mpirun_opts = kwargs.pop('mpirun_opts')
     silent_opt = kwargs.pop('global_silent')
     # Get args to pass to scripts.utils.athena as list of strings
     athena_config_args = kwargs.pop('config')
@@ -97,7 +98,7 @@ def main(**kwargs):
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 try:
-                    module.run(mpirun_cmd=mpirun_cmd)
+                    module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
                 except Exception:
                     traceback.print_exc()
                     test_errors.append('run()')
@@ -161,7 +162,12 @@ if __name__ == '__main__':
 
     parser.add_argument('--mpirun',
                         default='mpirun',
-                        choices=['mpirun', 'srun'],
+                        choices=['mpirun', 'srun', 'mpiexec'],
+                        help='select MPI run command')
+
+    parser.add_argument('--mpirun_opts',
+                        default=[],
+                        action='append',
                         help='select MPI run command')
 
     parser.add_argument('--silent', '-s',

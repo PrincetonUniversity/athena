@@ -4,8 +4,9 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
     cd openmpi
     brew unlink mpich || true
-    # OpenMPI and dependencies
-    brew install gcc # implied Homebrew dependency?
+    # OpenMPI and dependencies:
+    # always install dependencies from pre-compiled bottles before attempting to build-from-source
+    brew install gcc
     brew link libevent || true
     brew install libevent || true
     brew link open-mpi || true
@@ -15,7 +16,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     else
         echo "Installing OpenMPI with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/openmpi
-	#brew update
+	# brew update
         brew install open-mpi #--cc=gcc-7 --build-from-source --without-fortran
 	brew unlink open-mpi
 	# /usr/local/opt symlinks to Cellar are preserved, use these:
@@ -30,8 +31,6 @@ else
     # check to see if OpenMPI is cached from previous build
     if [ -f "openmpi/bin/mpirun" ] && [ -f "openmpi-3.0.2/config.log" ]; then
 	echo "Using cached OpenMPI"
-	# This redundant configure step may not be necessary; see install-mpich.sh
-	# ./configure --prefix=$TRAVIS_BUILD_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> openmpi.configure
     else
         # install OpenMPI from source
 	echo "Downloading OpenMPI Source"
@@ -41,13 +40,9 @@ else
 	echo "Configuring and building OpenMPI"
 	cd openmpi-3.0.2
 	# The configure output is not printed to the Travis CI log due to the redirect
-	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> openmpi.configure #--without-fortran
+	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi &> openmpi.configure # CC=$C_COMPILER CXX=$CXX_COMPILER --without-fortran
 	make -j4 &> openmpi.make
 	make install &> openmpi.install
 	cd ..
     fi
-    # Recommended by Travis CI documentation to unset these for MPI builds
-    # (put in .travis.yml before_install section)
-    # test -n $CC && unset CC
-    # test -n $CXX && unset CXX
 fi
