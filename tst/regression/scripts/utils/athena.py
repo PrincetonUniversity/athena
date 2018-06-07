@@ -2,6 +2,7 @@
 
 # Modules
 import os
+import sys
 import subprocess
 
 # Global variables
@@ -10,6 +11,7 @@ saved_filenames = ['src/defs.hpp', 'Makefile']
 saved_files = []
 global_config_args = []
 global_run_args = []
+global_silent = False
 
 
 # Function for configuring Athena++
@@ -45,12 +47,16 @@ def make(clean_first=True, obj_only=False):
         else:
             make_command = ['make', '-j', exe_dir, obj_dir]
         try:
+            stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
-                subprocess.check_call(clean_command)
-            subprocess.check_call(make_command)
+                subprocess.check_call(clean_command, stdout=stdout_f)
+            subprocess.check_call(make_command, stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
+        finally:
+            if stdout_f is not sys.stdout:
+                stdout_f.close()
     finally:
         os.chdir(current_dir)
 
@@ -86,14 +92,15 @@ def restart(input_filename, arguments):
         os.chdir(current_dir)
 
 
-def mpirun(mpirun_cmd, nproc, input_filename, arguments):
+def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments):
     current_dir = os.getcwd()
     os.chdir('bin')
     try:
         input_filename_full = '../' + athena_rel_path + 'inputs/' + \
                               input_filename
-        run_command = [mpirun_cmd, '-n', str(nproc), './athena', '-i',
-                       input_filename_full]
+        run_command = [mpirun_cmd] + mpirun_opts + ['-n', str(nproc), './athena', '-i',
+                                                    input_filename_full]
+        run_command = list(filter(None, run_command))  # remove any empty strings
         try:
             subprocess.check_call(run_command + arguments)
         except subprocess.CalledProcessError as err:

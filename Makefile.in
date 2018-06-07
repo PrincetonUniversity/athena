@@ -29,6 +29,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
+	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
+	     $(wildcard src/field/field_diffusion/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/mesh/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \

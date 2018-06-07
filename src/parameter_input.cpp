@@ -37,6 +37,7 @@
 
 // C++ headers
 #include <algorithm>  // transform
+#include <cmath>      // fmod()
 #include <cstdlib>    // atoi(), atof(), NULL, size_t
 #include <fstream>    // ifstream
 #include <iostream>   // endl, ostream
@@ -276,7 +277,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 //  are replaced (overwritten).
 
 void ParameterInput::AddParameter(InputBlock *pb, std::string name,
-     std::string value, std::string comment) {
+                                  std::string value, std::string comment) {
   InputLine *pl, *plast;
 
   // Search linked list of InputLines to see if name exists.  This also sets *plast
@@ -357,8 +358,8 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
       throw std::runtime_error(msg.str().c_str());
     }
     pl->param_value.assign(value);   // replace existing value
-    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
 
+    if (value.length() > pb->max_len_parvalue) pb->max_len_parvalue = value.length();
   }
 }
 
@@ -663,6 +664,87 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void ParameterInput::RollbackNextTime()
+//  \brief rollback next_time by dt for each output block
+
+void ParameterInput::RollbackNextTime() {
+  InputBlock *pb = pfirst_block;
+  InputLine* pl;
+  std::stringstream msg;
+  Real next_time;
+
+  while (pb != NULL) {
+    if (pb->block_name.compare(0, 6, "output") == 0) {
+      pl = pb->GetPtrToLine("next_time");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
+            << std::endl << "Parameter name 'next_time' not found in block '"
+            << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      next_time = static_cast<Real>(atof(pl->param_value.c_str()));
+      pl = pb->GetPtrToLine("dt");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
+            << std::endl << "Parameter name 'dt' not found in block '"
+            << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      next_time -= static_cast<Real>(atof(pl->param_value.c_str()));
+      msg << next_time;
+      //AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+      SetReal(pb->block_name, "next_time", next_time);
+    }
+    pb = pb->pnext;
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ParameterInput::ForwardNextTime()
+//  \brief add dt to next_time until next_time >  mesh_time - dt for each output block
+
+void ParameterInput::ForwardNextTime(Real mesh_time) {
+  InputBlock *pb = pfirst_block;
+  InputLine* pl;
+  Real next_time;
+  Real dt0, dt;
+  bool fresh = false;
+
+  while (pb != NULL) {
+    if (pb->block_name.compare(0, 6, "output") == 0) {
+      std::stringstream msg;
+      pl = pb->GetPtrToLine("next_time");
+      if (pl == NULL) {
+        next_time = mesh_time;
+        // This is a freshly added output
+        fresh = true;
+      } else {
+        next_time = static_cast<Real>(atof(pl->param_value.c_str()));
+      }
+      pl = pb->GetPtrToLine("dt");
+      if (pl == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]"
+            << std::endl << "Parameter name 'dt' not found in block '"
+            << pb->block_name << "'";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      dt0 = static_cast<Real>(atof(pl->param_value.c_str()));
+      dt = dt0 * static_cast<int>((mesh_time - next_time) / dt0) + dt0;
+      if (dt > 0) {
+        next_time += dt;
+        // If the user has added a new/fresh output round to multiple of dt0,
+        // and make sure that mesh_time - dt0 < next_time < mesh_time,
+        // to ensure immediate writing
+        if (fresh) next_time -= std::fmod(next_time, dt0) + dt0;
+      }
+      msg << next_time;
+      AddParameter(pb, "next_time", msg.str().c_str(), "# Updated during run time");
+    }
+    pb = pb->pnext;
+  }
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParameterDump(std::ostream& os)
 //  \brief output entire InputBlock/InputLine hierarchy to specified stream
 
@@ -709,6 +791,7 @@ InputLine* InputBlock::GetPtrToLine(std::string name) {
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::StartReading(void)
 //  \brief set the readers' lock (only for OpenMP)
+
 void ParameterInput::StartReading(void) {
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&rlock_);

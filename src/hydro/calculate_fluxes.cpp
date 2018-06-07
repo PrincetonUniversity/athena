@@ -11,15 +11,18 @@
 
 // Athena++ headers
 #include "hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"   // reapply floors to face-centered reconstructed states
 #include "../field/field.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -369,6 +372,22 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 
   if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
+
+// add diffusion fluxes
+  if (phdif->hydro_diffusion_defined) {
+    if (phdif->nu_iso > 0.0 || phdif->nu_aniso > 0.0)
+      phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
+
+    if (NON_BAROTROPIC_EOS) {
+      if (phdif->kappa_iso > 0.0 || phdif->kappa_aniso > 0.0)
+        phdif->AddHydroDiffusionEnergyFlux(phdif->cndflx,flux);
+    }
+  }
+
+  if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
+      if (pmb->pfield->pfdif->field_diffusion_defined)
+        pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
+  }
 
   return;
 }

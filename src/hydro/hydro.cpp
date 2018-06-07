@@ -18,6 +18,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "srcterms/hydro_srcterms.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -109,6 +110,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
   psrc  = new HydroSourceTerms(this, pin);
 
+  // ptr to diffusion object
+  phdif = new HydroDiffusion(this,pin);
+
 }
 
 // destructor
@@ -176,4 +180,5 @@ Hydro::~Hydro() {
   scr2_nkji_.DeleteAthenaArray();
 
   delete psrc;
+  delete phdif;
 }

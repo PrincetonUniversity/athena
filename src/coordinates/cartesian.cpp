@@ -45,6 +45,19 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
+  // allocate arrays for volume- and face-centered geometry coefficients of cells
+  h2f.NewAthenaArray(ncells1);
+  dh2fd1.NewAthenaArray(ncells1);
+  h31f.NewAthenaArray(ncells1);
+  dh31fd1.NewAthenaArray(ncells1);
+  h32f.NewAthenaArray(ncells2);
+  dh32fd2.NewAthenaArray(ncells2);
+  h2v.NewAthenaArray(ncells1);
+  dh2vd1.NewAthenaArray(ncells1);
+  h31v.NewAthenaArray(ncells1);
+  dh31vd1.NewAthenaArray(ncells1);
+  h32v.NewAthenaArray(ncells2);
+  dh32vd2.NewAthenaArray(ncells2);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -103,6 +116,33 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
         // dxkv = dx3f constant for uniform mesh; may disagree with x3v(k+1) - x3v(k)
         dx3v(k) = dx3f(k);
       }
+    }
+  }
+  // initialize geometry coefficients
+  // x1-direction
+  for (int i=il-ng; i<=iu+ng; ++i) {
+    h2v(i) = 1.0;
+    h2f(i) = 1.0;
+    h31v(i) = 1.0;
+    h31f(i) = 1.0;
+    dh2vd1(i) = 0.0;
+    dh2fd1(i) = 0.0;
+    dh31vd1(i) = 0.0;
+    dh31fd1(i) = 0.0;
+  }
+
+  // x2-direction
+  if (pmb->block_size.nx2 == 1) {
+    h32v(jl) = 1.0;
+    h32f(jl) = 1.0;
+    dh32vd2(jl) = 0.0;
+    dh32fd2(jl) = 0.0;
+  } else {
+    for (int j=jl-ng; j<=ju+ng; ++j) {
+      h32v(j) = 1.0;
+      h32f(j) = 1.0;
+      dh32vd2(j) = 0.0;
+      dh32fd2(j) = 0.0;
     }
   }
 

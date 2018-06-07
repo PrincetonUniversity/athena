@@ -127,6 +127,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
+  // If cos_a2 or cos_a3 = 0, need to override lambda
+  if (ang_3_vert == true)
+    lambda = x2;
+  if (ang_2_vert == true)
+    lambda = x3;
+
   // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
 
@@ -544,9 +550,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
           pcoord->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
-
       phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
-
       Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
       Real my = amp*sn*rem[2][wave_flag];
       Real mz = amp*sn*rem[3][wave_flag];

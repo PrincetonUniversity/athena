@@ -16,6 +16,7 @@
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
+class HydroDiffusion;
 struct IntegratorWeight;
 
 //! \class Hydro
@@ -40,6 +41,7 @@ public:
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
   HydroSourceTerms *psrc;
+  HydroDiffusion *phdif;
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock

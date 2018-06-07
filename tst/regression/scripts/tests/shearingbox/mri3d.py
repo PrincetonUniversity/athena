@@ -1,6 +1,4 @@
-"""
-Regression test of shearing box with 3d MRI
-"""
+# Regression test of shearing box with 3d MRI
 
 # Modules
 import numpy as np
@@ -21,6 +19,7 @@ def run(**kwargs):
         'output1/file_type=hst', 'output1/dt=0.062831853',
         'output2/file_type=vtk', 'output2/variable=prim', 'output2/dt=31.4616',
         'time/cfl_number=0.3', 'time/tlim=62.83185', 'time/nlim=10000',
+        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
         'mesh/nx1=32', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=24', 'mesh/x2min=-1.57079632679', 'mesh/x2max=1.57079632679',
@@ -39,9 +38,9 @@ def analyze():
 
     # omg  = 1.0e-3 # unused
     rho0 = 1.0
-    cs   = 1.0
+    cs = 1.0
     pres = rho0 * cs**2
-    vol  = 1.0 * np.pi * 1.0
+    vol = 1.0 * np.pi * 1.0
     index = -500
     dtype_array = np.dtype([('me1', 'f8'), ('me2', 'f8'), ('me3', 'f8'),
                             ('stress', 'f8')])

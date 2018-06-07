@@ -15,6 +15,16 @@
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 
+#if defined(__AVX512F__)
+#define SIMD_WIDTH 8
+#elif defined(__AVX__)
+#define SIMD_WIDTH 4
+#elif defined(__SSE2__)
+#define SIMD_WIDTH 2
+#else
+#define SIMD_WIDTH 4
+#endif
+
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()
 //  \brief
@@ -48,15 +58,11 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         bx(i) = bcc(IB1,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il-1; i<=iu; ++i) {
+
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
         wc(IBY,i) = bcc(IB2,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il-1; i<=iu; ++i) {
+
         dwl(IBZ,i) = (bcc(IB3,k,j,i  ) - bcc(IB3,k,j,i-1));
         dwr(IBZ,i) = (bcc(IB3,k,j,i+1) - bcc(IB3,k,j,i  ));
         wc(IBZ,i) = bcc(IB3,k,j,i);
@@ -73,12 +79,10 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->precon->uniform_limiter[X1DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il-1; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
-        }
-        for (int i=il-1; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -86,15 +90,13 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il-1; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
           Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
-        }
-        for (int i=il-1; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -107,7 +109,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
     // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il-1; i<=iu; ++i) {
         wl(n,k,j,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
         wr(n,k,j,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
@@ -159,15 +161,11 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB2,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
+
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
         wc(IBY,i) = bcc(IB3,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
+
         dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
         dwr(IBZ,i) = (bcc(IB1,k,j+1,i) - bcc(IB1,k,j  ,i));
         wc(IBZ,i) = bcc(IB1,k,j,i);
@@ -184,12 +182,10 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->precon->uniform_limiter[X2DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
-        }
-        for (int i=il; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -197,15 +193,13 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
           Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
-        }
-        for (int i=il; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -218,7 +212,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 
     // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         wl(n,k,j+1,i) = wc(n,i) + ((pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j))*dwm(n,i);
         wr(n,k,j  ,i) = wc(n,i) - ((pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j))*dwm(n,i);
@@ -268,15 +262,11 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bx(i) = bcc(IB3,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
+
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
         wc(IBY,i) = bcc(IB1,k,j,i);
-      }
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
+
         dwl(IBZ,i) = (bcc(IB2,k  ,j,i) - bcc(IB2,k-1,j,i));
         dwr(IBZ,i) = (bcc(IB2,k+1,j,i) - bcc(IB2,k  ,j,i));
         wc(IBZ,i) = bcc(IB2,k,j,i);
@@ -294,12 +284,10 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     // Apply van Leer limiter for uniform grid
     if (pmb->precon->uniform_limiter[X3DIR]) {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           dwm(n,i) = 2.0*dw2(i)/(dwl(n,i) + dwr(n,i));
-        }
-        for (int i=il; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -307,15 +295,13 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     // Apply Mignone limiter for non-uniform grid
     } else {
       for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           dw2(i) = dwl(n,i)*dwr(n,i);
           Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
           Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
           dwm(n,i) = (dw2(i)*(cf*dwl(n,i) + cb*dwr(n,i))/
             (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2(i)*(cf + cb - 2.0)));
-        }
-        for (int i=il; i<=iu; ++i) {
           if (dw2(i) <= 0.0) dwm(n,i) = 0.0;
         }
       }
@@ -328,7 +314,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
     // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         wl(n,k+1,j,i) = wc(n,i) + ((pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k))*dwm(n,i);
         wr(n,k  ,j,i) = wc(n,i) - ((pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k))*dwm(n,i);
