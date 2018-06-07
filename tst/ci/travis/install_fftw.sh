@@ -34,9 +34,7 @@ else
 	echo "Configuring and building FFTW"
 	cd fftw-3.3.7
 	# --enable-mpi: not needed, since Plimpton's FFT library is used in Athena++ for MPI+FFT grav
-	echo $C_COMPILER
-	echo $CXX_COMPILER
-	./configure --prefix=$TRAVIS_BUILD_DIR/fftw CC=$C_COMPILER CXX=$CXX_COMPILER &> fftw.configure
+	./configure --prefix=$TRAVIS_BUILD_DIR/fftw &> fftw.configure
 	# make -j4 &> fftw.make
 	make &> fftw.make
 	make install &> fftw.install

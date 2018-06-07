@@ -40,7 +40,7 @@ else
 	echo "Configuring and building OpenMPI"
 	cd openmpi-3.0.2
 	# The configure output is not printed to the Travis CI log due to the redirect
-	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi CC=$C_COMPILER CXX=$CXX_COMPILER &> openmpi.configure #--without-fortran
+	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi &> openmpi.configure # CC=$C_COMPILER CXX=$CXX_COMPILER --without-fortran
 	make -j4 &> openmpi.make
 	make install &> openmpi.install
 	cd ..
