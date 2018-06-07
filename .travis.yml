@@ -17,8 +17,8 @@ addons:
 # OpenMPI and MPICH implementations:
 env:
   matrix:
-  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
-  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH; MPI_CHOICE=mpich
+  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH; MPI_CHOICE=openmpi
 compiler:
   - g++
   - clang++
@@ -47,6 +47,7 @@ matrix:
     compiler: clang++
     env:
     - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+    - MPI_CHOICE=openmpi
     # Override Linux cache mapping
     cache:
       pip: true
@@ -70,6 +71,7 @@ matrix:
     env:
     - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
     - TMPDIR=/tmp
+    - MPI_CHOICE=openmpi
     # Cache is shared with other osx build with MPICH
     cache:
       pip: true
@@ -101,13 +103,13 @@ install:
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$TRAVIS_BUILD_DIR/hdf5/include/$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LIBRARY_PATH
-  # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
+  # Check fix for OpenMPI version > 2.0 and macOS version > Sierra tmpdir length issue
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - python3 -m pip install --upgrade --user pip
-  - pip3 install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user numpy || true # --user is necessary, since no virtualenv, sudo
   - pip3 install --user flake8 || true
   - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
 # Without "set -e" (which may cause issues with Travis clean up), all script
