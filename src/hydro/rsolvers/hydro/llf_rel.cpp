@@ -18,6 +18,16 @@
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 
+#if defined(__AVX512F__)
+#define SIMD_WIDTH 8
+#elif defined(__AVX__)
+#define SIMD_WIDTH 4
+#elif defined(__SSE2__)
+#define SIMD_WIDTH 2
+#else
+#define SIMD_WIDTH 4
+#endif
+
 // Declarations
 static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb,
@@ -107,24 +117,28 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
+  const Real gamma_tmp = gamma_adi/(gamma_adi - 1.0);
 
   // Go through each interface
-  #pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i = il; i <= iu; ++i) {
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,k,j,i);
-    const Real &pgas_l = prim_l(IPR,k,j,i);
+    Real rho_l = prim_l(IDN,k,j,i);
+    Real pgas_l = prim_l(IPR,k,j,i);
     Real u_l[4];
     if (GENERAL_RELATIVITY) {
-      u_l[1] = prim_l(ivx,k,j,i);
-      u_l[2] = prim_l(ivy,k,j,i);
-      u_l[3] = prim_l(ivz,k,j,i);
-      u_l[0] = std::sqrt(1.0 + SQR(u_l[1]) + SQR(u_l[2]) + SQR(u_l[3]));
+      Real vx_l = prim_l(ivx,k,j,i);
+      Real vy_l = prim_l(ivy,k,j,i);
+      Real vz_l = prim_l(ivz,k,j,i);
+      u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
+      u_l[1] = vx_l;
+      u_l[2] = vy_l;
+      u_l[3] = vz_l;
     } else {  // SR
-      const Real &vx_l = prim_l(ivx,k,j,i);
-      const Real &vy_l = prim_l(ivy,k,j,i);
-      const Real &vz_l = prim_l(ivz,k,j,i);
+      Real vx_l = prim_l(ivx,k,j,i);
+      Real vy_l = prim_l(ivy,k,j,i);
+      Real vz_l = prim_l(ivz,k,j,i);
       u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
       u_l[1] = u_l[0] * vx_l;
       u_l[2] = u_l[0] * vy_l;
@@ -132,18 +146,21 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     }
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,k,j,i);
-    const Real &pgas_r = prim_r(IPR,k,j,i);
+    Real rho_r = prim_r(IDN,k,j,i);
+    Real pgas_r = prim_r(IPR,k,j,i);
     Real u_r[4];
     if (GENERAL_RELATIVITY) {
-      u_r[1] = prim_r(ivx,k,j,i);
-      u_r[2] = prim_r(ivy,k,j,i);
-      u_r[3] = prim_r(ivz,k,j,i);
-      u_r[0] = std::sqrt(1.0 + SQR(u_r[1]) + SQR(u_r[2]) + SQR(u_r[3]));
+      Real vx_r = prim_r(ivx,k,j,i);
+      Real vy_r = prim_r(ivy,k,j,i);
+      Real vz_r = prim_r(ivz,k,j,i);
+      u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
+      u_r[1] = vx_r;
+      u_r[2] = vy_r;
+      u_r[3] = vz_r;
     } else {  // SR
-      const Real &vx_r = prim_r(ivx,k,j,i);
-      const Real &vy_r = prim_r(ivy,k,j,i);
-      const Real &vz_r = prim_r(ivz,k,j,i);
+      Real vx_r = prim_r(ivx,k,j,i);
+      Real vy_r = prim_r(ivy,k,j,i);
+      Real vz_r = prim_r(ivz,k,j,i);
       u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
       u_r[1] = u_r[0] * vx_r;
       u_r[2] = u_r[0] * vy_r;
@@ -152,13 +169,13 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 
     // Calculate wavespeeds in left state (MB 23)
     Real lambda_p_l, lambda_m_l;
-    Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
+    Real wgas_l = rho_l + gamma_tmp * pgas_l;
     pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]), &lambda_p_l,
         &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB 23)
     Real lambda_p_r, lambda_m_r;
-    Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
+    Real wgas_r = rho_r + gamma_tmp * pgas_r;
     pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]), &lambda_p_r,
         &lambda_m_r);
 
