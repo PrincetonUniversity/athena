@@ -208,40 +208,37 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
 
-    Real cons_l[NWAVE], flux_l[NWAVE], cons_r[NWAVE], flux_r[NWAVE];
-    {
-      // Calculate conserved quantities in L region (MB2005 3)
-      Real wgas_u0_l = wgas_l * u_l[0];
-      cons_l[IDN] = rho_l * u_l[0];
-      cons_l[IEN] = wgas_u0_l * u_l[0] - pgas_l;
-      cons_l[ivx] = wgas_u0_l * u_l[1];
-      cons_l[ivy] = wgas_u0_l * u_l[2];
-      cons_l[ivz] = wgas_u0_l * u_l[3];
+    // Calculate conserved quantities in L region (MB2005 3)
+    Real cons_l[NWAVE];
+    cons_l[IDN] = rho_l * u_l[0];
+    cons_l[IEN] = wgas_l * u_l[0] * u_l[0] - pgas_l;
+    cons_l[ivx] = wgas_l * u_l[1] * u_l[0];
+    cons_l[ivy] = wgas_l * u_l[2] * u_l[0];
+    cons_l[ivz] = wgas_l * u_l[3] * u_l[0];
 
-      // Calculate fluxes in L region (MB2005 2,3)
-      Real wgas_u1_l = wgas_l * u_l[1];
-      flux_l[IDN] = rho_l * u_l[1];
-      flux_l[IEN] = wgas_u1_l * u_l[0];
-      flux_l[ivx] = wgas_u1_l * u_l[1] + pgas_l;
-      flux_l[ivy] = wgas_u1_l * u_l[2];
-      flux_l[ivz] = wgas_u1_l * u_l[3];
+    // Calculate fluxes in L region (MB2005 2,3)
+    Real flux_l[NWAVE];
+    flux_l[IDN] = rho_l * u_l[1];
+    flux_l[IEN] = wgas_l * u_l[0] * u_l[1];
+    flux_l[ivx] = wgas_l * u_l[1] * u_l[1] + pgas_l;
+    flux_l[ivy] = wgas_l * u_l[2] * u_l[1];
+    flux_l[ivz] = wgas_l * u_l[3] * u_l[1];
 
     // Calculate conserved quantities in R region (MB2005 3)
-      Real wgas_u0_r = wgas_r * u_r[0];
-      cons_r[IDN] = rho_r * u_r[0];
-      cons_r[IEN] = wgas_u0_r * u_r[0] - pgas_r;
-      cons_r[ivx] = wgas_u0_r * u_r[1];
-      cons_r[ivy] = wgas_u0_r * u_r[2];
-      cons_r[ivz] = wgas_u0_r * u_r[3];
+    Real cons_r[NWAVE];
+    cons_r[IDN] = rho_r * u_r[0];
+    cons_r[IEN] = wgas_r * u_r[0] * u_r[0] - pgas_r;
+    cons_r[ivx] = wgas_r * u_r[1] * u_r[0];
+    cons_r[ivy] = wgas_r * u_r[2] * u_r[0];
+    cons_r[ivz] = wgas_r * u_r[3] * u_r[0];
 
     // Calculate fluxes in R region (MB2005 2,3)
-      Real wgas_u1_r = wgas_r * u_r[1];
-      flux_r[IDN] = rho_r * u_r[1];
-      flux_r[IEN] = wgas_u1_r * u_r[0];
-      flux_r[ivx] = wgas_u1_r * u_r[1] + pgas_r;
-      flux_r[ivy] = wgas_u1_r * u_r[2];
-      flux_r[ivz] = wgas_u1_r * u_r[3];
-    }
+    Real flux_r[NWAVE];
+    flux_r[IDN] = rho_r * u_r[1];
+    flux_r[IEN] = wgas_r * u_r[0] * u_r[1];
+    flux_r[ivx] = wgas_r * u_r[1] * u_r[1] + pgas_r;
+    flux_r[ivy] = wgas_r * u_r[2] * u_r[1];
+    flux_r[ivz] = wgas_r * u_r[3] * u_r[1];
 
     Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     // Calculate conserved quantities in HLL region in GR (MB2005 9)
