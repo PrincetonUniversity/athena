@@ -6,10 +6,9 @@
 //! \file kh.cpp
 //  \brief Problem generator for KH instability.
 //
-// Sets up two different problems:
+// Sets up several different problems:
 //   - iprob=1: slip surface with random perturbations
 //   - iprob=2: tanh profile at interface, with single-mode perturbation
-//========================================================================================
 
 // C/C++ headers
 #include <algorithm>  // min, max
@@ -29,12 +28,11 @@
 Real vflow;
 int RefinementCondition(MeshBlock *pmb);
 
-//========================================================================================
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (adaptive==true)
@@ -44,24 +42,24 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   return;
 }
 
-
-//========================================================================================
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Kelvin-Helmholz test
-//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
-
-  // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");
-  Real drat = pin->GetReal("problem","drat");
-  Real amp = pin->GetReal("problem","amp");
 
-//--- iprob=1.  Two uniform streams moving at +/- vflow, random perturbations
+  //--- iprob=1.  Uniform stream with density ratio "drat" located in region -1/4<y<1/4
+  // moving at (-vflow) seperated by two slip-surfaces from background medium with d=1
+  // moving at (+vflow), random perturbations.  This is the classic, unresolved K-H test.
 
   if (iprob == 1) {
+
+    // Read problem parameters
+    Real drat = pin->GetReal("problem","drat");
+    Real amp = pin->GetReal("problem","amp");
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
@@ -80,11 +78,42 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
+
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie+1; i++) {
+        pfield->b.x1f(k,j,i) = b0;
+      }}}
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x2f(k,j,i) = 0.0;
+      }}}
+      for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x3f(k,j,i) = 0.0;
+      }}}
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+        }}}
+      }
+    }
   }
 
-//--- iprob=2. Two uniform density flows with single mode pert., based on Ryu&Jones.
+  //--- iprob=2. Uniform density medium moving at +/-vflow seperated by a single shear
+  // layer with tanh() profile at y=0 with a single mode perturbation, reflecting BCs at
+  // top/bottom.  Based on Frank et al., ApJ 460, 777, 1996.
 
   if (iprob == 2) {
+    // Read/set problem parameters
+    Real amp = pin->GetReal("problem","amp");
     Real a = 0.02;
     Real sigma = 0.2;
     for (int k=ks; k<=ke; k++) {
@@ -92,7 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int i=is; i<=ie; i++) {
       phydro->u(IDN,k,j,i) = 1.0;
       phydro->u(IM1,k,j,i) = vflow*tanh((pcoord->x2v(j))/a);
-      phydro->u(IM2,k,j,i) = amp*sin(2.0*PI*pcoord->x1v(i))
+      phydro->u(IM2,k,j,i) = amp*cos(2.0*PI*pcoord->x1v(i))
         *exp(-(SQR(pcoord->x2v(j)))/SQR(sigma));
       phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
@@ -100,11 +129,42 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
+
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie+1; i++) {
+        pfield->b.x1f(k,j,i) = b0;
+      }}}
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x2f(k,j,i) = 0.0;
+      }}}
+      for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x3f(k,j,i) = 0.0;
+      }}}
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+        }}}
+      }
+    }
   }
 
-//--- iprob=3.  Test in SR paper, based on iprob=2
+  //--- iprob=3.  Test in SR paper (Beckwith & Stone, ApJS 193, 6, 2011).  Gives two
+  // resolved shear layers with tanh() profiles for velocity and density located at
+  // y = +/- 0.5, density one in middle and 0.01 elsewhere, single mode perturbation.
 
   if (iprob == 3) {
+    // Read/set problem parameters
+    Real amp = pin->GetReal("problem","amp");
     Real a = 0.01;
     Real sigma = 0.1;
     for (int k=ks; k<=ke; k++) {
@@ -123,51 +183,32 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
-  }
 
-//--- iprob=4.  Two uniform streams moving at +/- vflow, single mode
-  if (iprob == 4) {
-    Real a = 0.02;
-    Real sigma = 0.2;
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      phydro->u(IDN,k,j,i) = (1.5-0.5*tanh((pcoord->x2v(j))/a));
-      phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*tanh((pcoord->x2v(j))/a);
-      phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*amp*cos(2.0*PI*pcoord->x1v(i))
-                            *exp(-(SQR(pcoord->x2v(j)))/SQR(sigma));
-      phydro->u(IM3,k,j,i) = 0.0;
-      if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
-          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
-      }
-    }}}
-  }
-
-  // initialize interface B, same for all iprob
-  if (MAGNETIC_FIELDS_ENABLED) {
-    Real b0 = pin->GetReal("problem","b0");
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie+1; i++) {
-      pfield->b.x1f(k,j,i) = b0;
-    }}}
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je+1; j++) {
-    for (int i=is; i<=ie; i++) {
-      pfield->b.x2f(k,j,i) = 0.0;
-    }}}
-    for (int k=ks; k<=ke+1; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      pfield->b.x3f(k,j,i) = 0.0;
-    }}}
-    if (NON_BAROTROPIC_EOS) {
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+      for (int i=is; i<=ie+1; i++) {
+        pfield->b.x1f(k,j,i) = b0;
       }}}
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x2f(k,j,i) = 0.0;
+      }}}
+      for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x3f(k,j,i) = 0.0;
+      }}}
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+        }}}
+      }
     }
   }
 
