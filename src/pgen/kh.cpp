@@ -8,7 +8,9 @@
 //
 // Sets up several different problems:
 //   - iprob=1: slip surface with random perturbations
-//   - iprob=2: tanh profile at interface, with single-mode perturbation
+//   - iprob=2: tanh profile, with single-mode perturbation (Frank et al. 1996)
+//   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
+//   - iprob=4: tanh profiles for v and d, "Lecoanet" test
 
 // C/C++ headers
 #include <algorithm>  // min, max
@@ -207,6 +209,58 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+        }}}
+      }
+    }
+  }
+
+  //--- iprob=4.  "Lecoanet" test, resolved shear layers with tanh() profiles for velocity
+  // and constant density located at y = +/- 0.5, single mode perturbation.
+
+  if (iprob == 4) {
+    // Read/set problem parameters
+    Real amp = pin->GetReal("problem","amp");
+    Real a = 0.05;
+    Real sigma = 0.2;
+    for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+    for (int i=is; i<=ie; i++) {
+      phydro->u(IDN,k,j,i) = 1.0;
+      phydro->u(IM1,k,j,i) = vflow*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IM2,k,j,i) = amp*sin(2.0*PI*pcoord->x1v(i))
+          *exp(-((fabs(pcoord->x2v(j))-0.5)*(fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
+      if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+      if (NON_BAROTROPIC_EOS) {
+        phydro->u(IEN,k,j,i) = 10.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+      }
+    }}}
+
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
+      b0 = b0/std::sqrt(4.0*(PI));
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie+1; i++) {
+        pfield->b.x1f(k,j,i) = b0*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      }}}
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x2f(k,j,i) = 0.0;
+      }}}
+      for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x3f(k,j,i) = 0.0;
+      }}}
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          phydro->u(IEN,k,j,i) += 0.5*SQR(pfield->b.x1f(k,j,i));
         }}}
       }
     }
