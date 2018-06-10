@@ -16,6 +16,7 @@
 // C/C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
+#include <iostream>
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -26,8 +27,7 @@
 // prototype for functions to compute inner produces with eigenmatrices
 inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real out[],
   Real eigenvalues[]);
-inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[],
-  int &flag);
+inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[]);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem fns
 static Real gm1, iso_cs;
@@ -49,7 +49,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   Real coeff[(NHYDRO)];
-  Real ev[(NHYDRO)],du[(NHYDRO)],a[(NHYDRO)],u[(NHYDRO)];
+  Real ev[(NHYDRO)],du[(NHYDRO)],a[(NHYDRO)];
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
@@ -127,17 +127,19 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     LeftRoeEigenmatrixDotVector(wroe,du,a,ev);
 
-//--- Step 5.  Check that the density and pressure in the intermediate states are
-// positive.  If not, set a flag that will be checked below.
+//--- Step 5.  Check that the density in the intermediate states is positive.  If not, set
+//  a flag that will be checked below.
 
     int llf_flag = 0;
-    u[IDN] = wli[IDN];
-    u[IVX] = wli[IDN]*wli[IVX];
-    u[IVY] = wli[IDN]*wli[IVY];
-    u[IVZ] = wli[IDN]*wli[IVZ];
-    if (NON_BAROTROPIC_EOS) u[IEN] = el;
+    Real dens = wli[IDN];
 
-    SumRightRoeEigenmatrixDotVector(wroe,a,u,llf_flag);
+    // jump across wave[0] (L sound wave)
+    dens += a[0];
+    if (dens < 0.0) llf_flag=1;
+
+    // jump across wave[3] (contact)
+    dens += a[3];
+    if (dens < 0.0) llf_flag=1;
 
 //--- Step 6.  Compute Roe flux
 
@@ -154,7 +156,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     if (NON_BAROTROPIC_EOS) flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
 
     int dummy_flag=0;
-    SumRightRoeEigenmatrixDotVector(wroe,coeff,flxi,dummy_flag);
+    SumRightRoeEigenmatrixDotVector(wroe,coeff,flxi);
 
 //--- Step 7.  Overwrite with upwind flux if flow is supersonic
 
@@ -176,7 +178,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //--- Step 8.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-      Real a = 0.5*std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
+      Real cl = pmy_block->peos->SoundSpeed(wli);
+      Real cr = pmy_block->peos->SoundSpeed(wri);
+      Real a  = 0.5*std::max( (fabs(wli[IVX]) + cl), (fabs(wri[IVX]) + cr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -186,6 +190,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
       }
     }
+
+//--- Step 9. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
@@ -200,11 +206,12 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //----------------------------------------------------------------------------------------
 //! \fn LeftRoeEigenmatrixDotVector()
-//  \brief Computes inner-product of left-eigenmatrix of Roe's matrix A in the primitive
+//  \brief Computes inner-product of left-eigenmatrix of Roe's matrix A in the conserved
 //  variables and an input vector, and returns in out[].  The input vector is UNCHANGED.
+//  Also returns the eigenvalues through the argument list.
 //
 //  The order of the components in the input vector should be:
-//     (IDN,IVX,IVY,IVZ,[IPR],[IBY,IBZ])
+//     (IDN,IVX,IVY,IVZ,[IPR])
 //
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
@@ -223,7 +230,7 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
     Real h = wroe[IPR];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
-    Real asq = (q < 0.0) ? 0.0 : gm1*q;
+    Real asq = (q < 0.0) ? (TINY_NUMBER) : gm1*q;
     Real a = std::sqrt(asq);
 
     // Compute eigenvalues (eq. B2)
@@ -235,20 +242,32 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
 
     // Multiply row of L-eigenmatrix with vector using matrix elements from eq. B4
     Real na = 0.5/asq;
-    out[IDN] = (0.5*gm1*vsq + v1*a)*in[IDN];
-    out[IDN] -= gm1*(v1*in[IVX] + v2*in[IVY] + v3*in[IVZ] - in[IPR]) + a*in[IVX];
-    out[IDN] *= na;
+    out[0]  = in[0]*(0.5*gm1*vsq + v1*a);
+    out[0] -= in[1]*(gm1*v1 + a);
+    out[0] -= in[2]*gm1*v2;
+    out[0] -= in[3]*gm1*v3;
+    out[0] += in[4]*gm1;
+    out[0] *= na;
 
-    out[IVX] = -v2*in[IDN] + in[IVY];
-    out[IVY] = -v3*in[IDN] + in[IVZ];
+    out[1]  = in[0]*(-v2);
+    out[1] += in[2];
+
+    out[2]  = in[0]*(-v3);
+    out[2] += in[3];
 
     Real qa = gm1/asq;
-    out[IVZ] = (1.0 - na*gm1*vsq)*in[IDN];
-    out[IVZ] += qa*(v1*in[IVX] + v2*in[IVY] + v3*in[IVZ] - in[IPR]);
+    out[3]  = in[0]*(1.0 - na*gm1*vsq);
+    out[3] += in[1]*qa*v1;
+    out[3] += in[2]*qa*v2;
+    out[3] += in[3]*qa*v3;
+    out[3] -= in[4]*qa;
 
-    out[IPR] = (0.5*gm1*vsq - v1*a)*in[IDN];
-    out[IPR] -= gm1*(v1*in[IVX] + v2*in[IVY] + v3*in[IVZ] - in[IPR]) - a*in[IVX];
-    out[IPR] *= na;
+    out[4]  = in[0]*(0.5*gm1*vsq - v1*a);
+    out[4] -= in[1]*(gm1*v1 - a);
+    out[4] -= in[2]*gm1*v2;
+    out[4] -= in[3]*gm1*v3;
+    out[4] += in[4]*gm1;
+    out[4] *= na;
 
 //--- Isothermal hydrodynamics
 
@@ -260,30 +279,35 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
     eigenvalues[3] = v1 + iso_cs;
 
     // Multiply row of L-eigenmatrix with vector using matrix elements from eq. B7
-    out[IDN] = 0.5*(in[IDN] + (v1*in[IDN] - in[IVX])/iso_cs);
-    out[IVX] = -v2*in[IDN] + in[IVY];
-    out[IVY] = -v3*in[IDN] + in[IVZ];
-    out[IVZ] = 0.5*(in[IDN] - (v1*in[IDN] - in[IVX])/iso_cs);
+    out[0]  = in[0]*(0.5 + 0.5*v1/iso_cs);
+    out[0] -= in[1]*0.5/iso_cs;
+
+    out[1]  = in[0]*(-v2);
+    out[1] += in[2];
+
+    out[2]  = in[0]*(-v3);
+    out[2] += in[3];
+
+    out[3]  = in[0]*(0.5 - 0.5*v1/iso_cs);
+    out[3] += in[1]*0.5/iso_cs;
   }
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn SumRightRoeEigenmatrixDotVector()
-//  \brief Computes inner-product of right-eigenmatrix of Roe's matrix A in the primitive
-//  variables and an input vector, and sums into output vector.  Also checks that the
-//  density and pressure remain positive in the intermediate states, else an output flag
-//  is set.  This only works if the input vector is L-state of conserved variables.
-//  The input vector is UNCHANGED.
+//  \brief Computes inner-product of right-eigenmatrix of Roe's matrix A in the conserved
+//  variables and an input vector, and sums into output vector. The input vector is
+//  UNCHANGED.
 //
 //  The order of the components in the input vector should be:
-//     (IDN,IVX,IVY,IVZ,[IPR],[IBY,IBZ])
+//     (IDN,IVX,IVY,IVZ,[IPR])
 //
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
-inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[],
-                                            int &flag) {
+inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[]){
+
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -295,77 +319,50 @@ inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Re
     Real h = wroe[IPR];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
-    Real asq = (q < 0.0) ? 0.0 : gm1*q;
+    Real asq = (q < 0.0) ? (TINY_NUMBER) : gm1*q;
     Real a = std::sqrt(asq);
 
-    // Multiply row of R-eigenmatrix from eq. B3 with vector and sum into output
-    // Also check density and pressure are positive, and set flag if not
-    // jump across wave[0]
-    out[IDN] += in[IDN];
-    out[IVX] += in[IDN]*(v1 - a);
-    out[IVY] += in[IDN]*v2;
-    out[IVZ] += in[IDN]*v3;
-    out[IEN] += in[IDN]*(h - v1*a);
-    Real p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
-    if (out[IDN] < 0.0) flag=1;
-    if (p < 0.0) flag=2;
+    // Multiply row of R-eigenmatrix from eq. B3 with vector and SUM into output
+    out[0] += in[0];
+    out[1] += in[0]*(v1 - a);
+    out[2] += in[0]*v2;
+    out[3] += in[0]*v3;
+    out[4] += in[0]*(h - v1*a);
 
-    // jump across wave[1]
-    out[IVY] += in[IVX];
-    out[IEN] += in[IVX]*v2;
-    p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
-    if (p < 0.0) flag=2;
+    out[2] += in[1];
+    out[4] += in[1]*v2;
 
-    // jump across wave[2]
-    out[IVZ] += in[IVY];
-    out[IEN] += in[IVY]*v3;
-    p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
-    if (p < 0.0) flag=2;
+    out[3] += in[2];
+    out[4] += in[2]*v3;
 
-    // jump across wave[3]
-    out[IDN] += in[IVZ];
-    out[IVX] += in[IVZ]*v1;
-    out[IVY] += in[IVZ]*v2;
-    out[IVZ] += in[IVZ]*v3;
-    out[IEN] += in[IVZ]*0.5*asq;
-    p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
-    if (out[IDN] < 0.0) flag=1;
-    if (p < 0.0) flag=2;
+    out[0] += in[3];
+    out[1] += in[3]*v1;
+    out[2] += in[3]*v2;
+    out[3] += in[3]*v3;
+    out[4] += in[3]*0.5*vsq;
 
-    // jump across wave[4]
-    out[IDN] += in[IEN];
-    out[IVX] += in[IEN]*(v1+a);
-    out[IVY] += in[IEN]*v2;
-    out[IVZ] += in[IEN]*v3;
-    out[IEN] += in[IEN]*(h + v1*a);
-    p = out[IEN] - 0.5*(SQR(out[IVX])+SQR(out[IVY])+SQR(out[IVZ]))/out[IDN];
-    if (out[IDN] < 0.0) flag=1;
-    if (p < 0.0) flag=2;
+    out[0] += in[4];
+    out[1] += in[4]*(v1 + a);
+    out[2] += in[4]*v2;
+    out[3] += in[4]*v3;
+    out[4] += in[4]*(h + v1*a);
 
 //--- Isothermal hydrodynamics
 
   } else {
+    // Multiply row of R-eigenmatrix from eq. B3 with vector and SUM into output
+    out[0] += in[0];
+    out[1] += in[0]*(v1 - iso_cs);
+    out[2] += in[0]*v2;
+    out[3] += in[0]*v3;
 
-    // Multiply row of R-eigenmatrix from eq. B3 with vector and sum into output
-    // Also check density and pressure are positive, and set flag if not
-    // jump across wave[0]
-    out[IDN] += in[IDN];
-    out[IVX] += in[IDN]*(v1 - iso_cs);
-    out[IVY] += in[IDN]*v2;
-    out[IVZ] += in[IDN]*v3;
-    if (out[IDN] < 0.0) flag=1;
+    out[2] += in[1];
 
-    // jump across wave[1]
-    out[IVY] += in[IVX];
+    out[3] += in[2];
 
-    // jump across wave[2]
-    out[IVZ] += in[IVY];
-
-    // jump across wave[3]
-    out[IDN] += in[IEN];
-    out[IVX] += in[IEN]*(v1 + iso_cs);
-    out[IVY] += in[IEN]*v2;
-    out[IVZ] += in[IEN]*v3;
-    if (out[IDN] < 0.0) flag=1;
+    out[0] += in[3];
+    out[1] += in[3]*(v1 + iso_cs);
+    out[2] += in[3]*v2;
+    out[3] += in[3]*v3;
   }
 }
