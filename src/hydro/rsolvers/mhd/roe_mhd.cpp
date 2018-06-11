@@ -294,6 +294,12 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
   }
   Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
   Real vbet = v2*bet2_star + v3*bet3_star;
+  Real q2_star = 0.0;
+  Real q3_star = 0.0;
+  if (bet_starsq != 0.0) {
+    q2_star = bet2_star/bet_starsq;
+    q3_star = bet3_star/bet_starsq;
+  }
 
   // Compute alpha(s) (eq. A16)
   Real alpha_f, alpha_s;
@@ -322,21 +328,19 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
   Real as_prime = twid_c*alpha_s*isqrtd;
   Real afpbb = af_prime*bt_star*bet_starsq;
   Real aspbb = as_prime*bt_star*bet_starsq;
+  Real vqstr = (v2*q2_star + v3*q3_star);
+  Real vax = std::sqrt(vaxsq);
 
   // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
   Real norm = 0.5/twid_csq;
   Real cff = norm*alpha_f*cf;
   Real css = norm*alpha_s*cs;
-  qf *= norm;
-  qs *= norm;
+  Real qf_hat = qf*norm;
+  Real qs_hat = qs*norm;
   Real af = norm*af_prime*d;
   Real as = norm*as_prime*d;
   Real afpb = norm*af_prime*bt_star;
   Real aspb = norm*as_prime*bt_star;
-  Real q2_star = bet2_star/bet_starsq;
-  Real q3_star = bet3_star/bet_starsq;
-  Real vqstr = (v2*q2_star + v3*q3_star);
-  Real vax = std::sqrt(vaxsq);
 
 //--- Adiabatic MHD
 
@@ -353,18 +357,17 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     // Compute projection of dU onto L-eigenvectors using matrix elements from eq. B29
     // Normalize by (gamma-1)/2a^{2}: quantities denoted by \bar{f}
     Real a[(NWAVE)];
-    norm *= gm1;
-    alpha_f *= norm;
-    alpha_s *= norm;
-    norm *= 2.0;
+    Real alpha_f_bar = alpha_f*gm1*norm;
+    Real alpha_s_bar = alpha_s*gm1*norm;
+    Real gm1a = gm1/twid_csq;
 
-    a[0]  = du[0]*(alpha_f*(vsq-hp) + cff*(cf+v1) - qs*vqstr - aspb);
-    a[0] -= du[1]*(alpha_f*v1 + cff);
-    a[0] -= du[2]*(alpha_f*v2 - qs*q2_star);
-    a[0] -= du[3]*(alpha_f*v3 - qs*q3_star);
-    a[0] += du[4]*alpha_f;
-    a[0] += du[5]*(as*q2_star - alpha_f*b2);
-    a[0] += du[6]*(as*q3_star - alpha_f*b3);
+    a[0]  = du[0]*(alpha_f_bar*(vsq-hp) + cff*(cf+v1) - qs_hat*vqstr - aspb);
+    a[0] -= du[1]*(alpha_f_bar*v1 + cff);
+    a[0] -= du[2]*(alpha_f_bar*v2 - qs_hat*q2_star);
+    a[0] -= du[3]*(alpha_f_bar*v3 - qs_hat*q3_star);
+    a[0] += du[4]*alpha_f_bar;
+    a[0] += du[5]*(as*q2_star - alpha_f_bar*b2);
+    a[0] += du[6]*(as*q3_star - alpha_f_bar*b3);
 
     a[1]  = du[0]*(v2*bet3 - v3*bet2);
     a[1] -= du[2]*bet3;
@@ -373,29 +376,29 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[1] += du[6]*sqrtd*bet2*s;
     a[1] *= 0.5;
 
-    a[2]  = du[0]*(alpha_s*(vsq-hp) + css*(cs+v1) + qf*vqstr + afpb);
-    a[2] -= du[1]*(alpha_s*v1 + css);
-    a[2] -= du[2]*(alpha_s*v2 + qf*q2_star);
-    a[2] -= du[3]*(alpha_s*v3 + qf*q3_star);
-    a[2] += du[4]*alpha_s;
-    a[2] -= du[5]*(af*q2_star + alpha_s*b2);
-    a[2] -= du[6]*(af*q3_star + alpha_s*b3);
+    a[2]  = du[0]*(alpha_s_bar*(vsq-hp) + css*(cs+v1) + qf_hat*vqstr + afpb);
+    a[2] -= du[1]*(alpha_s_bar*v1 + css);
+    a[2] -= du[2]*(alpha_s_bar*v2 + qf_hat*q2_star);
+    a[2] -= du[3]*(alpha_s_bar*v3 + qf_hat*q3_star);
+    a[2] += du[4]*alpha_s_bar;
+    a[2] -= du[5]*(af*q2_star + alpha_s_bar*b2);
+    a[2] -= du[6]*(af*q3_star + alpha_s_bar*b3);
 
-    a[3]  = du[0]*(1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1));
-    a[3] += du[1]*norm*v1;
-    a[3] += du[2]*norm*v2;
-    a[3] += du[3]*norm*v3;
-    a[3] -= du[4]*norm;
-    a[3] += du[5]*norm*b2;
-    a[3] += du[6]*norm*b3;
+    a[3]  = du[0]*(1.0 - gm1a*(0.5*vsq - (gm1-1.0)*x/gm1));
+    a[3] += du[1]*gm1a*v1;
+    a[3] += du[2]*gm1a*v2;
+    a[3] += du[3]*gm1a*v3;
+    a[3] -= du[4]*gm1a;
+    a[3] += du[5]*gm1a*b2;
+    a[3] += du[6]*gm1a*b3;
 
-    a[4]  = du[0]*(alpha_s*(vsq-hp) + css*(cs-v1) - qf*vqstr + afpb);
-    a[4] -= du[1]*(alpha_s*v1 - css);
-    a[4] -= du[2]*(alpha_s*v2 - qf*q2_star);
-    a[4] -= du[3]*(alpha_s*v3 - qf*q3_star);
-    a[4] += du[4]*alpha_s;
-    a[4] -= du[5]*(af*q2_star + alpha_s*b2);
-    a[4] -= du[6]*(af*q3_star + alpha_s*b3);
+    a[4]  = du[0]*(alpha_s_bar*(vsq-hp) + css*(cs-v1) - qf_hat*vqstr + afpb);
+    a[4] -= du[1]*(alpha_s_bar*v1 - css);
+    a[4] -= du[2]*(alpha_s_bar*v2 - qf_hat*q2_star);
+    a[4] -= du[3]*(alpha_s_bar*v3 - qf_hat*q3_star);
+    a[4] += du[4]*alpha_s_bar;
+    a[4] -= du[5]*(af*q2_star + alpha_s_bar*b2);
+    a[4] -= du[6]*(af*q3_star + alpha_s_bar*b3);
 
     a[5]  = du[0]*(v3*bet2 - v2*bet3);
     a[5] += du[2]*bet3;
@@ -404,13 +407,13 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[5] += du[6]*sqrtd*bet2*s;
     a[5] *= 0.5;
 
-    a[6]  = du[0]*(alpha_f*(vsq-hp) + cff*(cf-v1) + qs*vqstr - aspb);
-    a[6] -= du[1]*(alpha_f*v1 - cff);
-    a[6] -= du[2]*(alpha_f*v2 + qs*q2_star);
-    a[6] -= du[3]*(alpha_f*v3 + qs*q3_star);
-    a[6] += du[4]*alpha_f;
-    a[6] += du[5]*(as*q2_star - alpha_f*b2);
-    a[6] += du[6]*(as*q3_star - alpha_f*b3);
+    a[6]  = du[0]*(alpha_f_bar*(vsq-hp) + cff*(cf-v1) + qs_hat*vqstr - aspb);
+    a[6] -= du[1]*(alpha_f_bar*v1 - cff);
+    a[6] -= du[2]*(alpha_f_bar*v2 + qs_hat*q2_star);
+    a[6] -= du[3]*(alpha_f_bar*v3 + qs_hat*q3_star);
+    a[6] += du[4]*alpha_f_bar;
+    a[6] += du[5]*(as*q2_star - alpha_f_bar*b2);
+    a[6] += du[6]*(as*q3_star - alpha_f_bar*b3);
 
     Real coeff[(NWAVE)];
     coeff[0] = -0.5*fabs(ev[0])*a[0];
@@ -499,10 +502,10 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
 
     // Compute projection of dU onto L-eigenvectors using matrix elements from eq. B41
     Real a[(NWAVE)];
-    a[0]  = du[0]*(cff*(cf+v1) - qs*vqstr - aspb);
+    a[0]  = du[0]*(cff*(cf+v1) - qs_hat*vqstr - aspb);
     a[0] -= du[1]*cff;
-    a[0] += du[2]*qs*q2_star;
-    a[0] += du[3]*qs*q3_star;
+    a[0] += du[2]*qs_hat*q2_star;
+    a[0] += du[3]*qs_hat*q3_star;
     a[0] += du[4]*as*q2_star;
     a[0] += du[5]*as*q3_star;
 
@@ -513,17 +516,17 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[1] += du[5]*sqrtd*bet2*s;
     a[1] *= 0.5;
 
-    a[2]  = du[0]*(css*(cs+v1) + qf*vqstr + afpb);
+    a[2]  = du[0]*(css*(cs+v1) + qf_hat*vqstr + afpb);
     a[2] -= du[1]*css;
-    a[2] -= du[2]*qf*q2_star;
-    a[2] -= du[3]*qf*q3_star;
+    a[2] -= du[2]*qf_hat*q2_star;
+    a[2] -= du[3]*qf_hat*q3_star;
     a[2] -= du[4]*af*q2_star;
     a[2] -= du[5]*af*q3_star;
 
-    a[3]  = du[0]*(css*(cs-v1) - qf*vqstr + afpb);
+    a[3]  = du[0]*(css*(cs-v1) - qf_hat*vqstr + afpb);
     a[3] += du[1]*css;
-    a[3] += du[2]*qf*q2_star;
-    a[3] += du[3]*qf*q3_star;
+    a[3] += du[2]*qf_hat*q2_star;
+    a[3] += du[3]*qf_hat*q3_star;
     a[3] -= du[4]*af*q2_star;
     a[3] -= du[5]*af*q3_star;
 
@@ -534,10 +537,10 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[4] += du[5]*sqrtd*bet2*s;
     a[4] *= 0.5;
 
-    a[5]  = du[0]*(cff*(cf-v1) + qs*vqstr - aspb);
+    a[5]  = du[0]*(cff*(cf-v1) + qs_hat*vqstr - aspb);
     a[5] += du[1]*cff;
-    a[5] -= du[2]*qs*q2_star;
-    a[5] -= du[3]*qs*q3_star;
+    a[5] -= du[2]*qs_hat*q2_star;
+    a[5] -= du[3]*qs_hat*q3_star;
     a[5] += du[4]*as*q2_star;
     a[5] += du[5]*as*q3_star;
 
