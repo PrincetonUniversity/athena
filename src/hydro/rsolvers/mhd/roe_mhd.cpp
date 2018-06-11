@@ -180,7 +180,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-      Real a = 0.5*std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
+      Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
+      Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
+      Real a = 0.5*std::max( (fabs(wli[IVX]) + cfl), (fabs(wri[IVX]) + cfr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -513,7 +515,7 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
 
     a[2]  = du[0]*(css*(cs+v1) + qf*vqstr + afpb);
     a[2] -= du[1]*css;
-    a[2] -= du[3]*qf*q2_star;
+    a[2] -= du[2]*qf*q2_star;
     a[2] -= du[3]*qf*q3_star;
     a[2] -= du[4]*af*q2_star;
     a[2] -= du[5]*af*q3_star;
