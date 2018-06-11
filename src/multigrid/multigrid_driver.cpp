@@ -113,7 +113,9 @@ MultigridDriver::~MultigridDriver() {
       delete pmg_->next;
     delete pmg_;
   }
+#ifdef MPI_PARALLEL
   MPI_Comm_free(&MPI_COMM_MULTIGRID);
+#endif
 }
 
 
