@@ -16,7 +16,7 @@ pip install -q --user flake8
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
-python -m flake8 --exclude=cpplint.py
+python -m flake8
 echo "Finished linting Python files with flake8"
 
 # step #0b: lint C++ files
