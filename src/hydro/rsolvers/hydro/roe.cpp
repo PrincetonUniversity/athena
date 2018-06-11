@@ -306,7 +306,8 @@ inline void LeftRoeEigenmatrixDotVector(const Real wroe[], const Real in[], Real
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
-inline void SumRightRoeEigenmatrixDotVector(const Real wroe[],const Real in[],Real out[]){
+inline void SumRightRoeEigenmatrixDotVector(const Real wroe[], const Real in[],
+                                            Real out[]) {
 
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
