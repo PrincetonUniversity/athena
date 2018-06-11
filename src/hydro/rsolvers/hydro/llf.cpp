@@ -114,6 +114,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
     }
 
+//--- Step 6. Store results into 3D array of fluxes
+
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
     flx(ivy,k,j,i) = flxi[IVY];
