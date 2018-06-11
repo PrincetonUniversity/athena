@@ -17,7 +17,6 @@
 // C/C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
-#include <iostream>
 
 // Athena++ headers
 #include "../../hydro.hpp"
@@ -166,7 +165,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       }
     }
 
-//--- Step 9. Store results into 3D array of fluxes
+//--- Step 7. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
