@@ -7,7 +7,8 @@
 //  \brief Roe's linearized Riemann solver for MHD.
 //
 // Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
-// negative density in the intermediate states, LLF fluxes are used instead (only density,// not pressure, is checked in this version).
+// negative density in the intermediate states, LLF fluxes are used instead (only density,
+// not pressure, is checked in this version).
 //
 // REFERENCES:
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
