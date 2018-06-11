@@ -275,27 +275,27 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
 
     // Now multiply projection with R-eigenvectors from eq. B3 and SUM into output fluxes
     flx[0] += coeff[0];
-    flx[1] += coeff[0]*(v1 - cs);
-    flx[2] += coeff[0]*v2;
-    flx[3] += coeff[0]*v3;
-    flx[4] += coeff[0]*(h - v1*cs);
-
-    flx[2] += coeff[1];
-    flx[4] += coeff[1]*v2;
-
-    flx[3] += coeff[2];
-    flx[4] += coeff[2]*v3;
-
     flx[0] += coeff[3];
-    flx[1] += coeff[3]*v1;
-    flx[2] += coeff[3]*v2;
-    flx[3] += coeff[3]*v3;
-    flx[4] += coeff[3]*0.5*vsq;
-
     flx[0] += coeff[4];
+
+    flx[1] += coeff[0]*(v1 - cs);
+    flx[1] += coeff[3]*v1;
     flx[1] += coeff[4]*(v1 + cs);
+
+    flx[2] += coeff[0]*v2;
+    flx[2] += coeff[1];
+    flx[2] += coeff[3]*v2;
     flx[2] += coeff[4]*v2;
+
+    flx[3] += coeff[0]*v3;
+    flx[3] += coeff[2];
+    flx[3] += coeff[3]*v3;
     flx[3] += coeff[4]*v3;
+
+    flx[4] += coeff[0]*(h - v1*cs);
+    flx[4] += coeff[1]*v2;
+    flx[4] += coeff[2]*v3;
+    flx[4] += coeff[3]*0.5*vsq;
     flx[4] += coeff[4]*(h + v1*cs);
 
 //--- Isothermal hydrodynamics
@@ -337,17 +337,17 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
 
     // Now multiply projection with R-eigenvectors from eq. B3 and SUM into output fluxes
     flx[0] += coeff[0];
-    flx[1] += coeff[0]*(v1 - iso_cs);
-    flx[2] += coeff[0]*v2;
-    flx[3] += coeff[0]*v3;
-
-    flx[2] += coeff[1];
-
-    flx[3] += coeff[2];
-
     flx[0] += coeff[3];
+
+    flx[1] += coeff[0]*(v1 - iso_cs);
     flx[1] += coeff[3]*(v1 + iso_cs);
+
+    flx[2] += coeff[0]*v2;
+    flx[2] += coeff[1];
     flx[2] += coeff[3]*v2;
+
+    flx[3] += coeff[0]*v3;
+    flx[3] += coeff[2];
     flx[3] += coeff[3]*v3;
   }
 }
