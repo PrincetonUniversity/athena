@@ -24,6 +24,16 @@
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
 
+#if defined(__AVX512F__)
+#define SIMD_WIDTH 8
+#elif defined(__AVX__)
+#define SIMD_WIDTH 4
+#elif defined(__SSE2__)
+#define SIMD_WIDTH 2
+#else
+#define SIMD_WIDTH 4
+#endif
+
 // prototype for function to compute Roe fluxes from eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
   Real eigenvalues[], int &flag);
@@ -203,7 +213,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
-
+#pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
   Real ev[], int &llf_flag) {
 
@@ -267,10 +277,10 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix
-    Real dens = wli[IDN] + a[0];  // rem[0][0]=1, so don't bother to compute or store 
+    Real dens = wli[IDN] + a[0];  // rem[0][0]=1, so don't bother to compute or store
     if (dens < 0.0) llf_flag=1;
 
-    dens += a[3];  // rem[0][3]=1, so don't bother to compute or store 
+    dens += a[3];  // rem[0][3]=1, so don't bother to compute or store
     if (dens < 0.0) llf_flag=1;
 
     // Now multiply projection with R-eigenvectors from eq. B3 and SUM into output fluxes
@@ -329,10 +339,10 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix
-    Real dens = wli[IDN] + a[0];  // rem[0][0]=1, so don't bother to compute or store 
+    Real dens = wli[IDN] + a[0];  // rem[0][0]=1, so don't bother to compute or store
     if (dens < 0.0) llf_flag=1;
 
-    dens += a[3];  // rem[0][3]=1, so don't bother to compute or store 
+    dens += a[3];  // rem[0][3]=1, so don't bother to compute or store
     if (dens < 0.0) llf_flag=1;
 
     // Now multiply projection with R-eigenvectors from eq. B3 and SUM into output fluxes
