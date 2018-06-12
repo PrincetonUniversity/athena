@@ -21,10 +21,14 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/p
 set +e
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
-echo "Starting std::sqrt(), std::cbrt() test"
+echo "Starting std::sqrt(), std::cbrt(), \t test"
 while read -r file
 do
     echo "Checking $file...."
+    # sed -n '/\t/p' $file
+    grep -n "$(printf '\t')" $file
+    if [ $? -ne 1 ]; then echo "ERROR: Do not use \t tab characters"; exit 1; fi
+
     grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit 1; fi
 
@@ -34,4 +38,4 @@ do
     # ./cpplint.py --counting=detailed "$file"
 done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print)
 
-echo "End of std::sqrt(), std::cbrt() test"
+echo "End of std::sqrt(), std::cbrt(), \t test"
