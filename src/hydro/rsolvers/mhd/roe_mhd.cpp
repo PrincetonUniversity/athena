@@ -24,16 +24,6 @@
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
 
-#if defined(__AVX512F__)
-#define SIMD_WIDTH 8
-#elif defined(__AVX__)
-#define SIMD_WIDTH 4
-#elif defined(__SSE2__)
-#define SIMD_WIDTH 2
-#else
-#define SIMD_WIDTH 4
-#endif
-
 // prototype for functions to compute inner product with eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
   const Real du[], const Real wli[], Real flx[], Real eigenvalues[], int &flag);
