@@ -190,15 +190,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
-	if (omega2 < 0) {
-	  sinot = -exp(omega*tlim);//time dependent factor of vel
-	  //unstable case v = amp*omega/k * coskx * e^omega*t
-	  //minus sign counters minus sign in m
-	  cosot = exp(omega*tlim);//time dependent factor of rho
-	} else {
-	  sinot = sin(omega*tlim);//time dependent factor of vel
-	  cosot = cos(omega*tlim);//time dependent factor of rho
-	}
+        if (omega2 < 0) {
+          sinot = -exp(omega*tlim);//time dependent factor of vel
+          // unstable case v = amp*omega/k * coskx * e^omega*t
+          // minus sign counters minus sign in m
+          cosot = exp(omega*tlim);//time dependent factor of rho
+        } else {
+          sinot = sin(omega*tlim);//time dependent factor of vel
+          cosot = cos(omega*tlim);//time dependent factor of rho
+        }
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
         max_err[IDN] = std::max(static_cast<Real>(fabs(den - phydro->u(IDN,k,j,i))),

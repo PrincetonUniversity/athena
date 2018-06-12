@@ -243,7 +243,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
     msg << "[normalize]: MPI_Allreduce error = "
-	<< mpierr << std::endl;
+        << mpierr << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   // Ask Changgoo about this
@@ -291,7 +291,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
     msg << "[normalize]: MPI_Allreduce error = "
-	<< mpierr << std::endl;
+        << mpierr << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   //  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
