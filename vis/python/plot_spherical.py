@@ -31,9 +31,9 @@ import numpy as np
 # Athena++ modules
 import athena_read
 
+
 # Main function
 def main(**kwargs):
-
     # Load function for transforming coordinates
     if kwargs['stream'] is not None:
         from scipy.ndimage import map_coordinates
