@@ -24,11 +24,6 @@ Requires scipy if making streamplot.
 import argparse
 import warnings
 
-# Python plotting modules
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-
 # Other Python modules
 import h5py
 import numpy as np
@@ -36,15 +31,19 @@ import numpy as np
 # Athena++ modules
 import athena_read
 
-matplotlib.use('agg')
-
 
 # Main function
 def main(**kwargs):
-
     # Load function for transforming coordinates
     if kwargs['stream'] is not None:
         from scipy.ndimage import map_coordinates
+
+    # Load Python plotting modules
+    if kwargs['output_file'] != 'show':
+        import matplotlib
+        matplotlib.use('agg')
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
 
     # Determine refinement level to use
     if kwargs['level'] is not None:
@@ -302,7 +301,10 @@ def main(**kwargs):
     plt.xlabel('$' + r_string + angle_string_x + '$')
     plt.ylabel('$' + r_string + angle_string_y + '$')
     plt.colorbar(im)
-    plt.savefig(kwargs['output_file'], bbox_inches='tight')
+    if kwargs['output_file'] == 'show':
+        plt.show()
+    else:
+        plt.savefig(kwargs['output_file'], bbox_inches='tight')
 
 
 # Execute main function
@@ -313,13 +315,13 @@ if __name__ == '__main__':
     parser.add_argument('quantity',
                         help='name of quantity to be plotted')
     parser.add_argument('output_file',
-                        help=('name of output to be (over)written, '
-                              'possibly including path'))
+                        help=('name of output to be (over)written, possibly including '
+                              'path; use "show" to show interactive plot instead'))
     parser.add_argument('-m',
                         '--midplane',
                         action='store_true',
-                        help=('flag indicating plot should be midplane (r,phi) '
-                              'rather than (r,theta)'))
+                        help=('flag indicating plot should be midplane (r,phi) rather '
+                              'than (r,theta)'))
     parser.add_argument('-a', '--average',
                         action='store_true',
                         help='flag indicating phi-averaging should be done')
@@ -327,8 +329,8 @@ if __name__ == '__main__':
                         '--level',
                         type=int,
                         default=None,
-                        help=('refinement level to be used in plotting '
-                              '(default: max level in file)'))
+                        help=('refinement level to be used in plotting (default: max '
+                              'level in file)'))
     parser.add_argument('-r', '--r_max',
                         type=float,
                         default=None,
@@ -336,24 +338,20 @@ if __name__ == '__main__':
     parser.add_argument('--logr',
                         action='store_true',
                         help='flag indicating data should be logarithmically in radius')
-    parser.add_argument(
-        '-c',
-        '--colormap',
-        default=None,
-        help=('name of Matplotlib colormap to use instead of default;'
-              'highly recommended; try "RdBu_r" or "gist_heat" if '
-              'looking for suggestions'))
-    parser.add_argument(
-      '--vmin',
-      type=float,
-      default=None,
-      help=('data value to correspond to colormap minimum; '
-            'use --vmin=<val> if <val> has negative sign'))
+    parser.add_argument('-c',
+                        '--colormap',
+                        default=None,
+                        help=('name of Matplotlib colormap to use instead of default'))
+    parser.add_argument('--vmin',
+                        type=float,
+                        default=None,
+                        help=('data value to correspond to colormap minimum; use '
+                              '--vmin=<val> if <val> has negative sign'))
     parser.add_argument('--vmax',
                         type=float,
                         default=None,
-                        help=('data value to correspond to colormap maximum; '
-                              'use --vmax=<val> if <val> has negative sign'))
+                        help=('data value to correspond to colormap maximum; use '
+                              '--vmax=<val> if <val> has negative sign'))
     parser.add_argument('--logc',
                         action='store_true',
                         help='flag indicating data should be colormapped logarithmically')
