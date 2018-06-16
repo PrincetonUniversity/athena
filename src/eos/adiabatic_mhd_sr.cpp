@@ -92,11 +92,19 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
-        Real &dd = cons(IDN,k,j,i);
-        Real &ee = cons(IEN,k,j,i);
+        Real dd = cons(IDN,k,j,i);
+        Real ee = cons(IEN,k,j,i);
+
         Real mx = cons(IM1,k,j,i);
         Real my = cons(IM2,k,j,i);
         Real mz = cons(IM3,k,j,i);
+
+        // Extract primitives
+        Real rho = prim(IDN,k,j,i);
+        Real pgas = prim(IPR,k,j,i);
+        Real vx = prim(IVX,k,j,i);
+        Real vy = prim(IVY,k,j,i);
+        Real vz = prim(IVZ,k,j,i);
 
         // Extract cell-centered magnetic field
         Real bbx = bb_cc(IB1,k,j,i);
@@ -130,19 +138,12 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
         Real w_true = w_new;
 
-        // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IPR,k,j,i);
-        Real &vx = prim(IVX,k,j,i);
-        Real &vy = prim(IVY,k,j,i);
-        Real &vz = prim(IVZ,k,j,i);
-
         // Set velocity
         vx = (mx + m_dot_bb/w_true * bbx) / (w_true + bb_sq);  // (MM A10)
         vy = (my + m_dot_bb/w_true * bby) / (w_true + bb_sq);  // (MM A10)
         vz = (mz + m_dot_bb/w_true * bbz) / (w_true + bb_sq);  // (MM A10)
         Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
-	Real vel_ratio = max_velocity / std::sqrt(v_sq);
+        Real vel_ratio = max_velocity / std::sqrt(v_sq);
         if (v_sq > v_sq_max) {
           vx *= vel_ratio;
           vy *= vel_ratio;
@@ -176,13 +177,23 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Set pressure, correcting only energy if floor applied
         Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * dd);  // (cf. MM A11)
-        pgas = chi/gamma_prime; // (MM A17
-	Real bt = gamma_lorentz * v_dot_bb;
+        pgas = chi/gamma_prime;  // (MM A17
+        Real bt = gamma_lorentz * v_dot_bb;
         if (pgas < pressure_floor_local) {
           pgas = pressure_floor_local;
           Real w = rho + gamma_prime * pgas + b_sq;
           ee = gamma_sq * w - SQR(bt) - (pgas + pmag);
         }
+
+        cons(IDN,k,j,i) = dd;
+        cons(IEN,k,j,i) = ee;
+
+        prim(IDN,k,j,i) = rho;
+        prim(IPR,k,j,i) = pgas;
+        prim(IVX,k,j,i) = vx;
+        prim(IVY,k,j,i) = vy;
+        prim(IVZ,k,j,i) = vz;
+
       }
     }
   }
@@ -217,6 +228,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         Real v1 = prim(IVX,k,j,i);
         Real v2 = prim(IVY,k,j,i);
         Real v3 = prim(IVZ,k,j,i);
+
         Real bb1 = bc(IB1,k,j,i);
         Real bb2 = bc(IB2,k,j,i);
         Real bb3 = bc(IB3,k,j,i);
@@ -228,23 +240,22 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         Real b0 = (bb1*v1 + bb2*v2 + bb3*v3) * u0;
         Real b1 = bb1 / u0 + b0 * v1;
         Real b2 = bb2 / u0 + b0 * v2;
-	Real b3 = bb3 / u0 + b0 * v3;
+        Real b3 = bb3 / u0 + b0 * v3;
         Real b_sq = -SQR(b0) + SQR(b1) + SQR(b2) + SQR(b3);
-
-        // Extract conserved quantities
-        Real &dd = cons(IDN,k,j,i);
-        Real &ee = cons(IEN,k,j,i);
-        Real &m1 = cons(IM1,k,j,i);
-        Real &m2 = cons(IM2,k,j,i);
-        Real &m3 = cons(IM3,k,j,i);
 
         // Set conserved quantities
         Real wtot_u02 = (rho + gamma_adi_red * pgas + b_sq) * u0 * u0;
-        dd = rho * u0;
-        ee = wtot_u02 - b0 * b0 - (pgas + 0.5*b_sq);
-        m1 = wtot_u02 * v1 - b0 * b1;
-        m2 = wtot_u02 * v2 - b0 * b2;
-        m3 = wtot_u02 * v3 - b0 * b3;
+        Real dd = rho * u0;
+        Real ee = wtot_u02 - b0 * b0 - (pgas + 0.5*b_sq);
+        Real m1 = wtot_u02 * v1 - b0 * b1;
+        Real m2 = wtot_u02 * v2 - b0 * b2;
+        Real m3 = wtot_u02 * v3 - b0 * b3;
+
+        cons(IDN,k,j,i) = dd;
+        cons(IEN,k,j,i) = ee;
+        cons(IM1,k,j,i) = m1;
+        cons(IM2,k,j,i) = m2;
+        cons(IM3,k,j,i) = m3;
       }
     }
   }
@@ -353,8 +364,10 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real tmp2 = gamma_rel_sq * (b_sq + w_gas * cs_sq);
       Real denominator_inv = 1.0 / (tmp1 + tmp2 - cs_sq * bt_sq);
       Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) * denominator_inv;
-      Real a2 = (6.0*tmp1*vx_sq + tmp2*(vx_sq-1.0) + cs_sq*(bt_sq-bx_sq)) * denominator_inv;
-      Real a1 = (-4.0*tmp1*vx_sq*vx + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1]) * denominator_inv;
+      Real a2 = (6.0*tmp1*vx_sq + tmp2*(vx_sq-1.0) + cs_sq*(bt_sq-bx_sq))
+        * denominator_inv;
+      Real a1 = (-4.0*tmp1*vx_sq*vx + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1])
+        * denominator_inv;
       Real a0 = (tmp1*SQR(vx_sq) - tmp2*vx_sq + cs_sq*bx_sq) * denominator_inv;
 
       // Calculate reduced quartic coefficients
@@ -398,12 +411,12 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Solve quadratic equations
         s2 = SQR(d1) - 4.0*d0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : (-d1-s)/2.0;
-        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
+        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : 0.5*(-d1-s);
+        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : 0.5*(-d1+s);
         s2 = SQR(e1) - 4.0*e0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : (-e1-s)/2.0;
-        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
+        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : 0.5*(-e1-s);
+        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : 0.5*(-e1+s);
       }
 
       // Calculate extremal original quartic roots

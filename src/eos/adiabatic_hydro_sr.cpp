@@ -109,12 +109,12 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
-	Real d = cons_copy(IDN,k,j,i);
-	Real e = cons_copy(IEN,k,j,i);
+        Real d = cons_copy(IDN,k,j,i);
+        Real e = cons_copy(IEN,k,j,i);
 
-	Real mx = cons_copy(IVX,k,j,i);
-	Real my = cons_copy(IVY,k,j,i);
-	Real mz = cons_copy(IVZ,k,j,i);
+        Real mx = cons_copy(IVX,k,j,i);
+        Real my = cons_copy(IVY,k,j,i);
+        Real mz = cons_copy(IVZ,k,j,i);
 
         // Extract primitives quantities
         Real rho = prim_copy(IDN,k,j,i);
@@ -126,84 +126,84 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Calculate total momentum
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
 
-	// Step 1: Prepare quartic coefficients
-	Real m_abs = std::sqrt(m_sq);
-	Real d_p2 = SQR(d);
-	Real gamma_adi_minus_1_p2 = SQR(gamma_adi_minus_1);
-	Real denom_inverse = 1.0 / (gamma_adi_minus_1_p2 * (d_p2 + m_sq));
-	Real a3 = -2.0 * gamma_adi * gamma_adi_minus_1 * m_abs * e * denom_inverse;
-	Real a2 = (SQR(gamma_adi) * SQR(e) + 2.0 * gamma_adi_minus_1 * m_sq -
-		   gamma_adi_minus_1_p2 * d_p2) * denom_inverse;
-	Real a1 = -2.0 * gamma_adi * m_abs * e * denom_inverse;
-	Real a0 = m_sq * denom_inverse;
+        // Step 1: Prepare quartic coefficients
+        Real m_abs = std::sqrt(m_sq);
+        Real d_p2 = SQR(d);
+        Real gamma_adi_minus_1_p2 = SQR(gamma_adi_minus_1);
+        Real denom_inv = 1.0 / (gamma_adi_minus_1_p2 * (d_p2 + m_sq));
+        Real a3 = -2.0 * gamma_adi * gamma_adi_minus_1 * m_abs * e * denom_inv;
+        Real a2 = (SQR(gamma_adi) * SQR(e) + 2.0 * gamma_adi_minus_1 * m_sq -
+                   gamma_adi_minus_1_p2 * d_p2) * denom_inv;
+        Real a1 = -2.0 * gamma_adi * m_abs * e * denom_inv;
+        Real a0 = m_sq * denom_inv;
 
-	// Step 2: Find resolvent cubic coefficients
-	Real b2 = -a2;
-	Real b1 = -4.0*a0 + a1*a3;
-	Real b0 = 4.0*a0*a2 - SQR(a1) - a0*SQR(a3);
+        // Step 2: Find resolvent cubic coefficients
+        Real b2 = -a2;
+        Real b1 = -4.0*a0 + a1*a3;
+        Real b0 = 4.0*a0*a2 - SQR(a1) - a0*SQR(a3);
 
-	// Step 3: Eliminate quadratic term from cubic
-	Real b2_p2 = SQR(b2);
-	Real c1 = b1/3.0 - b2_p2/9.0;
-	Real c2 = -b0/2.0 + b1*b2/6.0 - b2_p2*b2/27.0;
-	Real c3 = SQR(c1)*c1 + SQR(c2);
+        // Step 3: Eliminate quadratic term from cubic
+        Real b2_p2 = SQR(b2);
+        Real c1 = b1/3.0 - b2_p2/9.0;
+        Real c2 = -b0/2.0 + b1*b2/6.0 - b2_p2*b2/27.0;
+        Real c3 = SQR(c1)*c1 + SQR(c2);
 
-	// Step 4: Find real root of new cubic
-	Real y0;
+        // Step 4: Find real root of new cubic
+        Real y0;
 
-	if (c3 >= 0.0) {
-	  y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
-	} else {
-	  y0 = 2.0 * std::cbrt(SQR(c2) + c3)
-	    * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
-	}
+        if (c3 >= 0.0) {
+          y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
+        } else {
+          y0 = 2.0 * std::cbrt(SQR(c2) + c3)
+            * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
+        }
 
-	// Step 5: Find real root of original (resolvent) cubic:
-	Real x0 = y0 - b2/3.0;
+        // Step 5: Find real root of original (resolvent) cubic:
+        Real x0 = y0 - b2/3.0;
 
-	// Step 6: Solve for (correct) root of original quartic
-	Real d1 = (a3 + std::sqrt(4.0*x0 - 4.0*a2 + SQR(a3))) / 2.0;
-	Real d0 = (x0 - std::sqrt(SQR(x0) - 4.0*a0)) / 2.0;
-	Real v_abs = (-d1 + std::sqrt(SQR(d1) - 4.0*d0)) / 2.0;
+        // Step 6: Solve for (correct) root of original quartic
+        Real d1 = 0.5 * (a3 + std::sqrt(4.0*x0 - 4.0*a2 + SQR(a3)));
+        Real d0 = 0.5 * (x0 - std::sqrt(SQR(x0) - 4.0*a0));
+        Real v_abs = 0.5 * (-d1 + std::sqrt(SQR(d1) - 4.0*d0));
 
-	// Ensure velocity is physical
-	v_abs = (v_abs > 0.0) ? v_abs : 0.0;                    // sets NaN to 0
-	v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
+        // Ensure velocity is physical
+        v_abs = (v_abs > 0.0) ? v_abs : 0.0;                    // sets NaN to 0
+        v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
-	// Set density, correcting only conserved density if floor applied
-	Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
-	Real v_over_m = v_abs / m_abs;
-	Real e_tmp = m_sq * v_over_m;
+        // Set density, correcting only conserved density if floor applied
+        Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
+        Real v_over_m = v_abs / m_abs;
+        Real e_tmp = m_sq * v_over_m;
 
-	// Case out based on whether momentum vanishes
-	if (m_sq < TINY_NUMBER_p2 ) { // zero velocity case
-	  gamma_rel = 1.0;
-	  v_over_m = 0.0;
-	  e_tmp = 0.0;
-	}
+        // Case out based on whether momentum vanishes
+        if (m_sq < TINY_NUMBER_p2 ) { // zero velocity case
+          gamma_rel = 1.0;
+          v_over_m = 0.0;
+          e_tmp = 0.0;
+        }
 
-	rho = d / gamma_rel;
-	if (rho < density_floor_) {
-	  rho = density_floor_;
-	  d = gamma_rel * rho;
-	}
+        rho = d / gamma_rel;
+        if (rho < density_floor_) {
+          rho = density_floor_;
+          d = gamma_rel * rho;
+        }
 
-	// Set velocity
-	vx = mx * v_over_m;
-	vy = my * v_over_m;
-	vz = mz * v_over_m;
+        // Set velocity
+        vx = mx * v_over_m;
+        vy = my * v_over_m;
+        vz = mz * v_over_m;
 
-	// Set pressure, correcting only energy if floor applied
-	pgas = gamma_adi_minus_1 * (e - e_tmp - rho);
-	if (pgas < pressure_floor_) {
-	  pgas = pressure_floor_;
-	  e = pgas/gamma_adi_minus_1 + e_tmp + rho;
-	}
+        // Set pressure, correcting only energy if floor applied
+        pgas = gamma_adi_minus_1 * (e - e_tmp - rho);
+        if (pgas < pressure_floor_) {
+          pgas = pressure_floor_;
+          e = pgas/gamma_adi_minus_1 + e_tmp + rho;
+        }
 
         cons_copy(IDN,k,j,i) = d;
         cons_copy(IEN,k,j,i) = e;
         prim_copy(IDN,k,j,i) = rho;
-	prim_copy(IPR,k,j,i) = pgas;
+        prim_copy(IPR,k,j,i) = pgas;
         prim_copy(IVX,k,j,i) = vx;
         prim_copy(IVY,k,j,i) = vy;
         prim_copy(IVZ,k,j,i) = vz;
@@ -231,7 +231,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
      int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
-  Real gamma_adi_red = gamma_/(gamma_-1.0);
+  Real gamma_prime = gamma_/(gamma_-1.0);
 
   // Go through all cells
   for (int k=kl; k<=ku; ++k) {
@@ -253,19 +253,18 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         Real u3 = u0 * v3;
 
         // Set conserved quantities
-        Real wgas = rho + gamma_adi_red * pgas;
-	Real wgas_times_u0 = wgas * u0;
+        Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
         Real d = rho * u0;
-        Real e = wgas_times_u0 * u0 - pgas;
-        Real m1 = wgas_times_u0 * u1;
-        Real m2 = wgas_times_u0 * u2;
-        Real m3 = wgas_times_u0 * u3;
+        Real e = wgas_u0 * u0 - pgas;
+        Real m1 = wgas_u0 * u1;
+        Real m2 = wgas_u0 * u2;
+        Real m3 = wgas_u0 * u3;
 
-	cons(IDN,k,j,i) = d;
-	cons(IEN,k,j,i) = e;
-	cons(IM1,k,j,i) = m1;
-	cons(IM2,k,j,i) = m2;
-	cons(IM3,k,j,i) = m3;
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        cons(IM1,k,j,i) = m1;
+        cons(IM2,k,j,i) = m2;
+        cons(IM3,k,j,i) = m3;
 
       }
     }
@@ -288,14 +287,14 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
-				    Real *plambda_plus, Real *plambda_minus) {
+                                    Real *plambda_plus, Real *plambda_minus) {
   const Real gamma_adi = gamma_;
-  Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
+  Real cs_sq = gamma_adi * pgas / rho_h;  // (MB 4)
   Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
   Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - SQR(vx)));
   Real sigma_s_tmp = 1.0/(1.0+sigma_s);
-  *plambda_plus = sigma_s_tmp * (vx + relative_speed);             // (MB 23)
-  *plambda_minus = sigma_s_tmp * (vx - relative_speed);            // (MB 23)
+  *plambda_plus = sigma_s_tmp * (vx + relative_speed);  // (MB 23)
+  *plambda_minus = sigma_s_tmp * (vx - relative_speed);  // (MB 23)
   return;
 }
 

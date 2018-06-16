@@ -146,7 +146,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
   }
   #else  // SR; need to populate 1D normal B array
   {
-    #pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
     for (int i = il; i <= iu; ++i) {
       bb_normal(i) = bb(k,j,i);
     }
@@ -293,7 +293,8 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     Real cons_hll[NWAVE];
     if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
-        cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n]) * lambda_diff_inv;
+        cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+          * lambda_diff_inv;
       }
     }
 
@@ -301,7 +302,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-		     + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
+                     + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
     }
 
     // Calculate interface velocity

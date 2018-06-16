@@ -1,5 +1,6 @@
 //========================================================================================
-// Athena++ astrophysical MHD code// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hllc_rel.cpp
@@ -142,7 +143,7 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
-  const Real gamma_tmp = gamma_adi/(gamma_adi - 1.0);
+  const Real gamma_prime = gamma_adi/(gamma_adi - 1.0);
 
   // Go through each interface
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -194,13 +195,13 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
 
     // Calculate wavespeeds in left state (MB2005 23)
     Real lambda_p_l, lambda_m_l;
-    Real wgas_l = rho_l + gamma_tmp * pgas_l;
+    Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]), &lambda_p_l,
         &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB2005 23)
     Real lambda_p_r, lambda_m_r;
-    Real wgas_r = rho_r + gamma_tmp * pgas_r;
+    Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]), &lambda_p_r,
         &lambda_m_r);
 
@@ -245,14 +246,14 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
     Real cons_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
-	* lambda_diff_inv;
+        * lambda_diff_inv;
     }
 
     // Calculate fluxes in HLL region (MB2005 11)
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-		     + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
+                     + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
     }
 
     // Calculate contact wavespeed (MB2005 18)
@@ -260,8 +261,9 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
     Real b = -(cons_hll[IEN] + flux_hll[ivx]);
     if (std::abs(flux_hll[IEN]) > TINY_NUMBER) {  // use quadratic formula
       // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
-      lambda_star = - 2.0 * cons_hll[ivx] / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN]*cons_hll[ivx])) ;
-    } else {  // no quadratic term
+      lambda_star = - 2.0 * cons_hll[ivx]
+        / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN]*cons_hll[ivx]));
+    } else { // no quadratic term
       lambda_star = - cons_hll[ivx] / b;
     }
 
@@ -313,48 +315,33 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
       v_interface = gi(i01,i) / std::sqrt(SQR(gi(i01,i)) - gi(I00,i)*gi(i11,i));
     }
 
-    if (GENERAL_RELATIVITY) { // GR
-      // Determine region of wavefan
-      Real *cons_interface, *flux_interface;
-      if (lambda_l >= v_interface) {  // L region
-	cons_interface = cons_l;
-	flux_interface = flux_l;
-      } else if (lambda_r <= v_interface) { // R region
-	cons_interface = cons_r;
-	flux_interface = flux_r;
-      } else if (lambda_star >= v_interface) {  // aL region
-	cons_interface = cons_lstar;
-	flux_interface = flux_lstar;
-      } else {  // c region
-	cons_interface = cons_rstar;
-	flux_interface = flux_rstar;
-      }
-      // set conserved quantities
+    // Determine region of wavefan
+    Real *cons_interface, *flux_interface;
+    if (lambda_l >= v_interface) {  // L region
+      cons_interface = cons_l;
+      flux_interface = flux_l;
+    } else if (lambda_r <= v_interface) { // R region
+      cons_interface = cons_r;
+      flux_interface = flux_r;
+    } else if (lambda_star >= v_interface) {  // aL region
+      cons_interface = cons_lstar;
+      flux_interface = flux_lstar;
+    } else {  // c region
+      cons_interface = cons_rstar;
+      flux_interface = flux_rstar;
+    }
+
+    // Set conserved quantities in GR
+    if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
         cons(n,i) = cons_interface[n];
       }
-      // Set fluxes
-      for (int n = 0; n < NHYDRO; ++n) {
-        flux(n,k,j,i) = flux_interface[n];
-      }
-    } else {
-      // Determine region of wavefan
-      Real *flux_interface;
-      if (lambda_l >= v_interface) {  // L region
-	flux_interface = flux_l;
-      } else if (lambda_r <= v_interface) { // R region
-	flux_interface = flux_r;
-      } else if (lambda_star >= v_interface) {  // aL region
-	flux_interface = flux_lstar;
-      } else {  // c region
-	flux_interface = flux_rstar;
-      }
-      // Set fluxes
-      for (int n = 0; n < NHYDRO; ++n) {
-	flux(n,k,j,i) = flux_interface[n];
-      }
     }
 
+    // Set fluxes
+    for (int n = 0; n < NHYDRO; ++n) {
+      flux(n,k,j,i) = flux_interface[n];
+    }
   }
 
   // Transform fluxes to global coordinates if in GR
