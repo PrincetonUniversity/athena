@@ -189,6 +189,7 @@ parser.add_argument(
         'g++',
         'g++-simd',
         'icc',
+        'icc-debug',
         'cray',
         'bgxl',
         'icc-phi',
@@ -365,6 +366,19 @@ if args['cxx'] == 'icc':
     # -qopt-zmm-usage=high'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
+
+if args['cxx'] == 'icc-debug':
+    # Disable IPO, forced inlining, and fast math. Enable vectorization reporting.
+    # Useful for testing symmetry, SIMD-enabled functions and loops with OpenMP 4.5
+    definitions['COMPILER_CHOICE'] = 'icc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = (
+        '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
+        '-qopt-report=5 -qopt-report-phase=openmp,vec -g'
+    )
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
     definitions['COMPILER_CHOICE'] = 'cray'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
@@ -420,7 +434,8 @@ else:
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
-    if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc':
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc'
+            or args['cxx'] == 'icc-debug'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -434,8 +449,9 @@ else:
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi'
-            or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'):
+    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
+            or args['cxx'] == 'icc-phi' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'clang++'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -449,7 +465,7 @@ if args['omp']:
     definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
     if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -462,7 +478,7 @@ else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
@@ -505,17 +521,18 @@ if args['hdf5']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
-    if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' \
-            or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
+    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray'
+            or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
+            or args['cxx'] == 'clang++'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
     if args['cxx'] == 'bgxl':
-        makefile_options['PREPROCESSOR_FLAGS'] += \
-            ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE' \
-            + ' -I/soft/libraries/hdf5/1.10.0/cnk-xl/current/include' \
-            + ' -I/bgsys/drivers/ppcfloor/comm/include'
-        makefile_options['LINKER_FLAGS'] += \
-            ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib' \
-            + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
+        makefile_options['PREPROCESSOR_FLAGS'] += (
+            ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE'
+            ' -I/soft/libraries/hdf5/1.10.0/cnk-xl/current/include'
+            ' -I/bgsys/drivers/ppcfloor/comm/include')
+        makefile_options['LINKER_FLAGS'] += (
+            ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib'
+            ' -L/soft/libraries/alcf/current/xl/ZLIB/lib')
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
     definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
