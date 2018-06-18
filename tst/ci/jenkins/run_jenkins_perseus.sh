@@ -72,6 +72,14 @@ time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
 
+# Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining
+# Check subset of regression test sets to try most EOS functions called in rsolvers
+time python ./run_tests.py pgen --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
+time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
+time python ./run_tests.py sr --config=--cxx=icc-debug --silent
+time python ./run_tests.py gr --config=--cxx=icc-debug --silent
+
 set +e
 # end regression tests
 
