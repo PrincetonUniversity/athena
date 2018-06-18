@@ -40,16 +40,16 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
-  Cons1D ul,ur;                   // L/R states, conserved variables (computed)
   Real spd[5];                    // signal speeds, left to right
-  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states
-  Cons1D fl,fr;                   // Fluxes for left & right states
 
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-#pragma omp simd simdlen(SIMD_WIDTH)
+#pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
+  Cons1D ul,ur;                   // L/R states, conserved variables (computed)
+  Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states
+  Cons1D fl,fr;                   // Fluxes for left & right states
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables

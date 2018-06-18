@@ -43,7 +43,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-
+#pragma omp simd private(wli,wri,du,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
