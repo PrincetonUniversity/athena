@@ -43,6 +43,7 @@ public:
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
     #else  // MHD
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
       Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx);
     #endif  // !MAGNETIC_FIELDS_ENABLED
     void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
