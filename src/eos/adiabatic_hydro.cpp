@@ -1,4 +1,3 @@
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -128,7 +127,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
-#pragma omp declare simd simdlen(SIMD_WIDTH)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(gamma_*prim[IPR]/prim[IDN]);
 }
@@ -137,8 +136,8 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
-#pragma omp declare simd simdlen(SIMD_WIDTH)
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
+__attribute__((nothrow)) void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
 

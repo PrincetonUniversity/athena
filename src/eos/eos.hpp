@@ -33,10 +33,12 @@ public:
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,
        int il, int iu, int jl, int ju, int kl, int ku);
-  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
+  __attribute__((nothrow)) void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
     Real SoundSpeed(const Real prim[(NHYDRO)]);
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
