@@ -106,7 +106,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
 // \brief returns isothermal sound speed
-#pragma omp declare simd simdlen(SIMD_WIDTH)
 Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
   return iso_sound_speed_;
 }
@@ -115,7 +114,6 @@ Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
-#pragma omp declare simd simdlen(SIMD_WIDTH)
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 

@@ -114,7 +114,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
-#pragma omp declare simd simdlen(SIMD_WIDTH)
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return iso_sound_speed_;
 }
@@ -123,7 +122,6 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \!fn Real EquationOfState::FastMagnetosonicSpeed()
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
-#pragma omp declare simd simdlen(SIMD_WIDTH)
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
   Real asq = (iso_sound_speed_*iso_sound_speed_)*prim[IDN];
   Real vaxsq = bx*bx;
@@ -137,7 +135,6 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
-#pragma omp declare simd simdlen(SIMD_WIDTH)
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 
