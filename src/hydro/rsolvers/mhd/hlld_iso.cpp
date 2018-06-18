@@ -47,10 +47,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(flxi,wli,wri,spd)
-  Cons1D ul,ur;                   // L/R states, conserved variables (computed)
-  Cons1D ulst,urst,ucst;          // Conserved variable for all states
-  Cons1D fl,fr;                   // Fluxes for left & right states
   for (int i=il; i<=iu; ++i) {
+    Cons1D ul,ur;                   // L/R states, conserved variables (computed)
+    Cons1D ulst,urst,ucst;          // Conserved variable for all states
+    Cons1D fl,fr;                   // Fluxes for left & right states
 
 //--- Step 1.  Load L/R states into local variables
 
