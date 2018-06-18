@@ -29,7 +29,8 @@ public:
   __attribute__((nothrow)) void NewAthenaArray(int nx2, int nx1);
   __attribute__((nothrow)) void NewAthenaArray(int nx3, int nx2, int nx1);
   __attribute__((nothrow)) void NewAthenaArray(int nx4, int nx3, int nx2, int nx1);
-  __attribute__((nothrow)) void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx5, int nx4, int nx3, int nx2,
+                                               int nx1);
   void DeleteAthenaArray();
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
@@ -124,7 +125,8 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
 // THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
 
 template<typename T>
-__attribute__((nothrow)) AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
+__attribute__((nothrow))
+AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     for (std::size_t i=0; i<size; ++i) {
@@ -251,7 +253,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, i
 //  \brief 4d data allocation
 
 template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
+                                                             int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -266,7 +269,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, i
 //  \brief 5d data allocation
 
 template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
+                                                             int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
