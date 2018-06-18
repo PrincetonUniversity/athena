@@ -34,7 +34,7 @@ public:
        AthenaArray<Real> &cons, Coordinates *pco,
        int il, int iu, int jl, int ju, int kl, int ku);
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
-  __attribute__((nothrow)) void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
