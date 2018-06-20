@@ -18,8 +18,6 @@
 #include "athena_arrays.hpp"
 #include "defs.hpp"
 
-#define CACHELINE_BYTES 64
-
 // typedefs that allow code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
   typedef float Real;
@@ -43,6 +41,8 @@
 #else
 #define SIMD_WIDTH 4
 #endif
+
+#define CACHELINE_BYTES 64
 
 class MeshBlock;
 class Coordinates;
