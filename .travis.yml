@@ -4,6 +4,8 @@ language: cpp
 branches:
   only:
   - master
+  - hydro4
+  - mhd4
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
