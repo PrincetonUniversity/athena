@@ -27,15 +27,7 @@ typedef struct Cons1D {
 } Cons1D;
 
 #define SMALL_NUMBER 1.0e-8
-#if defined(__AVX512F__)
-#define SIMD_WIDTH 8
-#elif defined(__AVX__)
-#define SIMD_WIDTH 4
-#elif defined(__SSE2__)
-#define SIMD_WIDTH 2
-#else
-#define SIMD_WIDTH 4
-#endif
+
 
 //----------------------------------------------------------------------------------------
 //! \fn
