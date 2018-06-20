@@ -50,6 +50,9 @@ time python ./run_tests.py curvilinear --silent
 time python ./run_tests.py shearingbox --silent
 time python ./run_tests.py diffusion --silent
 
+# High-order regression tests w/ GCC
+time python ./run_tests.py hydro4 --silent
+
 # Build step #2: Intel compiler and MPI library
 module purge
 module load intel
@@ -79,6 +82,9 @@ time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
 time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
 time python ./run_tests.py sr --config=--cxx=icc-debug --silent
 time python ./run_tests.py gr --config=--cxx=icc-debug --silent
+
+# High-order regression tests w/ Intel compiler
+time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 
 set +e
 # end regression tests
