@@ -3,7 +3,7 @@
 # Check errors of reconstruction and time integrator options other than default VL2+PLM
 # primitive reconstruction. In particular, confirm fourth-order convergence rate for
 # semidiscrete integration with RK4 + PPM + Laplacian flux correction terms. 2D uniform
-# square grid, no SMR.
+# square grid, no SMR--- midpoint assumption used in init. and in error calculations
 
 # Modules
 import scripts.utils.athena as athena

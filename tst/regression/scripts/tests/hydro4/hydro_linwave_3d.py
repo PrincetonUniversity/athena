@@ -1,7 +1,9 @@
 # Regression test based on Newtonian hydro linear wave convergence problem
 
 # Confirm fourth-order convergence rate for semidiscrete integration with RK4 + PPM (char.
-# and primitive) + Laplacian flux correction terms. 3D uniform square grid, no SMR.
+# and primitive) + Laplacian flux correction terms. 3D uniform square grid, no SMR,
+# fourth-order accurate approximation to analytic solution used in initialization and in
+# error calculations.
 
 # Modules
 import scripts.utils.athena as athena
@@ -13,13 +15,19 @@ solvers = [('rk4', '4c'), ('ssprk5_4', '4')]
 # Matching above list of solver configurations, provide bounds on error metrics:
 # for each tested resolution (excluding lowest Nx1=16) and wave_flag.
 # Upper bound on RMS-L1 errors:
-error_tols = [((5.7e-9, 3.7e-10), (4.1e-9, 2.7e-10)),
-              ((5.7e-9, 3.7e-10), (4.1e-9, 2.7e-10))
+error_tols = [((5.6e-9, 3.6e-10), (4.05e-9, 2.65e-10)),
+              ((5.6e-9, 3.65e-10), (4.05e-9, 2.65e-10))
               ]
 # for each wave_flag, lower bound on convergence rate at 64x32x32 asymptotic convergence
 # regime. Linear hydro waves stop converging around RMS-L1 error 1e-11 to 1e-12
 rate_tols = [(3.95, 3.94),  (3.95, 3.94)]
 # this metric is redundant with above error_tols, but it is simpler...
+
+# time/correct_err= time/correct_ic=false (slightly higher errors, but faster convergence)
+# error_tols = [((5.7e-9, 3.7e-10), (4.1e-9, 2.7e-10)),
+#               ((5.7e-9, 3.7e-10), (4.1e-9, 2.7e-10))
+#               ]
+# rate_tols = [(3.95, 3.94),  (3.95, 3.94)]
 
 resolution_range = [16, 32, 64]
 num_nx1 = len(resolution_range)
@@ -43,6 +51,7 @@ def run(**kwargs):
         for i in resolution_range:
             arguments = ['time/ncycle_out=0',
                          'time/xorder=' + xorder, 'time/integrator=' + torder,
+                         'time/correct_ic=true', 'time/correct_err=true',
                          'problem/wave_flag=0', 'problem/vflow=0.0',
                          'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2),
                          'mesh/nx3=' + repr(i/2),
@@ -55,6 +64,7 @@ def run(**kwargs):
         for i in resolution_range:
             arguments = ['time/ncycle_out=0',
                          'time/xorder=' + xorder, 'time/integrator=' + torder,
+                         'time/correct_ic=true', 'time/correct_err=true',
                          'problem/wave_flag=3', 'problem/vflow=1.0',
                          'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2),
                          'mesh/nx3=' + repr(i/2),
@@ -67,6 +77,7 @@ def run(**kwargs):
         for w in (0, 4):
             arguments = ['time/ncycle_out=0',
                          'time/xorder=' + xorder, 'time/integrator=' + torder,
+                         'time/correct_ic=true', 'time/correct_err=true',
                          'problem/wave_flag=' + repr(w),
                          'output2/dt=-1', 'time/tlim=1.0',
                          'problem/compute_error=true']
