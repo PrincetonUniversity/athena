@@ -51,7 +51,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
@@ -236,7 +236,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 // REFERENCES:
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
-
+#pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
   const Real du[], const Real wli[], Real flx[], Real ev[], int &llf_flag) {
 

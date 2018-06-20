@@ -42,7 +42,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma distribute_point
+#pragma omp simd private(wli,wri,wroe,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
@@ -109,8 +110,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
-    // No loop-carried dependencies
-    #pragma distribute_point
+    // No loop-carried dependencies anywhere in this loop
+    //    #pragma distribute_point
 //--- Step 6.  Compute L/R fluxes along the line bm, bp
 
     vxl = wli[IVX] - bm;
