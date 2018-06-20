@@ -19,7 +19,6 @@ The guidelines in this document are meant to help make the development of Athena
 <!-- Could add links to New PR, New Issue, Issue Labels e.g. current "bugs" -->
 
 ## Organization
-
 The [athena](https://github.com/PrincetonUniversity/athena) development repository is a private GitHub repo owned by the [PrincetonUniversity](https://github.com/PrincetonUniversity) organization (which is owned by the user [@cses](http://www.princeton.edu/researchcomputing/about/picscie/)). See "[About Organizations](https://help.github.com/articles/about-organizations/)" for more information.
 
 There are three possible levels of [permissions for a repository belonging to an organization](https://help.github.com/articles/repository-permission-levels-for-an-organization/), and all are used in Athena++ development:
@@ -28,9 +27,14 @@ There are three possible levels of [permissions for a repository belonging to an
   * These users may push directly to the private repository's branches, with some caveats. See below section on the [Code review policy](#code-review-policy).
 * **Read**: a larger group of users, developers, and students who have a compelling need for the latest development version of Athena++.
   * Read access allows the user to create a private forked repository, `<username>/athena`. The collaborator has complete freedom to experiment with changes within the fork without affecting the original project.
- * **Note**: the user's private fork will be deleted on GitHub if the individual is ever removed as a [collaborator](https://help.github.com/articles/adding-outside-collaborators-to-repositories-in-your-organization/).
+ * **Note**: the user's private fork will be deleted on GitHub if the individual is ever removed as a [collaborator or from a Team and loses Read access](https://help.github.com/articles/adding-outside-collaborators-to-repositories-in-your-organization/).
 
-[GitHub Teams](https://help.github.com/articles/organizing-members-into-teams/), `Athena++_PP` (Write) and `Athena++` (Admin), were originally used to control permission levels for groups of users; however, this is being phased out in favor of setting individual collaborator permissions.
+[GitHub Teams](https://help.github.com/articles/organizing-members-into-teams/), `Athena++_PP` (Write) and `Athena++` (Admin), were originally used to control permission levels for groups of users; however, this is being phased out in favor of a newer [Nested Teams](https://blog.github.com/2017-06-13-nested-teams-add-depth-to-your-team-structure/) setup with:
+* `Athena++` (Read)
+   * `Athena++_core` (Write)
+     * `Athena++_admin` (Admin)
+
+These teams are currently setup with the same permissions hierarchy for the public version repository. Several Admin users also have [Team Maintainer](https://help.github.com/articles/giving-team-maintainer-permissions-to-an-organization-member/) roles for managing the membership and permissions of these teams. A GitHub user must be a member of the PrincetonUniversity Organization on GitHub. Princeton Research Computing has a [GitHub request form](https://forms.rc.princeton.edu/github/) that can be used to add usernames to the PrincetonUniversity GitHub organization (even if the user does not have a Princeton Netid). This is the preferred method for managing permissions; repository Collaborator status should be used only for short-term access.
 
 The public version of Athena++ should serve as the primary resource for the majority of users. If you are reading this document, it means you have at least Read permissions to the private repository!
 
@@ -217,7 +221,7 @@ header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and
 release practices for Athena++.
 
 **IMPORTANT**: The version string output by the `athena -h` command must be manually
-updated in `src/main.cpp` before tagging a new version. The user should also manually revert the `README.md` file to the simple (no CI status badges) format before tagging. 
+updated in `src/main.cpp` before tagging a new version. The user should also manually revert the `README.md` file to the simple (no CI status badges) format before tagging.
 
 In the priave repository, each release is accompanied by an Git annotated (not lightweight) tag. Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
 
@@ -230,7 +234,7 @@ the following updates should be performed manually:
   based on private [`CHANGELOG.md`](./CHANGELOG.md) entries
 - Update the [public Athena++
   Wiki](https://github.com/PrincetonUniversity/athena-public-version/wiki)
-  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki). For now, this consists of manually force-pushing from the latter to the former and then removing any pages/content that are irrelevant to the public repository (e.g. "Continuous Integration"). **TODO**: establish a `public` branch on `athena.wiki` repository that is continually rebased from `master` with a few commits that remove the irrelevant content. Then, the `master` branch of `athena-public-version.wiki` would pull from that private wiki `public` branch without any force-pushing.
+  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki). For now, this consists of manually force-pushing from the latter to the former and then removing or modifying any content that are irrelevant to the public repository (e.g. the pages on "Continuous Integration"). There is a `public` branch on the `athena.wiki` repository that should be continually rebased on top of `master` with a few commits that remove the irrelevant content. The `master` branch of `athena-public-version.wiki` should mirror that private wiki `public` branch via force-pushing.
 - Announce release on the [Athena++
   website](https://princetonuniversity.github.io/athena/index.html) by
   modifying the HTML and CSS files on the `gh-pages` branch of the private repository
