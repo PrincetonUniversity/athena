@@ -218,23 +218,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-	phydro->u(IDN,k,j,i) = rho0 ;
-	VelProfileCyl(pcoord->x1v(i),pcoord->x2v(j),pcoord->x3v(k),v1,v2,v3);
+        phydro->u(IDN,k,j,i) = rho0 ;
+        VelProfileCyl(pcoord->x1v(i),pcoord->x2v(j),pcoord->x3v(k),v1,v2,v3);
         phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
         phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
         phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-	if (NON_BAROTROPIC_EOS) {
+        if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = isocs2*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
           phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))
                                       +SQR(phydro->u(IM2,k,j,i))
                                       +SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
-	  if (MAGNETIC_FIELDS_ENABLED) {
-	    phydro->u(IEN,k,j,i) +=
+          if (MAGNETIC_FIELDS_ENABLED) {
+            phydro->u(IEN,k,j,i) +=
               0.5*(SQR(0.5*(pfield->b.x1f(k,j,i+1) + pfield->b.x1f(k,j,i)))
                  + SQR(0.5*(pfield->b.x2f(k,j+1,i) + pfield->b.x2f(k,j,i)))
                  + SQR(0.5*(pfield->b.x3f(k+1,j,i) + pfield->b.x3f(k,j,i))));
           }
-	}
+        }
       }
     }
   }

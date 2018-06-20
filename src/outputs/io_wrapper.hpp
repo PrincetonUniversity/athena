@@ -27,8 +27,8 @@ enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 class IOWrapper {
 public:
 #ifdef MPI_PARALLEL
-  IOWrapper() {comm=MPI_COMM_WORLD;}
-  void SetCommunicator(MPI_Comm scomm) { comm=scomm;}
+  IOWrapper() {comm_=MPI_COMM_WORLD;}
+  void SetCommunicator(MPI_Comm scomm) { comm_=scomm;}
 #else
   IOWrapper() {}
 #endif
@@ -47,9 +47,9 @@ public:
   int Seek(IOWrapperSize_t offset);
   IOWrapperSize_t GetPosition(void);
 private:
-  IOWrapperFile fh;
+  IOWrapperFile fh_;
 #ifdef MPI_PARALLEL
-  MPI_Comm comm;
+  MPI_Comm comm_;
 #endif
 };
 #endif // OUTPUTS_IO_WRAPPER_HPP_

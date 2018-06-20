@@ -40,7 +40,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-		    kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j,i-1));
+        kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
         dTdx = (prim(IPR,k,j,i)/prim(IDN,k,j,i) - prim(IPR,k,j,i-1)/
                 prim(IDN,k,j,i-1))/pco_->dx1v(i-1);
@@ -62,7 +62,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-		      kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j-1,i));
+          kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j-1,i));
           dTdy = (prim(IPR,k,j,i)/prim(IDN,k,j,i)-prim(IPR,k,j-1,i)/
                     prim(IDN,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1);
@@ -85,7 +85,7 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-	        kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k-1,j,i));
+          kappaf = 0.5*(kappa(ISO,k,j,i)+kappa(ISO,k-1,j,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k-1,j,i));
           dTdz = (prim(IPR,k,j,i)/prim(IDN,k,j,i)-prim(IPR,k-1,j,i)/
                    prim(IDN,k-1,j,i))/pco_->dx3v(k-1)/pco_->h31v(i)/pco_->h32v(j);
@@ -135,4 +135,3 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
   }
   return;
 }
-

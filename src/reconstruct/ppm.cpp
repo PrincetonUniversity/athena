@@ -36,16 +36,6 @@
 #include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
-#if defined(__AVX512F__)
-#define SIMD_WIDTH 8
-#elif defined(__AVX__)
-#define SIMD_WIDTH 4
-#elif defined(__SSE2__)
-#define SIMD_WIDTH 2
-#else
-#define SIMD_WIDTH 4
-#endif
-
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseParabolicX1()
 //  \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
