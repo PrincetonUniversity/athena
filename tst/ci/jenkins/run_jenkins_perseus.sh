@@ -16,7 +16,7 @@ pip install -q --user flake8
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
-python -m flake8 --exclude=cpplint.py
+python -m flake8
 echo "Finished linting Python files with flake8"
 
 # step #0b: lint C++ files
@@ -26,11 +26,12 @@ cd ../regression/
 # Build step #1: GNU compiler and OpenMPI library
 module purge
 module load rh # latest GNU compiler
-module load openmpi/gcc # /1.10.2/64
+module load openmpi/gcc/1.10.2/64 # openmpi/gcc/3.0.0/64 does not work right now
+# Do NOT "module load hdf5" = hdf5/intel-17.0/openmpi-1.10.2/1.10.0
 # output/all_outputs.py regression test uses non-MPI HDF5 writer
 # (Perseus will error w/ missing mpi.h header if MPI HDF5 is loaded w/o mpicxx)
-module load hdf5/gcc/1.10.0  # openmpi-1.10.2/1.8.16
 # grav/ regression tests require MPI and FFTW
+module load hdf5/gcc/1.10.0
 module load fftw/gcc/3.3.4
 module list
 
@@ -70,6 +71,14 @@ time python ./run_tests.py gr --config=--cxx=icc --silent
 time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
+
+# Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining
+# Check subset of regression test sets to try most EOS functions called in rsolvers
+time python ./run_tests.py pgen --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
+time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
+time python ./run_tests.py sr --config=--cxx=icc-debug --silent
+time python ./run_tests.py gr --config=--cxx=icc-debug --silent
 
 set +e
 # end regression tests

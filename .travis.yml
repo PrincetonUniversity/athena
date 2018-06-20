@@ -17,8 +17,8 @@ addons:
 # OpenMPI and MPICH implementations:
 env:
   matrix:
-  - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
-  - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+  - MPI_CHOICE=mpich
+  - MPI_CHOICE=openmpi
 compiler:
   - g++
   - clang++
@@ -28,7 +28,7 @@ cache:
   directories:
     # For caching Linux source directories:
     - openmpi-3.0.2 # released 6/1/18
-    - mpich-3.2 # stable release, checked on 8/14/17
+    - mpich-3.2.1 # stable maintenance release from 11/10/17
     # Caching Linux install directories:
     - openmpi
     - mpich
@@ -46,7 +46,7 @@ matrix:
     osx_image: xcode9.3 # macOS 10.13 High Sierra
     compiler: clang++
     env:
-    - PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
+    - MPI_CHOICE=mpich
     # Override Linux cache mapping
     cache:
       pip: true
@@ -68,7 +68,7 @@ matrix:
     osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
     compiler: clang++
     env:
-    - PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
+    - MPI_CHOICE=openmpi
     - TMPDIR=/tmp
     # Cache is shared with other osx build with MPICH
     cache:
@@ -85,10 +85,10 @@ matrix:
       - "/usr/local/Cellar/fftw/"
       - hdf5
       - "/usr/local/Cellar/hdf5/"
-# Prevent conflicts with MPI
+# Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
 before_install:
   - test -n $CC  && unset CC
-  # Cache Travis CI build matrix compiler
+  # Cache compiler variable from Travis CI Build Matrix before unsetting
   - export TEMP_CXX=$CXX
   - test -n $CXX && unset CXX
 # Install OpenMPI, MPICH, and FFTW
@@ -101,13 +101,13 @@ install:
   - export CPATH=$TRAVIS_BUILD_DIR/fftw/include/:$TRAVIS_BUILD_DIR/hdf5/include/$CPATH
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/share/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/fftw/lib/:$TRAVIS_BUILD_DIR/hdf5/lib/:$LIBRARY_PATH
-  # Check fix for OpenMPI version > 2.0 and macOS v. > Sierra tmpdir length issue
+  # Check fix for OpenMPI version > 2.0 and macOS version > Sierra tmpdir length issue
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - python3 -m pip install --upgrade --user pip
-  - pip3 install --user numpy || true # --user is necessary, since no virtualenv
+  - pip3 install --user numpy || true # --user is necessary, since no virtualenv, sudo
   - pip3 install --user flake8 || true
   - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
 # Without "set -e" (which may cause issues with Travis clean up), all script

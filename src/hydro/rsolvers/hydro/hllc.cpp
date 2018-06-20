@@ -25,13 +25,14 @@
 #include "../../../eos/eos.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \file
-//! \brief
+//! \fn void Hydro::RiemannSolver
+//! \brief The HLLC Riemann solver for adiabatic hydrodynamics (use HLLE for isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -41,7 +42,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma distribute_point
+#pragma omp simd private(wli,wri,wroe,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
@@ -63,7 +65,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
-
 
     //    wroe[IDN] = sqrtdl*sqrtdr; // unused in signal velocity estimates
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
@@ -109,8 +110,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
-    // No loop-carried dependencies
-    #pragma distribute_point
+    // No loop-carried dependencies anywhere in this loop
+    //    #pragma distribute_point
 //--- Step 6.  Compute L/R fluxes along the line bm, bp
 
     vxl = wli[IVX] - bm;
