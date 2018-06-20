@@ -100,7 +100,7 @@ def analyze():
         # effectively list.pop() range of rows for this solver configuration
         solver_results = np.array(data[0:nrows_per_solver])
         del data[0:nrows_per_solver]
-        print(err_tol[0], err_tol[1])
+
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------
         print('{} + {}'.format(torder.upper(), xorder))
@@ -141,10 +141,6 @@ def analyze():
                 print("L-going entropy wave error {} is larger than tolerance {}".format(
                     rms_errs[i], err_tol[1][i-1]))
                 return False
-
-        print(solver_results[-2, 4] - solver_results[-1, 4])
-        print(solver_results[-2, 4], solver_results[-1, 4])
-        # print("numpy bound = {}".format(5e-16 + 1e-5*abs(solver_results[-1, 4])))
 
         # Check that errors are identical for sound waves in each direction at default
         # 64x32x32 resolution
