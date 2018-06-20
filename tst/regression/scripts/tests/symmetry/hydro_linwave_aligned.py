@@ -22,6 +22,7 @@ nrows_per_solver = 3*num_nx1
 # Prepare Athena++
 def prepare(**kwargs):
     athena.configure(
+        nghost=4,  # required for fourth-order configurations
         prob='linear_wave',
         coord='cartesian',
         flux='hllc', **kwargs)
