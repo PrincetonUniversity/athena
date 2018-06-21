@@ -19,7 +19,6 @@ The guidelines in this document are meant to help make the development of Athena
 <!-- Could add links to New PR, New Issue, Issue Labels e.g. current "bugs" -->
 
 ## Organization
-
 The [athena](https://github.com/PrincetonUniversity/athena) development repository is a private GitHub repo owned by the [PrincetonUniversity](https://github.com/PrincetonUniversity) organization (which is owned by the user [@cses](http://www.princeton.edu/researchcomputing/about/picscie/)). See "[About Organizations](https://help.github.com/articles/about-organizations/)" for more information.
 
 There are three possible levels of [permissions for a repository belonging to an organization](https://help.github.com/articles/repository-permission-levels-for-an-organization/), and all are used in Athena++ development:
@@ -28,9 +27,14 @@ There are three possible levels of [permissions for a repository belonging to an
   * These users may push directly to the private repository's branches, with some caveats. See below section on the [Code review policy](#code-review-policy).
 * **Read**: a larger group of users, developers, and students who have a compelling need for the latest development version of Athena++.
   * Read access allows the user to create a private forked repository, `<username>/athena`. The collaborator has complete freedom to experiment with changes within the fork without affecting the original project.
- * **Note**: the user's private fork will be deleted on GitHub if the individual is ever removed as a [collaborator](https://help.github.com/articles/adding-outside-collaborators-to-repositories-in-your-organization/).
+ * **Note**: the user's private fork will be deleted on GitHub if the individual is ever removed as a [collaborator or from a Team and loses Read access](https://help.github.com/articles/adding-outside-collaborators-to-repositories-in-your-organization/).
 
-[GitHub Teams](https://help.github.com/articles/organizing-members-into-teams/), `Athena++_PP` (Write) and `Athena++` (Admin), were originally used to control permission levels for groups of users; however, this is being phased out in favor of setting individual collaborator permissions.
+[GitHub Teams](https://help.github.com/articles/organizing-members-into-teams/), `Athena++_PP` (Write) and `Athena++` (Admin), were originally used to control permission levels for groups of users; however, this is being phased out in favor of a newer [Nested Teams](https://blog.github.com/2017-06-13-nested-teams-add-depth-to-your-team-structure/) setup with:
+* `Athena++` (Read)
+   * `Athena++_core` (Write)
+     * `Athena++_admin` (Admin)
+
+These teams are currently setup with the same permissions hierarchy for the public version repository. Several Admin users also have [Team Maintainer](https://help.github.com/articles/giving-team-maintainer-permissions-to-an-organization-member/) roles for managing the membership and permissions of these teams. A GitHub user must be a member of the PrincetonUniversity Organization on GitHub. Princeton Research Computing has a [GitHub request form](https://forms.rc.princeton.edu/github/) that can be used to add usernames to the PrincetonUniversity GitHub organization (even if the user does not have a Princeton Netid). This is the preferred method for managing permissions; repository Collaborator status should be used only for short-term access.
 
 The public version of Athena++ should serve as the primary resource for the majority of users. If you are reading this document, it means you have at least Read permissions to the private repository!
 
@@ -87,7 +91,7 @@ git checkout -b cool-new-feature
 git add src/modified_file.cpp
 # Use your editor to format the commit message
 git commit -v
-```  
+```
 5. Push your changes to your remote GitHub fork:
 ```
 git push -u origin cool-new-feature
@@ -118,13 +122,13 @@ If you have modified your forked `master` branch, the last two steps could be re
 ```
 git pull --rebase upstream master
 ```
-See [Developing on `master`](#developing-on-master).
+See [Developing on shared `branch`](#developing-on-shared-branch).
 
-### Developing on `master`
-There are a few practices that should be followed when committing changes to the `master` branch on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) in order to avoid conflicts and headaches.
+### Developing on shared `branch`
+There are a few practices that should be followed when committing changes to a collaborative `branch` on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) in order to avoid conflicts and headaches. These guidelines especially apply to developing on the fast changing `master` branch for those users with Admin permissions.
 
-If you commit to an outdated local copy of `master` (i.e. someone else has pushed changes to GitHub since you last checked), the `git push origin master` command will be rejected by the server and prompt you to execute the `git pull` command. The default `git pull` behavior in this scenario is to create a merge-commit after you resolve any conflicts between your changes and the remote commits. However, these non-descriptive commit messages tend to clutter the repository history unnecessarily.
-<!-- insert image of Network graph -->
+If you commit to an outdated local copy of `branch` (i.e. someone else has pushed changes to GitHub since you last checked), the `git push origin branch` command will be rejected by the server and prompt you to execute the `git pull` command. The default `git pull` behavior in this scenario is to create a merge-commit after you resolve any conflicts between your changes and the remote commits. However, these non-descriptive commit messages tend to clutter the repository history unnecessarily.
+<!-- insert image of Network graph to compare linear and non-linear Git history -->
 
 For example, searching the Athena++ repository history using the [GitHub website](https://github.com/PrincetonUniversity/athena/search?utf8=%E2%9C%93&q=merge+branch+%27master%27+of+https:&type=Commits) or the command line:
 ```
@@ -132,7 +136,7 @@ git log --oneline —grep="Merge branch ‘master' of https://github.com/Princet
 ```
 returns many such commits. Most of them likely could have been avoided by either 1) doing local development on feature branches or 2) using `git pull --rebase` to perform a rebase instead of a merge when pulling conflicting updates.
 
-If you frequently make commits on `master`, it is recommended to enable the latter by default. In git versions >= 1.7.9, this can be accomplished with:
+If you frequently encounter such issues, it is recommended to enable the latter by default. In git versions >= 1.7.9, this can be accomplished with:
 ```
 git config --global pull.rebase true
 ```
@@ -160,18 +164,33 @@ Currently, `master` is a GitHub [protected branch](https://help.github.com/artic
 * Disables force pushing on `master`
 * Prevents `master` from being deleted
 
-Additionally, we have enabled ["Require pull request reviews before merging"](https://help.github.com/articles/enabling-required-reviews-for-pull-requests/) to `master`. This setting ensures that all pull requests require at least 1 code review before being merged to the `master` branch, even for collaborators with Write access. Only Admin collaborators can bypass this restriction.
-<!-- Currently set to 1; and "Dismiss stale PR approvals when new commits are pushed"-->
-<!-- Could also "Restrict who can push to this branch"-->
-<!-- Could "Require status checks to pass before merging" after adding CI-->
+Additionally, we have enabled ["Require pull request reviews before merging"](https://help.github.com/articles/enabling-required-reviews-for-pull-requests/) to `master`. This setting ensures that all pull requests require at least 1 code review before the branch is merged to the `master` branch and effectively prohibits pushing **any** commit directly to `master`, even from users with Write access. Attempting to do so will result in an error such as:
+```
+Total 9 (delta 7), reused 0 (delta 0)
+remote: Resolving deltas: 100% (7/7), completed with 7 local objects.
+remote: error: GH006: Protected branch update failed for refs/heads/master.
+remote: error: At least 1 approving review is required by reviewers with write access.
+To git@github.com:PrincetonUniversity/athena.git
+! [remote rejected] master -> master (protected branch hook declined)
+error: failed to push some refs to 'git@github.com:PrincetonUniversity/athena.git'
+```
+
+Only collaborators with Admin permissions can bypass these restrictions. The decision to force the use of branches and pull requests for all changes, no matter how small, was made in order to:
+1. Allow for isolated testing and human oversight/feedback/discussion of changes
+2. Promote a [readable](https://fangpenlin.com/posts/2013/09/30/keep-a-readable-git-history/), [linear](http://www.bitsnbites.eu/a-tidy-linear-git-history/), and reversible Git history for computational reproducibility and maintainability
+3. Most importantly, prevent any accidental pushes to `master`
+<!-- Currently set # of required reviews to 1; other options to consider enabling in the future include: -->
+<!-- "Dismiss stale PR approvals when new commits are pushed" -->
+<!-- "Restrict who can push to this branch" (redundant with Require PR reviews)-->
+<!-- "Require status checks to pass before merging" after separating CI build steps in new GitHub Checks API-->
+<!-- "Include administrators" -->
 
 When anyone opens a new pull request to `master`, GitHub will automatically request a code review from one or more users defined by the PR's modified files and the rules in the current [`.github/CODEOWNERS`](https://github.com/PrincetonUniversity/athena/blob/master/.github/CODEOWNERS) file. Only users with Admin permissions may modify this file to designate collaborators with at least Write access as "code owners". It is possible to use separate versions of this file on each branch to regulate PRs targeting those branches; see "[About CODEOWNERS](https://help.github.com/articles/about-codeowners/)" for more information.
 
 ## Testing and continuous integration (CI)
-Automated testing is an essential part of any large software project.
-The [Regression Tesitng](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) page in the Athena++ Wiki describes how to use and write new tests for the framework setup in the `tst/regression/` folder.
+Automated testing is an essential part of any large software project. The [Regression Testing](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) page in the Athena++ Wiki describes how to use and write new tests for the framework setup in the `tst/regression/` folder. Developers should run these tests to ensure that code changes did not break any existing functionalities.
 
-**Coming soon**: Continuous integration via the Princeton Jenkins server and Travis CI.
+Continuous integration is currently provided by both the Princeton Jenkins server and Travis CI service. These services automatically use the [Regression Testing](https://github.com/PrincetonUniversity/athena/wiki/Regression-Testing) framework to check code functionality and code <a href="https://en.wikipedia.org/wiki/Lint_(software)">linters</a> to ensure that conventions in the [Style Guide](https://github.com/PrincetonUniversity/athena/wiki/Style-Guide) are obeyed. The details of the infrastructure setup and instructions on how to use these services are covered in the [Continuous Integration (CI)](https://github.com/PrincetonUniversity/athena/wiki/Continuous-Integration-%28CI%29) Wiki page.
 
 ## Documentation
 The development repository's [documentation](https://github.com/PrincetonUniversity/athena/wiki) is a [GitHub Wiki](https://help.github.com/articles/about-github-wikis/) and is written largely in Markdown. Limited math typesetting is supported via HTML. See existing Wiki source for examples, e.g. [Editing: Coordinate Systems and Meshes](https://github.com/PrincetonUniversity/athena/wiki/Coordinate-Systems-and-Meshes/_edit).
@@ -180,12 +199,63 @@ Any significant change or new feature requires accompanying documentation before
 > You and your collaborators can create branches when working on wikis, but only changes pushed to the `master` branch will be made live and available to your readers.
 
 ## Community
-The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The `#general` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed.
-<!-- Note, GitHub integration is via a Webhook and "GitHub Notifications (Legacy)
-instead of the GitHub Slack App, which
-<!-- Add Jenkins and/or Travis CI status messages to Slack after integration-->
+The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The default `#general` and `#random` channels are available for free-form discussion and user support, and topic-specific channels and private Direct Messages (DMs) with up to 8 other members can be started by anyone. Issues and pull requests on the GitHub repository should still be the main forum to discuss development details, but the Slack workspace is a useful centralized forum for general discussion, sharing new results, asking questions, and learning what others are working on. This Slack workspace was setup on the Free plan, which essentially limits the amount of file storage to 5GB and message history to 10k messages
+
+### Slack Apps
+The `#development` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed. This channel also receives messages from the Jenkins and TravisCI Slack Apps, which provide summaries of and links to every [Continuous Integration (CI)](https://github.com/PrincetonUniversity/athena/wiki/Continuous-Integration-%28CI%29) build test result.
+
+Note, the GitHub + Slack integration was originally managed via a GitHub Webhook and "GitHub Notifications (Legacy)" Slack App until 5/19/2018. The current [GitHub + Slack App](https://slack.github.com/) interface enables embedded [rich link previews ](https://github.com/integrations/slack) when posting links from GitHub:
+> When a user posts a GitHub link to issues and pull requests, directly linked comments, code blobs with line numbers, as well as organizations, repositories, and users in Slack, a preview of the link will be shown.
+
+You may need to use the `/invite @github` command in private channels and Direct Messages to get rich link previews to work there. Posting links to the private [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) repository requires that you to link your Slack and GitHub accounts with the `/github signin` command. The GitHub + Slack App also allows you to open and close Issues and PRs from Slack with `/github close [issue link]`, for example.
+
+Slack's simple file upload and sharing features are especially useful when compared to GitHub or email. Slack also integrates with cloud file storage apps such as Dropbox, Google Drive, and Box.
 
 At this time, the Slack workspace is closed to the general public, but it is open to anyone who has Read access to the private repository and their associates. The workspace is configured such that anyone with a `@princeton.edu` email can join automatically at [this signup link](https://join.slack.com/t/athena-pp/signup). Any current member may invite new members. If all else fails, send your email address to [kfelker@math.princeton.edu](mailto:kfelker@math.princeton.edu) to request an invite.
+
+## Versioning and public releases
+We intend to provide periodic releases to the
+[athena-public-version](https://github.com/PrincetonUniversity/athena-public-version)
+repository based on the versions created in the private repository. See the
+header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and
+release practices for Athena++.
+
+**IMPORTANT**: The version string output by the `athena -h` command must be manually
+updated in `src/main.cpp` before tagging a new version. The user should also manually revert the `README.md` file to the simple (no CI status badges) format before tagging.
+
+In the priave repository, each release is accompanied by an Git annotated (not lightweight) tag. Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
+
+After pushing a new public release to
+[athena-public-version](https://github.com/PrincetonUniversity/athena-public-version),
+the following updates should be performed manually:
+- Duplicate the private version tag in the public repository
+- Draft public [Release
+  Notes](https://github.com/PrincetonUniversity/athena-public-version/releases)
+  based on private [`CHANGELOG.md`](./CHANGELOG.md) entries
+- Update the [public Athena++
+  Wiki](https://github.com/PrincetonUniversity/athena-public-version/wiki)
+  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki). For now, this consists of manually force-pushing from the latter to the former and then removing or modifying any content that are irrelevant to the public repository (e.g. the pages on "Continuous Integration"). There is a `public` branch on the `athena.wiki` repository that should be continually rebased on top of `master` with a few commits that remove the irrelevant content. The `master` branch of `athena-public-version.wiki` should mirror that private wiki `public` branch via force-pushing.
+- Announce release on the [Athena++
+  website](https://princetonuniversity.github.io/athena/index.html) by
+  modifying the HTML and CSS files on the `gh-pages` branch of the private repository
+
+### Pre-release versions, release/support branches, tagging practices
+While the release version is ideally drafted from a tagged commit on the `master` branch, it is possible that this development branch contains source code that is not intended to be released to the public. Or, the release may require temporary modifications that should not pollute the history of `master`.  In such cases, the content should be removed and the changes should be made in a separate **release/support branch**. Release branches should be named `release/X.Y.Z`. While these dead-end branches may not be merged back to master, they should be deleted after being tagged/released. The annotated tag at the tip of the branch should ensure that these commits are never garbage collected by Git.
+
+For prerelease tags, `X.Y.Z-suffix` is allowed, with optional suffixes `-alpha`, `-beta`, `-rc`, `-dev`. Their intended meanings are:
+- `-alpha`: version is feature-incomplete and/or unstable
+- `-beta`: version is feature-complete, but may have bugs and/or may be significantly changed before release
+- `-rc`: (release candidate) version will be released unless a last-minute bug is identified
+
+The above version suffixes may all have an integer appended to them, e.g. `-rc.1`, `-rc.2`, ... . In contrast, the following tag suffix should not have additional numbers appended at the end:
+- `-dev`: pre-release version that contains source code not meant for public release
+
+<!-- Note, some projects don't use a period after numbered suffixes, e.g. -rc2-->
+<!-- Although SemVer isn't so prescriptivist to define a set of suffixes, https://github.com/semver/semver/issues/114, it does define sytnax and how to use the suffixes in pt 9 , so that "pre-release versions have a lower precedence than the associated normal version" -->
+
+<!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future, such as conventional-changelog tool), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API, how to create an annotated/signed tag -->
+
+<!-- very weak/manual relationship between the private repo and the public repo tags and releases; this should be improved along with the "git reset --soft <base>" squash procedure. Need to add notes on modifications to pub/ scripts for releasing; do we want to use the last_public lightweight tag? -->
 
 <!-- # Athena++ Code of Conduct
 (to add here or store in external file, CODE_OF_CONDUCT.md) -->

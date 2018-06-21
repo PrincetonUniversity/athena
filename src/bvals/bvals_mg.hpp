@@ -69,6 +69,10 @@ private:
   MGBoundaryFunc_t MGBoundaryFunction_[6];
   MGBoundaryData bd_mggrav_;
 
+#ifdef MPI_PARALLEL
+  MPI_Comm mgcomm_;
+#endif
+
   friend class Multigrid;
 };
 

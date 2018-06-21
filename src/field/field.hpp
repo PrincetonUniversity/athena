@@ -17,6 +17,7 @@
 class MeshBlock;
 class ParameterInput;
 class Hydro;
+class FieldDiffusion;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -28,6 +29,7 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+  FieldDiffusion *pfdif;
 
   // face-centered magnetic fields
   FaceField b;       // time-integrator memory register #1

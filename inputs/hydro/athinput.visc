@@ -1,0 +1,55 @@
+<comment>
+problem   = viscous shear flow
+reference = 
+configure = --prob=visc --coord=cartesian --eos=isothermal
+
+<job>
+problem_id  = visc      # problem ID: basename of output filenames
+
+<output1>
+file_type   = vtk       # VTK data dump
+variable    = cons      #
+dt          = 0.01      # time increment between outputs
+ 
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.01      # time increment between outputs
+
+<time>
+cfl_number  = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 0.5       # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 128            # Number of zones in X1-direction
+x1min       = 0.0            # minimum value of X1
+x1max       = 2.0            # maximum value of X1
+ix1_bc      = reflecting        # Inner-X1 boundary condition flag
+ox1_bc      = reflecting        # Outer-X1 boundary condition flag
+
+nx2         = 16             # Number of zones in X2-direction
+x2min       = 0.             # minimum value of X2
+x2max       = 1.0            # maximum value of X2
+ix2_bc      = periodic       # Inner-X2 boundary condition flag
+ox2_bc      = periodic       # Outer-X2 boundary condition flag
+
+nx3         = 1             # Number of zones in X3-direction
+x3min       = -0.5           # minimum value of X3
+x3max       = 0.5            # maximum value of X3
+ix3_bc      = periodic           # Inner-X3 boundary condition flag
+ox3_bc      = periodic           # Outer-X3 boundary condition flag
+
+refinement  = None
+
+<hydro>
+gamma           = 1.66666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0        # isothermal sound speed
+
+<problem>
+r0              = 1.0        # initial location of the shear flow
+t0              = 0.5        # time used in initial profile
+iprob           = 0          # viscous shearing density column
+nu_iso          = 0.03

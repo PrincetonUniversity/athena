@@ -20,7 +20,7 @@ pgen_choices.remove('default_pgen')
 # coord='minkowski', #'-t'
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
 # MHD-required problems: --rsolver=hlld by default
-mhd_probs = set(['cpaw', 'field_loop', 'orszag_tang', 'rotor'])
+mhd_probs = set(['cpaw', 'field_loop', 'orszag_tang', 'rotor', 'resist'])
 # Shearing box MHD problems
 shear_probs = set(['hb3', 'hgb', 'ssheet', 'strat'])
 # Newtonian Hydro-only or MHD-optional problems are all leftover pgen/ files

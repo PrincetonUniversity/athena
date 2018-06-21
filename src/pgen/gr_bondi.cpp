@@ -27,13 +27,14 @@
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+                   FaceField &bb, Real time, Real dt,
+                   int is, int ie, int js, int je, int ks, int ke, int ngh);
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi);
+                                         Real *ptheta, Real *pphi);
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
-    Real *ppgas, Real *put, Real *pur);
+                                Real *ppgas, Real *put, Real *pur);
 static Real TemperatureMin(Real r, Real t_min, Real t_max);
 static Real TemperatureBisect(Real r, Real t_min, Real t_max);
 static Real TemperatureResidual(Real t, Real r);
@@ -238,7 +239,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+                   FaceField &bb, Real time, Real dt,
+                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
   return;
 }
 
@@ -252,7 +254,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   conversion is trivial in all currently implemented coordinate systems
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi) {
+                                         Real *ptheta, Real *pphi) {
   if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
     *pr = x1;
     *ptheta = x2;
@@ -272,7 +274,7 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (COORDINATE_SYSTEM == "schwarzschild") {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -302,7 +304,7 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
-    Real *ppgas, Real *put, Real *pur) {
+                                Real *ppgas, Real *put, Real *pur) {
   // Calculate solution to (HSW 76)
   Real temp_neg_res = TemperatureMin(r, temp_min, temp_max);
   Real temp;

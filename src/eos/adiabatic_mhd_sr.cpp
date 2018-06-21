@@ -78,20 +78,28 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   // Go through cells
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
 
         // Extract conserved quantities
-        Real &dd = cons(IDN,k,j,i);
-        Real &ee = cons(IEN,k,j,i);
-        const Real &mx = cons(IM1,k,j,i);
-        const Real &my = cons(IM2,k,j,i);
-        const Real &mz = cons(IM3,k,j,i);
+        Real dd = cons(IDN,k,j,i);
+        Real ee = cons(IEN,k,j,i);
+
+        Real mx = cons(IM1,k,j,i);
+        Real my = cons(IM2,k,j,i);
+        Real mz = cons(IM3,k,j,i);
+
+        // Extract primitives
+        Real rho = prim(IDN,k,j,i);
+        Real pgas = prim(IPR,k,j,i);
+        Real vx = prim(IVX,k,j,i);
+        Real vy = prim(IVY,k,j,i);
+        Real vz = prim(IVZ,k,j,i);
 
         // Extract cell-centered magnetic field
-        const Real &bbx = bb_cc(IB1,k,j,i);
-        const Real &bby = bb_cc(IB2,k,j,i);
-        const Real &bbz = bb_cc(IB3,k,j,i);
+        Real bbx = bb_cc(IB1,k,j,i);
+        Real bby = bb_cc(IB2,k,j,i);
+        Real bbz = bb_cc(IB3,k,j,i);
 
         // Calculate variations on conserved quantities
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
@@ -104,7 +112,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real a0 = ONE_3RD * (m_sq + bb_sq * (bb_sq - 2.0*ee));
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
+        Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
 
         // Apply Newton-Raphson method to find new W
         const int num_iterations = 5;
@@ -120,23 +128,16 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
         Real w_true = w_new;
 
-        // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IPR,k,j,i);
-        Real &vx = prim(IVX,k,j,i);
-        Real &vy = prim(IVY,k,j,i);
-        Real &vz = prim(IVZ,k,j,i);
-
         // Set velocity
         vx = (mx + m_dot_bb/w_true * bbx) / (w_true + bb_sq);  // (MM A10)
         vy = (my + m_dot_bb/w_true * bby) / (w_true + bb_sq);  // (MM A10)
         vz = (mz + m_dot_bb/w_true * bbz) / (w_true + bb_sq);  // (MM A10)
         Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
+        Real vel_ratio = max_velocity / std::sqrt(v_sq);
         if (v_sq > v_sq_max) {
-          Real v_abs = std::sqrt(v_sq);
-          vx *= max_velocity/v_abs;
-          vy *= max_velocity/v_abs;
-          vz *= max_velocity/v_abs;
+          vx *= vel_ratio;
+          vy *= vel_ratio;
+          vz *= vel_ratio;
           v_sq = v_sq_max;
         }
         Real gamma_sq = 1.0/(1.0-v_sq);
@@ -144,7 +145,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Calculate magnetic pressure
         Real v_dot_bb = vx*bbx + vy*bby + vz*bbz;
-        Real b_sq = bb_sq/gamma_sq + SQR(v_dot_bb);
+        Real b_sq = bb_sq * (1.0-v_sq) + SQR(v_dot_bb);
         Real pmag = 0.5*b_sq;
 
         // Calculate floors for density and pressure
@@ -166,14 +167,23 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Set pressure, correcting only energy if floor applied
         Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * dd);  // (cf. MM A11)
-        pgas = chi/gamma_prime;                                   // (MM A17)
+        pgas = chi/gamma_prime;  // (MM A17
+        Real bt = gamma_lorentz * v_dot_bb;
         if (pgas < pressure_floor_local) {
           pgas = pressure_floor_local;
-          Real bt = gamma_lorentz * v_dot_bb;
           Real w = rho + gamma_prime * pgas + b_sq;
-          Real ptot = pgas + pmag;
-          ee = gamma_sq * w - SQR(bt) - ptot;
+          ee = gamma_sq * w - SQR(bt) - (pgas + pmag);
         }
+
+        cons(IDN,k,j,i) = dd;
+        cons(IEN,k,j,i) = ee;
+
+        prim(IDN,k,j,i) = rho;
+        prim(IPR,k,j,i) = pgas;
+        prim(IVX,k,j,i) = vx;
+        prim(IVY,k,j,i) = vy;
+        prim(IVZ,k,j,i) = vz;
+
       }
     }
   }
@@ -199,47 +209,43 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   // Go through all cells
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
 
         // Extract primitives and magnetic fields
-        const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IPR,k,j,i);
-        const Real &v1 = prim(IVX,k,j,i);
-        const Real &v2 = prim(IVY,k,j,i);
-        const Real &v3 = prim(IVZ,k,j,i);
-        const Real &bb1 = bc(IB1,k,j,i);
-        const Real &bb2 = bc(IB2,k,j,i);
-        const Real &bb3 = bc(IB3,k,j,i);
+        Real rho = prim(IDN,k,j,i);
+        Real pgas = prim(IPR,k,j,i);
+        Real v1 = prim(IVX,k,j,i);
+        Real v2 = prim(IVY,k,j,i);
+        Real v3 = prim(IVZ,k,j,i);
 
-        // Calculate 4-velocity
+        Real bb1 = bc(IB1,k,j,i);
+        Real bb2 = bc(IB2,k,j,i);
+        Real bb3 = bc(IB3,k,j,i);
+
+        // Calculate velocity
         Real u0 = 1.0 / std::sqrt(1.0 - SQR(v1) - SQR(v2) - SQR(v3));
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
 
         // Calculate 4-magnetic field
-        Real b0 = bb1*u1 + bb2*u2 + bb3*u3;
-        Real b1 = (bb1 + b0 * u1) / u0;
-        Real b2 = (bb2 + b0 * u2) / u0;
-        Real b3 = (bb3 + b0 * u3) / u0;
+        Real b0 = (bb1*v1 + bb2*v2 + bb3*v3) * u0;
+        Real b1 = bb1 / u0 + b0 * v1;
+        Real b2 = bb2 / u0 + b0 * v2;
+        Real b3 = bb3 / u0 + b0 * v3;
         Real b_sq = -SQR(b0) + SQR(b1) + SQR(b2) + SQR(b3);
 
-        // Extract conserved quantities
-        Real &dd = cons(IDN,k,j,i);
-        Real &ee = cons(IEN,k,j,i);
-        Real &m1 = cons(IM1,k,j,i);
-        Real &m2 = cons(IM2,k,j,i);
-        Real &m3 = cons(IM3,k,j,i);
-
         // Set conserved quantities
-        Real wtot = rho + gamma_adi_red * pgas + b_sq;
-        Real ptot = pgas + 0.5*b_sq;
-        dd = rho * u0;
-        ee = wtot * u0 * u0 - b0 * b0 - ptot;
-        m1 = wtot * u0 * u1 - b0 * b1;
-        m2 = wtot * u0 * u2 - b0 * b2;
-        m3 = wtot * u0 * u3 - b0 * b3;
+        Real wtot_u02 = (rho + gamma_adi_red * pgas + b_sq) * u0 * u0;
+        Real dd = rho * u0;
+        Real ee = wtot_u02 - b0 * b0 - (pgas + 0.5*b_sq);
+        Real m1 = wtot_u02 * v1 - b0 * b1;
+        Real m2 = wtot_u02 * v2 - b0 * b2;
+        Real m3 = wtot_u02 * v3 - b0 * b3;
+
+        cons(IDN,k,j,i) = dd;
+        cons(IEN,k,j,i) = ee;
+        cons(IM1,k,j,i) = m1;
+        cons(IM2,k,j,i) = m2;
+        cons(IM3,k,j,i) = m3;
       }
     }
   }
@@ -279,47 +285,44 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
 
     // Extract primitives
-    const Real &rho = prim(IDN,k,j,i);
-    const Real &pgas = prim(IPR,k,j,i);
-    const Real &vx = prim(ivx,k,j,i);
-    const Real &vy = prim(ivy,k,j,i);
-    const Real &vz = prim(ivz,k,j,i);
-    const Real &bbx = bbx_vals(i);
-    const Real &bby = prim(IBY,k,j,i);
-    const Real &bbz = prim(IBZ,k,j,i);
+    Real rho = prim(IDN,k,j,i);
+    Real pgas = prim(IPR,k,j,i);
+    Real vx = prim(ivx,k,j,i);
+    Real vy = prim(ivy,k,j,i);
+    Real vz = prim(ivz,k,j,i);
+    Real bbx = bbx_vals(i);
+    Real bby = prim(IBY,k,j,i);
+    Real bbz = prim(IBZ,k,j,i);
 
-    // Calculate 4-velocity
-    Real u[4];
-    u[0] = std::sqrt(1.0 / (1.0 - SQR(vx) - SQR(vy) - SQR(vz)));
-    u[1] = u[0]*vx;
-    u[2] = u[0]*vy;
-    u[3] = u[0]*vz;
+    // Calculate velocity
+    Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
+    Real u0 = std::sqrt(1.0 / (1.0 - v_sq));
 
     // Calculate contravariant magnetic field
     Real b[4];
-    b[0] = bbx*u[1] + bby*u[2] + bbz*u[3];
-    b[1] = (bbx + b[0] * u[1]) / u[0];
-    b[2] = (bby + b[0] * u[2]) / u[0];
-    b[3] = (bbz + b[0] * u[3]) / u[0];
+    b[0] = (bbx*vx + bby*vy + bbz*vz) * u0;
+    b[1] = bbx / u0 + b[0] * vx;
+    b[2] = bby / u0 + b[0] * vy;
+    b[3] = bbz / u0 + b[0] * vz;
 
     // Calculate intermediate quantities
-    Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
-    Real gamma_rel_sq = 1.0/(1.0-v_sq);
+    Real gamma_rel_sq = u0 * u0;
     Real w_gas = rho + gamma_adi_red * pgas;
     Real cs_sq = gamma_adi * pgas / w_gas;                       // (MB2005 4)
     Real b_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
     Real bbx_sq = SQR(bbx);
+    Real vx_sq = SQR(vx);
 
     // Calculate wavespeeds in vanishing velocity case (MB2006 57)
     Real lambda_plus_no_v, lambda_minus_no_v;
     {
-      Real w_tot = w_gas + b_sq;
-      Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) / w_tot;
-      Real a0 = cs_sq * bbx_sq / w_tot;
+      Real w_tot_inv = 1.0 / (w_gas + b_sq);
+      Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) * w_tot_inv;
+      Real a0 = cs_sq * bbx_sq * w_tot_inv;
       Real s2 = SQR(a1) - 4.0*a0;
       Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
       Real lambda_sq = 0.5 * (-a1 + s);
@@ -330,39 +333,37 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     // Calculate wavespeeds in vanishing normal field case (MB2006 58)
     Real lambda_plus_no_bbx, lambda_minus_no_bbx;
     {
-      Real vx_sq = SQR(vx);
       Real v_dot_bb_perp = vy*bby + vz*bbz;
       Real q = b_sq - cs_sq*SQR(v_dot_bb_perp);
-      Real denominator = w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
-      Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) / denominator;
-      Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) / denominator;
+      Real denominator_inv = 1.0 / (w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q);
+      Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) * denominator_inv;
+      Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) * denominator_inv;
       Real s2 = SQR(a1) - 4.0*a0;
       Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-      lambda_plus_no_bbx = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
-      lambda_minus_no_bbx = (s2 >= 0.0 and a1 < 0.0) ? -2.0*a0/(a1-s) : (-a1-s)/2.0;
+      lambda_plus_no_bbx = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
+      lambda_minus_no_bbx = (s2 >= 0.0 and a1 < 0.0) ? -2.0*a0/(a1-s) : 0.5*(-a1-s);
     }
 
     // Calculate wavespeeds in general case (MB2006 56)
     Real lambda_plus, lambda_minus;
     {
       // Calculate quartic coefficients
-      Real vx2 = SQR(vx);
-      Real vx3 = vx2 * vx;
-      Real vx4 = SQR(vx2);
       Real bt_sq = SQR(b[0]);
       Real bx_sq = SQR(b[1]);
       Real tmp1 = SQR(gamma_rel_sq) * w_gas * (1.0-cs_sq);
       Real tmp2 = gamma_rel_sq * (b_sq + w_gas * cs_sq);
-      Real denominator = tmp1 + tmp2 - cs_sq * bt_sq;
-      Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) / denominator;
-      Real a2 = (6.0*tmp1*vx2 + tmp2*(vx2-1.0) + cs_sq*(bt_sq-bx_sq)) / denominator;
-      Real a1 = (-4.0*tmp1*vx3 + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1]) / denominator;
-      Real a0 = (tmp1*vx4 - tmp2*vx2 + cs_sq*bx_sq) / denominator;
+      Real denominator_inv = 1.0 / (tmp1 + tmp2 - cs_sq * bt_sq);
+      Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) * denominator_inv;
+      Real a2 = (6.0*tmp1*vx_sq + tmp2*(vx_sq-1.0) + cs_sq*(bt_sq-bx_sq))
+        * denominator_inv;
+      Real a1 = (-4.0*tmp1*vx_sq*vx + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1])
+        * denominator_inv;
+      Real a0 = (tmp1*SQR(vx_sq) - tmp2*vx_sq + cs_sq*bx_sq) * denominator_inv;
 
       // Calculate reduced quartic coefficients
-      Real b2 = a2 - 3.0/8.0*SQR(a3);
-      Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);
-      Real b0 = a0 - 1.0/4.0*a1*a3 + 1.0/16.0*a2*SQR(a3) - 3.0/256.0*SQR(SQR(a3));
+      Real b2 = a2 - 0.375*SQR(a3);
+      Real b1 = a1 - 0.5*a2*a3 + 0.125*a3*SQR(a3);
+      Real b0 = a0 - 0.25*a1*a3 + 0.0625*a2*SQR(a3) - 3.0/256.0*SQR(SQR(a3));
 
       // Solve reduced quartic equation
       Real y1, y2, y3, y4;
@@ -392,7 +393,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Calculate quadratic coefficients
         Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
         Real e1 = -d1;
-        s2 = SQR(z0)/4.0 - b0;
+        s2 = 0.25*SQR(z0) - b0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
         Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
@@ -400,17 +401,17 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Solve quadratic equations
         s2 = SQR(d1) - 4.0*d0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : (-d1-s)/2.0;
-        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
+        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : 0.5*(-d1-s);
+        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : 0.5*(-d1+s);
         s2 = SQR(e1) - 4.0*e0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : (-e1-s)/2.0;
-        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
+        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : 0.5*(-e1-s);
+        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : 0.5*(-e1+s);
       }
 
       // Calculate extremal original quartic roots
-      lambda_minus = std::min(y1, y3) - a3/4.0;
-      lambda_plus = std::max(y2, y4) - a3/4.0;
+      lambda_minus = std::min(y1, y3) - 0.25*a3;
+      lambda_plus = std::max(y2, y4) - 0.25*a3;
 
       // Ensure wavespeeds are not superluminal
       lambda_minus = std::max(lambda_minus, -1.0);
@@ -458,7 +459,7 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
   Real pgas = chi/gamma_prime;                                     // (MM A17)
   Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
-      - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
+      - ss_sq*0.5/SQR(w_guess);                                    // (MM A1)
   return ee_calc - ee;
 }
 
@@ -490,8 +491,8 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
   Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
       * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
   Real dchi_dw = 1.0 - v_sq
-      - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
-  Real drho_dw = -gamma_lorentz*dd/2.0 * dv_sq_dw;                    // (MM A15)
+      - 0.5*gamma_lorentz * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+  Real drho_dw = -0.5*gamma_lorentz*dd*dv_sq_dw;                      // (MM A15)
   Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
   Real dpgas_drho = 0.0;                                              // (MM A18)
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;

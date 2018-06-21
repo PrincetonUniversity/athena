@@ -56,7 +56,7 @@
 //  \brief Athena++ main program
 
 int main(int argc, char *argv[]) {
-  std::string athena_version = "version 1.0 - October 2016";
+  std::string athena_version = "version 1.1.0 - May 2018";
   char *input_filename=NULL, *restart_filename=NULL;
   char *prundir = NULL;
   int res_flag=0;   // set to 1 if -r        argument is on cmdline
@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (pmesh->turb_flag == 2) pmesh->ptrbd->Driving(); // driven turbulence
+    if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
     for (int step=1; step<=ptlist->nsub_steps; ++step) {
       if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
