@@ -60,11 +60,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Compute test EOS tables for Athena++.')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gamma', default=5./3., type=float)
+    parser.add_argument('--gamma', default=5./3., type=np.float64)
     parser.add_argument('--n', default=2, type=int)
     parser.add_argument('--fn', default='bin/eos_table.data', type=str)
-    parser.add_argument('--mu', default=.6, type=float)
-    parser.add_argument('--R', default=None, type=float)
+    parser.add_argument('--mu', default=.6, type=np.float64)
+    parser.add_argument('--R', default=None, type=np.float64)
     p = parser.parse_args()
     opts = vars(p)
 
