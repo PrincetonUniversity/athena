@@ -101,6 +101,15 @@ public:
     #endif  // !MAGNETIC_FIELDS_ENABLED
   #endif  // !RELATIVISTIC_DYNAMICS
 
+#if GENERAL_EOS
+  Real RiemannAsq(Real rho, Real hint);
+  Real SimplePres(Real rho, Real egas);
+  Real SimpleEgas(Real rho, Real pres);
+  Real SimpleAsq(Real rho, Real pres);
+  Real GetGamma() const {throw std::invalid_argument("GetGamma is not defined for general EOS.");}
+#else // not EOS_TABLE_ENABLED
+  Real GetGamma() const {return gamma_;}
+#endif
 #if EOS_TABLE_ENABLED
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
@@ -108,10 +117,6 @@ public:
   void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
   Real GetEosData(Real rho, Real var, int axis, int kOut);
   //Real GetGamma1FromRhoEgas(Real rho, Real egas);
-  Real RiemannAsq(Real rho, Real hint);
-  Real SimplePres(Real rho, Real egas);
-  Real SimpleEgas(Real rho, Real pres);
-  Real SimpleAsq(Real rho, Real pres);
   void EosTestLoop();
   void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
   int iPresEOS;
@@ -121,10 +126,6 @@ public:
   int axisEgas;
   int axisPres;
   int axisHint;
-
-  Real GetGamma() const {throw std::invalid_argument("GetGamma is not defined for EOS tables.");}
-#else // not EOS_TABLE_ENABLED
-  Real GetGamma() const {return gamma_;}
 #endif // EOS_TABLE_ENABLED
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
@@ -154,9 +155,10 @@ private:
   int nRho_, nEgas_, nVar_;
   Real egasOverPres_;
   Real EosRatios_[3];
-  Real energy_floor_;                    // internal energy floor
 #endif // EOS_TABLE_ENABLED
-
+#if GENERAL_EOS
+  Real energy_floor_;                    // internal energy floor
+#endif
 };
 
 #endif // EOS_EOS_HPP_
