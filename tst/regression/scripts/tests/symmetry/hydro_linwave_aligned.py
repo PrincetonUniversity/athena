@@ -6,7 +6,6 @@
 
 # Modules
 import scripts.utils.athena as athena
-from math import log
 import numpy as np
 
 # List of time/integrator and time/xorder combinations to test:
@@ -88,7 +87,7 @@ def analyze():
         solver_results = np.array(data[0:nrows_per_solver])
         del data[0:nrows_per_solver]
 
-        print('{} + {}'.format(torder.upper(), xorder))
+        # print('{} + {}'.format(torder.upper(), xorder))
         # L-going sound wave: Ncycle, RMS-L1, d_L1, E_L1, d_max, E_max
         indices = [3, 4, 5, 9, 11, 15]
         results_1D = np.take(np.squeeze(solver_results[0, :]), indices)
