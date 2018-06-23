@@ -352,7 +352,13 @@ if args['cxx'] == 'g++-simd':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -std=c++11 -fopenmp-simd -fwhole-program -march=skylake-avx512 -flto'
+        '-O3 -std=c++11 -fopenmp-simd -fwhole-program -flto -ffast-math '
+        '-march=native -fprefetch-loop-arrays'
+        # -march=skylake-avx512, skylake, core-avx2
+        # -mprefer-vector-width=128  # available in gcc-8, but not gcc-7
+        # -mtune=native, generic, broadwell
+        # -mprefer-avx128
+        # -m64 (default)
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
