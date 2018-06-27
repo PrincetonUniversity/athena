@@ -92,63 +92,58 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const int initial_guess_multiplications = 10;
 
   // Extract ratio of specific heats
-  const Real &gamma_adi = gamma_;
+  const Real gamma_adi = gamma_;
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
+  const Real gamma_tmp = SQR(gamma_max_)-1.0;
 
   // Go through cells
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH) early_exit
       for (int i=il; i<=iu; ++i) {
 
         // Extract metric
-        const Real
-            // unused:
-            //&g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
-            // &g_10 = g_(I01,i);
-            // &g_20 = g_(I02,i), &g_21 = g_(I12,i);
-            // &g_30 = g_(I03,i), &g_31 = g_(I13,i), &g_32 = g_(I23,i);
-            &g_11 = g_(I11,i), &g_12 = g_(I12,i), &g_13 = g_(I13,i),
-            &g_22 = g_(I22,i), &g_23 = g_(I23,i),
-            &g_33 = g_(I33,i);
-        const Real &g00 = g_inv_(I00,i), &g01 = g_inv_(I01,i), &g02 = g_inv_(I02,i),
-                   &g03 = g_inv_(I03,i), &g10 = g_inv_(I01,i), &g11 = g_inv_(I11,i),
-                   &g12 = g_inv_(I12,i), &g13 = g_inv_(I13,i), &g20 = g_inv_(I02,i),
-                   &g21 = g_inv_(I12,i), &g22 = g_inv_(I22,i), &g23 = g_inv_(I23,i),
-                   &g30 = g_inv_(I03,i), &g31 = g_inv_(I13,i), &g32 = g_inv_(I23,i),
-                   &g33 = g_inv_(I33,i);
+        Real g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
+	  g_22 = g_(I22,i),&g_23 = g_(I23,i), g_33 = g_(I33,i);
+        Real g00 = g_inv_(I00,i), g01 = g_inv_(I01,i), g02 = g_inv_(I02,i),
+	  g03 = g_inv_(I03,i), g10 = g_inv_(I01,i), g11 = g_inv_(I11,i),
+	  g12 = g_inv_(I12,i), g13 = g_inv_(I13,i), g20 = g_inv_(I02,i),
+	  g21 = g_inv_(I12,i), g22 = g_inv_(I22,i), g23 = g_inv_(I23,i),
+	  g30 = g_inv_(I03,i), g31 = g_inv_(I13,i), g32 = g_inv_(I23,i),
+	  g33 = g_inv_(I33,i);
         Real alpha = 1.0/std::sqrt(-g00);
 
         // Extract conserved quantities
-        const Real &rho_u0 = cons(IDN,k,j,i);
-        const Real &t0_0 = cons(IEN,k,j,i);
-        const Real &t0_1 = cons(IVX,k,j,i);
-        const Real &t0_2 = cons(IVY,k,j,i);
-        const Real &t0_3 = cons(IVZ,k,j,i);
+        Real rho_u0 = cons(IDN,k,j,i);
+        Real t0_0 = cons(IEN,k,j,i);
+        Real t0_1 = cons(IVX,k,j,i);
+        Real t0_2 = cons(IVY,k,j,i);
+        Real t0_3 = cons(IVZ,k,j,i);
 
         // Calculate variations on conserved quantities
-        Real d = alpha * rho_u0;                                               // (N 21)
-        Real q_0 = alpha * t0_0;                                               // (N 17)
-        Real q_1 = alpha * t0_1;                                               // (N 17)
-        Real q_2 = alpha * t0_2;                                               // (N 17)
-        Real q_3 = alpha * t0_3;                                               // (N 17)
-        Real q_n = -alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
-        Real qq1 = g10*q_0 + g11*q_1 + g12*q_2 + g13*q_3 - alpha * g01 * q_n;
-        Real qq2 = g20*q_0 + g21*q_1 + g22*q_2 + g23*q_3 - alpha * g02 * q_n;
-        Real qq3 = g30*q_0 + g31*q_1 + g32*q_2 + g33*q_3 - alpha * g03 * q_n;
-        Real tmp1 = g00*q_0*q_0 + 2.0*g01*q_0*q_1 + 2.0*g02*q_0*q_2 + 2.0*g03*q_0*q_3
-                  + g11*q_1*q_1 + 2.0*g12*q_1*q_2 + 2.0*g13*q_1*q_3
-                  + g22*q_2*q_2 + 2.0*g23*q_2*q_3
-                  + g33*q_3*q_3;
-        Real tmp2 = alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
-        Real qq_sq = tmp1 + SQR(tmp2);
+        Real d = alpha * rho_u0;  // (N 21)
+        //Real q_0 = alpha * t0_0;  // (N 17)
+        //Real q_1 = alpha * t0_1;  // (N 17)
+        //Real q_2 = alpha * t0_2;  // (N 17)
+        //Real q_3 = alpha * t0_3;  // (N 17)
+        Real q_n = - alpha * alpha * (g00*t0_0 + g01*t0_1 + g02*t0_2 + g03*t0_3);
+        Real qq1 = alpha * (g10*t0_0 + g11*t0_1 + g12*t0_2 + g13*t0_3 - g01*q_n);
+        Real qq2 = alpha * (g20*t0_0 + g21*t0_1 + g22*t0_2 + g23*t0_3 - g02*q_n);
+        Real qq3 = alpha * (g30*t0_0 + g31*t0_1 + g32*t0_2 + g33*t0_3 - g03*q_n);
+        Real qq_sq = alpha * alpha * (g00*t0_0*t0_0 + 2.0*g01*t0_0*t0_1 + 2.0*g02*t0_0*t0_2
+				     + 2.0*g03*t0_0*t0_3 + g11*t0_1*t0_1 + 2.0*g12*t0_1*t0_2
+				     + 2.0*g13*t0_1*t0_3 + g22*t0_2*t0_2 + 2.0*g23*t0_2*t0_3
+				      + g33*t0_3*t0_3) + SQR(q_n);
+        //Real tmp2 = alpha * alpha * (g00*t0_0 + g01*t0_1 + g02*t0_2 + g03*t0_3);
+        //Real qq_sq = tmp1 + SQR(tmp2);
 
         // Extract old primitives
-        const Real &rho_old = prim_old(IDN,k,j,i);
-        const Real &pgas_old = prim_old(IPR,k,j,i);
-        const Real &uu1_old = prim_old(IVX,k,j,i);
-        const Real &uu2_old = prim_old(IVY,k,j,i);
-        const Real &uu3_old = prim_old(IVZ,k,j,i);
+        Real rho_old = prim_old(IDN,k,j,i);
+        Real pgas_old = prim_old(IPR,k,j,i);
+        Real uu1_old = prim_old(IVX,k,j,i);
+        Real uu2_old = prim_old(IVY,k,j,i);
+        Real uu3_old = prim_old(IVZ,k,j,i);
 
         // Construct initial guess for relativistic gas enthalpy W
         Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old + 2.0*g_13*uu1_old*uu3_old
@@ -156,7 +151,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
                  + g_33*SQR(uu3_old);
         Real gamma_sq = 1.0 + tmp;
         Real wgas_rel_init =
-            gamma_sq * (rho_old + gamma_adi/(gamma_adi-1.0) * pgas_old);
+            gamma_sq * (rho_old + gamma_prime * pgas_old);
         for (int count = 0; count < initial_guess_multiplications; ++count) {
           if (SQR(wgas_rel_init) <= qq_sq) {  // v^2 >= 1 according to (N 28)
             wgas_rel_init *= initial_guess_multiplier;
@@ -193,21 +188,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // unused:
         // Real u0 = gamma_rel/alpha;  // (N 21)
 
-        // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IPR,k,j,i);
-        Real &uu1 = prim(IVX,k,j,i);
-        Real &uu2 = prim(IVY,k,j,i);
-        Real &uu3 = prim(IVZ,k,j,i);
-
         // Set density and pressure
-        rho = d/gamma_rel;                                                  // (N 21)
-        pgas = (gamma_adi-1.0)/gamma_adi * (wgas_rel_true/gamma_sq - rho);  // (N 21,32)
+        Real rho = d/gamma_rel;  // (N 21)
+        Real pgas = 1.0 / gamma_prime * (wgas_rel_true/gamma_sq - rho);  // (N 21,32)
 
         // Set velocity
-        uu1 = gamma_rel * qq1 / wgas_rel_true;  // (N 31)
-        uu2 = gamma_rel * qq2 / wgas_rel_true;  // (N 31)
-        uu3 = gamma_rel * qq3 / wgas_rel_true;  // (N 31)
+        Real uu1 = gamma_rel * qq1 / wgas_rel_true;  // (N 31)
+        Real uu2 = gamma_rel * qq2 / wgas_rel_true;  // (N 31)
+        Real uu3 = gamma_rel * qq3 / wgas_rel_true;  // (N 31)
 
         // Apply floors to density and pressure
         Real density_floor_local = density_floor_;
@@ -231,12 +219,20 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Apply ceiling to velocity
         if (gamma_rel > gamma_max_) {
-          Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma_rel)-1.0));
+          Real factor = std::sqrt(gamma_tmp / (SQR(gamma_rel)-1.0));
           uu1 *= factor;
           uu2 *= factor;
           uu3 *= factor;
           fixed_(k,j,i) = true;
         }
+
+	// Set primitives quantities
+	prim(IDN,k,j,i) = rho;
+        prim(IPR,k,j,i) = pgas;
+        prim(IVX,k,j,i) = uu1;
+        prim(IVY,k,j,i) = uu2;
+        prim(IVZ,k,j,i) = uu3;
+
       }
     }
   }
@@ -245,11 +241,50 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
+      const AthenaArray<Real> &g = g_;
+      const AthenaArray<Real> &gi = g_inv_;
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
+        //if (fixed_(k,j,i)) {
+        //  PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, cons, pco);
+        //  fixed_(k,j,i) = false;
+        //}
+        // Extract primitives
+        Real rho = prim(IDN,k,j,i);
+        Real pgas = prim(IPR,k,j,i);
+        Real uu1 = prim(IVX,k,j,i);
+        Real uu2 = prim(IVY,k,j,i);
+        Real uu3 = prim(IVZ,k,j,i);
+
+        // Calculate 4-velocity
+        Real alpha = std::sqrt(-1.0/gi(I00,i));
+        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+          + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+          + g(I33,i)*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma / alpha;
+        Real u1 = uu1 - alpha * gamma * gi(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi(I03,i);
+        Real u_0, u_1, u_2, u_3;
+        pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+        Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
+        Real rho_u0 = rho * u0;
+        Real t0_0 = wgas_u0 * u_0 + pgas;
+        Real t0_1 = wgas_u0 * u_1;
+        Real t0_2 = wgas_u0 * u_2;
+        Real t0_3 = wgas_u0 * u_3;
+
         if (fixed_(k,j,i)) {
-          PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, cons, pco);
-          fixed_(k,j,i) = false;
-        }
+	  // Set conserved quantities
+	  cons(IDN,k,j,i) = rho_u0;
+	  cons(IEN,k,j,i) = t0_0;
+	  cons(IM1,k,j,i) = t0_1;
+	  cons(IM2,k,j,i) = t0_2;
+	  cons(IM3,k,j,i) = t0_3;
+	  fixed_(k,j,i) = false;
+	}
       }
     }
   }
@@ -270,14 +305,55 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //       than having duplicate code
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku) {
+					   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+					   int iu, int jl, int ju, int kl, int ku) {
+
+  const Real gamma_adi = gamma_;
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
+
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
+      const AthenaArray<Real> &g = g_;
+      const AthenaArray<Real> &gi = g_inv_;
       //#pragma omp simd // fn is too long to inline
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
+	//        PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
+
+	// Extract primitives
+	Real rho = prim(IDN,k,j,i);
+	Real pgas = prim(IPR,k,j,i);
+	Real uu1 = prim(IVX,k,j,i);
+        Real uu2 = prim(IVY,k,j,i);
+	Real uu3 = prim(IVZ,k,j,i);
+
+	// Calculate 4-velocity
+	Real alpha = std::sqrt(-1.0/gi(I00,i));
+	Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+	  + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+	  + g(I33,i)*uu3*uu3;
+	Real gamma = std::sqrt(1.0 + tmp);
+	Real u0 = gamma / alpha;
+	Real u1 = uu1 - alpha * gamma * gi(I01,i);
+	Real u2 = uu2 - alpha * gamma * gi(I02,i);
+	Real u3 = uu3 - alpha * gamma * gi(I03,i);
+	Real u_0, u_1, u_2, u_3;
+	pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+	Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
+	Real rho_u0 = rho * u0;
+	Real t0_0 = wgas_u0 * u_0 + pgas;
+	Real t0_1 = wgas_u0 * u_1;
+	Real t0_2 = wgas_u0 * u_2;
+	Real t0_3 = wgas_u0 * u_3;
+
+	// Set conserved quantities
+        cons(IDN,k,j,i) = rho_u0;
+        cons(IEN,k,j,i) = t0_0;
+        cons(IM1,k,j,i) = t0_1;
+        cons(IM2,k,j,i) = t0_2;
+        cons(IM3,k,j,i) = t0_3;
       }
     }
   }
@@ -352,12 +428,14 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 
 void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus) {
-  const Real gamma_adi = gamma_;
-  Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
+  //const Real gamma_adi = gamma_;
+  //Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
+  Real cs_sq = gamma_ * pgas / rho_h;                                 // (MB 4)
   Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
   Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - SQR(vx)));
-  *plambda_plus = 1.0/(1.0+sigma_s) * (vx + relative_speed);             // (MB 23)
-  *plambda_minus = 1.0/(1.0+sigma_s) * (vx - relative_speed);            // (MB 23)
+  Real sigma_s_tmp = 1.0 / (1.0+sigma_s);
+  *plambda_plus = sigma_s_tmp * (vx + relative_speed);             // (MB 23)
+  *plambda_minus = sigma_s_tmp * (vx - relative_speed);            // (MB 23)
   return;
 }
 
@@ -379,10 +457,11 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
     Real g01, Real g11, Real *plambda_plus, Real *plambda_minus) {
   // Parameters and constants
   const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
-  const Real gamma_adi = gamma_;
+  //const Real gamma_adi = gamma_;
 
   // Calculate comoving sound speed
-  Real cs_sq = gamma_adi * pgas / rho_h;
+  //Real cs_sq = gamma_adi * pgas / rho_h;
+  Real cs_sq = gamma_ * pgas / rho_h;
 
   // Set sound speeds in appropriate coordinates
   Real a = SQR(u0) - (g00 + SQR(u0)) * cs_sq;

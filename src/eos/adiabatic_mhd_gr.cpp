@@ -26,11 +26,21 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(k,j,prim)
+///*
 static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
     const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
     Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor,
     Real *p_pmag);
+//*/
+/*
+static bool ConservedToPrimitiveNormal(Real dd, Real ee, Real mm_sq, Real mm1, Real mm2, Real mm3,
+                                       Real bb_sq, Real bb1, Real bb2, Real bb3, Real tt, Real gamma_adi,
+				       Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
+				       Real *p_gamma_lor, Real *p_pmag);
+*/
+#pragma omp declare simd simdlen(SIMD_WIDTH)
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
@@ -88,7 +98,6 @@ EquationOfState::~EquationOfState() {
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
-
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
     AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
@@ -97,7 +106,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real mm_sq_ee_sq_max = 1.0 - 1.0e-12;  // max. of squared momentum over energy
 
   // Extract ratio of specific heats
-  const Real &gamma_adi = gamma_;
+  const Real gamma_adi = gamma_;
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Interpolate magnetic field from faces to cell centers
   pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, il, iu, jl, ju, kl, ku);
@@ -114,6 +124,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           normal_ee_, normal_mm_, normal_bb_, normal_tt_);
 
       // Go through cells
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
 
         // Set flag indicating conserved values need adjusting at end
@@ -148,8 +159,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Ensure conserved momentum is not too large given energy
         Real mm_sq_max = mm_sq_ee_sq_max * SQR(normal_ee_(i));
+	Real factor = std::sqrt(mm_sq_max/normal_mm_(0,i));
         if (normal_mm_(0,i) > mm_sq_max) {
-          Real factor = std::sqrt(mm_sq_max/normal_mm_(0,i));
           normal_mm_(0,i) = mm_sq_max;
           normal_mm_(1,i) *= factor;
           normal_mm_(2,i) *= factor;
@@ -160,10 +171,19 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Set primitives
         Real gamma, pmag;
+	///*
         bool success = ConservedToPrimitiveNormal(normal_dd_, normal_ee_, normal_mm_,
             normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i, prim,
             &gamma, &pmag);
-
+	//*/
+	/*
+	bool success = ConservedToPrimitiveNormal(normal_dd_(i), normal_ee_(i), normal_mm_(0,i),
+						  normal_mm_(1,i), normal_mm_(2,i), normal_mm_(3,i),
+						  normal_bb_(0,i), normal_bb_(1,i), normal_bb_(2,i),
+						  normal_bb_(3,i), normal_tt_(i), gamma_adi,
+						  prim_old(IPR,k,j,i), k, j, i, prim, &gamma,
+						  &pmag);
+	*/
         // Handle failures
         if (not success) {
           for (int n = 0; n < NHYDRO; ++n) {
@@ -181,18 +201,28 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
         Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
         Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
+	Real wgas_add = rho_add + gamma_prime * pgas_add;
         if (success and (rho_add > 0.0 or pgas_add > 0.0)) {
 
           // Adjust conserved density and energy
-          Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
           normal_dd_(i) += rho_add * gamma;
           normal_ee_(i) += wgas_add * SQR(gamma) + pgas_add;
 
           // Recalculate primitives
+	  ///*
           success = ConservedToPrimitiveNormal(normal_dd_, normal_ee_, normal_mm_,
               normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i, prim,
               &gamma, &pmag);
+	  //*/
+	  /*
+	  success = ConservedToPrimitiveNormal(normal_dd_(i), normal_ee_(i),normal_mm_(0,i),
+					       normal_mm_(1,i), normal_mm_(2,i), normal_mm_(3,i),
+					       normal_bb_(0,i), normal_bb_(1,i), normal_bb_(2,i),
+					       normal_bb_(3,i), normal_tt_(i), gamma_adi,
+					       prim_old(IPR,k,j,i), k, j, i,prim, &gamma,
+					       &pmag);
 
+	  */
           // Handle failures
           if (not success) {
             for (int n = 0; n < NHYDRO; ++n) {
@@ -206,15 +236,15 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &uu1 = prim(IVX,k,j,i);
         Real &uu2 = prim(IVY,k,j,i);
         Real &uu3 = prim(IVZ,k,j,i);
+	Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+	  + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+	  + g_(I33,i)*SQR(uu3);
         if (not success) {
-          Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
-                   + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
-                   + g_(I33,i)*SQR(uu3);
           gamma = std::sqrt(1.0 + tmp);
         }
         bool velocity_ceiling = false;
+	factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma)-1.0));
         if (gamma > gamma_max_) {
-          Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma)-1.0));
           uu1 *= factor;
           uu2 *= factor;
           uu3 *= factor;
@@ -222,20 +252,20 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           velocity_ceiling = true;
         }
 
+	Real alpha = std::sqrt(-1.0/g_inv_(I00,i));
+	Real u0 = gamma/alpha;
+	Real u1 = uu1 - alpha * gamma * g_inv_(I01,i);
+	Real u2 = uu2 - alpha * gamma * g_inv_(I02,i);
+	Real u3 = uu3 - alpha * gamma * g_inv_(I03,i);
+	const Real &bb1 = bb_cc(IB1,k,j,i);
+	const Real &bb2 = bb_cc(IB2,k,j,i);
+	const Real &bb3 = bb_cc(IB3,k,j,i);
+	Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
+	  + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
+	  + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
+	  + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
         // Recalculate density and pressure floors given new velocity
         if (velocity_ceiling) {
-          Real alpha = std::sqrt(-1.0/g_inv_(I00,i));
-          Real u0 = gamma/alpha;
-          Real u1 = uu1 - alpha * gamma * g_inv_(I01,i);
-          Real u2 = uu2 - alpha * gamma * g_inv_(I02,i);
-          Real u3 = uu3 - alpha * gamma * g_inv_(I03,i);
-          const Real &bb1 = bb_cc(IB1,k,j,i);
-          const Real &bb2 = bb_cc(IB2,k,j,i);
-          const Real &bb3 = bb_cc(IB3,k,j,i);
-          Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
-                  + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
-                  + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
-                  + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
           pmag = 0.5 * (normal_bb_(0,i)/SQR(gamma) + SQR(b0/u0));
         }
         density_floor_local = density_floor_;
@@ -310,51 +340,45 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
   // Go through row
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
 
     // Extract metric
-    const Real &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
-               &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
-               &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
-    const Real &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
-               &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
-               &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
-               &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
+    Real g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+               g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+               g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+    Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
+               g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+               g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+               g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
 
     // Calculate unit timelike normal
     const Real alpha = std::sqrt(-1.0/g00);
-    const Real n0 = -alpha * g00;
-    const Real n1 = -alpha * g01;
-    const Real n2 = -alpha * g02;
-    const Real n3 = -alpha * g03;
+    const Real alpha_2 = alpha * alpha;
 
     // Calculate projection operator
-    const Real j10 = g10 + n1*n0, j20 = g20 + n2*n0, j30 = g30 + n3*n0;
-    const Real j11 = g11 + n1*n1, j21 = g21 + n2*n1, j31 = g31 + n3*n1;
-    const Real j12 = g12 + n1*n2, j22 = g22 + n2*n2, j32 = g32 + n3*n2;
-    const Real j13 = g13 + n1*n3, j23 = g23 + n2*n3, j33 = g33 + n3*n3;
+    const Real j10 = g10 + alpha_2*g01*g00, j20 = g20 + alpha_2*g02*g00, j30 = g30 + alpha_2*g03*g00;
+    const Real j11 = g11 + alpha_2*g01*g01, j21 = g21 + alpha_2*g02*g01, j31 = g31 + alpha_2*g03*g01;
+    const Real j12 = g12 + alpha_2*g01*g02, j22 = g22 + alpha_2*g02*g02, j32 = g32 + alpha_2*g03*g02;
+    const Real j13 = g13 + alpha_2*g01*g03, j23 = g23 + alpha_2*g02*g03, j33 = g33 + alpha_2*g03*g03;
 
     // Extract conserved quantities
-    const Real &rho_u0 = cons(IDN,k,j,i);
-    const Real &t0_0 = cons(IEN,k,j,i);
-    const Real &t0_1 = cons(IVX,k,j,i);
-    const Real &t0_2 = cons(IVY,k,j,i);
-    const Real &t0_3 = cons(IVZ,k,j,i);
-    const Real &bb1 = bb(IB1,k,j,i);
-    const Real &bb2 = bb(IB2,k,j,i);
-    const Real &bb3 = bb(IB3,k,j,i);
+    Real rho_u0 = cons(IDN,k,j,i);
+    Real t0_0 = cons(IEN,k,j,i);
+    Real t0_1 = cons(IVX,k,j,i);
+    Real t0_2 = cons(IVY,k,j,i);
+    Real t0_3 = cons(IVZ,k,j,i);
+    Real bb1 = bb(IB1,k,j,i);
+    Real bb2 = bb(IB2,k,j,i);
+    Real bb3 = bb(IB3,k,j,i);
 
     // Calculate projected momentum densities Q_\mu = -n_\nu T^\nu_\mu (N 17)
-    const Real qq_0 = alpha * t0_0;
-    const Real qq_1 = alpha * t0_1;
-    const Real qq_2 = alpha * t0_2;
-    const Real qq_3 = alpha * t0_3;
-    const Real qq_n = qq_0*n0 + qq_1*n1 + qq_2*n2 + qq_3*n3;
+    const Real qq_n = -alpha_2*(t0_0*g00 + t0_1*g01 + t0_2*g02 + t0_3*g03);
 
     // Calculate projected momentum M^i = j^{i\mu} Q_\mu
-    const Real mm1 = j10*qq_0 + j11*qq_1 + j12*qq_2 + j13*qq_3;
-    const Real mm2 = j20*qq_0 + j21*qq_1 + j22*qq_2 + j23*qq_3;
-    const Real mm3 = j30*qq_0 + j31*qq_1 + j32*qq_2 + j33*qq_3;
+    const Real mm1 = alpha*(j10*t0_0 + j11*t0_1 + j12*t0_2 + j13*t0_3);
+    const Real mm2 = alpha*(j20*t0_0 + j21*t0_1 + j22*t0_2 + j23*t0_3);
+    const Real mm3 = alpha*(j30*t0_0 + j31*t0_1 + j32*t0_2 + j33*t0_3);
 
     // Calculate projected field \mathcal{B}^i = alpha B^i (N 5)
     const Real bbb1 = alpha * bb1;
@@ -414,11 +438,19 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
 //     wgas: w_{gas} (NH: w)
 //     rr: \mathcal{R}
 
+///*
 static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
     const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
     Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor,
     Real *p_pmag) {
+  //*/
+ /*
+static bool ConservedToPrimitiveNormal(Real dd, Real ee, Real mm_sq, Real mm1, Real mm2, Real mm3,
+				       Real bb_sq, Real bb1, Real bb2, Real bb3, Real tt, Real gamma_adi,
+				       Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
+				       Real *p_gamma_lor, Real *p_pmag) {
+ */
   // Parameters
   const int max_iterations = 10;
   const Real tol = 1.0e-12;
@@ -440,6 +472,8 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   const Real &bb3 = bb_vals(3,i);
   const Real &tt = tt_vals(i);
 
+  Real gamma_prime_inv =  (gamma_adi-1.0)/gamma_adi;
+
   // Calculate functions of conserved quantities
   Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
   d = std::max(d, 0.0);
@@ -451,17 +485,12 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   pgas[0] = std::max(pgas_old, pgas_min);
   int n;
   for (n = 0; n < max_iterations; ++n) {
-
-    // Step 1: Calculate cubic coefficients
-    Real a;
     if (n%3 != 2) {
+      // Step 1: Calculate cubic coefficients
+      Real a, phi, eee, ll, v_sq;
       a = ee + pgas[n%3] + 0.5*bb_sq;  // (NH 5.7)
       a = std::max(a, a_min);
-    }
-
-    // Step 2: Calculate correct root of cubic equation
-    Real phi, eee, ll, v_sq;
-    if (n%3 != 2) {
+      // Step 2: Calculate correct root of cubic equation
       phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
       eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
       ll = eee - bb_sq;                                                       // (NH 5.5)
@@ -471,39 +500,32 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
       Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
       Real wgas = ll/gamma_sq;                                                // (NH 5.1)
       Real rho = dd/gamma;                                                    // (NH 4.5)
-      pgas[(n+1)%3] = (gamma_adi-1.0)/gamma_adi * (wgas - rho);               // (NH 4.1)
+      pgas[(n+1)%3] = gamma_prime_inv * (wgas - rho);               // (NH 4.1)
       pgas[(n+1)%3] = std::max(pgas[(n+1)%3], pgas_min);
-    }
-
-    // Step 3: Check for convergence
-    if (n%3 != 2) {
-      if (pgas[(n+1)%3] > pgas_min and std::abs(pgas[(n+1)%3]-pgas[n%3]) < tol) {
-        break;
-      }
-    }
-
-    // Step 4: Calculate Aitken accelerant and check for convergence
-    if (n%3 == 2) {
+    } else{  // n%3 != 2
+      // Step 4: Calculate Aitken accelerant and check for convergence
       Real rr = (pgas[2] - pgas[1]) / (pgas[1] - pgas[0]);  // (NH 7.1)
-      if (not std::isfinite(rr) or std::abs(rr) > rr_max) {
-        continue;
-      }
-      pgas[0] = pgas[1] + (pgas[2] - pgas[1]) / (1.0 - rr);  // (NH 7.2)
-      pgas[0] = std::max(pgas[0], pgas_min);
-      if (pgas[0] > pgas_min and std::abs(pgas[0]-pgas[2]) < tol) {
-        break;
+      if (std::abs(rr) <=rr_max) {
+	pgas[0] = pgas[1] + (pgas[2] - pgas[1]) / (1.0 - rr);  // (NH 7.2)
+	pgas[0] = std::max(pgas[0], pgas_min);
       }
     }
+    //if (pgas[(n+1)%3] > pgas_min and std::abs(pgas[(n+1)%3]-pgas[n%3]) < tol) {
+    //  break;
+    //}
   }
+
+  bool success=true;
+  // Step 3: Check for convergence
+  if (pgas[max_iterations%3] < pgas_min or std::abs(pgas[max_iterations%3]-pgas[(max_iterations-1)%3]) >= tol) {
+    success = false;
+  }
+  //if (n==max_iterations) {
+  //  success = false;
+  //}
 
   // Step 5: Set primitives
-  if (n == max_iterations) {
-    return false;
-  }
   prim(IPR,k,j,i) = pgas[(n+1)%3];
-  if (not std::isfinite(prim(IPR,k,j,i))) {
-    return false;
-  }
   Real a = ee + prim(IPR,k,j,i) + 0.5*bb_sq;                      // (NH 5.7)
   a = std::max(a, a_min);
   Real phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
@@ -514,26 +536,25 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-  Real wgas = ll/gamma_sq;                                        // (NH 5.1)
-  prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
-  if (not std::isfinite(prim(IDN,k,j,i))) {
-    return false;
-  }
+  prim(IDN,k,j,i) = dd/gamma;
   Real ss = tt/ll;                          // (NH 4.8)
-  Real v1 = (mm1 + ss*bb1) / (ll + bb_sq);  // (NH 4.6)
-  Real v2 = (mm2 + ss*bb2) / (ll + bb_sq);  // (NH 4.6)
-  Real v3 = (mm3 + ss*bb3) / (ll + bb_sq);  // (NH 4.6)
+  Real tmp = 1.0 / (ll+bb_sq);
+  Real v1 = (mm1 + ss*bb1) * tmp;  // (NH 4.6)
+  Real v2 = (mm2 + ss*bb2) * tmp;  // (NH 4.6)
+  Real v3 = (mm3 + ss*bb3) * tmp;  // (NH 4.6)
   prim(IVX,k,j,i) = gamma*v1;               // (NH 3.3)
   prim(IVY,k,j,i) = gamma*v2;               // (NH 3.3)
   prim(IVZ,k,j,i) = gamma*v3;               // (NH 3.3)
-  if (not std::isfinite(prim(IVX,k,j,i))
+  if (not std::isfinite(prim(IPR,k,j,i))
+      or not std::isfinite(prim(IDN,k,j,i))
+      or not std::isfinite(prim(IVX,k,j,i))
       or not std::isfinite(prim(IVY,k,j,i))
       or not std::isfinite(prim(IVZ,k,j,i))) {
-    return false;
+    success = false;
   }
   *p_gamma_lor = gamma;
   *p_pmag = 0.5 * (bb_sq/gamma_sq + SQR(ss));  // (NH 3.7, 3.11)
-  return true;
+  return success;
 }
 
 //----------------------------------------------------------------------------------------
@@ -556,6 +577,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
       //#pragma omp simd // fn is too long to inline
+#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
       }
@@ -590,6 +612,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   const Real &bb2 = bb_cc(IB2,k,j,i);
   const Real &bb3 = bb_cc(IB3,k,j,i);
 
+  Real gamma_prime =  gamma_adi/(gamma_adi-1.0);
   // Calculate 4-velocity
   Real alpha = std::sqrt(-1.0/gi(I00,i));
   Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
@@ -623,13 +646,13 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   Real &t0_3 = cons(IM3,k,j,i);
 
   // Set conserved quantities
-  Real wtot = rho + gamma_adi/(gamma_adi-1.0) * pgas + b_sq;
+  Real wtot_u0 = (rho + gamma_prime * pgas + b_sq) * u0;
   Real ptot = pgas + 0.5 * b_sq;
   rho_u0 = rho * u0;
-  t0_0 = wtot * u0 * u_0 - b0 * b_0 + ptot;
-  t0_1 = wtot * u0 * u_1 - b0 * b_1;
-  t0_2 = wtot * u0 * u_2 - b0 * b_2;
-  t0_3 = wtot * u0 * u_3 - b0 * b_3;
+  t0_0 = wtot_u0 * u_0 - b0 * b_0 + ptot;
+  t0_1 = wtot_u0 * u_1 - b0 * b_1;
+  t0_2 = wtot_u0 * u_2 - b0 * b_2;
+  t0_3 = wtot_u0 * u_3 - b0 * b_3;
   return;
 }
 
@@ -666,7 +689,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i = il; i <= iu; ++i) {
 
     // Extract primitives
