@@ -18,7 +18,6 @@
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 
-
 // Declarations
 static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb,
@@ -85,6 +84,7 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
     AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
   // Transform primitives to locally flat coordinates if in GR
   #if GENERAL_RELATIVITY
   {
@@ -126,21 +126,21 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
       Real pgas_l = prim_l(IPR,k,j,ipm);
       Real u_l[4];
       if (GENERAL_RELATIVITY) {
-	Real vx_l = prim_l(ivx,k,j,ipm);
-	Real vy_l = prim_l(ivy,k,j,ipm);
-	Real vz_l = prim_l(ivz,k,j,ipm);
-	u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
-	u_l[1] = vx_l;
-	u_l[2] = vy_l;
-	u_l[3] = vz_l;
+        Real vx_l = prim_l(ivx,k,j,ipm);
+        Real vy_l = prim_l(ivy,k,j,ipm);
+        Real vz_l = prim_l(ivz,k,j,ipm);
+        u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
+        u_l[1] = vx_l;
+        u_l[2] = vy_l;
+        u_l[3] = vz_l;
       } else {  // SR
-	Real vx_l = prim_l(ivx,k,j,ipm);
-	Real vy_l = prim_l(ivy,k,j,ipm);
-	Real vz_l = prim_l(ivz,k,j,ipm);
-	u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-	u_l[1] = u_l[0] * vx_l;
-	u_l[2] = u_l[0] * vy_l;
-	u_l[3] = u_l[0] * vz_l;
+        Real vx_l = prim_l(ivx,k,j,ipm);
+        Real vy_l = prim_l(ivy,k,j,ipm);
+        Real vz_l = prim_l(ivz,k,j,ipm);
+        u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
+        u_l[1] = u_l[0] * vx_l;
+        u_l[2] = u_l[0] * vy_l;
+        u_l[3] = u_l[0] * vz_l;
       }
 
       // Extract right primitives
@@ -148,34 +148,34 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
       Real pgas_r = prim_r(IPR,k,j,ipm);
       Real u_r[4];
       if (GENERAL_RELATIVITY) {
-	Real vx_r = prim_r(ivx,k,j,ipm);
-	Real vy_r = prim_r(ivy,k,j,ipm);
-	Real vz_r = prim_r(ivz,k,j,ipm);
-	u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
-	u_r[1] = vx_r;
-	u_r[2] = vy_r;
-	u_r[3] = vz_r;
+        Real vx_r = prim_r(ivx,k,j,ipm);
+        Real vy_r = prim_r(ivy,k,j,ipm);
+        Real vz_r = prim_r(ivz,k,j,ipm);
+        u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
+        u_r[1] = vx_r;
+        u_r[2] = vy_r;
+        u_r[3] = vz_r;
       } else {  // SR
-	Real vx_r = prim_r(ivx,k,j,ipm);
-	Real vy_r = prim_r(ivy,k,j,ipm);
-	Real vz_r = prim_r(ivz,k,j,ipm);
-	u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
-	u_r[1] = u_r[0] * vx_r;
-	u_r[2] = u_r[0] * vy_r;
-	u_r[3] = u_r[0] * vz_r;
+        Real vx_r = prim_r(ivx,k,j,ipm);
+        Real vy_r = prim_r(ivy,k,j,ipm);
+        Real vz_r = prim_r(ivz,k,j,ipm);
+        u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
+        u_r[1] = u_r[0] * vx_r;
+        u_r[2] = u_r[0] * vy_r;
+        u_r[3] = u_r[0] * vz_r;
       }
 
       // Calculate wavespeeds in left state (MB 23)
       Real lambda_p_l, lambda_m_l;
       Real wgas_l = rho_l + gamma_prime * pgas_l;
       pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]), &lambda_p_l,
-			       &lambda_m_l);
+                               &lambda_m_l);
 
       // Calculate wavespeeds in right state (MB 23)
       Real lambda_p_r, lambda_m_r;
       Real wgas_r = rho_r + gamma_prime * pgas_r;
       pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]), &lambda_p_r,
-			       &lambda_m_r);
+                               &lambda_m_r);
 
       // Calculate extremal wavespeed
       Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -212,14 +212,16 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 
       // Set conserved quantities in GR
       if (GENERAL_RELATIVITY) {
-	for (int n = 0; n < NWAVE; ++n) {
-	  cons(n,ipm) = 0.5 * (cons_r[n][m] + cons_l[n][m] + (flux_l[n][m] - flux_r[n][m]) / lambda);
-	}
+        for (int n = 0; n < NWAVE; ++n) {
+          cons(n,ipm) = 0.5 * (cons_r[n][m] + cons_l[n][m] + (flux_l[n][m] - flux_r[n][m])
+                               / lambda);
+        }
       }
 
       // Set fluxes
       for (int n = 0; n < NHYDRO; ++n) {
-	flux(n,k,j,ipm) = 0.5 * (flux_l[n][m] + flux_r[n][m] - lambda * (cons_r[n][m] - cons_l[n][m]));
+        flux(n,k,j,ipm) = 0.5 * (flux_l[n][m] + flux_r[n][m] -
+                                 lambda * (cons_r[n][m] - cons_l[n][m]));
       }
     }
   }
@@ -282,13 +284,13 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
 
       // Extract metric
       Real g_00 = g(I00,ipm), g_01 = g(I01,ipm), g_02 = g(I02,ipm), g_03 = g(I03,ipm),
-	g_10 = g(I01,ipm), g_11 = g(I11,ipm), g_12 = g(I12,ipm), g_13 = g(I13,ipm),
-	g_20 = g(I02,ipm), g_21 = g(I12,ipm), g_22 = g(I22,ipm), g_23 = g(I23,ipm),
-	g_30 = g(I03,ipm), g_31 = g(I13,ipm), g_32 = g(I23,ipm), g_33 = g(I33,ipm);
+        g_10 = g(I01,ipm), g_11 = g(I11,ipm), g_12 = g(I12,ipm), g_13 = g(I13,ipm),
+        g_20 = g(I02,ipm), g_21 = g(I12,ipm), g_22 = g(I22,ipm), g_23 = g(I23,ipm),
+        g_30 = g(I03,ipm), g_31 = g(I13,ipm), g_32 = g(I23,ipm), g_33 = g(I33,ipm);
       Real g00 = gi(I00,ipm), g01 = gi(I01,ipm), g02 = gi(I02,ipm), g03 = gi(I03,ipm),
-	g10 = gi(I01,ipm), g11 = gi(I11,ipm), g12 = gi(I12,ipm), g13 = gi(I13,ipm),
-	g20 = gi(I02,ipm), g21 = gi(I12,ipm), g22 = gi(I22,ipm), g23 = gi(I23,ipm),
-	g30 = gi(I03,ipm), g31 = gi(I13,ipm), g32 = gi(I23,ipm), g33 = gi(I33,ipm);
+        g10 = gi(I01,ipm), g11 = gi(I11,ipm), g12 = gi(I12,ipm), g13 = gi(I13,ipm),
+        g20 = gi(I02,ipm), g21 = gi(I12,ipm), g22 = gi(I22,ipm), g23 = gi(I23,ipm),
+        g30 = gi(I03,ipm), g31 = gi(I13,ipm), g32 = gi(I23,ipm), g33 = gi(I33,ipm);
       Real alpha = std::sqrt(-1.0/g00);
 
       // Extract left primitives
@@ -308,8 +310,8 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
       // Calculate 4-velocity in left state
       Real ucon_l[4], ucov_l[4];
       Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-	+ g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-	+ g_33*SQR(uu3_l);
+        + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+        + g_33*SQR(uu3_l);
       Real gamma_l = std::sqrt(1.0 + tmp);
       ucon_l[0] = gamma_l / alpha;
       ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -339,13 +341,13 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
       Real lambda_p_l, lambda_m_l;
       Real wgas_l = rho_l + gamma_prime * pgas_l;
       pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02, g22,
-			       &lambda_p_l, &lambda_m_l);
+                               &lambda_p_l, &lambda_m_l);
 
       // Calculate wavespeeds in right state
       Real lambda_p_r, lambda_m_r;
       Real wgas_r = rho_r + gamma_prime * pgas_r;
       pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02, g22,
-			       &lambda_p_r, &lambda_m_r);
+                               &lambda_p_r, &lambda_m_r);
 
       // Calculate extremal wavespeed
       Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -359,7 +361,7 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
       cons_l[IVY][m] = wgas_l * ucon_l[0] * ucov_l[2];
       cons_l[IVZ][m] = wgas_l * ucon_l[0] * ucov_l[3];
 
-    // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = IVY)
+      // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = IVY)
       flux_l[IDN][m] = rho_l * ucon_l[IVY];
       flux_l[IEN][m] = wgas_l * ucon_l[IVY] * ucov_l[0];
       flux_l[IVX][m] = wgas_l * ucon_l[IVY] * ucov_l[1];
@@ -384,7 +386,8 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
 
       // Set fluxes
       for (int n = 0; n < NHYDRO; ++n) {
-	flux(n,k,j,ipm) = 0.5 * (flux_l[n][m] + flux_r[n][m] - lambda * (cons_r[n][m] - cons_l[n][m]));
+        flux(n,k,j,ipm) = 0.5 * (flux_l[n][m] + flux_r[n][m]
+                                 - lambda * (cons_r[n][m] - cons_l[n][m]));
       }
     }
   }
