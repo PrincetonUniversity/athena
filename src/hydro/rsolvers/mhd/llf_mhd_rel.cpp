@@ -324,184 +324,181 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
   // Get metric components
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
-  Real cons_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-  Real flux_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-  Real cons_r[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-  Real flux_r[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-
   // Go through each interface
-  for (int i = il; i <= iu; i+=SIMD_WIDTH) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-    for (int m=0; m<std::min(SIMD_WIDTH, iu-i+1); m++) {
-      int ipm = i+m;
+  for (int i = il; i <= iu; i++) {
 
     // Extract metric
-      Real g_00 = g(I00,ipm), g_01 = g(I01,ipm), g_02 = g(I02,ipm), g_03 = g(I03,ipm),
-        g_10 = g(I01,ipm), g_11 = g(I11,ipm), g_12 = g(I12,ipm), g_13 = g(I13,ipm),
-        g_20 = g(I02,ipm), g_21 = g(I12,ipm), g_22 = g(I22,ipm), g_23 = g(I23,ipm),
-      g_30 = g(I03,ipm), g_31 = g(I13,ipm), g_32 = g(I23,ipm), g_33 = g(I33,ipm);
-      Real g00 = gi(I00,ipm), g01 = gi(I01,ipm), g02 = gi(I02,ipm), g03 = gi(I03,ipm),
-        g10 = gi(I01,ipm), g11 = gi(I11,ipm), g12 = gi(I12,ipm), g13 = gi(I13,ipm),
-        g20 = gi(I02,ipm), g21 = gi(I12,ipm), g22 = gi(I22,ipm), g23 = gi(I23,ipm),
-        g30 = gi(I03,ipm), g31 = gi(I13,ipm), g32 = gi(I23,ipm), g33 = gi(I33,ipm);
-      Real alpha = std::sqrt(-1.0/g00);
+    Real g_00 = g(I00,i), g_01 = g(I01,i), g_02 = g(I02,i), g_03 = g(I03,i),
+      g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+      g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+      g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+    Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
+      g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+      g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+      g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
+    Real alpha = std::sqrt(-1.0/g00);
 
-      // Extract left primitives
-      Real rho_l = prim_l(IDN,k,j,ipm);
-      Real pgas_l = prim_l(IPR,k,j,ipm);
-      Real uu1_l = prim_l(IVX,k,j,ipm);
-      Real uu2_l = prim_l(IVY,k,j,ipm);
-      Real uu3_l = prim_l(IVZ,k,j,ipm);
-      Real bb2_l = bb(k,j,ipm);
-      Real bb3_l = prim_l(IBY,k,j,ipm);
-      Real bb1_l = prim_l(IBZ,k,j,ipm);
+    // Extract left primitives
+    Real rho_l = prim_l(IDN,k,j,i);
+    Real pgas_l = prim_l(IPR,k,j,i);
+    Real uu1_l = prim_l(IVX,k,j,i);
+    Real uu2_l = prim_l(IVY,k,j,i);
+    Real uu3_l = prim_l(IVZ,k,j,i);
+    Real bb2_l = bb(k,j,i);
+    Real bb3_l = prim_l(IBY,k,j,i);
+    Real bb1_l = prim_l(IBZ,k,j,i);
 
       // Extract right primitives
-      Real rho_r = prim_r(IDN,k,j,ipm);
-      Real pgas_r = prim_r(IPR,k,j,ipm);
-      Real uu1_r = prim_r(IVX,k,j,ipm);
-      Real uu2_r = prim_r(IVY,k,j,ipm);
-      Real uu3_r = prim_r(IVZ,k,j,ipm);
-      Real bb2_r = bb(k,j,ipm);
-      Real bb3_r = prim_r(IBY,k,j,ipm);
-      Real bb1_r = prim_r(IBZ,k,j,ipm);
+    Real rho_r = prim_r(IDN,k,j,i);
+    Real pgas_r = prim_r(IPR,k,j,i);
+    Real uu1_r = prim_r(IVX,k,j,i);
+    Real uu2_r = prim_r(IVY,k,j,i);
+    Real uu3_r = prim_r(IVZ,k,j,i);
+    Real bb2_r = bb(k,j,i);
+    Real bb3_r = prim_r(IBY,k,j,i);
+    Real bb1_r = prim_r(IBZ,k,j,i);
 
-      // Calculate 4-velocity in left state
-      Real ucon_l[4], ucov_l[4];
-      Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-        + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-        + g_33*SQR(uu3_l);
-      Real gamma_l = std::sqrt(1.0 + tmp);
-      ucon_l[0] = gamma_l / alpha;
-      ucon_l[1] = uu1_l - alpha * gamma_l * g01;
-      ucon_l[2] = uu2_l - alpha * gamma_l * g02;
-      ucon_l[3] = uu3_l - alpha * gamma_l * g03;
-      ucov_l[0] = g_00*ucon_l[0] + g_01*ucon_l[1] + g_02*ucon_l[2] + g_03*ucon_l[3];
-      ucov_l[1] = g_10*ucon_l[0] + g_11*ucon_l[1] + g_12*ucon_l[2] + g_13*ucon_l[3];
-      ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
-      ucov_l[3] = g_30*ucon_l[0] + g_31*ucon_l[1] + g_32*ucon_l[2] + g_33*ucon_l[3];
+    // Calculate 4-velocity in left state
+    Real ucon_l[4], ucov_l[4];
+    Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+      + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+      + g_33*SQR(uu3_l);
+    Real gamma_l = std::sqrt(1.0 + tmp);
+    ucon_l[0] = gamma_l / alpha;
+    ucon_l[1] = uu1_l - alpha * gamma_l * g01;
+    ucon_l[2] = uu2_l - alpha * gamma_l * g02;
+    ucon_l[3] = uu3_l - alpha * gamma_l * g03;
+    ucov_l[0] = g_00*ucon_l[0] + g_01*ucon_l[1] + g_02*ucon_l[2] + g_03*ucon_l[3];
+    ucov_l[1] = g_10*ucon_l[0] + g_11*ucon_l[1] + g_12*ucon_l[2] + g_13*ucon_l[3];
+    ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
+    ucov_l[3] = g_30*ucon_l[0] + g_31*ucon_l[1] + g_32*ucon_l[2] + g_33*ucon_l[3];
 
-      // Calculate 4-velocity in right state
-      Real ucon_r[4], ucov_r[4];
-      tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-        + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-        + g_33*SQR(uu3_r);
-      Real gamma_r = std::sqrt(1.0 + tmp);
-      ucon_r[0] = gamma_r / alpha;
-      ucon_r[1] = uu1_r - alpha * gamma_r * g01;
-      ucon_r[2] = uu2_r - alpha * gamma_r * g02;
-      ucon_r[3] = uu3_r - alpha * gamma_r * g03;
-      ucov_r[0] = g_00*ucon_r[0] + g_01*ucon_r[1] + g_02*ucon_r[2] + g_03*ucon_r[3];
-      ucov_r[1] = g_10*ucon_r[0] + g_11*ucon_r[1] + g_12*ucon_r[2] + g_13*ucon_r[3];
-      ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];
-      ucov_r[3] = g_30*ucon_r[0] + g_31*ucon_r[1] + g_32*ucon_r[2] + g_33*ucon_r[3];
+    // Calculate 4-velocity in right state
+    Real ucon_r[4], ucov_r[4];
+    tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+      + g_33*SQR(uu3_r);
+    Real gamma_r = std::sqrt(1.0 + tmp);
+    ucon_r[0] = gamma_r / alpha;
+    ucon_r[1] = uu1_r - alpha * gamma_r * g01;
+    ucon_r[2] = uu2_r - alpha * gamma_r * g02;
+    ucon_r[3] = uu3_r - alpha * gamma_r * g03;
+    ucov_r[0] = g_00*ucon_r[0] + g_01*ucon_r[1] + g_02*ucon_r[2] + g_03*ucon_r[3];
+    ucov_r[1] = g_10*ucon_r[0] + g_11*ucon_r[1] + g_12*ucon_r[2] + g_13*ucon_r[3];
+    ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];
+    ucov_r[3] = g_30*ucon_r[0] + g_31*ucon_r[1] + g_32*ucon_r[2] + g_33*ucon_r[3];
 
-      // Calculate 4-magnetic field in left state
-      Real bcon_l[4], bcov_l[4];
-      bcon_l[0] = ucon_l[0] * (g_01*bb1_l + g_02*bb2_l + g_03*bb3_l)
-        + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
-        + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
-        + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
-      bcon_l[1] = (bb1_l + bcon_l[0] * ucon_l[1]) / ucon_l[0];
-      bcon_l[2] = (bb2_l + bcon_l[0] * ucon_l[2]) / ucon_l[0];
-      bcon_l[3] = (bb3_l + bcon_l[0] * ucon_l[3]) / ucon_l[0];
-      bcov_l[0] = g_00*bcon_l[0] + g_01*bcon_l[1] + g_02*bcon_l[2] + g_03*bcon_l[3];
-      bcov_l[1] = g_10*bcon_l[0] + g_11*bcon_l[1] + g_12*bcon_l[2] + g_13*bcon_l[3];
-      bcov_l[2] = g_20*bcon_l[0] + g_21*bcon_l[1] + g_22*bcon_l[2] + g_23*bcon_l[3];
-      bcov_l[3] = g_30*bcon_l[0] + g_31*bcon_l[1] + g_32*bcon_l[2] + g_33*bcon_l[3];
-      Real b_sq_l = bcon_l[0]*bcov_l[0] + bcon_l[1]*bcov_l[1] + bcon_l[2]*bcov_l[2]
-        + bcon_l[3]*bcov_l[3];
+    // Calculate 4-magnetic field in left state
+    Real bcon_l[4], bcov_l[4];
+    bcon_l[0] = ucon_l[0] * (g_01*bb1_l + g_02*bb2_l + g_03*bb3_l)
+      + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
+      + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
+      + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
+    bcon_l[1] = (bb1_l + bcon_l[0] * ucon_l[1]) / ucon_l[0];
+    bcon_l[2] = (bb2_l + bcon_l[0] * ucon_l[2]) / ucon_l[0];
+    bcon_l[3] = (bb3_l + bcon_l[0] * ucon_l[3]) / ucon_l[0];
+    bcov_l[0] = g_00*bcon_l[0] + g_01*bcon_l[1] + g_02*bcon_l[2] + g_03*bcon_l[3];
+    bcov_l[1] = g_10*bcon_l[0] + g_11*bcon_l[1] + g_12*bcon_l[2] + g_13*bcon_l[3];
+    bcov_l[2] = g_20*bcon_l[0] + g_21*bcon_l[1] + g_22*bcon_l[2] + g_23*bcon_l[3];
+    bcov_l[3] = g_30*bcon_l[0] + g_31*bcon_l[1] + g_32*bcon_l[2] + g_33*bcon_l[3];
+    Real b_sq_l = bcon_l[0]*bcov_l[0] + bcon_l[1]*bcov_l[1] + bcon_l[2]*bcov_l[2]
+      + bcon_l[3]*bcov_l[3];
 
-      // Calculate 4-magnetic field in right state
-      Real bcon_r[4], bcov_r[4];
-      bcon_r[0] = ucon_r[0] * (g_01*bb1_r + g_02*bb2_r + g_03*bb3_r)
-        + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
-        + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
-        + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
-      bcon_r[1] = (bb1_r + bcon_r[0] * ucon_r[1]) / ucon_r[0];
-      bcon_r[2] = (bb2_r + bcon_r[0] * ucon_r[2]) / ucon_r[0];
-      bcon_r[3] = (bb3_r + bcon_r[0] * ucon_r[3]) / ucon_r[0];
-      bcov_r[0] = g_00*bcon_r[0] + g_01*bcon_r[1] + g_02*bcon_r[2] + g_03*bcon_r[3];
-      bcov_r[1] = g_10*bcon_r[0] + g_11*bcon_r[1] + g_12*bcon_r[2] + g_13*bcon_r[3];
-      bcov_r[2] = g_20*bcon_r[0] + g_21*bcon_r[1] + g_22*bcon_r[2] + g_23*bcon_r[3];
-      bcov_r[3] = g_30*bcon_r[0] + g_31*bcon_r[1] + g_32*bcon_r[2] + g_33*bcon_r[3];
-      Real b_sq_r = bcon_r[0]*bcov_r[0] + bcon_r[1]*bcov_r[1] + bcon_r[2]*bcov_r[2]
-        + bcon_r[3]*bcov_r[3];
+    // Calculate 4-magnetic field in right state
+    Real bcon_r[4], bcov_r[4];
+    bcon_r[0] = ucon_r[0] * (g_01*bb1_r + g_02*bb2_r + g_03*bb3_r)
+      + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
+      + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
+      + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
+    bcon_r[1] = (bb1_r + bcon_r[0] * ucon_r[1]) / ucon_r[0];
+    bcon_r[2] = (bb2_r + bcon_r[0] * ucon_r[2]) / ucon_r[0];
+    bcon_r[3] = (bb3_r + bcon_r[0] * ucon_r[3]) / ucon_r[0];
+    bcov_r[0] = g_00*bcon_r[0] + g_01*bcon_r[1] + g_02*bcon_r[2] + g_03*bcon_r[3];
+    bcov_r[1] = g_10*bcon_r[0] + g_11*bcon_r[1] + g_12*bcon_r[2] + g_13*bcon_r[3];
+    bcov_r[2] = g_20*bcon_r[0] + g_21*bcon_r[1] + g_22*bcon_r[2] + g_23*bcon_r[3];
+    bcov_r[3] = g_30*bcon_r[0] + g_31*bcon_r[1] + g_32*bcon_r[2] + g_33*bcon_r[3];
+    Real b_sq_r = bcon_r[0]*bcov_r[0] + bcon_r[1]*bcov_r[1] + bcon_r[2]*bcov_r[2]
+      + bcon_r[3]*bcov_r[3];
 
-      // Calculate wavespeeds in left state
-      Real lambda_p_l, lambda_m_l;
-      Real wgas_l = rho_l + gamma_prime * pgas_l;
-      pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], b_sq_l,
-                                          g00, g02, g22, &lambda_p_l, &lambda_m_l);
+    // Calculate wavespeeds in left state
+    Real lambda_p_l, lambda_m_l;
+    Real wgas_l = rho_l + gamma_prime * pgas_l;
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], b_sq_l,
+					g00, g02, g22, &lambda_p_l, &lambda_m_l);
 
-      // Calculate wavespeeds in right state
-      Real lambda_p_r, lambda_m_r;
-      Real wgas_r = rho_r + gamma_prime * pgas_r;
-      pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], b_sq_r,
-                                          g00, g02, g22, &lambda_p_r, &lambda_m_r);
+    // Calculate wavespeeds in right state
+    Real lambda_p_r, lambda_m_r;
+    Real wgas_r = rho_r + gamma_prime * pgas_r;
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], b_sq_r,
+					g00, g02, g22, &lambda_p_r, &lambda_m_r);
 
-      // Calculate extremal wavespeed
-      Real lambda_l = std::min(lambda_m_l, lambda_m_r);
-      Real lambda_r = std::max(lambda_p_l, lambda_p_r);
-      Real lambda = std::max(lambda_r, -lambda_l);
+    // Calculate extremal wavespeed
+    Real lambda_l = std::min(lambda_m_l, lambda_m_r);
+    Real lambda_r = std::max(lambda_p_l, lambda_p_r);
+    Real lambda = std::max(lambda_r, -lambda_l);
 
-      // Calculate conserved quantities in L region
-      // (rho u^0, T^0_\mu, and B^j = *F^{j0}, where j != IVY)
-      Real wtot_l = wgas_l + b_sq_l;
-      Real ptot_l = pgas_l + 0.5*b_sq_l;
-      cons_l[IDN][m] = rho_l * ucon_l[0];
-      cons_l[IEN][m] = wtot_l * ucon_l[0] * ucov_l[0] - bcon_l[0] * bcov_l[0] + ptot_l;
-      cons_l[IVX][m] = wtot_l * ucon_l[0] * ucov_l[1] - bcon_l[0] * bcov_l[1];
-      cons_l[IVY][m] = wtot_l * ucon_l[0] * ucov_l[2] - bcon_l[0] * bcov_l[2];
-      cons_l[IVZ][m] = wtot_l * ucon_l[0] * ucov_l[3] - bcon_l[0] * bcov_l[3];
-      cons_l[IBY][m] = bcon_l[IVZ] * ucon_l[0] - bcon_l[0] * ucon_l[IVZ];
-      cons_l[IBZ][m] = bcon_l[IVX] * ucon_l[0] - bcon_l[0] * ucon_l[IVX];
+    // Calculate conserved quantities in L region
+    // (rho u^0, T^0_\mu, and B^j = *F^{j0}, where j != IVY)
+    Real cons_l[NWAVE];
+    Real wtot_l = wgas_l + b_sq_l;
+    Real ptot_l = pgas_l + 0.5*b_sq_l;
+    cons_l[IDN] = rho_l * ucon_l[0];
+    cons_l[IEN] = wtot_l * ucon_l[0] * ucov_l[0] - bcon_l[0] * bcov_l[0] + ptot_l;
+    cons_l[IVX] = wtot_l * ucon_l[0] * ucov_l[1] - bcon_l[0] * bcov_l[1];
+    cons_l[IVY] = wtot_l * ucon_l[0] * ucov_l[2] - bcon_l[0] * bcov_l[2];
+    cons_l[IVZ] = wtot_l * ucon_l[0] * ucov_l[3] - bcon_l[0] * bcov_l[3];
+    cons_l[IBY] = bcon_l[IVZ] * ucon_l[0] - bcon_l[0] * ucon_l[IVZ];
+    cons_l[IBZ] = bcon_l[IVX] * ucon_l[0] - bcon_l[0] * ucon_l[IVX];
 
-      // Calculate fluxes in L region
-      // (rho u^i, T^i_\mu, and *F^{ji}, where i = IVY and j != IVY)
-      flux_l[IDN][m] = rho_l * ucon_l[IVY];
-      flux_l[IEN][m] = wtot_l * ucon_l[IVY] * ucov_l[0] - bcon_l[IVY] * bcov_l[0];
-      flux_l[IVX][m] = wtot_l * ucon_l[IVY] * ucov_l[1] - bcon_l[IVY] * bcov_l[1];
-      flux_l[IVY][m] = wtot_l * ucon_l[IVY] * ucov_l[2] - bcon_l[IVY] * bcov_l[2];
-      flux_l[IVZ][m] = wtot_l * ucon_l[IVY] * ucov_l[3] - bcon_l[IVY] * bcov_l[3];
-      flux_l[IVY][m] += ptot_l;
-      flux_l[IBY][m] = bcon_l[IVZ] * ucon_l[IVY] - bcon_l[IVY] * ucon_l[IVZ];
-      flux_l[IBZ][m] = bcon_l[IVX] * ucon_l[IVY] - bcon_l[IVY] * ucon_l[IVX];
+    // Calculate fluxes in L region
+    // (rho u^i, T^i_\mu, and *F^{ji}, where i = IVY and j != IVY)
+    Real flux_l[NWAVE];
+    flux_l[IDN] = rho_l * ucon_l[IVY];
+    flux_l[IEN] = wtot_l * ucon_l[IVY] * ucov_l[0] - bcon_l[IVY] * bcov_l[0];
+    flux_l[IVX] = wtot_l * ucon_l[IVY] * ucov_l[1] - bcon_l[IVY] * bcov_l[1];
+    flux_l[IVY] = wtot_l * ucon_l[IVY] * ucov_l[2] - bcon_l[IVY] * bcov_l[2];
+    flux_l[IVZ] = wtot_l * ucon_l[IVY] * ucov_l[3] - bcon_l[IVY] * bcov_l[3];
+    flux_l[IVY] += ptot_l;
+    flux_l[IBY] = bcon_l[IVZ] * ucon_l[IVY] - bcon_l[IVY] * ucon_l[IVZ];
+    flux_l[IBZ] = bcon_l[IVX] * ucon_l[IVY] - bcon_l[IVY] * ucon_l[IVX];
 
-      // Calculate conserved quantities in R region
-      // (rho u^0, T^0_\mu, and B^j = *F^{j0}, where j != IVY)
-      Real wtot_r = wgas_r + b_sq_r;
-      Real ptot_r = pgas_r + 0.5*b_sq_r;
-      cons_r[IDN][m] = rho_r * ucon_r[0];
-      cons_r[IEN][m] = wtot_r * ucon_r[0] * ucov_r[0] - bcon_r[0] * bcov_r[0] + ptot_r;
-      cons_r[IVX][m] = wtot_r * ucon_r[0] * ucov_r[1] - bcon_r[0] * bcov_r[1];
-      cons_r[IVY][m] = wtot_r * ucon_r[0] * ucov_r[2] - bcon_r[0] * bcov_r[2];
-      cons_r[IVZ][m] = wtot_r * ucon_r[0] * ucov_r[3] - bcon_r[0] * bcov_r[3];
-      cons_r[IBY][m] = bcon_r[IVZ] * ucon_r[0] - bcon_r[0] * ucon_r[IVZ];
-      cons_r[IBZ][m] = bcon_r[IVX] * ucon_r[0] - bcon_r[0] * ucon_r[IVX];
+    // Calculate conserved quantities in R region
+    // (rho u^0, T^0_\mu, and B^j = *F^{j0}, where j != IVY)
+    Real cons_r[NWAVE];
+    Real wtot_r = wgas_r + b_sq_r;
+    Real ptot_r = pgas_r + 0.5*b_sq_r;
+    cons_r[IDN] = rho_r * ucon_r[0];
+    cons_r[IEN] = wtot_r * ucon_r[0] * ucov_r[0] - bcon_r[0] * bcov_r[0] + ptot_r;
+    cons_r[IVX] = wtot_r * ucon_r[0] * ucov_r[1] - bcon_r[0] * bcov_r[1];
+    cons_r[IVY] = wtot_r * ucon_r[0] * ucov_r[2] - bcon_r[0] * bcov_r[2];
+    cons_r[IVZ] = wtot_r * ucon_r[0] * ucov_r[3] - bcon_r[0] * bcov_r[3];
+    cons_r[IBY] = bcon_r[IVZ] * ucon_r[0] - bcon_r[0] * ucon_r[IVZ];
+    cons_r[IBZ] = bcon_r[IVX] * ucon_r[0] - bcon_r[0] * ucon_r[IVX];
 
       // Calculate fluxes in R region
       // (rho u^i, T^i_\mu, and *F^{ji}, where i = IVY and j != IVY)
-      flux_r[IDN][m] = rho_r * ucon_r[IVY];
-      flux_r[IEN][m] = wtot_r * ucon_r[IVY] * ucov_r[0] - bcon_r[IVY] * bcov_r[0];
-      flux_r[IVX][m] = wtot_r * ucon_r[IVY] * ucov_r[1] - bcon_r[IVY] * bcov_r[1];
-      flux_r[IVY][m] = wtot_r * ucon_r[IVY] * ucov_r[2] - bcon_r[IVY] * bcov_r[2];
-      flux_r[IVZ][m] = wtot_r * ucon_r[IVY] * ucov_r[3] - bcon_r[IVY] * bcov_r[3];
-      flux_r[IVY][m] += ptot_r;
-      flux_r[IBY][m] = bcon_r[IVZ] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVZ];
-      flux_r[IBZ][m] = bcon_r[IVX] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVX];
+    Real flux_r[NWAVE];
+    flux_r[IDN] = rho_r * ucon_r[IVY];
+    flux_r[IEN] = wtot_r * ucon_r[IVY] * ucov_r[0] - bcon_r[IVY] * bcov_r[0];
+    flux_r[IVX] = wtot_r * ucon_r[IVY] * ucov_r[1] - bcon_r[IVY] * bcov_r[1];
+    flux_r[IVY] = wtot_r * ucon_r[IVY] * ucov_r[2] - bcon_r[IVY] * bcov_r[2];
+    flux_r[IVZ] = wtot_r * ucon_r[IVY] * ucov_r[3] - bcon_r[IVY] * bcov_r[3];
+    flux_r[IVY] += ptot_r;
+    flux_r[IBY] = bcon_r[IVZ] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVZ];
+    flux_r[IBZ] = bcon_r[IVX] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVX];
 
-      // Set fluxes
-      for (int n = 0; n < NHYDRO; ++n) {
-        flux(n,k,j,ipm) = 0.5 * (flux_l[n][m] + flux_r[n][m] - lambda
-                                 * (cons_r[n][m] - cons_l[n][m]));
-      }
-      ey(k,j,ipm) = -0.5 * (flux_l[IBY][m] + flux_r[IBY][m] - lambda
-                            * (cons_r[IBY][m] - cons_l[IBY][m]));
-      ez(k,j,ipm) = 0.5 * (flux_l[IBZ][m] + flux_r[IBZ][m] - lambda
-                           * (cons_r[IBZ][m] - cons_l[IBZ][m]));
+    // Set fluxes
+    for (int n = 0; n < NHYDRO; ++n) {
+      flux(n,k,j,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda
+			     * (cons_r[n] - cons_l[n]));
     }
+    ey(k,j,i) = -0.5 * (flux_l[IBY] + flux_r[IBY] - lambda
+			* (cons_r[IBY] - cons_l[IBY]));
+    ez(k,j,i) = 0.5 * (flux_l[IBZ] + flux_r[IBZ] - lambda
+		       * (cons_r[IBZ] - cons_l[IBZ]));
   }
+
   return;
 }
 
