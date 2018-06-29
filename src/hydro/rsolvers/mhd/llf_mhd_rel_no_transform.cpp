@@ -95,17 +95,17 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         Real uu3_l = prim_l(IVZ,k,j,i);
         Real bb1_l, bb2_l, bb3_l;
 	if (ivx==IVX) {
-	  bb1_l = bb(k,j,ipm);
-	  bb2_l = prim_l(IBY,k,j,ipm);
-	  bb3_l = prim_l(IBZ,k,j,ipm);
+	  bb1_l = bb(k,j,i);
+	  bb2_l = prim_l(IBY,k,j,i);
+	  bb3_l = prim_l(IBZ,k,j,i);
 	} else if (ivx==IVY) {
-	  bb2_l = bb(k,j,ipm);
-	  bb3_l = prim_l(IBY,k,j,ipm);
-	  bb1_l = prim_l(IBZ,k,j,ipm);
+	  bb2_l = bb(k,j,i);
+	  bb3_l = prim_l(IBY,k,j,i);
+	  bb1_l = prim_l(IBZ,k,j,i);
 	} else if (ivx==IVZ) {
-	  bb3_l = bb(k,j,ipm);
-	  bb1_l = prim_l(IBY,k,j,ipm);
-	  bb2_l = prim_l(IBZ,k,j,ipm);
+	  bb3_l = bb(k,j,i);
+	  bb1_l = prim_l(IBY,k,j,i);
+	  bb2_l = prim_l(IBZ,k,j,i);
 	}
 
         // Extract right primitives
@@ -116,17 +116,17 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         Real uu3_r = prim_r(IVZ,k,j,i);
         Real bb1_r, bb2_r, bb3_r;
 	if (ivx==IVZ) {
-	  bb1_r = bb(k,j,ipm);
-	  bb2_r = prim_r(IBY,k,j,ipm);
-	  bb3_r = prim_r(IBZ,k,j,ipm);
+	  bb1_r = bb(k,j,i);
+	  bb2_r = prim_r(IBY,k,j,i);
+	  bb3_r = prim_r(IBZ,k,j,i);
 	} else if (ivx==IVY) {
-	  bb2_r = bb(k,j,ipm);
-	  bb3_r = prim_r(IBY,k,j,ipm);
-	  bb1_r = prim_r(IBZ,k,j,ipm);
+	  bb2_r = bb(k,j,i);
+	  bb3_r = prim_r(IBY,k,j,i);
+	  bb1_r = prim_r(IBZ,k,j,i);
 	} else if (ivx==IVZ) {
-	  bb3_r = bb(k,j,ipm);
-	  bb1_r = prim_r(IBY,k,j,ipm);
-	  bb2_r = prim_r(IBZ,k,j,ipm);
+	  bb3_r = bb(k,j,i);
+	  bb1_r = prim_r(IBY,k,j,i);
+	  bb2_r = prim_r(IBZ,k,j,i);
 	}
 
         // Calculate 4-velocity in left state
