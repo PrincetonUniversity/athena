@@ -210,7 +210,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
       phy_src2_i_(i) = phy_src1_i_(i);
       // R^2 at the volume center for non-ideal MHD
-      coord_area1vc_i_(i) = SQR(x1v(i))
+      coord_area1vc_i_(i) = SQR(x1v(i));
     }
     coord_area1_i_(iu+ng+1) = x1f(iu+ng+1)*x1f(iu+ng+1);
 #pragma omp simd
