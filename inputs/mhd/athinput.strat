@@ -2,7 +2,7 @@
 problem = Stratified 3D MRI with zero-net vertical flux
 author  = Stone, Hawley, Gammie, & Balbus
 journal =
-config  = -shear -b --prob=strat --with-eos=isothermal
+config  = -shear -b --prob=strat --eos=isothermal
 
 <job>
 problem_id  = Strat      # problem ID: basename of output filenames

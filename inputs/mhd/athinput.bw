@@ -1,7 +1,7 @@
 <comment>
 problem   = Brio & Wu shock tube
 reference = Brio, M. & Wu, C.C., JCP 75, 400-422 (1988)
-configure = -b
+configure = -b --prob=shock_tube
 
 <job>
 problem_id  = Brio-Wu   # problem ID: basename of output filenames
