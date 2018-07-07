@@ -1,7 +1,6 @@
 <comment>
 problem = Stratified 3D MRI with zero-net vertical flux
-author  = Stone, Hawley, Gammie, & Balbus
-journal =
+reference = Stone, Hawley, Gammie, & Balbus
 config  = -shear -b --prob=strat --eos=isothermal
 
 <job>

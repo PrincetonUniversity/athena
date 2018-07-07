@@ -1,7 +1,6 @@
 <comment>
 problem = 2D MRI
-author  = J.F. Hawley & S.A. Balbus
-journal = ApJ 400, 595-609 (1992)
+reference = J.F. Hawley & S.A. Balbus. ApJ 400, 595-609 (1992)
 config  = -shear -b --eos=isothermal --problem=hb3 
 
 <job>
