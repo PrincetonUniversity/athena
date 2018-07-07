@@ -7,7 +7,7 @@ configure = -b --prob=linear_wave
 problem_id = LinWave   # problem ID: basename of output filenames
 
 <output1>
-file_type  = hdf5      # VTK data dump
+file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
