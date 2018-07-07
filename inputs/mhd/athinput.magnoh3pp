@@ -1,0 +1,61 @@
+<comment>
+problem = Z pinch
+reference = Authored by A. Beresnyak
+configure = --prob=magnoh -b --flux-hlle -hdf5 -h5double
+
+<job>
+problem_id  = magnoh    # problem ID: basename of output filenames
+
+<output1>
+file_type   = hst       # History data dump
+dt          = 5e-11     # time increment between outputs
+data_format = %12.5e    # Optional data format string
+
+<output2>
+file_type = hdf5        # HDF5 data dump
+variable  = prim        # variables to be output
+dt        = 1.5e-8      # time increment between outputs
+
+<time>
+cfl_number = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 3.0e-8     # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1        = 800        # Number of zones in X1-direction
+x1min      = -8.0       # minimum value of X1
+x1max      =  8.0       # maximum value of X1
+ix1_bc     = outflow    # Inner-X1 boundary condition flag
+ox1_bc     = outflow    # Outer-X1 boundary condition flag
+
+nx2        = 800        # Number of zones in X2-direction
+x2min      = -8.0       # minimum value of X2
+x2max      =  8.0       # maximum value of X2
+ix2_bc     = outflow    # Inner-X2 boundary condition flag
+ox2_bc     = outflow    # Outer-X2 boundary condition flag
+
+nx3        = 1          # Number of zones in X3-direction
+x3min      = -1.0       # minimum value of X3
+x3max      = 1.0        # maximum value of X3
+ix3_bc     = periodic   # Inner-X3 boundary condition flag
+ox3_bc     = periodic   # Outer-X3 boundary condition flag
+
+<meshblock>
+nx1        = 400        # Number of zones in X1-direction
+nx2        = 400        # Number of zones in X2-direction
+nx3        = 1          # Number of zones in X3-direction
+
+<hydro>
+gamma      = 1.1        # gamma = C_p/C_v
+
+<problem>
+alpha      = 5.2
+beta       = 2.6
+pcoeff     = 1e-6
+d          = 3.256e-9
+vr         = -2e8
+bphi       = 1.198e3
+bz         = 1.198e3
