@@ -597,31 +597,44 @@ class athdf(dict):
             center_funcs = (center_func_1, center_func_2, center_func_3)
             for d, nx, face_func, center_func in zip(
                     range(1, 4), nx_vals, face_funcs, center_funcs):
+                xf = 'x' + repr(d) + 'f'
+                xv = 'x' + repr(d) + 'v'
                 if nx == 1:
                     xm = (self.x1m, self.x2m, self.x3m)[d-1]
                     xp = (self.x1p, self.x2p, self.x3p)[d-1]
-                    self['x' + repr(d) + 'f'] = np.array([xm, xp])
+                    self[xf] = np.array([xm, xp])
                 else:
                     xmin = f.attrs['RootGridX'+repr(d)][0]
                     xmax = f.attrs['RootGridX'+repr(d)][1]
-                    xrat_root = f.attrs['RootGridX' + repr(d)][2]
+                    xrat_root = f.attrs['RootGridX'+repr(d)][2]
                     if xrat_root == -1.0 and face_func is None:
                         raise AthenaError(
                                 'Must specify user-defined face_func_{0}'.format(d))
                     elif face_func is not None:
-                        self['x' + repr(d) + 'f'] = face_func(xmin,
+                        self[xf] = face_func(xmin,
                                 xmax, xrat_root, nx + 1)
                     elif xrat_root == 1.0:
-                        self['x' + repr(d) + 'f'] = np.linspace(xmin, xmax, nx + 1)
+                        if np.all(self.levels == self.level):
+                            self[xf] = np.empty(nx + 1)
+                            for n_block in range(nx / self.block_size[d-1]):
+                                sample_location = [0, 0, 0]
+                                sample_location[d-1] = n_block
+                                sample_block = np.where(
+                                        np.all(self.logical_locations == sample_location,
+                                        axis=1))[0][0]
+                                index_low = n_block * self.block_size[d-1]
+                                index_high = index_low + self.block_size[d-1] + 1
+                                self[xf][index_low:index_high] = f[xf][sample_block, :]
+                        else:
+                            self[xf] = np.linspace(xmin, xmax, nx + 1)
                     else:
                         xrat = xrat_root ** (1.0 / 2 ** self.level)
-                        self['x' + repr(d) + 'f'] = (
+                        self[xf] = (
                                 xmin + (1.0 - xrat**np.arange(nx+1)) / (1.0 - xrat**nx)
                                 * (xmax - xmin))
-                self['x' + repr(d) + 'v'] = np.empty(nx)
+                self[xv] = np.empty(nx)
                 for i in range(nx):
-                    self['x' + repr(d) + 'v'][i] = center_func(
-                            self['x' + repr(d) + 'f'][i], self['x' + repr(d) + 'f'][i+1])
+                    self[xv][i] = center_func(self[xf][i], self[xf][i+1])
 
             # Account for selection
             x1_select = False
