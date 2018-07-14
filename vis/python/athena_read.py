@@ -203,7 +203,7 @@ def vtk(filename):
     def skip_string(expected_string):
         expected_string_len = len(expected_string)
         if raw_data_ascii[current_index:current_index +
-                expected_string_len] != expected_string:
+                          expected_string_len] != expected_string:
             raise AthenaError('File not formatted as expected')
         return current_index+expected_string_len
 
@@ -232,7 +232,7 @@ def vtk(filename):
 
     # Prepare to read quantities defined on grid
     cell_dimensions = np.array([max(dim-1, 1)
-            for dim in face_dimensions])
+                                for dim in face_dimensions])
     num_cells = cell_dimensions.prod()
     current_index = skip_string('CELL_DATA {0}\n'.format(num_cells))
     if raw_data_ascii[current_index:current_index+1] == '\n':
@@ -277,13 +277,13 @@ def vtk(filename):
         expected_string = 'SCALARS'
         expected_string_len = len(expected_string)
         if raw_data_ascii[current_index:current_index +
-                expected_string_len] == expected_string:
+                          expected_string_len] == expected_string:
             current_index = read_cell_scalars()
             continue
         expected_string = 'VECTORS'
         expected_string_len = len(expected_string)
         if raw_data_ascii[current_index:current_index +
-                expected_string_len] == expected_string:
+                          expected_string_len] == expected_string:
             current_index = read_cell_vectors()
             continue
         raise AthenaError('File not formatted as expected')
@@ -379,9 +379,10 @@ class athdf(dict):
                 # Sum or slice
                 if self.block_size[d] == 1 and root_grid_size[d] > 1:
                     other_locations = [
-                            location for location in zip(self.levels,
-                            self.logical_locations[:, (d+1) % 3],
-                            self.logical_locations[:, (d+2) % 3])]
+                            location for location in zip(
+                                self.levels,
+                                self.logical_locations[:, (d+1) % 3],
+                                self.logical_locations[:, (d+2) % 3])]
 
                     # Effective slice
                     if len(set(other_locations)) == len(other_locations):
@@ -460,6 +461,7 @@ class athdf(dict):
                         self.fast_restrict = True
                     else:
                         a = vol_params[0]
+
                         def vol_func(rm, rp, thetam, thetap, phim, phip):
                             cosm = np.cos(thetam)
                             cosp = np.cos(thetap)
@@ -537,7 +539,7 @@ class athdf(dict):
 
             # Create list of all quantities if none given
             var_quantities = np.array([x.decode('ascii', 'replace')
-                    for x in f.attrs['VariableNames'][:]])
+                                       for x in f.attrs['VariableNames'][:]])
             coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
             attr_quantities = [key for key in f.attrs]
             other_quantities = ('Levels',)
@@ -555,9 +557,9 @@ class athdf(dict):
                                 ' does include {1}')
                         raise AthenaError(error_string.format(q, possibilities))
             self.quantities = [str(q) for q in self.quantities
-                    if q not in coord_quantities
-                    and q not in attr_quantities
-                    and q not in other_quantities]
+                               if q not in coord_quantities
+                               and q not in attr_quantities
+                               and q not in other_quantities]
 
             # Store file attribute metadata
             for key in attr_quantities:
@@ -566,11 +568,11 @@ class athdf(dict):
             # Get metadata describing file layout
             self.num_blocks = f.attrs['NumMeshBlocks']
             dataset_names = np.array([x.decode('ascii', 'replace')
-                    for x in f.attrs['DatasetNames'][:]])
+                                      for x in f.attrs['DatasetNames'][:]])
             dataset_sizes = f.attrs['NumVariables'][:]
             dataset_sizes_cumulative = np.cumsum(dataset_sizes)
             variable_names = np.array([x.decode('ascii', 'replace')
-                    for x in f.attrs['VariableNames'][:]])
+                                       for x in f.attrs['VariableNames'][:]])
             self.quantity_datasets = {}
             self.quantity_indices = {}
             for q in self.quantities:
@@ -611,17 +613,16 @@ class athdf(dict):
                         raise AthenaError(
                                 'Must specify user-defined face_func_{0}'.format(d))
                     elif face_func is not None:
-                        self[xf] = face_func(xmin,
-                                xmax, xrat_root, nx + 1)
+                        self[xf] = face_func(xmin, xmax, xrat_root, nx + 1)
                     elif xrat_root == 1.0:
                         if np.all(self.levels == self.level):
                             self[xf] = np.empty(nx + 1)
                             for n_block in range(nx / self.block_size[d-1]):
                                 sample_location = [0, 0, 0]
                                 sample_location[d-1] = n_block
-                                sample_block = np.where(
-                                        np.all(self.logical_locations == sample_location,
-                                        axis=1))[0][0]
+                                sample_block = np.where(np.all(
+                                    self.logical_locations == sample_location,
+                                    axis=1))[0][0]
                                 index_low = n_block * self.block_size[d-1]
                                 index_high = index_low + self.block_size[d-1] + 1
                                 self[xf][index_low:index_high] = f[xf][sample_block, :]
@@ -867,9 +868,10 @@ class athdf(dict):
                         for q in quantities:
                             dataset = self.quantity_datasets[q]
                             index = self.quantity_indices[q]
-                            self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (
-                                    f[dataset][index, block_num, kl_s+o3:ku_s:s,
-                                    jl_s+o2:ju_s:s, il_s+o1:iu_s:s])
+                            self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (f[dataset][
+                                index, block_num, kl_s+o3:ku_s:s,
+                                jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
+                            )
 
                     # Apply fast (uniform Cartesian) restriction
                     elif self.fast_restrict:
@@ -888,11 +890,11 @@ class athdf(dict):
                                     for io in io_vals:
                                         self[q][kl_d:ku_d,
                                                 jl_d:ju_d,
-                                                il_d:iu_d] += f[dataset][index,
-                                                block_num,
-                                                kl_s+ko:ku_s:s,
-                                                jl_s+jo:ju_s:s,
-                                                il_s+io:iu_s:s]
+                                                il_d:iu_d] += f[dataset][
+                                                    index, block_num,
+                                                    kl_s+ko:ku_s:s,
+                                                    jl_s+jo:ju_s:s,
+                                                    il_s+io:iu_s:s]
                             self[q][kl_d:ku_d, jl_d:ju_d,
                                     il_d:iu_d] /= s ** self.num_extended_dims
 
@@ -933,9 +935,8 @@ class athdf(dict):
                                         dataset = self.quantity_datasets[q]
                                         index = self.quantity_indices[q]
                                         self[q][k_d, j_d, i_d] += (
-                                                vol
-                                                * f[dataset][index, block_num, k_s, j_s,
-                                                i_s])
+                                            vol
+                                            * f[dataset][index, block_num, k_s, j_s, i_s])
                         loc1 = (self.nx1 > 1) * block_location[0] / s
                         loc2 = (self.nx2 > 1) * block_location[1] / s
                         loc3 = (self.nx3 > 1) * block_location[2] / s
@@ -1012,14 +1013,14 @@ def restrict_like(vals, levels, vols=None):
         stride = 2 ** level_difference
         if nx3 > 1:
             vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride,
-                    nx1/stride, stride))
+                                                  nx1/stride, stride))
             vols_level = np.reshape(
                     vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
             vals_sum = np.sum(np.sum(np.sum(vals_level, axis=5), axis=3), axis=1)
             vols_sum = np.sum(np.sum(np.sum(vols_level, axis=5), axis=3), axis=1)
             vals_level = np.repeat(
                     np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride,
-                    axis=1), stride, axis=2)
+                              axis=1), stride, axis=2)
         elif nx2 > 1:
             vals_level = np.reshape(vals * vols, (nx2/stride, stride, nx1/stride, stride))
             vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
