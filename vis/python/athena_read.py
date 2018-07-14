@@ -617,7 +617,7 @@ class athdf(dict):
                     elif xrat_root == 1.0:
                         if np.all(self.levels == self.level):
                             self[xf] = np.empty(nx + 1)
-                            for n_block in range(nx / self.block_size[d-1]):
+                            for n_block in range(int(nx / self.block_size[d-1])):
                                 sample_location = [0, 0, 0]
                                 sample_location[d-1] = n_block
                                 sample_block = np.where(np.all(
