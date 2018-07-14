@@ -3,9 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//
 //! \file hdf5_reader.cpp
-//  \brief prototypes of functions and class definitions for utils/*.cpp files
+//  \brief Implements HDF5 reader functions
 
 // C++ headers
 #include <sstream>    // stringstream
@@ -13,6 +12,7 @@
 #include <string>     // string
 
 // Athena++ headers
+#include "hdf5_reader.hpp"
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../defs.hpp"           // SINGLE_PRECISION_ENABLED
@@ -35,11 +35,19 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank,
-//      const hsize_t *dims, AthenaArray<Real> &array)
+//      const int *dims, const int *offset, AthenaArray<Real> &array)
 //  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
-    const hsize_t *dims, AthenaArray<Real> &array) {
+    const int *dims, const int *offset, AthenaArray<Real> &array) {
+
+  // Cast dims and offset to appropriate types
+  hsize_t dims_hid[rank];
+  hsize_t offset_hid[rank];
+  for (int n = 0; n < rank; ++n) {
+    dims_hid[n] = dims[n];
+    offset_hid[n] = offset[n];
+  }
 
   // Open data file
   hid_t property_list_file = H5Pcreate(H5P_FILE_ACCESS);
@@ -60,10 +68,14 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
 
   // Read dataset into array
   hid_t dataset = H5Dopen(file, dataset_name, H5P_DEFAULT);
-  hid_t dataspace = H5Screate_simple(rank, dims, NULL);
-  H5Dread(dataset, H5T_REAL, dataspace, dataspace, property_list_transfer, array.data());
+  hid_t dataspace_mem = H5Screate_simple(rank, dims, NULL);
+  hid_t dataspace_file = H5Screate_simple(rank, dims, NULL);
+  H5Soffset_simple(dataspace_file, offset);
+  H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,
+      array.data());
   H5Dclose(dataset);
-  H5Sclose(dataspace);
+  H5Sclose(dataspace_mem);
+  H5Sclose(dataspace_file);
 
   // Close data file
   H5Pclose(property_list_transfer);
