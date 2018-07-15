@@ -57,15 +57,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Read conserved values from file
   std::string input_filename = pin->GetString("problem", "input_filename");
   std::string dataset_name = pin->GetString("problem", "dataset_name");
-  int dims[5];
-  dims[0] = NHYDRO;
-  dims[1] = 1;
-  dims[2] = block_size.nx3;
-  dims[3] = block_size.nx2;
-  dims[4] = block_size.nx1;
-  int offset[5] = {0};
-  offset[1] = gid;
-  HDF5ReadRealArray(input_filename.c_str(), dataset_name.c_str(), 5, dims, offset, cons);
+  int start_file[5] = {0};
+  start_file[1] = gid;
+  int start_mem[5] = {0};
+  int count[5];
+  count[0] = NHYDRO;
+  count[1] = 1;
+  count[2] = block_size.nx3;
+  count[3] = block_size.nx2;
+  count[4] = block_size.nx1;
+  HDF5ReadRealArray(input_filename.c_str(), dataset_name.c_str(), 5, start_file,
+      start_mem, count, cons);
 
   // Set conserved values
   for (int n = 0; n <= NHYDRO; ++n) {
@@ -73,8 +75,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j = js; j <= je; ++j) {
         for (int i = is; i <= ie; ++i) {
           phydro->u(n, k, j, i) = cons(n, 0, k-NGHOST, j-NGHOST, i-NGHOST);
-          if (n == 0 and gid == 1 and k-NGHOST == 0 and j-NGHOST == 0 and i-NGHOST == 0)
-            std::cout << "\n" << cons(n, 0, k-NGHOST, j-NGHOST, i-NGHOST) << "\n";
         }
       }
     }

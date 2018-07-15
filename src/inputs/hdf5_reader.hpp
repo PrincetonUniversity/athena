@@ -15,6 +15,7 @@
 
 // Declarations
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
-    const int *dims, const int *offset, AthenaArray<Real> &array);
+    const int *start_file, const int *start_mem, const int *count,
+    AthenaArray<Real> &array);
 
 #endif  // INPUTS_HDF5_READER_HPP_
