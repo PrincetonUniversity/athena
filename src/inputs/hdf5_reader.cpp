@@ -43,7 +43,7 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
 
   // Cast dims and offset to appropriate types
   hsize_t dims_hid[rank];
-  hsize_t offset_hid[rank];
+  hssize_t offset_hid[rank];
   for (int n = 0; n < rank; ++n) {
     dims_hid[n] = dims[n];
     offset_hid[n] = offset[n];
@@ -68,9 +68,9 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
 
   // Read dataset into array
   hid_t dataset = H5Dopen(file, dataset_name, H5P_DEFAULT);
-  hid_t dataspace_mem = H5Screate_simple(rank, dims, NULL);
-  hid_t dataspace_file = H5Screate_simple(rank, dims, NULL);
-  H5Soffset_simple(dataspace_file, offset);
+  hid_t dataspace_mem = H5Screate_simple(rank, dims_hid, NULL);
+  hid_t dataspace_file = H5Screate_simple(rank, dims_hid, NULL);
+  H5Soffset_simple(dataspace_file, offset_hid);
   H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,
       array.data());
   H5Dclose(dataset);

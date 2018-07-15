@@ -9,6 +9,10 @@
 //! \file hdf5_reader.hpp
 //  \brief Declares HDF5 reader functions
 
+// Athena++ headers
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
+
 // Declarations
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
     const int *dims, const int *offset, AthenaArray<Real> &array);
