@@ -16,6 +16,8 @@ pgen_choices = set([choice[len(pgen_directory):-4] for choice in pgen_choices])
 
 # Skip --prob=default_pgen; weak attr. may not compile with Intel C++ compiler
 pgen_choices.remove('default_pgen')
+# Skip from_array pgen
+pgen_choices.remeove('from_array')
 # Currently testing GR Hydro, not MHD:
 # coord='minkowski', #'-t'
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
