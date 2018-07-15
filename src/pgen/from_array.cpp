@@ -34,50 +34,32 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
-  // Prepare index bounds
-  int il = is - NGHOST;
-  int iu = ie + NGHOST;
-  int jl = js;
-  int ju = je;
-  if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  int kl = ks;
-  int ku = ke;
-  if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
-
-  // Prepare scratch arrays for conserved values
-  AthenaArray<Real> cons;
-  cons.NewAthenaArray(NHYDRO, 1, block_size.nx3, block_size.nx2, block_size.nx1);
-
-  // Read conserved values from file
+  // Determine location of initial values
   std::string input_filename = pin->GetString("problem", "input_filename");
   std::string dataset_name = pin->GetString("problem", "dataset_name");
+
+  // Prepare array selections
   int start_file[5] = {0};
   start_file[1] = gid;
+  int count_file[5];
+  count_file[0] = NHYDRO;
+  count_file[1] = 1;
+  count_file[2] = block_size.nx3;
+  count_file[3] = block_size.nx2;
+  count_file[4] = block_size.nx1;
   int start_mem[5] = {0};
-  int count[5];
-  count[0] = NHYDRO;
-  count[1] = 1;
-  count[2] = block_size.nx3;
-  count[3] = block_size.nx2;
-  count[4] = block_size.nx1;
-  HDF5ReadRealArray(input_filename.c_str(), dataset_name.c_str(), 5, start_file,
-      start_mem, count, cons);
+  start_mem[2] = ks;
+  start_mem[3] = js;
+  start_mem[4] = is;
+  int count_mem[5];
+  count_mem[0] = 1;
+  count_mem[1] = NHYDRO;
+  count_mem[2] = block_size.nx3;
+  count_mem[3] = block_size.nx2;
+  count_mem[4] = block_size.nx1;
 
-  // Set conserved values
-  for (int n = 0; n <= NHYDRO; ++n) {
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is; i <= ie; ++i) {
-          phydro->u(n, k, j, i) = cons(n, 0, k-NGHOST, j-NGHOST, i-NGHOST);
-        }
-      }
-    }
-  }
+  // Read conserved values from file
+  HDF5ReadRealArray(input_filename.c_str(), dataset_name.c_str(), 5, start_file,
+      count_file, start_mem, count_mem, phydro->u);
   return;
 }

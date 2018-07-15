@@ -35,22 +35,24 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank,
-//      const int *start_file, const int *start_mem, const int *count,
-//      AthenaArray<Real> &array)
+//      const int *start_file, const int *count_file, const int *start_mem,
+//      const int *count_mem, AthenaArray<Real> &array)
 //  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
-    const int *start_file, const int *start_mem, const int *count,
-    AthenaArray<Real> &array) {
+    const int *start_file, const int *count_file, const int *start_mem,
+    const int *count_mem, AthenaArray<Real> &array) {
 
   // Cast selection arrays to appropriate types
   hsize_t start_file_hid[rank];
+  hsize_t count_file_hid[rank];
   hsize_t start_mem_hid[rank];
-  hsize_t count_hid[rank];
+  hsize_t count_mem_hid[rank];
   for (int n = 0; n < rank; ++n) {
     start_file_hid[n] = start_file[n];
+    count_file_hid[n] = count_file[n];
     start_mem_hid[n] = start_mem[n];
-    count_hid[n] = count[n];
+    count_mem_hid[n] = count_mem[n];
   }
 
   // Determine AthenaArray dimensions
@@ -81,10 +83,10 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
   // Read dataset into array
   hid_t dataset = H5Dopen(file, dataset_name, H5P_DEFAULT);
   hid_t dataspace_file = H5Dget_space(dataset);
-  H5Sselect_hyperslab(dataspace_file, H5S_SELECT_SET, start_file_hid, NULL, count_hid,
-      NULL);
+  H5Sselect_hyperslab(dataspace_file, H5S_SELECT_SET, start_file_hid, NULL,
+      count_file_hid, NULL);
   hid_t dataspace_mem = H5Screate_simple(rank, dims_mem, NULL);
-  H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET, start_mem_hid, NULL, count_hid,
+  H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET, start_mem_hid, NULL, count_mem_hid,
       NULL);
   H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,
       array.data());
