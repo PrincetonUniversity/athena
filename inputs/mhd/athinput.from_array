@@ -52,4 +52,9 @@ iso_sound_speed = 1.0                 # isothermal sound speed (for barotropic E
 
 <problem>
 input_filename = /dev/null  # name of HDF5 file containing initial conditions
-dataset_name   = cons       # name of dataset containing conserved values
+dataset_cons   = cons       # name of dataset containing conserved values
+index_dens     = 0          # index of density in conserved dataset
+index_mom1     = 1          # index of x1-momentum in conserved dataset
+index_mom2     = 2          # index of x2-momentum in conserved dataset
+index_mom3     = 3          # index of x3-momentum in conserved dataset
+index_etot     = 4          # index of energy in conserved dataset (for nonbarotropic EOS)

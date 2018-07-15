@@ -34,32 +34,41 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
-  // Determine location of initial values
+  // Determine locations of initial values
   std::string input_filename = pin->GetString("problem", "input_filename");
-  std::string dataset_name = pin->GetString("problem", "dataset_name");
+  std::string dataset_cons = pin->GetString("problem", "dataset_cons");
+  int index_dens = pin->GetInteger("problem", "index_dens");
+  int index_mom1 = pin->GetInteger("problem", "index_mom1");
+  int index_mom2 = pin->GetInteger("problem", "index_mom2");
+  int index_mom3 = pin->GetInteger("problem", "index_mom3");
+  int index_etot = pin->GetInteger("problem", "index_etot");
 
   // Prepare array selections
   int start_file[5] = {0};
   start_file[1] = gid;
-  int count_file[5];
-  count_file[0] = NHYDRO;
-  count_file[1] = 1;
-  count_file[2] = block_size.nx3;
-  count_file[3] = block_size.nx2;
-  count_file[4] = block_size.nx1;
   int start_mem[5] = {0};
   start_mem[2] = ks;
   start_mem[3] = js;
   start_mem[4] = is;
-  int count_mem[5];
-  count_mem[0] = 1;
-  count_mem[1] = NHYDRO;
-  count_mem[2] = block_size.nx3;
-  count_mem[3] = block_size.nx2;
-  count_mem[4] = block_size.nx1;
+  int start_indices[5];
+  start_indices[IDN] = index_dens;
+  start_indices[IM1] = index_mom1;
+  start_indices[IM2] = index_mom2;
+  start_indices[IM3] = index_mom3;
+  start_indices[IEN] = index_etot;
+  int count[5];
+  count[0] = 1;
+  count[1] = 1;
+  count[2] = block_size.nx3;
+  count[3] = block_size.nx2;
+  count[4] = block_size.nx1;
 
   // Read conserved values from file
-  HDF5ReadRealArray(input_filename.c_str(), dataset_name.c_str(), 5, start_file,
-      count_file, start_mem, count_mem, phydro->u);
+  for (int n = 0; n < NHYDRO; ++n) {
+    start_file[0] = start_indices[n];
+    start_mem[1] = n;
+    HDF5ReadRealArray(input_filename.c_str(), dataset_cons.c_str(), 5, start_file, count,
+        start_mem, count, phydro->u);
+  }
   return;
 }
