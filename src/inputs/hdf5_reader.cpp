@@ -34,34 +34,37 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank,
-//      const int *start_file, const int *count_file, const int *start_mem,
+//! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank_file,
+//      const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
 //      const int *count_mem, AthenaArray<Real> &array)
 //  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
-void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
-    const int *start_file, const int *count_file, const int *start_mem,
+void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
+    const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
     const int *count_mem, AthenaArray<Real> &array) {
 
   // Cast selection arrays to appropriate types
-  hsize_t start_file_hid[rank];
-  hsize_t count_file_hid[rank];
-  hsize_t start_mem_hid[rank];
-  hsize_t count_mem_hid[rank];
-  for (int n = 0; n < rank; ++n) {
+  hsize_t start_file_hid[rank_file];
+  hsize_t count_file_hid[rank_file];
+  for (int n = 0; n < rank_file; ++n) {
     start_file_hid[n] = start_file[n];
     count_file_hid[n] = count_file[n];
+  }
+  hsize_t start_mem_hid[rank_mem];
+  hsize_t count_mem_hid[rank_mem];
+  for (int n = 0; n < rank_mem; ++n) {
     start_mem_hid[n] = start_mem[n];
     count_mem_hid[n] = count_mem[n];
   }
 
   // Determine AthenaArray dimensions
-  hsize_t dims_mem[5];
-  dims_mem[0] = array.GetDim5();
-  dims_mem[1] = array.GetDim4();
-  dims_mem[2] = array.GetDim3();
-  dims_mem[3] = array.GetDim2();
-  dims_mem[4] = array.GetDim1();
+  hsize_t dims_mem_base[5];
+  dims_mem_base[0] = array.GetDim5();
+  dims_mem_base[1] = array.GetDim4();
+  dims_mem_base[2] = array.GetDim3();
+  dims_mem_base[3] = array.GetDim2();
+  dims_mem_base[4] = array.GetDim1();
+  hsize_t *dims_mem = dims_mem_base + 5 - rank_mem;
 
   // Open data file
   hid_t property_list_file = H5Pcreate(H5P_FILE_ACCESS);
@@ -85,7 +88,7 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank,
   hid_t dataspace_file = H5Dget_space(dataset);
   H5Sselect_hyperslab(dataspace_file, H5S_SELECT_SET, start_file_hid, NULL,
       count_file_hid, NULL);
-  hid_t dataspace_mem = H5Screate_simple(rank, dims_mem, NULL);
+  hid_t dataspace_mem = H5Screate_simple(rank_mem, dims_mem, NULL);
   H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET, start_mem_hid, NULL, count_mem_hid,
       NULL);
   H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,

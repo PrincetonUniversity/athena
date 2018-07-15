@@ -58,3 +58,6 @@ index_mom1     = 1          # index of x1-momentum in conserved dataset
 index_mom2     = 2          # index of x2-momentum in conserved dataset
 index_mom3     = 3          # index of x3-momentum in conserved dataset
 index_etot     = 4          # index of energy in conserved dataset (for nonbarotropic EOS)
+dataset_b1     = b1         # name of dataset containing B field on x1-faces
+dataset_b2     = b2         # name of dataset containing B field on x2-faces
+dataset_b3     = b3         # name of dataset containing B field on x3-faces

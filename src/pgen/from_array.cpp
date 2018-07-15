@@ -42,33 +42,92 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int index_mom2 = pin->GetInteger("problem", "index_mom2");
   int index_mom3 = pin->GetInteger("problem", "index_mom3");
   int index_etot = pin->GetInteger("problem", "index_etot");
+  std::string dataset_b1 = pin->GetString("problem", "dataset_b1");
+  std::string dataset_b2 = pin->GetString("problem", "dataset_b2");
+  std::string dataset_b3 = pin->GetString("problem", "dataset_b3");
 
-  // Prepare array selections
-  int start_file[5] = {0};
-  start_file[1] = gid;
-  int start_mem[5] = {0};
-  start_mem[2] = ks;
-  start_mem[3] = js;
-  start_mem[4] = is;
-  int start_indices[5];
-  start_indices[IDN] = index_dens;
-  start_indices[IM1] = index_mom1;
-  start_indices[IM2] = index_mom2;
-  start_indices[IM3] = index_mom3;
-  start_indices[IEN] = index_etot;
-  int count[5];
-  count[0] = 1;
-  count[1] = 1;
-  count[2] = block_size.nx3;
-  count[3] = block_size.nx2;
-  count[4] = block_size.nx1;
+  // Set conserved array selections
+  int start_cons_file[5];
+  start_cons_file[1] = gid;
+  start_cons_file[2] = 0;
+  start_cons_file[3] = 0;
+  start_cons_file[4] = 0;
+  int start_cons_indices[5];
+  start_cons_indices[IDN] = index_dens;
+  start_cons_indices[IM1] = index_mom1;
+  start_cons_indices[IM2] = index_mom2;
+  start_cons_indices[IM3] = index_mom3;
+  start_cons_indices[IEN] = index_etot;
+  int count_cons_file[5];
+  count_cons_file[0] = 1;
+  count_cons_file[1] = 1;
+  count_cons_file[2] = block_size.nx3;
+  count_cons_file[3] = block_size.nx2;
+  count_cons_file[4] = block_size.nx1;
+  int start_cons_mem[4];
+  start_cons_mem[1] = ks;
+  start_cons_mem[2] = js;
+  start_cons_mem[3] = is;
+  int count_cons_mem[4];
+  count_cons_mem[0] = 1;
+  count_cons_mem[1] = block_size.nx3;
+  count_cons_mem[2] = block_size.nx2;
+  count_cons_mem[3] = block_size.nx1;
 
-  // Read conserved values from file
+  // Set conserved values from file
   for (int n = 0; n < NHYDRO; ++n) {
-    start_file[0] = start_indices[n];
-    start_mem[1] = n;
-    HDF5ReadRealArray(input_filename.c_str(), dataset_cons.c_str(), 5, start_file, count,
-        start_mem, count, phydro->u);
+    start_cons_file[0] = start_cons_indices[n];
+    start_cons_mem[0] = n;
+    HDF5ReadRealArray(input_filename.c_str(), dataset_cons.c_str(), 5, start_cons_file,
+        count_cons_file, 4, start_cons_mem, count_cons_mem, phydro->u);
+  }
+
+  // Set magnetic field values from file
+  if (MAGNETIC_FIELDS_ENABLED) {
+
+      // Set field array selections
+      int start_field_file[4];
+      start_field_file[0] = gid;
+      start_field_file[1] = 0;
+      start_field_file[2] = 0;
+      start_field_file[3] = 0;
+      int count_field_file[4];
+      count_field_file[0] = 1;
+      int start_field_mem[3];
+      start_field_mem[0] = ks;
+      start_field_mem[1] = js;
+      start_field_mem[2] = is;
+      int count_field_mem[3];
+
+      // Set B1
+      count_field_file[1] = block_size.nx3;
+      count_field_file[2] = block_size.nx2;
+      count_field_file[3] = block_size.nx1 + 1;
+      count_field_mem[0] = block_size.nx3;
+      count_field_mem[1] = block_size.nx2;
+      count_field_mem[2] = block_size.nx1 + 1;
+      HDF5ReadRealArray(input_filename.c_str(), dataset_b1.c_str(), 4, start_field_file,
+          count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x1f);
+
+      // Set B2
+      count_field_file[1] = block_size.nx3;
+      count_field_file[2] = block_size.nx2 + 1;
+      count_field_file[3] = block_size.nx1;
+      count_field_mem[0] = block_size.nx3;
+      count_field_mem[1] = block_size.nx2 + 1;
+      count_field_mem[2] = block_size.nx1;
+      HDF5ReadRealArray(input_filename.c_str(), dataset_b2.c_str(), 4, start_field_file,
+          count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x2f);
+
+      // Set B3
+      count_field_file[1] = block_size.nx3 + 1;
+      count_field_file[2] = block_size.nx2;
+      count_field_file[3] = block_size.nx1;
+      count_field_mem[0] = block_size.nx3 + 1;
+      count_field_mem[1] = block_size.nx2;
+      count_field_mem[2] = block_size.nx1;
+      HDF5ReadRealArray(input_filename.c_str(), dataset_b3.c_str(), 4, start_field_file,
+          count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x3f);
   }
   return;
 }
