@@ -30,7 +30,7 @@ def prepare(**kwargs):
 
     # Configure and compile code
     athena.configure('b',
-                     'hdf5',
+                     'hdf5', 'h5double',
                      prob='from_array',
                      **kwargs)
     athena.make()
@@ -112,23 +112,13 @@ def analyze():
     b2_output = field_output[np.where(output_vars_field == 'Bcc2')[0][0], ...]
     b3_output = field_output[np.where(output_vars_field == 'Bcc3')[0][0], ...]
 
-    # Check that outputs match inputs in shape
-    if cons_output.shape != cons_input.shape:
+    # Check that outputs match inputs
+    if not np.all(cons_output == cons_input):
         return False
-    if b1_output.shape != b1v.shape:
+    if not np.all(b1_output == b1v):
         return False
-    if b2_output.shape != b2v.shape:
+    if not np.all(b2_output == b2v):
         return False
-    if b3_output.shape != b3v.shape:
-        return False
-
-    # Check that outputs match inputs in value
-    if not np.allclose(cons_output, cons_input, rtol=1.0e-15, atol=1.0e-15):
-        return False
-    if not np.allclose(b1_output, b1v, rtol=1.0e-15, atol=1.0e-15):
-        return False
-    if not np.allclose(b2_output, b2v, rtol=1.0e-15, atol=1.0e-15):
-        return False
-    if not np.allclose(b3_output, b3v, rtol=1.0e-15, atol=1.0e-15):
+    if not np.all(b3_output == b3v):
         return False
     return True
