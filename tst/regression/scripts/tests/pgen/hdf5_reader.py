@@ -25,6 +25,7 @@ nx2 = 6
 nx3 = 4
 gamma = 5.0/3.0
 
+
 # Prepare Athena++
 def prepare(**kwargs):
 
@@ -42,7 +43,7 @@ def prepare(**kwargs):
     b2_input = np.zeros((nb1, nx3, nx2 + 1, nx1))
     b3_input = np.zeros((nb1, nx3 + 1, nx2, nx1))
     for n in range(nb1):
-      b1_input[n, ...] = b1[:, :, n*nx1:(n+1)*nx1+1]
+        b1_input[n, ...] = b1[:, :, n*nx1:(n+1)*nx1+1]
     b1v = 0.5 * (b1_input[:, :, :, :-1] + b1_input[:, :, :, 1:])
 
     # Calculate initial conserved values
