@@ -67,6 +67,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   cell_volume_.NewAthenaArray(ncells1);
   dflx_.NewAthenaArray((NHYDRO),ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
+    if (not GENERAL_RELATIVITY) {
+      prim_field_.NewAthenaArray(NWAVE, 1, 1, ncells1);
+      lambdas_p_.NewAthenaArray(ncells1);
+      lambdas_m_.NewAthenaArray(ncells1);
+    }
     bb_normal_.NewAthenaArray(ncells1);
     lambdas_p_l_.NewAthenaArray(ncells1);
     lambdas_m_l_.NewAthenaArray(ncells1);
@@ -134,6 +139,11 @@ Hydro::~Hydro() {
   cell_volume_.DeleteAthenaArray();
   dflx_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) {  // only used in (SR/GR)MHD
+    if (not GENERAL_RELATIVITY) {
+      prim_field_.DeleteAthenaArray();
+      lambdas_p_.DeleteAthenaArray();
+      lambdas_m_.DeleteAthenaArray();
+    }
     bb_normal_.DeleteAthenaArray();
     lambdas_p_l_.DeleteAthenaArray();
     lambdas_m_l_.DeleteAthenaArray();
