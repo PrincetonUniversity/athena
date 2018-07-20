@@ -13,6 +13,11 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
+// upper limit on the dimensionality of the resulting AthenaArray
+#define MAX_RANK_MEM 5
+// upper limit on the dimensionality of the external dataset
+#define MAX_RANK_FILE 5
+
 // Declarations
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
     const int *start_file, const int *count_file, int rank_mem, const int *start_mem,

@@ -43,15 +43,30 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
     const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
     const int *count_mem, AthenaArray<Real> &array) {
 
+  // Check that user is not trying to exceed limits of HDF5 array or AthenaArray
+  // dimensionality
+  if (rank_file > MAX_RANK_FILE) {
+    std::stringstream message;
+    message << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_file
+            << "\nExceeding MAX_RANK_FILE=" << MAX_RANK_FILE << std::endl;
+    throw std::runtime_error(message.str().c_str());
+  }
+  if (rank_mem > MAX_RANK_MEM) {
+    std::stringstream message;
+    message << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_mem
+            << "\nExceeding MAX_RANK_MEM=" << MAX_RANK_MEM << std::endl;
+    throw std::runtime_error(message.str().c_str());
+  }
+
   // Cast selection arrays to appropriate types
-  hsize_t start_file_hid[rank_file];
-  hsize_t count_file_hid[rank_file];
+  hsize_t start_file_hid[MAX_RANK_FILE];
+  hsize_t count_file_hid[MAX_RANK_FILE];
   for (int n = 0; n < rank_file; ++n) {
     start_file_hid[n] = start_file[n];
     count_file_hid[n] = count_file[n];
   }
-  hsize_t start_mem_hid[rank_mem];
-  hsize_t count_mem_hid[rank_mem];
+  hsize_t start_mem_hid[MAX_RANK_MEM];
+  hsize_t count_mem_hid[MAX_RANK_MEM];
   for (int n = 0; n < rank_mem; ++n) {
     start_mem_hid[n] = start_mem[n];
     count_mem_hid[n] = count_mem[n];

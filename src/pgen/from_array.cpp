@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file from_array.cpp
-//  \brief Problem generator for initializing with preexisting array
+//  \brief Problem generator for initializing with preexisting array from HDF5 input
 
 // C++ headers
 #include <string>     // c_str(), string
