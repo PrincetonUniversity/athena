@@ -275,8 +275,9 @@ void HydroDiffusion::FaceXdy(const int k, const int j, const int il, const int i
       len(i) = pco_->h2f(i)
           * (prim(IM2,k,j,i)/pco_->h2v(i) - prim(IM2,k,j,i-1)/pco_->h2v(i-1))
           / pco_->dx1v(i-1)
-          + 0.5*( prim(IM1,k,j+1,i) + prim(IM1,k,j+1,i-1)
-                - prim(IM1,k,j-1,i) - prim(IM1,k,j-1,i-1) )
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          + 0.5*(   (prim(IM1,k,j+1,i) + prim(IM1,k,j+1,i-1))
+                  - (prim(IM1,k,j-1,i) + prim(IM1,k,j-1,i-1)) )
           / pco_->h2f(i)
           / (pco_->dx2v(j-1) + pco_->dx2v(j));
     }
@@ -300,8 +301,9 @@ void HydroDiffusion::FaceXdz(const int k, const int j, const int il, const int i
       len(i) = pco_->h31f(i)
           * (prim(IM3,k,j,i)/pco_->h31v(i) - prim(IM3,k,j,i-1)/pco_->h31v(i-1))
           / pco_->dx1v(i-1)
-          + 0.5*( prim(IM1,k+1,j,i) + prim(IM1,k+1,j,i-1)
-                - prim(IM1,k-1,j,i) - prim(IM1,k-1,j,i-1) )
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          + 0.5*(   (prim(IM1,k+1,j,i) + prim(IM1,k+1,j,i-1))
+                  - (prim(IM1,k-1,j,i) + prim(IM1,k-1,j,i-1)) )
           / pco_->h31f(i)/pco_->h32v(j) // note, more terms than FaceXdy() line
           / (pco_->dx3v(k-1) + pco_->dx3v(k));
     }
@@ -363,8 +365,9 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
       len(i) = pco_->h32f(j)
           * ( prim(IM3,k,j,i)/pco_->h32v(j) - prim(IM3,k,j-1,i)/pco_->h32v(j-1) )
           / pco_->h2v(i) / pco_->dx2v(j-1)
-          + 0.5*(  prim(IM2,k+1,j,i) + prim(IM2,k+1,j-1,i)
-                 - prim(IM2,k-1,j,i) - prim(IM2,k-1,j-1,i) )
+          // KGF: add the off-centered quantities first to preserve FP symmetry
+          + 0.5*(    (prim(IM2,k+1,j,i) + prim(IM2,k+1,j-1,i))
+                   - (prim(IM2,k-1,j,i) + prim(IM2,k-1,j-1,i)) )
           / pco_->h31v(i)
           / pco_->h32f(j) / (pco_->dx3v(k-1) + pco_->dx3v(k));
     }
