@@ -80,6 +80,7 @@ def analyze():
         b3_input = f[dataset_b3][:]
 
     # Calculate cell-centered field inputs from face-centered values
+    # (second-order accurate assumption)
     b1v = 0.5 * (b1_input[:, :, :, :-1] + b1_input[:, :, :, 1:])
     b2v = 0.5 * (b2_input[:, :, :-1, :] + b2_input[:, :, 1:, :])
     b3v = 0.5 * (b3_input[:, :-1, :, :] + b3_input[:, 1:, :, :])
@@ -87,8 +88,8 @@ def analyze():
     # Read output data
     with h5py.File('bin/{0}'.format(filename_output), 'r') as f:
         num_vars = f.attrs['NumVariables']
-        dataset_names = f.attrs['DatasetNames']
-        output_vars = f.attrs['VariableNames']
+        dataset_names = f.attrs['DatasetNames'].astype('U')
+        output_vars = f.attrs['VariableNames'].astype('U')
         cons_output = f['cons'][:]
         field_output = f['B'][:]
 
