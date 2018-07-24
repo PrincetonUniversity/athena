@@ -154,8 +154,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // initialize face-averaged magnetic fields
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
+  if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
