@@ -226,8 +226,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
-    AddTimeIntegratorTask(UPDATE_DT,SRCTERM_HYD);
-    AddTimeIntegratorTask(SEND_HYD,UPDATE_DT);
+    AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
       AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
@@ -906,7 +905,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
           + w.delta*pmb->stage_abscissae[l-1][0];
       // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
       pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-          + w.gamma_2*dt1
+          + w.gamma_2*pmb->stage_abscissae[l][1]
           + w.gamma_3*pmb->stage_abscissae[l-1][2]
           + w.beta*pmb->pmy_mesh->dt;
       // u2 = u^n
