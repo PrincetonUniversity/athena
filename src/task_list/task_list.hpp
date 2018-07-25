@@ -98,7 +98,7 @@ public:
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  struct IntegratorWeight step_wghts[MAX_NSTEP];
+  struct IntegratorWeight step_wghts[MAX_NSTAGE];
 
   void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
 

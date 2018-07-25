@@ -68,7 +68,7 @@ public:
             char *mbdata, int igflag);
   ~MeshBlock();
 
-  //data
+  // data
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
@@ -76,8 +76,11 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
   int gflag;
-  // Track the partial dt abscissae for substepping each memory register, relative to t^n
-  Real step_dt[3];
+  // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
+  // the time-integration scheme may partially substep several storage register pairs
+  // (u,b), (u1,b1), (u2, b2), ..., (umn, bm) through the dt interval.
+  // Track their time abscissae at the end of each stage (l) as (dt_m^l) relative to t^n
+  Real stage_abscissae[MAX_NSTAGE][MAX_NREGISTER];
 
   // user output variables for analysis
   int nuser_out_var;
