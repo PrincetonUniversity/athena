@@ -26,7 +26,7 @@ class MultigridTaskList;
 //  \brief data and function pointer for an individual MGTask
 
 struct MGTask {
-  uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
+  uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
   uint64_t dependency;   // encodes dependencies to other tasks using " " " "
   enum TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
 };
@@ -46,7 +46,7 @@ public:
 
   // functions
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
-  void DoTaskListOneSubStep(MultigridDriver *pmd);
+  void DoTaskListOneStage(MultigridDriver *pmd);
   void ClearTaskList(void) {ntasks=0;}
   void AddMultigridTask(uint64_t id, uint64_t dep);
 

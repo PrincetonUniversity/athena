@@ -35,6 +35,8 @@ public:
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2
   FaceField b2;      // time-integrator memory register #3
+  // (no more than MAX_NREGISTER allowed)
+
   // cell-centered magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1
 

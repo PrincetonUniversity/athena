@@ -1,8 +1,7 @@
 <comment>
 problem = Stratified 3D MRI with zero-net vertical flux
-author  = Stone, Hawley, Gammie, & Balbus
-journal =
-config  = -shear -b --prob=strat --with-eos=isothermal
+reference = Stone, Hawley, Gammie, & Balbus
+config  = -shear -b --prob=strat --eos=isothermal
 
 <job>
 problem_id  = Strat      # problem ID: basename of output filenames
@@ -16,7 +15,7 @@ file_type   = hst              # History data dump
 dt          = 6.2831853e1      # time increment between outputs
 
 <output3>
-file_type   = hdf5             # VTK data dump
+file_type   = hdf5             # HDF5 data dump
 variable    = prim             # variables to be output
 dt          = 1.5707963e3      # time increment between outputs
 
