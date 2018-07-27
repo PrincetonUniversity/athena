@@ -1973,6 +1973,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // move the data within the node
   MeshBlock *newlist=NULL;
 
+  RegionSize block_size=pblock->block_size;
+
   for (int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
@@ -1993,7 +1995,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       }
       pmb->gid=n; pmb->lid=n-nbs;
     } else {
-      RegionSize block_size=pblock->block_size;
       enum BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       // on a different level or node - create a new block
