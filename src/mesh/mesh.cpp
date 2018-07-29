@@ -1758,8 +1758,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   // share the cost list
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_REAL,
-                 costlist, nblist, nslist, MPI_REAL, MPI_COMM_WORLD);
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
+                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
 #endif
 
   current_level=0;
