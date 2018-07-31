@@ -33,9 +33,12 @@ Feature branches to merge to `master`:
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1-dev...v1.1.1)
 
+### Removed
+- Multigrid solver and related regression tests (removed directly from `v1.1.1-dev`)
+
 ## [v1.1.1-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.1-dev) (2018-07-31)
 
-[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0...v1.1.1-dev)
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0-dev...v1.1.1-dev)
 
 #### Fixed bugs:
 
@@ -74,12 +77,7 @@ Feature branches to merge to `master`:
 ### Fixed/Changed -->
 
 ### Removed
-- Multigrid solver
-
-### Issues and Pull Requests:
-#### Merged pull requests:
-
-- Remove the Multigrid solver from the next public version [\#128](https://github.com/PrincetonUniversity/athena/pull/128) ([tomidakn](https://github.com/tomidakn))
+- Multigrid solver and related regression tests (removed directly from `v1.1.0-dev`)
 
 ## [v1.1.0-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.0-dev) (2018-05-23)
 
