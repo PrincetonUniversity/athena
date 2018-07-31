@@ -47,7 +47,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 // turb_flag is initialzed in the Mesh constructor to 0 by default;
 // turb_flag = 1 for decaying turbulence
-// turb_flag = 2 for driven turbulence
+// turb_flag = 2 for impulsively driven turbulence
+// turb_flag = 3 for continuously driven turbulence
   turb_flag = pin->GetInteger("problem","turb_flag");
   if (turb_flag != 0) {
 #ifndef FFT

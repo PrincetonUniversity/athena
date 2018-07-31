@@ -31,9 +31,10 @@
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+                   FaceField &bb, Real time, Real dt,
+                   int is, int ie, int js, int je, int ks, int ke, int ngh);
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi);
+                                         Real *ptheta, Real *pphi);
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -142,7 +143,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+                   FaceField &bb, Real time, Real dt,
+                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
   return;
 }
 
@@ -156,7 +158,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   conversion is trivial in all currently implemented coordinate systems
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi) {
+                                         Real *ptheta, Real *pphi) {
   if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
     *pr = x1;
     *ptheta = x2;

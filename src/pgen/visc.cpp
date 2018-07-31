@@ -65,7 +65,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //  Initialize density and momenta in Cartesian grids
   if (iprob == 0) { //visc column
-	if (nuiso == 0) {
+    if (nuiso == 0) {
       nuiso = 0.03;
     }
     for(int k=ks; k<=ke; ++k) {

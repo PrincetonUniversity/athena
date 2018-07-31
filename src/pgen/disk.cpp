@@ -38,17 +38,17 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
 
 // User-defined boundary conditions for disk simulations
 void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DiskOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DiskInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DiskOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 
 // problem parameters which are useful to make global to this file
 static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
@@ -200,12 +200,12 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
 //
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      for (int i=1; i<=(NGHOST); ++i) {
+      for (int i=1; i<=ngh; ++i) {
         GetCylCoord(pco,rad,phi,z,is-i,j,k);
         prim(IDN,k,j,is-i) = DenProfileCyl(rad,phi,z);
         VelProfileCyl(rad,phi,z,v1,v2,v3);
@@ -220,12 +220,12 @@ void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      for (int i=1; i<=(NGHOST); ++i) {
+      for (int i=1; i<=ngh; ++i) {
         GetCylCoord(pco,rad,phi,z,ie+i,j,k);
         prim(IDN,k,j,ie+i) = DenProfileCyl(rad,phi,z);
         VelProfileCyl(rad,phi,z,v1,v2,v3);
@@ -240,11 +240,11 @@ void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=(NGHOST); ++j) {
+    for (int j=1; j<=ngh; ++j) {
       for (int i=is; i<=ie; ++i) {
         GetCylCoord(pco,rad,phi,z,i,js-j,k);
         prim(IDN,k,js-j,i) = DenProfileCyl(rad,phi,z);
@@ -260,11 +260,11 @@ void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=(NGHOST); ++j) {
+    for (int j=1; j<=ngh; ++j) {
       for (int i=is; i<=ie; ++i) {
         GetCylCoord(pco,rad,phi,z,i,je+j,k);
         prim(IDN,k,je+j,i) = DenProfileCyl(rad,phi,z);
@@ -280,10 +280,10 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
-  for (int k=1; k<=(NGHOST); ++k) {
+  for (int k=1; k<=ngh; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         GetCylCoord(pco,rad,phi,z,i,j,ks-k);
@@ -300,10 +300,10 @@ void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real rad,phi,z;
   Real v1, v2, v3;
-  for (int k=1; k<=(NGHOST); ++k) {
+  for (int k=1; k<=ngh; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         GetCylCoord(pco,rad,phi,z,i,j,ke+k);

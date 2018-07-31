@@ -38,11 +38,11 @@
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.
 // DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 int RefinementCondition(MeshBlock *pmb);
 
 //========================================================================================
@@ -153,7 +153,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //  Quantities at this boundary are held fixed at the downstream state
 
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*std::sqrt(3.0)/2.0;
@@ -162,7 +162,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real p0=e0*(gamma-1.0);
 
   for (int j=js; j<=je; ++j) {
-    for (int i=1;  i<=(NGHOST); ++i) {
+    for (int i=1;  i<=ngh; ++i) {
       prim(IDN,ks,j,is-i) = d0;
       prim(IVX,ks,j,is-i) = u0;
       prim(IVY,ks,j,is-i) = v0;
@@ -179,7 +179,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*std::sqrt(3.0)/2.0;
@@ -187,7 +187,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
 
-  for (int j=1;  j<=(NGHOST); ++j) {
+  for (int j=1;  j<=ngh; ++j) {
     for (int i=is; i<=ie; ++i) {
       if (pco->x1v(i) < 0.1666666666) {
         // fixed at downstream state
@@ -216,7 +216,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 > 0.16666666+v1_shock*time
 
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke) {
+        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*std::sqrt(3.0)/2.0;
@@ -226,7 +226,7 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real p0=e0*(gamma-1.0);
   Real p1=2.5*(gamma-1.0);
 
-  for (int j=1;  j<=(NGHOST); ++j) {
+  for (int j=1;  j<=ngh; ++j) {
     for (int i=is; i<=ie; ++i) {
       if (pco->x1v(i) < shock_pos) {
         // fixed at downstream state

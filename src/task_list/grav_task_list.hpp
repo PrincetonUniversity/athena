@@ -30,11 +30,11 @@ public:
   void AddGravitySolverTask(uint64_t id, uint64_t dep);
 
   // functions
-  enum TaskStatus StartGravityReceive(MeshBlock *pmb, int step);
-  enum TaskStatus ClearGravityBoundary(MeshBlock *pmb, int step);
-  enum TaskStatus SendGravityBoundary(MeshBlock *pmb, int step);
-  enum TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int step);
-  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step);
+  enum TaskStatus StartGravityReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 };
 
 

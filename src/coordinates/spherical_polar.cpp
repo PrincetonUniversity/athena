@@ -181,7 +181,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_src1_j_.NewAthenaArray(ncells2);
     coord_src2_j_.NewAthenaArray(ncells2);
     coord_src3_j_.NewAthenaArray(ncells2);
-    //non-ideal MHD
+    // non-ideal MHD
     coord_area1vc_i_.NewAthenaArray(ncells1);
     coord_area2vc_i_.NewAthenaArray(ncells1);
     coord_area3vc_i_.NewAthenaArray(ncells1);
@@ -209,6 +209,8 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       phy_src1_i_(i) = 1.0/SQR(x1v(i));
       // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
       phy_src2_i_(i) = phy_src1_i_(i);
+      // R^2 at the volume center for non-ideal MHD
+      coord_area1vc_i_(i) = SQR(x1v(i));
     }
     coord_area1_i_(iu+ng+1) = x1f(iu+ng+1)*x1f(iu+ng+1);
 #pragma omp simd
@@ -229,7 +231,6 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_area1_j_(j) = fabs(cm - cp);
         // sin theta
         coord_area2_j_(j) = sm;
-        coord_area2vc_j_(j)= fabs(sin(x2v(j)));//non-ideal MHD
         // d(sin theta) = d(-cos theta)
         coord_vol_j_(j) = coord_area1_j_(j);
         // (A2^{+} - A2^{-})/dV
@@ -238,17 +239,16 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
         // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
         coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
+        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
+        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
+        // sin theta at the volume center for non-ideal MHD
+        coord_area2vc_j_(j)= fabs(sin(x2v(j)));
       }
       coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
-#pragma omp simd
-      for (int j=jl-ng; j<=ju+ng; ++j) {//non-ideal MHD
-        // d(sin theta) = d(-cos theta)
-        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
-      }
       if (IsPole(jl))   // inner polar boundary
         coord_area1vc_j_(jl-1)= 2.0-cos(x2v(jl-1))-cos(x2v(jl));
       if (IsPole(ju))   // outer polar boundary
-        coord_area1vc_j_(ju)  = 2.0+cos(x2v(ju))-cos(x2v(ju+1));
+        coord_area1vc_j_(ju)  = 2.0+cos(x2v(ju))+cos(x2v(ju+1));
     } else {
       Real sm = fabs(sin(x2f(jl  )));
       Real sp = fabs(sin(x2f(jl+1)));
@@ -301,7 +301,7 @@ SphericalPolar::~SphericalPolar() {
     coord_src2_j_.DeleteAthenaArray();
     coord_src3_j_.DeleteAthenaArray();
 
-    //non-ideal MHD
+    // non-ideal MHD
     coord_area1vc_i_.DeleteAthenaArray();
     coord_area2vc_i_.DeleteAthenaArray();
     coord_area3vc_i_.DeleteAthenaArray();

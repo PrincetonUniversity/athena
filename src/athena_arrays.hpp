@@ -21,15 +21,16 @@ public:
   AthenaArray();
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
-  AthenaArray(const AthenaArray<T>& t);
-  AthenaArray<T> &operator= (const AthenaArray<T> &t);
+  __attribute__((nothrow)) AthenaArray(const AthenaArray<T>& t);
+  __attribute__((nothrow)) AthenaArray<T> &operator= (const AthenaArray<T> &t);
 
   // public functions to allocate/deallocate memory for 1D-5D data
-  void NewAthenaArray(int nx1);
-  void NewAthenaArray(int nx2, int nx1);
-  void NewAthenaArray(int nx3, int nx2, int nx1);
-  void NewAthenaArray(int nx4, int nx3, int nx2, int nx1);
-  void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx2, int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx3, int nx2, int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx4, int nx3, int nx2, int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx5, int nx4, int nx3, int nx2,
+                                               int nx1);
   void DeleteAthenaArray();
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
@@ -104,7 +105,7 @@ AthenaArray<T>::~AthenaArray() {
 // copy constructor (does a deep copy)
 
 template<typename T>
-AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
+__attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   nx1_ = src.nx1_;
   nx2_ = src.nx2_;
   nx3_ = src.nx3_;
@@ -124,6 +125,7 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
 // THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
 
 template<typename T>
+__attribute__((nothrow))
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
@@ -206,7 +208,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 //  \brief allocate new 1D array with elements initialized to zero.
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = 1;
@@ -221,7 +223,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1) {
 //  \brief 2d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -236,7 +238,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
 //  \brief 3d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -251,7 +253,8 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
 //  \brief 4d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
+                                                             int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
@@ -266,7 +269,8 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1) {
 //  \brief 5d data allocation
 
 template<typename T>
-void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) {
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
+                                                             int nx2, int nx1) {
   scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;

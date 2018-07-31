@@ -47,7 +47,7 @@
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
-static Real cs2,gam,gm1,omega,omega2, grav_mean_rho, gconst;
+static Real cs2,gam,gm1,omega,omega2, gconst;
 static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 static Real d0,p0,v0,u0,w0,va,b0;
 
@@ -90,7 +90,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     cs2 = SQR(iso_cs);
   }
   gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
-  grav_mean_rho = d0;
 
   kwave = 2.0*PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
@@ -100,6 +99,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     SetGravitationalConstant(gconst);
     Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
     SetGravityThreshold(eps);
+    SetMeanDensity(d0);
   }
 
   if (Globals::my_rank==0) {
@@ -155,9 +155,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
-  if (SELF_GRAVITY_ENABLED) {
-    pgrav->grav_mean_rho = grav_mean_rho;
-  } // self-gravity
 }
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
@@ -193,15 +190,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
-	if (omega2 < 0) {
-	  sinot = -exp(omega*tlim);//time dependent factor of vel
-	  //unstable case v = amp*omega/k * coskx * e^omega*t
-	  //minus sign counters minus sign in m
-	  cosot = exp(omega*tlim);//time dependent factor of rho
-	} else {
-	  sinot = sin(omega*tlim);//time dependent factor of vel
-	  cosot = cos(omega*tlim);//time dependent factor of rho
-	}
+        if (omega2 < 0) {
+          sinot = -exp(omega*tlim);//time dependent factor of vel
+          // unstable case v = amp*omega/k * coskx * e^omega*t
+          // minus sign counters minus sign in m
+          cosot = exp(omega*tlim);//time dependent factor of rho
+        } else {
+          sinot = sin(omega*tlim);//time dependent factor of vel
+          cosot = cos(omega*tlim);//time dependent factor of rho
+        }
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
         max_err[IDN] = std::max(static_cast<Real>(fabs(den - phydro->u(IDN,k,j,i))),

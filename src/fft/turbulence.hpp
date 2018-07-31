@@ -36,7 +36,6 @@ public:
 private:
   int64_t rseed;
   int nlow,nhigh;
-  bool impulsive;
   Real dtdrive,tdrive;
   Real expo,dedt,dvol;
   AthenaArray<Real> *vel;

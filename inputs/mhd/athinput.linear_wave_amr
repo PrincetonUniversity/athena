@@ -11,7 +11,7 @@ file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs
 
 <output2>
-file_type  = hdf5      # VTK data dump
+file_type  = hdf5      # HDF5 data dump
 variable   = d         # variables to be output
 dt         = 0.1       # time increment between outputs
 

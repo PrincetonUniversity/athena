@@ -31,6 +31,19 @@
   #endif
 #endif
 
+// for OpenMP 4.0 SIMD vectorization, control width of SIMD lanes
+#if defined(__AVX512F__)
+#define SIMD_WIDTH 8
+#elif defined(__AVX__)
+#define SIMD_WIDTH 4
+#elif defined(__SSE2__)
+#define SIMD_WIDTH 2
+#else
+#define SIMD_WIDTH 4
+#endif
+
+#define CACHELINE_BYTES 64
+
 class MeshBlock;
 class Coordinates;
 class ParameterInput;
@@ -123,7 +136,8 @@ enum FluxCorrectionType {FLUX_HYDRO=0};
 // function pointer prototypes for user-defined modules set at runtime
 
 typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-  FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+                           FaceField &b, Real time, Real dt,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh);
 typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,

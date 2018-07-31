@@ -20,7 +20,7 @@ def run(**kwargs):
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=62831.853', 'time/cfl_number=0.4',
         'time/tlim=50265.482', 'time/nlim=500000',
-        'time/xorder=2','time/integrator=vl2','time/ncycle_out=10',
+        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
         'mesh/nx1=64', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
         'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
         'mesh/nx2=64', 'mesh/x2min=-0.5', 'mesh/x2max=0.5',
@@ -38,9 +38,9 @@ def analyze():
     fname = 'data/mhd_mri_2d.hst'
     # omg  = 1.0e-3 # unused
     rho0 = 1.0
-    cs   = 0.00408
+    cs = 0.00408
     pres = rho0 * cs**2
-    vol  = 1.0 * 1.0
+    vol = 1.0 * 1.0
     index = -400
     dtype_array = np.dtype([('me1', 'f8'), ('me2', 'f8'), ('me3', 'f8'),
                             ('stress', 'f8')])
