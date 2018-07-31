@@ -77,10 +77,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   perturb = pin->GetOrAddReal("problem","perturb",0.0);
   mphi = pin->GetOrAddReal("problem","mphi",1.0);
 
-  // Add AMR condition based on density gradient
-  if (adaptive==true)
-    EnrollUserRefinementCondition(RefinementCondition);
-
   return;
 }
 
