@@ -230,7 +230,6 @@ private:
   ConductionCoeff_t ConductionCoeff_;
   FieldDiffusionCoeff_t FieldDiffusivity_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
-  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -248,8 +247,6 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                         GravityBoundaryFunc_t my_bc);
   void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
   void EnrollConductionCoefficient(ConductionCoeff_t my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);

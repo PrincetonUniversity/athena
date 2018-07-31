@@ -1201,7 +1201,6 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
   return;
 }
 
-
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
 //                                              MGBoundaryFunc_t my_bc)
@@ -1218,28 +1217,10 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-//                                                   GravityBoundaryFunc_t my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                             GravityBoundaryFunc_t my_bc) {
-  std::stringstream msg;
-  if (dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  GravityBoundaryFunction_[dir]=my_bc;
-  return;
-}
-
-
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 // \brief Apply MeshBlock::UserWorkBeforeOutput
+
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
   while (pmb != NULL)  {
