@@ -453,8 +453,9 @@ else:
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
-    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc'
-            or args['cxx'] == 'icc-debug'):
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -541,7 +542,8 @@ if args['hdf5']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray'
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'cray' or args['cxx'] == 'icc'
             or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
