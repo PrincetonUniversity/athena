@@ -184,7 +184,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len1_i1_.NewAthenaArray(ncells1);
     coord_len2_i1_.NewAthenaArray(ncells1+1);
     coord_len3_i1_.NewAthenaArray(ncells1+1);
-    coord_width1_i1_.NewAthenaArray(ncells1);
     metric_face1_i1_.NewAthenaArray(ncells1+1);
     metric_face2_i1_.NewAthenaArray(ncells1);
     metric_face3_i1_.NewAthenaArray(ncells1);
@@ -202,7 +201,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len1_j1_.NewAthenaArray(ncells2+1);
     coord_len2_j1_.NewAthenaArray(ncells2);
     coord_len3_j1_.NewAthenaArray(ncells2+1);
-    coord_width3_j1_.NewAthenaArray(ncells2);
     coord_src_j1_.NewAthenaArray(ncells2);
     coord_src_j2_.NewAthenaArray(ncells2);
     metric_face1_j1_.NewAthenaArray(ncells2);
@@ -225,7 +223,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real r_p_cu = r_p*r_p*r_p;
       Real r_m_cu = r_m*r_m*r_m;
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, areas, and lengths
       coord_vol_i1_(i) = ONE_3RD * (r_p_cu - r_m_cu);
       coord_area1_i1_(i) = SQR(r_m);
       if (i == (iu+ng)) {
@@ -240,8 +238,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
         coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
       }
-      coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
-          + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
 
       // Metric coefficients
       metric_face1_i1_(i) = SQR(alpha_m);
@@ -277,7 +273,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real sin_m_sq = SQR(sin_m);
       Real sin_p_sq = SQR(sin_p);
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, areas, and lengths
       coord_vol_j1_(j) = std::abs(cos_m - cos_p);
       coord_area1_j1_(j) = coord_vol_j1_(j);
       coord_area2_j1_(j) = std::abs(sin_m);
@@ -294,7 +290,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       if (j == juu) {
         coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
       }
-      coord_width3_j1_(j) = std::abs(sin_c);
 
       // Source terms
       coord_src_j1_(j) = sin_c;
@@ -347,7 +342,6 @@ Schwarzschild::~Schwarzschild() {
     coord_len1_i1_.DeleteAthenaArray();
     coord_len2_i1_.DeleteAthenaArray();
     coord_len3_i1_.DeleteAthenaArray();
-    coord_width1_i1_.DeleteAthenaArray();
     coord_vol_j1_.DeleteAthenaArray();
     coord_area1_j1_.DeleteAthenaArray();
     coord_area2_j1_.DeleteAthenaArray();
@@ -355,7 +349,6 @@ Schwarzschild::~Schwarzschild() {
     coord_len1_j1_.DeleteAthenaArray();
     coord_len2_j1_.DeleteAthenaArray();
     coord_len3_j1_.DeleteAthenaArray();
-    coord_width3_j1_.DeleteAthenaArray();
     coord_src_j1_.DeleteAthenaArray();
     coord_src_j2_.DeleteAthenaArray();
     metric_face1_i1_.DeleteAthenaArray();
@@ -427,39 +420,6 @@ Real Schwarzschild::GetEdge2Length(const int k, const int j, const int i) {
 Real Schwarzschild::GetEdge3Length(const int k, const int j, const int i) {
   // \Delta L = r^2 \sin\theta \Delta\phi
   return coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
-}
-
-//----------------------------------------------------------------------------------------
-// CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
-
-void Schwarzschild::CenterWidth1(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx1) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W = \Delta(r \alpha) + M \Delta\log(r(1+\alpha)-M)
-    dx1(i) = coord_width1_i1_(i);
-  }
-  return;
-}
-
-void Schwarzschild::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W = r \Delta\theta
-    dx2(i) = x1v(i) * dx1f(j);
-  }
-  return;
-}
-
-void Schwarzschild::CenterWidth3(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx3) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W = r \sin\theta \Delta\phi
-    dx3(i) = x1v(i) * coord_width3_j1_(j) * dx3f(k);
-  }
-  return;
 }
 
 //----------------------------------------------------------------------------------------

@@ -183,9 +183,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len1_kji_.NewAthenaArray(ncells3+1, ncells2+1, ncells1);
     coord_len2_kji_.NewAthenaArray(ncells3+1, ncells2, ncells1+1);
     coord_len3_kji_.NewAthenaArray(ncells3, ncells2+1, ncells1+1);
-    coord_width1_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_width2_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_width3_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
     coord_src_kji_.NewAthenaArray(3, NMETRIC, ncells3, ncells2, ncells1);
     metric_face1_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2, ncells1+1);
     metric_face2_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2+1, ncells1);
@@ -228,13 +225,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
         if (not coarse_flag) {
           Real det = Determinant(g);
           coord_vol_kji_(k,j,i) = std::sqrt(-det) * dx1 * dx2 * dx3;
-        }
-
-        // Calculate widths
-        if (not coarse_flag) {
-          coord_width1_kji_(k,j,i) = std::sqrt(g(I11)) * dx1;
-          coord_width2_kji_(k,j,i) = std::sqrt(g(I22)) * dx2;
-          coord_width3_kji_(k,j,i) = std::sqrt(g(I33)) * dx3;
         }
 
         // Store metric derivatives
@@ -476,9 +466,6 @@ GRUser::~GRUser() {
     coord_len1_kji_.DeleteAthenaArray();
     coord_len2_kji_.DeleteAthenaArray();
     coord_len3_kji_.DeleteAthenaArray();
-    coord_width1_kji_.DeleteAthenaArray();
-    coord_width2_kji_.DeleteAthenaArray();
-    coord_width3_kji_.DeleteAthenaArray();
     coord_src_kji_.DeleteAthenaArray();
     metric_face1_kji_.DeleteAthenaArray();
     metric_face2_kji_.DeleteAthenaArray();
@@ -543,39 +530,6 @@ Real GRUser::GetEdge2Length(const int k, const int j, const int i) {
 Real GRUser::GetEdge3Length(const int k, const int j, const int i) {
   // \Delta L \approx \sqrt{-g} \Delta x^3
   return coord_len3_kji_(k,j,i);
-}
-
-//----------------------------------------------------------------------------------------
-// CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
-
-void GRUser::CenterWidth1(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx1) {
-  // \Delta W \approx \sqrt{g_{11}} \Delta x^1
-  #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    dx1(i) = coord_width1_kji_(k,j,i);
-  }
-  return;
-}
-
-void GRUser::CenterWidth2(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx2) {
-  // \Delta W \approx \sqrt{g_{22}} \Delta x^2
-  #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    dx2(i) = coord_width2_kji_(k,j,i);
-  }
-  return;
-}
-
-void GRUser::CenterWidth3(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx3) {
-  // \Delta W \approx \sqrt{g_{33}} \Delta x^3
-  #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    dx3(i) = coord_width3_kji_(k,j,i);
-  }
-  return;
 }
 
 //----------------------------------------------------------------------------------------

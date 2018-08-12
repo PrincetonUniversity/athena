@@ -204,8 +204,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len1_i2_.NewAthenaArray(ncells1);
     coord_len2_i1_.NewAthenaArray(ncells1+1);
     coord_len3_i1_.NewAthenaArray(ncells1+1);
-    coord_width1_i1_.NewAthenaArray(ncells1);
-    coord_width2_i1_.NewAthenaArray(ncells1);
     metric_face1_i1_.NewAthenaArray(ncells1+1);
     metric_face2_i1_.NewAthenaArray(ncells1);
     metric_face3_i1_.NewAthenaArray(ncells1);
@@ -227,10 +225,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len2_j2_.NewAthenaArray(ncells2);
     coord_len3_j1_.NewAthenaArray(ncells2+1);
     coord_len3_j2_.NewAthenaArray(ncells2+1);
-    coord_width2_j1_.NewAthenaArray(ncells2);
-    coord_width3_j1_.NewAthenaArray(ncells2);
-    coord_width3_j2_.NewAthenaArray(ncells2);
-    coord_width3_j3_.NewAthenaArray(ncells2);
     coord_src_j1_.NewAthenaArray(ncells2);
     coord_src_j2_.NewAthenaArray(ncells2);
     metric_face1_j1_.NewAthenaArray(ncells2);
@@ -245,10 +239,8 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_area1_k1_.NewAthenaArray(ncells3);
     coord_area2_k1_.NewAthenaArray(ncells3);
     coord_len3_k1_.NewAthenaArray(ncells3);
-    coord_width3_k1_.NewAthenaArray(ncells3);
 
     // Allocate arrays for intermediate geometric quantities: r-theta-direction
-    coord_width3_ji1_.NewAthenaArray(ncells2, ncells1);
     trans_face1_ji1_.NewAthenaArray(ncells2, ncells1+1);
     trans_face1_ji2_.NewAthenaArray(ncells2, ncells1+1);
     trans_face1_ji3_.NewAthenaArray(ncells2, ncells1+1);
@@ -283,7 +275,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real rm_m = std::sqrt(r_m_sq + SQR(m));
       Real rm_p = std::sqrt(r_p_sq + SQR(m));
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, areas, and lengths
       coord_vol_i1_(i) = dx1f(i);
       coord_vol_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
       coord_area1_i1_(i) = SQR(r_m);
@@ -304,8 +296,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       if (i == (iu+ng)) {
         coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
       }
-      coord_width1_i1_(i) = rm_p - rm_m + m * std::log((rm_p + r_p) / (rm_m + r_m));
-      coord_width2_i1_(i) = x1v(i);
 
       // Metric coefficients
       metric_face1_i1_(i) = r_m;
@@ -338,7 +328,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real sin_m_cu = sin_m_sq*sin_m;
       Real sin_p_cu = SQR(sin_p)*sin_p;
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, areas, and lengths
       coord_vol_j1_(j) = std::abs(cos_m - cos_p);
       coord_vol_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
       coord_area1_j1_(j) = coord_vol_j1_(j);
@@ -365,10 +355,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
         coord_len3_j2_(j+1) = coord_area2_j2_(j+1);
       }
-      coord_width2_j1_(j) = dx2f(j);
-      coord_width3_j1_(j) = std::abs(sin_c);
-      coord_width3_j2_(j) = SQR(a) * sin_c_sq;
-      coord_width3_j3_(j) = SQR(a) * cos_c_sq;
 
       // Source terms
       coord_src_j1_(j) = sin_c;
@@ -395,12 +381,11 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       kll = kl; kuu = ku;
     }
     for (int k = kll; k <= kuu; ++k) {
-      // Volumes, areas, lengths, and widths
+      // Volumes, areas, and lengths
       coord_vol_k1_(k) = dx3f(k);
       coord_area1_k1_(k) = coord_vol_k1_(k);
       coord_area2_k1_(k) = coord_vol_k1_(k);
       coord_len3_k1_(k) = coord_vol_k1_(k);
-      coord_width3_k1_(k) = coord_vol_k1_(k);
     }
 
     // Calculate intermediate geometric quantities: r-theta-direction
@@ -439,10 +424,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         Real sigma_cp = r_c_sq + a2 * cos_p_sq;
         Real sigma_mc = r_m_sq + a2 * cos_c_sq;
         Real sigma_pc = r_p_sq + a2 * cos_c_sq;
-
-        // Volumes, areas, lengths, and widths
-        coord_width3_ji1_(j,i) = std::sqrt(r_c_sq + a2
-          + 2.0 * m * a2 * r_c * sin_c_sq / (r_c_sq + a2 * cos_c_sq));
 
         // Coordinate transformations
         trans_face1_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_m/sigma_mc);
@@ -537,8 +518,6 @@ KerrSchild::~KerrSchild() {
     coord_len1_i2_.DeleteAthenaArray();
     coord_len2_i1_.DeleteAthenaArray();
     coord_len3_i1_.DeleteAthenaArray();
-    coord_width1_i1_.DeleteAthenaArray();
-    coord_width2_i1_.DeleteAthenaArray();
     metric_face1_i1_.DeleteAthenaArray();
     metric_face2_i1_.DeleteAthenaArray();
     metric_face3_i1_.DeleteAthenaArray();
@@ -558,10 +537,6 @@ KerrSchild::~KerrSchild() {
     coord_len2_j2_.DeleteAthenaArray();
     coord_len3_j1_.DeleteAthenaArray();
     coord_len3_j2_.DeleteAthenaArray();
-    coord_width2_j1_.DeleteAthenaArray();
-    coord_width3_j1_.DeleteAthenaArray();
-    coord_width3_j2_.DeleteAthenaArray();
-    coord_width3_j3_.DeleteAthenaArray();
     coord_src_j1_.DeleteAthenaArray();
     coord_src_j2_.DeleteAthenaArray();
     metric_face1_j1_.DeleteAthenaArray();
@@ -574,8 +549,6 @@ KerrSchild::~KerrSchild() {
     coord_area1_k1_.DeleteAthenaArray();
     coord_area2_k1_.DeleteAthenaArray();
     coord_len3_k1_.DeleteAthenaArray();
-    coord_width3_k1_.DeleteAthenaArray();
-    coord_width3_ji1_.DeleteAthenaArray();
     trans_face1_ji1_.DeleteAthenaArray();
     trans_face1_ji2_.DeleteAthenaArray();
     trans_face1_ji3_.DeleteAthenaArray();
@@ -657,41 +630,6 @@ Real KerrSchild::GetEdge2Length(const int k, const int j, const int i) {
 Real KerrSchild::GetEdge3Length(const int k, const int j, const int i) {
   // \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
   return coord_len3_k1_(k) * coord_len3_j1_(j) * (coord_len3_i1_(i) + coord_len3_j2_(j));
-}
-
-//----------------------------------------------------------------------------------------
-// CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
-
-void KerrSchild::CenterWidth1(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx1) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
-    //     + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
-    dx1(i) = coord_width1_i1_(i);
-  }
-  return;
-}
-
-void KerrSchild::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W >= r (\theta_+ - \theta_-)
-    dx2(i) =  coord_width2_i1_(i) * coord_width2_j1_(j);
-  }
-  return;
-}
-
-void KerrSchild::CenterWidth3(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx3) {
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
-    //     * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
-    dx3(i) =  coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);
-  }
-  return;
 }
 
 //----------------------------------------------------------------------------------------
