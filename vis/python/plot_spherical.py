@@ -9,15 +9,12 @@ Run "plot_spherical.py -h" to see description of inputs.
 See documentation on athena_read.athdf() for important notes about reading files
 with mesh refinement.
 
-The -c <colormap> option is highly recommended to change the default. Consider
-"RdBu_r" or "gist_heat" for example.
-
 Users are encouraged to make their own versions of this script for improved
 results by adjusting figure size, spacings, tick locations, axes labels, etc.
 The script must also be modified to plot any functions of the quantities in the
 file, including combinations of multiple quantities.
 
-Requires scipy if making streamplot.
+Requires scipy if making a streamplot.
 """
 
 # Python standard modules
@@ -25,7 +22,6 @@ import argparse
 import warnings
 
 # Other Python modules
-import h5py
 import numpy as np
 
 # Athena++ modules
@@ -73,8 +69,7 @@ def main(**kwargs):
                              face_func_2=theta_func)
 
     # Extract basic coordinate information
-    with h5py.File(kwargs['data_file'], 'r') as f:
-        coordinates = f.attrs['Coordinates']
+    coordinates = data['Coordinates']
     r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
