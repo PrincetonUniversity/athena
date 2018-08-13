@@ -194,7 +194,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Reapply iteration procedure in case convergence not attained (possibly slow)
         if (not success_(i)) {
           success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
-              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
+              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
               prim, normal_gamma_, pmag_);
         }
       }
@@ -231,7 +231,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
           // Recalculate primitives
           success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
-              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
+              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
               prim, normal_gamma_, pmag_);
 
           // Handle failures
@@ -606,7 +606,7 @@ static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
 //     ll: \mathcal{L}
 //     wgas: w_{gas} (NH: w)
 //     rr: \mathcal{R}
-//   same exact function as ConservedToPrimitiveNormalInitial(), except this does 12
+//   same exact function as ConservedToPrimitiveNormalInitial(), except this does 7
 //       iterations
 
 static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
@@ -616,7 +616,7 @@ static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
     AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
 
   // Parameters
-  const int num_iterations = 12;
+  const int num_iterations = 7;
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
   const Real a_min = 1.0e-12;
