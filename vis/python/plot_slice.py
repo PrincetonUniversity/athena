@@ -242,7 +242,7 @@ if __name__ == '__main__':
                               'path; use "show" to show interactive plot instead'))
     parser.add_argument('-d', '--direction',
                         type=int,
-                        choices=(1,2,3),
+                        choices=(1, 2, 3),
                         default=3,
                         help=('direction orthogonal to slice for 3D data'))
     parser.add_argument('--slice_location',
@@ -253,11 +253,11 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--average',
                         action='store_true',
                         help=('flag indicating averaging should be done in orthogonal '
-                             'direction for 3D data'))
+                              'direction for 3D data'))
     parser.add_argument('-s', '--sum',
                         action='store_true',
                         help=('flag indicating summation should be done in orthogonal '
-                             'direction for 3D data'))
+                              'direction for 3D data'))
     parser.add_argument('-l',
                         '--level',
                         type=int,
