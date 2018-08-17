@@ -8,12 +8,14 @@ We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` 
 
 The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
 
-All major changes to Athena++ between each version/tag are summarized here with the following categories:
+All major changes to Athena++ between each version/tag are summarized in this `CHANGLEOG.md` document with the following categories:
 - **Added:** for new features
 - **Fixed/Changed:** for fixed or modified functionality
 - **Removed:** for removed functionality
 
-Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id. At this time, both the private and public GitHub Release Notes are manually generated from this document.
+Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
+
+At this time, both the private and public [GitHub Release Notes](https://help.github.com/articles/creating-releases/) are manually generated. Content from this document can be copy/pasted and used as a starting point.
 
 <!-- "Implemented enhancements" (enhancement) vs. "Merged pull requests" (feature request, etc.) division doesn't make a ton of sense-->
 <!-- Eventually, need to add label for "backwards-incompatible" and announce "BREAKING CHANGES" -->

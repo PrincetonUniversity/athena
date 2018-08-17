@@ -216,31 +216,41 @@ At this time, the Slack workspace is closed to the general public, but it is ope
 ## Versioning and public releases
 We intend to provide periodic releases to the
 [athena-public-version](https://github.com/PrincetonUniversity/athena-public-version)
-repository based on the versions created in the private repository. See the
-header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and
-release practices for Athena++.
+repository based on the versions created in the private repository.
 
-**IMPORTANT**: The version string output by the `athena -h` command must be manually
-updated in `src/main.cpp` before tagging a new version. The user should also manually revert the `README.md` file to the simple (no CI status badges) format before tagging.
+In the private repository, we currently maintain Git tags and code versions in a one-to-one correspondence: all versions are tagged, and all tags have a version number. However, not all tags/versions are released (see below section discussing pre-release tagged versions). A release version is defined by drafting a [GitHub Release](https://help.github.com/articles/creating-releases/) along with release notes in the GitHub UI. Once a release, say [Athena++ 1.1.1-dev](https://github.com/PrincetonUniversity/athena/releases/tag/v1.1.1-dev), is created in the private repository, a closely-related release with same version number, [Athena++ 1.1.1](https://github.com/PrincetonUniversity/athena-public-version/releases/tag/v1.1.1), should soon be drafted in the public repository. See the header of [`CHANGELOG.md`](./CHANGELOG.md) for notes on Semantic Versioning and GitHub Release note practices for Athena++.
+<!-- the above bijection is true for now, but the latter (surjective) restriction may be loosened in the future, e.g. tags such as "last_public" -->
 
-In the priave repository, each release is accompanied by an Git annotated (not lightweight) tag. Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
+In both the private and public repositories, each release is accompanied by an Git annotated (not lightweight) tag. An annotated tag is a full Git object with its own tagger name, tagger email, and creation date. A lightweight Git tag is more appropriate for temporary or local/personal use than for publishing releases, since a lightweight tag is merely a pointer to a commit object (much like a branch that doesn't naturally move with commits and *shouldn't* be moved by users after it is shared).
+
+Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18. The name of the tag corresponds to the same release number, prefixed with a `v` to distinguish them from other Git objects--- e.g. `vX.Y.Z`. See [Is "v1.2.3" a semantic version?](https://github.com/semver/semver/blob/master/semver.md#is-v123-a-semantic-version)
+
+Before creating new versions and Git tags, the following manual actions should be taken:
+* The version string output by the `athena -h` command must be manually
+updated in `src/main.cpp`.  
+* The user should also manually revert the `README.md` file to the simple (no CI status badges nor link to this file) format before tagging on the public repository.
 
 After pushing a new public release to
 [athena-public-version](https://github.com/PrincetonUniversity/athena-public-version),
 the following updates should be performed manually:
 - Duplicate the private version tag in the public repository
+  - There is a very manually-managed, ad-hoc relationship between the private repository and the public repository tags and releases; in the future, this should be improved by changing the `git reset --soft <base>` squash procedure performed by `./build_pub_repo_v2.sh`.
 - Draft public [Release
   Notes](https://github.com/PrincetonUniversity/athena-public-version/releases)
   based on private [`CHANGELOG.md`](./CHANGELOG.md) entries
 - Update the [public Athena++
   Wiki](https://github.com/PrincetonUniversity/athena-public-version/wiki)
-  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki). For now, this consists of manually force-pushing from the latter to the former and then removing or modifying any content that are irrelevant to the public repository (e.g. the pages on "Continuous Integration"). There is a `public` branch on the `athena.wiki` repository that should be continually rebased on top of `master` with a few commits that remove the irrelevant content. The `master` branch of `athena-public-version.wiki` should mirror that private wiki `public` branch via force-pushing.
+  based on the [private Athena++ Wiki](https://github.com/PrincetonUniversity/athena/wiki).
+  - Since version 1.1.0, there is a `public` branch on the `athena.wiki` repository that should be continually rebased on top of `master` with a few commits that remove the irrelevant content. The `master` branch of `athena-public-version.wiki` should mirror that private wiki `public` branch via force-pushing.
+  - Previously, this consisted of manually force-pushing from the private repository's `master` branch to the public repository's `master` branch *and then* removing or modifying any content that is sensitive/secret or irrelevant to the public repository (e.g. the pages on "Continuous Integration").
 - Announce release on the [Athena++
   website](https://princetonuniversity.github.io/athena/index.html) by
   modifying the HTML and CSS files on the `gh-pages` branch of the private repository
 
+A detailed example of these steps are illustrated in a below section.
+
 ### Pre-release versions, release/support branches, tagging practices
-While the release version is ideally drafted from a tagged commit on the `master` branch, it is possible that this development branch contains source code that is not intended to be released to the public. Or, the release may require temporary modifications that should not pollute the history of `master`.  In such cases, the content should be removed and the changes should be made in a separate **release/support branch**. Release branches should be named `release/X.Y.Z`. While these dead-end branches may not be merged back to master, they should be deleted after being tagged/released. The annotated tag at the tip of the branch should ensure that these commits are never garbage collected by Git.
+While the release version is ideally drafted from a tagged commit on the `master` branch, it is possible that this development branch contains source code that is not intended to be released to the public. Or, the release may require temporary modifications that should not pollute the history of `master`. In such cases, the content should be removed and the changes should be made in a separate **release/support branch**. A good formatting convention for naming release branches is `release/X.Y.Z`. While these dead-end branches will not be merged back to master, they should be deleted after being tagged/released. The annotated tag at the tip of the branch should ensure that these commits are never garbage collected by Git; all of the commits in the former `release/X.Y.Z` branch remain reachable by walking back from the `vX.Y.Z` tag.
 
 For prerelease tags, `X.Y.Z-suffix` is allowed, with optional suffixes `-alpha`, `-beta`, `-rc`, `-dev`. Their intended meanings are:
 - `-alpha`: version is feature-incomplete and/or unstable
@@ -250,12 +260,74 @@ For prerelease tags, `X.Y.Z-suffix` is allowed, with optional suffixes `-alpha`,
 The above version suffixes may all have an integer appended to them, e.g. `-rc.1`, `-rc.2`, ... . In contrast, the following tag suffix should not have additional numbers appended at the end:
 - `-dev`: pre-release version that contains source code not meant for public release
 
+### Example steps for tagging and releasing new public version
+We now illustrate the many policies and practices discussed in this section using a concrete example. Suppose that the latest released version of Athena++ is 1.1.1 on both the private [`athena`](https://github.com/PrincetonUniversity/athena) and public [`athena-public-version`](https://github.com/PrincetonUniversity/athena-public-version) repositories (which is true at the time of writing), and suppose that the `master` branch on the private repository has changed significantly since the `v1.1.1` and/or `v1.1.1-dev` tags. If the changes merit a public release of a new MINOR revision 1.2.0, here are the actions that should be taken.
+
+#### Prepare to increment version
+Start in the root project directory of a fully up-to-date clone of the private repository, with all changes committed and pushed.
+1. Edit `src/main.cpp` to update the following line with the new version number and current month and year for proper `athena -h` output:
+```c++
+std::string athena_version = "version 1.2.0 - August 2018";
+```
+2. Use [`github_changelog_generator`](https://github.com/github-changelog-generator/github-changelog-generator) tool to automatically summarize changes since 1.1.1
+  - This Ruby-based software can be installed locally via `gem install github_changelog_generator`. Currently using version 1.15.0-beta.
+  - The GitHub user who is executing the tool should first [Create a personal access token for the command line](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
+2. Add, commit, and push all changes (skipping any continuous integration) with `git add CHANGELOG.md src/main.cpp; git commit; git push` using a formulaic commit message such as:
+> Bump version number to v1.2.0 and update CHANGLEOG
+>
+> [ci skip]
+
+#### Create private repository tag(s) and GitHub Release
+If the `master` branch contains some feature that must be excluded from the public release (see earlier subsection), then here are the specific steps to follow:
+1. Create separate annotated tag with `-dev` suffix for private repository state before public release with `git tag -s v1.2.0-dev`
+  - Use `-s` to create an annotated tag object and sign with local GPG public key
+  - Use `-a` if no local GPG key exists or unsigned, annotated tag object is desired
+  - Since annotated (not lightweight) tag is created, and `-m` is absent, Git will open an editor to create the tag message. Write something descriptive, such as:
+  > Development repo master branch before removing Multigrid (again)
+
+2. On tip of `master` branch, create "dead-end" branch for polishing public release: `git checkout -b release/1.2.0`
+3. Manually modify/remove any source code that should remain private and cannot be removed by simply excluding entire files. Commit these removals to the dead-end branch `release/1.2.0` and `git push` to GitHub `origin` remote.
+4. Create annotated tag for public version with `git tag -s v1.2.0`
+5. Push the 2x new tags to the private repository's GitHub `origin` remote with `git push --tags`
+
+If nothing needs to be manually removed from `master` before the public release, then only the final 2 steps need to be executed. There will be no `v1.2.0-dev` tag; the `v1.2.0` tag will serve as the Release on the private repository.
+
+#### Modify and use private -> public release script
+3. Create copy of script for public releases outside local working copy: `cp ./pub/build_public_repo-v2.sh ~/; cd ~`
+4. Edit the copy of `build_public_repo-v2.sh` to change the variable indicating which private repo brach is the source for this public release:  `PRIV_REPO_PRIV_BRANCH="release/1.2.0"` (cannot be tag object `v1.2.0`!)
+  - Also, edit the Bash array variable `PRIVATE` to add/remove any files or subfolders that should be completely excluded from any public version. Examples include the `pub/` subdirectory containing the version-controlled script and instructions for creating such releases.
+5. Execute script by creating a new local clone `./build_pub_repo_v2.sh athena_working; cd athena_working`
+  - The script may take several minutes to run, since it must scan thousands of Git commits to history of files listed in the `PRIVATE` array.
+6. Check that no private source code remains in `athena_working/`, for example:
+```
+cd athena_working/.git
+grep -ri "multigrid"
+```
+7. Commit the squashed changes with `git commit -m "Public release of Athena++ version 1.2.0"`
+
+#### Creat public repository tag and GitHub Release
+8. Create new annotated tag public repository counterpart of annotated tag `v1.2.0` with `git tag -s v1.2.0`
+  - Although the state of the public repository at this `v1.2.0` tag should closely correspond to the state of the private repository at its `v1.2.0` tag, the two tags objects have no Git relationship (different object hashes, tag times, etc.)
+  - Typically, the tag message will be identical or similar to the previous commit message, e.g.:
+  > Public release of Athena++ version 1.2.0
+
+8. push to public repo GitHub remote
+
+
+clean up local and remote traces
+
+run changelog generator
+
+draft release notes
+
+If `master` does not contain
+
 <!-- Note, some projects don't use a period after numbered suffixes, e.g. -rc2-->
 <!-- Although SemVer isn't so prescriptivist to define a set of suffixes, https://github.com/semver/semver/issues/114, it does define sytnax and how to use the suffixes in pt 9 , so that "pre-release versions have a lower precedence than the associated normal version" -->
 
-<!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future, such as conventional-changelog tool), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API, how to create an annotated/signed tag -->
+<!-- TODO: add notes on automated CHANGELOG.md generation, drafting Release notes (hopefully automated via GitHub API in future, such as conventional-changelog tool), importance of labeling PRs/Issues + using active voice grammar in their titles, the need for documenting a public API -->
 
-<!-- very weak/manual relationship between the private repo and the public repo tags and releases; this should be improved along with the "git reset --soft <base>" squash procedure. Need to add notes on modifications to pub/ scripts for releasing; do we want to use the last_public lightweight tag? -->
+<!-- Need to add notes on modification from old procedure with pub/build_pub_repo.sh to new pub/build_pub_repo_v2.sh script; do we want to restart use of the last_public lightweight tag? -->
 
 <!-- # Athena++ Code of Conduct
-(to add here or store in external file, CODE_OF_CONDUCT.md) -->
+(add section here or store in external file, CODE_OF_CONDUCT.md) -->

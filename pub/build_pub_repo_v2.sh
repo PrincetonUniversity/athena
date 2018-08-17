@@ -22,7 +22,8 @@ PUB_REPO_URL="git@github.com:PrincetonUniversity/athena-public-version.git"
 
 # data for this script
 ## branch on remote private repo from which to create public release
-PRIV_REPO_PRIV_BRANCH="release/1.1.0"
+## (must be an actual branch and not a tag in order to rewrite local history/filter-branch)
+PRIV_REPO_PRIV_BRANCH="release/1.1.1"
 ## local workspace branch for drafting the public release
 PRIV_REPO_PUB_BRANCH="public"
 
