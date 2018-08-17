@@ -8,14 +8,14 @@ We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` 
 
 The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
 
-All major changes to Athena++ between each version/tag are summarized in this `CHANGLEOG.md` document with the following categories:
-- **Added:** for new features
-- **Fixed/Changed:** for fixed or modified functionality
+All major changes to the Athena++ private repository between each version/tag are summarized in this `CHANGLEOG.md` document. Each version has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
+
+Additionally, the changes are **manually** summarized using the following categories:
+- **Added:** for brand new features or extended capabilities
+- **Fixed/Changed:** for bug fixes or modified behavior
 - **Removed:** for removed functionality
 
-Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
-
-At this time, both the private and public [GitHub Release Notes](https://help.github.com/articles/creating-releases/) are manually generated. Content from this document can be copy/pasted and used as a starting point.
+The automatically-generated content should be used for reference when writing these sections. At this time, both the private and public [GitHub Release Notes](https://help.github.com/articles/creating-releases/) are started by copy/pasting from these sections.
 
 <!-- "Implemented enhancements" (enhancement) vs. "Merged pull requests" (feature request, etc.) division doesn't make a ton of sense-->
 <!-- Eventually, need to add label for "backwards-incompatible" and announce "BREAKING CHANGES" -->
@@ -41,6 +41,25 @@ Feature branches to merge to `master`:
 ## [v1.1.1-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.1-dev) (2018-07-31)
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0-dev...v1.1.1-dev)
+
+### Added
+- Performance improvements for SR calculations
+- Pragmas and clauses from OpenMP 4.0 and 4.5 for SIMD-enabled functions inside vectorized loops (instead of depending on the compiler to inline the function calls)
+- LLF Riemann solver for Newtonian hydrodynamics
+- Rules for checking Python style of Athena++ scripts with `flake8`
+- Interactive plotting for spherical polar coordinates results
+- Several new input files and problem generators
+
+### Fixed/Changed
+- Re-enabled SIMD vectorization for Roe-type Riemann solvers and rewrote eigenmatrix calculations to improve performance
+- Improved readability of `TimeIntegratorTaskList`
+- Fixed spherical coordinates terms for non-ideal MHD
+- Fixed reflective symmetry preservation for hydrodynamic viscosity calculations
+- Eliminated small floating point errors when analyzing uniform grid results using included Python HDF5 reader
+- Changed turbulence driving switches to avoid possible bug during initial cycle
+- Plugged MPI resource leaks in Multigrid
+
+### Issues and Pull Requests:
 
 #### Fixed bugs:
 
