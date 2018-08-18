@@ -218,9 +218,10 @@ def main(**kwargs):
                 'numpy')
             plt.streamplot(x_stream, y_stream, vals_x, vals_y,
                            density=kwargs['stream_density'], color='k')
-    plt.gca().set_aspect('equal')
     plt.xlim((x_min, x_max))
     plt.ylim((y_min, y_max))
+    if not kwargs['fill']:
+        plt.gca().set_aspect('equal')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.colorbar(im)
@@ -280,6 +281,10 @@ if __name__ == '__main__':
                         type=float,
                         default=None,
                         help='maximum extent of plot in second plotted direction')
+    parser.add_argument('-f', '--fill',
+                        action='store_true',
+                        help='flag indicating image should fill plot area, even if this '
+                             'distorts the aspect ratio')
     parser.add_argument('-c',
                         '--colormap',
                         default=None,
