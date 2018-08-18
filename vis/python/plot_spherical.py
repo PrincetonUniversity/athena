@@ -14,7 +14,7 @@ results by adjusting figure size, spacings, tick locations, axes labels, etc.
 The script must also be modified to plot any functions of the quantities in the
 file, including combinations of multiple quantities.
 
-Requires scipy if making a streamplot.
+Requires scipy if making a stream plot.
 """
 
 # Python standard modules
@@ -355,15 +355,15 @@ if __name__ == '__main__':
                         help='name of vector quantity to use to make stream plot')
     parser.add_argument('--stream_average',
                         action='store_true',
-                        help='flag indicating phi-averaging on streamplot data')
+                        help='flag indicating phi-averaging on stream plot data')
     parser.add_argument('--stream_density',
                         type=float,
                         default=1.0,
-                        help='density of streamlines')
+                        help='density of stream lines')
     parser.add_argument('--stream_samples',
                         type=int,
                         default=100,
-                        help='linear size of streamline sampling grid')
+                        help='linear size of stream line sampling grid')
     parser.add_argument('--theta_compression',
                         type=float,
                         default=None,

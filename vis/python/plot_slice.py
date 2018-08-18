@@ -307,11 +307,11 @@ if __name__ == '__main__':
                         help='name of vector quantity to use to make stream plot')
     parser.add_argument('--stream_average',
                         action='store_true',
-                        help='flag indicating streamplot should be averaged in '
+                        help='flag indicating stream plot should be averaged in '
                              'orthogonal direction for 3D data')
     parser.add_argument('--stream_density',
                         type=float,
                         default=1.0,
-                        help='density of streamlines')
+                        help='density of stream lines')
     args = parser.parse_args()
     main(**vars(args))

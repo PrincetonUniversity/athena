@@ -140,17 +140,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
       'data_files',
-      help=('comma-separated list of input files; empty strings repeat previous entries;'
+      help=('comma-separated list of input files; empty strings repeat previous entries; '
             'list is extended if x_names or y_names is longer')
     )
     parser.add_argument(
         'x_names',
-        help=('comma-separated list of abscissas; empty strings repeat previous entries;'
+        help=('comma-separated list of abscissas; empty strings repeat previous entries; '
               'list is extended if data_files or y_names is longer')
     )
     parser.add_argument(
         'y_names',
-        help=('comma-separated list of ordinates; empty strings repeat previous entries;'
+        help=('comma-separated list of ordinates; empty strings repeat previous entries; '
               'list is extended if data_files or x_names is longer')
     )
     parser.add_argument(
