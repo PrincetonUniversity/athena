@@ -48,9 +48,6 @@ def main(**kwargs):
         raise RuntimeError('First entry in x_names must be nonempty')
     if y_names[0] == '':
         raise RuntimeError('First entry in y_names must be nonempty')
-    for data_file in data_files:
-        if data_file[-4:] != '.hst' and data_file[-4:] != '.tab':
-            raise RuntimeError('Files must have .hst or .tab extension')
     if len(data_files) < num_lines:
         data_files += data_files[-1:] * (num_lines - len(data_files))
     if len(x_names) < num_lines:
@@ -64,6 +61,10 @@ def main(**kwargs):
             x_names[n] = x_names[n-1]
         if y_names[n] == '':
             y_names[n] = y_names[n-1]
+    for data_file in data_files:
+        if data_file[-4:] != '.hst' and data_file[-4:] != '.tab':
+            print(data_file)
+            raise RuntimeError('Files must have .hst or .tab extension')
     if len(styles) < num_lines:
         styles += styles[-1:] * (num_lines - len(styles))
     for n in range(num_lines):
