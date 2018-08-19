@@ -332,7 +332,8 @@ if __name__ == '__main__':
                         help='maximum radial extent of plot')
     parser.add_argument('--logr',
                         action='store_true',
-                        help='flag indicating data should be logarithmically in radius')
+                        help='flag indicating data should be plotted logarithmically in '
+                             'radius')
     parser.add_argument('-c',
                         '--colormap',
                         default=None,
