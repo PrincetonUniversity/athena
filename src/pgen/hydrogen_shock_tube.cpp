@@ -352,7 +352,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
   wl[IVZ] = pin->GetReal("problem","wl");
-  if (NON_BAROTROPIC_EOS) wl[IPR] = press(wl[IDN], pin->GetReal("problem","Tl"));
+  if (NON_BAROTROPIC_EOS) {
+    if (pin->DoesParameterExist("problem","Tl"))
+      wl[IPR] = press(wl[IDN], pin->GetReal("problem","Tl"));
+    else
+      wl[IPR] = pin->GetReal("problem","pl");
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     wl[NHYDRO  ] = pin->GetReal("problem","bxl");
     wl[NHYDRO+1] = pin->GetReal("problem","byl");
@@ -365,7 +370,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");
   wr[IVZ] = pin->GetReal("problem","wr");
-  if (NON_BAROTROPIC_EOS) wr[IPR] = press(wr[IDN], pin->GetReal("problem","Tr"));
+  if (NON_BAROTROPIC_EOS) {
+    if (pin->DoesParameterExist("problem","Tr"))
+      wr[IPR] = press(wr[IDN], pin->GetReal("problem","Tr"));
+    else
+      wr[IPR] = pin->GetReal("problem","pr");
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     wr[NHYDRO  ] = pin->GetReal("problem","bxr");
     wr[NHYDRO+1] = pin->GetReal("problem","byr");
