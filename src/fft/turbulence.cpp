@@ -116,7 +116,7 @@ void TurbulenceDriver::Driving(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::Generate(int step)
+//! \fn void TurbulenceDriver::Generate()
 //  \brief Generate velocity pertubation.
 
 void TurbulenceDriver::Generate(void) {

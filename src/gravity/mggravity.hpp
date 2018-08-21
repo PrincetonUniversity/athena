@@ -45,7 +45,7 @@ class MGGravityDriver : public MultigridDriver{
 public:
   MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
   ~MGGravityDriver() {}
-  void Solve(int step);
+  void Solve(int stage);
 
 private:
   Real four_pi_G_;

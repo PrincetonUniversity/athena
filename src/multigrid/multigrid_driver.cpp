@@ -240,7 +240,7 @@ void MultigridDriver::FMGProlongate(void) {
   }
   if (current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListFMGProlongate(flag);
-    mgtlist_->DoTaskListOneSubStep(this);
+    mgtlist_->DoTaskListOneStage(this);
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->FMGProlongate();
@@ -286,7 +286,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
   if (current_level_ >= nrootlevel_-1) {
     if (current_level_==ntotallevel_-2) flag=2;
     mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, flag);
-    mgtlist_->DoTaskListOneSubStep(this);
+    mgtlist_->DoTaskListOneStage(this);
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrect();
@@ -309,7 +309,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
   int ngh=mgroot_->ngh_;
   if (current_level_ >= nrootlevel_) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
-    mgtlist_->DoTaskListOneSubStep(this);
+    mgtlist_->DoTaskListOneStage(this);
     if (current_level_==nrootlevel_) {
       FillRootGridSource();
       mgroot_->ZeroClearData();

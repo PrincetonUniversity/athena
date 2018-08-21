@@ -194,7 +194,9 @@ parser.add_argument(
         'cray',
         'bgxl',
         'icc-phi',
-        'clang++'],
+        'clang++',
+        'clang++-simd',
+    ],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
@@ -356,11 +358,18 @@ if args['cxx'] == 'g++':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
-    definitions['COMPILER_CHOICE'] = 'g++-simd'  # gcc version > 4.9
+    # GCC version >= 4.9, for OpenMP 4.0; version >= 6.1 for OpenMP 4.5
+    definitions['COMPILER_CHOICE'] = 'g++-simd'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -std=c++11 -fopenmp-simd -fwhole-program -march=skylake-avx512 -flto'
+        '-O3 -std=c++11 -fopenmp-simd -fwhole-program -flto -ffast-math '
+        '-march=native -fprefetch-loop-arrays'
+        # -march=skylake-avx512, skylake, core-avx2
+        # -mprefer-vector-width=128  # available in gcc-8, but not gcc-7
+        # -mtune=native, generic, broadwell
+        # -mprefer-avx128
+        # -m64 (default)
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
@@ -432,6 +441,16 @@ if args['cxx'] == 'clang++':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
+if args['cxx'] == 'clang++-simd':
+    # LLVM/clang version >= 3.9 for most of OpenMP 4.0, 4.5 (still incomplete; no
+    # offloading, target/declare simd directives). OpenMP 3.1 fully supported in LLVM 3.7
+    definitions['COMPILER_CHOICE'] = 'clang++-simd'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -fopenmp-simd'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+
 # -float argument
 if args['float']:
     definitions['SINGLE_PRECISION_ENABLED'] = '1'
@@ -442,8 +461,9 @@ else:
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
-    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'icc'
-            or args['cxx'] == 'icc-debug'):
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -459,7 +479,7 @@ if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
     if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
             or args['cxx'] == 'icc-phi' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'clang++'):
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -471,7 +491,8 @@ else:
 # -omp argument
 if args['omp']:
     definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
-    if args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++':
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
+            or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
     if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
@@ -529,9 +550,10 @@ if args['hdf5']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray'
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'cray' or args['cxx'] == 'icc'
             or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
-            or args['cxx'] == 'clang++'):
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
     if args['cxx'] == 'bgxl':
         makefile_options['PREPROCESSOR_FLAGS'] += (

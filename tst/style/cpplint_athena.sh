@@ -17,7 +17,7 @@
 
 # Apply Google C++ Style Linter to all source code files at once:
 set -e
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print | xargs ./cpplint.py --counting=detailed
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs ./cpplint.py --counting=detailed
 set +e
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace

@@ -68,7 +68,7 @@ public:
             char *mbdata, int igflag);
   ~MeshBlock();
 
-  //data
+  // data
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
@@ -76,8 +76,11 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
   int gflag;
-  // Track the partial dt abscissae for substepping each memory register, relative to t^n
-  Real step_dt[3];
+  // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
+  // the time-integration scheme may partially substep several storage register pairs
+  // (u,b), (u1,b1), (u2, b2), ..., (umn, bm) through the dt interval.
+  // Track their time abscissae at the end of each stage (l) as (dt_m^l) relative to t^n
+  Real stage_abscissae[MAX_NSTAGE][MAX_NREGISTER];
 
   // user output variables for analysis
   int nuser_out_var;
@@ -227,7 +230,6 @@ private:
   ConductionCoeff_t ConductionCoeff_;
   FieldDiffusionCoeff_t FieldDiffusivity_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
-  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -245,8 +247,6 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                         GravityBoundaryFunc_t my_bc);
   void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
   void EnrollConductionCoefficient(ConductionCoeff_t my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);

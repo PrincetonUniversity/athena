@@ -46,8 +46,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator
   //
   // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
-  // another weighted average / caching of these terms each stage.
-  // API and framework is extensible to three register 3S* methods
+  // another weighted average / caching of these terms each stage. The API and framework
+  // is extensible to three register 3S* methods.
+
+  // Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
+  // (sometimes "step"), to refer to intermediate values between "timesteps" = "cycles"
+  // "Step" is often used for generic sequences in code, e.g. main.cpp: "Step 1: MPI"
 
   integrator = pin->GetOrAddString("time","integrator","vl2");
   int dim = 1;
@@ -58,130 +62,130 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
     // Simple predictor-corrector scheme similar to MUSCL-Hancock
     // Expressed in 2S or 3S* algorithm form
-    nsub_steps = 2;
+    nstages = 2;
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
     if (dim == 2) cfl_limit = 0.5;
     if (dim == 3) cfl_limit = ONE_3RD;
 
-    step_wghts[0].delta = 1.0; // required for consistency
-    step_wghts[0].gamma_1 = 0.0;
-    step_wghts[0].gamma_2 = 1.0;
-    step_wghts[0].gamma_3 = 0.0;
-    step_wghts[0].beta = 0.5;
+    stage_wghts[0].delta = 1.0; // required for consistency
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 0.5;
 
-    step_wghts[1].delta = 0.0;
-    step_wghts[1].gamma_1 = 0.0;
-    step_wghts[1].gamma_2 = 1.0;
-    step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 1.0;
+    stage_wghts[1].delta = 0.0;
+    stage_wghts[1].gamma_1 = 0.0;
+    stage_wghts[1].gamma_2 = 1.0;
+    stage_wghts[1].gamma_3 = 0.0;
+    stage_wghts[1].beta = 1.0;
   } else if (integrator == "rk2") {
     // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
     // Optimal (in error bounds) explicit two-stage, second-order SSPRK
-    nsub_steps = 2;
+    nstages = 2;
     cfl_limit = 1.0;
-    step_wghts[0].delta = 1.0;
-    step_wghts[0].gamma_1 = 0.0;
-    step_wghts[0].gamma_2 = 1.0;
-    step_wghts[0].gamma_3 = 0.0;
-    step_wghts[0].beta = 1.0;
+    stage_wghts[0].delta = 1.0;
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 1.0;
 
-    step_wghts[1].delta = 0.0;
-    step_wghts[1].gamma_1 = 0.5;
-    step_wghts[1].gamma_2 = 0.5;
-    step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 0.5;
+    stage_wghts[1].delta = 0.0;
+    stage_wghts[1].gamma_1 = 0.5;
+    stage_wghts[1].gamma_2 = 0.5;
+    stage_wghts[1].gamma_3 = 0.0;
+    stage_wghts[1].beta = 0.5;
   } else if (integrator == "rk3") {
     // SSPRK (3,3): Gottlieb (2009) equation 3.2
     // Optimal (in error bounds) explicit three-stage, third-order SSPRK
-    nsub_steps = 3;
+    nstages = 3;
     cfl_limit = 1.0;
-    step_wghts[0].delta = 1.0;
-    step_wghts[0].gamma_1 = 0.0;
-    step_wghts[0].gamma_2 = 1.0;
-    step_wghts[0].gamma_3 = 0.0;
-    step_wghts[0].beta = 1.0;
+    stage_wghts[0].delta = 1.0;
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 1.0;
 
-    step_wghts[1].delta = 0.0;
-    step_wghts[1].gamma_1 = 0.25;
-    step_wghts[1].gamma_2 = 0.75;
-    step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 0.25;
+    stage_wghts[1].delta = 0.0;
+    stage_wghts[1].gamma_1 = 0.25;
+    stage_wghts[1].gamma_2 = 0.75;
+    stage_wghts[1].gamma_3 = 0.0;
+    stage_wghts[1].beta = 0.25;
 
-    step_wghts[2].delta = 0.0;
-    step_wghts[2].gamma_1 = TWO_3RD;
-    step_wghts[2].gamma_2 = ONE_3RD;
-    step_wghts[2].gamma_3 = 0.0;
-    step_wghts[2].beta = TWO_3RD;
+    stage_wghts[2].delta = 0.0;
+    stage_wghts[2].gamma_1 = TWO_3RD;
+    stage_wghts[2].gamma_2 = ONE_3RD;
+    stage_wghts[2].gamma_3 = 0.0;
+    stage_wghts[2].beta = TWO_3RD;
     //} else if (integrator == "ssprk5_3") {
     //} else if (integrator == "ssprk10_4") {
   } else if (integrator == "rk4") {
     // RK4()4[2S] from Table 2 of Ketchenson (2010)
     // Non-SSP, explicit four-stage, fourth-order RK
-    nsub_steps = 4;
+    nstages = 4;
     // Stability properties are similar to classical RK4
     // Refer to Colella (2011) for constant advection with 4th order fluxes
     // linear stability analysis
     cfl_limit = 1.3925;
-    step_wghts[0].delta = 1.0;
-    step_wghts[0].gamma_1 = 0.0;
-    step_wghts[0].gamma_2 = 1.0;
-    step_wghts[0].gamma_3 = 0.0;
-    step_wghts[0].beta = 1.193743905974738;
+    stage_wghts[0].delta = 1.0;
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 1.193743905974738;
 
-    step_wghts[1].delta = 0.217683334308543;
-    step_wghts[1].gamma_1 = 0.121098479554482;
-    step_wghts[1].gamma_2 = 0.721781678111411;
-    step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 0.099279895495783;
+    stage_wghts[1].delta = 0.217683334308543;
+    stage_wghts[1].gamma_1 = 0.121098479554482;
+    stage_wghts[1].gamma_2 = 0.721781678111411;
+    stage_wghts[1].gamma_3 = 0.0;
+    stage_wghts[1].beta = 0.099279895495783;
 
-    step_wghts[2].delta = 1.065841341361089;
-    step_wghts[2].gamma_1 = -3.843833699660025;
-    step_wghts[2].gamma_2 = 2.121209265338722;
-    step_wghts[2].gamma_3 = 0.0;
-    step_wghts[2].beta = 1.131678018054042;
+    stage_wghts[2].delta = 1.065841341361089;
+    stage_wghts[2].gamma_1 = -3.843833699660025;
+    stage_wghts[2].gamma_2 = 2.121209265338722;
+    stage_wghts[2].gamma_3 = 0.0;
+    stage_wghts[2].beta = 1.131678018054042;
 
-    step_wghts[3].delta = 0.0;
-    step_wghts[3].gamma_1 = 0.546370891121863;
-    step_wghts[3].gamma_2 = 0.198653035682705;
-    step_wghts[3].gamma_3 = 0.0;
-    step_wghts[3].beta = 0.310665766509336;
+    stage_wghts[3].delta = 0.0;
+    stage_wghts[3].gamma_1 = 0.546370891121863;
+    stage_wghts[3].gamma_2 = 0.198653035682705;
+    stage_wghts[3].gamma_3 = 0.0;
+    stage_wghts[3].beta = 0.310665766509336;
   } else if (integrator == "ssprk5_4") {
     // SSPRK (5,4): Gottlieb (2009) section 3.1
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
     // 3N method, but there is no 3S* formulation due to irregular sparsity
     // of Shu-Osher form matrix, alpha
-    nsub_steps = 5;
+    nstages = 5;
     cfl_limit = 1.3925;
-    step_wghts[0].delta = 1.0;
-    step_wghts[0].gamma_1 = 0.0;
-    step_wghts[0].gamma_2 = 1.0;
-    step_wghts[0].gamma_3 = 0.0;
-    step_wghts[0].beta = 0.391752226571890;
+    stage_wghts[0].delta = 1.0;
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 0.391752226571890;
 
-    step_wghts[1].delta = 0.0; // u1 = u^n
-    step_wghts[1].gamma_1 = 0.555629506348765;
-    step_wghts[1].gamma_2 = 0.444370493651235;
-    step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 0.368410593050371;
+    stage_wghts[1].delta = 0.0; // u1 = u^n
+    stage_wghts[1].gamma_1 = 0.555629506348765;
+    stage_wghts[1].gamma_2 = 0.444370493651235;
+    stage_wghts[1].gamma_3 = 0.0;
+    stage_wghts[1].beta = 0.368410593050371;
 
-    step_wghts[2].delta = 0.0;
-    step_wghts[2].gamma_1 = 0.379898148511597;
-    step_wghts[2].gamma_2 = 0.0;
-    step_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
-    step_wghts[2].beta = 0.251891774271694;
+    stage_wghts[2].delta = 0.0;
+    stage_wghts[2].gamma_1 = 0.379898148511597;
+    stage_wghts[2].gamma_2 = 0.0;
+    stage_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
+    stage_wghts[2].beta = 0.251891774271694;
 
-    step_wghts[3].delta = 0.0;
-    step_wghts[3].gamma_1 = TWO_3RD;
-    step_wghts[3].gamma_2 = ONE_3RD;
-    step_wghts[3].gamma_3 = 0.178079954393132; // u2 = u^n
-    step_wghts[3].beta = 0.544974750228521;
+    stage_wghts[3].delta = 0.0;
+    stage_wghts[3].gamma_1 = TWO_3RD;
+    stage_wghts[3].gamma_2 = ONE_3RD;
+    stage_wghts[3].gamma_3 = 0.178079954393132; // u2 = u^n
+    stage_wghts[3].beta = 0.544974750228521;
 
-    step_wghts[4].delta = 0.0;
-    step_wghts[4].gamma_1 = 0.386708617503268; // from Gottlieb (2009), u^(4) coeff.
-    step_wghts[4].gamma_2 = ONE_3RD;
-    step_wghts[4].gamma_3 = 0.0;
-    step_wghts[4].beta = 0.226007483236906; // from Gottlieb (2009), F(u^(4)) coeff.
+    stage_wghts[4].delta = 0.0;
+    stage_wghts[4].gamma_1 = 0.386708617503268; // from Gottlieb (2009), u^(4) coeff.
+    stage_wghts[4].gamma_2 = ONE_3RD;
+    stage_wghts[4].gamma_3 = 0.0;
+    stage_wghts[4].beta = 0.226007483236906; // from Gottlieb (2009), F(u^(4)) coeff.
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
@@ -201,7 +205,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // Save to Mesh class
   pm->cfl_number = cfl_number;
 
-  // Now assemble list of tasks for each step of time integrator
+  // Now assemble list of tasks for each stage of time integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     AddTimeIntegratorTask(STARTUP_INT,NONE);
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
@@ -222,8 +226,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
-    AddTimeIntegratorTask(UPDATE_DT,SRCTERM_HYD);
-    AddTimeIntegratorTask(SEND_HYD,UPDATE_DT);
+    AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
       AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
@@ -465,13 +468,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartupIntegrator);
       break;
-
-    case (UPDATE_DT):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::UpdateTimeStep);
-      break;
-
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -496,14 +492,14 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
 //----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
 
-enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step) {
-  Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
+enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int stage) {
+  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
   Real time = pmb->pmy_mesh->time+dt;
   pmb->pbval->StartReceivingAll(time);
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundaryAll();
   return TASK_SUCCESS;
 }
@@ -511,12 +507,12 @@ enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int ste
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
 
-  if (step <= nsub_steps) {
-    if ((step == 1) && (integrator == "vl2")) {
+  if (stage <= nstages) {
+    if ((stage == 1) && (integrator == "vl2")) {
       phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       return TASK_NEXT;
     } else {
@@ -527,8 +523,8 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   return TASK_FAIL;
 }
 
-enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step) {
-  if (step <= nsub_steps) {
+enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
     pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TASK_NEXT;
   }
@@ -536,14 +532,14 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to communicate fluxes between MeshBlocks for flux correction step with AMR
+// Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
-enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int stage) {
   pmb->pbval->SendFluxCorrection(FLUX_HYDRO);
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage) {
   pmb->pbval->SendEMFCorrection();
   return TASK_SUCCESS;
 }
@@ -551,7 +547,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
-enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int stage) {
   if (pmb->pbval->ReceiveFluxCorrection(FLUX_HYDRO) == true) {
     return TASK_NEXT;
   } else {
@@ -559,7 +555,7 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int s
   }
 }
 
-enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int stage) {
   if (pmb->pbval->ReceiveEMFCorrection() == true) {
     return TASK_NEXT;
   } else {
@@ -570,22 +566,22 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int st
 //----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
-enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
   Field *pf=pmb->pfield;
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to FieldInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
-    ave_wghts[1] = step_wghts[step-1].delta;
+    ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
     ph->WeightedAveU(ph->u1,ph->u,ph->u2,ave_wghts);
 
-    ave_wghts[0] = step_wghts[step-1].gamma_1;
-    ave_wghts[1] = step_wghts[step-1].gamma_2;
-    ave_wghts[2] = step_wghts[step-1].gamma_3;
+    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
     ph->WeightedAveU(ph->u,ph->u1,ph->u2,ave_wghts);
-    ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[step-1].beta,ph->u);
+    ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,stage_wghts[stage-1].beta,ph->u);
 
     return TASK_NEXT;
   }
@@ -593,22 +589,22 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
   return TASK_FAIL;
 }
 
-enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
-    ave_wghts[1] = step_wghts[step-1].delta;
+    ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
     pf->WeightedAveB(pf->b1,pf->b,pf->b2,ave_wghts);
 
-    ave_wghts[0] = step_wghts[step-1].gamma_1;
-    ave_wghts[1] = step_wghts[step-1].gamma_2;
-    ave_wghts[2] = step_wghts[step-1].gamma_3;
+    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
-    pf->CT(step_wghts[step-1].beta, pf->b);
+    pf->CT(stage_wghts[stage-1].beta, pf->b);
 
     return TASK_NEXT;
   }
@@ -619,19 +615,19 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
 //----------------------------------------------------------------------------------------
 // Functions to add source terms
 
-enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
   Field *pf=pmb->pfield;
 
   // return if there are no source terms to be added
   if (ph->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
 
-  if (step <= nsub_steps) {
-    // Time at beginning of step for u()
-    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
+  if (stage <= nstages) {
+    // Time at beginning of stage for u()
+    Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
     // Scaled coefficient for RHS update
-    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
-    ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u);
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    ph->psrc->AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
   } else {
     // Evaluate the source terms at the beginning of the
     return TASK_FAIL;
@@ -642,15 +638,15 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes
 
-enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
 
 // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
   // *** this must be changed for the RK3 integrator
-  if(step <= nsub_steps) {
-    ph->phdif->CalcHydroDiffusionFlux(ph->w,ph->u,ph->flux);
+  if(stage <= nstages) {
+    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TASK_FAIL;
   }
@@ -660,14 +656,14 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
 //----------------------------------------------------------------------------------------
 // Functions to calculate diffusion EMF
 
-enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
 // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
   // *** this must be changed for the RK3 integrator
-  if(step <= nsub_steps) {
+  if(stage <= nstages) {
     pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
     return TASK_FAIL;
@@ -678,8 +674,8 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
 //----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks
 
-enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step) {
-  if (step <= nsub_steps) {
+enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
     pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   } else {
     return TASK_FAIL;
@@ -687,8 +683,8 @@ enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step) {
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step) {
-  if (step <= nsub_steps) {
+enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
     pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
@@ -699,9 +695,9 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step) {
 //----------------------------------------------------------------------------------------
 // Functions to receive conserved variables between MeshBlocks
 
-enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int stage) {
   bool ret;
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   } else {
     return TASK_FAIL;
@@ -714,9 +710,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step) {
   }
 }
 
-enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) {
   bool ret;
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
@@ -729,17 +725,17 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step) {
   }
 }
 
-enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int step) {
-  if (step <= nsub_steps) {
+enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
     pmb->pbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
   } else {
     return TASK_FAIL;
   }
   return TASK_SUCCESS;
 }
-enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     ret=pmb->pbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
     return TASK_FAIL;
@@ -751,17 +747,17 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int st
     return TASK_FAIL;
   }
 }
-enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int step) {
-  if (step <= nsub_steps) {
+enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
     pmb->pbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
   } else {
     return TASK_FAIL;
   }
   return TASK_SUCCESS;
 }
-enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
-  if (step <= nsub_steps) {
+  if (stage <= nstages) {
     ret=pmb->pbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
@@ -772,18 +768,18 @@ enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int st
     return TASK_FAIL;
   }
 }
-enum TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int stage) {
   pmb->pbval->SendEMFShearingboxBoundaryCorrection();
   return TASK_SUCCESS;
 }
-enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int stage) {
   if (pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
   }
 }
-enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage) {
   pmb->pbval->RemapEMFShearingboxBoundary();
   return TASK_SUCCESS;
 }
@@ -791,18 +787,18 @@ enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int step) 
 //--------------------------------------------------------------------------------------
 // Functions for everything else
 
-enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
 
-  if (step <= nsub_steps) {
-    // Time at the end of step for u()
-    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
-    // Scaled coefficient for RHS time-advance in substep
-    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
+  if (stage <= nstages) {
+    // Time at the end of stage for (u, b) register pair
+    Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
+    // Scaled coefficient for RHS time-advance within stage
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                time, dt);
+                                t_end_stage, dt);
   } else {
     return TASK_FAIL;
   }
@@ -810,7 +806,7 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step) {
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -822,13 +818,13 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
   if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
   if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
 
-  if (step <= nsub_steps) {
-    // At beginning of this task, phydro->w contains previous substep W(U) output
-    // and phydro->w1 is used as a register to store the current substep output.
+  if (stage <= nstages) {
+    // At beginning of this task, phydro->w contains previous stage's W(U) output
+    // and phydro->w1 is used as a register to store the current stage's output.
     // For the second order integrators VL2 and RK2, the prim_old initial guess for the
     // Newton-Raphson solver in GR EOS uses the following abscissae:
-    // step=1: W at t^n and
-    // step=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
+    // stage=1: W at t^n and
+    // stage=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
@@ -841,18 +837,18 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step) {
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int step) {
+enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
 
-  if (step <= nsub_steps) {
-    // Time at the end of step for u()
-    Real time=pmb->pmy_mesh->time + pmb->step_dt[0];
-    // Scaled coefficient for RHS time-advance in substep
-    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
+  if (stage <= nstages) {
+    // Time at the end of stage for (u, b) register pair
+    Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
+    // Scaled coefficient for RHS time-advance within stage
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                   time, dt);
+                                   t_end_stage, dt);
   } else {
     return TASK_FAIL;
   }
@@ -860,45 +856,63 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int ste
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::UserWork(MeshBlock *pmb, int step) {
-  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+enum TaskStatus TimeIntegratorTaskList::UserWork(MeshBlock *pmb, int stage) {
+  if (stage != nstages) return TASK_SUCCESS; // only do on last stage
 
   pmb->UserWorkInLoop();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::NewBlockTimeStep(MeshBlock *pmb, int step) {
-  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+enum TaskStatus TimeIntegratorTaskList::NewBlockTimeStep(MeshBlock *pmb, int stage) {
+  if (stage != nstages) return TASK_SUCCESS; // only do on last stage
 
   pmb->phydro->NewBlockTimeStep();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int step) {
-  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
+  if (stage != nstages) return TASK_SUCCESS; // only do on last stage
 
   pmb->pmr->CheckRefinementCondition();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int step) {
-  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int stage) {
+  if (stage != nstages) return TASK_SUCCESS; // only do on last stage
 
   pmb->phydro->CorrectGravityFlux();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int step) {
-  // Initialize registers only on first sub-step
-  if (step != 1) {
+enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int stage) {
+  // Initialize time-integrator only on first stage
+  if (stage != 1) {
     return TASK_SUCCESS;
   } else {
-    // For each Meshblock, initialize the dt abscissae of each memory register u()
-    // to correspond to the beginning of the interval [t^n, t^{n+1}]
-    pmb->step_dt[0]= 0.0;
-    pmb->step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
-    pmb->step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
+    // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
+    // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
+    pmb->stage_abscissae[0][0] = 0.0;
+    pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
+    pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
 
+    // Given overall timestep dt, precompute the time abscissae for all registers, stages
+    for (int l=1; l<=nstages; l++) {
+      // Update the dt abscissae of each memory register to values at end of this stage
+      const IntegratorWeight w = stage_wghts[l-1];
+
+      // u1 = u1 + delta*u
+      pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
+          + w.delta*pmb->stage_abscissae[l-1][0];
+      // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
+      pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
+          + w.gamma_2*pmb->stage_abscissae[l][1]
+          + w.gamma_3*pmb->stage_abscissae[l-1][2]
+          + w.beta*pmb->pmy_mesh->dt;
+      // u2 = u^n
+      pmb->stage_abscissae[l][2] = 0.0;
+    }
+
+    // Initialize storage registers
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
     // (if using a 3S* time-integrator)
@@ -912,7 +926,7 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       // pf->b2.x2f = pf->b.x2f;
       // pf->b2.x3f = pf->b.x3f;
 
-      // 2nd set of registers, including b1, need to be initialized to 0
+      // 2nd set of registers, including b1, need to be initialized to 0 each cycle
       Real ave_wghts[3];
       ave_wghts[0] = 0.0;
       ave_wghts[1] = 0.0;
@@ -926,30 +940,5 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     ave_wghts[2] = 0.0;
     ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
     return TASK_SUCCESS;
-  }
-}
-
-
-enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step) {
-  // Occurs after HydroIntegrate() and HydroSourceTerms(), before FieldIntegrate()
-  if (step <= nsub_steps) {
-    // Update the dt abscissae of each memory register to values at end of this substep
-    Real dt, dt1, dt2;
-    const IntegratorWeight w = step_wghts[step-1];
-    // u1 = u1 + delta*u
-    dt1 = pmb->step_dt[1] + w.delta*pmb->step_dt[0];
-    // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-    dt = w.gamma_1*pmb->step_dt[0] +
-        w.gamma_2*dt1 +
-        w.gamma_3*pmb->step_dt[2] +
-        w.beta*pmb->pmy_mesh->dt;
-    // u2 = u^n
-    dt2 = 0.0;
-    pmb->step_dt[0]= dt;
-    pmb->step_dt[1]= dt1;
-    pmb->step_dt[2]= dt2;
-    return TASK_SUCCESS;
-  } else {
-    return TASK_FAIL;
   }
 }

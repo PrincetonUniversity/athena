@@ -795,6 +795,7 @@ void ATHDF5Output::MakeXDMF() {
   xdmf << "<?xml version=\"1.0\" ?>\n";
   xdmf << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
   xdmf << "<Xdmf Version=\"2.0\">\n";
+  xdmf << "<Information Name=\"TimeVaryingMetaData\" Value=\"True\"/>\n";
   xdmf << "<Domain>\n";
   xdmf << "<Grid Name=\"Mesh\" GridType=\"Collection\">\n";
   xdmf << " <Time Value=\"" << code_time << "\"/>\n";

@@ -8,19 +8,21 @@ We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` 
 
 The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
 
-All major changes to Athena++ between each version/tag are summarized here with the following categories:
-- **Added:** for new features
-- **Fixed/Changed:** for fixed or modified functionality
+All major changes to the Athena++ private repository between each version/tag are summarized in this `CHANGLEOG.md` document. Each version has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
+
+Additionally, the changes are **manually** summarized using the following categories:
+- **Added:** for brand new features or extended capabilities
+- **Fixed/Changed:** for bug fixes or modified behavior
 - **Removed:** for removed functionality
 
-Each version additionally has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id. At this time, both the private and public GitHub Release Notes are manually generated from this document.
+The automatically-generated content should be used for reference when writing these sections. At this time, both the private and public [GitHub Release Notes](https://help.github.com/articles/creating-releases/) are started by copy/pasting from these sections.
 
 <!-- "Implemented enhancements" (enhancement) vs. "Merged pull requests" (feature request, etc.) division doesn't make a ton of sense-->
 <!-- Eventually, need to add label for "backwards-incompatible" and announce "BREAKING CHANGES" -->
 
 ## [Unreleased](https://github.com/PrincetonUniversity/athena/tree/HEAD)
 
-[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0...HEAD)
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1-dev...HEAD)
 
 ### Added
 Feature branches to merge to `master`:
@@ -29,13 +31,64 @@ Feature branches to merge to `master`:
   - Hydrodynamics (`hydro4`)
   - MHD (`mhd4`, `mhd4_3D`)
 
-<!-- ### Fixed/Changed
-### Removed -->
+## [v1.1.1](https://github.com/PrincetonUniversity/athena/tree/v1.1.1) (2018-07-31)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1-dev...v1.1.1)
+
+### Removed
+- Multigrid solver and related regression tests (removed directly from `v1.1.1-dev`)
+
+## [v1.1.1-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.1-dev) (2018-07-31)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.0-dev...v1.1.1-dev)
+
+### Added
+- Performance improvements for SR calculations
+- Pragmas and clauses from OpenMP 4.0 and 4.5 for SIMD-enabled functions inside vectorized loops (instead of depending on the compiler to inline the function calls)
+- LLF Riemann solver for Newtonian hydrodynamics
+- Rules for checking Python style of Athena++ scripts with `flake8`
+- Interactive plotting for spherical polar coordinates results
+- Several new input files and problem generators
+
+### Fixed/Changed
+- Re-enabled SIMD vectorization for Roe-type Riemann solvers and rewrote eigenmatrix calculations to improve performance
+- Improved readability of `TimeIntegratorTaskList`
+- Fixed spherical coordinates terms for non-ideal MHD
+- Fixed reflective symmetry preservation for hydrodynamic viscosity calculations
+- Eliminated small floating point errors when analyzing uniform grid results using included Python HDF5 reader
+- Changed turbulence driving switches to avoid possible bug during initial cycle
+- Plugged MPI resource leaks in Multigrid
 
 ### Issues and Pull Requests:
+
 #### Fixed bugs:
 
+- Gravity boundary functions not set when enrolled [\#148](https://github.com/PrincetonUniversity/athena/issues/148)
+- Viscosity terms break Rayleigh-Taylor symmetry [\#144](https://github.com/PrincetonUniversity/athena/issues/144)
 - SIMD vectorization disabled for Roe-type Riemann solvers [\#126](https://github.com/PrincetonUniversity/athena/issues/126)
+- Memory leak in jeans\_3d.py test MPI run [\#115](https://github.com/PrincetonUniversity/athena/issues/115)
+- athena\_read.py athdf\(\) results in small floating point errors [\#111](https://github.com/PrincetonUniversity/athena/issues/111)
+- Remove unused GravityBoundaryFunction\_\[\] array from Mesh class [\#149](https://github.com/PrincetonUniversity/athena/pull/149) ([felker](https://github.com/felker))
+- Cleanup minor issues before v1.1.1 release; fix viscosity asymmetry  [\#147](https://github.com/PrincetonUniversity/athena/pull/147) ([felker](https://github.com/felker))
+- Return exact floating point values when reading HDF5 coordinates [\#145](https://github.com/PrincetonUniversity/athena/pull/145) ([c-white](https://github.com/c-white))
+- Fixed spherical coordinates for non-ideal MHD [\#142](https://github.com/PrincetonUniversity/athena/pull/142) ([tomidakn](https://github.com/tomidakn))
+- Added interactive spherical plotting: [\#139](https://github.com/PrincetonUniversity/athena/pull/139) ([c-white](https://github.com/c-white))
+- Use \#pragma omp declare simd for functions called in SIMD loops [\#138](https://github.com/PrincetonUniversity/athena/pull/138) ([felker](https://github.com/felker))
+- Plugged MPI resource leaks in Multigrid. [\#137](https://github.com/PrincetonUniversity/athena/pull/137) ([tomidakn](https://github.com/tomidakn))
+- AMR Fix [\#133](https://github.com/PrincetonUniversity/athena/pull/133) ([tomidakn](https://github.com/tomidakn))
+- Bug fix for initial turbulence driving  [\#132](https://github.com/PrincetonUniversity/athena/pull/132) ([changgoo](https://github.com/changgoo))
+
+#### Closed issues:
+
+- Python scripts don't comply with PEP 8 style; vis scripts need documentation [\#96](https://github.com/PrincetonUniversity/athena/issues/96)
+
+#### Merged pull requests:
+
+- Improve performance for all SR problems [\#140](https://github.com/PrincetonUniversity/athena/pull/140) ([beiwang2003](https://github.com/beiwang2003))
+- Redefine and initialize grav\_mean\_rho directly in Mesh class [\#136](https://github.com/PrincetonUniversity/athena/pull/136) ([changgoo](https://github.com/changgoo))
+- Upgrade MPICH and OpenMPI in Travis CI build environments [\#135](https://github.com/PrincetonUniversity/athena/pull/135) ([felker](https://github.com/felker))
+- Add Python style checker and fix existing violations [\#134](https://github.com/PrincetonUniversity/athena/pull/134) ([felker](https://github.com/felker))
+- Improve CHANGELOG, release process, and CI testing [\#131](https://github.com/PrincetonUniversity/athena/pull/131) ([felker](https://github.com/felker))
 
 ## [v1.1.0](https://github.com/PrincetonUniversity/athena/tree/v1.1.0) (2018-05-23)
 
@@ -45,12 +98,7 @@ Feature branches to merge to `master`:
 ### Fixed/Changed -->
 
 ### Removed
-- Multigrid solver
-
-### Issues and Pull Requests:
-#### Merged pull requests:
-
-- Remove the Multigrid solver from the next public version [\#128](https://github.com/PrincetonUniversity/athena/pull/128) ([tomidakn](https://github.com/tomidakn))
+- Multigrid solver and related regression tests (removed directly from `v1.1.0-dev`)
 
 ## [v1.1.0-dev](https://github.com/PrincetonUniversity/athena/tree/v1.1.0-dev) (2018-05-23)
 
