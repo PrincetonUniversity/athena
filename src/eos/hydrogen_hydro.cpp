@@ -25,6 +25,8 @@
 // this class header
 #include "eos.hpp"
 
+const Real my_1pe = 1. + FLT_EPSILON;
+
 //Real phi_(Real T) {
 //  return std::exp(1. / T) * std::pow(T, -1.5);
 //}
@@ -111,24 +113,24 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
 }
 
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint), .4 * hint);
+  Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint), my_1pe * .4 * hint);
   return asq_(rho, T);
 }
 
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   Real es = egas / rho;
-  Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1., .1 * es)/3., 2. * es / 3.);
+  Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1., .1 * es)/3., my_1pe * 2. * es / 3.);
   return P_of_rho_T(rho, T);
 }
 
 Real EquationOfState::SimpleEgas(Real rho, Real pres) {
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, ps);
+  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return e_of_rho_T(rho, T);
 }
 
 Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, ps);
+  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return asq_(rho, T);
 }
