@@ -67,7 +67,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   Real f0, f1, fa, fb;
   Real Ta=-1;
   Real Tb=-1;
-  Real prec=1e-6;
+  const Real prec=1e-6;
   f0 = f(rho, T0) / sol - 1.;
   f1 = f(rho, T1) / sol - 1.;
 
