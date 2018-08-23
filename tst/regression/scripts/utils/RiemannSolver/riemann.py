@@ -334,18 +334,21 @@ class RiemannSol(object):
         out['vel'] = out['vel1']
         return out
 
-    def plot_sol(self, var=None, xi_min=None, xi_max=None, nsimp=100, speeds=True, fig=True, ax=None, popt=None):
+    def plot_sol(self, var=None, xi_min=None, xi_max=None, nsimp=100, speeds=True, fig=True, ax=None, popt=None,
+                 discont=True, lbls=True, t=1):
         """Plot solution to Riemann problem.
 
         Keyword arguments:
-        var    -- variable(s) to be plotted (default ['rho', 'p', 'u'])
-        xi_min -- min xi to be plotted (default automatic)
-        xi_max -- max xi to be plotted (default automatic)
-        nsimp  -- number of points to use in rarefaction/simple waves (default 100)
-        speeds -- choose whether to plot wave speeds (default True)
-        fig    -- if True and ax is None create new figure (default True)
-        ax     -- specify ax(es) to use for plotting (default None)
-        popt   -- option dictionary to pass to plt.plot (default None)
+        var     -- variable(s) to be plotted (default ['rho', 'p', 'u'])
+        xi_min  -- min xi to be plotted (default automatic)
+        xi_max  -- max xi to be plotted (default automatic)
+        nsimp   -- number of points to use in rarefaction/simple waves (default 100)
+        speeds  -- choose whether to plot wave speeds (default True)
+        fig     -- if True and ax is None create new figure (default True)
+        ax      -- specify ax(es) to use for plotting (default None)
+        popt    -- option dictionary to pass to plt.plot (default None)
+        discont -- show discontinuities by not connecting lines (default True)
+        lbls    -- show axis labels (default True)
         """
         import matplotlib.pyplot as plt
 
@@ -386,13 +389,14 @@ class RiemannSol(object):
                 ys = [self._rare_int_left.characteristic(i)[var] for i in xs]
                 x.extend(xs)
                 y.extend(ys)
-            else:
+            elif discont:
                 x.append(np.nan)
                 y.append(np.nan)
             x.extend([ws[0]['speed'][1], ws[1]['speed'][0]])
             y.extend([self.lmid[var]] * 2)
-            x.append(np.nan)
-            y.append(np.nan)
+            if discont:
+                x.append(np.nan)
+                y.append(np.nan)
             x.extend([ws[1]['speed'][1], ws[2]['speed'][0]])
             y.extend([self.rmid[var]] * 2)
             if ws[2]['kind'] == 'simple':
@@ -400,14 +404,17 @@ class RiemannSol(object):
                 ys = [self._rare_int_right.characteristic(i)[var] for i in xs]
                 x.extend(xs)
                 y.extend(ys)
-            else:
+            elif discont:
                 x.append(np.nan)
                 y.append(np.nan)
             x.extend([ws[2]['speed'][1], xi_max])
             y.extend([self.right[var]] * 2)
-            plt.plot(x, y, **popt)
-            plt.ylabel(var)
-            plt.xlim(xi_min, xi_max)
+            x = np.array(x)
+            y = np.array(y)
+            plt.plot(x * t, y, **popt)
+            if lbls:
+                plt.ylabel(var)
+            plt.xlim(xi_min * t, xi_max * t)
             if speeds:
                 waves = [i['speed'][0] for i in ws]
                 waves += [i['speed'][1] for i in ws if i['speed'][1] not in waves]
