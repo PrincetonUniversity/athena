@@ -54,7 +54,7 @@ class SimpleHydrogen(EOS):
     def _gamma1(self, rho, T):
         x = self._x(rho, T)
         xp1 = x + 1.
-        xt = x**3 / (2. + x) * np.exp(1. / T - 3.5 * np.log(T)) * (1. + 1.5 * T) * rho
+        xt = x**3 / (2. - x) * np.exp(1. / T - 3.5 * np.log(T)) * (1. + 1.5 * T) * rho
         t23 = T + 2. / 3.
         return 5. /3. * (1. / (1. + t23 * (xt / xp1))
                          + (4. / 15. + T * (T + 4. / 3.)) * xt / (t23 * (xp1 + t23 * xt)))
