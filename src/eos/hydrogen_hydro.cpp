@@ -32,7 +32,7 @@ const Real my_1pe = 1. + FLT_EPSILON;
 //}
 
 Real x_(Real rho, Real T) {
-  return 2. /(1 + std::sqrt(1 + 4. * rho * std::exp(1. / T - 1.5 * std::log(T))));
+  return 2. /(1. + std::sqrt(1. + 4. * std::exp(1. / T - 1.5 * std::log(T) + std::log(rho))));
 }
 
 //Real x_T_(Real rho, Real T){
@@ -56,11 +56,13 @@ Real h_of_rho_T(Real rho, Real T){
 
 Real asq_(Real rho, Real T) {
   Real x = x_(rho, T);
-  Real xp1 = x + 1.;
-  Real xt = std::pow(x, 3) / (2. - x) * std::exp(1. / T - 3.5 * std::log(T)) * (1. + 1.5 * T) * rho;
-  Real t23 = T + 2. / 3.;
-  return T * xp1 * 5. /3. * (1. / (1. + t23 * (xt / xp1))
-                             +(4./15.+T*(T+4./3.))*xt/(t23*(xp1+t23*xt)) );
+  Real lt = std::log(T);
+  Real b = 8. * rho * std::exp(-1.25 * lt - .5 / T);
+  Real c = std::exp(1.5 * lt - .5 / T);
+  c = (std::sqrt(c) + std::sqrt(c + 4. * rho));
+  b /= c*c*c;
+  c = 2. + x - SQR(x);
+  return (1.+x)*T*(b * (4. + 20. * T + 15. * SQR(T)) + 10. * c)/(b * SQR(2. + 3. * T) + 6. * c);
 }
 
 Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
