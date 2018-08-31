@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import brentq
 import sys
+from . import brent_opt
 
 
 class EOS(object):
@@ -39,7 +40,7 @@ class SimpleHydrogen(EOS):
         return np.exp(1. / T - 1.5 * np.log(T))
 
     def _x(self, rho, T):
-        return 2. /(1 + np.sqrt(1 + 4. * rho * self._phi(T)))
+        return 2. /(1 + np.sqrt(1 + 4. * np.exp(1. / T - 1.5 * np.log(T) + np.log(rho))))
 
     def _x_T(self, rho, T):
         x = self._x(rho, T)
@@ -51,16 +52,23 @@ class SimpleHydrogen(EOS):
     def ei_of_rho_T(self, rho, T):
         return self._x(rho, T) * rho + 1.5 * self.p_of_rho_T(rho, T)
 
-    def _gamma1(self, rho, T):
+    def _b(self, rho, T):
+        lt = np.log(T)
+        c1 = np.exp(-1.25 * lt - .5 / T)
+        c2 = np.exp(1.5 * lt - 1. / T)
+        return 8. * rho * c1 / (np.sqrt(c2) + np.sqrt(c2 + 4. * rho))**3
+
+    def gamma1(self, rho, T):
         x = self._x(rho, T)
-        xp1 = x + 1.
-        xt = x**3 / (2. - x) * np.exp(1. / T - 3.5 * np.log(T)) * (1. + 1.5 * T) * rho
-        t23 = T + 2. / 3.
-        return 5. /3. * (1. / (1. + t23 * (xt / xp1))
-                         + (4. / 15. + T * (T + 4. / 3.)) * xt / (t23 * (xp1 + t23 * xt)))
+        b = self._b(rho, T)
+        return (b * (4. + 20. * T + 15. * T**2) + 10. * (2. + x - x**2))/\
+               (b * (2. + 3. * T)**2 + 6.*(2. + x - x**2))
+
+    def asq_of_rho_T(self, rho, T):
+        return T * (1. + self._x(rho, T)) * self.gamma1(rho, T)
 
     def asq_of_rho_p(self, rho, p):
-        return p / rho * self._gamma1(rho, self.T_of_rho_p(rho, p))
+        return p * self.gamma1(rho, self.T_of_rho_p(rho, p)) / rho
 
     def T_of_rho_p(self, rho, p):
         t1 = p / rho* (1. + sys.float_info.epsilon)
@@ -68,7 +76,7 @@ class SimpleHydrogen(EOS):
         def f(y):
             return self.p_of_rho_T(rho, y) / p - 1.
 
-        T, r = brentq(f, .1 * t1, t1, full_output=True)
+        T, r = brentq(f, .1 * t1, t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
         return T
@@ -79,7 +87,7 @@ class SimpleHydrogen(EOS):
         def f(y):
             return self.ei_of_rho_T(rho, y) / ei - 1.
 
-        T, r = brentq(f, .1 * t1, 10 * t1, full_output=True)
+        T, r = brentq(f, .1 * t1, 10 * t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
         return T

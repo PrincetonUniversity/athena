@@ -3,6 +3,7 @@ from scipy.optimize import brentq, bisect
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
 from .eos import parse_eos
+from . import brent_opt, ode_opt
 
 class StateVector(object):
     """Fluid state vector."""
@@ -70,7 +71,7 @@ class StateVector(object):
                     eos_f(self.rho, np.exp(y)) / val - 1.
 
                 # do the root finding
-                sol, r = brentq(f, -100, 100, full_output=True)
+                sol, r = brentq(f, -100, 100, **brent_opt)
                 if not r.converged:
                     raise RuntimeError('Unable to converge on ' + indep + '.')
                 sol = np.exp(sol)
@@ -174,7 +175,7 @@ class RiemannSol(object):
                 fa = 1e-99
             fb = 10. * np.sqrt(.5 * dp * (2. * eu + psum) * edge.rho / edge.ei)
             # find root
-            fout, r = brentq(f, fa, fb, full_output=True)
+            fout, r = brentq(f, fa, fb, **brent_opt)
             if not r.converged:
                 raise RuntimeError('Internal energy density not converged.')
 
@@ -220,7 +221,7 @@ class RiemannSol(object):
         self._rare_int_left.init_data(self._pl, self._pu)
         self._rare_int_right.init_data(self._pl, self._pu)
         # find the pressure that give du=0
-        p0, r = brentq(self._du, self._pl / pnorm, self._pu / pnorm, full_output=True)
+        p0, r = brentq(self._du, self._pl / pnorm, self._pu / pnorm, **brent_opt)
         if not r.converged:
             raise RuntimeError('Middle pressure not converged.')
 
@@ -489,7 +490,7 @@ class RiemannSol(object):
 
 class RareInt(object):
     """Rarefaction ODE integrator."""
-    def __init__(self, owner, edge, sign=None):
+    def __init__(self, owner, edge, sign=None, slow=False):
         self.owner = owner # RiemannSol
         self.edge = edge
         self.eos = owner.eos
@@ -504,6 +505,7 @@ class RareInt(object):
         self._pmin = None
         self._pmax = None
         self._pa = None
+        self.slow = slow
         if sign is None:
             if self.edge == self.owner.left:
                 sign = -1
@@ -546,7 +548,7 @@ class RareInt(object):
             u = self.sign * self._u(p)
             return (self.edge.u + u + self.sign * np.sqrt(self.eos.asq_of_rho_p(rho, p))) / xi - 1.
 
-        p, r = brentq(f, self._pmin, self._pmax, full_output=True)  # root find
+        p, r = brentq(f, self._pmin, self._pmax, **brent_opt)  # root find
         if not r.converged:
             raise RuntimeError('Pressure within rarefaction wave not converged.')
 
@@ -574,18 +576,18 @@ class RareInt(object):
         loc = np.where(pa > p0)
         if loc[0].size > 0:
             tmp = np.concatenate(([p0], pa[loc]))
-            tmp = odeint(self._rare_ode, y0, tmp, mxstep=5000000)
+            tmp = odeint(self._rare_ode, y0, tmp, **ode_opt)
             data[loc] = tmp[1:]
         loc = np.where(pa < p0)
         if loc[0].size > 0:
             tmp = np.concatenate(([p0], pa[loc][::-1]))
-            tmp = odeint(self._rare_ode, y0, tmp, mxstep=5000000)
+            tmp = odeint(self._rare_ode, y0, tmp, **ode_opt)
             data[loc] = tmp[1:][::-1]
         self._data = data
-        if 0:
+        if self.slow:
             def f(p):
                 idx = (np.abs(self._pa - p)).argmin()
-                out = odeint(self._rare_ode, self._data[idx], np.array([self._pa[idx], p]), mxstep=5000000)[-1]
+                out = odeint(self._rare_ode, self._data[idx], np.array([self._pa[idx], p]), **ode_opt)[-1]
                 #print(out.shape, out)
                 return out
             self._call = f
