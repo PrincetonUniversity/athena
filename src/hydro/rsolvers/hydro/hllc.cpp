@@ -1,3 +1,4 @@
+#define SPEED_TYPE 0
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -93,8 +94,34 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
 #if GENERAL_EOS
+#if SPEED_TYPE==0
+    // a from q
     Real a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
-#else
+#endif
+#if SPEED_TYPE==1
+    // a from p_roe
+    wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
+    Real a = pmy_block->peos->SoundSpeed(wroe);
+    //a = (a < 0.0) ? 0.0 : a;
+#endif
+#if SPEED_TYPE==2
+    // a from gq_roe
+    Real ql = (el + wli[IPR]) / wli[IDN] - 0.5*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+    Real qr = (er + wri[IPR]) / wri[IDN] - 0.5*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    Real gl = SQR(cl) / ql + 1.;
+    Real gr = SQR(cr) / qr + 1.;
+    Real a = ((sqrtdl*gl + sqrtdr*gr)*isdlpdr - 1.) * q;
+    a = (a < 0.0) ? 0.0 : std::sqrt(a);
+#endif
+#if SPEED_TYPE==3
+    // a from gp_roe;
+    wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
+    Real gl = SQR(cl) * wli[IPR] / wli[IDN];
+    Real gr = SQR(cr) * wri[IPR] / wri[IDN];
+    Real a = (sqrtdl*gl + sqrtdr*gr)*isdlpdr * wroe[IPR] / wroe[IDN];
+    a = (a < 0.0) ? 0.0 : std::sqrt(a);
+#endif
+#else //not general EOS
     Real a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
 #endif
 
