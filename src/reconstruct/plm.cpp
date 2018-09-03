@@ -107,6 +107,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       }
     }
     if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         // Reapply EOS floors to both L/R reconstructed primitive states
         pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
@@ -209,6 +210,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       }
     }
     if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Reapply EOS floors to both L/R reconstructed primitive states
         pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
@@ -311,6 +313,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       }
     }
     if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Reapply EOS floors to both L/R reconstructed primitive states
         pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
