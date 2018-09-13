@@ -1,0 +1,29 @@
+# This is a JSON config file for Athena++ use of
+# https://github.com/github-changelog-generator/github-changelog-generator
+
+header=# Changelog
+user=PrincetonUniversity
+project=athena
+unreleased=true
+# Replaces "Unreleased" section label with the upcoming/nonexistent tag:
+unreleased_label=Unreleased
+# ISO 8601 compliant date format:
+date-format=%Y-%m-%d
+# Add author of pull request at the end of "Merged pull requests:" list item:
+author=true
+filter-by-milestone=true
+
+# future-release=v1.3.0
+# since-tag=v1.1.1
+
+# Modify section labels from defaults:
+# **Merged pull requests:**
+merge_prefix=#### Merged pull requests:
+# **Closed issues:**
+issue_prefix=#### Closed issues:
+# **Fixed bugs:**
+bug_prefix=#### Fixed bugs:
+# **Implemented enhancements:**
+enhancement_prefix=#### Implemented enhancements:
+# **Breaking changes:** (["backwards-incompatible", "breaking"])
+breaking_prefix=#### Breaking changes:

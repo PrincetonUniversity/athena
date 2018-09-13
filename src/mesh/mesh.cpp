@@ -1201,7 +1201,6 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
   return;
 }
 
-
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
 //                                              MGBoundaryFunc_t my_bc)
@@ -1218,28 +1217,10 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-//                                                   GravityBoundaryFunc_t my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                             GravityBoundaryFunc_t my_bc) {
-  std::stringstream msg;
-  if (dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  GravityBoundaryFunction_[dir]=my_bc;
-  return;
-}
-
-
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 // \brief Apply MeshBlock::UserWorkBeforeOutput
+
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
   while (pmb != NULL)  {
@@ -1863,8 +1844,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   // share the cost list
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_REAL,
-                 costlist, nblist, nslist, MPI_REAL, MPI_COMM_WORLD);
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
+                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
 #endif
 
   current_level=0;
@@ -2078,6 +2059,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // move the data within the node
   MeshBlock *newlist=NULL;
 
+  RegionSize block_size=pblock->block_size;
+
   for (int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
@@ -2098,7 +2081,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       }
       pmb->gid=n; pmb->lid=n-nbs;
     } else {
-      RegionSize block_size=pblock->block_size;
       enum BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       // on a different level or node - create a new block

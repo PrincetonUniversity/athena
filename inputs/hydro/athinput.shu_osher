@@ -1,7 +1,7 @@
 <comment>
 problem   = Mach 3 shock interacting with a sine wave in the density (Example 6)
 reference = Shu, C.-W., & Osher, S., JCP 83, pp. 32-78 (1989)
-configure = --with-gas=hydro --with-problem=shu-osher
+configure = --prob=shu_osher
 
 <job>
 problem_id  = ShuOsher  # problem ID: basename of output filenames
