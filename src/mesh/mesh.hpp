@@ -78,9 +78,9 @@ public:
   int gflag;
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
-  // (u,b), (u1,b1), (u2, b2), ..., (umn, bm) through the dt interval.
-  // Track their time abscissae at the end of each stage (l) as (dt_m^l) relative to t^n
-  Real stage_abscissae[MAX_NSTAGE][MAX_NREGISTER];
+  // (u,b), (u1,b1), (u2, b2), ..., (um, bm) through the dt interval. Track their time
+  // abscissae at the end of each stage (1<=l<=nstage) as (dt_m^l) relative to t^n
+  Real stage_abscissae[MAX_NSTAGE+1][MAX_NREGISTER];
 
   // user output variables for analysis
   int nuser_out_var;

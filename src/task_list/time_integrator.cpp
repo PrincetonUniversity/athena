@@ -34,24 +34,30 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm) {
   // First, define each time-integrator by setting weights for each step of the algorithm
   // and the CFL number stability limit when coupled to the single-stage spatial operator.
-  // Currently, the time-integrators must be expressed as 2S-type algorithms as in
-  // Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
-  // popular 2-register low-storage RK methods. The 2S-type integrators depend on a
-  // bidiagonally sparse Shu-Osher representation; at each stage l:
+  // Currently, the explicit, multistage time-integrators must be expressed as 2S-type
+  // algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
+  // (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
+  // depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
   //
   //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
   //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
   //
   // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
-  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator
+  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and
+  // integrator. Previous timestep U^{0} = U^n is given, and the integrator solves
+  // for U^{l} for 1 <= l <= nstages.
   //
   // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
   // another weighted average / caching of these terms each stage. The API and framework
-  // is extensible to three register 3S* methods.
+  // is extensible to three register 3S* methods, although none are currently implemented.
 
   // Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
-  // (sometimes "step"), to refer to intermediate values between "timesteps" = "cycles"
-  // "Step" is often used for generic sequences in code, e.g. main.cpp: "Step 1: MPI"
+  // (infrequently "step"), to refer to the intermediate values of U^{l} between each
+  // "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
+  // temporal integration from other iterative sequences; "Step" is often used for generic
+  // sequences in code, e.g. main.cpp: "Step 1: MPI"
+  //
+  // main.cpp invokes the tasklist in a for() loop from stage=1 to stage=ptlist->nstages
 
   integrator = pin->GetOrAddString("time","integrator","vl2");
   int dim = 1;
