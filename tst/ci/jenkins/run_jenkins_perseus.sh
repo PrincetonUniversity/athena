@@ -36,6 +36,7 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
+# --silent option refers only to stdout of Makefile calls for condensed build logs
 time python ./run_tests.py pgen --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 time python ./run_tests.py grav --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --silent
@@ -49,6 +50,7 @@ time python ./run_tests.py gr --silent
 time python ./run_tests.py curvilinear --silent
 time python ./run_tests.py shearingbox --silent
 time python ./run_tests.py diffusion --silent
+time python ./run_tests.py symmetry --silent
 
 # High-order regression tests w/ GCC
 time python ./run_tests.py hydro4 --silent
@@ -74,6 +76,10 @@ time python ./run_tests.py gr --config=--cxx=icc --silent
 time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
+time python ./run_tests.py symmetry --config=--cxx=icc --silent
+
+# High-order regression tests w/ Intel compiler
+time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining
 # Check subset of regression test sets to try most EOS functions called in rsolvers
@@ -82,9 +88,6 @@ time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
 time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
 time python ./run_tests.py sr --config=--cxx=icc-debug --silent
 time python ./run_tests.py gr --config=--cxx=icc-debug --silent
-
-# High-order regression tests w/ Intel compiler
-time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 
 set +e
 # end regression tests

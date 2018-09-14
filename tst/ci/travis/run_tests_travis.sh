@@ -17,6 +17,7 @@ else
     PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
 fi
 
+# --silent option refers only to stdout of Makefile calls for condensed build logs
 python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(./ci/set_warning_cflag.sh $TEMP_CXX)"
 python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
 python3 run_tests.py grav --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
