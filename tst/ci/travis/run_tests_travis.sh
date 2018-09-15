@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Fail at first error & echo commands before executing
-set -ev
+# Terminate script at first cmd w/ non-zero exit status & echo commands before executing (-v) as lines are read
+set -ev # -x # for tracing/debugging commands after variable expansion
 # Do not use "python run_tests.py" to run all tests, so that:
 # - Each set/directory of tests are timed separately
 # - Script fails after first broken set of tests
@@ -17,8 +17,8 @@ else
     PATH=$TRAVIS_BUILD_DIR/mpich/bin/:$PATH
 fi
 
-# --silent option refers only to stdout of Makefile calls for condensed build logs
-python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(./ci/set_warning_cflag.sh $TEMP_CXX)"
+# --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
+python3 run_tests.py pgen --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
 python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
 python3 run_tests.py grav --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
 python3 run_tests.py amr --config=--cxx=$TEMP_CXX --silent
