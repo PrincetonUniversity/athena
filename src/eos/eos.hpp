@@ -34,6 +34,14 @@ public:
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,
        int il, int iu, int jl, int ju, int kl, int ku);
+  void ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
+        const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+        AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
+        int kl, int ku);
+  // void PrimitiveToConservedCellAverage(const AthenaArray<Real> &prim,
+  //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
+  //   int iu, int jl, int ju, int kl, int ku);
+
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
@@ -42,16 +50,10 @@ public:
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
     Real SoundSpeed(const Real prim[(NHYDRO)]);
 
-    // Define fourth-order EOS functions as no-op for SR, GR regimes
-    void ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-        const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-        AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
-        int kl, int ku);
+    // Define flooring function for fourth-order EOS as no-op for SR, GR regimes
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,cons,bcc,k,j) linear(i)
     void ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
         AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i);
-    // void PrimitiveToConservedCellAverage(const AthenaArray<Real> &prim,
-    //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-    //   int iu, int jl, int ju, int kl, int ku);
 
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
@@ -114,9 +116,6 @@ public:
           Real g00, Real g01, Real g11,
           Real *plambda_plus, Real *plambda_minus);
     #endif  // !MAGNETIC_FIELDS_ENABLED
-      void ConservedToPrimitiveCellAverage(AthenaArray<Real> &,
-          const AthenaArray<Real> &, const FaceField &, AthenaArray<Real> &,
-          AthenaArray<Real> &, Coordinates *, int, int, int, int, int, int) {return;}
       void ApplyPrimitiveConservedFloors(AthenaArray<Real> &,
           AthenaArray<Real> &, AthenaArray<Real> &, int, int, int) {return;}
 
