@@ -41,8 +41,8 @@ EquationOfState::~EquationOfState() {
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+    AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
   Real gm1 = GetGamma() - 1.0;
 
   for (int k=kl; k<=ku; ++k) {
@@ -90,8 +90,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int il, int iu, int jl, int ju, int kl, int ku) {
+    const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
   // Force outer-loop vectorization
@@ -131,7 +131,7 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(gamma_*prim[IPR]/prim[IDN]);
 }
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
@@ -139,10 +139,38 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
 
-  // apply density floor
+  // apply (prim) density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
   // apply pressure floor
   w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
+  Real gm1 = GetGamma() - 1.0;
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+
+  Real& u_d  = cons(IDN,k,j,i);
+  Real& u_e  = cons(IEN,k,j,i);
+  // apply (prim) density floor, without changing momentum or energy
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // ensure cons density matches
+  u_d = w_d;
+
+  Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
+                      + SQR(prim(IVZ,k,j,i)));
+  // apply pressure floor, correct total energy
+  u_e = (w_p > pressure_floor_) ?
+      u_e : ((pressure_floor_/gm1) + e_k);
+  w_p = (w_p > pressure_floor_) ?
+      w_p : pressure_floor_;
 
   return;
 }
@@ -156,10 +184,9 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 // at fourth order accuracy. Wrapper function for specific pointwise conversion routine
 
 void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
-  int kl, int ku) {
-  Real gm1 = GetGamma() - 1.0;
+    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+    AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
+    int kl, int ku) {
 
   MeshBlock *pmb = pmy_block_;
   Hydro *ph = pmb->phydro;
@@ -216,22 +243,12 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
   }
 
   // Reapply primitive variable floors
+  // Cannot fuse w/ above loop since floors are applied to all NHYDRO variables at once
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        // apply density floor, without changing momentum or energy
-        prim(IDN,k,j,i) = (prim(IDN,k,j,i) > density_floor_) ?
-            prim(IDN,k,j,i) : density_floor_;
-        cons(IDN,k,j,i) = prim(IDN,k,j,i);
-
-        Real e_k = 0.5*prim(IDN,k,j,i)*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
-                                        + SQR(prim(IVZ,k,j,i)));
-        // apply pressure floor, correct total energy
-        cons(IEN,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
-            cons(IEN,k,j,i) : ((pressure_floor_/gm1) + e_k);
-        prim(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
-            prim(IPR,k,j,i) : pressure_floor_;
+        ApplyPrimitiveConservedFloors(prim, cons, bcc, k, j, i);
       }
     }
   }
