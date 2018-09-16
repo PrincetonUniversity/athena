@@ -171,3 +171,36 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 
   return;
 }
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
+  Real gm1 = GetGamma() - 1.0;
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+
+  Real& u_d  = cons(IDN,k,j,i);
+  Real& u_e  = cons(IEN,k,j,i);
+  const Real& bcc1 = bcc(IB1,k,j,i);
+  const Real& bcc2 = bcc(IB2,k,j,i);
+  const Real& bcc3 = bcc(IB3,k,j,i);
+
+  // apply (prim) density floor, without changing momentum or energy
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // ensure cons density matches
+  u_d = w_d;
+
+  Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+  Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
+                      + SQR(prim(IVZ,k,j,i)));
+  // apply pressure floor, correct total energy
+  u_e = (w_p > pressure_floor_) ?
+      u_e : ((pressure_floor_/gm1) + pb + e_k);
+  w_p = (w_p > pressure_floor_) ?
+      w_p : pressure_floor_;
+
+  return;
+}
