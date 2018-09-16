@@ -80,11 +80,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       const Real& bcc3 = bcc(IB3,k,j,i);
 
       Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
-      Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
-      w_p = gm1*(u_e - ke - pb);
+      Real e_k = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+      w_p = gm1*(u_e - e_k - pb);
 
       // apply pressure floor, correct total energy
-      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke + pb);
+      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + e_k + pb);
       w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
     }
   }}
