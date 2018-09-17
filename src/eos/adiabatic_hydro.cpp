@@ -42,7 +42,8 @@ EquationOfState::~EquationOfState() {
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bcc, Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+    AthenaArray<Real> &bcc, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   Real gm1 = GetGamma() - 1.0;
 
   for (int k=kl; k<=ku; ++k) {
