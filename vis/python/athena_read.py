@@ -711,34 +711,34 @@ class athdf(dict):
             # Prolongate coarse data and copy same-level data
             if block_level <= self.level:
 
-              # Calculate scale (number of copies per dimension)
-              s = 2 ** (self.level - block_level)
+                # Calculate scale (number of copies per dimension)
+                s = 2 ** (self.level - block_level)
 
-              # Calculate destination indices, without selection
-              il_d = block_location[0] * self.block_size[0] * s if self.nx1 > 1 else 0
-              jl_d = block_location[1] * self.block_size[1] * s if self.nx2 > 1 else 0
-              kl_d = block_location[2] * self.block_size[2] * s if self.nx3 > 1 else 0
-              iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
-              ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
-              ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
+                # Calculate destination indices, without selection
+                il_d = block_location[0] * self.block_size[0] * s if self.nx1 > 1 else 0
+                jl_d = block_location[1] * self.block_size[1] * s if self.nx2 > 1 else 0
+                kl_d = block_location[2] * self.block_size[2] * s if self.nx3 > 1 else 0
+                iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
+                ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
+                ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
 
-              # Calculate (prolongated) source indices, with selection
-              il_s = max(il_d, self.i_min) - il_d
-              jl_s = max(jl_d, self.j_min) - jl_d
-              kl_s = max(kl_d, self.k_min) - kl_d
-              iu_s = min(iu_d, self.i_max) - il_d
-              ju_s = min(ju_d, self.j_max) - jl_d
-              ku_s = min(ku_d, self.k_max) - kl_d
-              if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
-                continue
+                # Calculate (prolongated) source indices, with selection
+                il_s = max(il_d, self.i_min) - il_d
+                jl_s = max(jl_d, self.j_min) - jl_d
+                kl_s = max(kl_d, self.k_min) - kl_d
+                iu_s = min(iu_d, self.i_max) - il_d
+                ju_s = min(ju_d, self.j_max) - jl_d
+                ku_s = min(ku_d, self.k_max) - kl_d
+                if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+                    continue
 
-              # Account for selection in destination indices
-              il_d = max(il_d, self.i_min) - self.i_min
-              jl_d = max(jl_d, self.j_min) - self.j_min
-              kl_d = max(kl_d, self.k_min) - self.k_min
-              iu_d = min(iu_d, self.i_max) - self.i_min
-              ju_d = min(ju_d, self.j_max) - self.j_min
-              ku_d = min(ku_d, self.k_max) - self.k_min
+                # Account for selection in destination indices
+                il_d = max(il_d, self.i_min) - self.i_min
+                jl_d = max(jl_d, self.j_min) - self.j_min
+                kl_d = max(kl_d, self.k_min) - self.k_min
+                iu_d = min(iu_d, self.i_max) - self.i_min
+                ju_d = min(ju_d, self.j_max) - self.j_min
+                ku_d = min(ku_d, self.k_max) - self.k_min
 
             # Restrict fine data
             else:
