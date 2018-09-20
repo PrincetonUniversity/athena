@@ -699,11 +699,91 @@ class athdf(dict):
                 if i not in self:
                     self[i] = None
 
+        if self.return_levels:
+            self._get_levels()
+
+    def _get_levels(self):
+        self['Levels'] = np.ones((self._shape()), dtype=np.int32) * -1
+        for block_num in range(self.num_blocks):
+            block_level = self.levels[block_num]
+            block_location = self.logical_locations[block_num, :]
+
+            # Prolongate coarse data and copy same-level data
+            if block_level <= self.level:
+
+                # Calculate scale (number of copies per dimension)
+                s = 2 ** (self.level - block_level)
+
+                # Calculate destination indices, without selection
+                il_d = block_location[0] * self.block_size[0] * s if self.nx1 > 1 else 0
+                jl_d = block_location[1] * self.block_size[1] * s if self.nx2 > 1 else 0
+                kl_d = block_location[2] * self.block_size[2] * s if self.nx3 > 1 else 0
+                iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
+                ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
+                ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
+
+                # Calculate (prolongated) source indices, with selection
+                il_s = max(il_d, self.i_min) - il_d
+                jl_s = max(jl_d, self.j_min) - jl_d
+                kl_s = max(kl_d, self.k_min) - kl_d
+                iu_s = min(iu_d, self.i_max) - il_d
+                ju_s = min(ju_d, self.j_max) - jl_d
+                ku_s = min(ku_d, self.k_max) - kl_d
+                if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+                    continue
+
+                # Account for selection in destination indices
+                il_d = max(il_d, self.i_min) - self.i_min
+                jl_d = max(jl_d, self.j_min) - self.j_min
+                kl_d = max(kl_d, self.k_min) - self.k_min
+                iu_d = min(iu_d, self.i_max) - self.i_min
+                ju_d = min(ju_d, self.j_max) - self.j_min
+                ku_d = min(ku_d, self.k_max) - self.k_min
+
+            # Restrict fine data
+            else:
+                # Calculate scale
+                s = 2 ** (block_level - self.level)
+
+                # Calculate destination indices, without selection
+                il_d = block_location[0] * self.block_size[0] / s if self.nx1 > 1 else 0
+                jl_d = block_location[1] * self.block_size[1] / s if self.nx2 > 1 else 0
+                kl_d = block_location[2] * self.block_size[2] / s if self.nx3 > 1 else 0
+                iu_d = il_d + self.block_size[0] / s if self.nx1 > 1 else 1
+                ju_d = jl_d + self.block_size[1] / s if self.nx2 > 1 else 1
+                ku_d = kl_d + self.block_size[2] / s if self.nx3 > 1 else 1
+
+                # Calculate (restricted) source indices, with selection
+                il_s = max(il_d, self.i_min) - il_d
+                jl_s = max(jl_d, self.j_min) - jl_d
+                kl_s = max(kl_d, self.k_min) - kl_d
+                iu_s = min(iu_d, self.i_max) - il_d
+                ju_s = min(ju_d, self.j_max) - jl_d
+                ku_s = min(ku_d, self.k_max) - kl_d
+                if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+                    continue
+
+                # Account for selection in destination indices
+                il_d = max(il_d, self.i_min) - self.i_min
+                jl_d = max(jl_d, self.j_min) - self.j_min
+                kl_d = max(kl_d, self.k_min) - self.k_min
+                iu_d = min(iu_d, self.i_max) - self.i_min
+                ju_d = min(ju_d, self.j_max) - self.j_min
+                ku_d = min(ku_d, self.k_max) - self.k_min
+
+            # Set level information for cells in this block
+            self['Levels'][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_level
+
     # Function for contingently accessing data
     def __getitem__(self, item):
         if self._need_to_read(item):
             self._grab_quantities([item])
-        return super(athdf, self).__getitem__(item)
+        try:
+            return super(athdf, self).__getitem__(item)
+        except KeyError:
+            if item == 'Levels':
+                self._get_levels()
+                return super(athdf, self).__getitem__(item)
 
     # Function for contingently setting data
     def __setitem__(self, key, value):
@@ -744,8 +824,6 @@ class athdf(dict):
             if self.new_data:
                 for q in quantities:
                     self[q] = np.zeros((self._shape()), dtype=self.dtype)
-                if self.return_levels:
-                    self['Levels'] = np.empty((self._shape()), dtype=np.int32)
             else:
                 for q in quantities:
                     self[q].fill(0.0)
@@ -941,10 +1019,6 @@ class athdf(dict):
                         loc2 = (self.nx2 > 1) * block_location[1] / s
                         loc3 = (self.nx3 > 1) * block_location[2] / s
                         restricted_data[loc3, loc2, loc1] = True
-
-                # Set level information for cells in this block
-                if self.return_levels:
-                    self['Levels'][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_level
 
         # Remove volume factors from restricted data
         if self.level < self.max_level and not self.subsample and not self.fast_restrict:
