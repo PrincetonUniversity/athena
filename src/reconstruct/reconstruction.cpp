@@ -53,9 +53,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     xorder = 4;
     if (input_recon == "4c")
       characteristic_reconstruction = true;
-    // perform checks of solver configuration restrictions, NGHOST, etc:
-    // TODO(kfelker): add NGHOST and uniform Cartesian mesh checks
-
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -76,6 +73,54 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
+  }
+
+  // Perform checks of fourth-order solver configuration restrictions:
+  if (xorder == 4) {
+    // Uniform, Cartesian mesh with square cells (dx1f=dx2f=dx3f)
+    if (COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->block_size.x1rat != 1.0 || pmb->block_size.x2rat != 1.0 ||
+          pmb->block_size.x3rat != 1.0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " require a uniform (x1rat=x2rat=x3rat=1.0), " << std::endl
+            << "Carteisan mesh with square cells. Rerun with uniform cell spacing "
+            << std::endl
+            << "Current values are:" << std::endl
+            << "x1rat= " << pmb->block_size.x1rat << std::endl
+            << "x2rat= " << pmb->block_size.x2rat << std::endl
+            << "x3rat= " << pmb->block_size.x3rat << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
+      Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
+      Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
+      // note, may want to make the following condition less strict (small differences,
+      // ignore dx3f for 2D domains, etc.)
+      if ((dx_i != dx_j) || (dx_j != dx_k)) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " require a uniform, Carteisan mesh with" << std::endl
+            << "square cells (dx1f=dx2f=dx3f). "
+            << "Change mesh limits and/or number of cells for equal spacings" << std::endl
+            << "Current values are:" << std::endl
+            << "dx1f=" << dx_i << std::endl
+            << "dx2f=" << dx_j << std::endl
+            << "dx3f=" << dx_k << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM
+          << " is incompatible with selected time/xorder=" << input_recon << std::endl
+          << "Reconfigure with Cartesian coordinates " << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
