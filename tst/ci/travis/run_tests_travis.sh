@@ -29,8 +29,10 @@ time python3 run_tests.py gr --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py sr --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX --silent
-time python3 run_tests.py hydro4 --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py symmetry --config=--cxx=$TEMP_CXX --silent
 
 # mhd/ currently contains the longest set of tests. The following command often times-out after 10 m on Travis CI
 # time python3 run_tests.py mhd --config=--cxx=$TEMP_CXX --silent
+
+# hydro4/ fourth-order tests currently take >30 min on Travis CI
+# time python3 run_tests.py hydro4 --config=--cxx=$TEMP_CXX --silent
