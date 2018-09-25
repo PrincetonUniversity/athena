@@ -121,6 +121,20 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       throw std::runtime_error(msg.str().c_str());
     }
     // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
+    int req_nghost = 4;
+    // until new algorithm for face-averaged Field->bf to cell-averaged Hydro->bcc
+    // conversion is added, NGHOST>=6
+    if (MAGNETIC_FIELDS_ENABLED)
+      req_nghost += 2;
+    if (NGHOST < req_nghost) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "time/xorder=" << input_recon
+          << " reconstruction selected, but nghost=" << NGHOST << std::endl
+          << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
