@@ -96,9 +96,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
       Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
-      // note, may want to make the following condition less strict (small differences,
-      // ignore dx3f for 2D domains, etc.)
-      if ((dx_i != dx_j) || (dx_j != dx_k)) {
+      // note, may want to make the following condition less strict (small differences)
+      if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
+            (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
         std::stringstream msg;
         msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
