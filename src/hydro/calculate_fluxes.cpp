@@ -118,7 +118,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int n=0; n<NWAVE; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
-          pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
+          //pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
           for (int i=is; i<=ie+1; ++i) {
             wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
             wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
@@ -145,7 +145,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         for (int j=jl; j<=ju; ++j) {
           // Use 1-cell width ghost buffer to correct fluxes
           if (k>=ks && k<=ke && j>=js && j<=je) {
-            pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
+            //pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw);
             for(int i=is; i<=ie+1; i++) {
               x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
             }
@@ -217,7 +217,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int n=0; n<NWAVE; ++n) {
         for (int k=kl; k<=ku; ++k) {
           for (int j=js; j<=je+1; ++j) {
-            pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
+            //pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
             for (int i=il; i<=iu; ++i) {
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
@@ -243,7 +243,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for(int n=0; n<NWAVE; n++) {
         for (int k=kl; k<=ku; ++k) {
           for (int j=js; j<=je+1; ++j) {
-            pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
+            //pmb->pcoord->CenterWidth2(k, j, il, iu, dxw);
             for(int i=il; i<=iu; i++) {
               // Use 1-cell width ghost buffer to correct fluxes
               if (k>=ks && k<=ke && i>=is && i<=ie) {
@@ -314,7 +314,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int n=0; n<NWAVE; ++n) {
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl; j<=ju; ++j) {
-            pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
+            //pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
             for (int i=il; i<=iu; ++i) {
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
@@ -340,7 +340,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for(int n=0; n<NWAVE; n++) {
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl; j<=ju; ++j) {
-            pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
+            //pmb->pcoord->CenterWidth3(k, j, il, iu, dxw);
             for(int i=il; i<=iu; i++) {
               // Use 1-cell width ghost buffer to correct fluxes
               if (i>=is && i<=ie && j>=js && j<=je) {
