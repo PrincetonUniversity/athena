@@ -111,7 +111,13 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "dx3f=" << dx_k << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
-
+      if (pmb->pmy_mesh->multilevel==true) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " currently does not support SMR/AMR " << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
