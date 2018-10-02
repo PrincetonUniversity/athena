@@ -75,7 +75,7 @@ public:
 
   // data
   int ntasks;     // number of tasks in this list
-  int nstages;    // number of times task list should be repeated per full time step
+  int nstages;    // number of times the tasklist is repeated per each full timestep
 
   // functions
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);

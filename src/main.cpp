@@ -27,6 +27,7 @@
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
 #include <iostream>   // cout, endl
+#include <limits>     // max_digits10
 #include <new>        // bad_alloc
 #include <string>     // string
 
@@ -376,7 +377,8 @@ int main(int argc, char *argv[]) {
     if (Globals::my_rank==0) {
       if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
-          std::cout << "cycle=" << pmesh->ncycle<< std::scientific <<std::setprecision(14)
+          std::cout << "cycle=" << pmesh->ncycle<< std::scientific
+                    << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
                     << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
         }
       }

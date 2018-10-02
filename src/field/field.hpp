@@ -23,7 +23,7 @@ class FieldDiffusion;
 //  \brief electric and magnetic field data and functions
 
 class Field {
-friend class Hydro;
+  friend class Hydro;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
