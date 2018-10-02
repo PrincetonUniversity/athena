@@ -7,6 +7,8 @@
 //  \brief
 
 // C/C++ headers
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -88,6 +90,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "Carteisan mesh with square cells. Rerun with uniform cell spacing "
             << std::endl
             << "Current values are:" << std::endl
+            << std::scientific
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
             << "x1rat= " << pmb->block_size.x1rat << std::endl
             << "x2rat= " << pmb->block_size.x2rat << std::endl
             << "x3rat= " << pmb->block_size.x3rat << std::endl;
@@ -96,20 +100,33 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
       Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
-      // note, may want to make the following condition less strict (small differences)
+      // Note, probably want to make the following condition less strict (signal warning
+      // for small differences due to floating-point issues) but upgrade to error for
+      // large deviations from a square mesh. Currently signals a warning for each
+      // MeshBlock with non-square cells.
       if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
             (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+        // It is possible for small floating-point differences to arise despite equal
+        // analytic values for grid spacings in the coordinates.cpp calculation of:
+        // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
+        // due to the 3x rounding operations in numerator, e.g.
+        // float(float(x1max) - float((x1min))
+        // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
+        // decomposition is used
+
+        // std::stringstream msg;
+        std::cout << "### Warning in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
             << " require a uniform, Carteisan mesh with" << std::endl
             << "square cells (dx1f=dx2f=dx3f). "
             << "Change mesh limits and/or number of cells for equal spacings" << std::endl
             << "Current values are:" << std::endl
+            << std::scientific
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
             << "dx1f=" << dx_i << std::endl
             << "dx2f=" << dx_j << std::endl
             << "dx3f=" << dx_k << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        // throw std::runtime_error(msg.str().c_str());
       }
       if (pmb->pmy_mesh->multilevel==true) {
         std::stringstream msg;
