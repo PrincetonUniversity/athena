@@ -14,7 +14,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -241,7 +241,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       phiamp = 1.0*four_pi_G/phiamp;
 
       if (Globals::my_rank == 0) {
-        std::cout << std::setprecision(15) << std::scientific;
+      std::cout << std::scientific
+                << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);
         std::cout << "=====================================================" << std::endl;
         std::cout << "L1 : " << err1 <<" MaxPhi: " << maxphi
                   << " Amp: " << phiamp << std::endl;
