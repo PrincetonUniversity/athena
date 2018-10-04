@@ -29,7 +29,7 @@ enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 //  \brief weights used in time integrator tasks
 
 struct IntegratorWeight {
-  // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+  // 2S or 3S* low-storage RK coefficients, Ketcheson (2010)
   Real delta; // low-storage coefficients to avoid double F() evaluation per substage
   Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
   Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
