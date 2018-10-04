@@ -522,7 +522,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stag
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
 
-  if (stage <= nsub_stages) {
+  if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
       // TODO(kfelker): check safety of passing unallocated b_fc, bcc_center when
       // no fourth-order MHD is enabled
@@ -539,7 +539,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stag
 }
 
 enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
-  if (stage <= nsub_stages) {
+  if (stage <= nstages) {
     if (pmb->precon->xorder == 4)
       pmb->pfield->ComputeCornerE_UCT4(); //pmb->phydro->w,  pmb->pfield->bcc);
     else

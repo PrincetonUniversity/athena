@@ -1826,13 +1826,13 @@ void BoundaryValues::ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst,
   // Apply boundary function on inner-x1
   if (BoundaryFunction_[INNER_X1] != NULL) {
     OutflowInnerX1(pmb, pco, cdst, bfdst, time, dt,
-                   pmb->is, pmb->ie, bjs, bje, bks, bke);
+                   pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
   }
 
   // Apply boundary function on outer-x1
   if (BoundaryFunction_[OUTER_X1] != NULL) {
     OutflowOuterX1(pmb, pco, cdst, bfdst, time, dt,
-                                pmb->is, pmb->ie, bjs, bje, bks, bke);
+                   pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
 	// Do not apply EOS here, since this occurs before all cell EOS4
   }
 
@@ -1840,12 +1840,12 @@ void BoundaryValues::ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst,
     // Apply boundary function on inner-x2
     if (BoundaryFunction_[INNER_X2] != NULL) {
       OutflowInnerX2(pmb, pco, cdst, bfdst, time, dt,
-                     bis, bie, pmb->js, pmb->je, bks, bke);
+                     bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
     }
     // Apply boundary function on outer-x2
     if (BoundaryFunction_[OUTER_X2] != NULL) {
       OutflowOuterX2(pmb, pco, cdst, bfdst, time, dt,
-                     bis, bie, pmb->js, pmb->je, bks, bke);
+                     bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
     }
   }
 
