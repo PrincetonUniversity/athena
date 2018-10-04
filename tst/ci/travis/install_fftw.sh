@@ -8,9 +8,9 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     if [ -f "bin/fft-wisdom" ]; then
 	echo "Using cached FFTW"
     else
-        echo "Installing FFTW with homebrew"
+        echo "Installing FFTW with Homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/fftw
-	brew update
+	# brew update
         brew install fftw
 	brew unlink fftw
 	# /usr/local/opt symlinks to Cellar are preserved, use these:
@@ -33,9 +33,10 @@ else
 	tar zxf fftw-3.3.7.tar.gz
 	echo "Configuring and building FFTW"
 	cd fftw-3.3.7
-	# --enable-mpi
-	./configure --prefix=$TRAVIS_BUILD_DIR/fftw CC=$C_COMPILER CXX=$CXX_COMPILER &> fftw.configure
-	make -j4 &> fftw.make
+	# --enable-mpi: not needed, since Plimpton's FFT library is used in Athena++ for MPI+FFT grav
+	./configure --prefix=$TRAVIS_BUILD_DIR/fftw &> fftw.configure
+	# make -j4 &> fftw.make
+	make &> fftw.make
 	make install &> fftw.install
 	cd ..
     fi

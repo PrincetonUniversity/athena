@@ -1,7 +1,6 @@
 <comment>
 problem = 2D Circularly Polarized Alfven Wave
-author  = G. Toth
-journal = JCP, vol. 161, pp. 605-662 (2000).
+reference = G. Toth. JCP, vol. 161, pp. 605-662 (2000).
 config  = -b --prob=cpaw
 
 <job>

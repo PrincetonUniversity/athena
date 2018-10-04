@@ -44,6 +44,9 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
                                    MGBoundaryFunc_t *MGBoundary)
   : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs) {
   pmy_mg_=pmg;
+#ifdef MPI_PARALLEL
+  mgcomm_=pmg->pmy_driver_->MPI_COMM_MULTIGRID;
+#endif
   if (pmy_mg_->root_flag_==true) {
     for (int i=0; i<6; i++)
       MGBoundaryFunction_[i]=MGBoundary[i];
@@ -54,8 +57,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
       else
         MGBoundaryFunction_[i]=MGBoundary[i];
     }
-    if (SELF_GRAVITY_ENABLED == 2)
-      InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
+    InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
   }
 }
 
@@ -65,7 +67,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
 //  \brief Destructor of the MGBoundaryValues class
 
 MGBoundaryValues::~MGBoundaryValues() {
-  if (SELF_GRAVITY_ENABLED == 2)
+  if (pmy_mg_->root_flag_ == false)
     DestroyBoundaryData(bd_mggrav_);
 }
 
@@ -75,7 +77,7 @@ MGBoundaryValues::~MGBoundaryValues() {
 //  \brief Initialize MGBoundaryData structure
 
 void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type) {
- int size;
+  int size;
   bd.nbmax=maxneighbor_;
   for (int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
@@ -237,7 +239,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
       size*=nvar;
       tag=CreateBvalsMPITag(pmy_mg_->lid_, phys, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
-                MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
+                mgcomm_, &(pbd->req_recv[nb.bufid]));
     }
 #endif
   }
@@ -343,7 +345,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     } else { // MPI
       tag=CreateBvalsMPITag(nb.lid, phys, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
-                MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
+                mgcomm_, &(pbd->req_send[nb.bufid]));
     }
 #else
     }
@@ -409,7 +411,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
 #ifdef MPI_PARALLEL
       } else { // MPI boundary
         int test;
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,mgcomm_,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test) == false) {
           bflag=false;

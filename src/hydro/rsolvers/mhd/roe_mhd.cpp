@@ -7,7 +7,8 @@
 //  \brief Roe's linearized Riemann solver for MHD.
 //
 // Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
-// negative density or pressure in the intermediate states, LLF fluxes are used instead.
+// negative density in the intermediate states, LLF fluxes are used instead (only density,
+// not pressure, is checked in this version).
 //
 // REFERENCES:
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
@@ -23,33 +24,34 @@
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
 
-// prototype for function to compute eigenvalues and eigenvectors of Roe's matrix A
-inline static void RoeEigensystem(const Real wroe[], const Real b1,
-  const Real x, const Real y, Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
+// prototype for functions to compute inner product with eigenmatrices
+inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
+  const Real du[], const Real wli[], Real flx[], Real eigenvalues[], int &flag);
 
-// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
+// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem fns
 static Real gm1, iso_cs;
 
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn void Hydro::RiemannSolver
+//  \brief The Roe Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
   const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
   AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
+  Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)];
+  Real flxi[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)];
   gm1 = pmy_block->peos->GetGamma() - 1.0;
   iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
-  Real coeff[NWAVE];
-  Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
-  Real du[NWAVE],a[NWAVE],u[NWAVE];
+  Real ev[(NWAVE)],du[(NWAVE)];
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
+#pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
@@ -99,11 +101,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       wroe[IPR] = ((el + wli[IPR] + pbl)/sqrtdl + (er + wri[IPR] + pbr)/sqrtdr)*isdlpdr;
     }
 
-//--- Step 3.  Compute eigenvalues and eigenmatrices using Roe-averaged values
-
-    RoeEigensystem(wroe,bxi,x,y,ev,rem,lem);
-
-//--- Step 4.  Compute L/R fluxes
+//--- Step 3.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -138,7 +136,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     fl[IBZ] = wli[IBZ]*wli[IVX] - bxi*wli[IVZ];
     fr[IBZ] = wri[IBZ]*wri[IVX] - bxi*wri[IVZ];
 
-//--- Step 5.  Compute projection of dU onto L eigenvectors ("vector A")
+//--- Step 4.  Compute Roe fluxes
 
     du[IDN] = wri[IDN]          - wli[IDN];
     du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
@@ -148,244 +146,18 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     du[IBY] = wri[IBY] - wli[IBY];
     du[IBZ] = wri[IBZ] - wli[IBZ];
 
-    a[IDN]  = lem[IDN][IDN]*du[IDN];
-    a[IDN] += lem[IDN][IVX]*du[IVX];
-    a[IDN] += lem[IDN][IVY]*du[IVY];
-    a[IDN] += lem[IDN][IVZ]*du[IVZ];
-    a[IDN] += lem[IDN][IBY]*du[IBY];
-    a[IDN] += lem[IDN][IBZ]*du[IBZ];
-
-    a[IVX]  = lem[IVX][IDN]*du[IDN];
-    a[IVX] += lem[IVX][IVX]*du[IVX];
-    a[IVX] += lem[IVX][IVY]*du[IVY];
-    a[IVX] += lem[IVX][IVZ]*du[IVZ];
-    a[IVX] += lem[IVX][IBY]*du[IBY];
-    a[IVX] += lem[IVX][IBZ]*du[IBZ];
-
-    a[IVY]  = lem[IVY][IDN]*du[IDN];
-    a[IVY] += lem[IVY][IVX]*du[IVX];
-    a[IVY] += lem[IVY][IVY]*du[IVY];
-    a[IVY] += lem[IVY][IVZ]*du[IVZ];
-    a[IVY] += lem[IVY][IBY]*du[IBY];
-    a[IVY] += lem[IVY][IBZ]*du[IBZ];
-
-    a[IVZ]  = lem[IVZ][IDN]*du[IDN];
-    a[IVZ] += lem[IVZ][IVX]*du[IVX];
-    a[IVZ] += lem[IVZ][IVY]*du[IVY];
-    a[IVZ] += lem[IVZ][IVZ]*du[IVZ];
-    a[IVZ] += lem[IVZ][IBY]*du[IBY];
-    a[IVZ] += lem[IVZ][IBZ]*du[IBZ];
-
-    a[IBY]  = lem[IBY][IDN]*du[IDN];
-    a[IBY] += lem[IBY][IVX]*du[IVX];
-    a[IBY] += lem[IBY][IVY]*du[IVY];
-    a[IBY] += lem[IBY][IVZ]*du[IVZ];
-    a[IBY] += lem[IBY][IBY]*du[IBY];
-    a[IBY] += lem[IBY][IBZ]*du[IBZ];
-
-    a[IBZ]  = lem[IBZ][IDN]*du[IDN];
-    a[IBZ] += lem[IBZ][IVX]*du[IVX];
-    a[IBZ] += lem[IBZ][IVY]*du[IVY];
-    a[IBZ] += lem[IBZ][IVZ]*du[IVZ];
-    a[IBZ] += lem[IBZ][IBY]*du[IBY];
-    a[IBZ] += lem[IBZ][IBZ]*du[IBZ];
-
-    if (NON_BAROTROPIC_EOS) {
-      a[IDN] += lem[IDN][IEN]*du[IEN];
-      a[IVX] += lem[IVX][IEN]*du[IEN];
-      a[IVY] += lem[IVY][IEN]*du[IEN];
-      a[IVZ] += lem[IVZ][IEN]*du[IEN];
-      a[IBY] += lem[IBY][IEN]*du[IEN];
-      a[IBZ] += lem[IBZ][IEN]*du[IEN];
-
-      a[IEN]  = lem[IEN][IDN]*du[IDN];
-      a[IEN] += lem[IEN][IVX]*du[IVX];
-      a[IEN] += lem[IEN][IVY]*du[IVY];
-      a[IEN] += lem[IEN][IVZ]*du[IVZ];
-      a[IEN] += lem[IEN][IEN]*du[IEN];
-      a[IEN] += lem[IEN][IBY]*du[IBY];
-      a[IEN] += lem[IEN][IBZ]*du[IBZ];
-    }
-
-//--- Step 6.  Check that the density and pressure in the intermediate states are
-// positive.  If not, set a flag that will be checked below.
+    flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]);
+    flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]);
+    flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]);
+    flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]);
+    if (NON_BAROTROPIC_EOS) flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
+    flxi[IBY] = 0.5*(fl[IBY] + fr[IBY]);
+    flxi[IBZ] = 0.5*(fl[IBZ] + fr[IBZ]);
 
     int llf_flag = 0;
-    u[IDN] = wli[IDN];
-    u[IVX] = wli[IDN]*wli[IVX];
-    u[IVY] = wli[IDN]*wli[IVY];
-    u[IVZ] = wli[IDN]*wli[IVZ];
-    if (NON_BAROTROPIC_EOS) u[IEN] = el;
-    u[IBY] = wli[IBY];
-    u[IBZ] = wli[IBZ];
+    RoeFlux(wroe,bxi,x,y,du,wli,flxi,ev,llf_flag);
 
-    // jump across wave[0]
-    u[IDN] += a[0]*rem[IDN][0];
-    if (u[IDN] < 0.0) llf_flag=1;
-    if (NON_BAROTROPIC_EOS) {
-      u[IVX] += a[0]*rem[IVX][0];
-      u[IVY] += a[0]*rem[IVY][0];
-      u[IVZ] += a[0]*rem[IVZ][0];
-      u[IEN] += a[0]*rem[IEN][0];
-      u[IBY] += a[0]*rem[IBY][0];
-      u[IBZ] += a[0]*rem[IBZ][0];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-    // jump across wave[1]
-    u[IDN] += a[1]*rem[IDN][1];
-    if (u[IDN] < 0.0) llf_flag=1;
-    if (NON_BAROTROPIC_EOS) {
-      u[IVX] += a[1]*rem[IVX][1];
-      u[IVY] += a[1]*rem[IVY][1];
-      u[IVZ] += a[1]*rem[IVZ][1];
-      u[IEN] += a[1]*rem[IEN][1];
-      u[IBY] += a[1]*rem[IBY][1];
-      u[IBZ] += a[1]*rem[IBZ][1];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-    // jump across wave[2]
-    u[IDN] += a[2]*rem[IDN][2];
-    if (u[IDN] < 0.0) llf_flag=1;
-    if (NON_BAROTROPIC_EOS) {
-      u[IVX] += a[2]*rem[IVX][2];
-      u[IVY] += a[2]*rem[IVY][2];
-      u[IVZ] += a[2]*rem[IVZ][2];
-      u[IEN] += a[2]*rem[IEN][2];
-      u[IBY] += a[2]*rem[IBY][2];
-      u[IBZ] += a[2]*rem[IBZ][2];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-    // jump across wave[3]
-    u[IDN] += a[3]*rem[IDN][3];
-    if (u[IDN] < 0.0) llf_flag=1;
-    if (NON_BAROTROPIC_EOS) {
-      u[IVX] += a[3]*rem[IVX][3];
-      u[IVY] += a[3]*rem[IVY][3];
-      u[IVZ] += a[3]*rem[IVZ][3];
-      u[IEN] += a[3]*rem[IEN][3];
-      u[IBY] += a[3]*rem[IBY][3];
-      u[IBZ] += a[3]*rem[IBZ][3];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-    // jump across wave[4]
-    u[IDN] += a[4]*rem[IDN][4];
-    if (u[IDN] < 0.0) llf_flag=1;
-    if (NON_BAROTROPIC_EOS) {
-      u[IVX] += a[4]*rem[IVX][4];
-      u[IVY] += a[4]*rem[IVY][4];
-      u[IVZ] += a[4]*rem[IVZ][4];
-      u[IEN] += a[4]*rem[IEN][4];
-      u[IBY] += a[4]*rem[IBY][4];
-      u[IBZ] += a[4]*rem[IBZ][4];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-    if (NON_BAROTROPIC_EOS) {
-      // jump across wave[5]
-      u[IDN] += a[5]*rem[IDN][5];
-      if (u[IDN] < 0.0) llf_flag=1;
-      u[IVX] += a[5]*rem[IVX][5];
-      u[IVY] += a[5]*rem[IVY][5];
-      u[IVZ] += a[5]*rem[IVZ][5];
-      u[IEN] += a[5]*rem[IEN][5];
-      u[IBY] += a[5]*rem[IBY][5];
-      u[IBZ] += a[5]*rem[IBZ][5];
-      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN]
-                      - 0.5*(SQR(bxi)+SQR(u[IBY])+SQR(u[IBZ]));
-      if (p < 0.0) llf_flag=2;
-    }
-
-//--- Step 7.  Compute Roe flux
-
-    coeff[IDN] = 0.5*fabs(ev[IDN])*a[IDN];
-    coeff[IVX] = 0.5*fabs(ev[IVX])*a[IVX];
-    coeff[IVY] = 0.5*fabs(ev[IVY])*a[IVY];
-    coeff[IVZ] = 0.5*fabs(ev[IVZ])*a[IVZ];
-    coeff[IBY] = 0.5*fabs(ev[IBY])*a[IBY];
-    coeff[IBZ] = 0.5*fabs(ev[IBZ])*a[IBZ];
-
-    flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]);
-    flxi[IDN] -= coeff[IDN]*rem[IDN][IDN];
-    flxi[IDN] -= coeff[IVX]*rem[IDN][IVX];
-    flxi[IDN] -= coeff[IVY]*rem[IDN][IVY];
-    flxi[IDN] -= coeff[IVZ]*rem[IDN][IVZ];
-    flxi[IDN] -= coeff[IBY]*rem[IDN][IBY];
-    flxi[IDN] -= coeff[IBZ]*rem[IDN][IBZ];
-
-    flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]);
-    flxi[IVX] -= coeff[IDN]*rem[IVX][IDN];
-    flxi[IVX] -= coeff[IVX]*rem[IVX][IVX];
-    flxi[IVX] -= coeff[IVY]*rem[IVX][IVY];
-    flxi[IVX] -= coeff[IVZ]*rem[IVX][IVZ];
-    flxi[IVX] -= coeff[IBY]*rem[IVX][IBY];
-    flxi[IVX] -= coeff[IBZ]*rem[IVX][IBZ];
-
-    flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]);
-    flxi[IVY] -= coeff[IDN]*rem[IVY][IDN];
-    flxi[IVY] -= coeff[IVX]*rem[IVY][IVX];
-    flxi[IVY] -= coeff[IVY]*rem[IVY][IVY];
-    flxi[IVY] -= coeff[IVZ]*rem[IVY][IVZ];
-    flxi[IVY] -= coeff[IBY]*rem[IVY][IBY];
-    flxi[IVY] -= coeff[IBZ]*rem[IVY][IBZ];
-
-    flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]);
-    flxi[IVZ] -= coeff[IDN]*rem[IVZ][IDN];
-    flxi[IVZ] -= coeff[IVX]*rem[IVZ][IVX];
-    flxi[IVZ] -= coeff[IVY]*rem[IVZ][IVY];
-    flxi[IVZ] -= coeff[IVZ]*rem[IVZ][IVZ];
-    flxi[IVZ] -= coeff[IBY]*rem[IVZ][IBY];
-    flxi[IVZ] -= coeff[IBZ]*rem[IVZ][IBZ];
-
-    flxi[IBY] = 0.5*(fl[IBY] + fr[IBY]);
-    flxi[IBY] -= coeff[IDN]*rem[IBY][IDN];
-    flxi[IBY] -= coeff[IVX]*rem[IBY][IVX];
-    flxi[IBY] -= coeff[IVY]*rem[IBY][IVY];
-    flxi[IBY] -= coeff[IVZ]*rem[IBY][IVZ];
-    flxi[IBY] -= coeff[IBY]*rem[IBY][IBY];
-    flxi[IBY] -= coeff[IBZ]*rem[IBY][IBZ];
-
-    flxi[IBZ] = 0.5*(fl[IBZ] + fr[IBZ]);
-    flxi[IBZ] -= coeff[IDN]*rem[IBZ][IDN];
-    flxi[IBZ] -= coeff[IVX]*rem[IBZ][IVX];
-    flxi[IBZ] -= coeff[IVY]*rem[IBZ][IVY];
-    flxi[IBZ] -= coeff[IVZ]*rem[IBZ][IVZ];
-    flxi[IBZ] -= coeff[IBY]*rem[IBZ][IBY];
-    flxi[IBZ] -= coeff[IBZ]*rem[IBZ][IBZ];
-
-    if (NON_BAROTROPIC_EOS) {
-      coeff[IEN] = 0.5*fabs(ev[IEN])*a[IEN];
-      flxi[IDN] -= coeff[IEN]*rem[IDN][IEN];
-      flxi[IVX] -= coeff[IEN]*rem[IVX][IEN];
-      flxi[IVY] -= coeff[IEN]*rem[IVY][IEN];
-      flxi[IVZ] -= coeff[IEN]*rem[IVZ][IEN];
-      flxi[IBY] -= coeff[IEN]*rem[IBY][IEN];
-      flxi[IBZ] -= coeff[IEN]*rem[IBZ][IEN];
-
-      flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
-      flxi[IEN] -= coeff[IDN]*rem[IEN][IDN];
-      flxi[IEN] -= coeff[IVX]*rem[IEN][IVX];
-      flxi[IEN] -= coeff[IVY]*rem[IEN][IVY];
-      flxi[IEN] -= coeff[IVZ]*rem[IEN][IVZ];
-      flxi[IEN] -= coeff[IEN]*rem[IEN][IEN];
-      flxi[IEN] -= coeff[IBY]*rem[IEN][IBY];
-      flxi[IEN] -= coeff[IBZ]*rem[IEN][IBZ];
-    }
-
-//--- Step 8.  Overwrite with upwind flux if flow is supersonic
+//--- Step 5.  Overwrite with upwind flux if flow is supersonic
 
     if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
@@ -406,10 +178,12 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBZ] = fr[IBZ];
     }
 
-//--- Step 9.  Overwrite with LLF flux if any of intermediate states are negative
+//--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-      Real a = std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
+      Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
+      Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
+      Real a = 0.5*std::max( (fabs(wli[IVX]) + cfl), (fabs(wri[IVX]) + cfr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -421,6 +195,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       flxi[IBY] = 0.5*(fl[IBY] + fr[IBY]) - a*du[IBY];
       flxi[IBZ] = 0.5*(fl[IBZ] + fr[IBZ]) - a*du[IBZ];
     }
+
+//--- Step 7. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
@@ -436,30 +212,34 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn RoeEigensystem()
-// \brief computes eigenvalues and eigenvectors for MHD
+//! \fn RoeFlux()
+//  \brief Computes Roe fluxes for the conserved variables, that is
+//            F[n] = 0.5*(F_l + F_r) - SUM_m(coeff[m]*rem[n][m])
+//  where     coeff[n] = 0.5*ev[n]*SUM_m(dU[m]*lem[n][m])
+//  and the rem[n][m] and lem[n][m] are matrices of the L- and R-eigenvectors of Roe's
+//  matrix "A". Also returns the eigenvalues through the argument list.
 //
-// PURPOSE: Functions to evaluate the eigenvalues, and left- and right-eigenvectors of
-// "Roe's matrix A" for the linearized system in the CONSERVED variables, i.e.
-// U,t = AU,x, where U=(d,d*vx,d*vy,d*vz,[E],[By,Bz]). The eigenvalues are returned
-// through the argument list as a vector of length NWAVE.  The eigenvectors are returned
-// as matrices of size (NWAVE)x(NWAVE), with right-eigenvectors stored as COLUMNS
-// (so R_i = right_eigenmatrix[*][i]), and left-eigenvectors stored as ROWS
-// (so L_i = left_eigenmatrix[i][*]).
-//     - Input: d,v1,v2,v3,h,b1,b2,b3=Roe averaged density, velocities, enthalpy, B
-//          x,y = numerical factors (see eqn XX)
-//     - Output: eigenvalues[], right_eigenmatrix[][], left_eigenmatrix[][];
+// INPUT:
+//   wroe: vector of Roe averaged primitive variables
+//   du: Ur - Ul, difference in L/R-states in conserved variables
+//   wli: Wl, left state in primitive variables
+//   flx: (F_l + F_r)/2
+//
+// OUTPUT:
+//   flx: final Roe flux
+//   ev: vector of eingenvalues
+//   llf_flag: flag set to 1 if d<0 in any intermediate state
+//
+//  The order of the components in the input vectors should be:
+//     (IDN,IVX,IVY,IVZ,[IPR])
 //
 // REFERENCES:
-// - P. Cargo & G. Gallice, "Roe matrices for ideal MHD and systematic construction of
-//   Roe matrices for systems of conservation laws", JCP, 136, 446 (1997)
-//
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
-//   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
+//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
+#pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
+inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
+  const Real du[], const Real wli[], Real flx[], Real ev[], int &llf_flag) {
 
-inline static void RoeEigensystem(const Real wroe[], const Real b1,
-  const Real x, const Real y, Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
@@ -467,385 +247,361 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
   Real b2 = wroe[IBY];
   Real b3 = wroe[IBZ];
 
+  // compute sound and Alfven speeds
+  Real di = 1.0/d;
+  Real btsq = b2*b2 + b3*b3;
+  Real vaxsq = b1*b1*di;
+
+  Real bt_starsq, twid_csq, vsq, hp;
+  if (NON_BAROTROPIC_EOS) {
+    vsq = v1*v1 + v2*v2 + v3*v3;
+    hp = wroe[IPR] - (vaxsq + btsq*di);
+    bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
+    twid_csq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), TINY_NUMBER);
+  } else {
+    bt_starsq = btsq*y;
+    twid_csq = (iso_cs*iso_cs) + x;
+  }
+
+  // Compute fast- and slow-magnetosonic speeds (eq. B18)
+  Real ct2 = bt_starsq*di;
+  Real tsum = vaxsq + ct2 + twid_csq;
+  Real tdif = vaxsq + ct2 - twid_csq;
+  Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_csq*ct2);
+
+  Real cfsq = 0.5*(tsum + cf2_cs2);
+  Real cf = std::sqrt(cfsq);
+
+  Real cssq = twid_csq*vaxsq/cfsq;
+  Real cs = std::sqrt(cssq);
+
+  // Compute beta(s) (eqs. A17, B20, B28)
+  Real bt = std::sqrt(btsq);
+  Real bt_star = std::sqrt(bt_starsq);
+  Real bet2 = 0.0;
+  Real bet3 = 0.0;
+  if (bt != 0.0) {
+    bet2 = b2/bt;
+    bet3 = b3/bt;
+  }
+
+  Real bet2_star,bet3_star;
+  if (NON_BAROTROPIC_EOS) {
+    bet2_star = bet2/std::sqrt(gm1 - (gm1-1.0)*y);
+    bet3_star = bet3/std::sqrt(gm1 - (gm1-1.0)*y);
+  } else {
+    bet2_star = bet2/std::sqrt(y);
+    bet3_star = bet3/std::sqrt(y);
+  }
+  Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
+  Real vbet = v2*bet2_star + v3*bet3_star;
+  Real q2_star = 0.0;
+  Real q3_star = 0.0;
+  if (bet_starsq != 0.0) {
+    q2_star = bet2_star/bet_starsq;
+    q3_star = bet3_star/bet_starsq;
+  }
+
+  // Compute alpha(s) (eq. A16)
+  Real alpha_f, alpha_s;
+  if ((cfsq - cssq) <= 0.0) {
+    alpha_f = 1.0;
+    alpha_s = 0.0;
+  } else if ((twid_csq - cssq) <= 0.0) {
+    alpha_f = 0.0;
+    alpha_s = 1.0;
+  } else if ((cfsq - twid_csq) <= 0.0) {
+    alpha_f = 1.0;
+    alpha_s = 0.0;
+  } else {
+    alpha_f = std::sqrt((twid_csq - cssq)/(cfsq - cssq));
+    alpha_s = std::sqrt((cfsq - twid_csq)/(cfsq - cssq));
+  }
+
+  // Compute Q(s) and A(s) (eq. A14-15), etc.
+  Real sqrtd = std::sqrt(d);
+  Real isqrtd = 1.0/sqrtd;
+  Real s = SIGN(b1);
+  Real twid_c = std::sqrt(twid_csq);
+  Real qf = cf*alpha_f*s;
+  Real qs = cs*alpha_s*s;
+  Real af_prime = twid_c*alpha_f*isqrtd;
+  Real as_prime = twid_c*alpha_s*isqrtd;
+  Real afpbb = af_prime*bt_star*bet_starsq;
+  Real aspbb = as_prime*bt_star*bet_starsq;
+  Real vqstr = (v2*q2_star + v3*q3_star);
+  Real vax = std::sqrt(vaxsq);
+
+  // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
+  Real norm = 0.5/twid_csq;
+  Real cff = norm*alpha_f*cf;
+  Real css = norm*alpha_s*cs;
+  Real qf_hat = qf*norm;
+  Real qs_hat = qs*norm;
+  Real af = norm*af_prime*d;
+  Real as = norm*as_prime*d;
+  Real afpb = norm*af_prime*bt_star;
+  Real aspb = norm*as_prime*bt_star;
+
 //--- Adiabatic MHD
 
   if (NON_BAROTROPIC_EOS) {
-    Real vsq = v1*v1 + v2*v2 + v3*v3;
-    Real btsq = b2*b2 + b3*b3;
-    Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
-    Real vaxsq = b1*b1/d;
-    Real hp = wroe[IPR] - (vaxsq + btsq/d);
-    Real twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), TINY_NUMBER);
-
-    // Compute fast- and slow-magnetosonic speeds (eq. B18)
-    Real ct2 = bt_starsq/d;
-    Real tsum = vaxsq + ct2 + twid_asq;
-    Real tdif = vaxsq + ct2 - twid_asq;
-    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_asq*ct2);
-
-    Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real cf = std::sqrt(cfsq);
-
-    Real cssq = twid_asq*vaxsq/cfsq;
-    Real cs = std::sqrt(cssq);
-
-    // Compute beta(s) (eqs. A17, B20, B28)
-    Real bt = std::sqrt(btsq);
-    Real bt_star = std::sqrt(bt_starsq);
-    Real bet2=1.0;
-    Real bet3=0.0;
-    if (bt != 0.0) {
-      bet2 = b2/bt;
-      bet3 = b3/bt;
-    }
-    Real bet2_star = bet2/std::sqrt(gm1 - (gm1-1.0)*y);
-    Real bet3_star = bet3/std::sqrt(gm1 - (gm1-1.0)*y);
-    Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
-    Real vbet = v2*bet2_star + v3*bet3_star;
-
-    // Compute alpha(s) (eq. A16)
-    Real alpha_f=1.0;
-    Real alpha_s=0.0;
-    if ((twid_asq - cssq) <= 0.0) {
-      alpha_f = 0.0;
-      alpha_s = 1.0;
-    } else if ((cfsq - twid_asq) <= 0.0) {
-      alpha_f = 1.0;
-      alpha_s = 0.0;
-    } else if ((cfsq-cssq) != 0.0) {
-      alpha_f = std::sqrt((twid_asq - cssq)/(cfsq - cssq));
-      alpha_s = std::sqrt((cfsq - twid_asq)/(cfsq - cssq));
-    }
-
-    // Compute Q(s) and A(s) (eq. A14-15), etc.
-    Real sqrtd = std::sqrt(d);
-    Real isqrtd = 1.0/sqrtd;
-    Real s = SIGN(b1);
-    Real twid_a = std::sqrt(twid_asq);
-    Real qf = cf*alpha_f*s;
-    Real qs = cs*alpha_s*s;
-    Real af_prime = twid_a*alpha_f*isqrtd;
-    Real as_prime = twid_a*alpha_s*isqrtd;
-    Real afpbb = af_prime*bt_star*bet_starsq;
-    Real aspbb = as_prime*bt_star*bet_starsq;
-
     // Compute eigenvalues (eq. B17)
-    Real vax = std::sqrt(vaxsq);
-    eigenvalues[0] = v1 - cf;
-    eigenvalues[1] = v1 - vax;
-    eigenvalues[2] = v1 - cs;
-    eigenvalues[3] = v1;
-    eigenvalues[4] = v1 + cs;
-    eigenvalues[5] = v1 + vax;
-    eigenvalues[6] = v1 + cf;
+    ev[0] = v1 - cf;
+    ev[1] = v1 - vax;
+    ev[2] = v1 - cs;
+    ev[3] = v1;
+    ev[4] = v1 + cs;
+    ev[5] = v1 + vax;
+    ev[6] = v1 + cf;
 
-    // Right-eigenvectors, stored as COLUMNS (eq. B21) */
-    right_eigenmatrix[0][0] = alpha_f;
-    right_eigenmatrix[0][1] = 0.0;
-    right_eigenmatrix[0][2] = alpha_s;
-    right_eigenmatrix[0][3] = 1.0;
-    right_eigenmatrix[0][4] = alpha_s;
-    right_eigenmatrix[0][5] = 0.0;
-    right_eigenmatrix[0][6] = alpha_f;
-
-    right_eigenmatrix[1][0] = alpha_f*eigenvalues[0];
-    right_eigenmatrix[1][1] = 0.0;
-    right_eigenmatrix[1][2] = alpha_s*eigenvalues[2];
-    right_eigenmatrix[1][3] = v1;
-    right_eigenmatrix[1][4] = alpha_s*eigenvalues[4];
-    right_eigenmatrix[1][5] = 0.0;
-    right_eigenmatrix[1][6] = alpha_f*eigenvalues[6];
-
-    Real qa = alpha_f*v2;
-    Real qb = alpha_s*v2;
-    Real qc = qs*bet2_star;
-    Real qd = qf*bet2_star;
-    right_eigenmatrix[2][0] = qa + qc;
-    right_eigenmatrix[2][1] = -bet3;
-    right_eigenmatrix[2][2] = qb - qd;
-    right_eigenmatrix[2][3] = v2;
-    right_eigenmatrix[2][4] = qb + qd;
-    right_eigenmatrix[2][5] = bet3;
-    right_eigenmatrix[2][6] = qa - qc;
-
-    qa = alpha_f*v3;
-    qb = alpha_s*v3;
-    qc = qs*bet3_star;
-    qd = qf*bet3_star;
-    right_eigenmatrix[3][0] = qa + qc;
-    right_eigenmatrix[3][1] = bet2;
-    right_eigenmatrix[3][2] = qb - qd;
-    right_eigenmatrix[3][3] = v3;
-    right_eigenmatrix[3][4] = qb + qd;
-    right_eigenmatrix[3][5] = -bet2;
-    right_eigenmatrix[3][6] = qa - qc;
-
-    right_eigenmatrix[4][0] = alpha_f*(hp - v1*cf) + qs*vbet + aspbb;
-    right_eigenmatrix[4][1] = -(v2*bet3 - v3*bet2);
-    right_eigenmatrix[4][2] = alpha_s*(hp - v1*cs) - qf*vbet - afpbb;
-    right_eigenmatrix[4][3] = 0.5*vsq + (gm1-1.0)*x/gm1;
-    right_eigenmatrix[4][4] = alpha_s*(hp + v1*cs) + qf*vbet - afpbb;
-    right_eigenmatrix[4][5] = -right_eigenmatrix[4][1];
-    right_eigenmatrix[4][6] = alpha_f*(hp + v1*cf) - qs*vbet + aspbb;
-
-    right_eigenmatrix[5][0] = as_prime*bet2_star;
-    right_eigenmatrix[5][1] = -bet3*s*isqrtd;
-    right_eigenmatrix[5][2] = -af_prime*bet2_star;
-    right_eigenmatrix[5][3] = 0.0;
-    right_eigenmatrix[5][4] = right_eigenmatrix[5][2];
-    right_eigenmatrix[5][5] = right_eigenmatrix[5][1];
-    right_eigenmatrix[5][6] = right_eigenmatrix[5][0];
-
-    right_eigenmatrix[6][0] = as_prime*bet3_star;
-    right_eigenmatrix[6][1] = bet2*s*isqrtd;
-    right_eigenmatrix[6][2] = -af_prime*bet3_star;
-    right_eigenmatrix[6][3] = 0.0;
-    right_eigenmatrix[6][4] = right_eigenmatrix[6][2];
-    right_eigenmatrix[6][5] = right_eigenmatrix[6][1];
-    right_eigenmatrix[6][6] = right_eigenmatrix[6][0];
-
-    // Left-eigenvectors, stored as ROWS (eq. B29)
-    // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
-    Real norm = 0.5/twid_asq;
-    Real cff = norm*alpha_f*cf;
-    Real css = norm*alpha_s*cs;
-    qf *= norm;
-    qs *= norm;
-    Real af = norm*af_prime*d;
-    Real as = norm*as_prime*d;
-    Real afpb = norm*af_prime*bt_star;
-    Real aspb = norm*as_prime*bt_star;
-
+    // Compute projection of dU onto L-eigenvectors using matrix elements from eq. B29
     // Normalize by (gamma-1)/2a^{2}: quantities denoted by \bar{f}
-    norm *= gm1;
-    alpha_f *= norm;
-    alpha_s *= norm;
-    Real q2_star = bet2_star/bet_starsq;
-    Real q3_star = bet3_star/bet_starsq;
-    Real vqstr = (v2*q2_star + v3*q3_star);
-    norm *= 2.0;
+    Real a[(NWAVE)];
+    Real alpha_f_bar = alpha_f*gm1*norm;
+    Real alpha_s_bar = alpha_s*gm1*norm;
+    Real gm1a = gm1/twid_csq;
 
-    left_eigenmatrix[0][0] = alpha_f*(vsq-hp) + cff*(cf+v1) - qs*vqstr - aspb;
-    left_eigenmatrix[0][1] = -alpha_f*v1 - cff;
-    left_eigenmatrix[0][2] = -alpha_f*v2 + qs*q2_star;
-    left_eigenmatrix[0][3] = -alpha_f*v3 + qs*q3_star;
-    left_eigenmatrix[0][4] = alpha_f;
-    left_eigenmatrix[0][5] = as*q2_star - alpha_f*b2;
-    left_eigenmatrix[0][6] = as*q3_star - alpha_f*b3;
+    a[0]  = du[0]*(alpha_f_bar*(vsq-hp) + cff*(cf+v1) - qs_hat*vqstr - aspb);
+    a[0] -= du[1]*(alpha_f_bar*v1 + cff);
+    a[0] -= du[2]*(alpha_f_bar*v2 - qs_hat*q2_star);
+    a[0] -= du[3]*(alpha_f_bar*v3 - qs_hat*q3_star);
+    a[0] += du[4]*alpha_f_bar;
+    a[0] += du[5]*(as*q2_star - alpha_f_bar*b2);
+    a[0] += du[6]*(as*q3_star - alpha_f_bar*b3);
 
-    left_eigenmatrix[1][0] = 0.5*(v2*bet3 - v3*bet2);
-    left_eigenmatrix[1][1] = 0.0;
-    left_eigenmatrix[1][2] = -0.5*bet3;
-    left_eigenmatrix[1][3] = 0.5*bet2;
-    left_eigenmatrix[1][4] = 0.0;
-    left_eigenmatrix[1][5] = -0.5*sqrtd*bet3*s;
-    left_eigenmatrix[1][6] = 0.5*sqrtd*bet2*s;
+    a[1]  = du[0]*(v2*bet3 - v3*bet2);
+    a[1] -= du[2]*bet3;
+    a[1] += du[3]*bet2;
+    a[1] -= du[5]*sqrtd*bet3*s;
+    a[1] += du[6]*sqrtd*bet2*s;
+    a[1] *= 0.5;
 
-    left_eigenmatrix[2][0] = alpha_s*(vsq-hp) + css*(cs+v1) + qf*vqstr + afpb;
-    left_eigenmatrix[2][1] = -alpha_s*v1 - css;
-    left_eigenmatrix[2][2] = -alpha_s*v2 - qf*q2_star;
-    left_eigenmatrix[2][3] = -alpha_s*v3 - qf*q3_star;
-    left_eigenmatrix[2][4] = alpha_s;
-    left_eigenmatrix[2][5] = -af*q2_star - alpha_s*b2;
-    left_eigenmatrix[2][6] = -af*q3_star - alpha_s*b3;
+    a[2]  = du[0]*(alpha_s_bar*(vsq-hp) + css*(cs+v1) + qf_hat*vqstr + afpb);
+    a[2] -= du[1]*(alpha_s_bar*v1 + css);
+    a[2] -= du[2]*(alpha_s_bar*v2 + qf_hat*q2_star);
+    a[2] -= du[3]*(alpha_s_bar*v3 + qf_hat*q3_star);
+    a[2] += du[4]*alpha_s_bar;
+    a[2] -= du[5]*(af*q2_star + alpha_s_bar*b2);
+    a[2] -= du[6]*(af*q3_star + alpha_s_bar*b3);
 
-    left_eigenmatrix[3][0] = 1.0 - norm*(0.5*vsq - (gm1-1.0)*x/gm1);
-    left_eigenmatrix[3][1] = norm*v1;
-    left_eigenmatrix[3][2] = norm*v2;
-    left_eigenmatrix[3][3] = norm*v3;
-    left_eigenmatrix[3][4] = -norm;
-    left_eigenmatrix[3][5] = norm*b2;
-    left_eigenmatrix[3][6] = norm*b3;
+    a[3]  = du[0]*(1.0 - gm1a*(0.5*vsq - (gm1-1.0)*x/gm1));
+    a[3] += du[1]*gm1a*v1;
+    a[3] += du[2]*gm1a*v2;
+    a[3] += du[3]*gm1a*v3;
+    a[3] -= du[4]*gm1a;
+    a[3] += du[5]*gm1a*b2;
+    a[3] += du[6]*gm1a*b3;
 
-    left_eigenmatrix[4][0] = alpha_s*(vsq-hp) + css*(cs-v1) - qf*vqstr + afpb;
-    left_eigenmatrix[4][1] = -alpha_s*v1 + css;
-    left_eigenmatrix[4][2] = -alpha_s*v2 + qf*q2_star;
-    left_eigenmatrix[4][3] = -alpha_s*v3 + qf*q3_star;
-    left_eigenmatrix[4][4] = alpha_s;
-    left_eigenmatrix[4][5] = left_eigenmatrix[2][5];
-    left_eigenmatrix[4][6] = left_eigenmatrix[2][6];
+    a[4]  = du[0]*(alpha_s_bar*(vsq-hp) + css*(cs-v1) - qf_hat*vqstr + afpb);
+    a[4] -= du[1]*(alpha_s_bar*v1 - css);
+    a[4] -= du[2]*(alpha_s_bar*v2 - qf_hat*q2_star);
+    a[4] -= du[3]*(alpha_s_bar*v3 - qf_hat*q3_star);
+    a[4] += du[4]*alpha_s_bar;
+    a[4] -= du[5]*(af*q2_star + alpha_s_bar*b2);
+    a[4] -= du[6]*(af*q3_star + alpha_s_bar*b3);
 
-    left_eigenmatrix[5][0] = -left_eigenmatrix[1][0];
-    left_eigenmatrix[5][1] = 0.0;
-    left_eigenmatrix[5][2] = -left_eigenmatrix[1][2];
-    left_eigenmatrix[5][3] = -left_eigenmatrix[1][3];
-    left_eigenmatrix[5][4] = 0.0;
-    left_eigenmatrix[5][5] = left_eigenmatrix[1][5];
-    left_eigenmatrix[5][6] = left_eigenmatrix[1][6];
+    a[5]  = du[0]*(v3*bet2 - v2*bet3);
+    a[5] += du[2]*bet3;
+    a[5] -= du[3]*bet2;
+    a[5] -= du[5]*sqrtd*bet3*s;
+    a[5] += du[6]*sqrtd*bet2*s;
+    a[5] *= 0.5;
 
-    left_eigenmatrix[6][0] = alpha_f*(vsq-hp) + cff*(cf-v1) + qs*vqstr - aspb;
-    left_eigenmatrix[6][1] = -alpha_f*v1 + cff;
-    left_eigenmatrix[6][2] = -alpha_f*v2 - qs*q2_star;
-    left_eigenmatrix[6][3] = -alpha_f*v3 - qs*q3_star;
-    left_eigenmatrix[6][4] = alpha_f;
-    left_eigenmatrix[6][5] = left_eigenmatrix[0][5];
-    left_eigenmatrix[6][6] = left_eigenmatrix[0][6];
+    a[6]  = du[0]*(alpha_f_bar*(vsq-hp) + cff*(cf-v1) + qs_hat*vqstr - aspb);
+    a[6] -= du[1]*(alpha_f_bar*v1 - cff);
+    a[6] -= du[2]*(alpha_f_bar*v2 + qs_hat*q2_star);
+    a[6] -= du[3]*(alpha_f_bar*v3 + qs_hat*q3_star);
+    a[6] += du[4]*alpha_f_bar;
+    a[6] += du[5]*(as*q2_star - alpha_f_bar*b2);
+    a[6] += du[6]*(as*q3_star - alpha_f_bar*b3);
+
+    Real coeff[(NWAVE)];
+    coeff[0] = -0.5*fabs(ev[0])*a[0];
+    coeff[1] = -0.5*fabs(ev[1])*a[1];
+    coeff[2] = -0.5*fabs(ev[2])*a[2];
+    coeff[3] = -0.5*fabs(ev[3])*a[3];
+    coeff[4] = -0.5*fabs(ev[4])*a[4];
+    coeff[5] = -0.5*fabs(ev[5])*a[5];
+    coeff[6] = -0.5*fabs(ev[6])*a[6];
+
+    // compute density in intermediate states and check that it is positive, set flag
+    // This uses the [0][*] components of the right-eigenmatrix
+    Real dens = wli[IDN] + a[0]*alpha_f;
+    if (dens < 0.0) llf_flag=1;
+
+    dens += a[2]*alpha_s;
+    if (dens < 0.0) llf_flag=1;
+
+    dens += a[3];
+    if (dens < 0.0) llf_flag=1;
+
+    dens += a[4]*alpha_s;
+    if (dens < 0.0) llf_flag=1;
+
+    // Now multiply projection with R-eigenvectors from eq. B21 and SUM into output fluxes
+    flx[0] += coeff[0]*alpha_f;
+    flx[0] += coeff[2]*alpha_s;
+    flx[0] += coeff[3];
+    flx[0] += coeff[4]*alpha_s;
+    flx[0] += coeff[6]*alpha_f;
+
+    flx[1] += coeff[0]*(alpha_f*(v1 - cf));
+    flx[1] += coeff[2]*(alpha_s*(v1 - cs));
+    flx[1] += coeff[3]*v1;
+    flx[1] += coeff[4]*(alpha_s*(v1 + cs));
+    flx[1] += coeff[6]*(alpha_f*(v1 + cf));
+
+    flx[2] += coeff[0]*(alpha_f*v2 + qs*bet2_star);
+    flx[2] -= coeff[1]*bet3;
+    flx[2] += coeff[2]*(alpha_s*v2 - qf*bet2_star);
+    flx[2] += coeff[3]*v2;
+    flx[2] += coeff[4]*(alpha_s*v2 + qf*bet2_star);
+    flx[2] += coeff[5]*bet3;
+    flx[2] += coeff[6]*(alpha_f*v2 - qs*bet2_star);
+
+    flx[3] += coeff[0]*(alpha_f*v3 + qs*bet3_star);
+    flx[3] += coeff[1]*bet2;
+    flx[3] += coeff[2]*(alpha_s*v3 - qf*bet3_star);
+    flx[3] += coeff[3]*v3;
+    flx[3] += coeff[4]*(alpha_s*v3 + qf*bet3_star);
+    flx[3] -= coeff[5]*bet2;
+    flx[3] += coeff[6]*(alpha_f*v3 - qs*bet3_star);
+
+    flx[4] += coeff[0]*(alpha_f*(hp - v1*cf) + qs*vbet + aspbb);
+    flx[4] -= coeff[1]*(v2*bet3 - v3*bet2);
+    flx[4] += coeff[2]*(alpha_s*(hp - v1*cs) - qf*vbet - afpbb);
+    flx[4] += coeff[3]*(0.5*vsq + (gm1-1.0)*x/gm1);
+    flx[4] += coeff[4]*(alpha_s*(hp + v1*cs) + qf*vbet - afpbb);
+    flx[4] += coeff[5]*(v1*bet3 - v3*bet2);
+    flx[4] += coeff[6]*(alpha_f*(hp + v1*cf) - qs*vbet + aspbb);
+
+    flx[5] += coeff[0]*as_prime*bet2_star;
+    flx[5] -= coeff[1]*bet3*s*isqrtd;
+    flx[5] -= coeff[2]*af_prime*bet2_star;
+    flx[5] -= coeff[4]*af_prime*bet2_star;
+    flx[5] -= coeff[5]*bet3*s*isqrtd;
+    flx[5] += coeff[6]*as_prime*bet2_star;
+
+    flx[6] += coeff[0]*as_prime*bet3_star;
+    flx[6] += coeff[1]*bet2*s*isqrtd;
+    flx[6] -= coeff[2]*af_prime*bet3_star;
+    flx[6] -= coeff[4]*af_prime*bet3_star;
+    flx[6] += coeff[5]*bet2*s*isqrtd;
+    flx[6] += coeff[6]*as_prime*bet3_star;
 
 //--- Isothermal MHD
 
   } else {
-    Real di = 1.0/d;
-    Real btsq = b2*b2 + b3*b3;
-    Real bt_starsq = btsq*y;
-    Real vaxsq = b1*b1*di;
-    Real twid_csq = (iso_cs*iso_cs) + x;
-
-    // Compute fast- and slow-magnetosonic speeds (eq. B39)
-    Real ct2 = bt_starsq*di;
-    Real tsum = vaxsq + ct2 + twid_csq;
-    Real tdif = vaxsq + ct2 - twid_csq;
-    Real cf2_cs2 = std::sqrt(tdif*tdif + 4.0*twid_csq*ct2);
-
-    Real cfsq = 0.5*(tsum + cf2_cs2);
-    Real cf = std::sqrt(cfsq);
-
-    Real cssq = twid_csq*vaxsq/cfsq;
-    Real cs = std::sqrt(cssq);
-
-    // Compute beta's (eqs. A17, B28, B40)
-    Real bt = std::sqrt(btsq);
-    Real bt_star = std::sqrt(bt_starsq);
-    Real bet2 = 1.0;
-    Real bet3 = 0.0;
-    if (bt != 0.0) {
-      bet2 = b2/bt;
-      bet3 = b3/bt;
-    }
-    Real bet2_star = bet2/std::sqrt(y);
-    Real bet3_star = bet3/std::sqrt(y);
-    Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
-
-    // Compute alpha's (eq. A16)
-    Real alpha_f = 1.0;
-    Real alpha_s = 0.0;
-    if ((twid_csq - cssq) <= 0.0) {
-      alpha_f = 0.0;
-      alpha_s = 1.0;
-    } else if ((cfsq - twid_csq) <= 0.0) {
-      alpha_f = 1.0;
-      alpha_s = 0.0;
-    } else if ((cfsq-cssq) != 0.0) {
-      alpha_f = std::sqrt((twid_csq - cssq)/(cfsq - cssq));
-      alpha_s = std::sqrt((cfsq - twid_csq)/(cfsq - cssq));
-    }
-
-    // Compute Q's (eq. A14-15), etc.
-    Real sqrtd = std::sqrt(d);
-    Real s = SIGN(b1);
-    Real twid_c = std::sqrt(twid_csq);
-    Real qf = cf*alpha_f*s;
-    Real qs = cs*alpha_s*s;
-    Real af_prime = twid_c*alpha_f/sqrtd;
-    Real as_prime = twid_c*alpha_s/sqrtd;
-
     // Compute eigenvalues (eq. B38)
-    Real vax  = std::sqrt(vaxsq);
-    eigenvalues[0] = v1 - cf;
-    eigenvalues[1] = v1 - vax;
-    eigenvalues[2] = v1 - cs;
-    eigenvalues[3] = v1 + cs;
-    eigenvalues[4] = v1 + vax;
-    eigenvalues[5] = v1 + cf;
+    ev[0] = v1 - cf;
+    ev[1] = v1 - vax;
+    ev[2] = v1 - cs;
+    ev[3] = v1 + cs;
+    ev[4] = v1 + vax;
+    ev[5] = v1 + cf;
 
-    // Right-eigenvectors, stored as COLUMNS (eq. B21)
-    right_eigenmatrix[0][0] = alpha_f;
-    right_eigenmatrix[1][0] = alpha_f*(v1 - cf);
-    right_eigenmatrix[2][0] = alpha_f*v2 + qs*bet2_star;
-    right_eigenmatrix[3][0] = alpha_f*v3 + qs*bet3_star;
-    right_eigenmatrix[4][0] = as_prime*bet2_star;
-    right_eigenmatrix[5][0] = as_prime*bet3_star;
+    // Compute projection of dU onto L-eigenvectors using matrix elements from eq. B41
+    Real a[(NWAVE)];
+    a[0]  = du[0]*(cff*(cf+v1) - qs_hat*vqstr - aspb);
+    a[0] -= du[1]*cff;
+    a[0] += du[2]*qs_hat*q2_star;
+    a[0] += du[3]*qs_hat*q3_star;
+    a[0] += du[4]*as*q2_star;
+    a[0] += du[5]*as*q3_star;
 
-    right_eigenmatrix[0][1] = 0.0;
-    right_eigenmatrix[1][1] = 0.0;
-    right_eigenmatrix[2][1] = -bet3;
-    right_eigenmatrix[3][1] = bet2;
-    right_eigenmatrix[4][1] = -bet3*s/sqrtd;
-    right_eigenmatrix[5][1] = bet2*s/sqrtd;
+    a[1]  = du[0]*(v2*bet3 - v3*bet2);
+    a[1] -= du[2]*bet3;
+    a[1] += du[3]*bet2;
+    a[1] -= du[4]*sqrtd*bet3*s;
+    a[1] += du[5]*sqrtd*bet2*s;
+    a[1] *= 0.5;
 
-    right_eigenmatrix[0][2] = alpha_s;
-    right_eigenmatrix[1][2] = alpha_s*(v1 - cs);
-    right_eigenmatrix[2][2] = alpha_s*v2 - qf*bet2_star;
-    right_eigenmatrix[3][2] = alpha_s*v3 - qf*bet3_star;
-    right_eigenmatrix[4][2] = -af_prime*bet2_star;
-    right_eigenmatrix[5][2] = -af_prime*bet3_star;
+    a[2]  = du[0]*(css*(cs+v1) + qf_hat*vqstr + afpb);
+    a[2] -= du[1]*css;
+    a[2] -= du[2]*qf_hat*q2_star;
+    a[2] -= du[3]*qf_hat*q3_star;
+    a[2] -= du[4]*af*q2_star;
+    a[2] -= du[5]*af*q3_star;
 
-    right_eigenmatrix[0][3] = alpha_s;
-    right_eigenmatrix[1][3] = alpha_s*(v1 + cs);
-    right_eigenmatrix[2][3] = alpha_s*v2 + qf*bet2_star;
-    right_eigenmatrix[3][3] = alpha_s*v3 + qf*bet3_star;
-    right_eigenmatrix[4][3] = right_eigenmatrix[4][2];
-    right_eigenmatrix[5][3] = right_eigenmatrix[5][2];
+    a[3]  = du[0]*(css*(cs-v1) - qf_hat*vqstr + afpb);
+    a[3] += du[1]*css;
+    a[3] += du[2]*qf_hat*q2_star;
+    a[3] += du[3]*qf_hat*q3_star;
+    a[3] -= du[4]*af*q2_star;
+    a[3] -= du[5]*af*q3_star;
 
-    right_eigenmatrix[0][4] = 0.0;
-    right_eigenmatrix[1][4] = 0.0;
-    right_eigenmatrix[2][4] = bet3;
-    right_eigenmatrix[3][4] = -bet2;
-    right_eigenmatrix[4][4] = right_eigenmatrix[4][1];
-    right_eigenmatrix[5][4] = right_eigenmatrix[5][1];
+    a[4]  = du[0]*(v3*bet2 - v2*bet3);
+    a[4] += du[2]*bet3;
+    a[4] -= du[3]*bet2;
+    a[4] -= du[4]*sqrtd*bet3*s;
+    a[4] += du[5]*sqrtd*bet2*s;
+    a[4] *= 0.5;
 
-    right_eigenmatrix[0][5] = alpha_f;
-    right_eigenmatrix[1][5] = alpha_f*(v1 + cf);
-    right_eigenmatrix[2][5] = alpha_f*v2 - qs*bet2_star;
-    right_eigenmatrix[3][5] = alpha_f*v3 - qs*bet3_star;
-    right_eigenmatrix[4][5] = right_eigenmatrix[4][0];
-    right_eigenmatrix[5][5] = right_eigenmatrix[5][0];
+    a[5]  = du[0]*(cff*(cf-v1) + qs_hat*vqstr - aspb);
+    a[5] += du[1]*cff;
+    a[5] -= du[2]*qs_hat*q2_star;
+    a[5] -= du[3]*qs_hat*q3_star;
+    a[5] += du[4]*as*q2_star;
+    a[5] += du[5]*as*q3_star;
 
-    // Left-eigenvectors, stored as ROWS (eq. B41)
-    // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
-    Real norm = 0.5/twid_csq;
-    Real cff = norm*alpha_f*cf;
-    Real css = norm*alpha_s*cs;
-    qf *= norm;
-    qs *= norm;
-    Real af = norm*af_prime*d;
-    Real as = norm*as_prime*d;
-    Real afpb = norm*af_prime*bt_star;
-    Real aspb = norm*as_prime*bt_star;
+    Real coeff[(NWAVE)];
+    coeff[IDN] = -0.5*fabs(ev[IDN])*a[IDN];
+    coeff[IVX] = -0.5*fabs(ev[IVX])*a[IVX];
+    coeff[IVY] = -0.5*fabs(ev[IVY])*a[IVY];
+    coeff[IVZ] = -0.5*fabs(ev[IVZ])*a[IVZ];
+    if (NON_BAROTROPIC_EOS) coeff[IEN] = 0.5*fabs(ev[IEN])*a[IEN];
+    coeff[IBY] = -0.5*fabs(ev[IBY])*a[IBY];
+    coeff[IBZ] = -0.5*fabs(ev[IBZ])*a[IBZ];
 
-    Real q2_star = bet2_star/bet_starsq;
-    Real q3_star = bet3_star/bet_starsq;
-    Real vqstr = (v2*q2_star + v3*q3_star);
+    // compute density in intermediate states and check that it is positive, set flag
+    // This uses the [0][*] components of the right-eigenmatrix
+    Real dens = wli[IDN] + a[0]*alpha_f;
+    if (dens < 0.0) llf_flag=1;
 
-    left_eigenmatrix[0][0] = cff*(cf+v1) - qs*vqstr - aspb;
-    left_eigenmatrix[0][1] = -cff;
-    left_eigenmatrix[0][2] = qs*q2_star;
-    left_eigenmatrix[0][3] = qs*q3_star;
-    left_eigenmatrix[0][4] = as*q2_star;
-    left_eigenmatrix[0][5] = as*q3_star;
+    dens += a[2]*alpha_s;
+    if (dens < 0.0) llf_flag=1;
 
-    left_eigenmatrix[1][0] = 0.5*(v2*bet3 - v3*bet2);
-    left_eigenmatrix[1][1] = 0.0;
-    left_eigenmatrix[1][2] = -0.5*bet3;
-    left_eigenmatrix[1][3] = 0.5*bet2;
-    left_eigenmatrix[1][4] = -0.5*sqrtd*bet3*s;
-    left_eigenmatrix[1][5] = 0.5*sqrtd*bet2*s;
+    dens += a[3]*alpha_s;
+    if (dens < 0.0) llf_flag=1;
 
-    left_eigenmatrix[2][0] = css*(cs+v1) + qf*vqstr + afpb;
-    left_eigenmatrix[2][1] = -css;
-    left_eigenmatrix[2][2] = -qf*q2_star;
-    left_eigenmatrix[2][3] = -qf*q3_star;
-    left_eigenmatrix[2][4] = -af*q2_star;
-    left_eigenmatrix[2][5] = -af*q3_star;
+    // Now multiply projection with R-eigenvectors from eq. B21 and SUM into output fluxes
+    flx[0] += coeff[0]*alpha_f;
+    flx[0] += coeff[2]*alpha_s;
+    flx[0] += coeff[3]*alpha_s;
+    flx[0] += coeff[5]*alpha_f;
 
-    left_eigenmatrix[3][0] = css*(cs-v1) - qf*vqstr + afpb;
-    left_eigenmatrix[3][1] = css;
-    left_eigenmatrix[3][2] = -left_eigenmatrix[2][2];
-    left_eigenmatrix[3][3] = -left_eigenmatrix[2][3];
-    left_eigenmatrix[3][4] = left_eigenmatrix[2][4];
-    left_eigenmatrix[3][5] = left_eigenmatrix[2][5];
+    flx[1] += coeff[0]*alpha_f*(v1 - cf);
+    flx[1] += coeff[2]*alpha_s*(v1 - cs);
+    flx[1] += coeff[3]*alpha_s*(v1 + cs);
+    flx[1] += coeff[5]*alpha_f*(v1 + cf);
 
-    left_eigenmatrix[4][0] = -left_eigenmatrix[1][0];
-    left_eigenmatrix[4][1] = 0.0;
-    left_eigenmatrix[4][2] = -left_eigenmatrix[1][2];
-    left_eigenmatrix[4][3] = -left_eigenmatrix[1][3];
-    left_eigenmatrix[4][4] = left_eigenmatrix[1][4];
-    left_eigenmatrix[4][5] = left_eigenmatrix[1][5];
+    flx[2] += coeff[0]*(alpha_f*v2 + qs*bet2_star);
+    flx[2] -= coeff[1]*bet3;
+    flx[2] += coeff[2]*(alpha_s*v2 - qf*bet2_star);
+    flx[2] += coeff[3]*(alpha_s*v2 + qf*bet2_star);
+    flx[2] += coeff[4]*bet3;
+    flx[2] += coeff[5]*(alpha_f*v2 - qs*bet2_star);
 
-    left_eigenmatrix[5][0] = cff*(cf-v1) + qs*vqstr - aspb;
-    left_eigenmatrix[5][1] = cff;
-    left_eigenmatrix[5][2] = -left_eigenmatrix[0][2];
-    left_eigenmatrix[5][3] = -left_eigenmatrix[0][3];
-    left_eigenmatrix[5][4] = left_eigenmatrix[0][4];
-    left_eigenmatrix[5][5] = left_eigenmatrix[0][5];
+    flx[3] += coeff[0]*(alpha_f*v3 + qs*bet3_star);
+    flx[3] += coeff[1]*bet2;
+    flx[3] += coeff[2]*(alpha_s*v3 - qf*bet3_star);
+    flx[3] += coeff[3]*(alpha_s*v3 + qf*bet3_star);
+    flx[3] -= coeff[4]*bet2;
+    flx[3] += coeff[5]*(alpha_f*v3 - qs*bet3_star);
+
+    flx[4] += coeff[0]*as_prime*bet2_star;
+    flx[4] -= coeff[1]*bet3*s/sqrtd;
+    flx[4] -= coeff[2]*af_prime*bet2_star;
+    flx[4] -= coeff[3]*af_prime*bet2_star;
+    flx[4] -= coeff[4]*bet3*s/sqrtd;
+    flx[4] += coeff[5]*as_prime*bet2_star;
+
+    flx[5] += coeff[0]*as_prime*bet3_star;
+    flx[5] += coeff[1]*bet2*s/sqrtd;
+    flx[5] -= coeff[2]*af_prime*bet3_star;
+    flx[5] -= coeff[3]*af_prime*bet3_star;
+    flx[5] += coeff[4]*bet2*s/sqrtd;
+    flx[5] += coeff[5]*as_prime*bet3_star;
   }
 }

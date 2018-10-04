@@ -80,11 +80,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       const Real& bcc3 = bcc(IB3,k,j,i);
 
       Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
-      Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
-      w_p = gm1*(u_e - ke - pb);
+      Real e_k = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+      w_p = gm1*(u_e - e_k - pb);
 
       // apply pressure floor, correct total energy
-      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke + pb);
+      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + e_k + pb);
       w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
     }
   }}
@@ -139,7 +139,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
-
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(GetGamma()*prim[IPR]/prim[IDN]);
 }
@@ -148,7 +147,6 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
-
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
   Real asq = GetGamma()*prim[IPR];
   Real vaxsq = bx*bx;
@@ -162,7 +160,6 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
-
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
@@ -175,96 +172,35 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
   return;
 }
 
-//---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-//           const AthenaArray<Real> &prim_old, const FaceField &b,
-//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
-// \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
-// at fourth order accuracy. Wrapper function for specific pointwise conversion routine
-
-void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
-  int kl, int ku) {
-
-  MeshBlock *pmb = pmy_block_;
-  Hydro *ph = pmb->phydro;
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
   Real gm1 = GetGamma() - 1.0;
-  int nl = 0;
-  int nu = NHYDRO-1;
-  // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
-  // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
-  Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
-  Real C = (h*h)/24.0;
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
 
-  // Fourth-order accurate approx to cell-centered conserved and primitive variables
-  AthenaArray<Real> u_cc, w_cc;
-  u_cc.InitWithShallowCopy(ph->u_cc);
-  w_cc.InitWithShallowCopy(ph->w_cc);
-  // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
-  AthenaArray<Real> laplacian_cc;
-  laplacian_cc.InitWithShallowCopy(ph->scr1_nkji_);
+  Real& u_d  = cons(IDN,k,j,i);
+  Real& u_e  = cons(IEN,k,j,i);
+  const Real& bcc1 = bcc(IB1,k,j,i);
+  const Real& bcc2 = bcc(IB2,k,j,i);
+  const Real& bcc3 = bcc(IB3,k,j,i);
 
-  // Compute and store Laplacian of cell-averaged conserved variables
-  pco->Laplacian(cons, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
+  // apply (prim) density floor, without changing momentum or energy
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // ensure cons density matches
+  u_d = w_d;
 
-  // Compute fourth-order approximation to cell-centered conserved variables
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          // We do not actually need to store all cell-centered conserved variables,
-          // but the ConservedToPrimitive() implementation operates on 4D arrays
-          u_cc(n,k,j,i) = cons(n,k,j,i) - C*laplacian_cc(n,k,j,i);
-        }
-      }
-    }
-  }
-
-  // Compute Laplacian of 2nd-order approximation to cell-averaged primitive variables
-  pco->Laplacian(prim, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
-
-  // Convert cell-centered conserved values to cell-centered primitive values
-  ConservedToPrimitive(u_cc, prim_old, b, w_cc, bcc, pco, il, iu,
-                       jl, ju, kl, ku);
-
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          // Compute fourth-order approximation to cell-averaged primitive variables
-          prim(n,k,j,i) = w_cc(n,k,j,i) + C*laplacian_cc(n,k,j,i);
-        }
-      }
-    }
-  }
-
-  // Reapply primitive variable floors
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        // apply density floor, without changing momentum or energy
-        prim(IDN,k,j,i) = (prim(IDN,k,j,i) > density_floor_) ?
-            prim(IDN,k,j,i) : density_floor_;
-        cons(IDN,k,j,i) = prim(IDN,k,j,i);
-        // unlike pointwise EOS, not reapplying density floor to velocity
-        // Real di = 1.0/cons(IDN,k,j,i);
-        // TODO(kfelker): ensure that cell-averaged B is used here:
-        Real pb = 0.5*(SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)));
-        Real e_k = 0.5*prim(IDN,k,j,i)*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
-                                        + SQR(prim(IVZ,k,j,i)));
-        // apply pressure floor, correct total energy
-        cons(IEN,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
-            cons(IEN,k,j,i) : ((pressure_floor_/gm1) + e_k + pb);
-        prim(IPR,k,j,i) = (prim(IPR,k,j,i) > pressure_floor_) ?
-            prim(IPR,k,j,i) : pressure_floor_;
-      }
-    }
-  }
+  Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+  Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i))
+                      + SQR(prim(IVZ,k,j,i)));
+  // apply pressure floor, correct total energy
+  u_e = (w_p > pressure_floor_) ?
+      u_e : ((pressure_floor_/gm1) + pb + e_k);
+  w_p = (w_p > pressure_floor_) ?
+      w_p : pressure_floor_;
 
   return;
 }

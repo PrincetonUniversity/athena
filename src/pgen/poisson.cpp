@@ -14,7 +14,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -49,6 +49,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
   SetFourPiG(four_pi_G);
   SetGravityThreshold(eps);
+  SetMeanDensity(0.0);
 }
 
 //========================================================================================
@@ -69,7 +70,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
   Real gconst = four_pi_G / (4.0*PI);
-  Real grav_mean_rho = 0.0;
 
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
   int nlim = pin->GetInteger("time","nlim");
@@ -241,7 +241,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       phiamp = 1.0*four_pi_G/phiamp;
 
       if (Globals::my_rank == 0) {
-        std::cout << std::setprecision(15) << std::scientific;
+      std::cout << std::scientific
+                << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);
         std::cout << "=====================================================" << std::endl;
         std::cout << "L1 : " << err1 <<" MaxPhi: " << maxphi
                   << " Amp: " << phiamp << std::endl;

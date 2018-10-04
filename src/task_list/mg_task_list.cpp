@@ -24,10 +24,10 @@
 using namespace MultigridTaskNames; // NOLINT (build/namespace)
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd)
+//! \fn void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void MultigridTaskList::DoTaskListOneSubStep(MultigridDriver *pmd) {
+void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
   Multigrid *pmg = pmd->pmg_;
   int nmg_left = pmd->GetNumMultigrids();
 

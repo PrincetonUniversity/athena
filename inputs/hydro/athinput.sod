@@ -1,7 +1,7 @@
 <comment>
 problem   = Sod's shock tube
 reference = Sod, G.A., JCP 27, pp. 1-31 (1978)
-configure = --with-gas=hydro --with-problem=shock_tube
+configure = --prob=shock_tube
 
 <job>
 problem_id  = Sod       # problem ID: basename of output filenames

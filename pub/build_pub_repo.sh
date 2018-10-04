@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 # usage: build_pub_repo.sh local_repo_name
 # example: build_pub_repo.sh athena_working
 
@@ -11,13 +11,16 @@
 # brackets e.g.
 # incorrect: PRIVATE="{pub}"
 #   correct: PRIVATE="pub"
-PRIVATE="pub"
+PRIVATE="{pub,tst/ci,.travis.yml,.github,CONTRIBUTING.md,CHANGELOG.md}"
 
-# Repo URLs
+# Repo HTTPS URLs
 PRIV_REPO_URL="https://github.com/PrincetonUniversity/athena.git"
 PUB_REPO_URL="https://github.com/PrincetonUniversity/athena-public-version.git"
+# Repo SSH URLs:
+# PRIV_REPO_URL="git@github.com:PrincetonUniversity/athena.git"
+# PUB_REPO_URL="git@github.com:PrincetonUniversity/athena-public-version.git"
 
-# data for this script
+# data for this script: assumes we are rebasing private repo "master" on "last_public" tag
 PRIV_REPO_PUB_BRANCH="public"
 
 PUB_REMOTE_NAME="public_repo"
@@ -27,7 +30,6 @@ PRE_PUSH_HOOK="pub/pre-push"
 POST_COMMIT_HOOK="pub/post-commit"
 
 LOCAL_REPO_NAME=$1
-
 
 # clone private repo
 git clone $PRIV_REPO_URL $LOCAL_REPO_NAME
@@ -95,4 +97,7 @@ git checkout -b $PRIV_REPO_PUB_BRANCH $PUB_REMOTE_NAME/$PUB_REPO_BRANCH
 # configure git so it pushes from the public branch to public_repo:master
 git config push.default upstream
 
-
+# purge the deleted files from the packfile
+git for-each-ref --format='delete %(refname)' refs/original | git update-ref --stdin
+git reflog expire --expire=now --all
+git gc --aggressive --prune=now

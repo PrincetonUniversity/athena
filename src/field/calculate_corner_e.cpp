@@ -17,6 +17,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief
@@ -250,6 +251,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
     }}
   }
 
+  // add diffusion flux
+  if (pfdif->field_diffusion_defined) pfdif->AddEMF(pfdif->e_oa, e);
 
   return;
 }

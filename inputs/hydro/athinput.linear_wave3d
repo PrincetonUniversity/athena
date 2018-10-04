@@ -22,6 +22,8 @@ tlim       = 5.0       # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
+correct_ic  = false     # correct midpoint assumption in initial condition
+correct_err = false     # correct midpoint assumption in analytic solution
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
@@ -109,3 +111,5 @@ amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 ang_2_vert= false     # set to 'true' to make ang_2=pi/2
 ang_3_vert= false     # set to 'true' to make ang_3=pi/2
+nu_iso    = 0.0       # isotropic viscosity coefficient
+kappa_iso = 0.0       # isotropic thermal conduction coefficient

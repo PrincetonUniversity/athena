@@ -17,6 +17,7 @@
 class MeshBlock;
 class ParameterInput;
 class Hydro;
+class FieldDiffusion;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -28,11 +29,13 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+  FieldDiffusion *pfdif;
 
   // face-averaged (or 2nd order face-centered approx.) magnetic fields
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2
   FaceField b2;      // time-integrator memory register #3
+  // (no more than MAX_NREGISTER allowed)
 
   // cell-averaged (or 2nd order cell-centered approx.) magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1

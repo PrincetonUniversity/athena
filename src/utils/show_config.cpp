@@ -38,7 +38,7 @@ void ShowConfig(void) {
   } else if (SELF_GRAVITY_ENABLED == 2) {
     std::cout<<"  Self Gravity:               Multigrid" << std::endl;
   } else {
-    std::cout<<"  Self Gravity:               Off" << std::endl;
+    std::cout<<"  Self Gravity:               OFF" << std::endl;
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {

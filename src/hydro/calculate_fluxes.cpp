@@ -11,15 +11,18 @@
 
 // Athena++ headers
 #include "hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"   // reapply floors to face-centered reconstructed states
 #include "../field/field.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -464,7 +467,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       for(int n=0; n<NWAVE; n++) {
         for (int k=kl_buf; k<=ku_buf; ++k) {
           for (int j=js; j<=je+1; ++j) {
-            //pmb->pcoord->CenterWidth2(k, j, il_buf, iu_buf, dxw);
+            // pmb->pcoord->CenterWidth2(k, j, il_buf, iu_buf, dxw);
             for(int i=il_buf; i<=iu_buf; i++) {
               x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
             }
@@ -690,7 +693,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       for(int n=0; n<NWAVE; n++) {
         for (int k=ks; k<=ke+1; ++k) {
           for (int j=jl_buf; j<=ju_buf; ++j) {
-            //pmb->pcoord->CenterWidth3(k, j, il_buf, iu_buf, dxw);
+            // pmb->pcoord->CenterWidth3(k, j, il_buf, iu_buf, dxw);
             for(int i=il_buf; i<=iu_buf; i++) {
                 x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_l_fc(n,k,j,i);
             }
@@ -854,6 +857,22 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
   } // end if 3D
 
   if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
+
+// add diffusion fluxes
+  if (phdif->hydro_diffusion_defined) {
+    if (phdif->nu_iso > 0.0 || phdif->nu_aniso > 0.0)
+      phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
+
+    if (NON_BAROTROPIC_EOS) {
+      if (phdif->kappa_iso > 0.0 || phdif->kappa_aniso > 0.0)
+        phdif->AddHydroDiffusionEnergyFlux(phdif->cndflx,flux);
+    }
+  }
+
+  if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
+      if (pmb->pfield->pfdif->field_diffusion_defined)
+        pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
+  }
 
   return;
 }

@@ -27,6 +27,7 @@
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
 #include <iostream>   // cout, endl
+#include <limits>     // max_digits10
 #include <new>        // bad_alloc
 #include <string>     // string
 
@@ -56,7 +57,7 @@
 //  \brief Athena++ main program
 
 int main(int argc, char *argv[]) {
-  std::string athena_version = "version 1.0 - October 2016";
+  std::string athena_version = "version 1.1.1 - July 2018";
   char *input_filename=NULL, *restart_filename=NULL;
   char *prundir = NULL;
   int res_flag=0;   // set to 1 if -r        argument is on cmdline
@@ -201,13 +202,16 @@ int main(int argc, char *argv[]) {
   try {
     pinput = new ParameterInput;
     if (res_flag==1) {
-      restartfile.Open(restart_filename,IO_WRAPPER_READ_MODE);
+      restartfile.Open(restart_filename, IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(restartfile);
+      // If both -r and -i are specified, make sure next_time gets corrected.
+      // This needs to be corrected on the restart file because we need the old dt.
+      if(iarg_flag==1) pinput->RollbackNextTime();
       // leave the restart file open for later use
     }
     if (iarg_flag==1) {
       // if both -r and -i are specified, override the parameters using the input file
-      infile.Open(input_filename,IO_WRAPPER_READ_MODE);
+      infile.Open(input_filename, IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(infile);
       infile.Close();
     }
@@ -225,16 +229,6 @@ int main(int argc, char *argv[]) {
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message
-    if (res_flag==1) restartfile.Close();
-#ifdef MPI_PARALLEL
-    MPI_Finalize();
-#endif
-    return(0);
-  }
-
-  // Dump input parameters and quit if code was run with -n option.
-  if (narg_flag) {
-    if (Globals::my_rank==0) pinput->ParameterDump(std::cout);
     if (res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
@@ -272,6 +266,23 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+
+  // With current mesh time possibly read from restart file, correct next_time for outputs
+  if (iarg_flag == 1 && res_flag == 1) {
+    // if both -r and -i are specified, ensure that next_time  >= mesh_time - dt
+    pinput->ForwardNextTime(pmesh->time);
+  }
+
+  // Dump input parameters and quit if code was run with -n option.
+  if (narg_flag) {
+    if (Globals::my_rank==0) pinput->ParameterDump(std::cout);
+    if (res_flag==1) restartfile.Close();
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+
   if (res_flag==1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
@@ -366,20 +377,21 @@ int main(int argc, char *argv[]) {
     if (Globals::my_rank==0) {
       if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
-          std::cout << "cycle=" << pmesh->ncycle<< std::scientific <<std::setprecision(14)
+          std::cout << "cycle=" << pmesh->ncycle<< std::scientific
+                    << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
                     << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
         }
       }
     }
 
-    if (pmesh->turb_flag == 2) pmesh->ptrbd->Driving(); // driven turbulence
+    if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
-    for (int step=1; step<=ptlist->nsub_steps; ++step) {
+    for (int stage=1; stage<=ptlist->nstages; ++stage) {
       if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
-        pmesh->pfgrd->Solve(step,0);
+        pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
-        pmesh->pmgrd->Solve(step);
-      ptlist->DoTaskListOneSubstep(pmesh, step);
+        pmesh->pmgrd->Solve(stage);
+      ptlist->DoTaskListOneStage(pmesh, stage);
     }
 
     pmesh->ncycle++;

@@ -114,7 +114,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
-
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return iso_sound_speed_;
 }
@@ -123,7 +122,6 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \!fn Real EquationOfState::FastMagnetosonicSpeed()
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
-
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
   Real asq = (iso_sound_speed_*iso_sound_speed_)*prim[IDN];
   Real vaxsq = bx*bx;
@@ -137,12 +135,29 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
-
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
+  Real& w_d  = prim(IDN,k,j,i);
+
+  Real& u_d  = cons(IDN,k,j,i);
+
+  // apply (prim) density floor, without changing momentum or energy
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // ensure cons density matches
+  u_d = w_d;
 
   return;
 }

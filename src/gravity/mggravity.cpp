@@ -86,10 +86,10 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::Solve(int step)
+//! \fn void MGGravityDriver::Solve(int stage)
 //  \brief load the data and solve
 
-void MGGravityDriver::Solve(int step) {
+void MGGravityDriver::Solve(int stage) {
   Multigrid *pmggrav=pmg_;
   AthenaArray<Real> in;
 

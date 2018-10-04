@@ -7,6 +7,8 @@
 //  \brief
 
 // C/C++ headers
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -53,9 +55,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     xorder = 4;
     if (input_recon == "4c")
       characteristic_reconstruction = true;
-    // perform checks of solver configuration restrictions, NGHOST, etc:
-    // TODO(kfelker): add NGHOST and uniform Cartesian mesh checks
-
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -76,6 +75,89 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
+  }
+
+  // Perform checks of fourth-order solver configuration restrictions:
+  if (xorder == 4) {
+    // Uniform, Cartesian mesh with square cells (dx1f=dx2f=dx3f)
+    if (COORDINATE_SYSTEM == "cartesian") {
+      if (pmb->block_size.x1rat != 1.0 || pmb->block_size.x2rat != 1.0 ||
+          pmb->block_size.x3rat != 1.0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " require a uniform (x1rat=x2rat=x3rat=1.0), " << std::endl
+            << "Carteisan mesh with square cells. Rerun with uniform cell spacing "
+            << std::endl
+            << "Current values are:" << std::endl
+            << std::scientific
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+            << "x1rat= " << pmb->block_size.x1rat << std::endl
+            << "x2rat= " << pmb->block_size.x2rat << std::endl
+            << "x3rat= " << pmb->block_size.x3rat << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
+      Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
+      Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
+      // Note, probably want to make the following condition less strict (signal warning
+      // for small differences due to floating-point issues) but upgrade to error for
+      // large deviations from a square mesh. Currently signals a warning for each
+      // MeshBlock with non-square cells.
+      if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
+            (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
+        // It is possible for small floating-point differences to arise despite equal
+        // analytic values for grid spacings in the coordinates.cpp calculation of:
+        // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
+        // due to the 3x rounding operations in numerator, e.g.
+        // float(float(x1max) - float((x1min))
+        // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
+        // decomposition is used
+
+        // std::stringstream msg;
+        std::cout << "### Warning in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " require a uniform, Carteisan mesh with" << std::endl
+            << "square cells (dx1f=dx2f=dx3f). "
+            << "Change mesh limits and/or number of cells for equal spacings" << std::endl
+            << "Current values are:" << std::endl
+            << std::scientific
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+            << "dx1f=" << dx_i << std::endl
+            << "dx2f=" << dx_j << std::endl
+            << "dx3f=" << dx_k << std::endl;
+        // throw std::runtime_error(msg.str().c_str());
+      }
+      if (pmb->pmy_mesh->multilevel==true) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+            << "Selected time/xorder=" << input_recon << " flux calculations"
+            << " currently does not support SMR/AMR " << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM
+          << " is incompatible with selected time/xorder=" << input_recon << std::endl
+          << "Reconfigure with Cartesian coordinates " << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
+    int req_nghost = 4;
+    // until new algorithm for face-averaged Field->bf to cell-averaged Hydro->bcc
+    // conversion is added, NGHOST>=6
+    if (MAGNETIC_FIELDS_ENABLED)
+      req_nghost += 2;
+    if (NGHOST < req_nghost) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "time/xorder=" << input_recon
+          << " reconstruction selected, but nghost=" << NGHOST << std::endl
+          << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes

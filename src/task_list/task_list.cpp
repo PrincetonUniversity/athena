@@ -6,7 +6,7 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
-// needed for vector of pointers in DoTaskListOneSubstep()
+// needed for vector of pointers in DoTaskListOneStage()
 #include <vector>
 
 // Athena++ classes headers
@@ -23,7 +23,7 @@
 TaskList::TaskList(Mesh *pm) {
   pmy_mesh_=pm;
   ntasks = 0;
-  nsub_steps = 0;
+  nstages = 0;
 }
 
 // destructor
@@ -36,7 +36,7 @@ TaskList::~TaskList() {
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step,
+enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
                                                   TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
@@ -49,7 +49,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step,
     if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
-        ret=(this->*task_list_[i].TaskFunc)(pmb, step);
+        ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
         if (ret!=TASK_FAIL) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
@@ -69,10 +69,10 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
+//! \fn void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step) {
+void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   MeshBlock *pmb = pmesh->pblock;
   // initialize counters stored in each MeshBlock
   while (pmb != NULL)  {
@@ -99,7 +99,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step) {
 {
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i],step,pmb_array[i]->tasks) == TL_COMPLETE) {
+      if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;
       }
     }
