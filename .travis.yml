@@ -112,16 +112,27 @@ before_script:
   - pip3 install --user numpy || true # --user is necessary, since no virtualenv, sudo
   - pip3 install --user flake8 || true
   - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
-# Without "set -e" (which may cause issues with Travis clean up), all script
-# steps will be executed even if there are non-zero exit codes ---> Failed build
+
+# Default stage "test" used for Build Matrix expansion; run in all environments
 script:
-  # Test PEP 8 style compliance for .py files:
-  - python3 -m flake8 --exclude=cpplint.py,openmpi-*
-  - echo "Finished linting Python files with flake8"
-  # Test Google C++ Style Guide adherence for .cpp, .hpp files:
-  - cd tst/style/; ./cpplint_athena.sh
-  # Run regression test suite:
+  # Run subset of regression test suite:
   - cd .. ; ./ci/travis/run_tests_travis.sh
+
+# Run style checks only once: nherits first value of each Build Matrix dimension (Ubuntu, GCC, MPICH)
+jobs:
+  include:
+    # Test PEP 8 style compliance for .py files:
+    - stage: python linter
+      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
+    # Test Google C++ Style Guide adherence for .cpp, .hpp files:
+    - stage: c++ linter
+      script: cd tst/style/; ./cpplint_athena.sh
+
+# Specify order of stages; build matrix of regression tests will only run if linters pass
+stages:
+  - python linter
+  - c++ linter
+  - test
 
 # Codecov coverage analysis
 after_success:
