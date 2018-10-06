@@ -11,7 +11,7 @@
 # brackets e.g.
 # incorrect: PRIVATE="{pub}"
 #   correct: PRIVATE="pub"
-PRIVATE="{pub,tst/ci,.travis.yml,.github,CONTRIBUTING.md,CHANGELOG.md}"
+PRIVATE="{pub,tst/ci,.travis.yml,.github,.github_changelog_generator,CONTRIBUTING.md,CHANGELOG.md}"
 
 # Repo HTTPS URLs:
 # PRIV_REPO_URL="https://github.com/PrincetonUniversity/athena.git"
@@ -22,7 +22,8 @@ PUB_REPO_URL="git@github.com:PrincetonUniversity/athena-public-version.git"
 
 # data for this script
 ## branch on remote private repo from which to create public release
-PRIV_REPO_PRIV_BRANCH="release/1.1.0"
+## (must be an actual branch and not a tag in order to rewrite local history/filter-branch)
+PRIV_REPO_PRIV_BRANCH="release/1.1.1"
 ## local workspace branch for drafting the public release
 PRIV_REPO_PUB_BRANCH="public"
 

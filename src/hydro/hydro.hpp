@@ -23,7 +23,8 @@ struct IntegratorWeight;
 //  \brief hydro data and functions
 
 class Hydro {
-friend class Field;
+  friend class Field;
+  friend class EquationOfState;
 public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
   ~Hydro();
@@ -31,10 +32,15 @@ public:
   // data
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
   // conserved and primitive variables
-  AthenaArray<Real> u,w;      // time-integrator memory register #1
-  AthenaArray<Real> u1,w1;    // time-integrator memory register #2
+  AthenaArray<Real> u, w;      // time-integrator memory register #1
+  AthenaArray<Real> u1, w1;    // time-integrator memory register #2
   AthenaArray<Real> u2;       // time-integrator memory register #3
+  // (no more than MAX_NREGISTER allowed)
+
   AthenaArray<Real> flux[3];  // face-averaged flux vector
+
+  // fourth-order intermediate quantities
+  AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
   HydroSourceTerms *psrc;
   HydroDiffusion *phdif;
@@ -46,7 +52,7 @@ public:
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-    AthenaArray<Real> &bcc, int order);
+    AthenaArray<Real> &bcc, const int order);
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
@@ -58,7 +64,7 @@ public:
   void CorrectGravityFlux(void);
 
 private:
-  AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
+  AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
   AthenaArray<Real> wl_, wr_;
   AthenaArray<Real> dxw_;
@@ -77,6 +83,10 @@ private:
   // self-gravity
   AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor (old Athena style)
 
+  // fourth-order hydro
+  // 4D scratch arrays
+  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
+  AthenaArray<Real> scr1_nkji_, scr2_nkji_;
 
   TimeStepFunc_t UserTimeStep_;
 };

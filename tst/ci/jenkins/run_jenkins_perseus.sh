@@ -3,13 +3,13 @@
 # SCRIPT: run_jenkins_perseus.sh
 # AUTHOR: Kyle Gerard Felker - kfelker@princeton.edu
 # DATE: 4/10/2018
-# PURPOSE: Run regression test suite with PICSciE's Jenkins server, 4x Perseus
-# computer Intel Broadwell worker nodes for continuous integration (CI)
+# PURPOSE: Run style and regression test suites using PICSciE's Jenkins server for continuous
+# integration (CI) Current workers include 4x Intel Broadwell nodes on Perseus cluster.
 
 # USAGE: salloc -N1 -n4 --time=0:60:00 ./run_jenkins_perseus.sh
 # or similar command in the Jenkins build "Execute shell" step (run from athena/ root dir)
 
-set -e # quit at first error
+set -e # terminate script at first error/non-zero exit status
 # Install Python dependencies
 pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
 pip install -q --user flake8
@@ -23,7 +23,7 @@ echo "Finished linting Python files with flake8"
 cd tst/style/; ./cpplint_athena.sh
 cd ../regression/
 
-# Build step #1: GNU compiler and OpenMPI library
+# Build step #1: regression tests using GNU compiler and OpenMPI library
 module purge
 module load rh # latest GNU compiler
 module load openmpi/gcc/1.10.2/64 # openmpi/gcc/3.0.0/64 does not work right now
@@ -36,6 +36,7 @@ module load fftw/gcc/3.3.4
 module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
+# --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
 time python ./run_tests.py pgen --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 time python ./run_tests.py grav --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --silent
@@ -49,8 +50,12 @@ time python ./run_tests.py gr --silent
 time python ./run_tests.py curvilinear --silent
 time python ./run_tests.py shearingbox --silent
 time python ./run_tests.py diffusion --silent
+time python ./run_tests.py symmetry --silent
 
-# Build step #2: Intel compiler and MPI library
+# High-order solver regression tests w/ GCC
+time python ./run_tests.py hydro4 --silent
+
+# Build step #2: regression tests using Intel compiler and MPI library
 module purge
 module load intel
 module load intel-mpi
@@ -71,9 +76,13 @@ time python ./run_tests.py gr --config=--cxx=icc --silent
 time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
+time python ./run_tests.py symmetry --config=--cxx=icc --silent
 
-# Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining
-# Check subset of regression test sets to try most EOS functions called in rsolvers
+# High-order solver regression tests w/ Intel compiler
+time python ./run_tests.py hydro4 --config=--cxx=icc --silent
+
+# Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
+# Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
 time python ./run_tests.py pgen --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
 time python ./run_tests.py mhd --config=--cxx=icc-debug --silent

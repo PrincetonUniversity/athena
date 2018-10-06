@@ -71,7 +71,8 @@ def analyze():
                 continue
             data.append([float(val) for val in line.split()])
 
-    # check absolute error and convergence of all three waves
+    # Check absolute error and convergence rate lower bounds of all waves
+    # Asymptotic second-order convergence should have ratio <= 0.25 in below calculations
     if data[1][4] > 3.7e-8:
         print("error in L-going sound wave too large", data[1][4])
         return False

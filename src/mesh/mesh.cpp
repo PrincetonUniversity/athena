@@ -68,10 +68,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   if (mesh_test>0) Globals::nranks=mesh_test;
 
   // read time and cycle limits from input file
-  start_time = pin->GetOrAddReal("time","start_time",0.0);
-  tlim       = pin->GetReal("time","tlim");
-  cfl_number = pin->GetReal("time","cfl_number");
-  ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
+  start_time = pin->GetOrAddReal("time", "start_time", 0.0);
+  tlim       = pin->GetReal("time", "tlim");
+  cfl_number = pin->GetReal("time", "cfl_number");
+  ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
@@ -80,14 +80,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   turb_flag = 0;
 
-  nlim = pin->GetOrAddInteger("time","nlim",-1);
+  nlim = pin->GetOrAddInteger("time", "nlim", -1);
   ncycle = 0;
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
 
   // read number of OpenMP threads for mesh
-  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
@@ -1201,7 +1201,6 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
   return;
 }
 
-
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
 //                                              MGBoundaryFunc_t my_bc)
@@ -1218,28 +1217,10 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-//                                                   GravityBoundaryFunc_t my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                             GravityBoundaryFunc_t my_bc) {
-  std::stringstream msg;
-  if (dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  GravityBoundaryFunction_[dir]=my_bc;
-  return;
-}
-
-
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
 // \brief Apply MeshBlock::UserWorkBeforeOutput
+
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
   while (pmb != NULL)  {
@@ -1350,9 +1331,95 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     }
 
+    // begin fourth-order correction of midpoint initial condition:
+    // --------------------------
+    bool correct_ic = pmb->precon->correct_ic;
+    if (correct_ic == true) {
+#pragma omp for private(pmb, phydro, pfield, pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i];
+        phydro=pmb->phydro;
+        pfield=pmb->pfield;
+        pbval=pmb->pbval;
+
+        // Assume cell-centered analytic value is computed at all real cells, and ghost
+        // cells with the cell-centered U have been exchanged
+        int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+
+        // Laplacian of cell-averaged conserved variables
+        AthenaArray<Real> delta_cons_;
+
+        // Allocate memory for 4D Laplacian
+        int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+        int ncells2 = 1, ncells3 = 1;
+        if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+        if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+        int ncells4 = NHYDRO;
+        int nl = 0;
+        int nu = ncells4-1;
+        delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+
+        // Compute and store Laplacian of cell-averaged conserved variables
+        pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+        // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+        // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+        Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+        Real C = (h*h)/24.0;
+
+        // Compute fourth-order approximation to cell-centered conserved variables
+        for (int n=nl; n<=nu; ++n) {
+          for (int k=kl; k<=ku; ++k) {
+            for (int j=jl; j<=ju; ++j) {
+              for (int i=il; i<=iu; ++i) {
+                // We do not actually need to store all cell-centered conserved variables,
+                // but the ConservedToPrimitivePointwise() implementation operates on 4D
+                phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
+              }
+            }
+          }
+        }
+        delta_cons_.DeleteAthenaArray();
+      }
+
+      // begin second exchange of ghost cells with corrected cell-averaged <U>
+      // -----------------  (verbatim copied from above)
+      // prepare to receive conserved variables
+#pragma omp for private(pmb)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i];
+        pmb->pbval->Initialize();
+        pmb->pbval->StartReceivingForInit(true);
+      }
+
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+        if (MAGNETIC_FIELDS_ENABLED)
+          pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
+      }
+
+      // wait to receive conserved variables
+#pragma omp for private(pmb,pbval)
+      for (int i=0; i<nmb; ++i) {
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+        if (MAGNETIC_FIELDS_ENABLED)
+          pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+        // send and receive shearingbox boundary conditions
+        if (SHEARING_BOX)
+          pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+        pbval->ClearBoundaryForInit(true);
+      }
+      // -----------------  (verbatim copied from above)
+      // end second exchange of ghost cells
+    } // end if (correct_ic == true)
+    // --------------------------
+    // end fourth-order correction of midpoint initial condition
+
     // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
-    for (int i=0; i<nmb; ++i) {
+      for (int i=0; i<nmb; ++i) {
       pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
       if (multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
@@ -1372,6 +1439,25 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       il, iu, jl, ju, kl, ku);
+      // --------------------------
+      int order = pmb->precon->xorder;
+      if (order == 4) {
+        // fourth-order EOS:
+        // for hydro, shrink buffer by 1 on all sides
+        if (pbval->nblevel[1][1][0] != -1) il+=1;
+        if (pbval->nblevel[1][1][2] != -1) iu-=1;
+        if (pbval->nblevel[1][0][1] != -1) jl+=1;
+        if (pbval->nblevel[1][2][1] != -1) ju-=1;
+        if (pbval->nblevel[0][1][1] != -1) kl+=1;
+        if (pbval->nblevel[2][1][1] != -1) ku-=1;
+        // for MHD, shrink buffer by 3
+        // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
+        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                   phydro->w, pfield->bcc, pmb->pcoord,
+                                                   il, iu, jl, ju, kl, ku);
+      }
+      // --------------------------
+      // end fourth-order EOS
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
     }
@@ -1758,8 +1844,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   // share the cost list
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_REAL,
-                 costlist, nblist, nslist, MPI_REAL, MPI_COMM_WORLD);
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
+                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
 #endif
 
   current_level=0;
@@ -1973,6 +2059,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // move the data within the node
   MeshBlock *newlist=NULL;
 
+  RegionSize block_size=pblock->block_size;
+
   for (int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
@@ -1993,7 +2081,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       }
       pmb->gid=n; pmb->lid=n-nbs;
     } else {
-      RegionSize block_size=pblock->block_size;
       enum BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       // on a different level or node - create a new block

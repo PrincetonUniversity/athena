@@ -4,8 +4,8 @@ language: cpp
 branches:
   only:
   - master
-  - hydro4
-  - mhd4
+  - dust
+  - mhd4_3D
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
@@ -120,9 +120,8 @@ script:
   - echo "Finished linting Python files with flake8"
   # Test Google C++ Style Guide adherence for .cpp, .hpp files:
   - cd tst/style/; ./cpplint_athena.sh
-  - cd ..
   # Run regression test suite:
-  - ./ci/travis/run_tests_travis.sh
+  - cd .. ; ./ci/travis/run_tests_travis.sh
 
 # Codecov coverage analysis
 after_success:

@@ -247,7 +247,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
         coord_area1vc_j_(jl-1)= 2.0-cos(x2v(jl-1))-cos(x2v(jl));
-      if (IsPole(ju))   // outer polar boundary
+      if (IsPole(ju+1))   // outer polar boundary
         coord_area1vc_j_(ju)  = 2.0+cos(x2v(ju))+cos(x2v(ju+1));
     } else {
       Real sm = fabs(sin(x2f(jl  )));

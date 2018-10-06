@@ -27,6 +27,7 @@ def hst(filename, raw=False):
 
     # Read data
     with open(filename, 'r') as data_file:
+
         # Find header
         header_found = False
         multiple_headers = False
@@ -68,8 +69,8 @@ def hst(filename, raw=False):
     if not raw:
         if data_names[0] != 'time':
             raise AthenaError(
-                'Cannot remove spurious data because time column could not be' +
-                ' identified')
+                    'Cannot remove spurious data because time column could not be' +
+                    ' identified')
         branches_removed = False
         while not branches_removed:
             branches_removed = True
@@ -110,8 +111,8 @@ def tab(filename, raw=False, dimensions=None):
             headings = headings[1:2] + headings[3:4] + headings[5:]
             dimensions = 3
         elif ((headings[0] == 'i' and headings[2] == 'j') or
-              (headings[0] == 'i' and headings[2] == 'k') or
-              (headings[0] == 'j' and headings[2] == 'k')):
+                (headings[0] == 'i' and headings[2] == 'k') or
+                (headings[0] == 'j' and headings[2] == 'k')):
             headings = headings[1:2] + headings[3:]
             dimensions = 2
         elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
@@ -212,7 +213,7 @@ def vtk(filename):
     while raw_data_ascii[end_of_line_index] != '\n':
         end_of_line_index += 1
     face_dimensions = list(map(
-        int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
+            int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
     current_index = end_of_line_index + 1
 
     # Function for reading interface locations
@@ -326,7 +327,7 @@ class athdf(dict):
             h5py
         except NameError:
             raise ImportError(
-                'athdf could not be executed because h5py could not be imported.')
+                    'athdf could not be executed because h5py could not be imported.')
 
         # Prepare dictionary for results
         if data is None:
@@ -361,6 +362,7 @@ class athdf(dict):
 
         # Open file
         with h5py.File(filename, 'r') as f:
+
             # Extract size information
             self.max_level = f.attrs['MaxLevel']
             if self.level is None:
@@ -369,34 +371,47 @@ class athdf(dict):
             root_grid_size = f.attrs['RootGridSize']
             self.levels = f['Levels'][:]
             self.logical_locations = f['LogicalLocations'][:]
+
+            # Determine sums and slices
             nx_vals = []
             for d in range(3):
-                if self.block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
+
+                # Sum or slice
+                if self.block_size[d] == 1 and root_grid_size[d] > 1:
                     other_locations = [
-                        location for location in zip(self.levels,
-                                                     self.logical_locations[:, (d+1) % 3],
-                                                     self.logical_locations[:, (d+2) % 3])
-                        ]
-                    # effective slice
+                            location for location in zip(
+                                self.levels,
+                                self.logical_locations[:, (d+1) % 3],
+                                self.logical_locations[:, (d+2) % 3])]
+
+                    # Effective slice
                     if len(set(other_locations)) == len(other_locations):
                         nx_vals.append(1)
-                    else:  # nontrivial sum
+
+                    # Nontrivial sum
+                    else:
                         num_blocks_this_dim = 0
                         for (level_this_dim, loc_this_dim) in zip(
                                 self.levels, self.logical_locations[:, d]):
                             if level_this_dim <= self.level:
                                 num_blocks_this_dim = max(
-                                    num_blocks_this_dim,
-                                    (loc_this_dim + 1) * 2 ** (self.level-level_this_dim))
+                                        num_blocks_this_dim, (loc_this_dim + 1)
+                                        * 2 ** (self.level-level_this_dim))
                             else:
                                 num_blocks_this_dim = max(
-                                    num_blocks_this_dim,
-                                    (loc_this_dim + 1) / 2 ** (level_this_dim-self.level))
+                                        num_blocks_this_dim, (loc_this_dim + 1)
+                                        / 2 ** (level_this_dim-self.level))
                         nx_vals.append(num_blocks_this_dim)
-                elif self.block_size[d] == 1:  # singleton dimension
+
+                # Singleton dimension
+                elif self.block_size[d] == 1:
                     nx_vals.append(1)
-                else:  # normal case
+
+                # Normal case
+                else:
                     nx_vals.append(root_grid_size[d] * 2 ** self.level)
+
+            # Set dimensions
             self.nx1 = nx_vals[0]
             self.nx2 = nx_vals[1]
             self.nx3 = nx_vals[2]
@@ -424,22 +439,22 @@ class athdf(dict):
                         self.fast_restrict = True
                     else:
                         self.vol_func = lambda xm, xp, ym, yp, zm, zp: (
-                            xp - xm) * (yp - ym) * (zp - zm)
+                                xp - xm) * (yp - ym) * (zp - zm)
                 elif coord == 'cylindrical':
                     if (self.nx1 == 1 and (self.nx2 == 1 or x2_rat == 1.0)
                             and (self.nx3 == 1 or x3_rat == 1.0)):
                         self.fast_restrict = True
                     else:
                         self.vol_func = lambda rm, rp, phim, phip, zm, zp: (
-                            rp**2 - rm**2) * (phip - phim) * (zp - zm)
+                                rp**2 - rm**2) * (phip - phim) * (zp - zm)
                 elif coord == 'spherical_polar' or coord == 'schwarzschild':
                     if self.nx1 == 1 and self.nx2 == 1 and (
                             self.nx3 == 1 or x3_rat == 1.0):
                         self.fast_restrict = True
                     else:
                         self.vol_func = lambda rm, rp, thetam, thetap, phim, phip: ((
-                            rp**3 - rm**3) * abs(np.cos(thetam) - np.cos(thetap))
-                            * (phip - phim))
+                                rp**3 - rm**3) * abs(np.cos(thetam) - np.cos(thetap))
+                                * (phip - phim))
                 elif coord == 'kerr-schild':
                     if self.nx1 == 1 and self.nx2 == 1 and (
                             self.nx3 == 1 or x3_rat == 1.0):
@@ -484,7 +499,7 @@ class athdf(dict):
                         return (sp - xp*cp - sm + xm*cm) / (cm-cp)
                 elif coord == 'schwarzschild':
                     def center_func_2(xm, xp): return np.arccos(
-                        0.5 * (np.cos(xm) + np.cos(xp)))
+                            0.5 * (np.cos(xm) + np.cos(xp)))
                 else:
                     raise AthenaError('Coordinates not recognized')
             if center_func_3 is None:
@@ -500,15 +515,15 @@ class athdf(dict):
             if (self.level < self.max_level and not self.subsample
                     and not self.fast_restrict):
                 warnings.warn(
-                    'Exact restriction being used: performance severely affected; see' +
-                    ' documentation',
-                    AthenaWarning)
+                        'Exact restriction being used: performance severely affected;' +
+                        ' see documentation',
+                        AthenaWarning)
                 sys.stderr.flush()
             if self.level > self.max_level:
                 warnings.warn(
-                    'Requested refinement level higher than maximum level in file:' +
-                    ' all cells will be prolongated',
-                    AthenaWarning)
+                        'Requested refinement level higher than maximum level in file:' +
+                        ' all cells will be prolongated',
+                        AthenaWarning)
                 sys.stderr.flush()
 
             # Check that subsampling and/or fast restriction will work if needed
@@ -518,8 +533,9 @@ class athdf(dict):
                     if (current_block_size != 1 and current_block_size %
                             max_restrict_factor != 0):
                         raise AthenaError(
-                          'Block boundaries at finest level must be cell boundaries' +
-                          ' at desired level for subsampling or fast restriction to work')
+                                'Block boundaries at finest level must be cell' +
+                                ' boundaries at desired level for subsampling or fast' +
+                                ' restriction to work')
 
             # Create list of all quantities if none given
             var_quantities = np.array([x.decode('ascii', 'replace')
@@ -537,8 +553,8 @@ class athdf(dict):
                         possibilities = '", "'.join(var_quantities)
                         possibilities = '"' + possibilities + '"'
                         error_string = (
-                          'Quantity not recognized: file does not include "{0}" but'
-                          ' does include {1}')
+                                'Quantity not recognized: file does not include "{0}" but'
+                                ' does include {1}')
                         raise AthenaError(error_string.format(q, possibilities))
             self.quantities = [str(q) for q in self.quantities
                                if q not in coord_quantities
@@ -583,31 +599,43 @@ class athdf(dict):
             center_funcs = (center_func_1, center_func_2, center_func_3)
             for d, nx, face_func, center_func in zip(
                     range(1, 4), nx_vals, face_funcs, center_funcs):
+                xf = 'x' + repr(d) + 'f'
+                xv = 'x' + repr(d) + 'v'
                 if nx == 1:
                     xm = (self.x1m, self.x2m, self.x3m)[d-1]
                     xp = (self.x1p, self.x2p, self.x3p)[d-1]
-                    self['x' + repr(d) + 'f'] = np.array([xm, xp])
+                    self[xf] = np.array([xm, xp])
                 else:
                     xmin = f.attrs['RootGridX'+repr(d)][0]
                     xmax = f.attrs['RootGridX'+repr(d)][1]
-                    xrat_root = f.attrs['RootGridX' + repr(d)][2]
+                    xrat_root = f.attrs['RootGridX'+repr(d)][2]
                     if xrat_root == -1.0 and face_func is None:
                         raise AthenaError(
-                            'Must specify user-defined face_func_{0}'.format(d))
+                                'Must specify user-defined face_func_{0}'.format(d))
                     elif face_func is not None:
-                        self['x' + repr(d) + 'f'] = face_func(xmin,
-                                                              xmax, xrat_root, nx + 1)
+                        self[xf] = face_func(xmin, xmax, xrat_root, nx + 1)
                     elif xrat_root == 1.0:
-                        self['x' + repr(d) + 'f'] = np.linspace(xmin, xmax, nx + 1)
+                        if np.all(self.levels == self.level):
+                            self[xf] = np.empty(nx + 1)
+                            for n_block in range(int(nx / self.block_size[d-1])):
+                                sample_location = [0, 0, 0]
+                                sample_location[d-1] = n_block
+                                sample_block = np.where(np.all(
+                                    self.logical_locations == sample_location,
+                                    axis=1))[0][0]
+                                index_low = n_block * self.block_size[d-1]
+                                index_high = index_low + self.block_size[d-1] + 1
+                                self[xf][index_low:index_high] = f[xf][sample_block, :]
+                        else:
+                            self[xf] = np.linspace(xmin, xmax, nx + 1)
                     else:
                         xrat = xrat_root ** (1.0 / 2 ** self.level)
-                        self['x' + repr(d) + 'f'] = (
-                            xmin + (1.0 - xrat**np.arange(nx+1)) / (1.0 - xrat**nx)
-                            * (xmax - xmin))
-                self['x' + repr(d) + 'v'] = np.empty(nx)
+                        self[xf] = (
+                                xmin + (1.0 - xrat**np.arange(nx+1)) / (1.0 - xrat**nx)
+                                * (xmax - xmin))
+                self[xv] = np.empty(nx)
                 for i in range(nx):
-                    self['x' + repr(d) + 'v'][i] = center_func(
-                        self['x' + repr(d) + 'f'][i], self['x' + repr(d) + 'f'][i+1])
+                    self[xv][i] = center_func(self[xf][i], self[xf][i+1])
 
             # Account for selection
             x1_select = False
@@ -621,46 +649,37 @@ class athdf(dict):
             if x1_min is not None and x1_min >= self['x1f'][1]:
                 if x1_min >= self['x1f'][-1]:
                     raise AthenaError(error_string.format(
-                        'x1_min', 'less', self['x1f'][-1]))
+                            'x1_min', 'less', self['x1f'][-1]))
                 x1_select = True
                 self.i_min = np.where(self['x1f'] <= x1_min)[0][-1]
             if x1_max is not None and x1_max <= self['x1f'][-2]:
                 if x1_max <= self['x1f'][0]:
                     raise AthenaError(
-                        error_string.format(
-                            'x1_max',
-                            'greater',
-                            self['x1f'][0]))
+                            error_string.format('x1_max', 'greater', self['x1f'][0]))
                 x1_select = True
                 self.i_max = np.where(self['x1f'] >= x1_max)[0][0]
             if x2_min is not None and x2_min >= self['x2f'][1]:
                 if x2_min >= self['x2f'][-1]:
                     raise AthenaError(error_string.format(
-                        'x2_min', 'less', self['x2f'][-1]))
+                            'x2_min', 'less', self['x2f'][-1]))
                 x2_select = True
                 self.j_min = np.where(self['x2f'] <= x2_min)[0][-1]
             if x2_max is not None and x2_max <= self['x2f'][-2]:
                 if x2_max <= self['x2f'][0]:
                     raise AthenaError(
-                        error_string.format(
-                            'x2_max',
-                            'greater',
-                            self['x2f'][0]))
+                            error_string.format('x2_max', 'greater', self['x2f'][0]))
                 x2_select = True
                 self.j_max = np.where(self['x2f'] >= x2_max)[0][0]
             if x3_min is not None and x3_min >= self['x3f'][1]:
                 if x3_min >= self['x3f'][-1]:
                     raise AthenaError(error_string.format(
-                        'x3_min', 'less', self['x3f'][-1]))
+                            'x3_min', 'less', self['x3f'][-1]))
                 x3_select = True
                 self.k_min = np.where(self['x3f'] <= x3_min)[0][-1]
             if x3_max is not None and x3_max <= self['x3f'][-2]:
                 if x3_max <= self['x3f'][0]:
                     raise AthenaError(
-                        error_string.format(
-                            'x3_max',
-                            'greater',
-                            self['x3f'][0]))
+                            error_string.format('x3_max', 'greater', self['x3f'][0]))
                 x3_select = True
                 self.k_max = np.where(self['x3f'] >= x3_max)[0][0]
 
@@ -680,11 +699,91 @@ class athdf(dict):
                 if i not in self:
                     self[i] = None
 
+        if self.return_levels:
+            self._get_levels()
+
+    def _get_levels(self):
+        self['Levels'] = np.ones((self._shape()), dtype=np.int32) * -1
+        for block_num in range(self.num_blocks):
+            block_level = self.levels[block_num]
+            block_location = self.logical_locations[block_num, :]
+
+            # Prolongate coarse data and copy same-level data
+            if block_level <= self.level:
+
+                # Calculate scale (number of copies per dimension)
+                s = 2 ** (self.level - block_level)
+
+                # Calculate destination indices, without selection
+                il_d = block_location[0] * self.block_size[0] * s if self.nx1 > 1 else 0
+                jl_d = block_location[1] * self.block_size[1] * s if self.nx2 > 1 else 0
+                kl_d = block_location[2] * self.block_size[2] * s if self.nx3 > 1 else 0
+                iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
+                ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
+                ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
+
+                # Calculate (prolongated) source indices, with selection
+                il_s = max(il_d, self.i_min) - il_d
+                jl_s = max(jl_d, self.j_min) - jl_d
+                kl_s = max(kl_d, self.k_min) - kl_d
+                iu_s = min(iu_d, self.i_max) - il_d
+                ju_s = min(ju_d, self.j_max) - jl_d
+                ku_s = min(ku_d, self.k_max) - kl_d
+                if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+                    continue
+
+                # Account for selection in destination indices
+                il_d = max(il_d, self.i_min) - self.i_min
+                jl_d = max(jl_d, self.j_min) - self.j_min
+                kl_d = max(kl_d, self.k_min) - self.k_min
+                iu_d = min(iu_d, self.i_max) - self.i_min
+                ju_d = min(ju_d, self.j_max) - self.j_min
+                ku_d = min(ku_d, self.k_max) - self.k_min
+
+            # Restrict fine data
+            else:
+                # Calculate scale
+                s = 2 ** (block_level - self.level)
+
+                # Calculate destination indices, without selection
+                il_d = block_location[0] * self.block_size[0] / s if self.nx1 > 1 else 0
+                jl_d = block_location[1] * self.block_size[1] / s if self.nx2 > 1 else 0
+                kl_d = block_location[2] * self.block_size[2] / s if self.nx3 > 1 else 0
+                iu_d = il_d + self.block_size[0] / s if self.nx1 > 1 else 1
+                ju_d = jl_d + self.block_size[1] / s if self.nx2 > 1 else 1
+                ku_d = kl_d + self.block_size[2] / s if self.nx3 > 1 else 1
+
+                # Calculate (restricted) source indices, with selection
+                il_s = max(il_d, self.i_min) - il_d
+                jl_s = max(jl_d, self.j_min) - jl_d
+                kl_s = max(kl_d, self.k_min) - kl_d
+                iu_s = min(iu_d, self.i_max) - il_d
+                ju_s = min(ju_d, self.j_max) - jl_d
+                ku_s = min(ku_d, self.k_max) - kl_d
+                if il_s >= iu_s or jl_s >= ju_s or kl_s >= ku_s:
+                    continue
+
+                # Account for selection in destination indices
+                il_d = max(il_d, self.i_min) - self.i_min
+                jl_d = max(jl_d, self.j_min) - self.j_min
+                kl_d = max(kl_d, self.k_min) - self.k_min
+                iu_d = min(iu_d, self.i_max) - self.i_min
+                ju_d = min(ju_d, self.j_max) - self.j_min
+                ku_d = min(ku_d, self.k_max) - self.k_min
+
+            # Set level information for cells in this block
+            self['Levels'][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_level
+
     # Function for contingently accessing data
     def __getitem__(self, item):
         if self._need_to_read(item):
             self._grab_quantities([item])
-        return super(athdf, self).__getitem__(item)
+        try:
+            return super(athdf, self).__getitem__(item)
+        except KeyError:
+            if item == 'Levels':
+                self._get_levels()
+                return super(athdf, self).__getitem__(item)
 
     # Function for contingently setting data
     def __setitem__(self, key, value):
@@ -725,8 +824,6 @@ class athdf(dict):
             if self.new_data:
                 for q in quantities:
                     self[q] = np.zeros((self._shape()), dtype=self.dtype)
-                if self.return_levels:
-                    self['Levels'] = np.empty((self._shape()), dtype=np.int32)
             else:
                 for q in quantities:
                     self[q].fill(0.0)
@@ -736,6 +833,7 @@ class athdf(dict):
 
             # Go through blocks in data file
             for block_num in range(self.num_blocks):
+
                 # Extract location information
                 block_level = self.levels[block_num]
                 block_location = self.logical_locations[block_num, :]
@@ -788,10 +886,11 @@ class athdf(dict):
                             if self.nx3 > 1:
                                 block_data = np.repeat(block_data, s, axis=0)
                         self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (
-                            block_data[kl_s:ku_s, jl_s:ju_s, il_s:iu_s])
+                                block_data[kl_s:ku_s, jl_s:ju_s, il_s:iu_s])
 
                 # Restrict fine data
                 else:
+
                     # Calculate scale
                     s = 2 ** (block_level - self.level)
 
@@ -837,6 +936,7 @@ class athdf(dict):
 
                     # Apply subsampling
                     if self.subsample:
+
                         # Calculate fine-level offsets (nearest cell at or below center)
                         o1 = s/2 - 1 if self.nx1 > 1 else 0
                         o2 = s/2 - 1 if self.nx2 > 1 else 0
@@ -846,13 +946,14 @@ class athdf(dict):
                         for q in quantities:
                             dataset = self.quantity_datasets[q]
                             index = self.quantity_indices[q]
-                            self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (
-                                f[dataset][index, block_num, kl_s+o3:ku_s:s,
-                                           jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
-                                )
+                            self[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = (f[dataset][
+                                index, block_num, kl_s+o3:ku_s:s,
+                                jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
+                            )
 
                     # Apply fast (uniform Cartesian) restriction
                     elif self.fast_restrict:
+
                         # Calculate fine-level offsets
                         io_vals = range(s) if self.nx1 > 1 else (0,)
                         jo_vals = range(s) if self.nx2 > 1 else (0,)
@@ -867,16 +968,17 @@ class athdf(dict):
                                     for io in io_vals:
                                         self[q][kl_d:ku_d,
                                                 jl_d:ju_d,
-                                                il_d:iu_d] += f[dataset][index,
-                                                                         block_num,
-                                                                         kl_s+ko:ku_s:s,
-                                                                         jl_s+jo:ju_s:s,
-                                                                         il_s+io:iu_s:s]
+                                                il_d:iu_d] += f[dataset][
+                                                    index, block_num,
+                                                    kl_s+ko:ku_s:s,
+                                                    jl_s+jo:ju_s:s,
+                                                    il_s+io:iu_s:s]
                             self[q][kl_d:ku_d, jl_d:ju_d,
                                     il_d:iu_d] /= s ** self.num_extended_dims
 
                     # Apply exact (volume-weighted) restriction
                     else:
+
                         # Calculate sets of indices
                         i_s_vals = range(il_s, iu_s)
                         j_s_vals = range(jl_s, ju_s)
@@ -905,8 +1007,8 @@ class athdf(dict):
                                         self.x1m = f['x1f'][block_num, i_s]
                                         self.x1p = f['x1f'][block_num, i_s+1]
                                     vol = self.vol_func(
-                                        self.x1m, self.x1p, self.x2m, self.x2p,
-                                        self.x3m, self.x3p)
+                                            self.x1m, self.x1p, self.x2m, self.x2p,
+                                            self.x3m, self.x3p)
                                     for q in quantities:
                                         dataset = self.quantity_datasets[q]
                                         index = self.quantity_indices[q]
@@ -917,10 +1019,6 @@ class athdf(dict):
                         loc2 = (self.nx2 > 1) * block_location[1] / s
                         loc3 = (self.nx3 > 1) * block_location[2] / s
                         restricted_data[loc3, loc2, loc1] = True
-
-                # Set level information for cells in this block
-                if self.return_levels:
-                    self['Levels'][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_level
 
         # Remove volume factors from restricted data
         if self.level < self.max_level and not self.subsample and not self.fast_restrict:
@@ -953,9 +1051,8 @@ class athdf(dict):
                                             self.x1m = self['x1f'][i]
                                             self.x1p = self['x1f'][i+1]
                                         vol = self.vol_func(
-                                            self.x1m, self.x1p, self.x2m, self.x2p,
-                                            self.x3m, self.x3p
-                                        )
+                                                self.x1m, self.x1p, self.x2m, self.x2p,
+                                                self.x3m, self.x3p)
                                         for q in quantities:
                                             self[q][k, j, i] /= vol
 
@@ -992,27 +1089,19 @@ def restrict_like(vals, levels, vols=None):
             vals_level = np.reshape(vals * vols, (nx3/stride, stride, nx2/stride, stride,
                                                   nx1/stride, stride))
             vols_level = np.reshape(
-                vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
+                    vols, (nx3/stride, stride, nx2/stride, stride, nx1/stride, stride))
             vals_sum = np.sum(np.sum(np.sum(vals_level, axis=5), axis=3), axis=1)
             vols_sum = np.sum(np.sum(np.sum(vols_level, axis=5), axis=3), axis=1)
             vals_level = np.repeat(
-                np.repeat(
-                    np.repeat(
-                        vals_sum /
-                        vols_sum,
-                        stride,
-                        axis=0),
-                    stride,
-                    axis=1),
-                stride,
-                axis=2)
+                    np.repeat(np.repeat(vals_sum / vols_sum, stride, axis=0), stride,
+                              axis=1), stride, axis=2)
         elif nx2 > 1:
             vals_level = np.reshape(vals * vols, (nx2/stride, stride, nx1/stride, stride))
             vols_level = np.reshape(vols, (nx2/stride, stride, nx1/stride, stride))
             vals_sum = np.sum(np.sum(vals_level, axis=3), axis=1)
             vols_sum = np.sum(np.sum(vols_level, axis=3), axis=1)
             vals_level = np.repeat(
-                np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
+                    np.repeat(vals_sum / vols_sum, stride, axis=0), stride, axis=1)
         else:
             vals_level = np.reshape(vals * vols, (nx1/stride, stride))
             vols_level = np.reshape(vols, (nx1/stride, stride))
@@ -1029,12 +1118,11 @@ def restrict_like(vals, levels, vols=None):
 def athinput(filename):
     """Read athinput file and returns a dictionary of dictionaries."""
 
-    # Read data
+    # Read data, removing comments, extra whitespace, and empty lines
     with open(filename, 'r') as athinput:
-        # remove comments, extra whitespace, and empty lines
         lines = filter(None, [i.split('#')[0].strip() for i in athinput.readlines()])
-    data = {}
-    # split into blocks, first element will be empty
+
+    # Split into blocks, first element will be empty
     blocks = ('\n'.join(lines)).split('<')[1:]
 
     # Function for interpreting strings numerically
@@ -1061,6 +1149,7 @@ def athinput(filename):
         return out[:2]
 
     # Assign values into dictionaries
+    data = {}
     for block in blocks:
         info = list(filter(None, block.split('\n')))
         key = info.pop(0)[:-1]  # last character is '>'

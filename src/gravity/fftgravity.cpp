@@ -58,10 +58,10 @@ FFTGravityDriver::~FFTGravityDriver() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityDriver::Solve(int step)
+//! \fn void GravityDriver::Solve(int stage)
 //  \brief load the data and solve
 
-void FFTGravityDriver::Solve(int step, int mode) {
+void FFTGravityDriver::Solve(int stage, int mode) {
   FFTBlock *pfb=pmy_fb;
   AthenaArray<Real> in;
   // Load the source
@@ -92,7 +92,7 @@ void FFTGravityDriver::Solve(int step, int mode) {
 //    }
   }
 
-  gtlist_->DoTaskListOneSubstep(pmy_mesh_,step);
+  gtlist_->DoTaskListOneStage(pmy_mesh_, stage);
 
   return;
 }

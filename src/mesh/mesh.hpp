@@ -68,7 +68,7 @@ public:
             char *mbdata, int igflag);
   ~MeshBlock();
 
-  //data
+  // data
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
@@ -76,8 +76,11 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
   int gflag;
-  // Track the partial dt abscissae for substepping each memory register, relative to t^n
-  Real step_dt[3];
+  // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
+  // the time-integration scheme may partially substep several storage register pairs
+  // (u,b), (u1,b1), (u2, b2), ..., (um, bm) through the dt interval. Track their time
+  // abscissae at the end of each stage (1<=l<=nstage) as (dt_m^l) relative to t^n
+  Real stage_abscissae[MAX_NSTAGE+1][MAX_NREGISTER];
 
   // user output variables for analysis
   int nuser_out_var;
@@ -227,7 +230,6 @@ private:
   ConductionCoeff_t ConductionCoeff_;
   FieldDiffusionCoeff_t FieldDiffusivity_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
-  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -245,8 +247,6 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir,
-                                         GravityBoundaryFunc_t my_bc);
   void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
   void EnrollConductionCoefficient(ConductionCoeff_t my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);
@@ -259,7 +259,7 @@ private:
 
 //----------------------------------------------------------------------------------------
 // \!fn Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval)
-// \brief wrapper fn to compute Real x logical location for either [0, 1] or [-0.5, 0.5]
+// \brief wrapper fn to compute Real x logical location for either [0., 1.] or [-0.5, 0.5]
 //        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
 
 inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval) {
@@ -281,7 +281,7 @@ inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interv
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0, 1]
+// \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
@@ -299,7 +299,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location; x=j/nx2, real in [0, 1]
+// \brief x2 mesh generator function, x is the logical location; x=j/nx2, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
@@ -316,7 +316,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
 
 //----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location; x=k/nx3, real in [0, 1]
+// \brief x3 mesh generator function, x is the logical location; x=k/nx3, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
