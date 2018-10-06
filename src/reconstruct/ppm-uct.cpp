@@ -27,6 +27,9 @@
 // mapped coordinates", JCP, 230, 2952 (2011)
 //========================================================================================
 
+// C++ headers
+#include <algorithm>
+
 // Athena++ headers
 #include "reconstruction.hpp"
 #include "../athena.hpp"
@@ -92,10 +95,9 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
 		  qc = 1.0*(q(nin,k,j,i-1) - 2.0*q(nin,k,j,i) + q(nin,k,j,i+1)); // (CD eq 85c);
 		  // (the above two stencils are wastefully recomputed after this)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
 			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  }
-		  else {
+		  } else {
 			qd =0.0;
 		  }
 		  dph_(i) = 0.5*(q(nin,k,j,i-1)+q(nin,k,j,i)) - qd/6.0;
@@ -144,8 +146,7 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
             // Extrema is smooth
             qe = SIGN(qd)* std::min(std::min(C2*fabs(qa),C2*fabs(qb)),
                                     std::min(C2*fabs(qc),fabs(qd))); // (CS eq 22)
-          }
-          else {
+          } else {
             // Extrema is at interface adjacent to a discontinuity: flatten derivative
             qe =0.0;
           }
@@ -167,10 +168,8 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
 			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
 			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
-        } // end check of local extrema 2x conditions
-
-        //----------- No extrema detected
-        else {
+        } else { // end check of local extrema 2x conditions
+          //----------- No extrema detected
           // Construct the parabolic interpolant with a monotonicity preserving limiter
           // Using standard CW overshoot limiters; see Martin memo for diffusivity info
 
@@ -272,19 +271,16 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
 			qc = 1.0*(q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i)); // (CD eq 85c)
 			// (the above two stencils are wastefully recomputed)
 
-			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
 			  qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-			}
-			else {
+            } else {
 			  qd =0.0;
 			}
 			dph_(i) = 0.5*(q(nin,k,j-1,i)+q(nin,k,j,i)) - qd/6.0;
 		  }  // end check of interpolated interface monotonicity
 		}
-	  }
-
-      // Reuse old x1 slice information from previous j
-      else {
+      } else {
+        // Reuse old x1 slice information from previous j
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
          // Non-limited interface averages at j-1/2, j+1/2
         x2scratch_.InitWithShallowCopy(dph_);
@@ -319,10 +315,9 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
 		  qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k,j+1,i) + q(nin,k,j+2,i)); // (CD eq 85c)
 		  // (the above two stencils are wastefully recomputed)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
 			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  }
-		  else {
+		  } else {
 			qd =0.0;
 		  }
 		  dph_jp1_(i) = 0.5*(q(nin,k,j+1,i)+q(nin,k,j,i)) - qd/6.0;
@@ -364,8 +359,7 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
             // Extrema is possibly smooth
             qe = SIGN(qd)* std::min(std::min(C2*fabs(qa),C2*fabs(qb)),
                                     std::min(C2*fabs(qc),fabs(qd))); // (CS eq 22)
-          }
-          else {
+          } else {
             // Extrema is at interface adjacent to a discontinuity: flatten derivative
             qe =0.0;
           }
@@ -387,10 +381,8 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
 			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
 			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
-        } // end check of local extrema 2x conditions
-
-        //----------- No extrema detected
-        else {
+        } else { // end check of local extrema 2x conditions
+          //----------- No extrema detected:
           // Construct the parabolic interpolant with a monotonicity preserving limiter
           // Using standard CW overshoot limiters; see Martin memo for diffusivity info
 
@@ -499,18 +491,15 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
 			qc = 1.0*(q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i)); // (CD eq 85c)
 			// (the above two stencils are wastefully recomputed)
 
-			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
 			  qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-			}
-			else {
-			  qd =0.0;
+			} else {
+			  qd = 0.0;
 			}
 			dph_(i) = 0.5*(q(nin,k-1,j,i)+q(nin,k,j,i)) - qd/6.0;
 		  }  // end check of interpolated interface monotonicity
         }
-      }
-      // Reuse old x1 slice information from previous j
-      else {
+      } else { // Reuse old x1 slice information from previous j:
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
          // Non-limited interface averages at j-1/2, j+1/2
         x3scratch_.InitWithShallowCopy(dph_);
@@ -545,10 +534,9 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
 		  qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k+1,j,i) + q(nin,k+2,j,i)); // (CD eq 85c)
 		  // (the above two stencils are wastefully recomputed)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)){
+		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
 			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  }
-		  else {
+		  }	else {
 			qd =0.0;
 		  }
 		  dph_kp1_(i) = 0.5*(q(nin,k+1,j,i)+q(nin,k,j,i)) - qd/6.0;
@@ -590,8 +578,7 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
             // Extrema is possibly smooth
             qe = SIGN(qd)* std::min(std::min(C2*fabs(qa),C2*fabs(qb)),
                                     std::min(C2*fabs(qc),fabs(qd))); // (CS eq 22)
-          }
-          else {
+          } else {
             // Extrema is at interface adjacent to a discontinuity: flatten derivative
             qe =0.0;
           }
@@ -613,10 +600,8 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
 			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
 			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
-        } // end check of local extrema 2x conditions
-
-        //----------- No extrema detected
-        else {
+        } else { // end check of local extrema 2x conditions
+          //----------- No extrema detected
           // Construct the parabolic interpolant with a monotonicity preserving limiter
           // Using standard CW overshoot limiters; see Martin memo for diffusivity info
 
