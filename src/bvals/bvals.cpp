@@ -1833,7 +1833,7 @@ void BoundaryValues::ApplyPhysicalBoundariesConserved(AthenaArray<Real> &pdst,
   if (BoundaryFunction_[OUTER_X1] != NULL) {
     OutflowOuterX1(pmb, pco, cdst, bfdst, time, dt,
                    pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
-	// Do not apply EOS here, since this occurs before all cell EOS4
+    // Do not apply EOS here, since this occurs before all cell EOS4
   }
 
   if (pmb->block_size.nx2>1) { // 2D or 3D

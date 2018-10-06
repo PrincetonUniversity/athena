@@ -319,7 +319,7 @@ void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 
 void OutflowCellFieldInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
-							 int is, int ie, int js, int je, int ks, int ke) {
+                             int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NFIELD); ++n) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -374,7 +374,7 @@ void OutflowFaceFieldInnerX1(MeshBlock *pmb, Coordinates *pco, FaceField &b, int
 
 
 void OutflowCellFieldOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
-							 int is, int ie, int js, int je, int ks, int ke) {
+                             int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NFIELD); ++n) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -429,7 +429,7 @@ void OutflowFaceFieldOuterX1(MeshBlock *pmb, Coordinates *pco,FaceField &b, int 
 }
 
 void OutflowCellFieldInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
-							 int is, int ie, int js, int je, int ks, int ke) {
+                             int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NFIELD); ++n) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=1; j<=(NGHOST); ++j) {
@@ -484,7 +484,7 @@ void OutflowFaceFieldInnerX2(MeshBlock *pmb, Coordinates *pco, FaceField &b, int
 
 
 void OutflowCellFieldOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &bc,
-							 int is, int ie, int js, int je, int ks, int ke) {
+                             int is, int ie, int js, int je, int ks, int ke) {
   for (int n=0; n<(NFIELD); ++n) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=1; j<=(NGHOST); ++j) {
