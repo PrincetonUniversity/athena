@@ -5,7 +5,7 @@ branches:
   only:
   - master
   - dust
-  - mhd4_3d
+  - mhd4_3D
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
