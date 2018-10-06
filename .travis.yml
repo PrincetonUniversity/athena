@@ -44,49 +44,64 @@ cache:
 # the first value in the above arrays. Could encapsulate in script
 matrix:
   include:
-  - os: osx
-    osx_image: xcode9.3 # macOS 10.13 High Sierra
-    compiler: clang++
-    env:
-    - MPI_CHOICE=mpich
-    # Override Linux cache mapping
-    cache:
-      pip: true
-      directories:
-      - "/usr/local/Cellar/mpich/"
-      - "/usr/local/Cellar/open-mpi/"
-      - "/usr/local/Cellar/libevent/"
-      - "/usr/local/Cellar/szip/"
-      # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
-      - "/usr/local/opt/libevent"
-      # For caching macOS Homebrew installation symlinks:
-      - openmpi
-      - mpich
-      - fftw
-      - "/usr/local/Cellar/fftw/"
-      - hdf5
-      - "/usr/local/Cellar/hdf5/"
-  - os: osx
-    osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
-    compiler: clang++
-    env:
-    - MPI_CHOICE=openmpi
-    - TMPDIR=/tmp
-    # Cache is shared with other osx build with MPICH
-    cache:
-      pip: true
-      directories:
-      - "/usr/local/Cellar/mpich/"
-      - "/usr/local/Cellar/open-mpi/"
-      - "/usr/local/Cellar/libevent/"
-      - "/usr/local/Cellar/szip/"
-      - "/usr/local/opt/libevent"
-      - openmpi
-      - mpich
-      - fftw
-      - "/usr/local/Cellar/fftw/"
-      - hdf5
-      - "/usr/local/Cellar/hdf5/"
+    - os: osx
+      osx_image: xcode9.3 # macOS 10.13 High Sierra
+      compiler: clang++
+      env:
+        - MPI_CHOICE=mpich
+      # Override Linux cache mapping
+      cache:
+        pip: true
+        directories:
+          - "/usr/local/Cellar/mpich/"
+          - "/usr/local/Cellar/open-mpi/"
+          - "/usr/local/Cellar/libevent/"
+          - "/usr/local/Cellar/szip/"
+          # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
+          - "/usr/local/opt/libevent"
+          # For caching macOS Homebrew installation symlinks:
+          - openmpi
+          - mpich
+          - fftw
+          - "/usr/local/Cellar/fftw/"
+          - hdf5
+          - "/usr/local/Cellar/hdf5/"
+    - os: osx
+      osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+      compiler: clang++
+      env:
+        - MPI_CHOICE=openmpi
+        - TMPDIR=/tmp
+      # Cache is shared with other osx build with MPICH
+      cache:
+        pip: true
+        directories:
+          - "/usr/local/Cellar/mpich/"
+          - "/usr/local/Cellar/open-mpi/"
+          - "/usr/local/Cellar/libevent/"
+          - "/usr/local/Cellar/szip/"
+          - "/usr/local/opt/libevent"
+          - openmpi
+          - mpich
+          - fftw
+          - "/usr/local/Cellar/fftw/"
+          - hdf5
+          - "/usr/local/Cellar/hdf5/"
+    # Run style checks only once: inherits first value of each Build Matrix dimension
+    # (Ubuntu, GCC, MPICH). 'job: include:' is an alias for 'matrix: include:'
+    # Test PEP 8 style compliance for .py files:
+    - stage: python linter
+      before_install: skip
+      install: skip
+      before_script: skip
+      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
+    # Test Google C++ Style Guide adherence for .cpp, .hpp files:
+    - stage: c++ linter
+      before_install: skip
+      install: skip
+      before_script: skip
+      script: cd tst/style/; ./cpplint_athena.sh
+
 # Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
 before_install:
   - test -n $CC  && unset CC
@@ -116,22 +131,6 @@ before_script:
 # Above Build Matrix expansion is assigned to default stage name "test";
 # Run subset of regression test suite on all build environments
 script: cd .. ; ./ci/travis/run_tests_travis.sh
-
-# Run style checks only once: nherits first value of each Build Matrix dimension (Ubuntu, GCC, MPICH)
-jobs:
-  include:
-    # Test PEP 8 style compliance for .py files:
-    - stage: python linter
-      before_install: skip
-      install: skip
-      before_script: skip
-      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
-    # Test Google C++ Style Guide adherence for .cpp, .hpp files:
-    - stage: c++ linter
-      before_install: skip
-      install: skip
-      before_script: skip
-      script: cd tst/style/; ./cpplint_athena.sh
 
 # Specify order of stages; build matrix of regression tests will only run if linters pass
 stages:
