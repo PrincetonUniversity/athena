@@ -80,29 +80,29 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
           - 1.0/12.0*(q(nin,k,j,i+1) + q(nin,k,j,i-2));
       } // end reconstruction
 
-	  //-- Limit interpolated interface states as in CD section 4.3.1
+      //-- Limit interpolated interface states as in CD section 4.3.1
       for (int i=il-1; i<=(iu+1); ++i) {
-		// Either check monotonicity directly (CS eq 13) or equivalently,
-		qa = dph_(i) - q(nin,k,j,i-1); // (CD eq 84a)
-		qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
-		if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
-		  // centered appox. to second-derivative at i-1/2 (must recompute after limiting)
-		  qa = 3.0*(q(nin,k,j,i-1) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
-		  // Typo in CD! Use 1.0, not 0.5 coefficients
-		  // left appox. to second-derivative at i-1/2
-		  qb = 1.0*(q(nin,k,j,i-2) - 2.0*q(nin,k,j,i-1) + q(nin,k,j,i)); // (CD eq 85a)
-		  // right appox. to second-derivative at i-1/2
-		  qc = 1.0*(q(nin,k,j,i-1) - 2.0*q(nin,k,j,i) + q(nin,k,j,i+1)); // (CD eq 85c);
-		  // (the above two stencils are wastefully recomputed after this)
+        // Either check monotonicity directly (CS eq 13) or equivalently,
+        qa = dph_(i) - q(nin,k,j,i-1); // (CD eq 84a)
+        qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
+        if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
+          // centered appox. to second-derivative at i-1/2 (must recompute after limiting)
+          qa = 3.0*(q(nin,k,j,i-1) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
+          // Typo in CD! Use 1.0, not 0.5 coefficients
+          // left appox. to second-derivative at i-1/2
+          qb = 1.0*(q(nin,k,j,i-2) - 2.0*q(nin,k,j,i-1) + q(nin,k,j,i)); // (CD eq 85a)
+          // right appox. to second-derivative at i-1/2
+          qc = 1.0*(q(nin,k,j,i-1) - 2.0*q(nin,k,j,i) + q(nin,k,j,i+1)); // (CD eq 85c);
+          // (the above two stencils are wastefully recomputed after this)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  } else {
-			qd =0.0;
-		  }
-		  dph_(i) = 0.5*(q(nin,k,j,i-1)+q(nin,k,j,i)) - qd/6.0;
-		} // end check of interpolated interface monotonicity
-	  }
+          if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
+            qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+          } else {
+            qd =0.0;
+          }
+          dph_(i) = 0.5*(q(nin,k,j,i-1)+q(nin,k,j,i)) - qd/6.0;
+        } // end check of interpolated interface monotonicity
+      }
 
       // Initialize cell-indexed interface states / parabolic coefficients
       for (int i=il-1; i<=iu; ++i) {
@@ -132,7 +132,7 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
         qa = dqf_minus_(i)*dqf_plus_(i);
         // Condition #2: Cell average and other cell average differences
         qb = (q(nin,k,j,i+1) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k,j,i-1));
-		// Could use stencil width of +/-2 to reduce sensitivity to roundoff error
+        // Could use stencil width of +/-2 to reduce sensitivity to roundoff error
 
         //----------- Local extrema detected
         if (qa <= 0.0 || qb <= 0.0 ) { // If either face- or cell-avergage extrema
@@ -155,7 +155,7 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
           qb = std::max(std::max(fabs(q(nin,k,j,i)),fabs(q(nin,k,j,i+1))),
                         fabs(q(nin,k,j,i+2)));
           //--------------- 2nd derivative magnitude is too small: flatten
-		  // and/or dont divide by zero
+          // and/or dont divide by zero
           if (fabs(qd) <= (1.0e-12)*std::max(qa,qb))
             rho = 0.0;
           //--------------- Limiter is not sensitive to roundoff. Use limited ratio
@@ -164,9 +164,9 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
 
           //------------- Check if relative change in limited 2nd deriv is > roundoff
           if (rho <= (1.0 - (1.0e-12))) {
-			// Limit smooth extrema
-			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
-			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
+            // Limit smooth extrema
+            qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
+            qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
         } else { // end check of local extrema 2x conditions
           //----------- No extrema detected
@@ -257,28 +257,28 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
           d2qc_(i) = q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i);
           d2qc_jp1_(i) = q(nin,k,j,i) - 2.0*q(nin,k,j+1,i) + q(nin,k,j+2,i);
 
-		  //-- Limit interpolated interface states as in CD section 4.3.1
-		  // Either check monotonicity directly (CS eq 13) or equivalently,
-		  qa = dph_(i) - q(nin,k,j-1,i); // (CD eq 84a)
-		  qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
-		  if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
-			// centered appox. to second-derivative at i-1/2  (must recompute after limit)
-			qa = 3.0*(q(nin,k,j-1,i) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
-			// Typo in CD! Use 1.0, not 0.5 coefficients
-			// left appox. to second-derivative at i-1/2
-			qb = 1.0*(q(nin,k,j-2,i) - 2.0*q(nin,k,j-1,i) + q(nin,k,j,i)); // (CD eq 85a)
-			// right appox. to second-derivative at i-1/2
-			qc = 1.0*(q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i)); // (CD eq 85c)
-			// (the above two stencils are wastefully recomputed)
+          //-- Limit interpolated interface states as in CD section 4.3.1
+          // Either check monotonicity directly (CS eq 13) or equivalently,
+          qa = dph_(i) - q(nin,k,j-1,i); // (CD eq 84a)
+          qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
+          if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
+            // centered appox. to second-derivative at i-1/2  (must recompute after limit)
+            qa = 3.0*(q(nin,k,j-1,i) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
+            // Typo in CD! Use 1.0, not 0.5 coefficients
+            // left appox. to second-derivative at i-1/2
+            qb = 1.0*(q(nin,k,j-2,i) - 2.0*q(nin,k,j-1,i) + q(nin,k,j,i)); // (CD eq 85a)
+            // right appox. to second-derivative at i-1/2
+            qc = 1.0*(q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i)); // (CD eq 85c)
+            // (the above two stencils are wastefully recomputed)
 
-			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-			  qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
+              qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
             } else {
-			  qd =0.0;
-			}
-			dph_(i) = 0.5*(q(nin,k,j-1,i)+q(nin,k,j,i)) - qd/6.0;
-		  }  // end check of interpolated interface monotonicity
-		}
+              qd =0.0;
+            }
+            dph_(i) = 0.5*(q(nin,k,j-1,i)+q(nin,k,j,i)) - qd/6.0;
+          }  // end check of interpolated interface monotonicity
+        }
       } else {
         // Reuse old x1 slice information from previous j
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
@@ -301,27 +301,27 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
         dph_jp1_(i) = 7.0/12.0*(q(nin,k,j,i) + q(nin,k,j+1,i))
           - 1.0/12.0*(q(nin,k,j+2,i) + q(nin,k,j-1,i));
 
-		//-- Limit interpolated interface states as in CD section 4.3.1
-		// Either check monotonicity directly (CS eq 13) or equivalently,
-		qa = dph_jp1_(i) - q(nin,k,j,i); // (CD eq 84a)
-		qb = q(nin,k,j+1,i) - dph_jp1_(i); // (CD eq 84b)
-		if (qa*qb < 0.0) { // Local extrema detected at j+1/2 face
-		  // centered appox. to second-derivative at j+1/2  (must recompute after limit)
-		  qa = 3.0*(q(nin,k,j,i) - 2.0*dph_jp1_(i) + q(nin,k,j+1,i)); // (CD eq 85b)
-		  // Typo in CD! Use 1.0, not 0.5 coefficients
-		  // left appox. to second-derivative at j+1/2
-		  qb = 1.0*(q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i)); // (CD eq 85a)
-		  // right appox. to second-derivative at j+1/2
-		  qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k,j+1,i) + q(nin,k,j+2,i)); // (CD eq 85c)
-		  // (the above two stencils are wastefully recomputed)
+        //-- Limit interpolated interface states as in CD section 4.3.1
+        // Either check monotonicity directly (CS eq 13) or equivalently,
+        qa = dph_jp1_(i) - q(nin,k,j,i); // (CD eq 84a)
+        qb = q(nin,k,j+1,i) - dph_jp1_(i); // (CD eq 84b)
+        if (qa*qb < 0.0) { // Local extrema detected at j+1/2 face
+          // centered appox. to second-derivative at j+1/2  (must recompute after limit)
+          qa = 3.0*(q(nin,k,j,i) - 2.0*dph_jp1_(i) + q(nin,k,j+1,i)); // (CD eq 85b)
+          // Typo in CD! Use 1.0, not 0.5 coefficients
+          // left appox. to second-derivative at j+1/2
+          qb = 1.0*(q(nin,k,j-1,i) - 2.0*q(nin,k,j,i) + q(nin,k,j+1,i)); // (CD eq 85a)
+          // right appox. to second-derivative at j+1/2
+          qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k,j+1,i) + q(nin,k,j+2,i)); // (CD eq 85c)
+          // (the above two stencils are wastefully recomputed)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  } else {
-			qd =0.0;
-		  }
-		  dph_jp1_(i) = 0.5*(q(nin,k,j+1,i)+q(nin,k,j,i)) - qd/6.0;
-		} // end check of interpolated interface monotonicity
+          if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
+            qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+          } else {
+            qd =0.0;
+          }
+          dph_jp1_(i) = 0.5*(q(nin,k,j+1,i)+q(nin,k,j,i)) - qd/6.0;
+        } // end check of interpolated interface monotonicity
 
         //-- Compute cell-centered difference stencils (MC section 2.4.1)
         // Initialize cell-indexed interface states / parabolic coefficients
@@ -345,7 +345,7 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
         qa = dqf_minus_(i)*dqf_plus_(i);
         // Condition #2: Cell average and other cell average differences
         qb = (q(nin,k,j+1,i) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k,j-1,i));
-		// Could use stencil width of +/-2 to reduce sensitivity to roundoff error
+        // Could use stencil width of +/-2 to reduce sensitivity to roundoff error
 
         //----------- Local extrema detected
         if (qa <= 0.0 || qb <= 0.0 ) { // If either face- or cell-avergage extrema
@@ -368,7 +368,7 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
           qb = std::max(std::max(fabs(q(nin,k,j,i)),fabs(q(nin,k,j+1,i))),
                         fabs(q(nin,k,j+2,i)));
           //--------------- 2nd derivative magnitude is too small: flatten
-		  // and/or dont divide by zero
+          // and/or dont divide by zero
           if (fabs(qd) <= (1.0e-12)*std::max(qa,qb))
             rho = 0.0;
           //--------------- Limiter is not sensitive to roundoff. Use limited ratio
@@ -377,9 +377,9 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
 
           //------------- Check if relative change in limited 2nd deriv is > roundoff
           if (rho <= (1.0 - (1.0e-12))) {
-			// Limit smooth extrema
-			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
-			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
+            // Limit smooth extrema
+            qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
+            qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
         } else { // end check of local extrema 2x conditions
           //----------- No extrema detected:
@@ -477,27 +477,27 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
           d2qc_(i) = q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i);
           d2qc_kp1_(i) = q(nin,k,j,i) - 2.0*q(nin,k+1,j,i) + q(nin,k+2,j,i);
 
-		  //-- Limit interpolated interface states as in CD section 4.3.1
-		  // Either check monotonicity directly (CS eq 13) or equivalently,
-		  qa = dph_(i) - q(nin,k-1,j,i); // (CD eq 84a)
-		  qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
-		  if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
-			// centered appox. to second-derivative at i-1/2  (must recompute after limit)
-			qa = 3.0*(q(nin,k-1,j,i) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
-			// Typo in CD! Use 1.0, not 0.5 coefficients
-			// left appox. to second-derivative at i-1/2
-			qb = 1.0*(q(nin,k-2,j,i) - 2.0*q(nin,k-1,j,i) + q(nin,k,j,i)); // (CD eq 85a)
-			// right appox. to second-derivative at i-1/2
-			qc = 1.0*(q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i)); // (CD eq 85c)
-			// (the above two stencils are wastefully recomputed)
+          //-- Limit interpolated interface states as in CD section 4.3.1
+          // Either check monotonicity directly (CS eq 13) or equivalently,
+          qa = dph_(i) - q(nin,k-1,j,i); // (CD eq 84a)
+          qb = q(nin,k,j,i) - dph_(i); // (CD eq 84b)
+          if (qa*qb < 0.0) { // Local extrema detected at i-1/2 face
+            // centered appox. to second-derivative at i-1/2  (must recompute after limit)
+            qa = 3.0*(q(nin,k-1,j,i) - 2.0*dph_(i) + q(nin,k,j,i)); // (CD eq 85b)
+            // Typo in CD! Use 1.0, not 0.5 coefficients
+            // left appox. to second-derivative at i-1/2
+            qb = 1.0*(q(nin,k-2,j,i) - 2.0*q(nin,k-1,j,i) + q(nin,k,j,i)); // (CD eq 85a)
+            // right appox. to second-derivative at i-1/2
+            qc = 1.0*(q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i)); // (CD eq 85c)
+            // (the above two stencils are wastefully recomputed)
 
-			if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-			  qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-			} else {
-			  qd = 0.0;
-			}
-			dph_(i) = 0.5*(q(nin,k-1,j,i)+q(nin,k,j,i)) - qd/6.0;
-		  }  // end check of interpolated interface monotonicity
+            if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
+              qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+            } else {
+              qd = 0.0;
+            }
+            dph_(i) = 0.5*(q(nin,k-1,j,i)+q(nin,k,j,i)) - qd/6.0;
+          }  // end check of interpolated interface monotonicity
         }
       } else { // Reuse old x1 slice information from previous j:
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
@@ -520,27 +520,27 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
         dph_kp1_(i) = 7.0/12.0*(q(nin,k,j,i) + q(nin,k+1,j,i))
           - 1.0/12.0*(q(nin,k+2,j,i) + q(nin,k-1,j,i));
 
-		//-- Limit interpolated interface states as in CD section 4.3.1
-		// Either check monotonicity directly (CS eq 13) or equivalently,
-		qa = dph_kp1_(i) - q(nin,k,j,i); // (CD eq 84a)
-		qb = q(nin,k+1,j,i) - dph_kp1_(i); // (CD eq 84b)
-		if (qa*qb < 0.0) { // Local extrema detected at k+1/2 face
-		  // centered appox. to second-derivative at k+1/2  (must recompute after limit)
-		  qa = 3.0*(q(nin,k,j,i) - 2.0*dph_kp1_(i) + q(nin,k+1,j,i)); // (CD eq 85b)
-		  // Typo in CD! Use 1.0, not 0.5 coefficients
-		  // left appox. to second-derivative at k+1/2
-		  qb = 1.0*(q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i)); // (CD eq 85a)
-		  // right appox. to second-derivative at k+1/2
-		  qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k+1,j,i) + q(nin,k+2,j,i)); // (CD eq 85c)
-		  // (the above two stencils are wastefully recomputed)
+        //-- Limit interpolated interface states as in CD section 4.3.1
+        // Either check monotonicity directly (CS eq 13) or equivalently,
+        qa = dph_kp1_(i) - q(nin,k,j,i); // (CD eq 84a)
+        qb = q(nin,k+1,j,i) - dph_kp1_(i); // (CD eq 84b)
+        if (qa*qb < 0.0) { // Local extrema detected at k+1/2 face
+          // centered appox. to second-derivative at k+1/2  (must recompute after limit)
+          qa = 3.0*(q(nin,k,j,i) - 2.0*dph_kp1_(i) + q(nin,k+1,j,i)); // (CD eq 85b)
+          // Typo in CD! Use 1.0, not 0.5 coefficients
+          // left appox. to second-derivative at k+1/2
+          qb = 1.0*(q(nin,k-1,j,i) - 2.0*q(nin,k,j,i) + q(nin,k+1,j,i)); // (CD eq 85a)
+          // right appox. to second-derivative at k+1/2
+          qc = 1.0*(q(nin,k,j,i) - 2.0*q(nin,k+1,j,i) + q(nin,k+2,j,i)); // (CD eq 85c)
+          // (the above two stencils are wastefully recomputed)
 
-		  if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-			qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
-		  }	else {
-			qd =0.0;
-		  }
-		  dph_kp1_(i) = 0.5*(q(nin,k+1,j,i)+q(nin,k,j,i)) - qd/6.0;
-		}  // end check of interpolated interface monotonicity
+          if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
+            qd = SIGN(qa)* std::min(C2*fabs(qb),std::min(C2*fabs(qc),fabs(qa)));
+          }     else {
+            qd =0.0;
+          }
+          dph_kp1_(i) = 0.5*(q(nin,k+1,j,i)+q(nin,k,j,i)) - qd/6.0;
+        }  // end check of interpolated interface monotonicity
 
         //-- Compute cell-centered difference stencils (MC section 2.4.1)
         // Initialize cell-indexed interface states / parabolic coefficients
@@ -564,7 +564,7 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
         qa = dqf_minus_(i)*dqf_plus_(i);
         // Condition #2: Cell average and other cell average differences
         qb = (q(nin,k+1,j,i) - q(nin,k,j,i))*(q(nin,k,j,i) - q(nin,k-1,j,i));
-		// Could use stencil width of +/-2 to reduce sensitivity to roundoff error
+        // Could use stencil width of +/-2 to reduce sensitivity to roundoff error
 
         //----------- Local extrema detected
         if (qa <= 0.0 || qb <= 0.0 ) { // If either face- or cell-avergage extrema
@@ -587,7 +587,7 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
           qb = std::max(std::max(fabs(q(nin,k,j,i)),fabs(q(nin,k+1,j,i))),
                         fabs(q(nin,k+2,j,i)));
           //--------------- 2nd derivative magnitude is too small: flatten
-		  // and/or dont divide by zero
+          // and/or dont divide by zero
           if (fabs(qd) <= (1.0e-12)*std::max(qa,qb))
             rho = 0.0;
           //--------------- Limiter is not sensitive to roundoff. Use limited ratio
@@ -596,9 +596,9 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
 
           //------------- Check if relative change in limited 2nd deriv is > roundoff
           if (rho <= (1.0 - (1.0e-12))) {
-			// Limit smooth extrema
-			qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
-			qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
+            // Limit smooth extrema
+            qminus_(i) = q(nin,k,j,i) - rho*dqf_minus_(i); // (CS eq 23)
+            qplus_(i) = q(nin,k,j,i) + rho*dqf_plus_(i);
           } // end loop over rho roundoff sensitivity
         } else { // end check of local extrema 2x conditions
           //----------- No extrema detected

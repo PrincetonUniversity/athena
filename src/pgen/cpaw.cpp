@@ -542,10 +542,10 @@ static Real A1_ave(const Real x1f, const Real x1f_ip1, const Real x2, const Real
   Real Ay, Az;
 
   if (cos_a3 != 0.0 && cos_a2 != 0.0) {
-	Ay =  (fac*b_perp/(SQR(k_par)*cos_a3*cos_a2))*(-cos(k_par*x_ip1) + cos(k_par*x));
+    Ay =  (fac*b_perp/(SQR(k_par)*cos_a3*cos_a2))*(-cos(k_par*x_ip1) + cos(k_par*x));
   } else {
     // vertical (+x2) OR polar (+x3) coordinate aligned wave--- Ay uniform on the x1 edge
-	Ay = dx1f*((fac*b_perp/k_par)*sin(k_par*(x))); // x  = x_ip1
+    Ay = dx1f*((fac*b_perp/k_par)*sin(k_par*(x))); // x  = x_ip1
   }
   if (cos_a2 != 0.0) {
     // cancelling cos_a3 factor
@@ -569,10 +569,10 @@ static Real A2_ave(const Real x1, const Real x2f, const Real x2f_jp1, const Real
   Real Ay, Az;
 
   if (sin_a3 != 0.0 && cos_a2 != 0.0) {
-	Ay =  (fac*b_perp/(SQR(k_par)*cos_a2*sin_a3))*(-cos(k_par*x_jp1) + cos(k_par*x));
+    Ay =  (fac*b_perp/(SQR(k_par)*cos_a2*sin_a3))*(-cos(k_par*x_jp1) + cos(k_par*x));
   } else {
     // horizontal (+x1) OR polar (+x3) coordinate aligned wave--- Ay uniform on x2 edge
-	Ay = dx2f*((fac*b_perp/k_par)*sin(k_par*(x))); // x = x_jp1
+    Ay = dx2f*((fac*b_perp/k_par)*sin(k_par*(x))); // x = x_jp1
   }
   if (cos_a2 != 0.0) {
     // cancelling sin_a3 factor

@@ -660,16 +660,16 @@ static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
 
   Real Ay;
   if (cos_a3 != 0.0) {
-	// O(bz0) linear term
-	Ay = -bz0*SQR(sin_a3);
-	Ay += dbz*sin_a3/(SQR(k_par)*cos_a3*dx1f*dx2f)
-        *((sin(k_par*xu_ip1) - sin(k_par*xu_i))	- (sin(k_par*xl_ip1) - sin(k_par*xl_i)));
+    // O(bz0) linear term
+    Ay = -bz0*SQR(sin_a3);
+    Ay += dbz*sin_a3/(SQR(k_par)*cos_a3*dx1f*dx2f)
+        *((sin(k_par*xu_ip1) - sin(k_par*xu_i)) - (sin(k_par*xl_ip1) - sin(k_par*xl_i)));
   } else { // vertical coordinate aligned wave--- uniform on the x1 edge
-	// O(bz0) linear term
-	Ay = -bz0;
-	// O(amp) perturbative term
-	// Using the difference of cosine trig identity, with angles x+/-dx1f/2
-	Ay -= (2.0*dbz/(k_par*dx2f))*sin(k_par*dx2f/2.0)*sin(k_par*(x2f_j+dx2f/2.0));
+    // O(bz0) linear term
+    Ay = -bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx1f/2
+    Ay -= (2.0*dbz/(k_par*dx2f))*sin(k_par*dx2f/2.0)*sin(k_par*(x2f_j+dx2f/2.0));
   }
   return Ay;
 }
@@ -693,16 +693,16 @@ static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
   Real dx2f = x2f_jp1 - x2f_j;
   Real Ay;
   if (sin_a3 != 0.0) {
-	// O(bz0) linear term
-	Ay = bz0*SQR(cos_a3);
-	Ay -= dbz*cos_a3/(SQR(k_par)*sin_a3*dx1f*dx2f)
+    // O(bz0) linear term
+    Ay = bz0*SQR(cos_a3);
+    Ay -= dbz*cos_a3/(SQR(k_par)*sin_a3*dx1f*dx2f)
         *((sin(k_par*xu_jp1) - sin(k_par*xu_j)) - (sin(k_par*xl_jp1) - sin(k_par*xl_j)));
   } else { // horizontal coordinate aligned wave--- uniform on the x2 edge
-	// O(bz0) linear term
-	Ay = bz0;
-	// O(amp) perturbative term
-	// Using the difference of cosine trig identity, with angles x+/-dx1f/2
-	Ay += (2.0*dbz/(k_par*dx1f))*sin(k_par*dx1f/2.0)*sin(k_par*(x1f_i+dx1f/2.0));
+    // O(bz0) linear term
+    Ay = bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx1f/2
+    Ay += (2.0*dbz/(k_par*dx1f))*sin(k_par*dx1f/2.0)*sin(k_par*(x1f_i+dx1f/2.0));
   }
   return Ay;
 }

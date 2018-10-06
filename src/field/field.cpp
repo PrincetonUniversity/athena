@@ -313,14 +313,14 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-		const Real& b1_im1 = bf_center.x1f(k  , j  , i-1);
+        const Real& b1_im1 = bf_center.x1f(k  , j  , i-1);
         const Real& b1_i   = bf_center.x1f(k  , j  , i  );
         const Real& b1_ip1 = bf_center.x1f(k  , j  , i+1);
         const Real& b1_ip2 = bf_center.x1f(k  , j  , i+2);
         const Real& b2_j   = bf_center.x2f(k  , j  , i);
         const Real& b2_jp1 = bf_center.x2f(k  , j+1, i);
         const Real& b3_k   = bf_center.x3f(k  , j  , i);
-		const Real& b3_kp1 = bf_center.x3f(k+1, j  , i);
+        const Real& b3_kp1 = bf_center.x3f(k+1, j  , i);
 
         Real& bcc1 = bc_center(IB1,k,j,i);
         Real& bcc2 = bc_center(IB2,k,j,i);
@@ -333,7 +333,7 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
         const Real& dx1_i  = pco->dx1f(i);
         Real lw=(x1f_ip-x1v_i)/dx1_i;
         Real rw=(x1v_i -x1f_i)/dx1_i;
-		bcc1 = -1.0/16.0*(b1_im1 + b1_ip2) + 9.0/16.0*(b1_i + b1_ip1);
+        bcc1 = -1.0/16.0*(b1_im1 + b1_ip2) + 9.0/16.0*(b1_i + b1_ip1);
 
         const Real& x2f_j  = pco->x2f(j);
         const Real& x2f_jp = pco->x2f(j+1);
@@ -341,12 +341,12 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
         const Real& dx2_j  = pco->dx2f(j);
         lw=(x2f_jp-x2v_j)/dx2_j;
         rw=(x2v_j -x2f_j)/dx2_j;
-		if (pmb->block_size.nx2 > 1) {
-		  const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
-		  const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
-		  bcc2 = -1.0/16.0*(b2_jm1 + b2_jp2) + 9.0/16.0*(b2_j + b2_jp1);
-		} else { // default to second-order cell-centered field reconstruction in 1D:
-		  bcc2 = 0.5*(b2_j + b2_jp1);
+        if (pmb->block_size.nx2 > 1) {
+          const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
+          const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
+          bcc2 = -1.0/16.0*(b2_jm1 + b2_jp2) + 9.0/16.0*(b2_j + b2_jp1);
+        } else { // default to second-order cell-centered field reconstruction in 1D:
+          bcc2 = 0.5*(b2_j + b2_jp1);
         }
 
         const Real& x3f_k  = pco->x3f(k);
@@ -355,12 +355,12 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
         const Real& dx3_k  = pco->dx3f(k);
         lw=(x3f_kp-x3v_k)/dx3_k;
         rw=(x3v_k -x3f_k)/dx3_k;
-		if (pmb->block_size.nx3 > 1) {
-		  const Real& b3_km1 = bf_center.x3f(k-1,j,i);
-		  const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
-		  bcc3 = -1.0/16.0*(b3_km1 + b3_kp2) + 9.0/16.0*(b3_k + b3_kp1);
-		} else {
-		  bcc3 = 0.5*(b3_k + b3_kp1);
+        if (pmb->block_size.nx3 > 1) {
+          const Real& b3_km1 = bf_center.x3f(k-1,j,i);
+          const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
+          bcc3 = -1.0/16.0*(b3_km1 + b3_kp2) + 9.0/16.0*(b3_k + b3_kp1);
+        } else {
+          bcc3 = 0.5*(b3_k + b3_kp1);
         }
       }
     }
@@ -393,7 +393,7 @@ void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
         Real& bc1 = bc(IB1,k,j,i);
         Real& bc2 = bc(IB2,k,j,i);
         Real& bc3 = bc(IB3,k,j,i);
-		const Real& bcc1 = bc_center(IB1,k,j,i);
+        const Real& bcc1 = bc_center(IB1,k,j,i);
         const Real& bcc2 = bc_center(IB2,k,j,i);
         const Real& bcc3 = bc_center(IB3,k,j,i);
 
@@ -438,10 +438,10 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   if (pbval->nblevel[1][1][2]!=-1) iu_buf-=1;
 
   if (pmb->block_size.nx2 > 1) {
-	if (pmb->block_size.nx3 == 1) {// 2D
-	  jl_buf+=1, ju_buf-=1;
+    if (pmb->block_size.nx3 == 1) {// 2D
+      jl_buf+=1, ju_buf-=1;
     } else { // 3D
-	  jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+      jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
     }
   }
 
