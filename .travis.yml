@@ -4,8 +4,8 @@ language: cpp
 branches:
   only:
   - master
-  - hydro4
-  - mhd4
+  - dust
+  - mhd4_3D
 # Default build matrix is 4x Ubuntu builds:
 os:
   - linux
