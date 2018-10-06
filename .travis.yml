@@ -113,19 +113,24 @@ before_script:
   - pip3 install --user flake8 || true
   - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
 
-# Default stage "test" used for Build Matrix expansion; run in all environments
-script:
-  # Run subset of regression test suite:
-  - cd .. ; ./ci/travis/run_tests_travis.sh
+# Above Build Matrix expansion is assigned to default stage name "test";
+# Run subset of regression test suite on all build environments
+script: cd .. ; ./ci/travis/run_tests_travis.sh
 
 # Run style checks only once: nherits first value of each Build Matrix dimension (Ubuntu, GCC, MPICH)
 jobs:
   include:
     # Test PEP 8 style compliance for .py files:
     - stage: python linter
+      before_install: skip
+      install: skip
+      before_script: skip
       script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
     # Test Google C++ Style Guide adherence for .cpp, .hpp files:
     - stage: c++ linter
+      before_install: skip
+      install: skip
+      before_script: skip
       script: cd tst/style/; ./cpplint_athena.sh
 
 # Specify order of stages; build matrix of regression tests will only run if linters pass
