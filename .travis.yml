@@ -129,7 +129,7 @@ before_script:
 
 # Above Build Matrix expansion is assigned to default stage name "test";
 # Run subset of regression test suite on all build environments
-script: ./ci/travis/run_tests_travis.sh
+script: ./tst/ci/travis/run_tests_travis.sh
 
 # Specify order of stages; build matrix of regression tests will only run if linters pass
 stages:
