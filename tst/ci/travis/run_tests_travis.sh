@@ -6,7 +6,9 @@ set -ev # -x # for tracing/debugging commands after variable expansion
 # - Each set/directory of tests are timed separately (although entire script is timed as one unit in Travis CI)
 # - Script fails after first broken set of tests
 # (Could alternatively group sets of tests with && operator)
-cd regression/
+
+# Assume script is called from the top-level athena/ directory
+cd tst/regression/
 
 if [ "$MPI_CHOICE" == "openmpi" ]; then
     PATH=$TRAVIS_BUILD_DIR/openmpi/bin/:$PATH
