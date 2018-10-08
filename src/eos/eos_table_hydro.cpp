@@ -107,61 +107,40 @@ void EquationOfState::CleanEOS()
   eos_data_.DeleteAthenaArray();
 }
 
-/* bilinear interpolation */
-/* 0 <= x <= nx-1, 0 <= y <= ny-1 */
+// bilinear interpolation
+// x, y are data coordinates
+// 0 <= x <= nx-1, 0 <= y <= ny-1
+// nx, ny is the size of the 2d table
 Real EquationOfState::BilinearInterp(Real x, Real y, int var)
 {
   Real xrl, yrl, out;
-  int xil = (int) x; /* index lower */
-  int yil = (int) y;
+  int xil = (int) x; // lower x index
+  int yil = (int) y; // lower y index
   int nx = nRho_;
   int ny = nEgas_;
-  if (xil < 0)
-  {
+  //if off table do linear extrapolation
+  if (xil < 0) { // below xmin
     xil = 0;
-#ifdef EOSDEBUG0
-    printf("WARNING!\nX value off table, extrapolating.\n");
-#endif
   }
-  else if (xil >= nx - 1)
-  {
+  else if (xil >= nx - 1) { // above xmax
     xil = nx - 2;
-#ifdef EOSDEBUG0
-    printf("WARNING!\nX value off table, extrapolating.\n");
-#endif
   }
-  xrl = 1 + xil - x;  /* residual lower */
+  xrl = 1 + xil - x;  // x residual
 
-  if (yil < 0)
-  {
+  if (yil < 0) { // below ymin
     yil = 0;
-#ifdef EOSDEBUG0
-    printf("WARNING!\nY value off table, extrapolating.\n");
-#endif
   }
-  else if (yil >= ny - 1)
-  {
+  else if (yil >= ny - 1) { // above ymax
     yil = ny - 2;
-#ifdef EOSDEBUG0
-    printf("WARNING!\nY value off table, extrapolating.\n");
-#endif
   }
-  yrl = 1 + yil - y;  /* residual lower */
+  yrl = 1 + yil - y;  // y residual
 
-#ifdef EOSDEBUG1
-  std::cout << "xil, yil = " << xil <<  ", " << yil << "\n";
-  std::cout << "xrl, yrl = " << xrl <<  ", " << yrl << "\n";
-  std::cout << "Interp: var = " << var << "\n";
-#endif
+  //Sample from the 4 nearest data points and weight appropriately
+  //eos_data_ is an attribute of the eos class
   out =   xrl  *  yrl  *eos_data_(var, xil , yil )
       +   xrl  *(1-yrl)*eos_data_(var, xil ,yil+1)
       + (1-xrl)*  yrl  *eos_data_(var,xil+1, yil )
       + (1-xrl)*(1-yrl)*eos_data_(var,xil+1,yil+1);
-#ifdef EOSDEBUG1
-  std::cout << eos_data_(var, xil ,yil) << ", " << eos_data_(var, xil ,yil+1) << ", "
-            << eos_data_(var,xil+1,yil) << ", " << eos_data_(var,xil+1,yil+1) << "\n";
-#endif
-  //std::cout << "\n";
   return out;
 }
 
