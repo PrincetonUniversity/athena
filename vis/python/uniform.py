@@ -5,8 +5,6 @@ Read .athdf data files and write new ones as single block at constant refinement
 level.
 
 Note: Requires h5py.
-
-Note: Only works for 3D data.
 """
 
 # Python standard modules
