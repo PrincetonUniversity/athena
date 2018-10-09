@@ -1,4 +1,4 @@
-# Test script for initializing problem with preexisting array
+# Serial test script for initializing problem with preexisting array
 
 # Standard modules
 import sys
@@ -24,7 +24,6 @@ nx1 = 4
 nx2 = 6
 nx3 = 4
 gamma = 5.0/3.0
-num_ranks = 3
 
 
 # Prepare Athena++
@@ -32,7 +31,6 @@ def prepare(**kwargs):
 
     # Configure and compile code
     athena.configure('b',
-                     'mpi',
                      'hdf5', 'h5double',
                      prob='from_array',
                      **kwargs)
@@ -75,8 +73,7 @@ def run(**kwargs):
                  'meshblock/nx2={0}'.format(nx2),
                  'meshblock/nx3={0}'.format(nx3),
                  'problem/input_filename={0}'.format(filename_input)]
-    athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], num_ranks,
-                  'mhd/athinput.from_array', arguments)
+    athena.run('mhd/athinput.from_array', arguments)
 
 
 # Analyze outputs
