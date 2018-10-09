@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 """
 Read .athdf data files and write new ones as single block at constant refinement
 level.
@@ -43,10 +45,8 @@ def main(**kwargs):
     for n in file_nums_local:
 
         # Determine filenames
-        input_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['input_filename'], kwargs['output_num'], n)
-        output_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['output_filename'], kwargs['output_num'], n)
+        input_filename = '{0}.{1:05d}.athdf'.format(kwargs['input_filename'], n)
+        output_filename = '{0}.{1:05d}.athdf'.format(kwargs['output_filename'], n)
         output_dir, output_base = os.path.split(output_filename)
 
         # Read attributes and data
@@ -181,9 +181,6 @@ if __name__ == '__main__':
     parser.add_argument('output_filename',
                         type=str,
                         help='base name of new files to be saved, including directory')
-    parser.add_argument('output_num',
-                        type=int,
-                        help='number of output to convert')
     parser.add_argument('start',
                         type=int,
                         help='first file number to be converted')
