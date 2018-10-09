@@ -19,11 +19,12 @@ dataset_cons = 'cons'
 dataset_b1 = 'b1'
 dataset_b2 = 'b2'
 dataset_b3 = 'b3'
-nb1 = 2
-nx1 = 8
+nb1 = 4
+nx1 = 4
 nx2 = 6
 nx3 = 4
 gamma = 5.0/3.0
+num_ranks = 3
 
 
 # Prepare Athena++
@@ -31,6 +32,7 @@ def prepare(**kwargs):
 
     # Configure and compile code
     athena.configure('b',
+                     'mpi',
                      'hdf5', 'h5double',
                      prob='from_array',
                      **kwargs)
@@ -66,8 +68,15 @@ def prepare(**kwargs):
 def run(**kwargs):
     arguments = ['time/tlim=0',
                  'time/ncycle_out=0',
+                 'mesh/nx1={0}'.format(nb1 * nx1),
+                 'mesh/nx2={0}'.format(nx2),
+                 'mesh/nx3={0}'.format(nx3),
+                 'meshblock/nx1={0}'.format(nx1),
+                 'meshblock/nx2={0}'.format(nx2),
+                 'meshblock/nx3={0}'.format(nx3),
                  'problem/input_filename={0}'.format(filename_input)]
-    athena.run('mhd/athinput.from_array', arguments)
+    athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], num_ranks,
+                  'mhd/athinput.from_array', arguments)
 
 
 # Analyze outputs
