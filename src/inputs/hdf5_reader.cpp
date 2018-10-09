@@ -36,12 +36,13 @@
 //----------------------------------------------------------------------------------------
 //! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank_file,
 //      const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
-//      const int *count_mem, AthenaArray<Real> &array)
+//      const int *count_mem, AthenaArray<Real> &array, bool collective=false,
+//      bool noop=false)
 //  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
     const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
-    const int *count_mem, AthenaArray<Real> &array) {
+    const int *count_mem, AthenaArray<Real> &array, bool collective, bool noop) {
 
   // Check that user is not trying to exceed limits of HDF5 array or AthenaArray
   // dimensionality
@@ -84,7 +85,11 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
   // Open data file
   hid_t property_list_file = H5Pcreate(H5P_FILE_ACCESS);
   #ifdef MPI_PARALLEL
-    H5Pset_fapl_mpio(property_list_file, MPI_COMM_WORLD, MPI_INFO_NULL);
+  {
+    if (collective) {
+      H5Pset_fapl_mpio(property_list_file, MPI_COMM_WORLD, MPI_INFO_NULL);
+    }
+  }
   #endif
   hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, property_list_file);
   H5Pclose(property_list_file);
@@ -95,15 +100,25 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
   }
   hid_t property_list_transfer = H5Pcreate(H5P_DATASET_XFER);
   #ifdef MPI_PARALLEL
-    H5Pset_dxpl_mpio(property_list_transfer, H5FD_MPIO_COLLECTIVE);
+  {
+    if (collective) {
+      H5Pset_dxpl_mpio(property_list_transfer, H5FD_MPIO_COLLECTIVE);
+    }
+  }
   #endif
 
   // Read dataset into array
   hid_t dataset = H5Dopen(file, dataset_name, H5P_DEFAULT);
   hid_t dataspace_file = H5Dget_space(dataset);
+  if (noop) {
+    H5Sselect_none(dataspace_file);
+  }
   H5Sselect_hyperslab(dataspace_file, H5S_SELECT_SET, start_file_hid, NULL,
       count_file_hid, NULL);
   hid_t dataspace_mem = H5Screate_simple(rank_mem, dims_mem, NULL);
+  if (noop) {
+    H5Sselect_none(dataspace_mem);
+  }
   H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET, start_mem_hid, NULL, count_mem_hid,
       NULL);
   H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,
