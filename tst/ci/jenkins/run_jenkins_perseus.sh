@@ -61,7 +61,7 @@ module unload hdf5/gcc/1.10.0
 module load hdf5/gcc/openmpi-1.10.2/1.10.0
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64--silent
+time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
