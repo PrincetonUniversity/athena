@@ -37,7 +37,8 @@ module list
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
 # --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
-time python ./run_tests.py pgen --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --silent
 time python ./run_tests.py hydro --silent
@@ -55,6 +56,13 @@ time python ./run_tests.py symmetry --silent
 # High-order solver regression tests w/ GCC
 time python ./run_tests.py hydro4 --silent
 
+# Swap serial HDF5 library module for parallel HDF5 library:
+module unload hdf5/gcc/1.10.0
+module load hdf5/gcc/openmpi-1.10.2/1.10.0
+# Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
+# due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
+time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64--silent
+
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
 module load intel
@@ -64,7 +72,8 @@ module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 module load rh
 module list
 
-time python ./run_tests.py pgen --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
@@ -81,9 +90,14 @@ time python ./run_tests.py symmetry --config=--cxx=icc --silent
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 
+# Swap serial HDF5 library module for parallel HDF5 library:
+module unload  hdf5/intel-17.0/1.10.0
+module load hdf5/intel-17.0/intel-mpi/1.10.0
+time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc --mpirun=srun --silent
+
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
-time python ./run_tests.py pgen --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
 time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
 time python ./run_tests.py sr --config=--cxx=icc-debug --silent

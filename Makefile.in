@@ -26,24 +26,25 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/$(EOS_FILE) \
+	     $(wildcard src/fft/*.cpp) \
 	     src/eos/eos_high_order.cpp \
 	     $(wildcard src/field/*.cpp) \
+	     $(wildcard src/field/field_diffusion/*.cpp) \
+	     $(wildcard src/gravity/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
-	     $(wildcard src/field/field_diffusion/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
+	     $(wildcard src/inputs/*.cpp) \
 	     $(wildcard src/mesh/*.cpp) \
+	     $(wildcard src/multigrid/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
+	     src/pgen/default_pgen.cpp \
+	     src/pgen/$(PROBLEM_FILE) \
 	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
-	     $(wildcard src/fft/*.cpp) \
-	     $(wildcard src/multigrid/*.cpp) \
-	     $(wildcard src/gravity/*.cpp) \
-	     $(MPIFFT_FILE) \
-	     src/pgen/$(PROBLEM_FILE) \
-	     src/pgen/default_pgen.cpp
+	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
 SRC_DIR := $(dir $(SRC_FILES) $(PROB_FILES))
