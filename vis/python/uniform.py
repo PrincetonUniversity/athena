@@ -1,10 +1,10 @@
+#! /usr/bin/env python
+
 """
 Read .athdf data files and write new ones as single block at constant refinement
 level.
 
 Note: Requires h5py.
-
-Note: Only works for 3D data.
 """
 
 # Python standard modules
@@ -43,10 +43,8 @@ def main(**kwargs):
     for n in file_nums_local:
 
         # Determine filenames
-        input_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['input_filename'], kwargs['output_num'], n)
-        output_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['output_filename'], kwargs['output_num'], n)
+        input_filename = '{0}.{1:05d}.athdf'.format(kwargs['input_filename'], n)
+        output_filename = '{0}.{1:05d}.athdf'.format(kwargs['output_filename'], n)
         output_dir, output_base = os.path.split(output_filename)
 
         # Read attributes and data
@@ -63,9 +61,9 @@ def main(**kwargs):
                                  level=level, subsample=subsample)
 
         # Determine new grid size
-        nx1 = attrs['RootGridSize'][0] * 2**level
-        nx2 = attrs['RootGridSize'][1] * 2**level
-        nx3 = attrs['RootGridSize'][2] * 2**level
+        nx1 = attrs['RootGridSize'][0] * 2**level if attrs['MeshBlockSize'][0] > 1 else 1
+        nx2 = attrs['RootGridSize'][1] * 2**level if attrs['MeshBlockSize'][1] > 1 else 1
+        nx3 = attrs['RootGridSize'][2] * 2**level if attrs['MeshBlockSize'][2] > 1 else 1
 
         # Create new HDF5 file
         with h5py.File(output_filename, 'w') as f:
@@ -97,10 +95,8 @@ def main(**kwargs):
 
             # Write datasets
             f.create_dataset('Levels', data=[0], dtype='>i4')
-            f.create_dataset(
-                'LogicalLocations', data=[
-                    0, 0, 0], dtype='>i8', shape=(
-                    1, 3))
+            f.create_dataset('LogicalLocations', data=[0, 0, 0], dtype='>i8',
+                             shape=(1, 3))
             f.create_dataset('x1f', data=data['x1f'], dtype='>f4', shape=(1, nx1 + 1))
             f.create_dataset('x2f', data=data['x2f'], dtype='>f4', shape=(1, nx2 + 1))
             f.create_dataset('x3f', data=data['x3f'], dtype='>f4', shape=(1, nx3 + 1))
@@ -110,9 +106,8 @@ def main(**kwargs):
             var_offset = 0
             for dataset_name, num_vars in zip(
                     f.attrs['DatasetNames'], f.attrs['NumVariables']):
-                f.create_dataset(
-                    dataset_name, dtype='>f4', shape=(
-                        num_vars, 1, nx3, nx2, nx1))
+                f.create_dataset(dataset_name, dtype='>f4',
+                                 shape=(num_vars, 1, nx3, nx2, nx1))
                 for var_num in range(num_vars):
                     variable_name = f.attrs['VariableNames'][var_num + var_offset]
                     f[dataset_name][var_num, 0, :, :, :] = data[variable_name]
@@ -181,9 +176,6 @@ if __name__ == '__main__':
     parser.add_argument('output_filename',
                         type=str,
                         help='base name of new files to be saved, including directory')
-    parser.add_argument('output_num',
-                        type=int,
-                        help='number of output to convert')
     parser.add_argument('start',
                         type=int,
                         help='first file number to be converted')
