@@ -46,7 +46,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Problem Generator for the Kelvin-Helmholz test
+//  \brief Problem Generator for the Kelvin-Helmholtz test
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int64_t iseed = -1 - gid;

@@ -1,5 +1,5 @@
 <comment>
-problem   = Kelvin Helmholtz instability
+problem   = Kelvin-Helmholtz instability
 reference =
 configure = --prob=kh
 
