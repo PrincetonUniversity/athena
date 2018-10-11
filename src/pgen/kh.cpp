@@ -220,8 +220,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (iprob == 4) {
     // Read/set problem parameters
     Real amp = pin->GetReal("problem","amp");
-    Real rho0 = pin->GetOrAddReal("problem", "rho0");
-    Real delta_rho = pin->GetOrAddReal("problem", "delta_rho");
+    // unstratified problem is the default
+    Real drho_rho0 = pin->GetOrAddReal("problem", "drho_rho0", 0.0);
     Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
@@ -233,7 +233,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       // Lecoanet (2016) equation 8a)
-      phydro->u(IDN,k,j,i) = 1.0 + 0.5*(delta_rho/rho0)*(tanh((pcoord->x2v(j)-z1)/a) -
+      phydro->u(IDN,k,j,i) = 1.0 + 0.5*drho_rho0*(tanh((pcoord->x2v(j)-z1)/a) -
                                                          tanh((pcoord->x2v(j)-z2)/a));
       phydro->u(IM1,k,j,i) = vflow*(tanh((pcoord->x2v(j)-z1)/a) -
                                     tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)

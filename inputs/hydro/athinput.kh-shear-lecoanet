@@ -50,5 +50,4 @@ gamma           = 1.6666667    # gamma = C_p/C_v
 iprob  = 4
 amp    = 0.01            # amplitude of initial vy perturbation
 vflow  = 1.0             # background vx
-rho0   = 1.0             # background density
-delta_rho = 0.0          # stratified or unstratified problem
+drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
