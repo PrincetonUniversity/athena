@@ -115,7 +115,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (iprob == 2) {
     // Read/set problem parameters
-    Real amp = pin->GetReal("problem","amp");
+    Real amp = pin->GetReal("problem", "amp");
     Real a = 0.02;
     Real sigma = 0.2;
     for (int k=ks; k<=ke; k++) {
@@ -215,26 +215,38 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //--- iprob=4.  "Lecoanet" test, resolved shear layers with tanh() profiles for velocity
-  // and constant density located at y = +/- 0.5, single mode perturbation.
+  // and density located at z1=0.5, z2=1.5 two-mode perturbation for fully periodic BCs
 
   if (iprob == 4) {
     // Read/set problem parameters
     Real amp = pin->GetReal("problem","amp");
+    Real rho0 = pin->GetOrAddReal("problem", "rho0");
+    Real delta_rho = pin->GetOrAddReal("problem", "delta_rho");
+    Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
+    Real z1 = 0.5;
+    Real z2 = 1.5;
+    // TODO(kfelker): check if reflect-and-shift symmetry of IC allows for:
+    // x1 = [-0.5, 0.5] and x2 = [-1.0, 1.0] rescaling of domain for improved FP symmetry
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phydro->u(IDN,k,j,i) = 1.0;
-      phydro->u(IM1,k,j,i) = vflow*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      // Lecoanet (2016) equation 8a)
+      phydro->u(IDN,k,j,i) = 1.0 + 0.5*(delta_rho/rho0)*(tanh((pcoord->x2v(j)-z1)/a) -
+                                                         tanh((pcoord->x2v(j)-z2)/a));
+      phydro->u(IM1,k,j,i) = vflow*(tanh((pcoord->x2v(j)-z1)/a) -
+                                    tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
       phydro->u(IM2,k,j,i) = amp*sin(2.0*PI*pcoord->x1v(i))
-          *exp(-((fabs(pcoord->x2v(j))-0.5)*(fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
-      if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
+          *(exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
+            exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c)
       phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = 10.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
-          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = P0/gm1 +
+            0.5*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i))
+                 + SQR(phydro->u(IM3,k,j,i)) )/phydro->u(IDN,k,j,i);
       }
+      // TODO(kfelker): add equation 8e) for color concentration of passive scalar
     }}}
 
     // initialize uniform interface B
