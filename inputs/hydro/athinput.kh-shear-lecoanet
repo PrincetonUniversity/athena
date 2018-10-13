@@ -42,6 +42,11 @@ x3max      = 0.5         # maximum value of X3
 ix3_bc     = periodic    # inner-X3 boundary flag
 ox3_bc     = periodic    # inner-X3 boundary flag
 
+<meshblock>
+nx1        = 64
+nx2        = 128
+nx3        = 1
+
 <hydro>
 iso_sound_speed = 1.0
 gamma           = 1.6666667    # gamma = C_p/C_v
@@ -51,3 +56,5 @@ iprob  = 4
 amp    = 0.01            # amplitude of initial vy perturbation
 vflow  = 1.0             # background vx
 drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
+nu_iso    = 4e-4         # isotropic viscosity coefficient
+kappa_iso = 4e-4         # isotropic thermal conduction coefficient
