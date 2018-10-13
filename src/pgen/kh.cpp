@@ -217,6 +217,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //--- iprob=4.  "Lecoanet" test, resolved shear layers with tanh() profiles for velocity
   // and density located at z1=0.5, z2=1.5 two-mode perturbation for fully periodic BCs
 
+  // To promote symmetry of FP errors about midplanes, rescale z' = z - 1. ; x' = x - 0.5
+  // so that domain x1 = [-0.5, 0.5] and x2 = [-1.0, 1.0] is centered about origin
   if (iprob == 4) {
     // Read/set problem parameters
     Real amp = pin->GetReal("problem","amp");
@@ -225,10 +227,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
-    Real z1 = 0.5;
-    Real z2 = 1.5;
-    // TODO(kfelker): check if reflect-and-shift symmetry of IC allows for:
-    // x1 = [-0.5, 0.5] and x2 = [-1.0, 1.0] rescaling of domain for improved FP symmetry
+    // Initial condition's reflect-and-shift symmetry, x1-> x1 + 1/2, x2-> -x2
+    // is preserved in new coordinates; hence, the same flow is solved twice in this prob.
+    Real z1 = -0.5;  // z1' = z1 - 1.0
+    Real z2 = 0.5;   // z2' = z2 - 1.0
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
@@ -237,9 +239,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                          tanh((pcoord->x2v(j)-z2)/a));
       phydro->u(IM1,k,j,i) = vflow*(tanh((pcoord->x2v(j)-z1)/a) -
                                     tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
-      phydro->u(IM2,k,j,i) = amp*sin(2.0*PI*pcoord->x1v(i))
+      // shifted domain x1= x - 1/2 relative to Lecoanet (2016) introduces U_z sign change
+      phydro->u(IM2,k,j,i) = -amp*sin(2.0*PI*pcoord->x1v(i))
           *(exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
-            exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c)
+            exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c), modified
       phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = P0/gm1 +
