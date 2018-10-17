@@ -98,6 +98,8 @@ def analyze():
         # (Differences in d_max can exceed 2e-15, but other differences are 2e-16 at most)
         atol = 5e-15
         rtol = 1e-8
+
+        # Useful optional diagnostics for determining if differences are meaningful in FP:
         # print(np.allclose(results_1D, results_2D, atol=atol, rtol=rtol))
         # print("numpy tolerance = {}".format(atol + 1e-10*abs(results_2D)))
         # print(np.allclose(results_2D, results_3D, atol=atol, rtol=rtol))
@@ -113,6 +115,6 @@ def analyze():
             print(results_2D)
             print(results_3D)
             print("Exhibit differences that are not close to round-off")
-            # return False
+            return False
 
     return True

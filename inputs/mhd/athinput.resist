@@ -1,7 +1,7 @@
 <comment>
 problem   = field diffusion
 reference = 
-configure = -b --prob=resist --coord=cartesian --eos=isothermal
+configure = -b --prob=resist --coord=cartesian --eos=isothermal (-sts)
 
 <job>
 problem_id = res      # problem ID: basename of output filenames
@@ -11,9 +11,10 @@ file_type = hst         # History data dump
 dt        = 0.01        # time increment between outputs
 
 <output2>
-file_type = vtk         # VTK data dump
-variable  = prim        # variables to be output
-dt        = 0.01        # time increment between outputs
+file_type   = tab     # tab data dump
+variable    = prim    # variables to be output
+data_format = %24.16e # output precision
+dt          = 0.1     # time increment between outputs
 
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -49,4 +50,4 @@ gamma           = 1.66667   # gamma = C_p/C_v
 <problem>
 amp        = 1.0e-3    # Amplitude of B
 iprob      = 0         # 0: default 1: diagonal B    
-eta_ohm    = 0.03      # Ohmic resistivity
+eta_ohm    = 0.3      # Ohmic resistivity

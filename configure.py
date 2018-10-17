@@ -98,6 +98,12 @@ parser.add_argument('-b',
                     default=False,
                     help='enable magnetic field')
 
+# -sts argument
+parser.add_argument('-sts',
+                    action='store_true',
+                    default=False,
+                    help='enable super-time-stepping')
+
 # -s argument
 parser.add_argument('-s',
                     action='store_true',
@@ -269,6 +275,12 @@ if args['eos'] == 'isothermal':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'Isothermal EOS is incompatible with relativity')
 
+# STS
+if args['sts'] and args['coord'] != 'cartesian':
+    raise SystemExit('### CONFIGURE ERROR: STS can only be used with cartesian coordinates')
+if args['sts'] and args['shear']:
+    raise SystemExit('### CONFIGURE ERROR: STS is not yet compatible with shearing BCs')
+
 # --- Step 3. Set definitions and Makefile options based on above argument
 
 # Prepare dictionaries of substitutions to be made
@@ -321,6 +333,12 @@ else:
         definitions['NWAVE_VALUE'] = '5'
     else:
         definitions['NWAVE_VALUE'] = '4'
+
+# -sts argument
+if args['sts']:
+   definitions['STS_ENABLED'] = '1'
+else:
+   definitions['STS_ENABLED'] = '0'
 
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
@@ -620,6 +638,7 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))

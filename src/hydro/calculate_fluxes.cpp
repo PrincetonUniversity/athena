@@ -373,7 +373,32 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 
-// add diffusion fluxes
+  if (!STS_ENABLED) { // add diffusion fluxes
+    if (phdif->hydro_diffusion_defined) {
+      if (phdif->nu_iso > 0.0 || phdif->nu_aniso > 0.0)
+        phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
+  
+      if (NON_BAROTROPIC_EOS) {
+        if (phdif->kappa_iso > 0.0 || phdif->kappa_aniso > 0.0)
+          phdif->AddHydroDiffusionEnergyFlux(phdif->cndflx,flux);
+      }
+    }
+  
+    if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
+        if (pmb->pfield->pfdif->field_diffusion_defined)
+          pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Hydro::CalculateFluxes_STS
+//  \brief Calculate Hydrodynamic Diffusion Fluxes for STS
+
+void Hydro::CalculateFluxes_STS() {
+  MeshBlock *pmb=pmy_block;
+  // add diffusion fluxes
   if (phdif->hydro_diffusion_defined) {
     if (phdif->nu_iso > 0.0 || phdif->nu_aniso > 0.0)
       phdif->AddHydroDiffusionFlux(phdif->visflx,flux);
@@ -385,9 +410,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
   if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
-      if (pmb->pfield->pfdif->field_diffusion_defined)
-        pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
+    if (pmb->pfield->pfdif->field_diffusion_defined)
+      pmb->pfield->pfdif->AddPoyntingFlux(pmb->pfield->pfdif->pflux);
   }
-
+  
   return;
 }

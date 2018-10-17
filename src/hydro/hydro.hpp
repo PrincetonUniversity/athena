@@ -51,8 +51,11 @@ public:
     AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     const Real wght, AthenaArray<Real> &u_out);
+  void AddFluxDivergenceToAverage_STS(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
+    AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, const int order);
+  void CalculateFluxes_STS();
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,

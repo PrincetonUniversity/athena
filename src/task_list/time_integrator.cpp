@@ -670,7 +670,8 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage
 
   // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
-    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    if (!STS_ENABLED)
+      ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TASK_FAIL;
   }
@@ -688,7 +689,8 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage
 
   // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
-    pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+    if (!STS_ENABLED)
+      pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
     return TASK_FAIL;
   }
