@@ -7,29 +7,22 @@
 //  \brief implements functions for Athena++ outputs
 //
 // The number and types of outputs are all controlled by the number and values of
-// parameters specified in <outputN> blocks in the input file.  Each output block must be
-// labelled by a unique integer "N".  Following the convention of the parser implemented
-// in the ParameterInput class, a second output block with the same integer "N" of an
-// earlier block will silently overwrite the values read by the first block. The numbering
-// of the output blocks does not need to be consecutive, and blocks may appear in any
-// order in the input file.  Moreover, unlike the C version of Athena, the total number of
-// <outputN> blocks does not need to be specified -- in Athena++ a new output type will be
-// created for each and every <outputN> block in the input file.
+// parameters specified in <output[n]> blocks in the input file.  Each output block must
+// be labelled by a unique integer "n".  Following the convention of the parser
+// implemented in the ParameterInput class, a second output block with the same integer
+// "n" of an earlier block will silently overwrite the values read by the first block. The
+// numbering of the output blocks does not need to be consecutive, and blocks may appear
+// in any order in the input file.  Moreover, unlike the C version of Athena, the total
+// number of <output[n]> blocks does not need to be specified -- in Athena++ a new output
+// type will be created for each and every <output[n]> block in the input file.
 //
-// Required parameters that must be specified in an <outputN> block are:
-//   - variable     = cons,prim,D,d,E,e,m,v
-//   - file_type    = rst,tab,vtk,hst
+// Required parameters that must be specified in an <output[n]> block are:
+//   - variable     = cons,prim,D,d,E,e,m,m1,m2,m3,v,v1=vx,v2=vy,v3=vz,p,
+//                    bcc,bcc1,bcc2,bcc3,b,b1,b2,b3,phi,uov
+//   - file_type    = rst,tab,vtk,hst,hdf5
 //   - dt           = problem time between outputs
 //
-// Optional parameters that may be specified in an <outputN> block are:
-//   - data_format  = format string used in writing data (e.g. %12.5e)
-//   - next_time    = time of next output (useful for restarts)
-//   - id           = any string
-//   - file_number  = any integer with up to 4 digits
-//   - x[123]_slice = specifies data should be a slice at x[123] position
-//   - x[123]_sum   = set to "true" to sum data along specified direction
-//
-// EXAMPLE of an <outputN> block for a VTK dump:
+// EXAMPLE of an <output[n]> block for a VTK dump:
 //   <output3>
 //   file_type   = tab       # Tabular data dump
 //   variable    = prim      # variables to be output
@@ -38,7 +31,7 @@
 //   x2_slice    = 0.0       # slice in x2
 //   x3_slice    = 0.0       # slice in x3
 //
-// Each <outputN> block will result in a new node being created in a linked list of
+// Each <output[n]> block will result in a new node being created in a linked list of
 // OutputType stored in the Outputs class.  During a simulation, outputs are made when
 // the simulation time satisfies the criteria implemented in the MakeOutputs() function.
 //
