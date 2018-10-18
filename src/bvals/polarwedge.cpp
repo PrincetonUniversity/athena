@@ -15,12 +15,12 @@
 //----------------------------------------------------------------------------------------
 //! \fn void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, const Real time, const Real dt,
-//                         int is, int ie, int js, int je, int ks, int ke, int ngh)
+//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, inner x2 boundary
 
 void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
@@ -76,12 +76,12 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 //----------------------------------------------------------------------------------------
 //! \fn void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                          FaceField &b, const Real time, const Real dt,
-//                          int is, int ie, int js, int je, int ks, int ke, int ngh)
+//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, outer x2 boundary
 
 void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
