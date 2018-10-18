@@ -171,6 +171,66 @@ protected:
   Mesh *pmy_mesh_;
 }
 
+//----------------------------------------------------------------------------------------
+//! \class FieldBoundaryFunctions
+//  \brief abstract base class for all the derived classes for applying BC to AthenaArray
+
+class FieldBoundaryFunctions {
+  // Allow functions to access most any variable to allow for fully general BC dependence
+  friend class Hydro;
+  friend class Field;
+public:
+  FieldBoundaryFunctions();
+  virtual ~FieldBoundaryFunctions();
+  //-------------------- prototypes for all BC functions ---------------------------------
+  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 FaceField &b, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 FaceField &b, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+protected:
+  Mesh *pmy_mesh_;
+}
+
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
