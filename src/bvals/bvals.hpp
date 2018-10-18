@@ -101,54 +101,6 @@ typedef struct BoundaryData {
 #endif
 } BoundaryData;
 
-
-//---------------------- prototypes for all BC functions ---------------------------------
-void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-
-void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-
-void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-
-
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
@@ -158,6 +110,67 @@ typedef struct ShearingBoundaryBlock {
   int *ogidlist, *olidlist, *ornklist, *olevlist;
   bool inner, outer; // inner=true if inner blocks
 } ShearingBoundaryBlock;
+
+//----------------------------------------------------------------------------------------
+//! \class CellCenteredBoundaryFunctions
+//  \brief abstract base class for all the derived classes for applying BC to AthenaArray
+
+class CellCenteredBoundaryFunctions {
+  // Allow functions to access most any variable to allow for fully general BC dependence
+  friend class Hydro;
+  friend class Field;
+public:
+  CellCenteredBoundaryFunctions();
+  virtual ~CellCenteredBoundaryFunctions();
+  //-------------------- prototypes for all BC functions ---------------------------------
+  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+protected:
+  Mesh *pmy_mesh_;
+}
+
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
