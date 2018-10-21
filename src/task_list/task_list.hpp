@@ -155,7 +155,7 @@ public:
 
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID  each hydro task.
+// 64-bit integers with "1" in different bit positions used to ID each hydro task.
 
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
