@@ -104,8 +104,9 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 //  \brief Adds flux divergence to weighted average of conservative variables for STS
 
 void Hydro::AddFluxDivergenceToAverage_STS(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-                                       AthenaArray<Real> &u_out,
-                                       AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2) {
+                                           AthenaArray<Real> &u_out,
+                                           AthenaArray<Real> &u_in1,
+                                           AthenaArray<Real> &u_in2) {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
@@ -164,8 +165,8 @@ void Hydro::AddFluxDivergenceToAverage_STS(AthenaArray<Real> &w, AthenaArray<Rea
       for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) = pmb->pmy_mesh->muj*u_in1(n,k,j,i) + 
-                           pmb->pmy_mesh->nuj*u_in2(n,k,j,i) - 
+          u_out(n,k,j,i) = pmb->pmy_mesh->muj*u_in1(n,k,j,i) +
+                           pmb->pmy_mesh->nuj*u_in2(n,k,j,i) -
                            pmb->pmy_mesh->muj_tilde*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
         }
       }
@@ -175,7 +176,7 @@ void Hydro::AddFluxDivergenceToAverage_STS(AthenaArray<Real> &w, AthenaArray<Rea
   // TODO(pdmullen): for non-Cartesian coord, there *are* coord src terms from diff
   //                 fluxes, however, time & dt are not well-defined inside an STS stage
   // pmb->pcoord->CoordSrcTerms((wght*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
-      
+
   return;
 }
 

@@ -157,7 +157,8 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
         b_out.x1f(k,j,i) = pmb->pmy_mesh->muj*b_in1.x1f(k,j,i) +
                            pmb->pmy_mesh->nuj*b_in2.x1f(k,j,i) -
                            pmb->pmy_mesh->muj_tilde *
-                         ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
+                         ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e3(k,j+1,i)
+                                                        - len(i)*e3(k,j,i));
       }
 
       if (pmb->block_size.nx3 > 1) {
@@ -166,7 +167,8 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           b_out.x1f(k,j,i) += pmb->pmy_mesh->muj_tilde *
-                            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e2(k+1,j,i) -len(i)*e2(k,j,i));
+                            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e2(k+1,j,i)
+                                                           - len(i)*e2(k,j,i));
         }
       }
     }
@@ -189,7 +191,8 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
         b_out.x2f(k,j,i) = pmb->pmy_mesh->muj*b_in1.x2f(k,j,i) +
                            pmb->pmy_mesh->nuj*b_in2.x2f(k,j,i) +
                            pmb->pmy_mesh->muj_tilde *
-                         ((pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)- len(i)*e3(k,j,i));
+                         ((pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)
+                                                        - len(i)*e3(k,j,i));
       }
       if (pmb->block_size.nx3 > 1) {
         pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
@@ -197,7 +200,8 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           b_out.x2f(k,j,i) -= pmb->pmy_mesh->muj_tilde *
-                            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
+                            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k+1,j,i)
+                                                           - len(i)*e1(k,j,i));
         }
       }
     }
@@ -211,10 +215,11 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 #pragma omp simd
     for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) = pmb->pmy_mesh->muj*b_in1.x3f(k,j,i) + 
-                         pmb->pmy_mesh->nuj*b_in2.x3f(k,j,i) - 
+      b_out.x3f(k,j,i) = pmb->pmy_mesh->muj*b_in1.x3f(k,j,i) +
+                         pmb->pmy_mesh->nuj*b_in2.x3f(k,j,i) -
                          pmb->pmy_mesh->muj_tilde *
-                       ((pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
+                       ((pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1)
+                                                      - len(i)*e2(k,j,i));
     }
     if (pmb->block_size.nx2 > 1) {
       pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
@@ -222,7 +227,8 @@ void Field::CT_STS(FaceField &b_out, FaceField &b_in1, FaceField &b_in2) {
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b_out.x3f(k,j,i) += pmb->pmy_mesh->muj_tilde *
-                          ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
+                          ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i)
+                                                         - len(i)*e1(k,j,i));
       }
     }
   }}
