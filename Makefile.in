@@ -26,8 +26,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/$(EOS_FILE) \
-	     $(wildcard src/fft/*.cpp) \
 	     src/eos/eos_high_order.cpp \
+	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/field_diffusion/*.cpp) \
 	     $(wildcard src/gravity/*.cpp) \
