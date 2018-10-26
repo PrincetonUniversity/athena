@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
       pinput->LoadFromFile(restartfile);
       // If both -r and -i are specified, make sure next_time gets corrected.
       // This needs to be corrected on the restart file because we need the old dt.
-      if(iarg_flag==1) pinput->RollbackNextTime();
+      if (iarg_flag==1) pinput->RollbackNextTime();
       // leave the restart file open for later use
     }
     if (iarg_flag==1) {
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     return(0);
   }
 
-#if STS_ENABLED  
+#if STS_ENABLED
   TaskList *pststlist;
   try {
     pststlist = new SuperTimeStepTaskList(pinput, pmesh);
