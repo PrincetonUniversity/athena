@@ -51,7 +51,7 @@
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
-// floating point single precision option
+// floating-point single precision option
 #define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
@@ -63,7 +63,7 @@
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
-// HDF5 floating point ouptut precision option
+// HDF5 floating-point ouptut precision option
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
 // compiler options
