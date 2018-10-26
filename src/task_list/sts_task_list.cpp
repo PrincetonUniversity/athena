@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file sts_task_list.cpp
-//  \brief RKL1 Super-Time-Stepping Algorithm 
+//  \brief RKL1 Super-Time-Stepping Algorithm
 //
-// REFERENCE: 
+// REFERENCE:
 // Meyer, C. D., Balsara, D. S., & Aslam, T. D. 2014, J. Comput. Phys.,
 //    257A, 594-626
 
@@ -36,7 +36,7 @@
 SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm) {
   // STS Incompatiblities
-  if ((MAGNETIC_FIELDS_ENABLED && 
+  if ((MAGNETIC_FIELDS_ENABLED &&
         (!pm->pblock->pfield->pfdif->field_diffusion_defined)) &&
       (!pm->pblock->phydro->phdif->hydro_diffusion_defined)) {
     std::stringstream msg;
@@ -47,7 +47,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     return;
   }
   // TODO(pdmullen): time-dep BC's require knowing the time within
-  //                 an RKL1 operator-split STS, what is the time? 
+  //                 an RKL1 operator-split STS, what is the time?
   if (SHEARING_BOX) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
@@ -118,7 +118,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
       AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
     else  // HYDRO
       AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD));
-    
+
     // everything else
     AddSuperTimeStepTask(PHY_BVAL,CON2PRIM);
     AddSuperTimeStepTask(CLEAR_ALLBND,PHY_BVAL);
@@ -342,7 +342,6 @@ enum TaskStatus SuperTimeStepTaskList::HydroDiffusion_STS(MeshBlock *pmb, int st
   // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
     ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
@@ -357,10 +356,9 @@ enum TaskStatus SuperTimeStepTaskList::HydroDiffusion_STS(MeshBlock *pmb, int st
 enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
-// return if there are no diffusion to be added
+  // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
     pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
@@ -460,7 +458,7 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
   BoundaryValues *pbval=pmb->pbval;
 
   if (stage <= nstages) {
-    // TODO(pdmullen): for time-dependent BC's, what is the time inside of an 
+    // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;

@@ -59,6 +59,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   //
   // main.cpp invokes the tasklist in a for() loop from stage=1 to stage=ptlist->nstages
 
+  // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time","integrator","vl2");
   int dim = 1;
   if (pm->mesh_size.nx2 > 1) dim = 2;
@@ -651,9 +652,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int sta
     Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    // Evaluate the time-dependent source terms at the time at the beginning of the stage
     ph->psrc->AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
   } else {
-    // Evaluate the source terms at the beginning of the
     return TASK_FAIL;
   }
   return TASK_NEXT;
@@ -665,10 +666,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int sta
 enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
 
-// return if there are no diffusion to be added
+  // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
     if (!STS_ENABLED)
       ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
@@ -684,10 +684,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage
 enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
-// return if there are no diffusion to be added
+  // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
     if (!STS_ENABLED)
       pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
