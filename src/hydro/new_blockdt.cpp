@@ -146,8 +146,8 @@ Real Hydro::NewBlockTimeStep(void) {
     min_dt = std::min(min_dt,mindt_h);
   } // field diffusion
 
-  if ((phdif->hydro_diffusion_defined) || 
-      (MAGNETIC_FIELDS_ENABLED && 
+  if ((phdif->hydro_diffusion_defined) ||
+      (MAGNETIC_FIELDS_ENABLED &&
        pmb->pfield->pfdif->field_diffusion_defined))
     min_dt_parabolic  = min_dt*pmb->pmy_mesh->cfl_number;
 
