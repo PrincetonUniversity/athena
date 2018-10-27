@@ -11,7 +11,7 @@ import athena_read                             # noqa
 
 
 def prepare(**kwargs):
-    athena.configure('b','sts',
+    athena.configure('b', 'sts',
                      prob='linear_wave',
                      flux='hlld',
                      eos='adiabatic')

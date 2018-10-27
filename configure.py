@@ -330,9 +330,9 @@ else:
 
 # -sts argument
 if args['sts']:
-   definitions['STS_ENABLED'] = '1'
+    definitions['STS_ENABLED'] = '1'
 else:
-   definitions['STS_ENABLED'] = '0'
+    definitions['STS_ENABLED'] = '0'
 
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
