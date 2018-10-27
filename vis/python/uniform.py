@@ -122,9 +122,9 @@ def main(**kwargs):
                 f.write('<Domain>\n')
                 f.write('<Grid Name="Mesh" GridType="Collection">\n')
                 f.write('  <Grid Name="MeshBlock0" GridType="Uniform">\n')
-                f.write(('    <Topology TopologyType="3DRectMesh"' +
-                         ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1, nx2+1,
-                                                                       nx1+1))
+                f.write(('    <Topology TopologyType="3DRectMesh"'
+                         + ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1, nx2+1,
+                                                                         nx1+1))
                 f.write('    <Geometry GeometryType="VXVYVZ">\n')
                 for nx, xf_string in zip((nx1, nx2, nx3), ('x1f', 'x2f', 'x3f')):
                     f.write(

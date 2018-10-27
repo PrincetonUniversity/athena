@@ -69,8 +69,8 @@ def hst(filename, raw=False):
     if not raw:
         if data_names[0] != 'time':
             raise AthenaError(
-                    'Cannot remove spurious data because time column could not be' +
-                    ' identified')
+                    'Cannot remove spurious data because time column could not be'
+                    + ' identified')
         branches_removed = False
         while not branches_removed:
             branches_removed = True
@@ -110,9 +110,9 @@ def tab(filename, raw=False, dimensions=None):
         if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
             headings = headings[1:2] + headings[3:4] + headings[5:]
             dimensions = 3
-        elif ((headings[0] == 'i' and headings[2] == 'j') or
-                (headings[0] == 'i' and headings[2] == 'k') or
-                (headings[0] == 'j' and headings[2] == 'k')):
+        elif ((headings[0] == 'i' and headings[2] == 'j')
+              or (headings[0] == 'i' and headings[2] == 'k')
+              or (headings[0] == 'j' and headings[2] == 'k')):
             headings = headings[1:2] + headings[3:]
             dimensions = 2
         elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
@@ -202,8 +202,8 @@ def vtk(filename):
     # Function for skipping though the file
     def skip_string(expected_string):
         expected_string_len = len(expected_string)
-        if raw_data_ascii[current_index:current_index +
-                          expected_string_len] != expected_string:
+        if raw_data_ascii[current_index:current_index
+                          + expected_string_len] != expected_string:
             raise AthenaError('File not formatted as expected')
         return current_index+expected_string_len
 
@@ -276,14 +276,14 @@ def vtk(filename):
     while current_index < len(raw_data):
         expected_string = 'SCALARS'
         expected_string_len = len(expected_string)
-        if raw_data_ascii[current_index:current_index +
-                          expected_string_len] == expected_string:
+        if raw_data_ascii[current_index:current_index
+                          + expected_string_len] == expected_string:
             current_index = read_cell_scalars()
             continue
         expected_string = 'VECTORS'
         expected_string_len = len(expected_string)
-        if raw_data_ascii[current_index:current_index +
-                          expected_string_len] == expected_string:
+        if raw_data_ascii[current_index:current_index
+                          + expected_string_len] == expected_string:
             current_index = read_cell_vectors()
             continue
         raise AthenaError('File not formatted as expected')
@@ -465,8 +465,8 @@ class athdf(dict):
                         def vol_func(rm, rp, thetam, thetap, phim, phip):
                             cosm = np.cos(thetam)
                             cosp = np.cos(thetap)
-                            return ((rp**3 - rm**3) * abs(cosm - cosp) + a**2 *
-                                    (rp - rm) * abs(cosm**3 - cosp**3)) * (phip - phim)
+                            return ((rp**3 - rm**3) * abs(cosm - cosp) + a**2
+                                    * (rp - rm) * abs(cosm**3 - cosp**3)) * (phip - phim)
                 else:
                     raise AthenaError('Coordinates not recognized')
 
@@ -515,14 +515,14 @@ class athdf(dict):
             if (self.level < self.max_level and not self.subsample
                     and not self.fast_restrict):
                 warnings.warn(
-                        'Exact restriction being used: performance severely affected;' +
-                        ' see documentation',
+                        'Exact restriction being used: performance severely affected;'
+                        + ' see documentation',
                         AthenaWarning)
                 sys.stderr.flush()
             if self.level > self.max_level:
                 warnings.warn(
-                        'Requested refinement level higher than maximum level in file:' +
-                        ' all cells will be prolongated',
+                        'Requested refinement level higher than maximum level in file:'
+                        + ' all cells will be prolongated',
                         AthenaWarning)
                 sys.stderr.flush()
 
@@ -533,9 +533,9 @@ class athdf(dict):
                     if (current_block_size != 1 and current_block_size %
                             max_restrict_factor != 0):
                         raise AthenaError(
-                                'Block boundaries at finest level must be cell' +
-                                ' boundaries at desired level for subsampling or fast' +
-                                ' restriction to work')
+                                'Block boundaries at finest level must be cell'
+                                + ' boundaries at desired level for subsampling or fast'
+                                + ' restriction to work')
 
             # Create list of all quantities if none given
             var_quantities = np.array([x.decode('ascii', 'replace')
@@ -842,12 +842,12 @@ class athdf(dict):
                     s = 2 ** (self.level - block_level)
 
                     # Calculate destination indices, without selection
-                    il_d = (block_location[0] *
-                            self.block_size[0] * s) if self.nx1 > 1 else 0
-                    jl_d = (block_location[1] *
-                            self.block_size[1] * s) if self.nx2 > 1 else 0
-                    kl_d = (block_location[2] *
-                            self.block_size[2] * s) if self.nx3 > 1 else 0
+                    il_d = (block_location[0]
+                            * self.block_size[0] * s) if self.nx1 > 1 else 0
+                    jl_d = (block_location[1]
+                            * self.block_size[1] * s) if self.nx2 > 1 else 0
+                    kl_d = (block_location[2]
+                            * self.block_size[2] * s) if self.nx3 > 1 else 0
                     iu_d = il_d + self.block_size[0] * s if self.nx1 > 1 else 1
                     ju_d = jl_d + self.block_size[1] * s if self.nx2 > 1 else 1
                     ku_d = kl_d + self.block_size[2] * s if self.nx3 > 1 else 1
@@ -892,12 +892,12 @@ class athdf(dict):
                     s = 2 ** (block_level - self.level)
 
                     # Calculate destination indices, without selection
-                    il_d = (block_location[0] *
-                            self.block_size[0] / s) if self.nx1 > 1 else 0
-                    jl_d = (block_location[1] *
-                            self.block_size[1] / s) if self.nx2 > 1 else 0
-                    kl_d = (block_location[2] *
-                            self.block_size[2] / s) if self.nx3 > 1 else 0
+                    il_d = (block_location[0]
+                            * self.block_size[0] / s) if self.nx1 > 1 else 0
+                    jl_d = (block_location[1]
+                            * self.block_size[1] / s) if self.nx2 > 1 else 0
+                    kl_d = (block_location[2]
+                            * self.block_size[2] / s) if self.nx3 > 1 else 0
                     iu_d = il_d + self.block_size[0] / s if self.nx1 > 1 else 1
                     ju_d = jl_d + self.block_size[1] / s if self.nx2 > 1 else 1
                     ku_d = kl_d + self.block_size[2] / s if self.nx3 > 1 else 1

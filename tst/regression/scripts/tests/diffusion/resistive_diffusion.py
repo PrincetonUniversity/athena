@@ -51,10 +51,10 @@ def analyze():
 
         N = int(len(x1v)/16.)
         dz = 8./N
-        analytic = ((amp/np.sqrt(2.*np.pi*sigma**2.)) *
-                    (1./np.sqrt(1.+(2.*eta*t0/sigma**2.))) *
-                    np.exp(-(x1v[8*N:8*N+N]**2.) /
-                    (2.*sigma**2.*(1.+(2.*eta*t0/sigma**2.)))))
+        analytic = ((amp/np.sqrt(2.*np.pi*sigma**2.))
+                    * (1./np.sqrt(1.+(2.*eta*t0/sigma**2.)))
+                    * np.exp(-(x1v[8*N:8*N+N]**2.)
+                    / (2.*sigma**2.*(1.+(2.*eta*t0/sigma**2.)))))
         l1ERROR.append(sum(np.absolute(bcc2[8*N:8*N+N]-analytic)*dz))
 
     # estimate L1 convergence
