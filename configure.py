@@ -275,12 +275,6 @@ if args['eos'] == 'isothermal':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'Isothermal EOS is incompatible with relativity')
 
-# STS
-if args['sts'] and args['coord'] != 'cartesian':
-    raise SystemExit('### CONFIGURE ERROR: STS can only be used with cartesian coordinates')
-if args['sts'] and args['shear']:
-    raise SystemExit('### CONFIGURE ERROR: STS is not yet compatible with shearing BCs')
-
 # --- Step 3. Set definitions and Makefile options based on above argument
 
 # Prepare dictionaries of substitutions to be made
