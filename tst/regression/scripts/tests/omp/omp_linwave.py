@@ -63,7 +63,7 @@ def analyze():
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
         print("Linear wave error differences between 4 threads vs. serial is too large",
-              data[2][4], data[0][4])
+              data[3][4], data[0][4])
         return False
 
     return True
