@@ -52,7 +52,7 @@ def analyze():
                 continue
             data.append([float(val) for val in line.split()])
 
-    print(data[0][4], data[1][4], data[2][4], data[3][4])
+    print(data[0][4], data[1][4], data[2][4])
 
     # check errors between runs: serial vs. hybrid w/ 1 thread vs. hybrid w/ 4 threads
     if data[0][4] != data[1][4]:
@@ -60,10 +60,6 @@ def analyze():
               data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 2 threads vs. serial is too large",
-              data[2][4], data[0][4])
-        return False
-    if abs(data[3][4] - data[0][4]) > 5.0e-4:
         print("Linear wave error differences between 4 threads vs. serial is too large",
               data[2][4], data[0][4])
         return False
