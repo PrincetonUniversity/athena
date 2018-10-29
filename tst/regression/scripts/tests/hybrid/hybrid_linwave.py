@@ -32,7 +32,7 @@ def run(**kwargs):
                  'output2/dt=-1', 'time/tlim=2.0', 'problem/compute_error=true']
     athena.run('mhd/athinput.linear_wave3d', arguments)
 
-    os.system('mv bin/athena_mpi bin/athena')
+    os.system('mv bin/athena_hybrid bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 1,
                   'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=1'])
     # 4 total threads = 2 MPI ranks x 2 OpenMP threads / rank
