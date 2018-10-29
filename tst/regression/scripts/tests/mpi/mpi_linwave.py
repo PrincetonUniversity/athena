@@ -57,14 +57,16 @@ def analyze():
 
     # check errors between runs w/wo MPI and different numbers of ranks
     if data[0][4] != data[1][4]:
-        print("Linear wave error with one core w/wo MPI not identical",
+        print("Linear wave error from serial calculation vs. MPI w/ 1 rank not identical",
               data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 2 and 1 ranks too large", data[2][4], data[0][4])
+        print("Linear wave error differences between 2 ranks vs. serial is too large",
+              data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 4 and 1 ranks too large", data[2][4], data[0][4])
+        print("Linear wave error differences between 4 ranks vs. serial is too large",
+              data[2][4], data[0][4])
         return False
 
     return True

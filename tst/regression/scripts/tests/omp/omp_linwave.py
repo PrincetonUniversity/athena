@@ -54,15 +54,15 @@ def analyze():
 
     # check errors between runs w/wo OpenMP and different numbers of threads
     if data[0][4] != data[1][4]:
-        print("Linear wave error with one OpenMP thread vs. no OpenMP not identical",
+        print("Linear wave error from serial calculation vs. single thread not identical",
               data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 2 and 1 threads too large",
+        print("Linear wave error differences between 2 threads vs. serial is too large",
               data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 4 and 1 threads too large",
+        print("Linear wave error differences between 4 threads vs. serial is too large",
               data[2][4], data[0][4])
         return False
 
