@@ -52,6 +52,7 @@ time python ./run_tests.py curvilinear --silent
 time python ./run_tests.py shearingbox --silent
 time python ./run_tests.py diffusion --silent
 time python ./run_tests.py symmetry --silent
+time python ./run_tests.py omp --silent
 
 # High-order solver regression tests w/ GCC
 time python ./run_tests.py hydro4 --silent
@@ -86,6 +87,7 @@ time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
 time python ./run_tests.py symmetry --config=--cxx=icc --silent
+time python ./run_tests.py omp --config=--cxx=icc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent
