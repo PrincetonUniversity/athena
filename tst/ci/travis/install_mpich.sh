@@ -42,14 +42,14 @@ else
 	rm mpich-3.2.1.tar.gz
 	echo "configuring and building mpich."
 	cd mpich-3.2.1
-	# Disabled fortran to shorten MPICH install time when building from source
+	# Disabled Fortran bindings to shorten MPICH install time when building from source
 	# Need to enable romio for MPI-I/O
 	./configure \
             --prefix=`pwd`/../mpich \
             --enable-static=false \
             --enable-alloca=true \
             --disable-long-double \
-            --enable-threads=single \
+            --enable-threads=multiple \
 	    --enable-fortran=no \
 	    --enable-romio=yes \
 	    --enable-fast=all \
