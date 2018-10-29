@@ -41,6 +41,7 @@ time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warni
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --silent
+time python ./run_tests.py hybrid --mpirun=srun --silent
 time python ./run_tests.py hydro --silent
 # MHD is currenlty the longest regression test set:
 time python ./run_tests.py mhd --silent
@@ -77,6 +78,7 @@ time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
 time python ./run_tests.py amr --config=--cxx=icc --silent

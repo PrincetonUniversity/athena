@@ -24,6 +24,7 @@ time python3 run_tests.py pgen/pgen_compile --config=--cxx=$TEMP_CXX --config=--
 # Only building serial HDF5 library on Travis CI:
 time python3 run_tests.py pgen/hdf5_reader_serial --config=--cxx=$TEMP_CXX
 time python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
+time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
 time python3 run_tests.py grav --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
 time python3 run_tests.py amr --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX --silent
