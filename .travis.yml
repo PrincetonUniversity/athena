@@ -45,10 +45,14 @@ cache:
 # Explicitly includilng the 2x macOS jobs in build matrix
 # Must specify complete build details, or the jobs will inherit
 # the first value in the above arrays. Could encapsulate in script
+# --------------
+# History of Travis CI default osx_image (date = when used in this file)
+# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra
+# (2018-04-11) xcode8.3 on macOS 10.12 Sierra
 matrix:
   include:
     - os: osx
-      osx_image: xcode9.3 # macOS 10.13 High Sierra
+      osx_image: xcode9.4
       compiler: clang++
       env:
         - MPI_CHOICE=mpich
@@ -70,7 +74,7 @@ matrix:
           - hdf5
           - "/usr/local/Cellar/hdf5/"
     - os: osx
-      osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+      osx_image: xcode9.4
       compiler: clang++
       env:
         - MPI_CHOICE=openmpi
