@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# MPICH 3.2.1 = released 2017-11-10
+version_str=3.2.1
 # for macOS builds, install MPICH from Homebrew
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
@@ -36,12 +39,13 @@ else
     if [ -f mpich/lib/libmpich.so ]; then
 	echo "libmpich.so found -- nothing to build."
     else
+	# download, configure, and compile MPICH
 	echo "Downloading mpich source."
-	wget http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
-	tar xfz mpich-3.2.1.tar.gz
-	rm mpich-3.2.1.tar.gz
+	wget http://www.mpich.org/static/downloads/${version_str}/mpich-${version_str}.tar.gz
+	tar xfz mpich-${version_str}.tar.gz
+	rm mpich-${version_str}.tar.gz
+	cd mpich-${version_str}
 	echo "configuring and building mpich."
-	cd mpich-3.2.1
 	# Disabled Fortran bindings to shorten MPICH install time when building from source
 	# Need to enable romio for MPI-I/O
 	./configure \
