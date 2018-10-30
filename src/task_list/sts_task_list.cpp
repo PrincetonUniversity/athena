@@ -261,7 +261,7 @@ enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int s
   Field *pfield=pmb->pfield;
 
   if (stage <= nstages) {
-    phydro->CalculateFluxes_STS();
+    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1, 1);
     return TASK_NEXT;
   }
   return TASK_FAIL;
@@ -269,7 +269,7 @@ enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int s
 
 enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pfield->ComputeCornerE_STS();
+    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc, 1);
     return TASK_NEXT;
   }
   return TASK_FAIL;
@@ -316,7 +316,12 @@ enum TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int st
 
   // update u
   if (stage <= nstages) {
-    ph->AddFluxDivergenceToAverage_STS(ph->w,pf->bcc,ph->u,ph->u1,ph->u2);
+    Real ave_wghts[3];
+    ave_wghts[0] = 0.0;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
+    ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
     return TASK_NEXT;
   }
   return TASK_FAIL;
@@ -326,7 +331,12 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
   Field *pf=pmb->pfield;
 
   if (stage <= nstages) {
-    pf->CT_STS(pf->b,pf->b1,pf->b2);
+    Real ave_wghts[3];
+    ave_wghts[0] = 0.0;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
+    pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+    pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
     return TASK_NEXT;
   }
 

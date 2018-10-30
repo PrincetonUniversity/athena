@@ -525,10 +525,12 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stag
 
   if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc,
+                              1, 0);
       return TASK_NEXT;
     } else {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc,
+                              pmb->precon->xorder, 0);
       return TASK_NEXT;
     }
   }
@@ -537,7 +539,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stag
 
 enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc, 0);
     return TASK_NEXT;
   }
   return TASK_FAIL;

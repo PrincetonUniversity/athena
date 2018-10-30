@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     return(0);
   }
 
-  TaskList *pststlist;
+  TaskList *pststlist = NULL;
   if (STS_ENABLED) {
     try {
       pststlist = new SuperTimeStepTaskList(pinput, pmesh);
