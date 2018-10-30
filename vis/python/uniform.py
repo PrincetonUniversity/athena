@@ -128,12 +128,12 @@ def main(**kwargs):
                 f.write('    <Geometry GeometryType="VXVYVZ">\n')
                 for nx, xf_string in zip((nx1, nx2, nx3), ('x1f', 'x2f', 'x3f')):
                     f.write(
-                        '      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'.format(nx + 1)) # noqa
+                        '      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'.format(nx + 1))  # noqa
                     f.write(('        <DataItem Dimensions="3 2" NumberType="Int">'
                              + ' 0 0 1 1 1 {0} </DataItem>\n').format(nx + 1))
                     f.write(
                         ('        <DataItem Dimensions="1 {0}" Format="HDF">'
-                         + ' {1}:/{2} </DataItem>\n').format(nx + 1, output_base, xf_string)) # noqa
+                         + ' {1}:/{2} </DataItem>\n').format(nx + 1, output_base, xf_string))  # noqa
                     f.write('      </DataItem>\n')
                 f.write('    </Geometry>\n')
                 if kwargs['quantities'] is None:
@@ -149,15 +149,15 @@ def main(**kwargs):
                     for var_num in range(num_vars):
                         variable_name = variable_names[var_num + var_offset]
                         f.write(
-                            '    <Attribute Name="{0}" Center="Cell">\n'.format(variable_name)) # noqa
+                            '    <Attribute Name="{0}" Center="Cell">\n'.format(variable_name))  # noqa
                         f.write(
-                            '      <DataItem ItemType="HyperSlab" Dimensions="{0} {1} {2}">\n' .format(nx3, nx2, nx1)) # noqa
+                            '      <DataItem ItemType="HyperSlab" Dimensions="{0} {1} {2}">\n' .format(nx3, nx2, nx1))  # noqa
                         f.write(('        <DataItem Dimensions="3 5" NumberType="Int">'
                                  + ' {0} 0 0 0 0 1 1 1 1 1 1 1 {1} {2} {3} </DataItem>\n')
                                 .format(var_num, nx3, nx2, nx1))
                         f.write(
-                            ('        <DataItem Dimensions="{0} 1 {1} {2} {3}" Format="HDF">' # noqa
-                             + ' {4}:/{5} </DataItem>\n') .format(num_vars, nx3, nx2, nx1, output_base, dataset_name)) # noqa
+                            ('        <DataItem Dimensions="{0} 1 {1} {2} {3}" Format="HDF">'  # noqa
+                             + ' {4}:/{5} </DataItem>\n') .format(num_vars, nx3, nx2, nx1, output_base, dataset_name))  # noqa
                         f.write('      </DataItem>\n')
                         f.write('    </Attribute>\n')
                     var_offset += num_vars

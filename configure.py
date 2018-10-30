@@ -488,7 +488,7 @@ if args['mpi']:
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
     if args['cxx'] == 'bgxl':
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx' # noqa
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
 else:
     definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 

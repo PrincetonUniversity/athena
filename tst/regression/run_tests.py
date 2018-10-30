@@ -28,7 +28,7 @@ import sys
 sys.dont_write_bytecode = True
 
 # Athena++ modules
-import scripts.utils.athena as athena # noqa
+import scripts.utils.athena as athena  # noqa
 
 
 # Main function
