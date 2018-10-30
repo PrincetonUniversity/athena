@@ -18,7 +18,7 @@ addons:
     packages:
       - "python3"
       - "python3-pip"
-      - "clang-5.0"  # Ubuntu 14.04 ships wit Clang 3.5..0 as of 2018-10-29
+      - "clang-5.0"  # Ubuntu 14.04 ships wit Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
 env:
   matrix:
