@@ -27,7 +27,7 @@ time python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS -
 # need to switch serial compiler to Homebrew's GCC instead of /usr/bin/gcc -> Apple Clang for OpenMP
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     #time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
-    time python3 run_tests.py omp --config="--cxx=g++ --ccmd=/usr/local/bin/gcc-8" --silent
+    time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/gcc-8 --silent
 else
     time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
     time python3 run_tests.py omp --config=--cxx=$TEMP_CXX --silent
