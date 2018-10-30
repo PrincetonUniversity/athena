@@ -30,17 +30,17 @@ compiler:
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
-  directories:
+  directories: # TODO(felker): sync "version_str=" lines in install scripts with cache dir names
     # For caching Linux source directories:
-    - openmpi-3.0.2 # released 6/1/18
-    - mpich-3.2.1 # stable maintenance release from 11/10/17
+    - openmpi-3.0.2
+    - mpich-3.2.1
     # Caching Linux install directories:
     - openmpi
     - mpich
     - fftw
-    - fftw-3.3.7 # stable release as of 11/8/17
+    - fftw-3.3.8
     - hdf5
-    - hdf5-1.10.1 # released on 2017-04-27
+    - hdf5-1.10.4
 
 # Explicitly includilng the 2x macOS jobs in build matrix
 # Must specify complete build details, or the jobs will inherit
