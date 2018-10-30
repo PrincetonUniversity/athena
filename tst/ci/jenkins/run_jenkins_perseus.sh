@@ -67,8 +67,8 @@ time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--li
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-module load intel
-module load intel-mpi
+module load intel/17.0/64/17.0.5.239 # intel
+module load intel-mpi/intel/2017.5/64 # intel-mpi
 module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 module load rh
