@@ -1,6 +1,6 @@
 <comment>
 problem   = viscous shear flow
-reference = 
+reference =
 configure = --prob=visc --coord=cartesian --eos=isothermal (-sts)
 
 <job>
@@ -12,9 +12,9 @@ dt          = 0.01      # time increment between outputs
 
 <output2>
 file_type   = vtk       # tab data dump
-variable    = cons        # variable(s) to output
+variable    = cons      # variable(s) to output
 data_format = %24.16e   # output precision
-dt          = 0.1      # time increment between outputs
+dt          = 0.01      # time increment between outputs
 
 <time>
 cfl_number  = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
