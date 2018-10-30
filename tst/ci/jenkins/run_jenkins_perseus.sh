@@ -73,6 +73,9 @@ module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 module load rh
 module list
+# temp:
+time python ./run_tests.py omp --config=--cxx=icc --silent
+time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
 
 time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
