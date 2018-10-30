@@ -67,11 +67,13 @@ time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--li
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-module load intel/17.0/64/17.0.5.239 # intel
-module load intel-mpi/intel/2017.5/64 # intel-mpi
+# automatically use latest default version of these libraries as Princeton Research Computing updates them:
+module load intel # intel/17.0/64/17.0.5.239
+module load intel-mpi # intel-mpi/intel/2017.5/64
+# pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
-module load rh
+# do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 # temp:
 time python ./run_tests.py omp --config=--cxx=icc --silent
