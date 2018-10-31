@@ -27,7 +27,12 @@ time python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS -
 # need to switch serial compiler to Homebrew's GCC instead of /usr/bin/gcc -> Apple Clang for OpenMP functionality
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     # TODO(felker): improve selection of 'gcc-8' so when 'brew install gcc' formula instead installs gcc-9, this won't break
-    time python3 run_tests.py hybrid --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 --mpirun_opts=$MPI_OPTS --silent
+    export OMPI_CC=/usr/local/bin/gcc-8
+    export OMPI_CXX=/usr/local/bin/g++-8
+    export MPICH_CC=/usr/local/bin/gcc-8
+    export MPICH_CXX=/usr/local/bin/g++-8
+    time python3 run_tests.py hybrid --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 \
+	 --config=--mpiccmd='mpicc -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX' --mpirun_opts=$MPI_OPTS --silent
     time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 --silent
 else
     # Fix for broken libomp.h with Travis CI's clang installation on Ubuntu images
