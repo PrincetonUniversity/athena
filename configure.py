@@ -205,7 +205,7 @@ parser.add_argument('--ccmd',
                     help='override for command to use to call (non-MPI) C++ compiler')
 
 # --mpiccmd=[name] argument
-parser.add_argument('--ccmd',
+parser.add_argument('--mpiccmd',
                     default=None,
                     help='override for command to use to call MPI C++ compiler')
 
