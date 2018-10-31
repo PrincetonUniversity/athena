@@ -111,7 +111,7 @@ matrix:
             - "python3-pip"
       env:
       compiler:
-      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
+      script: python3 -m flake8 --exclude=cpplint.py,openmpi-* && echo "Finished linting Python files with flake8"
     # Test Google C++ Style Guide adherence for .cpp, .hpp files:
     - stage: c++ linter
       before_install: skip
@@ -121,7 +121,7 @@ matrix:
       env:
       compiler:
       # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
-      script: cd tst/style/; ./cpplint_athena.sh
+      script: cd tst/style/ && ./cpplint_athena.sh
 
 # Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
 before_install:

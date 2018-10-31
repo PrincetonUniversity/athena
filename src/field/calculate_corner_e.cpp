@@ -251,8 +251,18 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
     }}
   }
 
+  if (!STS_ENABLED) // add diffusion flux
+    if (pfdif->field_diffusion_defined) pfdif->AddEMF(pfdif->e_oa, e);
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Field::ComputeCornerE_STS
+//  \brief Compute corner E for STS
+
+void Field::ComputeCornerE_STS() {
   // add diffusion flux
   if (pfdif->field_diffusion_defined) pfdif->AddEMF(pfdif->e_oa, e);
-
   return;
 }

@@ -28,7 +28,7 @@ import sys
 sys.dont_write_bytecode = True
 
 # Athena++ modules
-import scripts.utils.athena as athena # noqa
+import scripts.utils.athena as athena  # noqa
 
 
 # Main function
@@ -52,8 +52,8 @@ def main(**kwargs):
         for _, directory, ispkg in iter_modules(path=['scripts/tests']):
             if ispkg:
                 dir_test_names = [name for _, name, _ in
-                                  iter_modules(path=['scripts/tests/' +
-                                                     directory],
+                                  iter_modules(path=['scripts/tests/'
+                                                     + directory],
                                                prefix=directory + '.')]
                 test_names.extend(dir_test_names)
     else:  # run selected tests
@@ -67,8 +67,8 @@ def main(**kwargs):
                 test_names.append(test.replace('/', '.'))
             else:  # test suite specified
                 dir_test_names = [name for _, name, _ in
-                                  iter_modules(path=['scripts/tests/' +
-                                                     test],
+                                  iter_modules(path=['scripts/tests/'
+                                                     + test],
                                                prefix=test + '.')]
                 test_names.extend(dir_test_names)
     test_names = list(set(test_names))

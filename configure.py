@@ -99,6 +99,12 @@ parser.add_argument('-b',
                     default=False,
                     help='enable magnetic field')
 
+# -sts argument
+parser.add_argument('-sts',
+                    action='store_true',
+                    default=False,
+                    help='enable super-time-stepping')
+
 # -s argument
 parser.add_argument('-s',
                     action='store_true',
@@ -328,6 +334,12 @@ else:
     else:
         definitions['NWAVE_VALUE'] = '4'
 
+# -sts argument
+if args['sts']:
+    definitions['STS_ENABLED'] = '1'
+else:
+    definitions['STS_ENABLED'] = '0'
+
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
@@ -485,7 +497,7 @@ if args['mpi']:
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
     if args['cxx'] == 'bgxl':
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx' # noqa
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
     # --mpiccmd=[name] argument
     if args['mpiccmd'] is not None:
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd'] # noqa
@@ -628,6 +640,7 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))

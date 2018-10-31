@@ -16,9 +16,11 @@
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
 # Apply Google C++ Style Linter to all source code files at once:
+echo "Starting Google C++ Style cpplint.py test"
 set -e
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs ./cpplint.py --counting=detailed
 set +e
+echo "End of Google C++ Style cpplint.py test"
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
 echo "Starting std::sqrt(), std::cbrt(), \t test"
@@ -39,3 +41,10 @@ do
 done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print)
 
 echo "End of std::sqrt(), std::cbrt(), \t test"
+
+# Search src/ C++ source code for trailing whitespace errors
+# (Google C++ Style Linter does not check for this, but flake8 via pycodestyle warning W291 will check *.py)
+echo "Checking for trailing whitespace in src/"
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/fft/plimpton/*" -exec grep -n -E " +$" {} +
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ files with trailing whitespace"; exit 1; fi
+echo "End of trailing whitespace test"
