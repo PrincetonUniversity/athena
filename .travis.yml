@@ -49,6 +49,8 @@ cache:
 # History of Travis CI default osx_image (date = when used in this file)
 # (2018-10-30) xcode9.4 on macOS 10.13 High Sierra
 # (2018-04-11) xcode8.3 on macOS 10.12 Sierra
+# TODO(felker): improve syncing of osx "softwareupdate" cmd xcode version argument in
+# tst/ci/travis/ install_mpich.sh, install_openmpi.sh (workaround for Homebrew GCC)
 matrix:
   include:
     - os: osx
