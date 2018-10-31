@@ -44,6 +44,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
     return;
   }
 
+  pgbval = new GravityBoundaryValues(pmy_block,input_bcs);
+
   // Allocate memory for gravitational potential, but only when needed.
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
@@ -57,4 +59,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
 Gravity::~Gravity() {
   phi.DeleteAthenaArray();
+
+  delete pgbval;
 }

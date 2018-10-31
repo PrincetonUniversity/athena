@@ -13,6 +13,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -28,6 +29,7 @@ public:
   ~Gravity();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+  GravityBoundaryValues *pgbval;
 
   AthenaArray<Real> phi;  // gravitational potential
   Real gconst, four_pi_G;

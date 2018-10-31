@@ -260,7 +260,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
 
     if (nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      ptarget=&(pbl->pgbval->bd_gravity_);
+      ptarget=&(pbl->pgrav->pgbval->bd_gravity_);
       if (ptarget->flag[nb.targetid] != BNDRY_WAITING) {
         bflag=false;
         continue;

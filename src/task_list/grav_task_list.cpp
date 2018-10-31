@@ -97,28 +97,28 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
 // Functions to start/end MPI communication
 
 enum TaskStatus GravitySolverTaskList::StartGravityReceive(MeshBlock *pmb, int stage) {
-  pmb->pgbval->StartReceivingGravity();
+  pmb->pgrav->pgbval->StartReceivingGravity();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgbval->ClearBoundaryGravity();
+  pmb->pgrav->pgbval->ClearBoundaryGravity();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
-  if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+  if (pmb->pgrav->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
 enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int stage) {
-  if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+  if (pmb->pgrav->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
 enum TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgbval->ApplyPhysicalBoundaries();
+  pmb->pgrav->pgbval->ApplyPhysicalBoundaries();
   return TASK_NEXT;
 }
