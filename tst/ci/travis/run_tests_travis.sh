@@ -32,7 +32,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export MPICH_CC=/usr/local/bin/gcc-8
     export MPICH_CXX=/usr/local/bin/g++-8
     time python3 run_tests.py hybrid --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 \
-	 --config=--mpiccmd='mpicc -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX' --mpirun_opts=$MPI_OPTS --silent
+	 --config=--mpiccmd='mpicxx -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX' --mpirun_opts=$MPI_OPTS --silent
     time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 --silent
 else
     # Fix for broken libomp.h with Travis CI's clang installation on Ubuntu images
