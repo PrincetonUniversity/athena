@@ -261,7 +261,7 @@ enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int s
   Field *pfield=pmb->pfield;
 
   if (stage <= nstages) {
-    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1, 1);
+    phydro->CalculateFluxes_STS();
     return TASK_NEXT;
   }
   return TASK_FAIL;
@@ -269,7 +269,7 @@ enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int s
 
 enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc, 1);
+    pmb->pfield->ComputeCornerE_STS();
     return TASK_NEXT;
   }
   return TASK_FAIL;
