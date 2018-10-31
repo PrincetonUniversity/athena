@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# MPICH 3.2.1 = released 2017-11-10
+version_str=3.2.1
 # for macOS builds, install MPICH from Homebrew
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
@@ -6,6 +9,9 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew unlink open-mpi || true
     # MPICH and dependencies
     brew update  # Travis CI's Homebrew is out of date such that MPICH gcc vs. gfortran deps are broken
+    # workaround for "missing stdio.h" header and conflict with oclint cask
+    sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
+    brew cask uninstall oclint
     # always install dependencies from pre-compiled bottles before attempting to build-from-source
     brew install gcc # Homebrew dependency due to gfrotran (would take 1 hr to build from source)
     rm '/usr/local/include/c++' || true # recommended by Homebrew
@@ -36,20 +42,21 @@ else
     if [ -f mpich/lib/libmpich.so ]; then
 	echo "libmpich.so found -- nothing to build."
     else
+	# download, configure, and compile MPICH
 	echo "Downloading mpich source."
-	wget http://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
-	tar xfz mpich-3.2.1.tar.gz
-	rm mpich-3.2.1.tar.gz
+	wget http://www.mpich.org/static/downloads/${version_str}/mpich-${version_str}.tar.gz
+	tar xfz mpich-${version_str}.tar.gz
+	rm mpich-${version_str}.tar.gz
+	cd mpich-${version_str}
 	echo "configuring and building mpich."
-	cd mpich-3.2.1
-	# Disabled fortran to shorten MPICH install time when building from source
+	# Disabled Fortran bindings to shorten MPICH install time when building from source
 	# Need to enable romio for MPI-I/O
 	./configure \
             --prefix=`pwd`/../mpich \
             --enable-static=false \
             --enable-alloca=true \
             --disable-long-double \
-            --enable-threads=single \
+            --enable-threads=multiple \
 	    --enable-fortran=no \
 	    --enable-romio=yes \
 	    --enable-fast=all \

@@ -57,9 +57,9 @@ void ShowConfig(void) {
     std::cout<<"  General Relativity:         OFF " << std::endl;
   }
   if (SINGLE_PRECISION_ENABLED) {
-    std::cout<<"  Floating point precision:   single" << std::endl;
+    std::cout<<"  Floating-point precision:   single" << std::endl;
   } else {
-    std::cout<<"  Floating point precision:   double" << std::endl;
+    std::cout<<"  Floating-point precision:   double" << std::endl;
   }
   std::cout<<"  Number of ghost cells:      " << NGHOST << std::endl;
 #ifdef MPI_PARALLEL

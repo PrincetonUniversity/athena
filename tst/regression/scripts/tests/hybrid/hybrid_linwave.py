@@ -1,4 +1,4 @@
-# Regression test based on Newtonian MHD linear wave convergence problem with MPI
+# Regression test based on Newtonian MHD linear wave convergence problem with MPI+OpenMP
 #
 # Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
 # are computed by the executable automatically and stored in the temporary file
@@ -9,18 +9,18 @@ import os
 import scripts.utils.athena as athena
 
 
-# Prepare Athena++ w/wo MPI
+# Prepare Athena++ w/wo MPI+OpenMP
 def prepare(**kwargs):
-    athena.configure('b', 'mpi', prob='linear_wave', coord='cartesian',
+    athena.configure('b', 'mpi', 'omp', prob='linear_wave', coord='cartesian',
                      flux='hlld', **kwargs)
     athena.make()
-    os.system('mv bin/athena bin/athena_mpi')
+    os.system('mv bin/athena bin/athena_hybrid')
 
     athena.configure('b', prob='linear_wave', coord='cartesian', flux='hlld', **kwargs)
     athena.make()
 
 
-# Run Athena++ w/wo MPI
+# Run Athena++: serial, then hybrid MPI+OpenMP
 def run(**kwargs):
     # L-going fast wave
     arguments = ['time/ncycle_out=0',
@@ -32,13 +32,12 @@ def run(**kwargs):
                  'output2/dt=-1', 'time/tlim=2.0', 'problem/compute_error=true']
     athena.run('mhd/athinput.linear_wave3d', arguments)
 
-    os.system('mv bin/athena_mpi bin/athena')
+    os.system('mv bin/athena_hybrid bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 1,
-                  'mhd/athinput.linear_wave3d', arguments)
+                  'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=1'])
+    # 4 total threads = 2 MPI ranks x 2 OpenMP threads / rank
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 2,
-                  'mhd/athinput.linear_wave3d', arguments)
-    athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 4,
-                  'mhd/athinput.linear_wave3d', arguments)
+                  'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=2'])
 
 
 # Analyze outputs
@@ -53,20 +52,16 @@ def analyze():
                 continue
             data.append([float(val) for val in line.split()])
 
-    print(data[0][4], data[1][4], data[2][4], data[3][4])
+    print(data[0][4], data[1][4], data[2][4])
 
-    # check errors between runs w/wo MPI and different numbers of ranks
+    # check errors between runs: serial vs. hybrid w/ 1 thread vs. hybrid w/ 4 threads
     if data[0][4] != data[1][4]:
-        print("Linear wave error from serial calculation vs. MPI w/ 1 rank not identical",
+        print("Linear wave error from serial calculation vs. single thread not identical",
               data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 2 ranks vs. serial is too large",
+        print("Linear wave error differences between 4 threads vs. serial is too large",
               data[2][4], data[0][4])
-        return False
-    if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 4 ranks vs. serial is too large",
-              data[3][4], data[0][4])
         return False
 
     return True

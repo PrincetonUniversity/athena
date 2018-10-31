@@ -143,6 +143,16 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Reconfigure with Cartesian coordinates " << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
+
+    if (SHEARING_BOX) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " flux calculations"
+          << "currently does not support shearing box boundary conditions " << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return;
+    }
+
     // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
     int req_nghost = 4;
     // until new algorithm for face-averaged Field->bf to cell-averaged Hydro->bcc
