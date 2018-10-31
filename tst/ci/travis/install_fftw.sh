@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# FFTW 3.3.8 = released 2018-05-28
+# FFTW 3.3.7 = released 2017-10-29
+version_str=3.3.8
 # for macOS builds, install FFTW from Homebrew
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
@@ -23,16 +27,15 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 else
     # for Ubuntu builds, install FFTW from source
     # check to see if FFTW is cached from previous build
-    if [ -f "fftw/bin/fft-wisdom" ]; then # && [ -f "fftw-3.3.7/config.log" ]
+    if [ -f "fftw/bin/fft-wisdom" ]; then # && [ -f "fftw-${version_str}/config.log" ]
 	echo "Using cached FFTW"
     else
-        # install FFTW from source
+	# download, configure, and compile FFTW3
 	echo "Downloading FFTW Source"
-	# Using 3.3.7 on Homebrew for osx Travis builds
-	wget http://www.fftw.org/fftw-3.3.7.tar.gz
-	tar zxf fftw-3.3.7.tar.gz
+	wget http://www.fftw.org/fftw-${version_str}.tar.gz
+	tar zxf fftw-${version_str}.tar.gz
+	cd fftw-${version_str}
 	echo "Configuring and building FFTW"
-	cd fftw-3.3.7
 	# --enable-mpi: not needed, since Plimpton's FFT library is used in Athena++ for MPI+FFT grav
 	./configure --prefix=$TRAVIS_BUILD_DIR/fftw &> fftw.configure
 	# make -j4 &> fftw.make

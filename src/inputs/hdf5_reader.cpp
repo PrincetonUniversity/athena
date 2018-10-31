@@ -26,7 +26,7 @@
   #include <mpi.h>  // MPI_COMM_WORLD, MPI_INFO_NULL
 #endif
 
-// Determine floating point precision (in memory, not file)
+// Determine floating-point precision (in memory, not file)
 #if SINGLE_PRECISION_ENABLED
   #define H5T_REAL H5T_NATIVE_FLOAT
 #else

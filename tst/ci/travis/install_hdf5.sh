@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# HDF5 1.10.4 = released 2018-10-09
+# HDF5 1.10.3 = released 2018-08-22
+# HDF5 1.10.2 = released 2018-03-30
+# HDF5 1.10.1 = released 2018-08-22
+version_str=1.10.4
 # for macOS builds, install HDF5 from Homebrew
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
@@ -29,13 +35,12 @@ else
     if [ -f "hdf5/bin/h5stat" ]; then
 	echo "Using cached HDF5"
     else
-        # install HDF5 from source
+        # download, configure, and compile HDF5
 	echo "Downloading HDF5 Source"
-	# Using 1.10.1 on Homebrew for osx Travis builds
-	wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-	tar zxf hdf5-1.10.1.tar.gz
+	wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-${version_str}/src/hdf5-${version_str}.tar.gz
+	tar zxf hdf5-${version_str}.tar.gz
+	cd hdf5-${version_str}
 	echo "Configuring and building HDF5"
-	cd hdf5-1.10.1
 	./configure --prefix=$TRAVIS_BUILD_DIR/hdf5 &> hdf5.configure
 	# For parallel MPI build of HDF5 library:
 	# CC=/Users/kfelker/mpich-install/bin/mpicc ./configure --enable-parallel

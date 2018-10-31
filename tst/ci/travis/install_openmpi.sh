@@ -1,10 +1,17 @@
 #!/bin/bash
+
+# OpenMPI 3.0.2 = released 2018-06-01
+# will need to manually adjust below URL after major version 3.0
+version_str=3.0.2
 # for macOS builds, install OpenMPI from Homebrew:
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
     cd openmpi
     brew unlink mpich || true
     # OpenMPI and dependencies:
+    # workaround for "missing stdio.h" header and conflict with oclint cask
+    sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
+    brew cask uninstall oclint
     # always install dependencies from pre-compiled bottles before attempting to build-from-source
     brew install gcc
     brew link libevent || true
@@ -29,16 +36,16 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 else
     # for Ubuntu builds, install OpenMPI from source
     # check to see if OpenMPI is cached from previous build
-    if [ -f "openmpi/bin/mpirun" ] && [ -f "openmpi-3.0.2/config.log" ]; then
+    if [ -f "openmpi/bin/mpirun" ] && [ -f "openmpi-${version_str}/config.log" ]; then
 	echo "Using cached OpenMPI"
     else
-        # install OpenMPI from source
+        # download, configure, and compile OpenMPI
 	echo "Downloading OpenMPI Source"
 	# Using 2.1.1 on Homebrew for osx Travis builds
-	wget https://download.open-mpi.org/release/open-mpi/v3.0/openmpi-3.0.2.tar.gz
-	tar zxf openmpi-3.0.2.tar.gz
+	wget https://download.open-mpi.org/release/open-mpi/v3.0/openmpi-${version_str}.tar.gz
+	tar zxf openmpi-${version_str}.tar.gz
+	cd openmpi-${version_str}
 	echo "Configuring and building OpenMPI"
-	cd openmpi-3.0.2
 	# The configure output is not printed to the Travis CI log due to the redirect
 	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi &> openmpi.configure # CC=$C_COMPILER CXX=$CXX_COMPILER --without-fortran
 	make -j4 &> openmpi.make

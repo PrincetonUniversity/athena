@@ -41,6 +41,7 @@ time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warni
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --silent
+time python ./run_tests.py hybrid --mpirun=srun --silent
 time python ./run_tests.py hydro --silent
 # MHD is currenlty the longest regression test set:
 time python ./run_tests.py mhd --silent
@@ -52,6 +53,7 @@ time python ./run_tests.py curvilinear --silent
 time python ./run_tests.py shearingbox --silent
 time python ./run_tests.py diffusion --silent
 time python ./run_tests.py symmetry --silent
+time python ./run_tests.py omp --silent
 
 # High-order solver regression tests w/ GCC
 time python ./run_tests.py hydro4 --silent
@@ -65,17 +67,20 @@ time python ./run_tests.py pgen/hdf5_reader_parallel --mpirun=srun --config=--li
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-module load intel
-module load intel-mpi
+# automatically use latest default version of these libraries as Princeton Research Computing updates them:
+module load intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.0.117
+module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
+# pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
-module load rh
+# do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 
 time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
 time python ./run_tests.py amr --config=--cxx=icc --silent
@@ -86,6 +91,7 @@ time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
 time python ./run_tests.py symmetry --config=--cxx=icc --silent
+time python ./run_tests.py omp --config=--cxx=icc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent

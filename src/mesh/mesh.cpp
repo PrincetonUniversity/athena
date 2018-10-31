@@ -1350,7 +1350,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
     // begin fourth-order correction of midpoint initial condition:
     // --------------------------
-    bool correct_ic = pmb->precon->correct_ic;
+
+    // correct IC on all MeshBlocks or none; switch cannot be toggled independently
+    bool correct_ic = pmb_array[0]->precon->correct_ic;
     if (correct_ic == true) {
 #pragma omp for private(pmb, phydro, pfield, pbval)
       for (int i=0; i<nmb; ++i) {

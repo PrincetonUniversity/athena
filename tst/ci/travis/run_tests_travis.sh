@@ -21,9 +21,25 @@ fi
 
 # --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
 time python3 run_tests.py pgen/pgen_compile --config=--cxx=$TEMP_CXX --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
-# Only building serial HDF5 library on Travis CI:
+# Only building serial HDF5 library on Travis CI (skip "pgen/hdf5_reader_parallel"):
 time python3 run_tests.py pgen/hdf5_reader_serial --config=--cxx=$TEMP_CXX
 time python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
+# need to switch serial compiler to Homebrew's GCC instead of /usr/bin/gcc -> Apple Clang for OpenMP functionality
+if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    # TODO(felker): improve selection of 'gcc-8' so when 'brew install gcc' formula instead installs gcc-9, this won't break
+    export OMPI_CC=/usr/local/bin/gcc-8
+    export OMPI_CXX=/usr/local/bin/g++-8
+    export MPICH_CC=/usr/local/bin/gcc-8
+    export MPICH_CXX=/usr/local/bin/g++-8
+    time python3 run_tests.py hybrid --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 \
+	 --config=--mpiccmd='mpicxx -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX' --mpirun_opts=$MPI_OPTS --silent
+    time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 --silent
+else
+    # Fix for broken libomp.h with Travis CI's clang installation on Ubuntu images
+    export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH
+    time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
+    time python3 run_tests.py omp --config=--cxx=$TEMP_CXX --silent
+fi
 time python3 run_tests.py grav --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
 time python3 run_tests.py amr --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX --silent

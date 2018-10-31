@@ -28,7 +28,8 @@
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --cxx=xxx         use xxx as the C++ compiler
-#   --ccmd=name       use name as the command to call the C++ compiler
+#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
 #   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -207,7 +208,12 @@ parser.add_argument(
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
                     default=None,
-                    help='override for command to use to call C++ compiler')
+                    help='override for command to use to call (non-MPI) C++ compiler')
+
+# --mpiccmd=[name] argument
+parser.add_argument('--mpiccmd',
+                    default=None,
+                    help='override for command to use to call MPI C++ compiler')
 
 # --cflag=[string] argument
 parser.add_argument('--cflag',
@@ -461,7 +467,6 @@ if args['float']:
 else:
     definitions['SINGLE_PRECISION_ENABLED'] = '0'
 
-
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
@@ -478,6 +483,10 @@ if args['debug']:
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
 
+# --ccmd=[name] argument
+if args['ccmd'] is not None:
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
@@ -489,6 +498,9 @@ if args['mpi']:
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
     if args['cxx'] == 'bgxl':
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
+    # --mpiccmd=[name] argument
+    if args['mpiccmd'] is not None:
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd'] # noqa
 else:
     definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 
@@ -576,10 +588,6 @@ if args['h5double']:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
-
-# --ccmd=[name] argument
-if args['ccmd'] is not None:
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # --cflag=[string] argument
 if args['cflag'] is not None:
