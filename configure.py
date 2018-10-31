@@ -449,7 +449,6 @@ if args['float']:
 else:
     definitions['SINGLE_PRECISION_ENABLED'] = '0'
 
-
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
@@ -465,6 +464,10 @@ if args['debug']:
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
+
+# --ccmd=[name] argument
+if args['ccmd'] is not None:
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # -mpi argument
 if args['mpi']:
@@ -564,10 +567,6 @@ if args['h5double']:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
-
-# --ccmd=[name] argument
-if args['ccmd'] is not None:
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # --cflag=[string] argument
 if args['cflag'] is not None:
