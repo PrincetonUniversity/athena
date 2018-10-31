@@ -1,12 +1,12 @@
 # .travis.yml
-# Defines build matrix and regression tests for Travis CI.com
+# Defines build matrix and regression tests for Travis CI
 language: cpp
 branches:
   only:
   - master
   - dust
   - mhd4_3D
-# Default build matrix is 4x Ubuntu builds:
+# Default build matrix is 4x Ubuntu builds (inherit the default stage name "test"):
 os:
   - linux
 dist: trusty
@@ -42,7 +42,7 @@ cache:
     - hdf5
     - hdf5-1.10.4
 
-# Explicitly includilng the 2x macOS jobs in build matrix
+# Explicitly includilng the 2x macOS jobs in build matrix (inherit the default stage name "test")
 # Must specify complete build details, or the jobs will inherit
 # the first value in the above arrays. Could encapsulate in script
 # --------------
@@ -56,6 +56,7 @@ matrix:
     - os: osx
       osx_image: xcode9.4
       compiler: clang++
+      addons:
       env:
         - MPI_CHOICE=mpich
       # Override Linux cache mapping
@@ -78,6 +79,7 @@ matrix:
     - os: osx
       osx_image: xcode9.4
       compiler: clang++
+      addons:
       env:
         - MPI_CHOICE=openmpi
         - TMPDIR=/tmp
@@ -102,12 +104,23 @@ matrix:
     - stage: python linter
       before_install: skip
       install: skip
+      addons:
+        apt:
+          packages:
+            - "python3"
+            - "python3-pip"
+      env:
+      compiler:
       script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
     # Test Google C++ Style Guide adherence for .cpp, .hpp files:
     - stage: c++ linter
       before_install: skip
       install: skip
       before_script: skip
+      addons:
+      env:
+      compiler:
+      # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
       script: cd tst/style/; ./cpplint_athena.sh
 
 # Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
