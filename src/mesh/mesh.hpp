@@ -94,11 +94,10 @@ public:
   // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
-  GravityBoundaryValues *pgbval;
   Reconstruction *precon;
   MeshRefinement *pmr;
 
-  // physics-related objects
+  // physics-related objects (possibly containing their derived bvals classes)
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;

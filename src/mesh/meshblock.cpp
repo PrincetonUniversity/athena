@@ -118,12 +118,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   }
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-  if (SELF_GRAVITY_ENABLED == 1) {
-    pgbval = new GravityBoundaryValues(this,input_bcs);
-  }
 
-  // Reconstruction (constructor may implicitly depend on Coordinates, and PPM variable
-  // floors depend on EOS (but EOS not needed by Reconstruction constructor)
+  // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
+  // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
 
   if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
@@ -199,9 +196,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   //peos = new EquationOfState(this, pin);
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-  if (SELF_GRAVITY_ENABLED == 1) {
-    pgbval = new GravityBoundaryValues(this,input_bcs);
-  }
 
   // Coordinates
   if (COORDINATE_SYSTEM == "cartesian") {
@@ -292,7 +286,6 @@ MeshBlock::~MeshBlock() {
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
-  if (SELF_GRAVITY_ENABLED==1) delete pgbval;
 
   // delete user output variables array
   if (nuser_out_var > 0) {
