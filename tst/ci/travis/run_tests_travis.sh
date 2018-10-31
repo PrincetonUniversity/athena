@@ -26,7 +26,8 @@ time python3 run_tests.py pgen/hdf5_reader_serial --config=--cxx=$TEMP_CXX
 time python3 run_tests.py mpi --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
 # need to switch serial compiler to Homebrew's GCC instead of /usr/bin/gcc -> Apple Clang for OpenMP functionality
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    #time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX --mpirun_opts=$MPI_OPTS --silent
+    # TODO(felker): improve selection of 'gcc-8' so when 'brew install gcc' installs gcc-9, this won't break
+    time python3 run_tests.py hybrid --config=--cxx=g++ --config=--ccmd=/usr/local/bin/gcc-8 --mpirun_opts=$MPI_OPTS --silent
     time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/gcc-8 --silent
 else
     # Fix for broken libomp.h with Travis CI's clang installation on Ubuntu images
