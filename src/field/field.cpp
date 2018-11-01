@@ -22,6 +22,7 @@
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
+  pfbval  = new BoundaryValues(pmy_block, input_bcs, pin);
 
   // Allocate memory for interface fields, but only when needed.
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -116,6 +117,7 @@ Field::~Field() {
     gi_.DeleteAthenaArray();
   }
   delete pfdif;
+  delete pfbval;
 }
 
 //----------------------------------------------------------------------------------------

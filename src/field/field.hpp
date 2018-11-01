@@ -29,6 +29,7 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+  FieldBoundaryValues *pfbval;
   FieldDiffusion *pfdif;
 
   // face-centered magnetic fields
