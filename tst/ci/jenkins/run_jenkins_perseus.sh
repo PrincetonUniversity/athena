@@ -25,7 +25,7 @@ cd ../regression/
 
 # Build step #1: regression tests using GNU compiler and OpenMPI library
 module purge
-module load rh # latest GNU compiler
+# module load rh # latest GNU compiler
 module load openmpi/gcc/1.10.2/64 # openmpi/gcc/3.0.0/64 does not work right now
 # Do NOT "module load hdf5" = hdf5/intel-17.0/openmpi-1.10.2/1.10.0
 # output/all_outputs.py regression test uses non-MPI HDF5 writer
