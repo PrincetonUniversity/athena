@@ -62,7 +62,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
-
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
 
@@ -95,8 +94,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // in the Hydro constructor
 
   // mesh-related objects
-
-
   // Boundary
   pbval  = new BoundaryValues(this, input_bcs, pin);
 
