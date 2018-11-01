@@ -115,182 +115,15 @@ typedef struct ShearingBoundaryBlock {
 //! \class CellCenteredBoundaryFunctions
 //  \brief abstract base class for all the derived classes for applying BC to AthenaArray
 
-class CellCenteredBoundaryFunctions {
+class CellCenteredBoundaryFunctions : public BoundaryBase {
   // Allow functions to access most any variable to allow for fully general BC dependence
   friend class Hydro;
   friend class Field;
 public:
   CellCenteredBoundaryFunctions();
   virtual ~CellCenteredBoundaryFunctions();
-  //-------------------- prototypes for all BC functions ---------------------------------
-  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
 
-  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-
-  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
-  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
-protected:
-  Mesh *pmy_mesh_;
-}
-
-//----------------------------------------------------------------------------------------
-//! \class FieldBoundaryFunctions
-//  \brief abstract base class for all the derived classes for applying BC to AthenaArray
-
-class FieldBoundaryFunctions {
-  // Allow functions to access most any variable to allow for fully general BC dependence
-  friend class Hydro;
-  friend class Field;
-public:
-  FieldBoundaryFunctions();
-  virtual ~FieldBoundaryFunctions();
-  //-------------------- prototypes for all BC functions ---------------------------------
-  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-
-  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
-
-  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
-  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
-protected:
-  Mesh *pmy_mesh_;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \class BoundaryBase
-//  \brief Base class for all the BoundaryValues classes
-
-class BoundaryBase {
-public:
-  BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-               enum BoundaryFlag *input_bcs);
-  virtual ~BoundaryBase();
-
-  static NeighborIndexes ni[56];
-  static int bufid[56];
-  NeighborBlock neighbor[56];
-  int nneighbor;
-  int nblevel[3][3][3];
-  LogicalLocation loc;
-  enum BoundaryFlag block_bcs[6];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
-
-  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
-  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-  static int BufferID(int dim, bool multilevel);
-  static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-
-  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-
-protected:
-  static int maxneighbor_;
-  Mesh *pmy_mesh_;
-  RegionSize block_size_;
-  AthenaArray<Real> sarea_[2];
-
-private:
-  static bool called_;
-};
-
-//----------------------------------------------------------------------------------------
-//! \class BoundaryValues
-//  \brief BVals data and functions
-
-class BoundaryValues : public BoundaryBase {
-public:
-  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
-  ~BoundaryValues();
-
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
-  void DestroyBoundaryData(BoundaryData &bd);
-  void Initialize(void);
-  void CheckBoundary(void);
-  void StartReceivingForInit(bool cons_and_field);
-  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
-  void StartReceivingAll(const Real time);
-  void ClearBoundaryForInit(bool cons_and_field);
-  void ClearBoundaryAll(void);
-  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
-
+  // standard cell-centered buffer management (unrefined and SMR/AMR)
   int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
                       int ns, int ne, Real *buf, const NeighborBlock& nb);
   int LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
@@ -311,6 +144,105 @@ public:
                                            enum CCBoundaryType type);
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
+  // TODO(felker): FLUX_HYDRO=0 is the only defined enum
+  void SendFluxCorrection(enum FluxCorrectionType type);
+  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
+
+  // Shearingbox Hydro
+  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
+  void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+
+  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                            const int nb);
+  bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
+  void FindShearBlock(const Real time);
+  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
+                 const int i, const Real eps, const AthenaArray<Real> &U,
+                 AthenaArray<Real> &Flux);
+
+  //-------------------- prototypes for all BC functions ---------------------------------
+  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+ private:
+  // standard cell-centered and flux BV private variables
+  BoundaryData bd_hydro_, bd_flcor_;
+
+  // Shearingbox Hydro
+  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  // working arrays of remapped quantities
+  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
+  // Hydro flux from conservative remapping
+  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
+  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
+  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
+  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
+  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
+#ifdef MPI_PARALLEL
+  // MPI request for send and recv msgs
+  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
+  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
+#endif
+
+ protected:
+  Mesh *pmy_mesh_;
+}
+
+//----------------------------------------------------------------------------------------
+//! \class FieldBoundaryFunctions
+//  \brief abstract base class for all the derived classes for applying BC to AthenaArray
+
+class FieldBoundaryFunctions {
+  // Allow functions to access most any variable to allow for fully general BC dependence
+  friend class Hydro;
+  friend class Field;
+
+ public:
+  FieldBoundaryFunctions();
+  virtual ~FieldBoundaryFunctions();
+  // standard Field buffer management (unrefined and SMR/AMR)
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                        const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
@@ -326,9 +258,7 @@ public:
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 
-  void SendFluxCorrection(enum FluxCorrectionType type);
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
-
+  // standard Field buffer management (unrefined and SMR/AMR)
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
@@ -341,18 +271,6 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 
-  // Shearingbox Hydro
-  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
-  void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
-  void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
-
-  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                            const int nb);
-  bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  void FindShearBlock(const Real time);
-  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
-                 const int i, const Real eps, const AthenaArray<Real> &U,
-                 AthenaArray<Real> &Flux);
   // Shearingbox Field
   void LoadFieldShearing(FaceField &src, Real *buf, int nb);
   void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
@@ -373,19 +291,58 @@ public:
   void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
                     const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
-private:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
-  int nface_, nedge_;
-  bool edge_flag_[12];
-  int nedge_fine_[12];
-  bool firsttime_;
+  //-------------------- prototypes for all BC functions ---------------------------------
+  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
 
-  BoundaryData bd_hydro_, bd_field_, bd_flcor_, bd_emfcor_;
+  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                              FaceField &b, int il, int iu, int jl, int ju,
+                              int kl, int ku, int nl, int nu);
+
+  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 FaceField &b, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                                 FaceField &b, int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nl, int nu);
+ private:
+  // standard Field and emf BV private variables
+  BoundaryData bd_field_, bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
-  AthenaArray<Real> exc_;
   int num_north_polar_blocks_, num_south_polar_blocks_;
 
 #ifdef MPI_PARALLEL
@@ -393,39 +350,7 @@ private:
   MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif
 
-  BValFunc_t BoundaryFunction_[6];
-
-// Shearingbox
-  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
-  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
-  Real Omega_0_, qshear_;       // orbital freq and shear rate
-  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  int joverlap_;                // # of cells the shear runs over one block
-  Real ssize_;                  // # of ghost cells in x-z plane
-  Real eps_;                    // fraction part of the shear
-  int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
-  int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
-  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
-  int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
-  int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
-  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
-
-  // Hydro
-  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-  // working arrays of remapped quantities
-  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
-  // flux from conservative remapping
-  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
-  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
-  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
-  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
-  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
-#ifdef MPI_PARALLEL
-  // MPI request for send and recv msgs
-  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
-  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
-#endif
-  // Field
+  // Shearingbox Field
   enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
   FaceField shboxvar_inner_field_, shboxvar_outer_field_;
   FaceField flx_inner_field_, flx_outer_field_;
@@ -437,7 +362,7 @@ private:
   MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];
   MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];
 #endif
-  // EMF correction
+  // Shearing box EMF correction
   enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
   EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_;
   EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_;
@@ -451,7 +376,99 @@ private:
   MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 #endif
 
-  // temporary
+ protected:
+  Mesh *pmy_mesh_;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryBase
+//  \brief Base class for all the BoundaryValues classes
+
+class BoundaryBase {
+ public:
+  BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
+               enum BoundaryFlag *input_bcs);
+  virtual ~BoundaryBase();
+
+  static NeighborIndexes ni[56];
+  static int bufid[56];
+  NeighborBlock neighbor[56];
+  int nneighbor;
+  int nblevel[3][3][3];
+  LogicalLocation loc;
+  enum BoundaryFlag block_bcs[6];
+  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
+
+  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
+  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+  static int BufferID(int dim, bool multilevel);
+  static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+
+ protected:
+  static int maxneighbor_;
+  Mesh *pmy_mesh_;
+  RegionSize block_size_;
+  AthenaArray<Real> sarea_[2];
+
+ private:
+  static bool called_;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryValues
+//  \brief BVals data and functions
+
+class BoundaryValues : public BoundaryBase {
+ public:
+  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
+  ~BoundaryValues();
+
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  void DestroyBoundaryData(BoundaryData &bd);
+  void Initialize(void);
+  void CheckBoundary(void);
+  void StartReceivingForInit(bool cons_and_field);
+  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
+  void StartReceivingAll(const Real time);
+  void ClearBoundaryForInit(bool cons_and_field);
+  void ClearBoundaryAll(void);
+  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+
+ private:
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
+  int nface_, nedge_;
+  bool edge_flag_[12];
+  int nedge_fine_[12];
+  bool firsttime_;
+
+  // TODO(felker): what exactly is this for? Appears in bvals_cc,bvals_fc.cpp
+  AthenaArray<Real> exc_;
+
+  BValFunc_t BoundaryFunction_[6];
+
+  // Shearingbox (shared with Field and Hydro)
+  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
+  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
+  Real Omega_0_, qshear_;       // orbital freq and shear rate
+  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
+  int joverlap_;                // # of cells the shear runs over one block
+  Real ssize_;                  // # of ghost cells in x-z plane
+  Real eps_;                    // fraction part of the shear
+
+  int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
+  int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
+  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
+  int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
+  int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
+  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+
+  // temporary--- Added by @tomidakn on 2015-11-27
   friend class Mesh;
 };
 
