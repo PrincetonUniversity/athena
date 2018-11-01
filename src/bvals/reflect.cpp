@@ -14,20 +14,20 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          FaceField &b, const Real time, const Real dt,
-//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         FaceField &b, const Real time, const Real dt,
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVX)) {
       for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
+        for (int i=nl; i<=nu; ++i) {
           prim(IVX,k,j,il-i) = -prim(IVX,k,j,(il+i-1));  // reflect 1-velocity
         }
       }}
@@ -35,7 +35,7 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
+        for (int i=nl; i<=nu; ++i) {
           prim(n,k,j,il-i) = prim(n,k,j,(il+i-1));
         }
       }}
@@ -47,7 +47,7 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x1f(k,j,(il-i)) = -b.x1f(k,j,(il+i  ));  // reflect 1-field
       }
     }}
@@ -55,7 +55,7 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x2f(k,j,(il-i)) =  b.x2f(k,j,(il+i-1));
       }
     }}
@@ -63,7 +63,7 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku+1; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x3f(k,j,(il-i)) =  b.x3f(k,j,(il+i-1));
       }
     }}
@@ -74,20 +74,20 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          FaceField &b, const Real time, const Real dt,
-//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         FaceField &b, const Real time, const Real dt,
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
 void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVX)) {
       for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
+        for (int i=nl; i<=nu; ++i) {
           prim(IVX,k,j,iu+i) = -prim(IVX,k,j,(iu-i+1));  // reflect 1-velocity
         }
       }}
@@ -95,7 +95,7 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
+        for (int i=nl; i<=nu; ++i) {
           prim(n,k,j,iu+i) = prim(n,k,j,(iu-i+1));
         }
       }}
@@ -107,7 +107,7 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x1f(k,j,(iu+i+1)) = -b.x1f(k,j,(iu-i+1));  // reflect 1-field
       }
     }}
@@ -115,7 +115,7 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x2f(k,j,(iu+i  )) =  b.x2f(k,j,(iu-i+1));
       }
     }}
@@ -123,7 +123,7 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     for (int k=kl; k<=ku+1; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
+      for (int i=nl; i<=nu; ++i) {
         b.x3f(k,j,(iu+i  )) =  b.x3f(k,j,(iu-i+1));
       }
     }}
@@ -135,17 +135,17 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 //! \fn void ReflecInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
 void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVY)) {
       for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+      for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(IVY,k,jl-j,i) = -prim(IVY,k,jl+j-1,i);  // reflect 2-velocity
@@ -153,7 +153,7 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }}
     } else {
       for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+      for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,jl-j,i) = prim(n,k,jl+j-1,i);
@@ -165,7 +165,7 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
         b.x1f(k,(jl-j),i) =  b.x1f(k,(jl+j-1),i);
@@ -173,7 +173,7 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     }}
 
     for (int k=kl; k<=ku; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         b.x2f(k,(jl-j),i) = -b.x2f(k,(jl+j  ),i);  // reflect 2-field
@@ -181,7 +181,7 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     }}
 
     for (int k=kl; k<=ku+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         b.x3f(k,(jl-j),i) =  b.x3f(k,(jl+j-1),i);
@@ -194,18 +194,18 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          FaceField &b, const Real time, const Real dt,
-//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         FaceField &b, const Real time, const Real dt,
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVY)) {
       for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+      for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(IVY,k,ju+j,i) = -prim(IVY,k,ju-j+1,i);  // reflect 2-velocity
@@ -213,7 +213,7 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }}
     } else {
       for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+      for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,ju+j,i) = prim(n,k,ju-j+1,i);
@@ -225,7 +225,7 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
         b.x1f(k,(ju+j  ),i) =  b.x1f(k,(ju-j+1),i);
@@ -233,7 +233,7 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     }}
 
     for (int k=kl; k<=ku; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         b.x2f(k,(ju+j+1),i) = -b.x2f(k,(ju-j+1),i);  // reflect 2-field
@@ -241,7 +241,7 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
     }}
 
     for (int k=kl; k<=ku+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int j=nl; j<=nu; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         b.x3f(k,(ju+j  ),i) =  b.x3f(k,(ju-j+1),i);
@@ -254,17 +254,17 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          FaceField &b, const Real time, const Real dt,
-//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         FaceField &b, const Real time, const Real dt,
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVZ)) {
-      for (int k=1; k<=ngh; ++k) {
+      for (int k=nl; k<=nu; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -272,7 +272,7 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
         }
       }}
     } else {
-      for (int k=1; k<=ngh; ++k) {
+      for (int k=nl; k<=nu; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -284,7 +284,7 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
@@ -292,7 +292,7 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }
     }}
 
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -300,7 +300,7 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }
     }}
 
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -314,17 +314,17 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          FaceField &b, const Real time, const Real dt,
-//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//                         FaceField &b, const Real time, const Real dt,
+//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
 void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+                    int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<(NHYDRO); ++n) {
     if (n==(IVZ)) {
-      for (int k=1; k<=ngh; ++k) {
+      for (int k=nl; k<=nu; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -332,7 +332,7 @@ void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
         }
       }}
     } else {
-      for (int k=1; k<=ngh; ++k) {
+      for (int k=nl; k<=nu; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
@@ -344,7 +344,7 @@ void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
@@ -352,7 +352,7 @@ void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }
     }}
 
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -360,7 +360,7 @@ void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
       }
     }}
 
-    for (int k=1; k<=ngh; ++k) {
+    for (int k=nl; k<=nu; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
