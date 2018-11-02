@@ -16,12 +16,15 @@
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
+git ls-tree -r HEAD ../../src # is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
+
 # Apply Google C++ Style Linter to all source code files at once:
-git ls-tree -r HEAD ../../src # is this command's output buffered in Jenkins?
 echo "Starting Google C++ Style cpplint.py test"
-#set -e
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
-#set +e
+set -e
+# Use "python2 -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
+# and since the local version of cpplint.py is currently incompatible with Python 3. Monitor potential errors on macOS from O_NONBLOCK.
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python2 -u ./cpplint.py --counting=detailed
+set +e
 echo "End of Google C++ Style cpplint.py test"
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace

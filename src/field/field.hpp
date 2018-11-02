@@ -25,7 +25,7 @@ class FieldDiffusion;
 class Field {
   friend class Hydro;
 public:
-  Field(MeshBlock *pmb, ParameterInput *pin); // test a really long comment that should cause the c++ linter to report a failure on all platforms
+  Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
