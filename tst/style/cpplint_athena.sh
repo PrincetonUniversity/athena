@@ -16,11 +16,17 @@
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
-# is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
+# no buffering issue with stdout of "git ls-files"; appears normally in Jenkins log
 git ls-files ./
+git --version
+which git
+# is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
 git ls-tree -r HEAD ../../src 2>&1
+git ls-tree -rz HEAD ../../src 2>&1
 # from GNU coreutils 7.5 and later: "stdout -oL cmd" turns on line-buffering for cmd output, -o0 makes it unbuffered
-stdbuf -o0 git ls-tree -r HEAD ../../src
+# (no built-in counterpart available on macOS; 'script' is a possible alternative)
+stdbuf -o0 git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}'
+stdbuf -o0 git ls-tree -r HEAD ../../src 2>&1 | awk '{print substr($1,4,5), $4}'
 # gawk output is unbuffered by default for INTERACTIVE tty
 # By default, grep output is line buffered when standard output is a terminal and block buffered otherwise.
 # Use --line-buffered to force line-by-line buffering for non-terminal stdout
@@ -81,9 +87,10 @@ echo "Checking for correct file permissions in src/"
 # - As Git tree objects, directories have 040000 file mode--- permissions are ignored
 # - Recurse into sub-trees to get only blob (file) entries:
 git ls-tree -r HEAD ../../src
-git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}'
-git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}' | grep -v "644"
-echo $?
+git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}'
+git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}' | grep -v "644"
+grep_code=$?
+echo $grep_code
 # | sort -r | tee >(head -n1) | tail -n1
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
+if [ $grep_code -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
 echo "End of file permissions test"
