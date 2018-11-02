@@ -69,7 +69,10 @@ echo "Checking for correct file permissions in src/"
 # - First column of output is 6 octal digit UNIX file mode: 2x file type, 1x sticky bits, 3x permissions
 # - As Git tree objects, directories have 040000 file mode--- permissions are ignored
 # - Recurse into sub-trees to get only blob (file) entries:
+git ls-tree -r HEAD ../../src
+git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}'
 git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}' | grep -v "644"
+echo $?
 # | sort -r | tee >(head -n1) | tail -n1
 if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
 echo "End of file permissions test"
