@@ -47,7 +47,7 @@ echo "End of std::sqrt(), std::cbrt(), \t test"
 # (Google C++ Style Linter does not check for this, but flake8 via pycodestyle warning W291 will check *.py)
 echo "Checking for trailing whitespace in src/"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/fft/plimpton/*" -exec grep -n -E " +$" {} +
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ files with trailing whitespace"; exit 1; fi
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with trailing whitespace"; exit 1; fi
 echo "End of trailing whitespace test"
 
 # Check that all files in src/ have the correct, non-executable octal permission 644
@@ -71,4 +71,5 @@ echo "Checking for correct file permissions in src/"
 # - Recurse into sub-trees to get only blob (file) entries:
 git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}' | grep -v "644"
 # | sort -r | tee >(head -n1) | tail -n1
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ files in src/ with executable permission"; exit 1; fi
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
+echo "End of file permissions test"
