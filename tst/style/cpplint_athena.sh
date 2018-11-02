@@ -17,10 +17,11 @@
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
 # Apply Google C++ Style Linter to all source code files at once:
+git ls-tree -r HEAD ../../src # is this command's output buffered in Jenkins?
 echo "Starting Google C++ Style cpplint.py test"
-set -e
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs ./cpplint.py --counting=detailed
-set +e
+#set -e
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
+#set +e
 echo "End of Google C++ Style cpplint.py test"
 
 # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
