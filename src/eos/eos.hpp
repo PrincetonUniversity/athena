@@ -23,8 +23,8 @@ struct FaceField;
 //  \brief data and functions that implement EoS
 
 class EquationOfState {
-  friend class Hyrdo;
-public:
+  friend class Hydro;
+ public:
   EquationOfState(MeshBlock *pmb, ParameterInput *pin);
   ~EquationOfState();
 
@@ -122,7 +122,7 @@ public:
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
 
-private:
+ private:
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
