@@ -16,7 +16,14 @@
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
-git ls-tree -r HEAD ../../src # is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
+# is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
+git ls-files ./
+git ls-tree -r HEAD ../../src 2>&1
+# from GNU coreutils 7.5 and later: "stdout -oL cmd" turns on line-buffering for cmd output, -o0 makes it unbuffered
+stdbuf -o0 git ls-tree -r HEAD ../../src
+# gawk output is unbuffered by default for INTERACTIVE tty
+# By default, grep output is line buffered when standard output is a terminal and block buffered otherwise.
+# Use --line-buffered to force line-by-line buffering for non-terminal stdout
 
 # Apply Google C++ Style Linter to all source code files at once:
 echo "Starting Google C++ Style cpplint.py test"
