@@ -6,11 +6,12 @@
 # PURPOSE:  Wrapper script to ./cpplint.py application to check Athena++ src/ code
 #           compliance with C++ style guildes. User's Python and/or Bash shell
 #           implementation may not support recursive globbing of src/ subdirectories
-#           and files, so this uses "find" cmd.
+#           and files, so this uses "find" cmd w/ non-POSIX Bash process substitution.
 #
 # USAGE: ./cpplint_athena.sh
 #        Assumes this script is executed from ./tst/style/ with cpplint.py in
-#        the same directory, and that CPPLINT.cfg is in root directory
+#        the same directory, and that CPPLINT.cfg is in root directory.
+#        TODO: add explicit check of execution directory
 # ========================================
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
@@ -48,3 +49,26 @@ echo "Checking for trailing whitespace in src/"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/fft/plimpton/*" -exec grep -n -E " +$" {} +
 if [ $? -ne 1 ]; then echo "ERROR: Found C++ files with trailing whitespace"; exit 1; fi
 echo "End of trailing whitespace test"
+
+# Check that all files in src/ have the correct, non-executable octal permission 644
+# Git only tracks permission changes (when core.filemode=true) for the "user/owner" executable permissions bit,
+# and ignores the user read/write and all "group" and "other", setting file modes to 100644 or 100755 (exec)
+echo "Checking for correct file permissions in src/"
+
+# Option 1: stat --- is not portable, e.g. BSD stat on macOS uses -f FORMAT flag
+# - Directories have 755 global executable permissions to enable cd
+# - No recursion into subdirectories
+#stat -c '%a - %n' ../../src/*
+
+# Option 2: find --- is portable, but tracks the local working direcotry NOT the Git working tree
+# It will process local temp files which we don't care about.
+#find ../../src/ -type f -printf '%m %p\n' | grep -v "644"
+
+# Option 3: git ls-tree --- portable if the copy was cloned with git, only checks working tree
+# (but not the staging area / index, unlike git ls-files)
+# - First column of output is 6 octal digit UNIX file mode: 2x file type, 1x sticky bits, 3x permissions
+# - As Git tree objects, directories have 040000 file mode--- permissions are ignored
+# - Recurse into sub-trees to get only blob (file) entries:
+git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5) $4}' | grep -v "644"
+# | sort -r | tee >(head -n1) | tail -n1
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ files in src/ with executable permission"; exit 1; fi
