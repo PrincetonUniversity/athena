@@ -1,6 +1,4 @@
-#!/usr/bin/bash -ex
-
-####!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # SCRIPT: cpplint_athena.sh
 # AUTHOR: Kyle Gerard Felker - kfelker@princeton.edu
@@ -18,26 +16,11 @@
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
-# no buffering issue with stdout of "git ls-files"; appears normally in Jenkins log
-git ls-files ./
-git --version
-which git
-# is this command's output buffered in Jenkins?-- Appears normally in Travis CI, regardless of linting outcome
-git ls-tree -r HEAD ../../src 2>&1
-git ls-tree -rz HEAD ../../src 2>&1
-# from GNU coreutils 7.5 and later: "stdout -oL cmd" turns on line-buffering for cmd output, -o0 makes it unbuffered
-# (no built-in counterpart available on macOS; 'script' is a possible alternative)
-stdbuf -o0 git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}'
-stdbuf -o0 git ls-tree -r HEAD ../../src 2>&1 | awk '{print substr($1,4,5), $4}'
-# gawk output is unbuffered by default for INTERACTIVE tty
-# By default, grep output is line buffered when standard output is a terminal and block buffered otherwise.
-# Use --line-buffered to force line-by-line buffering for non-terminal stdout
-
 # Apply Google C++ Style Linter to all source code files at once:
 echo "Starting Google C++ Style cpplint.py test"
 set -e
 # Use "python2 -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
-# and since the local version of cpplint.py is currently incompatible with Python 3. Monitor potential errors on macOS from O_NONBLOCK.
+# and since the local version of cpplint.py is currently incompatible with Python 3.
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python2 -u ./cpplint.py --counting=detailed
 set +e
 echo "End of Google C++ Style cpplint.py test"
@@ -84,15 +67,18 @@ echo "Checking for correct file permissions in src/"
 #find ../../src/ -type f -printf '%m %p\n' | grep -v "644"
 
 # Option 3: git ls-tree --- portable if the copy was cloned with git, only checks working tree
-# (but not the staging area / index, unlike git ls-files)
+# (but not the staging area/index, unlike git ls-files)
 # - First column of output is 6 octal digit UNIX file mode: 2x file type, 1x sticky bits, 3x permissions
 # - As Git tree objects, directories have 040000 file mode--- permissions are ignored
 # - Recurse into sub-trees to get only blob (file) entries:
-git ls-tree -r HEAD ../../src
-git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}'
-git ls-tree -r HEAD ../../src | awk '{print substr($1,4,5), $4}' | grep -v "644"
-grep_code=$?
-echo $grep_code
-# | sort -r | tee >(head -n1) | tail -n1
-if [ $grep_code -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
+
+# As of 2018-11-02, Jenkins worker Perseus has system /usr/bin/git version 1.8.3.1 (2013-06-10), which does not
+# have the fix from 1cf9952d (2014-11-30) first released in 2.3.0 that addressed duplicate path filtering in
+# builtin/ls-tree.c. (on top of "pathspec" filtering in read_tree_recursive()), which broke the ability to
+# specify "../" relative parent dirs. Use --full-tree to ignore current working directory when pattern matching
+
+# Furthermore, even the latest version of "git ls-tree" will silently fail & return nothing if [<path>...]
+# is in repository but does not match any tree contents.
+git ls-tree -r --full-tree HEAD src/ | awk '{print substr($1,4,5), $4}' | grep -v "644"
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
 echo "End of file permissions test"
