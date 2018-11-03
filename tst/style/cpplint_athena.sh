@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -ex
 
 # SCRIPT: cpplint_athena.sh
 # AUTHOR: Kyle Gerard Felker - kfelker@princeton.edu
