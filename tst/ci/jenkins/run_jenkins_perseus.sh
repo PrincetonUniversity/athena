@@ -116,6 +116,6 @@ time python ./run_tests.py gr --config=--cxx=icc-debug --silent
 set +e
 # end regression tests
 
-# Codecov coverage analysis
+# Codecov analysis of test coverage reports
 # Pipe to bash (Jenkins)
-curl -s https://codecov.io/bash | bash -s - -t ccdc959e-e2c3-4811-95c6-512151b39471
+curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"

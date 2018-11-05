@@ -161,7 +161,7 @@ stages:
 
 # Codecov coverage analysis
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471 -X gcov || echo "Codecov did not collect coverage reports"
 notifications:
   email:
     on_success: change
