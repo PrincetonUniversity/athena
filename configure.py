@@ -497,13 +497,13 @@ if args['coverage']:
     # unoptimized (-O0 instead of -O3) to get useful annotations. (add -g -fopenmp-simd?)
     # And don't combine lines when writing source code!
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
-        makefile_options['COMPILER_FLAGS'] += '-O0 -fprofile-arcs -ftest-coverage'
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -fprofile-arcs -ftest-coverage'
     if (args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'):
-        makefile_options['COMPILER_FLAGS'] += '-O0 -prof-gen=srcpos'
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
     if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         # Clang's "source-based" code coverage feature to produces .profraw output
         makefile_options['COMPILER_FLAGS'] += (
-            '-O0 -fprofile-instr-generate -fcoverage-mapping'
+            ' -O0 -fprofile-instr-generate -fcoverage-mapping'
             )  # use --coverage for GCC-compatible .gcno, .gcda output for gcov
     if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
         raise SystemExit(
