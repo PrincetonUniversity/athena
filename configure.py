@@ -19,6 +19,7 @@
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -coverage         enable code coverage flags
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
@@ -134,6 +135,12 @@ parser.add_argument('-debug',
                     action='store_true',
                     default=False,
                     help='enable debug flags; override other compiler options')
+
+# -coverage argument
+parser.add_argument('-coverage',
+                    action='store_true',
+                    default=False,
+                    help='enable code coverage flag')
 
 # -float argument
 parser.add_argument('-float',
@@ -483,6 +490,27 @@ if args['debug']:
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
 
+# -coverage argument
+if args['coverage']:
+    definitions['COVERAGE'] = 'COVERAGE'
+    # For now, append new compiler flags and don't override --cxx set, but set code to be
+    # unoptimized (-O0 instead of -O3) to get useful annotations. (add -g -fopenmp-simd?)
+    # And don't combine lines when writing source code!
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
+        makefile_options['COMPILER_FLAGS'] += '-O0 -fprofile-arcs -ftest-coverage'
+    if (args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'):
+        makefile_options['COMPILER_FLAGS'] += '-O0 -prof-gen=srcpos'
+    if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+        # Clang's "source-based" code coverage feature to produces .profraw output
+        makefile_options['COMPILER_FLAGS'] += (
+            '-O0 -fprofile-instr-generate -fcoverage-mapping'
+            )  # use --coverage for GCC-compatible .gcno, .gcda output for gcov
+    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
+        raise SystemExit(
+            '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
+else:
+    definitions['COVERAGE'] = 'NOT_COVERAGE'
+
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
@@ -646,6 +674,7 @@ print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
+print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' '
       + makefile_options['LIBRARY_FLAGS'])
 print('  Precision:               ' + ('single' if args['float'] else 'double'))
