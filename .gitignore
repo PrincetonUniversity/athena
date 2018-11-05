@@ -46,3 +46,8 @@ meshtest.dat
 # editor temp files
 *~
 *.swp
+
+# Gcov: GCC coverage testing tool files
+*.gcno
+*.gcda
+*.gcov
