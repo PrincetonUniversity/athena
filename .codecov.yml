@@ -32,6 +32,6 @@ coverage:
         url: "https://hooks.slack.com/services/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"
         threshold: 1%
         only_pulls: false
-        branches: "master, feature/codecov"
+        branches: null # "master, feature/codecov"
         flags: null
         paths: null
