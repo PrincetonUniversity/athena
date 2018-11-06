@@ -17,7 +17,7 @@ CPPFLAGS := @PREPROCESSOR_FLAGS@
 CXXFLAGS := @COMPILER_FLAGS@
 LDFLAGS := @LINKER_FLAGS@
 LDLIBS := @LIBRARY_FLAGS@
-GCOV_CMD := @GCOV_EXECUTABLE@
+GCOV_CMD := @GCOV_COMMAND@
 
 # Preliminary definitions
 
@@ -48,7 +48,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
-GCOV_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.gcov)))
+GCOV_FILES := $(notdir $(addsuffix .gcov,$(SRC_FILES)))
+SRC_PREFIX := src/
 SRC_DIRS := $(dir $(SRC_FILES))
 VPATH := $(SRC_DIRS)
 
@@ -65,6 +66,8 @@ dirs : $(EXE_DIR) $(OBJ_DIR)
 # Placing gcov target in the Makefile in order to easily collect all SRC_FILES w/ correct paths
 
 gcov : dirs $(GCOV_FILES)
+
+# For debugging variables in Makefile, e.g. by "make print-GCOV_FILES"
 
 print-%  : ; @echo $* = $($*)
 
@@ -84,14 +87,14 @@ $(EXECUTABLE) : $(OBJ_FILES)
 $(OBJ_DIR)%.o : %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-# Process .gcno and .gcda files from obj/ into .gcov files in src/
+# Process .gcno and .gcda files from obj/ into .cpp.gcov files (and .hpp.gcov, .h.gcov) in root directory
 
-$(OBJ_DIR)%.gcov : %.cpp
-	$(GCOV_CMD) --preserve-paths --source-prefix=src/ --object-directory=$(OBJ_DIR) $<
+./%.cpp.gcov : %.cpp
+	$(GCOV_CMD) --source-prefix=$(SRC_PREFIX) --object-directory=$(OBJ_DIR) $<  # --preserve-paths -abcu
 
 # Cleanup
 
 clean :
 	rm -rf $(OBJ_DIR)*
 	rm -rf $(EXECUTABLE)
-	rm -rf $(GCOV_FILES)
+	rm -rf *.gcov
