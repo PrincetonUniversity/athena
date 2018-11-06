@@ -521,9 +521,11 @@ else:
 if args['ccmd'] is not None:
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
-# --gcovcmd=[name] argument
+# --gcovcmd=[name] argument (only modifies Makefile target)
 if args['gcovcmd'] is not None:
-    definitions['GCOV_EXECUTABLE'] = makefile_options['GCOV_EXECUTABLE'] = args['gcov']
+    makefile_options['GCOV_EXECUTABLE'] = args['gcovcmd']
+else:
+    makefile_options['GCOV_EXECUTABLE'] = 'gcov'
 
 # -mpi argument
 if args['mpi']:
