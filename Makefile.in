@@ -48,8 +48,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
 GCOV_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.gcov)))
-SRC_DIR := $(dir $(SRC_FILES) $(PROB_FILES))
-VPATH := $(SRC_DIR)
+SRC_DIRS := $(dir $(SRC_FILES))
+VPATH := $(SRC_DIRS)
 
 # Generally useful targets
 
@@ -64,6 +64,8 @@ dirs : $(EXE_DIR) $(OBJ_DIR)
 # Placing this target in the Makefile in order to easily collect all SRC_FILES w/ correct paths
 
 gcov : dirs $(GCOV_FILES)
+
+print-%  : ; @echo $* = $($*)
 
 $(EXE_DIR):
 	mkdir -p $(EXE_DIR)
