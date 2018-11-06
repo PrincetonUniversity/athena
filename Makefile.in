@@ -17,6 +17,7 @@ CPPFLAGS := @PREPROCESSOR_FLAGS@
 CXXFLAGS := @COMPILER_FLAGS@
 LDFLAGS := @LINKER_FLAGS@
 LDLIBS := @LIBRARY_FLAGS@
+GCOV_CMD := @GCOV_EXECUTABLE@
 
 # Preliminary definitions
 
@@ -61,7 +62,7 @@ objs : dirs $(OBJ_FILES)
 
 dirs : $(EXE_DIR) $(OBJ_DIR)
 
-# Placing this target in the Makefile in order to easily collect all SRC_FILES w/ correct paths
+# Placing gcov target in the Makefile in order to easily collect all SRC_FILES w/ correct paths
 
 gcov : dirs $(GCOV_FILES)
 
@@ -83,15 +84,14 @@ $(EXECUTABLE) : $(OBJ_FILES)
 $(OBJ_DIR)%.o : %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-# Won't be able to use custom gcov executable, e.g. "gcov-8"
-# Unless it is set in configure.py like $(CXX), $(CPPFLAGS), $(CXXFLAGS) variables
+# Process .gcno and .gcda files from obj/ into .gcov files in src/
 
 $(OBJ_DIR)%.gcov : %.cpp
-	gcov-8 -p -s src/ -o $(OBJ_DIR) $<  # -o $@
+	$(GCOV_CMD) --preserve-paths --source-prefix=src/ --object-directory=$(OBJ_DIR) $<
 
 # Cleanup
 
 clean :
 	rm -rf $(OBJ_DIR)*
 	rm -rf $(EXECUTABLE)
-	rm -rf *.gcov
+	rm -rf $(GCOV_FILES)

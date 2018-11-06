@@ -19,7 +19,7 @@
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
-#   -coverage         enable code coverage flags
+#   -coverage         enable compiler-dependent code coverage flags
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
@@ -31,6 +31,7 @@
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name    use name as the command to call the gcov utility
 #   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -140,7 +141,7 @@ parser.add_argument('-debug',
 parser.add_argument('-coverage',
                     action='store_true',
                     default=False,
-                    help='enable code coverage flag')
+                    help='enable compiler-dependent code coverage flag')
 
 # -float argument
 parser.add_argument('-float',
@@ -221,6 +222,11 @@ parser.add_argument('--ccmd',
 parser.add_argument('--mpiccmd',
                     default=None,
                     help='override for command to use to call MPI C++ compiler')
+
+# --gcovcmd=[name] argument
+parser.add_argument('--gcovcmd',
+                    default=None,
+                    help='override for command to use to call Gcov utility in Makefile')
 
 # --cflag=[string] argument
 parser.add_argument('--cflag',
@@ -515,6 +521,10 @@ else:
 if args['ccmd'] is not None:
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
+# --gcovcmd=[name] argument
+if args['gcovcmd'] is not None:
+    definitions['GCOV_EXECUTABLE'] = makefile_options['GCOV_EXECUTABLE'] = args['gcov']
+
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
@@ -672,7 +682,7 @@ print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
+print('  Shearing Box:            ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' '
