@@ -47,7 +47,12 @@ meshtest.dat
 *~
 *.swp
 
-# Gcov: GCC coverage testing tool files
+# Gcov: GCC coverage testing tool- data files
 *.gcno
 *.gcda
+
+# Gcov log files
 *.gcov
+
+# Lcov: graphical frontend for Gcov- tracefiles
+*.info
