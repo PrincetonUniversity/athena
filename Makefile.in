@@ -88,9 +88,9 @@ $(OBJ_DIR)%.o : %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 # Process .gcno and .gcda files from obj/ into .cpp.gcov files (and .hpp.gcov, .h.gcov) in root directory
-
+# Other options to consider: --preserve-paths -abcu
 ./%.cpp.gcov : %.cpp
-	$(GCOV_CMD) --source-prefix=$(SRC_PREFIX) --object-directory=$(OBJ_DIR) $<  # --preserve-paths -abcu
+	$(GCOV_CMD)  --relative-only --source-prefix=$(SRC_PREFIX) --object-directory=$(OBJ_DIR) $<
 
 # Cleanup
 
