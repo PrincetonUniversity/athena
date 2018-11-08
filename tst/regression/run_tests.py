@@ -19,6 +19,7 @@ from __future__ import print_function
 # Python modules
 import argparse
 import os
+from collections import OrderedDict
 from pkgutil import iter_modules
 import traceback
 
@@ -72,7 +73,8 @@ def main(**kwargs):
                                                      + test],
                                                prefix=test + '.')]
                 test_names.extend(dir_test_names)
-    test_names = list(set(test_names))
+    # Remove duplicate test entries while preserving the original order
+    test_names = list(OrderedDict.fromkeys(test_names))
 
     # Run tests
     current_dir = os.getcwd()
