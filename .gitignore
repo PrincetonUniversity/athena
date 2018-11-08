@@ -56,3 +56,6 @@ meshtest.dat
 
 # Lcov: graphical frontend for Gcov- tracefiles
 *.info
+
+# genhtml test case description format produced by gendesc
+*.desc

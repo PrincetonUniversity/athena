@@ -120,7 +120,8 @@ def main(**kwargs):
                 # For now, assumes Lcov for adding test-dependent info (name, output file)
                 if coverage_cmd is not None:
                     # Lcov test names may only contain letters, numbers, and '_'
-                    lcov_test_name = name.replace('.', '_')
+                    # change formatting of full test name, e.g. gr.compile_kerr-schild
+                    lcov_test_name = name.replace('.', '_').replace('-', '_')
                     test_lcov_cmd = (
                       coverage_cmd
                       + ' --test-name {0} -output-file {0}.info'.format(lcov_test_name)

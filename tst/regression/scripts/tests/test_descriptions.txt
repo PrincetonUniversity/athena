@@ -1,7 +1,7 @@
 amr_amr_linwave
     Regression test based on Newtonian 2D MHD linear wave test problem with AMR
     Runs a 2D linear wave test with AMR, using a refinement condition that tracks the
-    velocity maxima.  Then checks L1 and L_infty (max) error.  This test is very sensitive
+    velocity maxima. Then checks L1 and L_infty (max) error. This test is very sensitive
     to finding errors in AMR prolongation/restriction/boundaries
 
 curvilinear_blast_cyl
@@ -18,17 +18,17 @@ diffusion_linear_wave3d
 diffusion_linear_wave3d_sts
     Regression test based on the decaying linear wave due to viscosity,
     Ohmic resistivity and thermal conduction. The decay rate is fit and
-    then compared with analytic solution.  This test employs STS.
+    then compared with analytic solution. This test employs STS.
 
 diffusion_resistive_diffusion
     Regression test based on the diffusion of a Gaussian
-    magnetic field.  Convergence of L1 norm of the error
-    in b is tested.  Expected 2nd order conv. for explicit.
+    magnetic field. Convergence of L1 norm of the error
+    in b is tested. Expected 2nd order conv. for explicit.
 
 diffusion_resistive_diffusion_sts
     Regression test based on the diffusion of a Gaussian
-    magnetic field.  Convergence of L1 norm of the error
-    in b is tested.  Expected 1st order conv. for STS.
+    magnetic field. Convergence of L1 norm of the error
+    in b is tested. Expected 1st order conv. for STS.
 
 diffusion_thermal_attenuation
     Regression test based on the decaying linear wave due to thermal
@@ -38,19 +38,19 @@ diffusion_thermal_attenuation
 diffusion_thermal_attenuation_sts
     Regression test based on the decaying linear wave due to thermal
     conduction. The decay rate is fit and then compared with analytic
-    solution.  This test employs STS.
+    solution. This test employs STS.
 
 diffusion_viscous_diffusion
     Regression test based on the diffusion of a Gaussian
-    velocity field.  Convergence of L1 norm of the error
-    in v is tested.  Expected 2nd order conv. for explicit.
+    velocity field. Convergence of L1 norm of the error
+    in v is tested. Expected 2nd order conv. for explicit.
 
 diffusion_viscous_diffusion_sts
     Regression test based on the diffusion of a Gaussian
-    velocity field.  Convergence of L1 norm of the error
-    in v is tested.  Expected 1st order conv. for STS.
+    velocity field. Convergence of L1 norm of the error
+    in v is tested. Expected 1st order conv. for STS.
 
-gr_compile_kerr-schild
+gr_compile_kerr_schild
     Test script for checking that Kerr-Schild coordinates compile.
 
 gr_compile_minkowski
@@ -165,7 +165,7 @@ omp_omp_linwave
 outputs_all_outputs
     Regression test for all output types
     Runs Orszag Tang vortex test, restarting the job twice and making history (hst),
-    formatted table (.tab), VTK, and HDF5 (if available) outputs.  Then reads last
+    formatted table (.tab), VTK, and HDF5 (if available) outputs. Then reads last
     version of each file to make sure output data is correct
 
 pgen_hdf5_reader_parallel
