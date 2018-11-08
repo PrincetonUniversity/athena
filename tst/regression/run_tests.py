@@ -44,6 +44,7 @@ def main(**kwargs):
     mpirun_cmd = kwargs.pop('mpirun')
     mpirun_opts = kwargs.pop('mpirun_opts')
     silent_opt = kwargs.pop('global_silent')
+    coverage_cmd = kwargs.pop('coverage')
     # Get args to pass to scripts.utils.athena as list of strings
     athena_config_args = kwargs.pop('config')
     athena_run_args = kwargs.pop('run')
@@ -115,6 +116,16 @@ def main(**kwargs):
             else:
                 test_results.append(result)
                 test_errors.append(None)
+                # (optional) if passed, run code coverage analysis from this test
+                # For now, assumes Lcov for adding test-dependent info (name, output file)
+                if coverage_cmd is not None:
+                    # Lcov test names may only contain letters, numbers, and '_'
+                    lcov_test_name = name.replace('.', '_')
+                    test_lcov_cmd = (
+                      coverage_cmd
+                      + ' --test-name {0} -output-file {0}.info'.format(lcov_test_name)
+                    )
+                    os.system(test_lcov_cmd)
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
             # For CI, print after every individual test has finished
@@ -185,6 +196,14 @@ if __name__ == '__main__':
                         default=[],
                         action='append',
                         help=('arguments to pass to athena.run'))
+
+    # TODO(felker): this script calls os.system() with the contents of this flag--safe?
+    parser.add_argument("--coverage", "-cov",
+                        type=str,
+                        default=None,
+                        help=('code coverage command to run after a successful test; '
+                              ' currenntly assumes Lcov is being used and appends '
+                              ' reformatted test name to -t and -o options'))
 
     args = parser.parse_args()
     main(**vars(args))
