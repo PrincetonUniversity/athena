@@ -9,9 +9,8 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew unlink open-mpi || true
     # MPICH and dependencies
     brew update  # Travis CI's Homebrew is out of date such that MPICH gcc vs. gfortran deps are broken
-    # workaround for "missing stdio.h" header and conflict with oclint cask
+    # workaround for "missing stdio.h" header:
     sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
-    brew cask uninstall oclint
     # always install dependencies from pre-compiled bottles before attempting to build-from-source
     brew install gcc # Homebrew dependency due to gfrotran (would take 1 hr to build from source)
     rm '/usr/local/include/c++' || true # recommended by Homebrew
