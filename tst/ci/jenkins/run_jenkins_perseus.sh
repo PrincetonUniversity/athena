@@ -50,36 +50,39 @@ gcov --version
 which g++
 g++ --version
 test_path=$(pwd)
-lcov_cmd="lcov --rc lcov_branch_coverage=1 --no-external --gcov-tool=gcov --directory=${athena_abs_path} --capture --base-directory=${test_path}"
+# Lcov command stub used for capturing tracefile and for combining multiple tracefiles:
+lcov_cmd="lcov --rc lcov_branch_coverage=1 --no-external --gcov-tool=gcov"
+lcov_capture_cmd="${lcov_cmd} --directory=${athena_abs_path} --capture --base-directory=${test_path}"
 echo $test_path
 echo $lcov_cmd
+echo $lcov_capture_cmd
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
 # --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
-time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
-time python ./run_tests.py pgen/hdf5_reader_serial -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
-time python ./run_tests.py mpi --mpirun=srun --silent
-time python ./run_tests.py hybrid --mpirun=srun --silent
-time python ./run_tests.py hydro -c=-coverage --coverage=${lcov_cmd} --silent
+#time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+time python ./run_tests.py pgen/hdf5_reader_serial -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+#time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
+#time python ./run_tests.py mpi --mpirun=srun --silent
+#time python ./run_tests.py hybrid --mpirun=srun --silent
+time python ./run_tests.py hydro -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
 # MHD is currenlty the longest regression test set:
-time python ./run_tests.py mhd -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py amr -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py outputs -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py sr -c=-coverage --coverage=${lcov_cmd} --silent
+time python ./run_tests.py mhd -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py amr -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py outputs -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py sr -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
-time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py curvilinear -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py shearingbox -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py diffusion -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py symmetry -c=-coverage --coverage=${lcov_cmd} --silent
-time python ./run_tests.py omp --silent
+time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py curvilinear -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py shearingbox -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py diffusion -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+time python ./run_tests.py symmetry -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
+#time python ./run_tests.py omp --silent
 
 # High-order solver regression tests w/ GCC
-time python ./run_tests.py hydro4 -c=-coverage --coverage=${lcov_cmd} --silent
+time python ./run_tests.py hydro4 -c=-coverage --coverage=\"${lcov_capture_cmd}\" --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.0
@@ -87,20 +90,22 @@ module load hdf5/gcc/openmpi-1.10.2/1.10.0
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel  -c=-coverage --coverage=${lcov_cmd} --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
+time python ./run_tests.py pgen/hdf5_reader_parallel  -c=-coverage --coverage=\"${lcov_capture_cmd}\" --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
 
-# Combine Lcov tracefiles from individaul regression tests
-while read FILENAME; do
-    LCOV_INPUT_FILES="$LCOV_INPUT_FILES -a \"$FILENAME\""
+# Combine Lcov tracefiles from individaul regression tests:
+# All .info files in current working directory tst/regression/ -> lcov.info
+# (remove '-maxdepth 1' to recursively search subfolders for more .info)
+while read filename; do
+    lcov_input_files="$lcov_input_files -a \"$filename\""
 done < <( find . -maxdepth 1 -name '*.info' )
-eval lcov --rc lcov_branch_coverage=1 --gcov-tool=gcov "${LCOV_INPUT_FILES}" -o lcov.info
+eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 
 # Generate Lcov HTML report
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
-genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc --branch-coverage -o regression_tests_html_summary regression_tests.info
+genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc --branch-coverage -o regression_tests_html_summary lcov.info
 # (temporary) backup to home directory:
 cp -r regression_tests_html_summary $HOME
-cp regression_tests.info $HOME
+cp lcov.info $HOME
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
