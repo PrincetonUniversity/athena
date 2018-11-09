@@ -9,8 +9,8 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     cd openmpi
     brew unlink mpich || true
     # OpenMPI and dependencies:
-    # workaround for "missing stdio.h" header:
-    sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
+    # depending on macOS image, may need to install Xcode CLI (workaround for "missing stdio.h" header):
+    #sudo softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
     # always install dependencies from pre-compiled bottles before attempting to build-from-source
     brew install gcc
     brew link libevent || true
