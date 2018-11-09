@@ -583,10 +583,8 @@ else:
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
-definitions['FFT_ENABLED'] = '0'
 definitions['FFT_DEFINE'] = 'NO_FFT'
 if args['fft']:
-    definitions['FFT_ENABLED'] = '1'
     definitions['FFT_DEFINE'] = 'FFT'
     if args['fftw_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(

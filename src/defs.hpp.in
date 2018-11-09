@@ -37,11 +37,6 @@
 // include self gravity? default=0 (false)
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
-// make use of FFT? default=0 (false)
-#define FFT_ENABLED @FFT_ENABLED@
-
-#define @FFT_DEFINE@
-
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED 0
 
@@ -56,6 +51,9 @@
 
 // floating-point single precision option
 #define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
+
+// make use of FFT? (FFT or NO_FFT)
+#define @FFT_DEFINE@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
