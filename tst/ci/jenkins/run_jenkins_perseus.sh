@@ -65,9 +65,17 @@ time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft
 #time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
 #time python ./run_tests.py mpi --mpirun=srun --silent
 #time python ./run_tests.py hybrid --mpirun=srun --silent
-time python ./run_tests.py hydro -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+
+#time python ./run_tests.py hydro -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py hydro/hydro_linwave -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py hydro/sod_shock -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+
 # MHD is currenlty the longest regression test set:
-time python ./run_tests.py mhd -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+#time python ./run_tests.py mhd -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py mhd/cpaw -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py mhd/mhd_linwave -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py mhd/rj2a_shock -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+
 time python ./run_tests.py amr -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py sr -c=-coverage --coverage="${lcov_capture_cmd}" --silent
