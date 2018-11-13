@@ -1294,11 +1294,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     BoundaryValues *pbval;
 
     // prepare to receive conserved variables
-#pragma omp for private(pmb)
+#pragma omp for private(pmb,pbval)
     for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i];
-      pmb->pbval->Initialize();
-      pmb->pbval->StartReceivingForInit(true);
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->Initialize();
+      pbval->StartReceivingForInit(true);
     }
 
     // send conserved variables
@@ -1401,13 +1401,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
 
       // begin second exchange of ghost cells with corrected cell-averaged <U>
-      // -----------------  (verbatim copied from above)
+      // -----------------  (mostly copied from above)
       // prepare to receive conserved variables
-#pragma omp for private(pmb)
+#pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i];
-        pmb->pbval->Initialize();
-        pmb->pbval->StartReceivingForInit(true);
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        // no need to re-Initialize()
+        pbval->StartReceivingForInit(true);
       }
 
 #pragma omp for private(pmb,pbval)
