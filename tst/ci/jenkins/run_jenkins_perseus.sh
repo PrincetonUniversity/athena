@@ -63,8 +63,8 @@ echo $lcov_capture_cmd
 time python ./run_tests.py pgen/hdf5_reader_serial -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
-time python ./run_tests.py mpi --mpirun=srun --silent
-time python ./run_tests.py hybrid --mpirun=srun --silent
+time python ./run_tests.py mpi --mpirun=srun -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py hybrid --mpirun=srun -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 
 #time python ./run_tests.py hydro -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hydro/hydro_linwave -c=-coverage --coverage="${lcov_capture_cmd}" --silent
@@ -89,7 +89,7 @@ time python ./run_tests.py curvilinear -c=-coverage --coverage="${lcov_capture_c
 time python ./run_tests.py shearingbox -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py diffusion -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py symmetry -c=-coverage --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py omp --silent
+time python ./run_tests.py omp -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 
 # High-order solver regression tests w/ GCC
 time python ./run_tests.py hydro4 -c=-coverage --coverage="${lcov_capture_cmd}" --silent
