@@ -1,0 +1,43 @@
+#ifndef UTILS_INTERP_TABLE_HPP_
+#define UTILS_INTERP_TABLE_HPP_
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file interp_table.hpp
+//  \brief defines class InterpTable
+//  Contains functions that implement an intpolated lookup table
+
+// C++ headers
+#include <stdexcept> // std::invalid_argument
+
+// Athena headers
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../coordinates/coordinates.hpp" // Coordinates
+//#include "../defs.hpp"
+
+class InterpTable2D {
+public:
+  InterpTable2D();
+  InterpTable2D(const int nvar, const int nx2, const int nx1);
+  //InterpTable2D(std::string fn);
+  ~InterpTable2D();
+  void SetSize(const int nvar, const int nx2, const int nx1);
+  Real interpolate(int nvar, Real x2, Real x1);
+  int nvar();
+  AthenaArray<Real> data;
+  void SetX1lim(Real x1min, Real x1max);
+  void SetX2lim(Real x2min, Real x2max);
+private:
+  int nvar_;
+  int nx1_;
+  int nx2_;
+  Real x1min_;
+  Real x2min_;
+  Real x1norm_;
+  Real x2norm_;
+};
+
+#endif //UTILS_INTERP_TABLE_HPP_
