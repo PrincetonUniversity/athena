@@ -87,6 +87,7 @@ def main(**kwargs):
                 module = __import__(name_full, globals(), locals(),
                                     fromlist=['prepare', 'run', 'analyze'])
                 os.system('rm -rf {0}/bin'.format(current_dir))
+                os.system('rm -rf {0}/obj'.format(current_dir))
 
                 # insert arguments to athena.run and athena.configure
                 # by changing global values through module
@@ -131,10 +132,11 @@ def main(**kwargs):
                     os.system(test_lcov_cmd)
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
+                os.system('rm -rf {0}/obj'.format(current_dir))
             # For CI, print after every individual test has finished
             print('{} test: prepare(), run(), analyze() finished'.format(name))
 
-    # Restore any previously-existing files once runs are complete
+    # Restore any previously-existing files once ALL runs are complete
     finally:
         athena.restore_files()
 

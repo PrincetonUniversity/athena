@@ -9,7 +9,7 @@
 # USAGE: salloc -N1 -n4 --time=0:60:00 ./run_jenkins_perseus.sh
 # or similar command in the Jenkins build "Execute shell" step (run from athena/ root dir)
 
-set -ex # terminate script at first error/non-zero exit status
+set -e # terminate script at first error/non-zero exit status
 # Store absolute path of project's root directory for Lcov (realpath is GNU coreutils, not macOS)
 athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
@@ -52,7 +52,7 @@ g++ --version
 test_path=$(pwd)
 # Lcov command stub used for capturing tracefile and for combining multiple tracefiles:
 lcov_cmd="lcov --rc lcov_branch_coverage=1 --no-external --gcov-tool=gcov"
-lcov_capture_cmd="${lcov_cmd} --directory=${athena_abs_path} --capture --base-directory=${test_path}"
+lcov_capture_cmd="${lcov_cmd} --directory=${test_path}/obj/ --capture --base-directory=${athena_abs_path}"
 echo $test_path
 echo $lcov_cmd
 echo $lcov_capture_cmd
