@@ -27,6 +27,8 @@ def configure(*args, **kwargs):
         for key, val in kwargs.items():
             if val:
                 configure_command.append('--{0}={1}'.format(key, val))
+        if global_coverage_cmd is not None:
+            configure_command.append('-coverage')
         try:
             subprocess.check_call(configure_command + global_config_args)
         except subprocess.CalledProcessError as err:

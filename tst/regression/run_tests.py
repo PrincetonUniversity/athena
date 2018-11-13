@@ -206,9 +206,10 @@ if __name__ == '__main__':
     parser.add_argument("--coverage", "-cov",
                         type=str,
                         default=None,
-                        help=('code coverage command to run after a successful test; '
-                              ' currenntly assumes Lcov is being used and appends '
-                              ' reformatted test name to -t and -o options'))
+                        help=('code coverage command to run after a successful test;'
+                              ' automatically passes -coverage to configure.py.'
+                              ' Currently, assumes that Lcov is being used and appends '
+                              ' -t and -o options w/ reformatted test name to COVERAGE.'))
 
     args = parser.parse_args()
     main(**vars(args))
