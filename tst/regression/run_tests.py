@@ -89,12 +89,11 @@ def main(**kwargs):
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
 
+                # Change formatting of full single test name, e.g. gr.compile_kerr-schild:
+                # (Lcov test names may only contain letters, numbers, and '_')
+                lcov_test_name = name.replace('.', '_').replace('-', '_')
                 # (optional) build test-dependent code coverage command
-                # For now, assumes Lcov for adding test-dependent info (name, output file)
                 if coverage_cmd is not None:
-                    # Lcov test names may only contain letters, numbers, and '_'
-                    # change formatting of full test name, e.g. gr.compile_kerr-schild
-                    lcov_test_name = name.replace('.', '_').replace('-', '_')
                     module.athena.global_test_name = lcov_test_name
                     module.athena.global_coverage_cmd = coverage_cmd
 
@@ -129,7 +128,8 @@ def main(**kwargs):
                 test_results.append(result)
                 test_errors.append(None)
                 # (optional) if test passed, run code coverage analysis after the final
-                # athena.run() call, producing base_test_name.info (no suffix)
+                # athena.run() call, producing base_test_name.info (no suffix).
+                # Function only executes if --coverage=CMD is passed to this script
                 athena.analyze_code_coverage(lcov_test_name, '')
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
@@ -203,7 +203,6 @@ if __name__ == '__main__':
                         action='append',
                         help=('arguments to pass to athena.run'))
 
-    # TODO(felker): this script calls os.system() with the contents of this flag--safe?
     parser.add_argument("--coverage", "-cov",
                         type=str,
                         default=None,

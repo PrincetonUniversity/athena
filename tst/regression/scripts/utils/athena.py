@@ -162,6 +162,7 @@ def analyze_code_coverage(test_name, lcov_test_suffix=None):
         # Append nonempty string suffix to base test name with an underscore
         else:
             lcov_test_name = '_'.join([global_test_name, lcov_test_suffix])
+        # For now, assumes Lcov flags for adding test-dependent info (name, output file):
         test_lcov_cmd = (
             global_coverage_cmd
             + ' --test-name {0} -output-file {0}.info'.format(lcov_test_name)
