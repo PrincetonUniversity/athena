@@ -89,7 +89,16 @@ def main(**kwargs):
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
 
-                # insert arguments to athena.run and athena.configure
+                # (optional) build test-dependent code coverage command
+                # For now, assumes Lcov for adding test-dependent info (name, output file)
+                if coverage_cmd is not None:
+                    # Lcov test names may only contain letters, numbers, and '_'
+                    # change formatting of full test name, e.g. gr.compile_kerr-schild
+                    lcov_test_name = name.replace('.', '_').replace('-', '_')
+                    module.athena.global_test_name = lcov_test_name
+                    module.athena.global_coverage_cmd = coverage_cmd
+
+                # insert arguments for athena.run() and athena.configure()
                 # by changing global values through module
                 module.athena.global_config_args = athena_config_args
                 module.athena.global_run_args = athena_run_args
@@ -119,17 +128,9 @@ def main(**kwargs):
             else:
                 test_results.append(result)
                 test_errors.append(None)
-                # (optional) if passed, run code coverage analysis from this test
-                # For now, assumes Lcov for adding test-dependent info (name, output file)
-                if coverage_cmd is not None:
-                    # Lcov test names may only contain letters, numbers, and '_'
-                    # change formatting of full test name, e.g. gr.compile_kerr-schild
-                    lcov_test_name = name.replace('.', '_').replace('-', '_')
-                    test_lcov_cmd = (
-                      coverage_cmd
-                      + ' --test-name {0} -output-file {0}.info'.format(lcov_test_name)
-                    )
-                    os.system(test_lcov_cmd)
+                # (optional) if test passed, run code coverage analysis after the final
+                # athena.run() call, producing base_test_name.info (no suffix)
+                athena.analyze_code_coverage(lcov_test_name, '')
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
