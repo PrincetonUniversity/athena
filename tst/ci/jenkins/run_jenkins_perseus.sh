@@ -73,8 +73,10 @@ time python ./run_tests.py hydro/sod_shock -c=-coverage --coverage="${lcov_captu
 # MHD is currenlty the longest regression test set:
 #time python ./run_tests.py mhd -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py mhd/cpaw -c=-coverage --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mhd/mhd_linwave -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py mhd/rj2a_shock -c=-coverage --coverage="${lcov_capture_cmd}" --silent
+# Shorten the long runtime of the complete mhd_linwave.py test to sample the code coverage, and allow failure in test.analyze()
+time python ./run_tests.py mhd/mhd_linwave -c=-coverage --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py mhd/mhd_linwave --silent
 
 time python ./run_tests.py amr -c=-coverage --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs -c=-coverage --coverage="${lcov_capture_cmd}" --silent
