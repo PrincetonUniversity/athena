@@ -99,7 +99,8 @@ def restart(input_filename, arguments):
         os.chdir(current_dir)
 
 
-def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments, lcov_test_suffix=None):
+def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
+           lcov_test_suffix=None):
     current_dir = os.getcwd()
     os.chdir('bin')
     try:
