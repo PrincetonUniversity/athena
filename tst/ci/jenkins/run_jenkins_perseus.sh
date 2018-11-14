@@ -64,6 +64,7 @@ time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cm
 time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
 time python ./run_tests.py mpi --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 
 #time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
@@ -71,28 +72,32 @@ time python ./run_tests.py hydro/hydro_linwave --coverage="${lcov_capture_cmd}" 
 time python ./run_tests.py hydro/sod_shock --coverage="${lcov_capture_cmd}" --silent
 
 # MHD is currenlty the longest regression test set:
-#time python ./run_tests.py mhd --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mhd/cpaw --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mhd/rj2a_shock --coverage="${lcov_capture_cmd}" --silent
 # Shorten the long runtime of the complete mhd_linwave.py test to sample the code coverage, and allow failure in test.analyze()
-time python ./run_tests.py mhd/mhd_linwave --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py mhd/mhd_linwave --silent
+time python ./run_tests.py mhd --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py mhd --silent
 
 time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
+# Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform --coverage="${lcov_capture_cmd}" --silent
+
 time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py shearingbox --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py diffusion --coverage="${lcov_capture_cmd}" --silent
+
+time python ./run_tests.py shearingbox --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py shearingbox --silent
+
+time python ./run_tests.py diffusion --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py diffusion --silent
+
 time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
 
 # High-order solver regression tests w/ GCC
-time python ./run_tests.py hydro4 --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py hydro4 --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py hydro4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.0
@@ -132,6 +137,7 @@ time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py omp --config=--cxx=icc --silent
 time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
@@ -143,7 +149,6 @@ time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
 time python ./run_tests.py symmetry --config=--cxx=icc --silent
-time python ./run_tests.py omp --config=--cxx=icc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent
