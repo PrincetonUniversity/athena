@@ -16,12 +16,28 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../coordinates/coordinates.hpp" // Coordinates
+#include "../utils/interp_table.hpp"
 //#include "../defs.hpp"
 
 // Declarations
 class Hydro;
 class ParameterInput;
+class InterpTable2D;
 struct FaceField;
+
+//----------------------------------------------------------------------------------------
+//! \struct TableSize
+//  \brief extent and number of cells in an EOS table
+
+typedef struct TableSize {
+  int iPres, iASq, iTemp, iOffset, axisEgas, axisPres, axisHint;
+  Real logRhoMin, logRhoMax, rhoNorm;
+  Real logEgasMin, logEgasMax, eNorm;
+  Real rhoUnit, eUnit;
+  int nRho, nEgas, nVar;
+  Real egasOverPres;
+  Real EosRatios[3];
+} TableSize;
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -116,19 +132,11 @@ public:
 #if EOS_TABLE_ENABLED
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
-  Real BilinearInterp(Real x, Real y, int var);
-  void GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex);
   Real GetEosData(Real rho, Real var, int axis, int kOut);
   //Real GetGamma1FromRhoEgas(Real rho, Real egas);
   void EosTestLoop();
   void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
-  int iPresEOS;
-  int iASqEOS;
-  int iTempEOS;
-  int iOffsetEOS;
-  int axisEgas;
-  int axisPres;
-  int axisHint;
+  TableSize ts;
 #endif // EOS_TABLE_ENABLED
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
@@ -151,13 +159,7 @@ private:
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
 #if EOS_TABLE_ENABLED
   //AthenaArray<Real> eos_rho_, eos_espec_;// eos density and specific internal energy
-  AthenaArray<Real> eos_data_;           // eos table data
-  Real logRhoMin_, logRhoMax_, rhoNorm_;
-  Real logEgasMin_, logEgasMax_, eNorm_;
-  Real rhoUnit_, eUnit_;
-  int nRho_, nEgas_, nVar_;
-  Real egasOverPres_;
-  Real EosRatios_[3];
+  InterpTable2D* ptable_;
 #endif // EOS_TABLE_ENABLED
 #if GENERAL_EOS
   Real energy_floor_;                    // internal energy floor

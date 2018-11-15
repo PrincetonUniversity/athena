@@ -25,23 +25,23 @@
 #include "eos.hpp"
 
 #if EOS_TABLE_ENABLED
-//#define EOSDEBUG0
+#define EOSDEBUG0
 //#define EOSDEBUG1
 
 Real EquationOfState::SimplePres(Real rho, Real egas) {
-  return GetEosData(rho, egas, axisEgas, iPresEOS) * egas;
+  return GetEosData(rho, egas, ts.axisEgas, ts.iPres) * egas;
 }
 
 Real EquationOfState::SimpleEgas(Real rho, Real pres) {
-  return GetEosData(rho, pres, axisPres, iPresEOS) * pres;
+  return GetEosData(rho, pres, ts.axisPres, ts.iPres) * pres;
 }
 
 Real EquationOfState::SimpleAsq(Real rho, Real pres) {
-  return GetEosData(rho, pres, axisPres, iASqEOS) * pres / rho;
+  return GetEosData(rho, pres, ts.axisPres, ts.iASq) * pres / rho;
 }
 
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  return GetEosData(rho, hint, axisHint, iASqEOS) * hint;
+  return GetEosData(rho, hint, ts.axisHint, ts.iASq) * hint;
 }
 
 void EquationOfState::PrepEOS(ParameterInput *pin) {
@@ -51,45 +51,47 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   if (eos_table.is_open())
   {
     eos_table.seekg(0, std::ios::beg);
-    eos_table.read((char*)&nRho_, sizeof(nRho_));
-    eos_table.read((char*)&logRhoMin_, sizeof(logRhoMin_));
-    eos_table.read((char*)&logRhoMax_, sizeof(logRhoMax_));
-    eos_table.read((char*)&nEgas_, sizeof(nEgas_));
-    eos_table.read((char*)&logEgasMin_, sizeof(logEgasMin_));
-    eos_table.read((char*)&logEgasMax_, sizeof(logEgasMax_));
-    eos_table.read((char*)&egasOverPres_, sizeof(egasOverPres_));
-    eos_table.read((char*)&nVar_, sizeof(nVar_));
-    std::cout << "prepEOS: " << EosFn << ", " << nVar_ << ", " << nRho_ << ", " << nEgas_ << "\n";
-    eos_data_.NewAthenaArray(nVar_, nRho_, nEgas_);
-    eos_table.read((char*)eos_data_.data(), nVar_ * nRho_ * nEgas_ * sizeof(logRhoMin_));
+    eos_table.read((char*)&ts.nRho, sizeof(ts.nRho));
+    eos_table.read((char*)&ts.logRhoMin, sizeof(ts.logRhoMin));
+    eos_table.read((char*)&ts.logRhoMax, sizeof(ts.logRhoMax));
+    eos_table.read((char*)&ts.nEgas, sizeof(ts.nEgas));
+    eos_table.read((char*)&ts.logEgasMin, sizeof(ts.logEgasMin));
+    eos_table.read((char*)&ts.logEgasMax, sizeof(ts.logEgasMax));
+    eos_table.read((char*)&ts.egasOverPres, sizeof(ts.egasOverPres));
+    eos_table.read((char*)&ts.nVar, sizeof(ts.nVar));
+    std::cout << "prepEOS: " << EosFn << ", " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
+    ptable_ = new InterpTable2D(ts.nVar, ts.nEgas, ts.nRho);
+    ptable_->SetX1lim(ts.logRhoMin, ts.logRhoMax);
+    ptable_->SetX2lim(ts.logEgasMin, ts.logEgasMax);
+    eos_table.read((char*)ptable_->data.data(), ts.nVar * ts.nRho * ts.nEgas * sizeof(ts.logRhoMin));
     eos_table.close();
   }
   else throw std::invalid_argument("Unable to open eos table: " + EosFn);
 
-  rhoNorm_ = (nRho_ - 1.) / (logRhoMax_ - logRhoMin_);
-  eNorm_ = (nEgas_ - 1.) / (logEgasMax_ - logEgasMin_);
+  ts.rhoNorm = (ts.nRho - 1.) / (ts.logRhoMax - ts.logRhoMin);
+  ts.eNorm = (ts.nEgas - 1.) / (ts.logEgasMax - ts.logEgasMin);
 
-  iPresEOS = 0;
-  iASqEOS = 1;
-  iTempEOS = 2;
-  iOffsetEOS = 3;
-  axisEgas = 0;
-  axisPres = 1;
-  axisHint = 2;
-  EosRatios_[0] = 1;
-  EosRatios_[1] = egasOverPres_;
-  EosRatios_[2] = egasOverPres_ / (1. + egasOverPres_);
+  ts.iPres = 0;
+  ts.iASq = 1;
+  ts.iTemp = 2;
+  ts.iOffset = 3;
+  ts.axisEgas = 0;
+  ts.axisPres = 1;
+  ts.axisHint = 2;
+  ts.EosRatios[0] = 1;
+  ts.EosRatios[1] = ts.egasOverPres;
+  ts.EosRatios[2] = ts.egasOverPres / (1. + ts.egasOverPres);
 
-  rhoUnit_ = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.);
-  eUnit_ = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.);
+  ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.);
+  ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.);
 
 #ifdef EOSDEBUG1
   std::cout << "Eos table:\n";
-  for (int i=0;i<nVar_;i++){
+  for (int i=0;i<ts.nVar;i++){
     std::cout << "var = " << i << "\n";
-    for (int j=0;j<nRho_;j++){
-      for (int k=0;k<nEgas_;k++){
-        std::cout << std::pow((Real) 10, eos_data_(i,j,k)) << " ";
+    for (int j=0;j<ts.nRho;j++){
+      for (int k=0;k<ts.nEgas;k++){
+        std::cout << std::pow((Real) 10, ptable_->data.data()(i,j,k)) << " ";
       }
       std::cout << "\n";
     }
@@ -104,96 +106,50 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 
 void EquationOfState::CleanEOS()
 {
-  eos_data_.DeleteAthenaArray();
-}
-
-// bilinear interpolation
-// x, y are data coordinates
-// 0 <= x <= nx-1, 0 <= y <= ny-1
-// nx, ny is the size of the 2d table
-Real EquationOfState::BilinearInterp(Real x, Real y, int var)
-{
-  Real xrl, yrl, out;
-  int xil = (int) x; // lower x index
-  int yil = (int) y; // lower y index
-  int nx = nRho_;
-  int ny = nEgas_;
-  //if off table do linear extrapolation
-  if (xil < 0) { // below xmin
-    xil = 0;
-  }
-  else if (xil >= nx - 1) { // above xmax
-    xil = nx - 2;
-  }
-  xrl = 1 + xil - x;  // x residual
-
-  if (yil < 0) { // below ymin
-    yil = 0;
-  }
-  else if (yil >= ny - 1) { // above ymax
-    yil = ny - 2;
-  }
-  yrl = 1 + yil - y;  // y residual
-
-  //Sample from the 4 nearest data points and weight appropriately
-  //eos_data_ is an attribute of the eos class
-  out =   xrl  *  yrl  *eos_data_(var, xil , yil )
-      +   xrl  *(1-yrl)*eos_data_(var, xil ,yil+1)
-      + (1-xrl)*  yrl  *eos_data_(var,xil+1, yil )
-      + (1-xrl)*(1-yrl)*eos_data_(var,xil+1,yil+1);
-  return out;
-}
-
-void EquationOfState::GetEosIndices(Real rho, Real var, int axis, Real &rhoIndex, Real &varIndex)
-{
-  rhoIndex = log10(rho * rhoUnit_);
-  varIndex = (log10(var * EosRatios_[axis] * eUnit_) - rhoIndex - logEgasMin_) * eNorm_;
-  rhoIndex = (rhoIndex - logRhoMin_) * rhoNorm_;
-#ifdef EOSDEBUG1
-  std::cout << rho << ", " << var * EosRatios_[axis] << ", (" << rhoIndex << ", " << varIndex << ")" << ", Axis: " << axis << "\n";
-#endif
+  ptable_->~InterpTable2D();
 }
 
 Real EquationOfState::GetEosData(Real rho, Real var, int axis, int kOut)
 {
   Real rhoIndex;
   Real varIndex;
-  GetEosIndices(rho, var, axis, rhoIndex, varIndex);
-  return std::pow((Real)10, BilinearInterp(rhoIndex, varIndex, kOut + iOffsetEOS * axis));
+  rhoIndex = log10(rho * ts.rhoUnit);
+  varIndex = log10(var * ts.EosRatios[axis] * ts.eUnit) - rhoIndex;
+  rhoIndex = (rhoIndex - ts.logRhoMin) * ts.rhoNorm;
+  return std::pow((Real)10, ptable_->interpolate(kOut + ts.iOffset * axis, rhoIndex, varIndex));
 }
 
 void EquationOfState::EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data)
 {
   Real idn = 1./rho;
   Real ien = 1./egas;
-  data(0) = GetEosData(rho, egas, axisEgas, iPresEOS) * egas;
+  data(0) = GetEosData(rho, egas, ts.axisEgas, ts.iPres) * egas;
   data(1) = data(0) + egas;
-  data(2) = GetEosData(rho, egas, axisEgas, iASqEOS) * egas * idn;
-  data(3) = GetEosData(rho, egas, axisEgas, iTempEOS) * egas * idn;
-  data(4) = (egas -  GetEosData(rho, data(0), axisPres, iPresEOS) * data(0)) * ien;
-  data(5) = (data(2) - GetEosData(rho, data(0), axisPres, iASqEOS) * data(0) * idn) / data(2);
-  data(6) = (egas - GetEosData(rho, data(1), axisHint, iPresEOS) * data(1)) * ien;
-  data(7) = (data(2) - GetEosData(rho, data(1), axisHint, iASqEOS) * data(1) * idn) / data(2);
+  data(2) = GetEosData(rho, egas, ts.axisEgas, ts.iASq) * egas * idn;
+  data(3) = GetEosData(rho, egas, ts.axisEgas, ts.iTemp) * egas * idn;
+  data(4) = (egas -  GetEosData(rho, data(0), ts.axisPres, ts.iPres) * data(0)) * ien;
+  data(5) = (data(2) - GetEosData(rho, data(0), ts.axisPres, ts.iASq) * data(0) * idn) / data(2);
+  data(6) = (egas - GetEosData(rho, data(1), ts.axisHint, ts.iPres) * data(1)) * ien;
+  data(7) = (data(2) - GetEosData(rho, data(1), ts.axisHint, ts.iASq) * data(1) * idn) / data(2);
 }
 
 void EquationOfState::EosTestLoop()
 {
   Real rho = 0;
-  Real egas, iRho, iEgas;
+  Real egas;
   AthenaArray<Real> data;
   data.NewAthenaArray(8);
-  std::cout << "logRhoMin_, logRhoMax_: " << logRhoMin_ << ", " << logRhoMax_ << "\n";
-  std::cout << "logEgasMin_, logEgasMax_: " << logEgasMin_ << ", " << logEgasMax_ << "\n";
-  std::cout << "egasOverPres_ = " << egasOverPres_ << "\n";
+  std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
+  std::cout << "logEgasMin, logEgasMax: " << ts.logEgasMin << ", " << ts.logEgasMax << "\n";
+  std::cout << "egasOverPres = " << ts.egasOverPres << "\n";
   std::cout << "Input rho (g/cc):";
   std::cin >> rho;
   std::cout << "Input egas (erg/cc):";
   std::cin >> egas;
   while (rho >= 0){
-    GetEosIndices(rho, egas, axisEgas, iRho, iEgas);
-    std::cout << "log10(e/p) = " << GetEosData(rho, egas, axisEgas, iPresEOS) << ", " << std::pow((Real) 10, eos_data_(0, int(iRho + .5), int(iEgas + .5))) << "\n";
+    std::cout << "log10(e/p) = " << GetEosData(rho, egas, ts.axisEgas, ts.iPres) << "\n";
     EosTestRhoEgas(rho, egas, data);
-    std::cout << rho << ", " << egas << ", (" << iRho << ", " << iEgas << "): \n";
+    std::cout << rho << ", " << egas << "\n";
     std::cout << "P(d, e)    , h(d, e)    , ASq(d, e)  , T(d, e) , PErr    , ASqErr  , hErr    , AsqErr\n";
     for (int i=0;i<8;i++){
       std::cout << data(i) << ", ";
