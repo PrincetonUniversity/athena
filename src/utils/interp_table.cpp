@@ -3,9 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file interp_table.hpp
-//  \brief defines class InterpTable
-//  Contains functions that implement an intpolated lookup table
+//! \file interp_table.cpp
+//  \brief implements functions in class InterpTable2D an intpolated lookup table
 
 // C++ headers
 #include <stdexcept> // std::invalid_argument
@@ -17,35 +16,42 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../coordinates/coordinates.hpp" // Coordinates
-//#include "../defs.hpp"
 
+// A do nothing constructor
 InterpTable2D::InterpTable2D() {}
 
+// A contructor that setts the size of the table with number of variables nvar
+// and dimensions nx2 x nx1 (interpolated dimensions)
 InterpTable2D::InterpTable2D(const int nvar, const int nx2, const int nx1) {
   SetSize(nvar, nx2, nx1);
 }
 
+// Destructor. Deletes athena array.
 InterpTable2D::~InterpTable2D() {
   data.DeleteAthenaArray();
 }
 
+// Set size of table
 void InterpTable2D::SetSize(const int nvar, const int nx2, const int nx1) {
-  nvar_ = nvar;
-  nx2_ = nx2;
-  nx1_ = nx1;
+  nvar_ = nvar; // number of variables/tables
+  nx2_ = nx2; // slower indexing dimension
+  nx1_ = nx1; // faster indexing dimension
   data.NewAthenaArray(nvar, nx2, nx1);
 }
 
+// Set the corrdinate limits for x1
 void InterpTable2D::SetX1lim(Real x1min, Real x1max) {
   x1min_ = x1min;
   x1norm_ = (nx1_ - 1) / (x1max - x1min);
 }
 
+// Set the corrdinate limits for x2
 void InterpTable2D::SetX2lim(Real x2min, Real x2max) {
   x2min_ = x2min;
   x2norm_ = (nx2_ - 1) / (x2max - x2min);
 }
 
+// Bilinear interpolation
 Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   Real x, y, xrl, yrl, out;
   x = (x2 - x2min_) * x2norm_;
