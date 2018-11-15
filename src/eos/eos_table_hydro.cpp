@@ -25,7 +25,7 @@
 #include "eos.hpp"
 
 #if EOS_TABLE_ENABLED
-#define EOSDEBUG0
+//#define EOSDEBUG0
 //#define EOSDEBUG1
 
 Real EquationOfState::SimplePres(Real rho, Real egas) {
