@@ -4,22 +4,23 @@ codecov:
     require_ci_to_pass: yes
 
 coverage:
-  precision: 2
+  precision: 2 # digits after decimal point to show % code coverage
   round: down
-  range: "70...100"
+  range: "40...80" # scale the color plot range, red to green
 
   status:
     project: yes
     patch: yes
-    changes: no
+    changes: yes
 
   notify:
     slack:
       default:
         url: "https://hooks.slack.com/services/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"
-        threshold: null # 1%
+        threshold: null  # 1% # send message if coverage changes by more than this %
         only_pulls: false
-        branches: null # "master, feature/codecov"
+        attachments: "sunburst, diff"
+        branches: null  # "master, feature/codecov" # all branches by default
         flags: null
         paths: null
 
