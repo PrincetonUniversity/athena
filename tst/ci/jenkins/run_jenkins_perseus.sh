@@ -39,61 +39,42 @@ module load hdf5/gcc/1.10.0
 module load fftw/gcc/3.3.4
 module list
 
-# (temporary) diagnostics for code-coverage analysis in CI
-echo $PATH
-echo $athena_rel_path
-echo $athena_abs_path
-which lcov
-lcov --version
-which gcov
-gcov --version
-which g++
-g++ --version
-test_path=$(pwd)
 # Lcov command stub used for capturing tracefile and for combining multiple tracefiles:
 lcov_cmd="lcov --rc lcov_branch_coverage=1 --no-external --gcov-tool=gcov"
-lcov_capture_cmd="${lcov_cmd} --directory=${test_path}/obj/ --capture --base-directory=${athena_abs_path}"
-echo $test_path
-echo $lcov_cmd
-echo $lcov_capture_cmd
+regression_abs_path=$(pwd)
+lcov_capture_cmd="${lcov_cmd} --directory=${regression_abs_path}/obj/ --capture --base-directory=${athena_abs_path}"
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
-# --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
-#time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+# In order to condense the build log, --silent option suppresses only the stdout of Makefile calls. Don't use with pgen_compile.py:
+time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+# For (most) regression tests compiled with GCC, perform Gcov code coverage analysis via Lcov front end:
 time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav/unstable_jeans_3d_fft grav/unstable_jeans_3d_fft --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav/jeans_3d --mpirun=srun --silent
+time python ./run_tests.py grav --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py mpi --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
-
-#time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py hydro/hydro_linwave --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py hydro/sod_shock --coverage="${lcov_capture_cmd}" --silent
-
-# MHD is currenlty the longest regression test set:
-# Shorten the long runtime of the complete mhd_linwave.py test to sample the code coverage, and allow failure in test.analyze()
-time python ./run_tests.py mhd --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py mhd --silent
-
+time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform --coverage="${lcov_capture_cmd}" --silent
-
-time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
+# For regression tests with unacceptably long runtimes with -O0 optimization, "sample" the code coverage by running each test twice:
+# - 1x normally (-O3) without --coverage=CMD to check correctness
+# - 1x with --coverage=CMD (and hence -O0) and small cycle limit, ignoring failure in subsequent test.analyze() step
+time python ./run_tests.py mhd --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty the slowest regression test):
 
 time python ./run_tests.py shearingbox --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
 time python ./run_tests.py shearingbox --silent
 
 time python ./run_tests.py diffusion --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
 time python ./run_tests.py diffusion --silent
-
-time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
 
 # High-order solver regression tests w/ GCC
 time python ./run_tests.py hydro4 --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
@@ -115,10 +96,9 @@ while read filename; do
 done < <( find . -maxdepth 1 -name '*.info' )
 eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 
-# Generate Lcov HTML report
+# (temporary) Generate Lcov HTML report and backup to home directory on Perseus (not used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc --branch-coverage -o regression_tests_html_summary lcov.info
-# (temporary) backup to home directory:
 cp -r regression_tests_html_summary $HOME
 cp lcov.info $HOME
 
@@ -172,6 +152,6 @@ time python ./run_tests.py gr --config=--cxx=icc-debug --silent
 set +e
 # end regression tests
 
-# Codecov analysis of test coverage reports
-# Pipe to bash (Jenkins)
+# Upload tracefile for Codecov analysis of test coverage reports (Lcov tracefile must be named "lcov.info"):
+# curl-pipe to Codecov Bash Uploader (recommended approach for Jenkins)
 curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"
