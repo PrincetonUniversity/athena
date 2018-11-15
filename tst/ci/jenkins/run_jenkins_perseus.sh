@@ -49,7 +49,7 @@ lcov_capture_cmd="${lcov_cmd} --directory=${regression_abs_path}/obj/ --capture 
 time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 # For (most) regression tests compiled with GCC, perform Gcov code coverage analysis via Lcov front end:
 time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py grav --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py mpi --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
