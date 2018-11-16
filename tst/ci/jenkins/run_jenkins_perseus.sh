@@ -29,8 +29,12 @@ cd ../regression/
 
 # Build step #1: regression tests using GNU compiler and OpenMPI library
 module purge
-# module load rh # latest GNU compiler
-module load openmpi/gcc/1.10.2/64 # openmpi/gcc/3.0.0/64 does not work right now
+# Load latest GCC built by Red Hat Developer Toolset:
+# (vs. /usr/bin/gcc v4.8.5 (released 2015-06-23)
+module load rh/devtoolset/7  # GCC 7.3.1 (v7.3 released on 2018-01-25)
+module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
+# openmpi/gcc/3.0.0/64 (2017-09-12) does not work on Perseus; it was only installed on head-node as a VisIt 2.13.1 dependency
+
 # Do NOT "module load hdf5" = hdf5/intel-17.0/openmpi-1.10.2/1.10.0
 # output/all_outputs.py regression test uses non-MPI HDF5 writer
 # (Perseus will error w/ missing mpi.h header if MPI HDF5 is loaded w/o mpicxx)
@@ -104,13 +108,15 @@ cp lcov.info $HOME
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-# automatically use latest default version of these libraries as Princeton Research Computing updates them:
+# Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
+# (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
+# Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
 module load intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.0.117
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
-# pinning these modules to a specific version, since new library versions are rarely compiled:
+# Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
-# do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
+# Note, do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 
 time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
@@ -134,7 +140,7 @@ time python ./run_tests.py symmetry --config=--cxx=icc --silent
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
-module unload  hdf5/intel-17.0/1.10.0
+module unload hdf5/intel-17.0/1.10.0
 module load hdf5/intel-17.0/intel-mpi/1.10.0
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
