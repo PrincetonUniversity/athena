@@ -475,7 +475,8 @@ public:
 
   // ...to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) final;
+                     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
+                     AthenaArray<Real> &u) final;
 
   // In GR, functions...
   // ...to compute metric
@@ -567,7 +568,8 @@ public:
 
   // ...to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) final;
+                     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
+                     AthenaArray<Real> &u) final;
 
   // In GR, functions...
   // ...to compute metric
@@ -659,7 +661,8 @@ public:
 
   // ...to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) final;
+                     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
+                     AthenaArray<Real> &u) final;
 
   // In GR, functions...
   // ...to compute metric
