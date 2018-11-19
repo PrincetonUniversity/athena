@@ -13,7 +13,7 @@
 
 # Slurm diagnostics: see all timing info when job first exits the queue and actually starts
 # Jenkins build time may be misleading, since it includes time sitting in Slurm queue.
-sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%30,Submit,Start,Elapsed,Timelimit  #--noheader
+sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%50,Submit,Start,Elapsed,Timelimit  #--noheader
 
 set -e # terminate script at first error/non-zero exit status
 # Store absolute path of project's root directory for Lcov (realpath is GNU coreutils, not macOS)
@@ -61,10 +61,13 @@ lcov_capture_cmd="${lcov_cmd} --directory=${regression_abs_path}/obj/ --capture 
 time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 # For (most) regression tests compiled with GCC, perform Gcov code coverage analysis via Lcov front end:
 time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mpi --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py grav --mpirun="srun --job-name='GCC grav/jeans_3d'" \
+     --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py mpi --mpirun="srun --job-name='GCC mpi/mpi_linwave'" \
+     --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun="srun --job-name='GCC hybrid/hybrid_linwave'" \
+	--coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
@@ -73,9 +76,12 @@ time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
-time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
+     --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf \
+     --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform \
+     --coverage="${lcov_capture_cmd}" --silent
 # For regression tests with unacceptably long runtimes with -O0 optimization, "sample" the code coverage by running each test twice:
 # - 1x normally (-O3) without --coverage=CMD to check correctness
 # - 1x with --coverage=CMD (and hence -O0) and small cycle limit, ignoring failure in subsequent test.analyze() step
@@ -100,7 +106,9 @@ module load hdf5/gcc/openmpi-1.10.2/1.10.0
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" --mpirun=srun --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
+time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
+     --mpirun="srun --job-name='GCC pgen/hdf5_reader_parallel'" \
+     --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
 
 # Combine Lcov tracefiles from individaul regression tests:
 # All .info files in current working directory tst/regression/ -> lcov.info
@@ -112,7 +120,8 @@ eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 
 # (temporary) Generate Lcov HTML report and backup to home directory on Perseus (not used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
-genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc --branch-coverage -o regression_tests_html_summary lcov.info
+genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
+	--branch-coverage -o regression_tests_html_summary lcov.info
 cp -r regression_tests_html_summary $HOME
 cp lcov.info $HOME
 
@@ -131,10 +140,11 @@ module list
 
 time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
-time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
-time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
+time python ./run_tests.py grav --config=--cxx=icc --mpirun="srun --job-name='ICC grav/jeans_3d'" --silent
+time python ./run_tests.py mpi --config=--cxx=icc --mpirun="srun --job-name='ICC mpi/mpi_linwave'" --silent
 time python ./run_tests.py omp --config=--cxx=icc --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc \
+	--mpirun="srun --job-name='ICC hybrid/hybrid_linwave'" --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
 time python ./run_tests.py amr --config=--cxx=icc --silent
@@ -155,7 +165,9 @@ module load hdf5/intel-17.0/intel-mpi/1.10.0
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc --mpirun=srun --config=--lib=/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64 --silent
+time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc \
+     --mpirun="srun --job-name='ICC pgen/hdf5_reader_parallel'" \
+     --config=--lib=/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64 --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
@@ -174,4 +186,4 @@ curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-5
 
 # Slurm diagnostics: see all timing info when build script finishes
 # (should run in Jenkins "Execute shell" build step when Slurm allocation is released)
-sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%30,Submit,Start,Elapsed,Timelimit,End  #--noheader
+sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%50,Submit,Start,Elapsed,Timelimit,End  #--noheader
