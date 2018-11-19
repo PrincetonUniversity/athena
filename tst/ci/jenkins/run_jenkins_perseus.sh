@@ -94,6 +94,8 @@ time python ./run_tests.py hydro4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.0
+module unload openmpi/gcc/3.0.0/64  # incompatible with P-HDF5 built with OpenMPI 1.10.2 on Perseus
+module load openmpi/gcc/1.10.2/64
 module load hdf5/gcc/openmpi-1.10.2/1.10.0
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
