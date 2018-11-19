@@ -64,7 +64,7 @@ time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cm
 time python ./run_tests.py grav --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py mpi --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
-timeout 60m --signal=TERM time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun=srun --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
@@ -132,7 +132,7 @@ time python ./run_tests.py pgen/hdf5_reader_serial --silent
 time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py omp --config=--cxx=icc --silent
-timeout 60m --signal=TERM time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc --mpirun=srun --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
 time python ./run_tests.py amr --config=--cxx=icc --silent
