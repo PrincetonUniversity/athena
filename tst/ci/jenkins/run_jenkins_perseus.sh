@@ -34,8 +34,10 @@ module purge
 # Load latest GCC built by Red Hat Developer Toolset:
 # (vs. /usr/bin/gcc v4.8.5 (released 2015-06-23)
 module load rh/devtoolset/7  # GCC 7.3.1 (v7.3 released on 2018-01-25)
-module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
-# openmpi/gcc/3.0.0/64 (2017-09-12) does not work on Perseus; it was only installed on head-node as a VisIt 2.13.1 dependency
+#module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
+module load openmpi/gcc/3.0.0/64
+# OpenMPI v3.0.0 was released on 2017-09-12. Originally, was only installed on Perseus
+# without development files (mpicc, etc.) as a VisIt 2.13.1 dependency
 
 # Do NOT "module load hdf5" = hdf5/intel-17.0/openmpi-1.10.2/1.10.0
 # output/all_outputs.py regression test uses non-MPI HDF5 writer
