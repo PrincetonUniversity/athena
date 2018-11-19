@@ -6,7 +6,9 @@
 # PURPOSE: Run style and regression test suites using PICSciE's Jenkins server for continuous
 # integration (CI) Current workers include 4x Intel Broadwell nodes on Perseus cluster.
 
-# USAGE: salloc -N1 -n4 --time=0:60:00 ./run_jenkins_perseus.sh
+# USAGE: salloc -N1 -n4 -c2 --kill-command=SIGTERM --time=9:00:00 \
+#            --job-name=PrincetonUniversity_athena_jenkins_PR_$BUILD_NUMBER \
+#            ./tst/ci/jenkins/run_jenkins_perseus.sh
 # or similar command in the Jenkins build "Execute shell" step (run from athena/ root dir)
 
 set -e # terminate script at first error/non-zero exit status
