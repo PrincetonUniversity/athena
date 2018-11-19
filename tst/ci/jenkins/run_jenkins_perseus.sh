@@ -11,6 +11,10 @@
 #            ./tst/ci/jenkins/run_jenkins_perseus.sh
 # or similar command in the Jenkins build "Execute shell" step (run from athena/ root dir)
 
+# Slurm diagnostics: see all timing info when job first exits the queue and actually starts
+# Jenkins build time may be misleading, since it includes time sitting in Slurm queue.
+sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%30,Submit,Start,Elapsed,Timelimit  #--noheader
+
 set -e # terminate script at first error/non-zero exit status
 # Store absolute path of project's root directory for Lcov (realpath is GNU coreutils, not macOS)
 athena_rel_path='./'
@@ -165,3 +169,7 @@ set +e
 # Upload tracefile for Codecov analysis of test coverage reports (Lcov tracefile must be named "lcov.info"):
 # curl-pipe to Codecov Bash Uploader (recommended approach for Jenkins)
 curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"
+
+# Slurm diagnostics: see all timing info when build script finishes
+# (should run in Jenkins "Execute shell" build step when Slurm allocation is released)
+sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%30,Submit,Start,Elapsed,Timelimit,End  #--noheader
