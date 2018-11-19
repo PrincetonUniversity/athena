@@ -120,10 +120,14 @@ eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 
 # (temporary) Generate Lcov HTML report and backup to home directory on Perseus (not used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
+lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
-	--branch-coverage -o regression_tests_html_summary lcov.info
-cp -r regression_tests_html_summary $HOME
-cp lcov.info $HOME
+	--branch-coverage -o ${lcov_dir_name} lcov.info
+tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
+cp -r "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Regularly delete old HTML databases
+# genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
+# but lcov.info tracefile is not portable across sytems (without --to-package, etc.)
+#cp lcov.info $HOME  # ~30 MB
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
