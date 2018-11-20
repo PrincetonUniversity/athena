@@ -61,12 +61,13 @@ lcov_capture_cmd="${lcov_cmd} --directory=${regression_abs_path}/obj/ --capture 
 time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 # For (most) regression tests compiled with GCC, perform Gcov code coverage analysis via Lcov front end:
 time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav --mpirun="srun --job-name='GCC grav/jeans_3d'" \
+time python ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' \
      --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mpi --mpirun="srun --job-name='GCC mpi/mpi_linwave'" \
+time python ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' \
      --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun="srun --job-name='GCC hybrid/hybrid_linwave'" \
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun=srun \
+	--mpirun_opts=--job-name='GCC hybrid/hybrid_linwave' \
 	--coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
@@ -107,7 +108,7 @@ module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
-     --mpirun="srun --job-name='GCC pgen/hdf5_reader_parallel'" \
+     --mpirun=srun --mpirun_opts=--job-name='GCC pgen/hdf5_reader_parallel' \
      --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
 
 # Combine Lcov tracefiles from individaul regression tests:
@@ -144,11 +145,11 @@ module list
 
 time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
-time python ./run_tests.py grav --config=--cxx=icc --mpirun="srun --job-name='ICC grav/jeans_3d'" --silent
-time python ./run_tests.py mpi --config=--cxx=icc --mpirun="srun --job-name='ICC mpi/mpi_linwave'" --silent
+time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python ./run_tests.py omp --config=--cxx=icc --silent
 timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc \
-	--mpirun="srun --job-name='ICC hybrid/hybrid_linwave'" --silent
+	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
 time python ./run_tests.py hydro --config=--cxx=icc --silent
 time python ./run_tests.py mhd --config=--cxx=icc --silent
 time python ./run_tests.py amr --config=--cxx=icc --silent
@@ -170,7 +171,7 @@ module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc \
-     --mpirun="srun --job-name='ICC pgen/hdf5_reader_parallel'" \
+     --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
      --config=--lib=/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64 --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
