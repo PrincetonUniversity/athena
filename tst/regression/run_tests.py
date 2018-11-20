@@ -179,7 +179,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--mpirun',
                         default='mpirun',
-                        choices=['mpirun', 'srun', 'mpiexec'],
+                        # 2x MPI, Slurm, PBS/Torque, LSF, Cray ALPS
+                        choices=['mpirun', 'mpiexec', 'srun', 'qsub', 'lsrun', 'aprun'],
                         help='select MPI run command')
 
     parser.add_argument('--mpirun_opts',
