@@ -185,7 +185,7 @@ public:
 
   void QuickCreatePlan();
   void InitializeFFTBlock(bool set_norm);
-// small functions
+  // small functions
   int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; }
 
   friend class FFTBlock;

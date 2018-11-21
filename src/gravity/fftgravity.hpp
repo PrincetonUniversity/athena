@@ -30,7 +30,7 @@ public:
            RegionSize msize, RegionSize bsize)
   : FFTBlock(pfd, iloc, igid, msize, bsize) {}
   ~FFTGravity() {}
-  void ApplyKernel(int mode);
+  void ApplyKernel(int mode) final;
 };
 
 
@@ -41,7 +41,7 @@ class FFTGravityDriver : public FFTDriver{
 public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
   ~FFTGravityDriver();
-  void Solve(int stage, int mode);
+  void Solve(int stage, int mode); // unlike MultigridDriver::Solve(), not inherited
 
 private:
   Real four_pi_G_;
