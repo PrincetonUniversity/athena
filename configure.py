@@ -203,11 +203,11 @@ parser.add_argument(
     choices=[
         'g++',
         'g++-simd',
-        'icc',
-        'icc-debug',
+        'icpc',
+        'icpc-debug',
         'cray',
         'bgxl',
-        'icc-phi',
+        'icpc-phi',
         'clang++',
         'clang++-simd',
     ],
@@ -396,9 +396,9 @@ if args['cxx'] == 'g++-simd':
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-if args['cxx'] == 'icc':
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+if args['cxx'] == 'icpc':
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -inline-forceinline -qopenmp-simd -qopt-prefetch=4'
@@ -407,11 +407,11 @@ if args['cxx'] == 'icc':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
-if args['cxx'] == 'icc-debug':
+if args['cxx'] == 'icpc-debug':
     # Disable IPO, forced inlining, and fast math. Enable vectorization reporting.
     # Useful for testing symmetry, SIMD-enabled functions and loops with OpenMP 4.5
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
         '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
@@ -446,9 +446,9 @@ if args['cxx'] == 'bgxl':
     makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
     makefile_options['LIBRARY_FLAGS'] = ''
 
-if args['cxx'] == 'icc-phi':
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+if args['cxx'] == 'icpc-phi':
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
@@ -484,14 +484,14 @@ else:
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
+            or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
     if args['cxx'] == 'bgxl':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
-    if args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
@@ -504,7 +504,8 @@ if args['coverage']:
     # And don't combine lines when writing source code!
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
         makefile_options['COMPILER_FLAGS'] += ' -O0 -fprofile-arcs -ftest-coverage'
-    if (args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'):
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi'):
         makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
     if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         # Clang's "source-based" code coverage feature to produces .profraw output
@@ -530,8 +531,8 @@ else:
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
-            or args['cxx'] == 'icc-phi' or args['cxx'] == 'g++-simd'
+    if (args['cxx'] == 'g++' or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
@@ -550,7 +551,7 @@ if args['omp']:
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
             or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -563,7 +564,7 @@ else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
@@ -605,8 +606,8 @@ if args['hdf5']:
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'cray' or args['cxx'] == 'icc'
-            or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
+            or args['cxx'] == 'cray' or args['cxx'] == 'icpc'
+            or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
     if args['cxx'] == 'bgxl':
