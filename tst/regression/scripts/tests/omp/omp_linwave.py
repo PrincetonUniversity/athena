@@ -15,6 +15,7 @@ def prepare(**kwargs):
                      flux='hlld', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_omp')
+    os.system('mv obj obj_omp')
 
     athena.configure('b', prob='linear_wave', coord='cartesian', flux='hlld', **kwargs)
     athena.make()
@@ -30,8 +31,10 @@ def run(**kwargs):
                  'meshblock/nx2=8',
                  'meshblock/nx3=8',
                  'output2/dt=-1', 'time/tlim=2.0', 'problem/compute_error=true']
-    athena.run('mhd/athinput.linear_wave3d', arguments)
+    athena.run('mhd/athinput.linear_wave3d', arguments, lcov_test_suffix='serial')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_omp obj')
     os.system('mv bin/athena_omp bin/athena')
     athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=1'])
     athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=2'])

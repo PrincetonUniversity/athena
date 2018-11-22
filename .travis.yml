@@ -47,14 +47,14 @@ cache:
 # the first value in the above arrays. Could encapsulate in script
 # --------------
 # History of Travis CI default osx_image (date = when used in this file)
-# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra
+# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra (requies softwareupdate workaround)
 # (2018-04-11) xcode8.3 on macOS 10.12 Sierra
 # TODO(felker): improve syncing of osx "softwareupdate" cmd xcode version argument in
 # tst/ci/travis/ install_mpich.sh, install_openmpi.sh (workaround for Homebrew GCC)
 matrix:
   include:
     - os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10.1
       compiler: clang++
       addons:
       env:
@@ -77,7 +77,7 @@ matrix:
           - hdf5
           - "/usr/local/Cellar/hdf5/"
     - os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10.1
       compiler: clang++
       addons:
       env:
@@ -161,7 +161,7 @@ stages:
 
 # Codecov coverage analysis
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471 -X gcov || echo "Codecov did not collect coverage reports"
 notifications:
   email:
     on_success: change
