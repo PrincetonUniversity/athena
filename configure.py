@@ -205,11 +205,12 @@ parser.add_argument(
         'g++-simd',
         'icpc',
         'icpc-debug',
+        'icpc-phi',
         'cray',
         'bgxl',
-        'icpc-phi',
         'clang++',
         'clang++-simd',
+        'clang++-apple',
     ],
     help='select C++ compiler')
 
@@ -403,10 +404,9 @@ if args['cxx'] == 'icpc':
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -inline-forceinline -qopenmp-simd -qopt-prefetch=4'
     )
-    # -qopt-zmm-usage=high'
+    # -qopt-zmm-usage=high'  # typically harms multi-core performance on Skylake Xeon
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-
 if args['cxx'] == 'icpc-debug':
     # Disable IPO, forced inlining, and fast math. Enable vectorization reporting.
     # Useful for testing symmetry, SIMD-enabled functions and loops with OpenMP 4.5
@@ -416,6 +416,17 @@ if args['cxx'] == 'icpc-debug':
     makefile_options['COMPILER_FLAGS'] = (
         '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
         '-qopt-report=5 -qopt-report-phase=openmp,vec -g'
+    )
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'icpc-phi':
+    # Cross-compile for Intel Xeon Phi x200 KNL series (unique AVX-512ER and AVX-512FP)
+    # -xMIC-AVX512: generate AVX-512F, AVX-512CD, AVX-512ER and AVX-512FP
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = (
+      '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
@@ -445,17 +456,6 @@ if args['cxx'] == 'bgxl':
     )
     makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
     makefile_options['LIBRARY_FLAGS'] = ''
-
-if args['cxx'] == 'icpc-phi':
-    definitions['COMPILER_CHOICE'] = 'icpc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
-    makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
-    )
-    makefile_options['LINKER_FLAGS'] = ''
-    makefile_options['LIBRARY_FLAGS'] = ''
-
 if args['cxx'] == 'clang++':
     definitions['COMPILER_CHOICE'] = 'clang++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
@@ -463,14 +463,21 @@ if args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-
 if args['cxx'] == 'clang++-simd':
-    # LLVM/clang version >= 3.9 for most of OpenMP 4.0, 4.5 (still incomplete; no
+    # LLVM/Clang version >= 3.9 for most of OpenMP 4.0 and 4.5 (still incomplete; no
     # offloading, target/declare simd directives). OpenMP 3.1 fully supported in LLVM 3.7
     definitions['COMPILER_CHOICE'] = 'clang++-simd'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -fopenmp-simd'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'clang++-apple':
+    # Apple LLVM/Clang: forked version of the open-source LLVM project bundled in macOS
+    definitions['COMPILER_CHOICE'] = 'clang++-apple'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -485,7 +492,8 @@ if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
@@ -507,7 +515,8 @@ if args['coverage']:
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'icpc-phi'):
         makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
-    if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+    if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         # Clang's "source-based" code coverage feature to produces .profraw output
         makefile_options['COMPILER_FLAGS'] += (
             ' -O0 -fprofile-instr-generate -fcoverage-mapping'
@@ -533,7 +542,8 @@ if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
     if (args['cxx'] == 'g++' or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'icpc-phi' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -551,6 +561,10 @@ if args['omp']:
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
             or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
+    if (args['cxx'] == 'clang++-apple'):
+        # Apple Clang disables the front end OpenMP driver interface; enable it via the
+        # preprocessor. Must install LLVM's OpenMP runtime library libomp beforehand
+        makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp -lomp'
     if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
@@ -608,7 +622,8 @@ if args['hdf5']:
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'cray' or args['cxx'] == 'icpc'
             or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
     if args['cxx'] == 'bgxl':
         makefile_options['PREPROCESSOR_FLAGS'] += (
