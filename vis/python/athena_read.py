@@ -336,11 +336,11 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
         num_extended_dims += 1
 
     # Set volume function for preset coordinates if needed
-    coord = f.attrs['Coordinates']
+    coord = f.attrs['Coordinates'].decode('ascii', 'replace')
     if level < max_level and not subsample and not fast_restrict and vol_func is None:
-      x1_rat = f.attrs['RootGridX1'][2]
-      x2_rat = f.attrs['RootGridX2'][2]
-      x3_rat = f.attrs['RootGridX3'][2]
+      x1_rat = f.attrs['RootGridX1'][2].decode('ascii', 'replace')
+      x2_rat = f.attrs['RootGridX2'][2].decode('ascii', 'replace')
+      x3_rat = f.attrs['RootGridX3'][2].decode('ascii', 'replace')
       if coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted' \
           or coord == 'sinusoidal':
         if (nx1 == 1 or x1_rat == 1.0) and (nx2 == 1 or x2_rat == 1.0) and \
@@ -428,7 +428,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
               + ' at desired level for subsampling or fast restriction to work')
 
     # Create list of all quantities if none given
-    var_quantities = f.attrs['VariableNames'][:]
+    var_quantities = np.array([x.decode('ascii', 'replace')
+                               for x in f.attrs['VariableNames'][:]])
     coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
     attr_quantities = [key for key in f.attrs]
     other_quantities = ('Levels',)
@@ -453,10 +454,12 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
     # Get metadata describing file layout
     num_blocks = f.attrs['NumMeshBlocks']
-    dataset_names = f.attrs['DatasetNames'][:]
+    dataset_names = np.array([x.decode('ascii', 'replace')
+                              for x in f.attrs['DatasetNames'][:]])
     dataset_sizes = f.attrs['NumVariables'][:]
     dataset_sizes_cumulative = np.cumsum(dataset_sizes)
-    variable_names = f.attrs['VariableNames'][:]
+    variable_names = np.array([x.decode('ascii', 'replace')
+                               for x in f.attrs['VariableNames'][:]])
     quantity_datasets = []
     quantity_indices = []
     for q in quantities:
