@@ -1,52 +1,62 @@
 # .travis.yml
-# Defines build matrix and regression tests for Travis CI.com
+# Defines build matrix and regression tests for Travis CI
 language: cpp
 branches:
   only:
   - master
   - dust
   - mhd4_3D
-# Default build matrix is 4x Ubuntu builds:
+# Default build matrix is 4x Ubuntu builds (inherit the default stage name "test"):
 os:
   - linux
 dist: trusty
 sudo: false # use faster container-based build
 addons:
   apt:
+    sources:
+      - llvm-toolchain-trusty-5.0
     packages:
       - "python3"
       - "python3-pip"
+      - "clang-5.0"  # Ubuntu 14.04 ships wit Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
 env:
   matrix:
-  - MPI_CHOICE=mpich
-  - MPI_CHOICE=openmpi
+    - MPI_CHOICE=mpich
+    - MPI_CHOICE=openmpi
 compiler:
   - g++
   - clang++
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
-  directories:
+  directories: # TODO(felker): sync "version_str=" lines in install scripts with cache dir names
     # For caching Linux source directories:
-    - openmpi-3.0.2 # released 6/1/18
-    - mpich-3.2.1 # stable maintenance release from 11/10/17
+    - openmpi-3.0.2
+    - mpich-3.2.1
     # Caching Linux install directories:
     - openmpi
     - mpich
     - fftw
-    - fftw-3.3.7 # stable release as of 11/8/17
+    - fftw-3.3.8
     - hdf5
-    - hdf5-1.10.1 # released on 2017-04-27
+    - hdf5-1.10.4
 
-# Explicitly includilng the 2x macOS jobs in build matrix
+# Explicitly includilng the 2x macOS jobs in build matrix (inherit the default stage name "test")
 # Must specify complete build details, or the jobs will inherit
 # the first value in the above arrays. Could encapsulate in script
+# --------------
+# History of Travis CI default osx_image (date = when used in this file)
+# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra (requies softwareupdate workaround)
+# (2018-04-11) xcode8.3 on macOS 10.12 Sierra
+# TODO(felker): improve syncing of osx "softwareupdate" cmd xcode version argument in
+# tst/ci/travis/ install_mpich.sh, install_openmpi.sh (workaround for Homebrew GCC)
 matrix:
   include:
     - os: osx
-      osx_image: xcode9.3 # macOS 10.13 High Sierra
+      osx_image: xcode10.1
       compiler: clang++
+      addons:
       env:
         - MPI_CHOICE=mpich
       # Override Linux cache mapping
@@ -67,8 +77,9 @@ matrix:
           - hdf5
           - "/usr/local/Cellar/hdf5/"
     - os: osx
-      osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+      osx_image: xcode10.1
       compiler: clang++
+      addons:
       env:
         - MPI_CHOICE=openmpi
         - TMPDIR=/tmp
@@ -93,13 +104,24 @@ matrix:
     - stage: python linter
       before_install: skip
       install: skip
-      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
+      addons:
+        apt:
+          packages:
+            - "python3"
+            - "python3-pip"
+      env:
+      compiler:
+      script: python3 -m flake8 --exclude=cpplint.py,openmpi-* && echo "Finished linting Python files with flake8"
     # Test Google C++ Style Guide adherence for .cpp, .hpp files:
     - stage: c++ linter
       before_install: skip
       install: skip
       before_script: skip
-      script: cd tst/style/; ./cpplint_athena.sh
+      addons:
+      env:
+      compiler:
+      # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
+      script: cd tst/style/ && ./cpplint_athena.sh
 
 # Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
 before_install:
@@ -139,7 +161,7 @@ stages:
 
 # Codecov coverage analysis
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471 -X gcov || echo "Codecov did not collect coverage reports"
 notifications:
   email:
     on_success: change

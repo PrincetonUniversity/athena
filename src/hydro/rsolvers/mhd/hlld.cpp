@@ -74,7 +74,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // Compute L/R states for selected conserved variables
     Real bxsq = bxi*bxi;
-    // (KGF): group transverse vector components for floating point associativity symmetry
+    // (KGF): group transverse vector components for floating-point associativity symmetry
     Real pbl = 0.5*(bxsq + (SQR(wli[IBY]) + SQR(wli[IBZ])));  // magnetic pressure (l/r)
     Real pbr = 0.5*(bxsq + (SQR(wri[IBY]) + SQR(wri[IBZ])));
     Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + (SQR(wli[IVY]) + SQR(wli[IVZ])));
@@ -141,7 +141,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sdr = spd[4] - wri[IVX];
 
     // S_M: eqn (38) of Miyoshi & Kusano
-    // (KGF): group ptl, ptr terms for floating point associativity symmetry
+    // (KGF): group ptl, ptr terms for floating-point associativity symmetry
     spd[2] = (sdr*ur.mx - sdl*ul.mx + (ptl - ptr))/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
@@ -190,10 +190,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       ulst.bz = ul.bz * tmp;
     }
     // v_i* dot B_i*
-    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    // (KGF): group transverse momenta terms for floating-point associativity symmetry
     Real vbstl = (ulst.mx*bxi+(ulst.my*ulst.by+ulst.mz*ulst.bz))*ulst_d_inv;
     // eqn (48) of M&K
-    // (KGF): group transverse by, bz terms for floating point associativity symmetry
+    // (KGF): group transverse by, bz terms for floating-point associativity symmetry
     ulst.e = (sdl*ul.e - ptl*wli[IVX] + ptst*spd[2] +
               bxi*(wli[IVX]*bxi + (wli[IVY]*ul.by + wli[IVZ]*ul.bz) - vbstl))*sdml_inv;
 
@@ -218,10 +218,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.bz = ur.bz * tmp;
     }
     // v_i* dot B_i*
-    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    // (KGF): group transverse momenta terms for floating-point associativity symmetry
     Real vbstr = (urst.mx*bxi+(urst.my*urst.by+urst.mz*urst.bz))*urst_d_inv;
     // eqn (48) of M&K
-    // (KGF): group transverse by, bz terms for floating point associativity symmetry
+    // (KGF): group transverse by, bz terms for floating-point associativity symmetry
     urst.e = (sdr*ur.e - ptr*wri[IVX] + ptst*spd[2] +
               bxi*(wri[IVX]*bxi + (wri[IVY]*ur.by + wri[IVZ]*ur.bz) - vbstr))*sdmr_inv;
     // ul** and ur** - if Bx is near zero, same as *-states

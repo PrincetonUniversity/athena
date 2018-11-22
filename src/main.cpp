@@ -24,6 +24,7 @@
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
+#include <cmath>      // std::sqrt()
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
 #include <iostream>   // cout, endl
@@ -206,7 +207,7 @@ int main(int argc, char *argv[]) {
       pinput->LoadFromFile(restartfile);
       // If both -r and -i are specified, make sure next_time gets corrected.
       // This needs to be corrected on the restart file because we need the old dt.
-      if(iarg_flag==1) pinput->RollbackNextTime();
+      if (iarg_flag==1) pinput->RollbackNextTime();
       // leave the restart file open for later use
     }
     if (iarg_flag==1) {
@@ -309,6 +310,21 @@ int main(int argc, char *argv[]) {
     return(0);
   }
 
+  TaskList *pststlist = NULL;
+  if (STS_ENABLED) {
+    try {
+      pststlist = new SuperTimeStepTaskList(pinput, pmesh);
+    }
+    catch(std::bad_alloc& ba) {
+      std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+                << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
+      return(0);
+    }
+  }
+
 //--- Step 6. ----------------------------------------------------------------------------
 // Set initial conditions by calling problem generator, or reading restart file
 
@@ -382,6 +398,17 @@ int main(int argc, char *argv[]) {
                     << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
         }
       }
+    }
+
+    if (STS_ENABLED) {
+      // compute nstages for this STS
+      Real my_dt = pmesh->dt;
+      Real dt_p  = pmesh->dt_parabolic;
+      pststlist->nstages = static_cast<int>(0.5*(-1.+std::sqrt(1.+8.*my_dt/dt_p))) + 1;
+
+      // super-time-step
+      for (int stage=1; stage<=pststlist->nstages; ++stage)
+        pststlist->DoTaskListOneStage(pmesh,stage);
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence

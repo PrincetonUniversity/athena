@@ -1,10 +1,14 @@
+---
+name: Bug report
+about: Notify other developers about a problem with Athena++
+
+---
 <!-- Please fill out as many of the relevant sections of this form as possible to help us reproduce, track down, and fix the issue. -->
 
 <!-- Feel free to delete any of the below sections if they aren't relevant, e.g. if you are submitting a feature request. -->
 
 <!-- If you want support, please see the GitHub Wiki or ask questions in the Slack workspace.-->
 
-## Bug report
 
 **Prerequisite checklist**
 <!-- You may delete this section after completing the list-->

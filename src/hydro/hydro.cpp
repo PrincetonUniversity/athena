@@ -43,7 +43,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
-  if (integrator == "ssprk5_4")
+  if (integrator == "ssprk5_4" || STS_ENABLED)
     // future extension may add "int nregister" to Hydro class
     u2.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
@@ -122,7 +122,7 @@ Hydro::~Hydro() {
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
   w1.DeleteAthenaArray();
-  // only allocated if integrator was 3S* integrator
+  // only allocated if integrator was 3S* integrator or STS_ENABLED
   u2.DeleteAthenaArray();
 
   // fourth-order hydro

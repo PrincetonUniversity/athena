@@ -73,7 +73,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   cfl_number = pin->GetReal("time", "cfl_number");
   ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
-  dt   = (FLT_MAX*0.4);
+  dt            = (FLT_MAX*0.4);
+  dt_hyperbolic = (FLT_MAX*0.4);
+  dt_parabolic  = (FLT_MAX*0.4);
+  muj = 0.0;
+  nuj = 0.0;
+  muj_tilde = 0.0;
   nbnew=0; nbdel=0;
 
   four_pi_G_=0.0, grav_eps_=-1.0, grav_mean_rho_=-1.0;
@@ -1008,18 +1013,30 @@ void Mesh::OutputMeshStructure(int dim) {
 void Mesh::NewTimeStep(void) {
   MeshBlock *pmb = pblock;
   Real min_dt=pmb->new_block_dt;
+  Real min_dt_hyperbolic=pmb->new_block_dt_hyperbolic;
+  Real min_dt_parabolic =pmb->new_block_dt_parabolic;
   pmb=pmb->next;
   while (pmb != NULL)  {
     min_dt=std::min(min_dt,pmb->new_block_dt);
+    min_dt_hyperbolic = std::min(min_dt_hyperbolic, pmb->new_block_dt_hyperbolic);
+    min_dt_parabolic  = std::min(min_dt_parabolic , pmb->new_block_dt_parabolic );
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE,&min_dt_hyperbolic,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE,&min_dt_parabolic, 1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
-  // set it
-  dt=std::min(min_dt,static_cast<Real>(2.0)*dt);
-  if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
+  dt_hyperbolic=min_dt_hyperbolic;
+  dt_parabolic =min_dt_parabolic;
+  if (STS_ENABLED)
+    dt=std::min(dt_hyperbolic,static_cast<Real>(2.0)*dt);
+  else
+    dt=std::min(min_dt,static_cast<Real>(2.0)*dt);
+
+  if (time < tlim && tlim-time < dt) {  // timestep would take us past desired endpoint
     dt = tlim-time;
+  }
   return;
 }
 
@@ -1277,11 +1294,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     BoundaryValues *pbval;
 
     // prepare to receive conserved variables
-#pragma omp for private(pmb)
+#pragma omp for private(pmb,pbval)
     for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i];
-      pmb->pbval->Initialize();
-      pmb->pbval->StartReceivingForInit(true);
+      pmb=pmb_array[i]; pbval=pmb->pbval;
+      pbval->Initialize();
+      pbval->StartReceivingForInit(true);
     }
 
     // send conserved variables
@@ -1333,7 +1350,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
     // begin fourth-order correction of midpoint initial condition:
     // --------------------------
-    bool correct_ic = pmb->precon->correct_ic;
+
+    // correct IC on all MeshBlocks or none; switch cannot be toggled independently
+    bool correct_ic = pmb_array[0]->precon->correct_ic;
     if (correct_ic == true) {
 #pragma omp for private(pmb, phydro, pfield, pbval)
       for (int i=0; i<nmb; ++i) {
@@ -1382,13 +1401,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
 
       // begin second exchange of ghost cells with corrected cell-averaged <U>
-      // -----------------  (verbatim copied from above)
+      // -----------------  (mostly copied from above)
       // prepare to receive conserved variables
-#pragma omp for private(pmb)
+#pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i];
-        pmb->pbval->Initialize();
-        pmb->pbval->StartReceivingForInit(true);
+        pmb=pmb_array[i]; pbval=pmb->pbval;
+        // no need to re-Initialize()
+        pbval->StartReceivingForInit(true);
       }
 
 #pragma omp for private(pmb,pbval)

@@ -19,6 +19,7 @@
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -coverage         enable compiler-dependent code coverage flags
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
@@ -28,7 +29,9 @@
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --cxx=xxx         use xxx as the C++ compiler
-#   --ccmd=name       use name as the command to call the C++ compiler
+#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name    use name as the command to call the gcov utility
 #   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -98,6 +101,12 @@ parser.add_argument('-b',
                     default=False,
                     help='enable magnetic field')
 
+# -sts argument
+parser.add_argument('-sts',
+                    action='store_true',
+                    default=False,
+                    help='enable super-time-stepping')
+
 # -s argument
 parser.add_argument('-s',
                     action='store_true',
@@ -127,6 +136,12 @@ parser.add_argument('-debug',
                     action='store_true',
                     default=False,
                     help='enable debug flags; override other compiler options')
+
+# -coverage argument
+parser.add_argument('-coverage',
+                    action='store_true',
+                    default=False,
+                    help='enable compiler-dependent code coverage flag')
 
 # -float argument
 parser.add_argument('-float',
@@ -201,7 +216,17 @@ parser.add_argument(
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
                     default=None,
-                    help='override for command to use to call C++ compiler')
+                    help='override for command to use to call (non-MPI) C++ compiler')
+
+# --mpiccmd=[name] argument
+parser.add_argument('--mpiccmd',
+                    default=None,
+                    help='override for command to use to call MPI C++ compiler')
+
+# --gcovcmd=[name] argument
+parser.add_argument('--gcovcmd',
+                    default=None,
+                    help='override for command to use to call Gcov utility in Makefile')
 
 # --cflag=[string] argument
 parser.add_argument('--cflag',
@@ -321,6 +346,12 @@ else:
         definitions['NWAVE_VALUE'] = '5'
     else:
         definitions['NWAVE_VALUE'] = '4'
+
+# -sts argument
+if args['sts']:
+    definitions['STS_ENABLED'] = '1'
+else:
+    definitions['STS_ENABLED'] = '0'
 
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
@@ -449,7 +480,6 @@ if args['float']:
 else:
     definitions['SINGLE_PRECISION_ENABLED'] = '0'
 
-
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
@@ -466,6 +496,37 @@ if args['debug']:
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
 
+# -coverage argument
+if args['coverage']:
+    definitions['COVERAGE'] = 'COVERAGE'
+    # For now, append new compiler flags and don't override --cxx set, but set code to be
+    # unoptimized (-O0 instead of -O3) to get useful annotations. (add -g -fopenmp-simd?)
+    # And don't combine lines when writing source code!
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -fprofile-arcs -ftest-coverage'
+    if (args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'):
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
+    if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+        # Clang's "source-based" code coverage feature to produces .profraw output
+        makefile_options['COMPILER_FLAGS'] += (
+            ' -O0 -fprofile-instr-generate -fcoverage-mapping'
+            )  # use --coverage for GCC-compatible .gcno, .gcda output for gcov
+    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
+        raise SystemExit(
+            '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
+else:
+    definitions['COVERAGE'] = 'NOT_COVERAGE'
+
+# --ccmd=[name] argument
+if args['ccmd'] is not None:
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
+# --gcovcmd=[name] argument (only modifies Makefile target)
+if args['gcovcmd'] is not None:
+    makefile_options['GCOV_COMMAND'] = args['gcovcmd']
+else:
+    makefile_options['GCOV_COMMAND'] = 'gcov'
+
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
@@ -476,7 +537,10 @@ if args['mpi']:
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
     if args['cxx'] == 'bgxl':
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx' # noqa
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
+    # --mpiccmd=[name] argument
+    if args['mpiccmd'] is not None:
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd'] # noqa
 else:
     definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 
@@ -519,10 +583,8 @@ else:
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
-definitions['FFT_ENABLED'] = '0'
 definitions['FFT_DEFINE'] = 'NO_FFT'
 if args['fft']:
-    definitions['FFT_ENABLED'] = '1'
     definitions['FFT_DEFINE'] = 'FFT'
     if args['fftw_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
@@ -564,10 +626,6 @@ if args['h5double']:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
-
-# --ccmd=[name] argument
-if args['ccmd'] is not None:
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # --cflag=[string] argument
 if args['cflag'] is not None:
@@ -620,11 +678,13 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
+print('  Shearing Box:            ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
+print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' '
       + makefile_options['LIBRARY_FLAGS'])
 print('  Precision:               ' + ('single' if args['float'] else 'double'))

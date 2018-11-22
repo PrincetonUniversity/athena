@@ -69,6 +69,7 @@ class TaskState {
 class TaskList {
 friend class TimeIntegratorTaskList;
 friend class GravitySolverTaskList;
+friend class SuperTimeStepTaskList;
 public:
   explicit TaskList(Mesh *pm);
   virtual ~TaskList();
@@ -153,9 +154,49 @@ public:
   enum TaskStatus StartupIntegrator(MeshBlock *pmb, int stage);
 };
 
+//----------------------------------------------------------------------------------------
+//! \class SuperTimeStepTaskList
+//  \brief data and function definitions for SuperTimeStepTaskList derived class
+
+class SuperTimeStepTaskList : public TaskList {
+public:
+  SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm);
+  ~SuperTimeStepTaskList() {}
+
+  void AddSuperTimeStepTask(uint64_t id, uint64_t dep);
+
+  // functions
+  enum TaskStatus StartAllReceive_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus EMFCorrectSend_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus EMFCorrectReceive_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus CalcDiffusivity_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroSend_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldSend_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroReceive_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldReceive_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus StartupIntegrator_STS(MeshBlock *pmb, int stage);
+};
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID  each hydro task.
+// 64-bit integers with "1" in different bit positions used to ID each hydro task.
 
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;

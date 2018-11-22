@@ -46,3 +46,16 @@ meshtest.dat
 # editor temp files
 *~
 *.swp
+
+# Gcov: GCC coverage testing tool- data files
+*.gcno
+*.gcda
+
+# Gcov log files
+*.gcov
+
+# Lcov: graphical frontend for Gcov- tracefiles
+*.info
+
+# genhtml test case description format produced by gendesc
+*.desc

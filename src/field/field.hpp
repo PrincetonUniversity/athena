@@ -52,6 +52,7 @@ public:
   void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
        const Real wght[3]);
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
+  void ComputeCornerE_STS();
 
 private:
   // scratch space used to compute fluxes

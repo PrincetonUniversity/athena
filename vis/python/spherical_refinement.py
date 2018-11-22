@@ -52,8 +52,9 @@ def main(**kwargs):
         raise RuntimeError('blocks must have at least 4 cells in all dimensions')
     if max_levels < 0:
         raise RuntimeError('max_levels must be nonnegative')
-    if (max_levels > 0 and
-            (num_r_block % 2 != 0 or num_theta_block % 2 != 0 or num_phi_block % 2 != 0)):
+    if (max_levels > 0
+            and (num_r_block % 2 != 0
+                 or num_theta_block % 2 != 0 or num_phi_block % 2 != 0)):
         raise RuntimeError('blocks must have even number of cells in all dimensions to \
         support refinement')
     if r_ratio is not None and (not np.isfinite(r_ratio) or r_ratio <= 0.0):
@@ -486,11 +487,11 @@ def plot_grid(refinement, r_bounds, theta_bounds, output, colormap, grid_refined
         theta2 = 90.0 - theta_bounds[0][-1] * 180.0/np.pi
         theta3 = 180.0 - theta1
         theta4 = 180.0 - theta2
-        arc = patches.Arc((0, 0), r_val_plot*2, r_val_plot *
-                          2, theta1=theta2, theta2=theta1)
+        arc = patches.Arc((0, 0), r_val_plot*2, r_val_plot
+                          * 2, theta1=theta2, theta2=theta1)
         ax.add_artist(arc)
-        arc = patches.Arc((0, 0), r_val_plot*2, r_val_plot *
-                          2, theta1=theta3, theta2=theta4)
+        arc = patches.Arc((0, 0), r_val_plot*2, r_val_plot
+                          * 2, theta1=theta3, theta2=theta4)
         ax.add_artist(arc)
     for theta_val in theta_vals_grid:
         r_inner = r_bounds[0][0]

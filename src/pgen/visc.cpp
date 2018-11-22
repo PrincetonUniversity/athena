@@ -45,7 +45,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Get parameters for gravitatonal potential of central point mass
   v0 = pin->GetOrAddReal("problem","v0",0.001);
   t0 = pin->GetOrAddReal("problem","t0",0.5);
-  nuiso = pin->GetOrAddReal("problem","nuiso",0.0);
+  nuiso = pin->GetOrAddReal("problem","nu_iso",0.0);
   iprob = pin->GetOrAddInteger("problem","iprob",0);
   gm0 = pin->GetOrAddReal("problem","GM", 0.0);
   return;
@@ -59,7 +59,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //Real rad, phi, z;
   Real v1=0.0, v2=0.0, v3=0.0;
-  Real d0 = 1.0, p0=1.0, x0=1.0;
+  Real d0 = 1.0, p0=1.0, x0=0.0;
   Real x1,x2,x3;
   Real rad,z,phi,theta;
 
