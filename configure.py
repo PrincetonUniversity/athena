@@ -196,23 +196,33 @@ parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
 
+# The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
+# major family/suite/group of compilers and "suffix" may represent variants of the
+# compiler version and/or predefined sets of compiler options. The C++ compiler front ends
+# are the main supported/documented options and are invoked on the command line, but the C
+# front ends are also acceptable selections and are mapped to the matching C++ front end:
+# gcc -> g++, clang -> clang++, icc-> icpc
+cxx_choices = [
+    'g++',
+    'g++-simd',
+    'icpc',
+    'icpc-debug',
+    'icpc-phi',
+    'cray',
+    'bgxl',
+    'clang++',
+    'clang++-simd',
+    'clang++-apple',
+]
+cxx_usage = '{{{}}}'.format(','.join(cxx_choices))
+
 # --cxx=[name] argument
 parser.add_argument(
     '--cxx',
     default='g++',
-    choices=[
-        'g++',
-        'g++-simd',
-        'icpc',
-        'icpc-debug',
-        'icpc-phi',
-        'cray',
-        'bgxl',
-        'clang++',
-        'clang++-simd',
-        'clang++-apple',
-    ],
-    help='select C++ compiler')
+    # choices=cxx_choices,  # object must support Python's "in" operator
+    metavar=cxx_usage,
+    help='select C++ compiler and default set of flags')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
@@ -253,6 +263,21 @@ parser.add_argument(
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
+
+# If necessary, map compiler front end from C -> C++, then check validity of CXX option:
+args['cxx'] = args['cxx'].replace('gcc', 'g++', 1)
+args['cxx'] = args['cxx'].replace('icc', 'icpc', 1)
+if args['cxx'] == 'clang':
+    args['cxx'] = 'clang++'
+else:
+    args['cxx'] = args['cxx'].replace('clang-', 'clang++-', 1)
+
+if (args['cxx'] not in cxx_choices):
+    raise SystemExit(
+      '### CONFIGURE ERROR: Invalid compiler choice "{}". Options include: {{{}}}'.format(
+          args['cxx'], ', '.join(cxx_choices))
+      + ' (and C front end variants)'
+    )
 
 # --- Step 2. Test for incompatible arguments ----------------------------
 
