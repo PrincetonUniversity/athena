@@ -564,7 +564,8 @@ if args['omp']:
     if (args['cxx'] == 'clang++-apple'):
         # Apple Clang disables the front end OpenMP driver interface; enable it via the
         # preprocessor. Must install LLVM's OpenMP runtime library libomp beforehand
-        makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp -lomp'
+        makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp'
+        makefile_options['LIBRARY_FLAGS'] += ' -lomp'
     if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
