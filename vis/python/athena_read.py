@@ -277,7 +277,7 @@ def vtk(filename):
 
 #=========================================================================================
 
-def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
+def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, level=None,
     return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
     x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
     face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
@@ -286,6 +286,47 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
     # Load HDF5 reader
     import h5py
+
+    # Handle request for raw data
+    if raw:
+
+        # Open file
+        with h5py.File(filename, 'r') as f:
+
+            # Store file-level attributes
+            data = {}
+            for key in f.attrs:
+                data[str(key)] = f.attrs[key]
+
+            # Store location metadata
+            data['Levels'] = f['Levels']
+            data['LogicalLocations'] = f['LogicalLocations']
+
+            # Store coordinate data
+            data['x1f'] = f['x1f']
+            data['x2f'] = f['x2f']
+            data['x3f'] = f['x3f']
+            data['x1v'] = f['x1v']
+            data['x2v'] = f['x2v']
+            data['x3v'] = f['x3v']
+
+            # Get metadata describing file layout
+            dataset_names = np.array([x.decode('ascii', 'replace')
+                                      for x in f.attrs['DatasetNames'][:]])
+            dataset_sizes = f.attrs['NumVariables'][:]
+            variable_names = np.array([x.decode('ascii', 'replace')
+                                       for x in f.attrs['VariableNames'][:]])
+
+            # Store cell data
+            for dataset_index, dataset_name in enumerate(dataset_names):
+                variable_begin = sum(dataset_sizes[:dataset_index])
+                variable_end = variable_begin + dataset_sizes[dataset_index]
+                variable_names_local = variable_names[variable_begin:variable_end]
+                for variable_index, variable_name in enumerate(variable_names_local):
+                    data[variable_name] = f[dataset_name][variable_index, ...]
+
+        # Return dictionary containing raw data
+        return data
 
     # Prepare dictionary for results
     if data is None:
