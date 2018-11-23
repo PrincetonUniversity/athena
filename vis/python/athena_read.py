@@ -12,7 +12,8 @@ from io import open  # Consistent binary I/O from Python 2 and 3
 # Other Python modules
 import numpy as np
 
-#=========================================================================================
+
+# ========================================================================================
 
 def hst(filename, raw=False):
     """Read .hst files and return dict of 1D arrays."""
@@ -74,7 +75,8 @@ def hst(filename, raw=False):
                     break
     return data
 
-#=========================================================================================
+
+# ========================================================================================
 
 def tab(filename, raw=False, dimensions=None):
     """Read .tab files and return dict or array."""
@@ -166,7 +168,8 @@ def tab(filename, raw=False, dimensions=None):
             data_dict[heading] = data_array[n, ...]
         return data_dict
 
-#=========================================================================================
+
+# ========================================================================================
 
 def vtk(filename):
     """Read .vtk files and return dict of arrays of data."""
@@ -190,7 +193,7 @@ def vtk(filename):
     def skip_string(expected_string):
         expected_string_len = len(expected_string)
         if (raw_data_ascii[current_index:current_index+expected_string_len]
-            != expected_string):
+                != expected_string):
             raise AthenaError('File not formatted as expected')
         return current_index+expected_string_len
 
@@ -263,25 +266,26 @@ def vtk(filename):
         expected_string = 'SCALARS'
         expected_string_len = len(expected_string)
         if (raw_data_ascii[current_index:current_index+expected_string_len]
-            == expected_string):
+                == expected_string):
             current_index = read_cell_scalars()
             continue
         expected_string = 'VECTORS'
         expected_string_len = len(expected_string)
         if (raw_data_ascii[current_index:current_index+expected_string_len]
-            == expected_string):
+                == expected_string):
             current_index = read_cell_vectors()
             continue
         raise AthenaError('File not formatted as expected')
     return x_faces, y_faces, z_faces, data
 
-#=========================================================================================
+
+# ========================================================================================
 
 def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, level=None,
-    return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
-    x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
-    face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
-    center_func_2=None, center_func_3=None, num_ghost=0):
+          return_levels=False, subsample=False, fast_restrict=False, x1_min=None,
+          x1_max=None, x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None,
+          vol_params=None, face_func_1=None, face_func_2=None, face_func_3=None,
+          center_func_1=None, center_func_2=None, center_func_3=None, num_ghost=0):
     """Read .athdf files and populate dict of arrays of data."""
 
     # Load HDF5 reader
@@ -353,8 +357,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             if block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
                 other_locations = [location
                                    for location in zip(levels,
-                                                       logical_locations[:, (d+1)%3],
-                                                       logical_locations[:, (d+2)%3])]
+                                                       logical_locations[:, (d+1) % 3],
+                                                       logical_locations[:, (d+2) % 3])]
                 if len(set(other_locations)) == len(other_locations):  # effective slice
                     nx_vals.append(1)
                 else:  # nontrivial sum
@@ -390,16 +394,16 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             x2_rat = f.attrs['RootGridX2'][2].decode('ascii', 'replace')
             x3_rat = f.attrs['RootGridX3'][2].decode('ascii', 'replace')
             if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
-                or coord == 'sinusoidal'):
+                    or coord == 'sinusoidal'):
                 if ((nx1 == 1 or x1_rat == 1.0) and (nx2 == 1 or x2_rat == 1.0)
-                    and (nx3 == 1 or x3_rat == 1.0)):
+                        and (nx3 == 1 or x3_rat == 1.0)):
                     fast_restrict = True
                 else:
                     def vol_func(xm, xp, ym, yp, zm, zp):
                         return (xp-xm) * (yp-ym) * (zp-zm)
             elif coord == 'cylindrical':
                 if (nx1 == 1 and (nx2 == 1 or x2_rat == 1.0)
-                    and (nx3 == 1 or x3_rat == 1.0)):
+                        and (nx3 == 1 or x3_rat == 1.0)):
                     fast_restrict = True
                 else:
                     def vol_func(rm, rp, phim, phip, zm, zp):
@@ -416,18 +420,19 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                     fast_restrict = True
                 else:
                     a = vol_params[0]
+
                     def vol_func(rm, rp, thetam, thetap, phim, phip):
-                      cosm = np.cos(thetam)
-                      cosp = np.cos(thetap)
-                      return (((rp**3-rm**3) * abs(cosm-cosp)
-                               + a**2 * (rp-rm) * abs(cosm**3-cosp**3)) * (phip-phim))
+                        cosm = np.cos(thetam)
+                        cosp = np.cos(thetap)
+                        return (((rp**3-rm**3) * abs(cosm-cosp)
+                                 + a**2 * (rp-rm) * abs(cosm**3-cosp**3)) * (phip-phim))
             else:
                 raise AthenaError('Coordinates not recognized')
 
         # Set cell center functions for preset coordinates
         if center_func_1 is None:
             if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
-                or coord == 'sinusoidal' or coord == 'kerr-schild'):
+                    or coord == 'sinusoidal' or coord == 'kerr-schild'):
                 def center_func_1(xm, xp):
                     return 0.5 * (xm+xp)
             elif coord == 'cylindrical':
@@ -443,26 +448,29 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 raise AthenaError('Coordinates not recognized')
         if center_func_2 is None:
             if (coord == 'cartesian' or coord == 'cylindrical' or coord == 'minkowski'
-                or coord == 'tilted' or coord == 'sinusoidal' or coord == 'kerr-schild'):
+                    or coord == 'tilted' or coord == 'sinusoidal'
+                    or coord == 'kerr-schild'):
                 def center_func_2(xm, xp):
                     return 0.5 * (xm+xp)
             elif coord == 'spherical_polar':
+
                 def center_func_2(xm, xp):
-                  sm = np.sin(xm)
-                  cm = np.cos(xm)
-                  sp = np.sin(xp)
-                  cp = np.cos(xp)
-                  return (sp-xp*cp - sm+xm*cm) / (cm-cp)
+                    sm = np.sin(xm)
+                    cm = np.cos(xm)
+                    sp = np.sin(xp)
+                    cp = np.cos(xp)
+                    return (sp-xp*cp - sm+xm*cm) / (cm - cp)
             elif coord == 'schwarzschild':
                 def center_func_2(xm, xp):
                     return np.arccos(0.5 * (np.cos(xm) + np.cos(xp)))
             else:
                 raise AthenaError('Coordinates not recognized')
         if center_func_3 is None:
-            if (coord == 'cartesian' or coord == 'cylindrical'
-                or coord == 'spherical_polar' or coord == 'minkowski' or coord == 'tilted'
-                or coord == 'sinusoidal' or coord == 'schwarzschild'
-                or coord == 'kerr-schild'):
+            if (coord == 'cartesian' or coord == 'cylindrical' or coord == 'tilted'
+                    or coord == 'spherical_polar' or coord == 'minkowski'
+                    or coord == 'sinusoidal' or coord == 'schwarzschild'
+                    or coord == 'kerr-schild'):
+
                 def center_func_3(xm, xp):
                     return 0.5 * (xm+xp)
             else:
@@ -486,7 +494,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             max_restrict_factor = 2**(max_level-level)
             for current_block_size in block_size:
                 if (current_block_size != 1
-                    and current_block_size%max_restrict_factor != 0):
+                        and current_block_size % max_restrict_factor != 0):
                     raise AthenaError('Block boundaries at finest level must be cell'
                                       + ' boundaries at desired level for subsampling or'
                                       + ' fast restriction to work')
@@ -588,7 +596,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                                           + ' coordinate spacing')
                     xrat = xrat_root ** (1.0 / 2**level)
                     data[xf] = (xmin + (1.0-xrat**np.arange(nx+1))
-                                             / (1.0-xrat**nx) * (xmax-xmin))
+                                / (1.0-xrat**nx) * (xmax-xmin))
             data[xv] = np.empty(nx)
             for i in range(nx):
                 data[xv][i] = center_func(data[xf][i], data[xf][i+1])
@@ -765,18 +773,18 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 # Apply subsampling
                 if subsample:
 
-                  # Calculate fine-level offsets (nearest cell at or below center)
-                  o1 = s/2 - 1 if nx1 > 1 else 0
-                  o2 = s/2 - 1 if nx2 > 1 else 0
-                  o3 = s/2 - 1 if nx3 > 1 else 0
+                    # Calculate fine-level offsets (nearest cell at or below center)
+                    o1 = s/2 - 1 if nx1 > 1 else 0
+                    o2 = s/2 - 1 if nx2 > 1 else 0
+                    o3 = s/2 - 1 if nx3 > 1 else 0
 
-                  # Assign values
-                  for q, dataset, index in zip(quantities, quantity_datasets,
-                                               quantity_indices):
-                      data[q][kl_d:ku_d,
-                              jl_d:ju_d,
-                              il_d:iu_d] = f[dataset][index, block_num, kl_s+o3:ku_s:s,
-                                                      jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
+                    # Assign values
+                    for q, dataset, index in zip(quantities, quantity_datasets,
+                                                 quantity_indices):
+                        data[q][kl_d:ku_d,
+                                jl_d:ju_d,
+                                il_d:iu_d] = f[dataset][index, block_num, kl_s+o3:ku_s:s,
+                                                        jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
 
                 # Apply fast (uniform Cartesian) restriction
                 elif fast_restrict:
@@ -838,9 +846,9 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                                                                                block_num,
                                                                                k_s, j_s,
                                                                                i_s]
-                    loc1 = (nx1 > 1 ) * block_location[0] / s
-                    loc2 = (nx2 > 1 ) * block_location[1] / s
-                    loc3 = (nx3 > 1 ) * block_location[2] / s
+                    loc1 = (nx1 > 1) * block_location[0] / s
+                    loc2 = (nx2 > 1) * block_location[1] / s
+                    loc3 = (nx3 > 1) * block_location[2] / s
                     restricted_data[loc3, loc2, loc1] = True
 
             # Set level information for cells in this block
@@ -884,7 +892,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
     # Return dictionary containing requested data arrays
     return data
 
-#=========================================================================================
+
+# ========================================================================================
 
 def restrict_like(vals, levels, vols=None):
     """Average cell values according to given mesh refinement scheme."""
@@ -938,7 +947,8 @@ def restrict_like(vals, levels, vols=None):
         vals_restricted = np.where(levels == level, vals_level, vals_restricted)
     return vals_restricted
 
-#=========================================================================================
+
+# ========================================================================================
 
 def athinput(filename):
     """Read athinput file and returns a dictionary of dictionaries."""
@@ -981,11 +991,13 @@ def athinput(filename):
         data[key] = dict(map(parse_line, info))
     return data
 
-#=========================================================================================
+
+# ========================================================================================
 
 class AthenaError(RuntimeError):
     """General exception class for Athena++ read functions."""
     pass
+
 
 class AthenaWarning(RuntimeWarning):
     """General warning class for Athena++ read functions."""
