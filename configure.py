@@ -182,7 +182,6 @@ parser.add_argument('-fft',
 
 # --fftw_path argument
 parser.add_argument('--fftw_path',
-                    type=str,
                     default='',
                     help='path to FFTW libraries')
 
