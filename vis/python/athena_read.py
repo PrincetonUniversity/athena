@@ -522,11 +522,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                     if np.all(levels == level):
                         data[xf] = np.empty(nx + 1)
                         for n_block in range(int(nx / block_size[d-1])):
-                            sample_location = [0, 0, 0]
-                            sample_location[d-1] = n_block
-                            sample_block = np.where(np.all((logical_locations
-                                                            == sample_location),
-                                                           axis=1))[0][0]
+                            sample_block = np.where(logical_locations[:, d-1]
+                                                    == n_block)[0][0]
                             index_low = n_block * block_size[d-1]
                             index_high = index_low + block_size[d-1] + 1
                             data[xf][index_low:index_high] = f[xf][sample_block, :]
