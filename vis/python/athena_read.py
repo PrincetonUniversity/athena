@@ -521,7 +521,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                 elif xrat_root == 1.0:
                     if np.all(levels == level):
                         data[xf] = np.empty(nx + 1)
-                        for n_block in range(nx / block_size[d-1]):
+                        for n_block in range(int(nx / block_size[d-1])):
                             sample_location = [0, 0, 0]
                             sample_location[d-1] = n_block
                             sample_block = np.where(np.all((logical_locations
