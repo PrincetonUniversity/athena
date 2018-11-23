@@ -49,7 +49,14 @@ defsfile_input = 'src/defs.hpp.in'
 defsfile_output = 'src/defs.hpp'
 
 # --- Step 1. Prepare parser, add each of the arguments ------------------
-parser = argparse.ArgumentParser()
+athena_description = (
+    "Prepare custom Makefile and defs.hpp for compiling Athena++ solver"
+)
+athena_epilog = (
+    "Full documentation of options available at "
+    "https://github.com/PrincetonUniversity/athena-public-version/wiki/Configuring"
+)
+parser = argparse.ArgumentParser(description=athena_description, epilog=athena_epilog)
 
 # --prob=[name] argument
 pgen_directory = 'src/pgen/'
