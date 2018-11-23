@@ -52,11 +52,11 @@ def hst(filename, raw=False):
 
         # Read data
         for line in data_file:
-            for name,val in zip(data_names, line.split()):
+            for name, val in zip(data_names, line.split()):
                 data[name].append(float(val))
 
     # Finalize data
-    for key,val in data.iteritems():
+    for key, val in data.iteritems():
         data[key] = np.array(val)
     if not raw:
         if data_names[0] != 'time':
@@ -68,7 +68,7 @@ def hst(filename, raw=False):
             for n in range(1, len(data['time'])):
                 if data['time'][n] <= data['time'][n-1]:
                     branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
-                    for key,val in data.iteritems():
+                    for key, val in data.iteritems():
                         data[key] = np.concatenate((val[:branch_index], val[n:]))
                     branches_removed = False
                     break
@@ -162,8 +162,8 @@ def tab(filename, raw=False, dimensions=None):
     if raw:
         return data_array
     else:
-        for n,heading in enumerate(headings):
-            data_dict[heading] = data_array[n,...]
+        for n, heading in enumerate(headings):
+            data_dict[heading] = data_array[n, ...]
         return data_dict
 
 #=========================================================================================
@@ -210,15 +210,15 @@ def vtk(filename):
         format_string = '>' + 'f'*num_faces
         end_index = begin_index + 4*num_faces
         vals = np.array(struct.unpack(format_string, raw_data[begin_index:end_index]))
-        return vals,end_index+1
+        return vals, end_index+1
 
     # Read interface locations
-    x_faces,current_index = read_faces('X', face_dimensions[0])
-    y_faces,current_index = read_faces('Y', face_dimensions[1])
-    z_faces,current_index = read_faces('Z', face_dimensions[2])
+    x_faces, current_index = read_faces('X', face_dimensions[0])
+    y_faces, current_index = read_faces('Y', face_dimensions[1])
+    z_faces, current_index = read_faces('Z', face_dimensions[2])
 
     # Prepare to read quantities defined on grid
-    cell_dimensions = np.array([max(dim-1,1) for dim in face_dimensions])
+    cell_dimensions = np.array([max(dim-1, 1) for dim in face_dimensions])
     num_cells = cell_dimensions.prod()
     current_index = skip_string('CELL_DATA {0}\n'.format(num_cells))
     if raw_data_ascii[current_index:current_index+1] == '\n':
@@ -254,7 +254,7 @@ def vtk(filename):
         format_string = '>' + 'f'*num_cells*3
         end_index = begin_index + 4*num_cells*3
         data[array_name] = struct.unpack(format_string, raw_data[begin_index:end_index])
-        dimensions = tuple(np.append(cell_dimensions[::-1],3))
+        dimensions = tuple(np.append(cell_dimensions[::-1], 3))
         data[array_name] = np.array(data[array_name]).reshape(dimensions)
         return end_index+1
 
@@ -273,7 +273,7 @@ def vtk(filename):
             current_index = read_cell_vectors()
             continue
         raise AthenaError('File not formatted as expected')
-    return x_faces,y_faces,z_faces,data
+    return x_faces, y_faces, z_faces, data
 
 #=========================================================================================
 
@@ -310,14 +310,14 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
             if block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
                 other_locations = [location
                                    for location in zip(levels,
-                                                       logical_locations[:,(d+1)%3],
-                                                       logical_locations[:,(d+2)%3])]
+                                                       logical_locations[:, (d+1)%3],
+                                                       logical_locations[:, (d+2)%3])]
                 if len(set(other_locations)) == len(other_locations):  # effective slice
                     nx_vals.append(1)
                 else:  # nontrivial sum
                     num_blocks_this_dim = 0
-                    for level_this_dim,loc_this_dim in zip(levels,
-                                                           logical_locations[:,d]):
+                    for level_this_dim, loc_this_dim in zip(levels,
+                                                            logical_locations[:, d]):
                         if level_this_dim <= level:
                             possible_max = (loc_this_dim+1) * 2**(level-level_this_dim)
                             num_blocks_this_dim = max(num_blocks_this_dim, possible_max)
@@ -492,18 +492,18 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
         # Locate fine block for coordinates in case of slice
         fine_block = np.where(levels == max_level)[0][0]
-        x1m = f['x1f'][fine_block,0]
-        x1p = f['x1f'][fine_block,1]
-        x2m = f['x2f'][fine_block,0]
-        x2p = f['x2f'][fine_block,1]
-        x3m = f['x3f'][fine_block,0]
-        x3p = f['x3f'][fine_block,1]
+        x1m = f['x1f'][fine_block, 0]
+        x1p = f['x1f'][fine_block, 1]
+        x2m = f['x2f'][fine_block, 0]
+        x2p = f['x2f'][fine_block, 1]
+        x3m = f['x3f'][fine_block, 0]
+        x3p = f['x3f'][fine_block, 1]
 
         # Populate coordinate arrays
         face_funcs = (face_func_1, face_func_2, face_func_3)
         center_funcs = (center_func_1, center_func_2, center_func_3)
-        for d,nx,face_func,center_func in zip(range(1, 4), nx_vals, face_funcs,
-                                              center_funcs):
+        for d, nx, face_func, center_func in zip(range(1, 4), nx_vals, face_funcs,
+                                                 center_funcs):
             if nx == 1:
                 xm = (x1m, x2m, x3m)[d-1]
                 xp = (x1p, x2p, x3p)[d-1]
@@ -599,7 +599,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
             # Extract location information
             block_level = levels[block_num]
-            block_location = logical_locations[block_num,:]
+            block_location = logical_locations[block_num, :]
 
             # Prolongate coarse data and copy same-level data
             if block_level <= level:
@@ -634,9 +634,9 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                 ku_d = min(ku_d, k_max) - k_min
 
                 # Assign values
-                for q,dataset,index in zip(quantities, quantity_datasets,
-                                           quantity_indices):
-                    block_data = f[dataset][index,block_num,:]
+                for q, dataset, index in zip(quantities, quantity_datasets,
+                                             quantity_indices):
+                    block_data = f[dataset][index, block_num, :]
                     if s > 1:
                         if nx1 > 1:
                             block_data = np.repeat(block_data, s, axis=2)
@@ -644,9 +644,9 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                             block_data = np.repeat(block_data, s, axis=1)
                         if nx3 > 1:
                             block_data = np.repeat(block_data, s, axis=0)
-                    data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = block_data[kl_s:ku_s,
-                                                                        jl_s:ju_s,
-                                                                        il_s:iu_s]
+                    data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data[kl_s:ku_s,
+                                                                          jl_s:ju_s,
+                                                                          il_s:iu_s]
 
             # Restrict fine data
             else:
@@ -700,12 +700,12 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                   o3 = s/2 - 1 if nx3 > 1 else 0
 
                   # Assign values
-                  for q,dataset,index in zip(quantities, quantity_datasets,
-                                             quantity_indices):
-                      data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = f[dataset][index,block_num,
-                                                                          kl_s+o3:ku_s:s,
-                                                                          jl_s+o2:ju_s:s,
-                                                                          il_s+o1:iu_s:s]
+                  for q, dataset, index in zip(quantities, quantity_datasets,
+                                               quantity_indices):
+                      data[q][kl_d:ku_d,
+                              jl_d:ju_d,
+                              il_d:iu_d] = f[dataset][index, block_num, kl_s+o3:ku_s:s,
+                                                      jl_s+o2:ju_s:s, il_s+o1:iu_s:s]
 
                 # Apply fast (uniform Cartesian) restriction
                 elif fast_restrict:
@@ -716,18 +716,18 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                     ko_vals = range(s) if nx3 > 1 else (0,)
 
                     # Assign values
-                    for q,dataset,index in zip(quantities, quantity_datasets,
-                                               quantity_indices):
+                    for q, dataset, index in zip(quantities, quantity_datasets,
+                                                 quantity_indices):
                         for ko in ko_vals:
                             for jo in jo_vals:
                                 for io in io_vals:
                                     data[q][kl_d:ku_d,
                                             jl_d:ju_d,
-                                            il_d:iu_d] += f[dataset][index,block_num,
+                                            il_d:iu_d] += f[dataset][index, block_num,
                                                                      kl_s+ko:ku_s:s,
                                                                      jl_s+jo:ju_s:s,
                                                                      il_s+io:iu_s:s]
-                        data[q][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] /= s ** num_extended_dims
+                        data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] /= s ** num_extended_dims
 
                 # Apply exact (volume-weighted) restriction
                 else:
@@ -747,39 +747,41 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                         k_d_vals = np.repeat(k_d_vals, s)
 
                     # Accumulate values
-                    for k_s,k_d in zip(k_s_vals, k_d_vals):
+                    for k_s, k_d in zip(k_s_vals, k_d_vals):
                         if nx3 > 1:
-                            x3m = f['x3f'][block_num,k_s]
-                            x3p = f['x3f'][block_num,k_s+1]
-                        for j_s,j_d in zip(j_s_vals, j_d_vals):
+                            x3m = f['x3f'][block_num, k_s]
+                            x3p = f['x3f'][block_num, k_s+1]
+                        for j_s, j_d in zip(j_s_vals, j_d_vals):
                             if nx2 > 1:
-                                x2m = f['x2f'][block_num,j_s]
-                                x2p = f['x2f'][block_num,j_s+1]
-                            for i_s,i_d in zip(i_s_vals, i_d_vals):
+                                x2m = f['x2f'][block_num, j_s]
+                                x2p = f['x2f'][block_num, j_s+1]
+                            for i_s, i_d in zip(i_s_vals, i_d_vals):
                                 if nx1 > 1:
-                                    x1m = f['x1f'][block_num,i_s]
-                                    x1p = f['x1f'][block_num,i_s+1]
+                                    x1m = f['x1f'][block_num, i_s]
+                                    x1p = f['x1f'][block_num, i_s+1]
                                 vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
-                                for q,dataset,index in zip(quantities, quantity_datasets,
-                                                           quantity_indices):
-                                    data[q][k_d,j_d,i_d] += vol * f[dataset][index,
-                                                                             block_num,
-                                                                             k_s,j_s,i_s]
+                                for q, dataset, index in zip(quantities,
+                                                             quantity_datasets,
+                                                             quantity_indices):
+                                    data[q][k_d, j_d, i_d] += vol * f[dataset][index,
+                                                                               block_num,
+                                                                               k_s, j_s,
+                                                                               i_s]
                     loc1 = (nx1 > 1 ) * block_location[0] / s
                     loc2 = (nx2 > 1 ) * block_location[1] / s
                     loc3 = (nx3 > 1 ) * block_location[2] / s
-                    restricted_data[loc3,loc2,loc1] = True
+                    restricted_data[loc3, loc2, loc1] = True
 
             # Set level information for cells in this block
             if return_levels:
-                data['Levels'][kl_d:ku_d,jl_d:ju_d,il_d:iu_d] = block_level
+                data['Levels'][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_level
 
     # Remove volume factors from restricted data
     if level < max_level and not subsample and not fast_restrict:
         for loc3 in range(lx3):
             for loc2 in range(lx2):
                 for loc1 in range(lx1):
-                    if restricted_data[loc3,loc2,loc1]:
+                    if restricted_data[loc3, loc2, loc1]:
                         il = loc1 * block_size[0]
                         jl = loc2 * block_size[1]
                         kl = loc3 * block_size[2]
@@ -806,7 +808,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                                         x1p = data['x1f'][i+1]
                                     vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
                                     for q in quantities:
-                                        data[q][k,j,i] /= vol
+                                        data[q][k, j, i] /= vol
 
     # Return dictionary containing requested data arrays
     return data
@@ -817,7 +819,7 @@ def restrict_like(vals, levels, vols=None):
     """Average cell values according to given mesh refinement scheme."""
 
     # Determine maximum amount of restriction
-    nx3,nx2,nx1 = vals.shape
+    nx3, nx2, nx1 = vals.shape
     max_level = np.max(levels)
     if nx3 > 1 and nx3 % 2**max_level != 0:
         raise AthenaError('x3-dimension wrong size to be restricted')
