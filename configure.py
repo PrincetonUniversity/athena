@@ -220,14 +220,17 @@ cxx_choices = [
     'clang++-simd',
     'clang++-apple',
 ]
+
+
 def c_to_cpp(arg):
-  arg = arg.replace('gcc', 'g++', 1)
-  arg = arg.replace('icc', 'icpc', 1)
-  if arg == 'clang':
-    arg = 'clang++'
-  else:
-    arg = arg.replace('clang-', 'clang++-', 1)
-  return arg
+    arg = arg.replace('gcc', 'g++', 1)
+    arg = arg.replace('icc', 'icpc', 1)
+    if arg == 'clang':
+        arg = 'clang++'
+    else:
+        arg = arg.replace('clang-', 'clang++-', 1)
+    return arg
+
 
 # --cxx=[name] argument
 parser.add_argument(
