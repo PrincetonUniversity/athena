@@ -281,7 +281,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     return_levels=False, subsample=False, fast_restrict=False, x1_min=None, x1_max=None,
     x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
     face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
-    center_func_2=None, center_func_3=None):
+    center_func_2=None, center_func_3=None, num_ghost=0):
     """Read .athdf files and populate dict of arrays of data."""
 
     # Load HDF5 reader
@@ -305,6 +305,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
         root_grid_size = f.attrs['RootGridSize']
         levels = f['Levels'][:]
         logical_locations = f['LogicalLocations'][:]
+        if num_ghost > 0 and not np.all(levels == max_level):
+            raise AthenaError('Cannot use ghost zones with different refinement levels')
         nx_vals = []
         for d in range(3):
             if block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
@@ -328,7 +330,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
             elif block_size[d] == 1:  # singleton dimension
                 nx_vals.append(1)
             else:  # normal case
-                nx_vals.append(root_grid_size[d] * 2**level)
+                nx_vals.append(root_grid_size[d] * 2**level + 2 * num_ghost)
         nx1 = nx_vals[0]
         nx2 = nx_vals[1]
         nx3 = nx_vals[2]
@@ -437,6 +439,9 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
 
         # Check that subsampling and/or fast restriction will work if needed
         if level < max_level and (subsample or fast_restrict):
+            if num_ghost > 0:
+                raise AthenaError('Subsampling and fast restriction incompatible with'
+                                  + ' ghost zones')
             max_restrict_factor = 2**(max_level-level)
             for current_block_size in block_size:
                 if (current_block_size != 1
@@ -517,19 +522,29 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                 if xrat_root == -1.0 and face_func is None:
                     raise AthenaError('Must specify user-defined face_func_{0}'.format(d))
                 elif face_func is not None:
+                    if num_ghost > 0:
+                        raise AthenaError('Ghost zones incompatible with user-defined'
+                                          + ' coordinate spacing')
                     data[xf] = face_func(xmin, xmax, xrat_root, nx+1)
                 elif xrat_root == 1.0:
                     if np.all(levels == level):
                         data[xf] = np.empty(nx + 1)
-                        for n_block in range(int(nx / block_size[d-1])):
+                        for n_block in range(int((nx - 2*num_ghost)
+                                                 / (block_size[d-1] - 2*num_ghost))):
                             sample_block = np.where(logical_locations[:, d-1]
                                                     == n_block)[0][0]
-                            index_low = n_block * block_size[d-1]
+                            index_low = n_block * (block_size[d-1] - 2*num_ghost)
                             index_high = index_low + block_size[d-1] + 1
                             data[xf][index_low:index_high] = f[xf][sample_block, :]
                     else:
+                        if num_ghost > 0:
+                            raise AthenaError('Cannot use ghost zones with different'
+                                              + ' refinement levels')
                         data[xf] = np.linspace(xmin, xmax, nx + 1)
                 else:
+                    if num_ghost > 0:
+                        raise AthenaError('Ghost zones incompatible with non-uniform'
+                                          + ' coordinate spacing')
                     xrat = xrat_root ** (1.0 / 2**level)
                     data[xf] = (xmin + (1.0-xrat**np.arange(nx+1))
                                              / (1.0-xrat**nx) * (xmax-xmin))
@@ -579,6 +594,8 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                                                       data['x3f'][0]))
             x3_select = True
             k_max = np.where(data['x3f'] >= x3_max)[0][0]
+        if (x1_select or x2_select or x3_select) and num_ghost > 0:
+            raise AthenaError('Cannot take subsets with ghost zones')
 
         # Adjust coordinates if selection made
         if x1_select:
@@ -618,9 +635,12 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
                 s = 2 ** (level - block_level)
 
                 # Calculate destination indices, without selection
-                il_d = block_location[0] * block_size[0] * s if nx1 > 1 else 0
-                jl_d = block_location[1] * block_size[1] * s if nx2 > 1 else 0
-                kl_d = block_location[2] * block_size[2] * s if nx3 > 1 else 0
+                il_d = (block_location[0] * (block_size[0] - 2*num_ghost) * s
+                        if nx1 > 1 else 0)
+                jl_d = (block_location[1] * (block_size[1] - 2*num_ghost) * s
+                        if nx2 > 1 else 0)
+                kl_d = (block_location[2] * (block_size[2] - 2*num_ghost) * s
+                        if nx3 > 1 else 0)
                 iu_d = il_d + block_size[0] * s if nx1 > 1 else 1
                 ju_d = jl_d + block_size[1] * s if nx2 > 1 else 1
                 ku_d = kl_d + block_size[2] * s if nx3 > 1 else 1
