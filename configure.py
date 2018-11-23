@@ -221,14 +221,21 @@ cxx_choices = [
     'clang++-simd',
     'clang++-apple',
 ]
-cxx_usage = '{{{}}}'.format(','.join(cxx_choices))
+def c_to_cpp(arg):
+  arg = arg.replace('gcc', 'g++', 1)
+  arg = arg.replace('icc', 'icpc', 1)
+  if arg == 'clang':
+    arg = 'clang++'
+  else:
+    arg = arg.replace('clang-', 'clang++-', 1)
+  return arg
 
 # --cxx=[name] argument
 parser.add_argument(
     '--cxx',
     default='g++',
-    # choices=cxx_choices,  # object must support Python's "in" operator
-    metavar=cxx_usage,
+    type=c_to_cpp,
+    choices=cxx_choices,
     help='select C++ compiler and default set of flags')
 
 # --ccmd=[name] argument
@@ -270,21 +277,6 @@ parser.add_argument(
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
-
-# If necessary, map compiler front end from C -> C++, then check validity of CXX option:
-args['cxx'] = args['cxx'].replace('gcc', 'g++', 1)
-args['cxx'] = args['cxx'].replace('icc', 'icpc', 1)
-if args['cxx'] == 'clang':
-    args['cxx'] = 'clang++'
-else:
-    args['cxx'] = args['cxx'].replace('clang-', 'clang++-', 1)
-
-if (args['cxx'] not in cxx_choices):
-    raise SystemExit(
-      '### CONFIGURE ERROR: Invalid compiler choice "{}". Options include: {{{}}}'.format(
-          args['cxx'], ', '.join(cxx_choices))
-      + ' (and C front end variants)'
-    )
 
 # --- Step 2. Test for incompatible arguments ----------------------------
 
