@@ -231,18 +231,68 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // is preserved in new coordinates; hence, the same flow is solved twice in this prob.
     Real z1 = -0.5;  // z1' = z1 - 1.0
     Real z2 = 0.5;   // z2' = z2 - 1.0
+
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       // Lecoanet (2016) equation 8a)
-      phydro->u(IDN,k,j,i) = 1.0 + 0.5*drho_rho0*(tanh((pcoord->x2v(j)-z1)/a) -
-                                                         tanh((pcoord->x2v(j)-z2)/a));
-      phydro->u(IM1,k,j,i) = vflow*(tanh((pcoord->x2v(j)-z1)/a) -
-                                    tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
-      // shifted domain x1= x - 1/2 relative to Lecoanet (2016) introduces U_z sign change
-      phydro->u(IM2,k,j,i) = -amp*sin(2.0*PI*pcoord->x1v(i))
+      Real dens = 1.0 + 0.5*drho_rho0*(tanh((pcoord->x2v(j)-z1)/a) -
+                                       tanh((pcoord->x2v(j)-z2)/a));
+      phydro->u(IDN,k,j,i) = dens;
+
+      Real v1 = vflow*(tanh((pcoord->x2v(j)-z1)/a)
+                       - tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
+      // Currently, the midpoint approx. is applied in the momenta and energy calculations
+      phydro->u(IM1,k,j,i) = v1*dens;
+
+      // NOTE ON FLOATING-POINT SHIFT SYMMETRY IN X1:
+      // There is no scaling + translation coordinate transformation that would naturally
+      // preserve this symmetry when calculating x1 coordinates in floating-point
+      // representation. Need to correct for the asymmetry of FP error by modifying the
+      // operands.  Centering the domain on x1=0.0 ensures reflective symmetry, x1' -> -x1
+      // NOT shift symmetry, x1' -> x1 + 0.5, which is a harder guarantee.
+
+      // For example, consider a cell in the right half of the dom ain with x1v > 0.0,
+      // so that shift symmetry should hold w/ another cell's x1v'= -0.5 + x1v < 0.0
+
+      // ISSUE: sin(2*pi*(-0.5+x1v)) != -sin(2*pi*x1v) in floating-point calculations
+      // The primary FP issues are twofold: 1) different rounding errors in x1v, x1v'
+      // and 2) IEEE-754 merely "recommends" that sin(), cos(), etc. functions are
+      // correctly rounded. Note, glibc library does not provde correctly-rounded versions
+
+      // 1) Since x1min = -0.5 can be perfectly represented in binary as -2^{-1}:
+      // double(x1v') = double(double(-0.5) + double(x1v)) = double(-0.5 + double(x1v))
+      // Even if x1v is also a dyadic rational -> has an exact finite FP representation:
+      // x1v' = double(-0.5 + double(x1v)) = double(-0.5 + x1v) ?= (-0.5 + x1v) exactly
+
+      // Sterbenz's Lemma does not hold for any nx1>4, so exactness cannot be guaranteed.
+      // However, for most nx1 = power of two, the calculation of ALL cell center
+      // positions x1v will be exact. For nx1 != 2^n, differences are easily observed.
+
+      // 2) Even if the rounding error of x1v (and hence x1v') is zero, the exact
+      // periodicity of trigonometric functions (even after range reduction of input to
+      // [-pi/4, pi/4], e.g.) is NOT guaranteed:
+      // sin(2*pi*(-0.5+x1v)) = sin(-pi + 2*pi*x1v) != -sin(2*pi*x1v)
+
+      // WORKAROUND: Averge inexact sin() with -sin() sample on opposite x1-half of domain
+      // The assumption of periodic domain with x1min=-0.5 and x1max=0.5 is hardcoded here
+      // (v2 is the only quantity in the initial condition with x1 dependence)
+
+      Real ave_sine = sin(2.0*PI*pcoord->x1v(i));
+      if (pcoord->x1v(i) > 0.0) {
+        ave_sine -= sin(2.0*PI*(-0.5+pcoord->x1v(i)));
+      } else {
+        ave_sine -= sin(2.0*PI*(0.5+pcoord->x1v(i)));
+      }
+      ave_sine /= 2.0;
+
+      // translated x1 = x - 1/2 relative to Lecoanet (2016) shifts sine function by pi
+      // (half-period) and introduces U_z sign change:
+      Real v2 = -amp*ave_sine
           *(exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
             exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c), modified
+      phydro->u(IM2,k,j,i) = v2*dens;
+
       phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = P0/gm1 +
