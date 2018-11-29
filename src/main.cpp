@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-/////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+/////////////////////////////////// Athena++ Main Program ////////////////////////////////
 //! \file main.cpp
 //  \brief Athena++ main program
 //
