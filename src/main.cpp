@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 #else
   Globals::my_rank = 0;
   Globals::nranks  = 1;
-#endif /* MPI_PARALLEL */
+#endif // MPI_PARALLEL
 
 //--- Step 2. ----------------------------------------------------------------------------
 // Check for command line options and respond.

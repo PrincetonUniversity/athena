@@ -295,14 +295,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     }
   }
 
- /* single CPU in the azimuthal direction with the polar boundary*/
+  // single CPU in the azimuthal direction with the polar boundary
   if (pmb->loc.level == pmy_mesh_->root_level &&
      pmy_mesh_->nrbx3 == 1 &&
      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
-// set parameters for shearing box bc and allocate buffers
+  // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
     Mesh *pmy_mesh = pmb->pmy_mesh;
     Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);

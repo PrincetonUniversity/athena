@@ -103,16 +103,15 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
-/*
-    Real cfmax = std::max(cfl,cfr);
-    if (wli[IVX] <= wri[IVX]) {
-      spd[0] = wli[IVX] - cfmax;
-      spd[4] = wri[IVX] + cfmax;
-    } else {
-      spd[0] = wri[IVX] - cfmax;
-      spd[4] = wli[IVX] + cfmax;
-    }
-*/
+
+    // Real cfmax = std::max(cfl,cfr);
+    // if (wli[IVX] <= wri[IVX]) {
+    //   spd[0] = wli[IVX] - cfmax;
+    //   spd[4] = wri[IVX] + cfmax;
+    // } else {
+    //   spd[0] = wri[IVX] - cfmax;
+    //   spd[4] = wli[IVX] + cfmax;
+    // }
 
 //--- Step 3.  Compute L/R fluxes
 
