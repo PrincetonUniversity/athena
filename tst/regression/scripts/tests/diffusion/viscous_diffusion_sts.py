@@ -49,12 +49,12 @@ def analyze():
         t0 = 0.5
         sigma = np.sqrt(2.*nu*t0)
 
-        dz = 8./len(x1v)
+        dx1 = 8./len(x1v)
         analytic = ((v0/np.sqrt(2.*np.pi*sigma**2.))
                     * (1./np.sqrt(1.+(2.*nu*t0/sigma**2.)))
                     * np.exp(-(x1v**2.)
                     / (2.*sigma**2.*(1.+(2.*nu*t0/sigma**2.)))))
-        l1ERROR.append(sum(np.absolute(v2-analytic)*dz))
+        l1ERROR.append(sum(np.absolute(v2-analytic)*dx1))
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(res)))
