@@ -18,11 +18,11 @@ def run(**kwargs):
         arguments0 = ['output1/file_type=hst', 'output1/dt=0.1',
                       'output2/file_type=tab', 'output2/variable=v2',
                       'output2/data_format=%24.16e', 'output2/dt=0.5',
-                      'time/cfl_number=0.3', 'time/tlim=0.5', 'time/nlim=500',
+                      'time/cfl_number=0.8', 'time/tlim=0.5', 'time/nlim=500',
                       'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=0',
                       'mesh/nx1=' + repr(i), 'mesh/x1min=-4.0', 'mesh/x1max=4.0',
                       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
-                      'mesh/nx2=16', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
+                      'mesh/nx2=1', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
                       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                       'mesh/nx3=1', 'mesh/x3min=-1.0', 'mesh/x3max=1.0',
                       'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
@@ -39,7 +39,7 @@ def analyze():
 
     for n in res:
         x1v, v2 = np.loadtxt("bin/visc"+str(n)+".block0.out2.00002.tab",
-                             usecols=(1, 4), dtype=float,
+                             usecols=(1, 2), dtype=float,
                              unpack=True, comments='#')
 
         # initial conditions
@@ -48,23 +48,22 @@ def analyze():
         t0 = 0.5
         sigma = np.sqrt(2.*nu*t0)
 
-        N = int(len(x1v)/16.)
-        dz = 8./N
+        dz = 8./len(x1v)
         analytic = ((v0/np.sqrt(2.*np.pi*sigma**2.))
                     * (1./np.sqrt(1.+(2.*nu*t0/sigma**2.)))
-                    * np.exp(-(x1v[8*N:8*N+N]**2.)
+                    * np.exp(-(x1v**2.)
                     / (2.*sigma**2.*(1.+(2.*nu*t0/sigma**2.)))))
-        l1ERROR.append(sum(np.absolute(v2[8*N:8*N+N]-analytic)*dz))
+        l1ERROR.append(sum(np.absolute(v2-analytic)*dz))
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(res)))
     print('[Viscous Diffusion Explicit]: Convergence order = {}'.format(conv))
 
     flag = True
-    if conv > -1.97:
-        print('[Resistive Diffusion Explicit]: Scheme NOT Converging at ~2nd order.')
+    if conv > -1.99:
+        print('[Viscous Diffusion Explicit]: Scheme NOT Converging at ~2nd order.')
         flag = False
     else:
-        print('[Resistive Diffusion Explicit]: Scheme Converging at ~2nd order.')
+        print('[Viscous Diffusion Explicit]: Scheme Converging at ~2nd order.')
 
     return flag
