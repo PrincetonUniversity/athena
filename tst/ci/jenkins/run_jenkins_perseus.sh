@@ -101,15 +101,17 @@ time python ./run_tests.py hydro4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.0
+module load hdf5/gcc/openmpi-3.0.0/1.10.0
+mpi_hdf5_library_path='/usr/local/hdf5/gcc/openmpi-3.0.0/1.10.0/lib64'
+module list
 # This P-HDF5 library, built with OpenMPI 1.10.2, is incompatible with OpenMPI 3.0.0 on Perseus:
 #module load hdf5/gcc/openmpi-1.10.2/1.10.0
-module load hdf5/gcc/openmpi-3.0.0/1.10.0
-module list
-# Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
+
+# Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still chooses serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
      --mpirun=srun --mpirun_opts=--job-name='GCC pgen/hdf5_reader_parallel' \
-     --config=--lib=/usr/local/hdf5/gcc/openmpi-1.10.2/1.10.0/lib64 --silent
+     --config=--lib=${mpi_hdf5_library_path} --silent
 
 # Combine Lcov tracefiles from individaul regression tests:
 # All .info files in current working directory tst/regression/ -> lcov.info
@@ -167,12 +169,13 @@ time python ./run_tests.py hydro4 --config=--cxx=icc --silent
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-17.0/1.10.0
 module load hdf5/intel-17.0/intel-mpi/1.10.0
+mpi_hdf5_library_path='/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64'
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
-     --config=--lib=/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64 --silent
+     --config=--lib=${mpi_hdf5_library_path} --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
