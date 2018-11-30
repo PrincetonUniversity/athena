@@ -116,21 +116,34 @@ time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_
 # Combine Lcov tracefiles from individaul regression tests:
 # All .info files in current working directory tst/regression/ -> lcov.info
 # (remove '-maxdepth 1' to recursively search subfolders for more .info)
+lcov_counter=0
 while read filename; do
+    # Accumulate string variable containing all tracefiles joined by '-a '
     lcov_input_files="$lcov_input_files -a \"$filename\""
+    # Alternative to uploading single unified "lcov.info" tracefile: attempt to upload each Lcov
+    # test_name.info tracefile separately with a Codecov Flag matching test_name (or test_set/ group?)
+    codecov_flag=$(basename ${filename} .info) # "flags must match pattern ^[\w\,]+$"
+    # basename command is in GNU coreutils, but here is Bash Parameter Expansion alternative for stripping extension and path:
+    #codecov_flag=${${filename%.info}##*/}
+    curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 \
+	-F ${codecov_flag} -f "${filename}" || echo "Codecov did not collect coverage reports"
+    lcov_counter=$((lcov_counter + 1))
 done < <( find . -maxdepth 1 -name '*.info' )
 eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
+# Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number:
+# (most Lcov failures will be silent and hidden in build log;, missing reports will be hard to notice in Lcov HTML and Codecov reports)
+echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.info"
 
-# (temporary) Generate Lcov HTML report and backup to home directory on Perseus (not used by Codecov):
+# Generate Lcov HTML report and backup to home directory on Perseus (never used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
 tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
-cp -r "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Regularly delete old HTML databases
+mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HOME on a reg. basis
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
 # but lcov.info tracefile is not portable across sytems (without --to-package, etc.)
-#cp lcov.info $HOME  # ~30 MB
+#cp lcov.info $HOME  # ~30 MB --- tracefile is too large to store long-term
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
@@ -188,9 +201,10 @@ time python ./run_tests.py gr --config=--cxx=icc-debug --silent
 set +e
 # end regression tests
 
-# Upload tracefile for Codecov analysis of test coverage reports (Lcov tracefile must be named "lcov.info"):
-# curl-pipe to Codecov Bash Uploader (recommended approach for Jenkins)
-curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"
+# Alternative: Upload single combined tracefile for Codecov analysis of test coverage reports:
+# Use curl-pipe to Codecov Bash Uploader (recommended approach for Jenkins).
+# If using the default options (no -f PATTERN), any Lcov tracefile must be named "lcov.info".
+#curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"
 
 # Slurm diagnostics: see all timing info when build script finishes
 # (should run in Jenkins "Execute shell" build step when Slurm allocation is released)
