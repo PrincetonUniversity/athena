@@ -577,7 +577,7 @@ if args['mpi']:
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
     # --mpiccmd=[name] argument
     if args['mpiccmd'] is not None:
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd'] # noqa
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd']  # noqa
 else:
     definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 
