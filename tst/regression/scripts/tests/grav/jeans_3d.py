@@ -73,7 +73,9 @@ def run(**kwargs):
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   2, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
-                  4, 'hydro/athinput.jeans_3d', arguments)
+                  4, 'hydro/athinput.jeans_3d', arguments,
+                  lcov_test_suffix='mpi_fft')
+    return 'skip_lcov'
 
 
 # Analyze outputs

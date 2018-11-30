@@ -110,17 +110,18 @@ def main(**kwargs):
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 try:
-                    module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
+                    run_ret = module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
                 except Exception:
                     traceback.print_exc()
                     test_errors.append('run()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 else:
-                    # (optional) if all test_name.run() complete w/o error, perform code
+                    # (optional) if test_name.run() completes w/o error, perform code
                     # coverage analysis after the final athena.run() call, producing
-                    # test_name.info (no suffix).  Function only executes if
-                    # --coverage=CMD is passed to this run_tests.py script
-                    athena.analyze_code_coverage(lcov_test_name, '')
+                    # test_name.info (no suffix). Function only actually executes on cmd
+                    # line if --coverage=CMD is passed to this run_tests.py script:
+                    if run_ret is None:
+                        athena.analyze_code_coverage(lcov_test_name, '')
                 try:
                     result = module.analyze()
                 except Exception:
