@@ -208,6 +208,8 @@ set +e
 # Use curl-pipe to Codecov Bash Uploader (recommended approach for Jenkins).
 # If using the default options (no -f PATTERN), any Lcov tracefile must be named "lcov.info".
 #curl -s https://codecov.io/bash | bash -s - -X gcov -t ccdc959e-e2c3-4811-95c6-512151b39471 || echo "Codecov did not collect coverage reports"
+# (Default will always exit with 0. Use -Z to exit with 1 if not successful.)
+# "exit 0" in Codecov Bash uploader script is not fool-proof. Preventing build failures with catch-all echo statement to ensure exit status=0
 
 # Slurm diagnostics: see all timing info when build script finishes
 # (should run in Jenkins "Execute shell" build step when Slurm allocation is released)
