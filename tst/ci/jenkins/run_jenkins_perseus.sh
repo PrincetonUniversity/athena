@@ -130,7 +130,7 @@ while read filename; do
     lcov_counter=$((lcov_counter + 1))
 done < <( find . -maxdepth 1 -name '*.info' )
 eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
-# Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number:
+# Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number (53 expected as of 2018-12-04):
 # (most Lcov failures will be silent and hidden in build log;, missing reports will be hard to notice in Lcov HTML and Codecov reports)
 echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.info"
 
@@ -144,6 +144,9 @@ mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HO
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
 # but lcov.info tracefile is not portable across sytems (without --to-package, etc.)
 #cp lcov.info $HOME  # ~30 MB --- tracefile is too large to store long-term
+
+# Ensure that no stale tracefiles are kept in Jenkins cached workspace
+rm -rf *.info
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
