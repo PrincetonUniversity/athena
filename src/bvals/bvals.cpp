@@ -233,7 +233,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   } else {
     num_south_polar_blocks_ = 0;
   }
+  // end KGF: shared logic of setting boundary functions and counting spherical blocks
 
+  // KGF: All of these can be moved to separate classes
   InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
@@ -241,6 +243,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     InitBoundaryData(bd_field_, BNDRY_FIELD);
     InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
   }
+  // end KGF: moving these to separate classes
+
+  // KGF: begin special logic for handling emf in polar coordinates.
+  // averaging of radial emf along polar axis added by C. White on 2018-01-28 (f00ae05)
+
+  // KGF: move emf spherical polar buffers to FieldBoundaryFunctions, but steps depend on
+  // shared BoundaryValues for num_north_polar_blocks_
 
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
@@ -295,12 +304,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     }
   }
 
-  // single CPU in the azimuthal direction with the polar boundary
+  // edge-case: single CPU in the azimuthal direction with the polar boundary
+  // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
   if (pmb->loc.level == pmy_mesh_->root_level &&
      pmy_mesh_->nrbx3 == 1 &&
      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
+  // end KGF: special handling of emf for spherical polar coordinates
+
 
   // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
@@ -510,6 +522,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb=pmy_block_;
 
+  // KGF: similar to section in constructor, this can be automatically handled in separate
+  // classes
   DestroyBoundaryData(bd_hydro_);
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     DestroyBoundaryData(bd_flcor_);
@@ -517,7 +531,10 @@ BoundaryValues::~BoundaryValues() {
     DestroyBoundaryData(bd_field_);
     DestroyBoundaryData(bd_emfcor_);
   }
+  // end KGF
 
+  // KGF: similar to section in constructor, special handling of emf in spherical polar
+  // coords
   if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
@@ -563,6 +580,8 @@ BoundaryValues::~BoundaryValues() {
      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.DeleteAthenaArray();
+  // end KGF:
+
 
   if (SHEARING_BOX) {
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
@@ -800,6 +819,8 @@ void BoundaryValues::DestroyBoundaryData(BoundaryData &bd) {
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Initialize MPI requests
 
+// KGF: unlike InitBoundaryData(), splitting this up into constituent derived class
+// methods will be a pain
 void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
@@ -820,6 +841,7 @@ void BoundaryValues::Initialize(void) {
   myox2=(static_cast<int>(lx2&1L));
   myox3=(static_cast<int>(lx3&1L));
 
+  // KGF: shared logic of counting of neighbor MeshBlock coarse/same/refined
   // count the number of the fine meshblocks contacting on each edge
   int eid=0;
   if (pmb->block_size.nx2 > 1) {
@@ -880,6 +902,7 @@ void BoundaryValues::Initialize(void) {
       }
     }
   }
+  // end KGF: shared counting of neighbor MeshBlock coarse/same/refined
 
 #ifdef MPI_PARALLEL
   // Initialize non-polar neighbor communications to other ranks
@@ -1123,7 +1146,7 @@ void BoundaryValues::Initialize(void) {
   }
 #endif
 
-// initialize the shearing block lists
+  // initialize the shearing block lists
   if (SHEARING_BOX) {
     Mesh *pmesh = pmb->pmy_mesh;
     int level = pmb->loc.level - pmesh->root_level;

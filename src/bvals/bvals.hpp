@@ -82,7 +82,8 @@ typedef struct PolarNeighborBlock {
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
 typedef struct NeighborIndexes {
-  int ox1, ox2, ox3, fi1, fi2;
+  int ox1, ox2, ox3; // integer offset, {+/-1, 0}
+  int fi1, fi2; // (0, 0) (1, 1) , e.g. for fine neighbors
   enum NeighborType type;
   NeighborIndexes() {
     ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
@@ -110,6 +111,147 @@ typedef struct ShearingBoundaryBlock {
   int *ogidlist, *olidlist, *ornklist, *olevlist;
   bool inner, outer; // inner=true if inner blocks
 } ShearingBoundaryBlock;
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryBase
+//  \brief Base class for all the BoundaryValues classes
+
+// Mid-2018, BoundaryBase (no virtual methods) is the parent class to 3x derived classes:
+// BoundaryValues, GravityBoundaryValues, MGBoundaryValues
+
+// After redesign, it should only be the parent class to 2x classes: MGBoundaryValues
+// and BoundaryValues (or new analog)
+
+// TODO(felker): describe its contents, and why it has so much in common with Multigrid:
+
+// Notation question: boundary value vs. boundary condition vs. boundary function
+// BE CONSISTENT. What should the classes be named?
+
+// TOOD(felker): convert all class access specifiers (public:, private:, protected:) to
+// 1-space indent, following Google C++ style
+
+class BoundaryBase {
+ public:
+  BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
+               enum BoundaryFlag *input_bcs);
+  virtual ~BoundaryBase();
+
+  static NeighborIndexes ni[56];
+  // 1 "neighbor ID for set of buffers (Hydro, Field, etc.)
+  static int bufid[56]; // sets of buffers for every possible neighbor; only 26 needed
+  NeighborBlock neighbor[56];
+  int nneighbor;
+  int nblevel[3][3][3];
+  LogicalLocation loc;
+  enum BoundaryFlag block_bcs[6];
+  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
+
+  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
+  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+  static int BufferID(int dim, bool multilevel);
+  static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+
+ protected:
+  static int maxneighbor_;
+  Mesh *pmy_mesh_;
+  RegionSize block_size_;
+  AthenaArray<Real> sarea_[2];
+
+ private:
+  static bool called_;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryMemory
+//  \brief interface = class containing only pure virtual functions for managing buffers
+
+class BoundaryMemory {
+ public:
+  BoundaryMemory() {}
+  virtual ~BoundaryMemory() {}
+
+  // functions called exclusively in the constructor/destructor of same class instance
+  virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) = 0;
+  virtual void DestroyBoundaryData(BoundaryData &bd) = 0;
+
+  // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
+  // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
+  virtual void Initialize(void) = 0; // setup MPI requests
+  virtual void StartReceivingForInit(bool cons_and_field) = 0;
+  virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
+
+  // functions called only in task_list/ during timestepping
+  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
+  virtual void StartReceivingAll(const Real time) = 0;
+  virtual void ClearBoundaryAll(void) = 0;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryValues
+//  \brief centralized class for interacting with individual variable boundary data
+
+class BoundaryValues : public BoundaryBase, public BoundaryMemory {
+ public:
+  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
+  ~BoundaryValues();
+
+  // override the pure virtual methods from BoundaryMemory parent class:
+  // BoundaryValues() constructor
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) final;
+  void DestroyBoundaryData(BoundaryData &bd) final;
+  // before time-stepper:
+  void Initialize(void) final; // setup MPI requests
+  void StartReceivingForInit(bool cons_and_field) final;
+  void ClearBoundaryForInit(bool cons_and_field) final;
+  // during time-stepper:
+  void StartReceivingAll(const Real time) final;
+  void ClearBoundaryAll(void) final;
+
+  // new functions that do not exist in individual variable boundary value classes
+  // and define a coupled interaction of these boundary values
+  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+  // called in Mesh::Initialize() after processing ParameterInput(), before
+  // pbval->Initialize() is called in this class
+  void CheckBoundary(void);
+
+ private:
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
+  // Set in the BoundaryValues() constructor based on block_bcs = input_bcs:
+  int nface_, nedge_;
+  bool edge_flag_[12];
+  int nedge_fine_[12];
+  bool firsttime_;
+  int num_north_polar_blocks_, num_south_polar_blocks_;
+
+  // TODO(felker): what exactly is this for? Appears in bvals_cc,bvals_fc.cpp
+  AthenaArray<Real> exc_;
+
+  BValFunc_t BoundaryFunction_[6];
+
+  // Shearingbox (shared with Field and Hydro)
+  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
+  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
+  Real Omega_0_, qshear_;       // orbital freq and shear rate
+  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
+  int joverlap_;                // # of cells the shear runs over one block
+  Real ssize_;                  // # of ghost cells in x-z plane
+  Real eps_;                    // fraction part of the shear
+
+  int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
+  int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
+  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
+  int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
+  int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
+  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+
+  // temporary--- Added by @tomidakn on 2015-11-27
+  friend class Mesh;
+};
 
 //----------------------------------------------------------------------------------------
 //! \class CellCenteredBoundaryFunctions
@@ -226,9 +368,9 @@ public:
   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
 #endif
 
- protected:
-  Mesh *pmy_mesh_;
-}
+  //protected:
+
+};
 
 //----------------------------------------------------------------------------------------
 //! \class FieldBoundaryFunctions
@@ -343,7 +485,6 @@ class FieldBoundaryFunctions {
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
-  int num_north_polar_blocks_, num_south_polar_blocks_;
 
 #ifdef MPI_PARALLEL
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
@@ -376,100 +517,8 @@ class FieldBoundaryFunctions {
   MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 #endif
 
- protected:
-  Mesh *pmy_mesh_;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \class BoundaryBase
-//  \brief Base class for all the BoundaryValues classes
-
-class BoundaryBase {
- public:
-  BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-               enum BoundaryFlag *input_bcs);
-  virtual ~BoundaryBase();
-
-  static NeighborIndexes ni[56];
-  static int bufid[56];
-  NeighborBlock neighbor[56];
-  int nneighbor;
-  int nblevel[3][3][3];
-  LogicalLocation loc;
-  enum BoundaryFlag block_bcs[6];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
-
-  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
-  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-  static int BufferID(int dim, bool multilevel);
-  static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-
-  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-
- protected:
-  static int maxneighbor_;
-  Mesh *pmy_mesh_;
-  RegionSize block_size_;
-  AthenaArray<Real> sarea_[2];
-
- private:
-  static bool called_;
+  // protected:
 };
 
-//----------------------------------------------------------------------------------------
-//! \class BoundaryValues
-//  \brief BVals data and functions
-
-class BoundaryValues : public BoundaryBase {
- public:
-  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
-  ~BoundaryValues();
-
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
-  void DestroyBoundaryData(BoundaryData &bd);
-  void Initialize(void);
-  void CheckBoundary(void);
-  void StartReceivingForInit(bool cons_and_field);
-  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
-  void StartReceivingAll(const Real time);
-  void ClearBoundaryForInit(bool cons_and_field);
-  void ClearBoundaryAll(void);
-  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
-
- private:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
-  int nface_, nedge_;
-  bool edge_flag_[12];
-  int nedge_fine_[12];
-  bool firsttime_;
-
-  // TODO(felker): what exactly is this for? Appears in bvals_cc,bvals_fc.cpp
-  AthenaArray<Real> exc_;
-
-  BValFunc_t BoundaryFunction_[6];
-
-  // Shearingbox (shared with Field and Hydro)
-  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
-  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
-  Real Omega_0_, qshear_;       // orbital freq and shear rate
-  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  int joverlap_;                // # of cells the shear runs over one block
-  Real ssize_;                  // # of ghost cells in x-z plane
-  Real eps_;                    // fraction part of the shear
-
-  int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
-  int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
-  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
-  int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
-  int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
-  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
-
-  // temporary--- Added by @tomidakn on 2015-11-27
-  friend class Mesh;
-};
 
 #endif // BVALS_BVALS_HPP_

@@ -1406,7 +1406,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        // no need to re-Initialize()
+        // no need to re-Initialize() the MPI requests for boundary values
         pbval->StartReceivingForInit(true);
       }
 

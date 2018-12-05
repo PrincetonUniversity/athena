@@ -45,9 +45,12 @@ typedef struct GravityBoundaryData {
 
 class GravityBoundaryValues : public BoundaryBase {
 public:
+  // compare with bvals.hpp:: BoundaryValues derived class
+  // BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
   ~GravityBoundaryValues();
 
+  // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
   void InitBoundaryData(GravityBoundaryData &bd);
   void DestroyBoundaryData(GravityBoundaryData &bd);
 
