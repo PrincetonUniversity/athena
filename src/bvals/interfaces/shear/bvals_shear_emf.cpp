@@ -4,7 +4,7 @@
 // // Licensed under the 3-clause BSD License, see LICENSE file for details
 // //========================================================================================
 // //! \file bvals_emf.cpp
-// //  \brief functions that apply BCs for emf corrections
+// //  \brief functions that apply BCs for emf corrections in shearing box calculations
 // //======================================================================================
 
 // // C++ headers
