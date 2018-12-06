@@ -534,10 +534,13 @@ else:
 if args['coverage']:
     definitions['COVERAGE'] = 'COVERAGE'
     # For now, append new compiler flags and don't override --cxx set, but set code to be
-    # unoptimized (-O0 instead of -O3) to get useful annotations. (add -g -fopenmp-simd?)
-    # And don't combine lines when writing source code!
+    # unoptimized (-O0 instead of -O3) to get useful statement annotations. Should we add
+    # '-g -fopenmp-simd', by default? Don't combine lines when writing source code!
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
-        makefile_options['COMPILER_FLAGS'] += ' -O0 -fprofile-arcs -ftest-coverage'
+        makefile_options['COMPILER_FLAGS'] += (
+            ' -O0 -fprofile-arcs -ftest-coverage'
+            ' -fno-inline -fno-exceptions -fno-elide-constructors'
+            )
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'icpc-phi'):
         makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
@@ -546,7 +549,7 @@ if args['coverage']:
         # Clang's "source-based" code coverage feature to produces .profraw output
         makefile_options['COMPILER_FLAGS'] += (
             ' -O0 -fprofile-instr-generate -fcoverage-mapping'
-            )  # use --coverage for GCC-compatible .gcno, .gcda output for gcov
+            )  # use --coverage to produce GCC-compatible .gcno, .gcda output for gcov
     if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
         raise SystemExit(
             '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
