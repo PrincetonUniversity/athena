@@ -50,19 +50,53 @@ public:
   GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
   ~GravityBoundaryValues();
 
+  // Compare to bvals.hpp:
+  // ----------------
+
+  // new interface class BoundaryMemory functions:
+  // --------
   // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  // void DestroyBoundaryData(BoundaryData &bd);
   void InitBoundaryData(GravityBoundaryData &bd);
   void DestroyBoundaryData(GravityBoundaryData &bd);
 
-  void ApplyPhysicalBoundaries(void);
+  // missing counterparts to:
+  // void Initialize(void)
+  // void StartReceivingForInit(bool cons_and_field)
+  // void ClearBoundaryForInit(bool cons_and_field)
+
+  // void StartReceivingAll(const Real time) final;
   void StartReceivingGravity(void);
   void ClearBoundaryGravity(void);
+
+  // shared class BoundaryValues/BoundaryShared functions:
+  // --------
+  void ApplyPhysicalBoundaries(void);
+  // missing counterparts to: ProlongateBoundaries, CheckBoundary
+
+  // individual VariableBoundary classes: CellCenteredVariableBoundary,
+  // FaceCenteredVariableBoundary
+  // --------
+
+  // minimum requirement of all 4x unrefined functions: load, send, set, recv
   int LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb);
+                                         const NeighborBlock& nb);
   bool SendGravityBoundaryBuffers(AthenaArray<Real> &src);
   void SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                 const NeighborBlock& nb);
+                                   const NeighborBlock& nb);
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
+  // No 2x Load*() + 2x Set*() SMR/AMR functions
+
+  // No "Receive*BoundaryBuffersWithWait()" counterpart. perhaps optional, and must
+  // manually be added to Mesh::Initialize() at this time. Should a function be required,
+  // even if it does nothing?
+
+  // -- gravity must do something in mesh initialization...
+
+  // No 14x "physical Boundary Functions": 6x outflow + 6x reflect + 2x polar. Only
+  // periodic BCs allowed for gravity
+
+  // optional interfaces: RefinedBoundary, PolarBoundary, ...
 
 private:
   MeshBlock *pmy_block_;

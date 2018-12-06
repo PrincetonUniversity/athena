@@ -752,7 +752,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) 
 
 enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
+    //    pmb->pbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
   } else {
     return TASK_FAIL;
   }
@@ -761,7 +761,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage
 enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
+    // ret=pmb->pbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
     return TASK_FAIL;
   }
@@ -774,7 +774,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int st
 }
 enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
+    //    pmb->pbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
   } else {
     return TASK_FAIL;
   }
@@ -783,7 +783,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage
 enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
+    // ret=pmb->pbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
   }
@@ -794,18 +794,18 @@ enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int st
   }
 }
 enum TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int stage) {
-  pmb->pbval->SendEMFShearingboxBoundaryCorrection();
+  //pmb->pbval->SendEMFShearingboxBoundaryCorrection();
   return TASK_SUCCESS;
 }
 enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int stage) {
-  if (pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
-    return TASK_NEXT;
-  } else {
-    return TASK_FAIL;
-  }
+  // if (pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
+  //   return TASK_NEXT;
+  // } else {
+  //   return TASK_FAIL;
+  // }
 }
 enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage) {
-  pmb->pbval->RemapEMFShearingboxBoundary();
+  // pmb->pbval->RemapEMFShearingboxBoundary();
   return TASK_SUCCESS;
 }
 

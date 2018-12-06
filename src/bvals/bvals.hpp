@@ -55,7 +55,11 @@ static bool flip_across_pole_field[] = {false, true, true};
 //  \brief neighbor rank, level, and ids
 
 typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
+  int rank, level;
+  int gid, lid;
+  int ox1, ox2, ox3;
+  int fi1, fi2;
+  int bufid, eid, targetid;
   enum NeighborType type;
   enum BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
@@ -82,8 +86,8 @@ typedef struct PolarNeighborBlock {
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
 typedef struct NeighborIndexes {
-  int ox1, ox2, ox3; // integer offset, {+/-1, 0}
-  int fi1, fi2; // (0, 0) (1, 1) , e.g. for identifying fine neighbors
+  int ox1, ox2, ox3; // 3-vector of integer offsets of indices, {-1, 0, +1}
+  int fi1, fi2; // 2-vector for identifying refined neighbors, {0, 1}
   enum NeighborType type;
   NeighborIndexes() {
     ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
@@ -93,6 +97,7 @@ typedef struct NeighborIndexes {
 
 //! \struct BoundaryData
 //  \brief structure storing boundary information
+// TODO(felker): rename/be more specific--- what kind of data/info?
 typedef struct BoundaryData {
   int nbmax;
   enum BoundaryStatus flag[56];
@@ -102,15 +107,17 @@ typedef struct BoundaryData {
 #endif
 } BoundaryData;
 
-// function to return boundary flag given input string
+// function to return boundary flag given user's athinput string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
+// KGF: shearing box
 // Struct for describing blocks which touched the shearing-periodic boundaries
-typedef struct ShearingBoundaryBlock {
-  int *igidlist, *ilidlist, *irnklist, *ilevlist;
-  int *ogidlist, *olidlist, *ornklist, *olevlist;
-  bool inner, outer; // inner=true if inner blocks
-} ShearingBoundaryBlock;
+// typedef struct ShearingBoundaryBlock {
+//   int *igidlist, *ilidlist, *irnklist, *ilevlist;
+//   int *ogidlist, *olidlist, *ornklist, *olevlist;
+//   bool inner, outer; // inner=true if inner blocks
+// } ShearingBoundaryBlock;
+// end KGF
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
@@ -130,15 +137,23 @@ typedef struct ShearingBoundaryBlock {
 // TOOD(felker): convert all class access specifiers (public:, private:, protected:) to
 // 1-space indent, following Google C++ style
 
+// KGF: BoundaryLogic, BoundaryNeighbors, BoundaryBase
+// Used in mesh.hpp, meshblock_tree.hpp (Friend class), bvals_mg/grav*
 class BoundaryBase {
  public:
   BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
                enum BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
 
+  // Currently, these 2x static data members are shared among 3x possible derived class
+  // instances: BoundaryValues, MGBoundaryValues, GravityBoundaryValues
+
+  // 1x pair (neighbor index, buffer ID) per entire SET of separate variable buffers
+  // (Hydro, Field, Passive Scalar, Gravity, etc.). Greedy allocation for worst-case
+  // of refined 3D; only 26 entries needed/initialized if unrefined 3D, e.g.
   static NeighborIndexes ni[56];
-  // 1 "neighbor ID for set of buffers (Hydro, Field, etc.)
-  static int bufid[56]; // sets of buffers for every possible neighbor; only 26 needed
+  static int bufid[56];
+
   NeighborBlock neighbor[56];
   int nneighbor;
   int nblevel[3][3][3];
@@ -154,18 +169,26 @@ class BoundaryBase {
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
 
  protected:
+  // 1D refined or unrefined=2
+  // 2D refined=12, unrefined=8
+  // 3D refined=56, unrefined=26. Refinement adds: 3*6 faces + 1*12 edges = +30 neighbors
   static int maxneighbor_;
+
   Mesh *pmy_mesh_;
   RegionSize block_size_;
   AthenaArray<Real> sarea_[2];
 
  private:
+  // calculate 3x shared static data members when constructing only the 1st class instance
+  // int maxneighbor_=BufferID() computes ni[] and then calls bufid[]=CreateBufferID()
   static bool called_;
 };
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryMemory
-//  \brief interface = class containing only pure virtual functions for managing buffers
+//  \brief interface = class containing only pure virtual functions
+//                     contains methods for managing buffers, MPI requests
+//    BoundaryCommunication
 
 class BoundaryMemory {
  public:
@@ -188,10 +211,14 @@ class BoundaryMemory {
   virtual void ClearBoundaryAll(void) = 0;
 };
 
+
 //----------------------------------------------------------------------------------------
 //! \class BoundaryValues
 //  \brief centralized class for interacting with individual variable boundary data
 
+// KGF: BoundaryShared, BoundaryCommon, BoundaryCoupled,
+// BoundaryInterface (as in "centralized interface for interacting with
+//                    BoundaryVariables", but this
 class BoundaryValues : public BoundaryBase, public BoundaryMemory {
  public:
   BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
@@ -267,36 +294,53 @@ public:
   CellCenteredBoundaryFunctions();
   virtual ~CellCenteredBoundaryFunctions();
 
-  // standard cell-centered buffer management (unrefined and SMR/AMR)
+  // standard cell-centered buffer management:
+  // required: unrefined
   int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
                       int ns, int ne, Real *buf, const NeighborBlock& nb);
+  // optional: SMR/AMR
   int LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
       int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb);
   int LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
                       int ns, int ne, Real *buf, const NeighborBlock& nb);
 
-
+  // required: universal
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                        enum CCBoundaryType type);
 
-  void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
-                                  Real *buf, const NeighborBlock& nb, bool *flip);
-  void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
-                      AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip);
-  void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
-                                  Real *buf, const NeighborBlock& nb, bool *flip);
-
-
+  // required: universal
   bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
                                           enum CCBoundaryType type);
+
+  // optional: initialization in mesh.cpp
   void ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
                                            enum CCBoundaryType type);
 
+  // required: unrefined
+  void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
+                                        Real *buf, const NeighborBlock& nb, bool *flip);
+
+  // optional: SMR/AMR
+  void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
+                                          AthenaArray<Real> &cbuf,
+                                          const NeighborBlock& nb, bool *flip);
+  void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
+                                        Real *buf, const NeighborBlock& nb, bool *flip);
+
+  // optional? compare to PolarSingleField(), PolarSingleEMF()
+  // what about PolarAxisFieldAverage()
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
+
+  // Cell-centered flux correction functions are much simpler than Field counterpart
+  // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
+  // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
+  //   Set/LoadEMFBoundaryPolarBuffer()
+  // - AverageEMFBoundary(), ClearCoarseEMFBoundary(), PolarSingleEMF()
 
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
+
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -399,27 +443,36 @@ class FieldBoundaryFunctions {
                                        const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
                                      const NeighborBlock& nb);
+
   void SendFieldBoundaryBuffers(FaceField &src);
+
+  bool ReceiveFieldBoundaryBuffers(FaceField &dst);
+  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
+
   void SetFieldBoundarySameLevel(FaceField &dst, Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
-  bool ReceiveFieldBoundaryBuffers(FaceField &dst);
-  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
+
+  // ---
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 
-  // standard Field buffer management (unrefined and SMR/AMR)
+  // standard EMF buffer management (unrefined and SMR/AMR)
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
+
   void SendEMFCorrection(void);
+
+  bool ReceiveEMFCorrection(void);
+
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
+
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
   void PolarSingleEMF(void);
-  bool ReceiveEMFCorrection(void);
 
   // Shearingbox Field
   // void LoadFieldShearing(FaceField &src, Real *buf, int nb);
