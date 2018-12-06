@@ -8,10 +8,10 @@
 //  These functions are based on TAG's signal handler written for Athena 8/19/2004
 
 // C headers
-#include <unistd.h>
+#include <unistd.h>   // alarm()
 
 // C++ headers
-#include <csignal>
+#include <csignal>    // SIGTERM, SIGINT, SIGALARM, signal(), sigemptyset(), ...
 #include <iostream>
 
 // Athena++ headers

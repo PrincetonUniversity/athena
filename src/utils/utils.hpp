@@ -10,8 +10,9 @@
 
 // C headers
 #include <stdint.h>  // int64_t
+
 // C++ headers
-#include <csignal>
+#include <csignal>   // sigset_t
 
 void ChangeRunDir(const char *pdir);
 double ran2(int64_t *idum);

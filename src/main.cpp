@@ -20,7 +20,7 @@
 #include <stdint.h>   // int64_t
 
 // C++ headers
-#include <csignal>
+#include <csignal>    // sigset_t, signal(), sigemptyset(), SIGTERM
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
