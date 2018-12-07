@@ -44,11 +44,11 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
+//! \fn void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
+void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 

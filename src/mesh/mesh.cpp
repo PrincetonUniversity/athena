@@ -802,7 +802,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
   for (i=nbs;i<=nbe;i++) {
     // Match fixed-width integer precision of IOWrapperSize_t datasize
-    uint64_t buff_os = datasize * (i-nbs);
+    std::uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if (i==nbs) {

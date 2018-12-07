@@ -26,8 +26,8 @@ class MultigridTaskList;
 //  \brief data and function pointer for an individual MGTask
 
 struct MGTask {
-  uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
-  uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  std::uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
+  std::uint64_t dependency;   // encodes dependencies to other tasks using " " " "
   enum TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
 };
 
@@ -48,7 +48,7 @@ public:
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
   void ClearTaskList(void) {ntasks=0;}
-  void AddMultigridTask(uint64_t id, uint64_t dep);
+  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
   enum TaskStatus StartReceive(Multigrid *pmg);
@@ -79,48 +79,48 @@ private:
 // 64-bit integers with "1" in different bit positions used to ID each Multigrid task.
 
 namespace MultigridTaskNames {
-  const uint64_t NONE           = 0;
-  const uint64_t MG_STARTRECV0  = 1LL<<0;
-  const uint64_t MG_STARTRECV0F = 1LL<<1;
-  const uint64_t MG_STARTRECV1R = 1LL<<2;
-  const uint64_t MG_STARTRECV1B = 1LL<<3;
-  const uint64_t MG_STARTRECV2R = 1LL<<4;
-  const uint64_t MG_STARTRECV2B = 1LL<<5;
-  const uint64_t MG_STARTRECVL  = 1LL<<6;
-  const uint64_t MG_CLEARBND0   = 1LL<<7;
-  const uint64_t MG_CLEARBND0F  = 1LL<<8;
-  const uint64_t MG_CLEARBND1R  = 1LL<<9;
-  const uint64_t MG_CLEARBND1B  = 1LL<<10;
-  const uint64_t MG_CLEARBND2R  = 1LL<<11;
-  const uint64_t MG_CLEARBND2B  = 1LL<<12;
-  const uint64_t MG_CLEARBNDL   = 1LL<<13;
-  const uint64_t MG_SENDBND0    = 1LL<<14;
-  const uint64_t MG_SENDBND0F   = 1LL<<15;
-  const uint64_t MG_SENDBND1R   = 1LL<<16;
-  const uint64_t MG_SENDBND1B   = 1LL<<17;
-  const uint64_t MG_SENDBND2R   = 1LL<<18;
-  const uint64_t MG_SENDBND2B   = 1LL<<19;
-  const uint64_t MG_SENDBNDL    = 1LL<<20;
-  const uint64_t MG_RECVBND0    = 1LL<<21;
-  const uint64_t MG_RECVBND0F   = 1LL<<22;
-  const uint64_t MG_RECVBND1R   = 1LL<<23;
-  const uint64_t MG_RECVBND1B   = 1LL<<24;
-  const uint64_t MG_RECVBND2R   = 1LL<<25;
-  const uint64_t MG_RECVBND2B   = 1LL<<26;
-  const uint64_t MG_RECVBNDL    = 1LL<<27;
-  const uint64_t MG_SMOOTH1R    = 1LL<<28;
-  const uint64_t MG_SMOOTH1B    = 1LL<<29;
-  const uint64_t MG_SMOOTH2R    = 1LL<<30;
-  const uint64_t MG_SMOOTH2B    = 1LL<<31;
-  const uint64_t MG_PHYSBND0    = 1LL<<32;
-  const uint64_t MG_PHYSBND1R   = 1LL<<33;
-  const uint64_t MG_PHYSBND1B   = 1LL<<34;
-  const uint64_t MG_PHYSBND2R   = 1LL<<35;
-  const uint64_t MG_PHYSBND2B   = 1LL<<36;
-  const uint64_t MG_PHYSBNDL    = 1LL<<37;
-  const uint64_t MG_RESTRICT    = 1LL<<38;
-  const uint64_t MG_PROLONG     = 1LL<<39;
-  const uint64_t MG_FMGPROLONG  = 1LL<<40;
+  const std::uint64_t NONE           = 0;
+  const std::uint64_t MG_STARTRECV0  = 1LL<<0;
+  const std::uint64_t MG_STARTRECV0F = 1LL<<1;
+  const std::uint64_t MG_STARTRECV1R = 1LL<<2;
+  const std::uint64_t MG_STARTRECV1B = 1LL<<3;
+  const std::uint64_t MG_STARTRECV2R = 1LL<<4;
+  const std::uint64_t MG_STARTRECV2B = 1LL<<5;
+  const std::uint64_t MG_STARTRECVL  = 1LL<<6;
+  const std::uint64_t MG_CLEARBND0   = 1LL<<7;
+  const std::uint64_t MG_CLEARBND0F  = 1LL<<8;
+  const std::uint64_t MG_CLEARBND1R  = 1LL<<9;
+  const std::uint64_t MG_CLEARBND1B  = 1LL<<10;
+  const std::uint64_t MG_CLEARBND2R  = 1LL<<11;
+  const std::uint64_t MG_CLEARBND2B  = 1LL<<12;
+  const std::uint64_t MG_CLEARBNDL   = 1LL<<13;
+  const std::uint64_t MG_SENDBND0    = 1LL<<14;
+  const std::uint64_t MG_SENDBND0F   = 1LL<<15;
+  const std::uint64_t MG_SENDBND1R   = 1LL<<16;
+  const std::uint64_t MG_SENDBND1B   = 1LL<<17;
+  const std::uint64_t MG_SENDBND2R   = 1LL<<18;
+  const std::uint64_t MG_SENDBND2B   = 1LL<<19;
+  const std::uint64_t MG_SENDBNDL    = 1LL<<20;
+  const std::uint64_t MG_RECVBND0    = 1LL<<21;
+  const std::uint64_t MG_RECVBND0F   = 1LL<<22;
+  const std::uint64_t MG_RECVBND1R   = 1LL<<23;
+  const std::uint64_t MG_RECVBND1B   = 1LL<<24;
+  const std::uint64_t MG_RECVBND2R   = 1LL<<25;
+  const std::uint64_t MG_RECVBND2B   = 1LL<<26;
+  const std::uint64_t MG_RECVBNDL    = 1LL<<27;
+  const std::uint64_t MG_SMOOTH1R    = 1LL<<28;
+  const std::uint64_t MG_SMOOTH1B    = 1LL<<29;
+  const std::uint64_t MG_SMOOTH2R    = 1LL<<30;
+  const std::uint64_t MG_SMOOTH2B    = 1LL<<31;
+  const std::uint64_t MG_PHYSBND0    = 1LL<<32;
+  const std::uint64_t MG_PHYSBND1R   = 1LL<<33;
+  const std::uint64_t MG_PHYSBND1B   = 1LL<<34;
+  const std::uint64_t MG_PHYSBND2R   = 1LL<<35;
+  const std::uint64_t MG_PHYSBND2B   = 1LL<<36;
+  const std::uint64_t MG_PHYSBNDL    = 1LL<<37;
+  const std::uint64_t MG_RESTRICT    = 1LL<<38;
+  const std::uint64_t MG_PROLONG     = 1LL<<39;
+  const std::uint64_t MG_FMGPROLONG  = 1LL<<40;
 }; // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_

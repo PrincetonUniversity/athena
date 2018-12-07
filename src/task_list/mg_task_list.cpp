@@ -88,11 +88,11 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
+//! \fn void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep) {
+void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
