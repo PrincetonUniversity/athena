@@ -11,7 +11,7 @@
 // C headers
 
 // C++ headers
-#include <csignal>   // sigset_t
+#include <csignal>   // sigset_t POSIX C extension
 #include <cstdint>   // std::int64_t
 
 // Athena++ headers

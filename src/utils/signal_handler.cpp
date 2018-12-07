@@ -8,9 +8,10 @@
 //  These functions are based on TAG's signal handler written for Athena 8/19/2004
 
 // C headers
-#include <unistd.h>   // alarm()
+#include <unistd.h>   // alarm() Unix OS utility; not in C standard --> no <cunistd>
 
 // C++ headers
+// first 2x macros and signal() are the only ISO C features; rest are POSIX C extensions
 #include <csignal>    // SIGTERM, SIGINT, SIGALARM, signal(), sigemptyset(), ...
 #include <iostream>
 
@@ -31,10 +32,16 @@ namespace SignalHandler {
 //  \brief install handlers for selected signals
 
 void SignalHandlerInit(void) {
-  for (int n=0; n<nsignal; n++) signalflag[n]=0;
-  signal(SIGTERM, SetSignalFlag);
-  signal(SIGINT,  SetSignalFlag);
-  signal(SIGALRM, SetSignalFlag);
+  for (int n=0; n<nsignal; n++) {
+    signalflag[n]=0;
+  }
+  // C++11 standard guarantees that <csignal> places C-standard signal.h contents in std::
+  // namespace. POSIX C extensions are likely only placed in global namespace (not std::)
+  std::signal(SIGTERM, SetSignalFlag);
+  std::signal(SIGINT,  SetSignalFlag);
+  std::signal(SIGALRM, SetSignalFlag);
+
+  // populate set of signals to block while the handler is running; prevent premption
   sigemptyset(&mask);
   sigaddset(&mask, SIGTERM);
   sigaddset(&mask, SIGINT);
@@ -46,6 +53,9 @@ void SignalHandlerInit(void) {
 //  \brief Synchronize and check signal flags and return true if any of them is caught
 
 int CheckSignalFlags(void) {
+  // Currently, only checking for nonzero return code at the end of each timestep in
+  // main.cpp; i.e. if an issue prevents a process from reaching the end of a cycle, the
+  // signals will never be handled by that process / the solver may hang
   int ret = 0;
   sigprocmask(SIG_BLOCK, &mask, NULL);
 #ifdef MPI_PARALLEL
@@ -88,6 +98,7 @@ int GetSignalFlag(int s) {
 //  \brief Sets signal flags and reinstalls the signal handler function.
 
 void SetSignalFlag(int s) {
+  // Signal handler functions must have C linkage; C++ linkage is implemantation-defined
   switch(s) {
   case SIGTERM:
     signalflag[ITERM]=1;
