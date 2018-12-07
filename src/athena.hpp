@@ -10,7 +10,7 @@
 
 // C headers
 #include <math.h>
-#include <stdint.h>  // int64_t
+#include <cstdint>  // int64_t
 
 // C++ headers
 

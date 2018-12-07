@@ -8,7 +8,7 @@
 //!   \file task_list.hpp
 //    \brief provides functionality to control dynamic execution using tasks
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 // Athena++ headers

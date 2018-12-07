@@ -9,7 +9,7 @@
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
 // C headers
-#include <stdint.h>  // int64_t
+#include <cstdint>  // int64_t
 
 // C++ headers
 #include <csignal>   // sigset_t

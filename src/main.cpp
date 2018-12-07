@@ -17,7 +17,7 @@
 //========================================================================================
 
 // C headers
-#include <stdint.h>   // int64_t
+#include <cstdint>   // int64_t
 
 // C++ headers
 #include <csignal>    // sigset_t, signal(), sigemptyset(), SIGTERM

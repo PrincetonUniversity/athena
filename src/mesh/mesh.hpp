@@ -11,7 +11,7 @@
 //  (potentially on different levels) that tile the entire domain.
 
 // C/C++ headers
-#include <stdint.h>  // int64_t
+#include <cstdint>  // int64_t
 #include <string>
 
 // Athena++ classes headers
