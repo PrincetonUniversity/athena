@@ -33,7 +33,7 @@
 // legacy format requires data to be stored as big-endian.
 
 int IsBigEndian(void) {
-  int32_t n = 1;
+  std::int32_t n = 1;
   // careful! although int -> char * -> int round-trip conversion is safe,
   // an arbitrary char* may not be converted to int*
   char *ep = reinterpret_cast<char *>(&n);

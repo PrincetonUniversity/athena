@@ -514,7 +514,7 @@ void FFTBlock::MpiInitialize() {
 AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize,
                                RegionSize bsize) {
   dim_=dim;
-  // loc.lxi are int64_t in general, but w/o AMR, they are unilikely to overflow int32_t
+  // loc.lxi are int64_t in general, but w/o AMR, they are unilikely to overflow std::int32_t
   Lx[0] = msize.x1max-msize.x1min;
   Nx[0] = msize.nx1;
   np[0] = msize.nx1/bsize.nx1;
