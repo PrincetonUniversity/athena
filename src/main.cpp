@@ -17,7 +17,7 @@
 //========================================================================================
 
 // C headers
-#include <cstdint>   // int64_t
+#include <cstdint>   // std::int64_t
 
 // C++ headers
 #include <csignal>    // sigset_t, signal(), sigemptyset(), SIGTERM
@@ -512,7 +512,7 @@ int main(int argc, char *argv[]) {
     clock_t tstop = clock();
     float cpu_time = (tstop>tstart ? static_cast<float> (tstop-tstart) :
                       1.0)/static_cast<float> (CLOCKS_PER_SEC);
-    int64_t zones = pmesh->GetTotalCells();
+    std::int64_t zones = pmesh->GetTotalCells();
     float zc_cpus = static_cast<float> (zones*(pmesh->ncycle-ncstart))/cpu_time;
 
     std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;

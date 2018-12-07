@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>  // memcpy
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h> // int64_t format macro PRId64
+#include <inttypes.h> // std::int64_t format macro PRId64
 
 // C++ headers
 #include <algorithm>  // sort
@@ -61,7 +61,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   RegionSize block_size;
   MeshBlock *pfirst;
   enum BoundaryFlag block_bcs[6];
-  int64_t nbmax;
+  std::int64_t nbmax;
   int dim;
 
   // mesh test
@@ -336,8 +336,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
-        int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-        int64_t lxmax=nrbx1*(1L<<ref_lev);
+        std::int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
+        std::int64_t lxmax=nrbx1*(1L<<ref_lev);
         for (lx1min=0;lx1min<lxmax;lx1min++) {
           Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
@@ -382,7 +382,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         // create the finest level
         if (dim==1) {
-          for (int64_t i=lx1min; i<lx1max; i+=2) {
+          for (std::int64_t i=lx1min; i<lx1max; i+=2) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
@@ -391,8 +391,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           }
         }
         if (dim==2) {
-          for (int64_t j=lx2min; j<lx2max; j+=2) {
-            for (int64_t i=lx1min; i<lx1max; i+=2) {
+          for (std::int64_t j=lx2min; j<lx2max; j+=2) {
+            for (std::int64_t i=lx1min; i<lx1max; i+=2) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
@@ -402,9 +402,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           }
         }
         if (dim==3) {
-          for (int64_t k=lx3min; k<lx3max; k+=2) {
-            for (int64_t j=lx2min; j<lx2max; j+=2) {
-              for (int64_t i=lx1min; i<lx1max; i+=2) {
+          for (std::int64_t k=lx3min; k<lx3max; k+=2) {
+            for (std::int64_t j=lx2min; j<lx2max; j+=2) {
+              for (std::int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
                 nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
                 int nnew;
@@ -944,9 +944,9 @@ void Mesh::OutputMeshStructure(int dim) {
     for (int j=0; j<nbtotal; j++) {
       if (loclist[j].level==i) {
         SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
-        int64_t &lx1=loclist[j].lx1;
-        int64_t &lx2=loclist[j].lx2;
-        int64_t &lx3=loclist[j].lx3;
+        std::int64_t &lx1=loclist[j].lx1;
+        std::int64_t &lx2=loclist[j].lx2;
+        std::int64_t &lx3=loclist[j].lx3;
         int &ll=loclist[j].level;
         mincost=std::min(mincost,costlist[i]);
         maxcost=std::max(maxcost,costlist[i]);
@@ -1614,11 +1614,11 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      enum BoundaryFlag *block_bcs) {
-  int64_t &lx1=loc.lx1;
-  int64_t &lx2=loc.lx2;
-  int64_t &lx3=loc.lx3;
+  std::int64_t &lx1=loc.lx1;
+  std::int64_t &lx2=loc.lx2;
+  std::int64_t &lx3=loc.lx3;
   int &ll=loc.level;
-  int64_t nrbx_ll = nrbx1<<(ll-root_level);
+  std::int64_t nrbx_ll = nrbx1<<(ll-root_level);
 
   // calculate physical block size, x1
   if (lx1==0) {
@@ -1782,9 +1782,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     for (int n=0; n<tnderef; n++) {
       if ((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
         int r=n, rr=0;
-        for (int64_t k=0;k<=lk;k++) {
-          for (int64_t j=0;j<=lj;j++) {
-            for (int64_t i=0;i<=1;i++) {
+        for (std::int64_t k=0;k<=lk;k++) {
+          for (std::int64_t j=0;j<=lj;j++) {
+            for (std::int64_t i=0;i<=1;i++) {
               if ((lderef[n].lx1+i)==lderef[r].lx1
               && (lderef[n].lx2+j)==lderef[r].lx2
               && (lderef[n].lx3+k)==lderef[r].lx3

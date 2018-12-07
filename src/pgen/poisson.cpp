@@ -178,8 +178,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       clock_t tstop = clock();
       float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
           static_cast<Real>(CLOCKS_PER_SEC);
-      int64_t zones = GetTotalCells();
-      int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
+      std::int64_t zones = GetTotalCells();
+      std::int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
       float zc_cpus = static_cast<Real>(mb_zones*ncycle)/cpu_time;
       float zc_cpus2 = static_cast<Real>(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
 

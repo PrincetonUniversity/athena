@@ -58,7 +58,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
 
   // Allocate multigrid objects
   RegionSize root_size=pmy_mesh_->mesh_size;
-  // int64_t nrbxi are unlikely to exceed std::int32_t limits when Multigrid is used
+  // std::int64_t nrbxi are unlikely to exceed std::int32_t limits when Multigrid is used
   root_size.nx1 = static_cast<int>(pmy_mesh_->nrbx1);
   root_size.nx2 = static_cast<int>(pmy_mesh_->nrbx2);
   root_size.nx3 = static_cast<int>(pmy_mesh_->nrbx3);
@@ -70,7 +70,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   RegionSize block_size;
-  // nrbx* are int64_t
+  // nrbx* are std::int64_t
   block_size.nx1 = static_cast<int>(pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1);
   block_size.nx2 = static_cast<int>(pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2);
   block_size.nx3 = static_cast<int>(pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3);

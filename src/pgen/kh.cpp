@@ -49,7 +49,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //  \brief Problem Generator for the Kelvin-Helmholz test
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  int64_t iseed = -1 - gid;
+  std::int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
   int iprob = pin->GetInteger("problem","iprob");
 

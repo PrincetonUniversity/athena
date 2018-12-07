@@ -11,7 +11,7 @@
 //  (potentially on different levels) that tile the entire domain.
 
 // C/C++ headers
-#include <cstdint>  // int64_t
+#include <cstdint>  // std::int64_t
 #include <string>
 
 // Athena++ classes headers
@@ -167,7 +167,7 @@ public:
   // accessors
   int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
   int GetNumMeshThreads() const {return num_mesh_threads_;}
-  int64_t GetTotalCells() {return static_cast<int64_t> (nbtotal)*
+  std::int64_t GetTotalCells() {return static_cast<std::int64_t> (nbtotal)*
      pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
 
   // data
@@ -210,7 +210,7 @@ private:
   int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
   LogicalLocation *loclist;
   MeshBlockTree tree;
-  int64_t nrbx1, nrbx2, nrbx3;
+  std::int64_t nrbx1, nrbx2, nrbx3;
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
@@ -261,11 +261,11 @@ private:
 
 
 //----------------------------------------------------------------------------------------
-// \!fn Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval)
+// \!fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange, bool sym_interval)
 // \brief wrapper fn to compute Real x logical location for either [0., 1.] or [-0.5, 0.5]
 //        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
 
-inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval) {
+inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange, bool sym_interval) {
   // index is typically 0, ... nrange for non-ghost boundaries
   if (sym_interval == false) {
     // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
@@ -274,8 +274,8 @@ inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interv
     // to map to a [-0.5, 0.5] range, rescale int indices around 0 before FP conversion
     // if nrange is even, there is an index at center x=0.0; map it to (int) 0
     // if nrange is odd, the center x=0.0 is between two indices; map them to -1, 1
-    int64_t noffset = index - (nrange)/2;
-    int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
+    std::int64_t noffset = index - (nrange)/2;
+    std::int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
     //std::cout << "noffset, noffset_ceil = " << noffset << ", " << noffset_ceil << "\n";
     // average the (possibly) biased integer indexing
     return static_cast<Real>(noffset + noffset_ceil)/(2.0*nrange);

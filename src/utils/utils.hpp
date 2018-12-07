@@ -9,13 +9,13 @@
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
 // C headers
-#include <cstdint>  // int64_t
+#include <cstdint>  // std::int64_t
 
 // C++ headers
 #include <csignal>   // sigset_t
 
 void ChangeRunDir(const char *pdir);
-double ran2(int64_t *idum);
+double ran2(std::int64_t *idum);
 void ShowConfig();
 
 //----------------------------------------------------------------------------------------

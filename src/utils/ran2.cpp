@@ -13,7 +13,7 @@
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn double ran2(int64_t *idum)
+//! \fn double ran2(std::int64_t *idum)
 //  \brief  Extracted from the Numerical Recipes in C (version 2) code. Modified
 //   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
 //
@@ -37,12 +37,12 @@
 #define NDIV (1+IMM1/NTAB)
 #define RNMX (1.0-DBL_EPSILON)
 
-double ran2(int64_t *idum) {
+double ran2(std::int64_t *idum) {
   int j;
-  int64_t k;
-  static int64_t idum2=123456789;
-  static int64_t iy=0;
-  static int64_t iv[NTAB];
+  std::int64_t k;
+  static std::int64_t idum2=123456789;
+  static std::int64_t iy=0;
+  static std::int64_t iv[NTAB];
   double temp;
 
   if (*idum <= 0) { // Initialize

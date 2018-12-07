@@ -126,7 +126,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
 
 // Ensure a different initial random seed for each meshblock.
-  int64_t iseed = -1 - gid;
+  std::int64_t iseed = -1 - gid;
 
 // Initialize boxsize
   Lx = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;

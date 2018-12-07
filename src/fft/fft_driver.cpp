@@ -66,17 +66,17 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   int ns = nslist_[Globals::my_rank];
   int ne = ns+nblist_[Globals::my_rank];
 
-  int64_t &lx1min = pm->loclist[ns].lx1;
-  int64_t &lx2min = pm->loclist[ns].lx2;
-  int64_t &lx3min = pm->loclist[ns].lx3;
-  int64_t lx1max = lx1min;
-  int64_t lx2max = lx2min;
-  int64_t lx3max = lx3min;
+  std::int64_t &lx1min = pm->loclist[ns].lx1;
+  std::int64_t &lx2min = pm->loclist[ns].lx2;
+  std::int64_t &lx3min = pm->loclist[ns].lx3;
+  std::int64_t lx1max = lx1min;
+  std::int64_t lx2max = lx2min;
+  std::int64_t lx3max = lx3min;
 
   for (int n=ns; n<ne; n++) {
-    int64_t &lx1 = pm->loclist[n].lx1;
-    int64_t &lx2 = pm->loclist[n].lx2;
-    int64_t &lx3 = pm->loclist[n].lx3;
+    std::int64_t &lx1 = pm->loclist[n].lx1;
+    std::int64_t &lx2 = pm->loclist[n].lx2;
+    std::int64_t &lx3 = pm->loclist[n].lx3;
     lx1min = lx1min<lx1?lx1min:lx1;
     lx2min = lx2min<lx2?lx2min:lx2;
     lx3min = lx3min<lx3?lx3min:lx3;

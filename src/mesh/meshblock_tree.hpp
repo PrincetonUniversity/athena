@@ -33,21 +33,21 @@ public:
   MeshBlockTree* GetLeaf(int ox, int oy, int oz) {return pleaf[oz][oy][ox];}
 
   // functions
-  void CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl);
+  void CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_t nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-       enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
+       enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
        int rl, int &nnew);
   void AddMeshBlockWithoutRefine(LogicalLocation rloc,
-                                 int64_t rbx, int64_t rby, int64_t rbz, int rl);
+                                 std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl);
   void Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &nnew);
+              std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &nnew);
   void Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &ndel);
+              std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &ndel);
   MeshBlockTree* FindMeshBlock(LogicalLocation tloc);
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                 enum BoundaryFlag* bcs, int64_t rbx, int64_t rby, int64_t rbz,
+                 enum BoundaryFlag* bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
                  int rl, bool amrflag=false);
 
 private:

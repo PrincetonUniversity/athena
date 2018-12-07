@@ -162,7 +162,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
         Real q2=ran2(&rseed);
         Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
         q1=ran2(&rseed);
-        int64_t kidx=pfb->GetIndex(i,j,k,idx);
+        std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] = q3*std::cos(2.0*PI*q1);
         amp[kidx][1] = q3*std::sin(2.0*PI*q1);
       }
@@ -173,16 +173,16 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
-        int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
-        int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
-        int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
+        std::int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
+        std::int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
+        std::int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
         Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
         Real kx=nx*pfb->dkx[0];
         Real ky=ny*pfb->dkx[1];
         Real kz=nz*pfb->dkx[2];
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
-        int64_t gidx = pfb->GetGlobalIndex(i,j,k);
+        std::int64_t gidx = pfb->GetGlobalIndex(i,j,k);
 
         if (gidx == 0) {
           pcoeff = 0.0;
@@ -193,7 +193,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
             pcoeff = 0.0;
           }
         }
-        int64_t kidx=pfb->GetIndex(i,j,k,idx);
+        std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
         amp[kidx][0] *= pcoeff;
         amp[kidx][1] *= pcoeff;
       }
@@ -356,6 +356,6 @@ void TurbulenceDriver::Perturb(Real dt) {
 //! \fn void TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
 //  \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
 
-int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx) {
-  return ((idx+disp) - static_cast<int64_t>(2*(idx+disp)/Nx)*Nx);
+std::int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx) {
+  return ((idx+disp) - static_cast<std::int64_t>(2*(idx+disp)/Nx)*Nx);
 }

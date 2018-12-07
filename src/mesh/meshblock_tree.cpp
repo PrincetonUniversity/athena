@@ -78,10 +78,10 @@ MeshBlockTree::~MeshBlockTree() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::CreateRootGrid(int64_t nx,int64_t ny, int64_t nz, int nl)
+//! \fn void MeshBlockTree::CreateRootGrid(std::int64_t nx,std::int64_t ny, std::int64_t nz, int nl)
 //  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
 
-void MeshBlockTree::CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl) {
+void MeshBlockTree::CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_t nz, int nl) {
   if (loc.level == nl) return;
 
   for (int k=0; k<=1; k++) {
@@ -105,12 +105,12 @@ void MeshBlockTree::CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc,
-//   int dim, enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
+//   int dim, enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
 //   int rl, int &nnew)
 //  \brief add a MeshBlock to the tree, also creates neighboring blocks
 
 void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-   enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
+   enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
    int rl, int &nnew) {
   int mx, my, mz;
   if (loc.level==rloc.level) return; // done
@@ -129,11 +129,11 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
-//                          int64_t rbx, int64_t rby, int64_t rbz, int rl)
+//                          std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl)
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
 
 void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
-                    int64_t rbx, int64_t rby, int64_t rbz, int rl) {
+                    std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl) {
   int mx, my, mz;
   if (loc.level==rloc.level) // done
     return;
@@ -152,15 +152,15 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim,
-//           enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
+//           enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
 //           int rl, int &nnew)
 //  \brief make finer leaves
 
 void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-                    int64_t rbx, int64_t rby, int64_t rbz, int rl, int &nnew) {
+                    std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &nnew) {
   if (flag==false) return;
-  int64_t nxmax,nymax,nzmax;
-  int64_t ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
+  std::int64_t nxmax,nymax,nzmax;
+  std::int64_t ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
   int xmax,ymax,zmax;
   LogicalLocation nloc;
   nloc.level=loc.level;
@@ -237,12 +237,12 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Derefine(MeshBlockTree& root, int dim,
-//                                   enum BoundaryFlag* mesh_bcs, int64_t rbx,
-//                                   int64_t rby, int64_t rbz, int rl, int &ndel)
+//                                   enum BoundaryFlag* mesh_bcs, std::int64_t rbx,
+//                                   std::int64_t rby, std::int64_t rbz, int rl, int &ndel)
 //  \brief destroy leaves and make this block a leaf
 
 void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-                    int64_t rbx, int64_t rby, int64_t rbz, int rl, int &ndel) {
+                    std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &ndel) {
   int s2=0, e2=0, s3=0, e3=0;
   if (dim>=2) s2=-1, e2=1;
   if (dim==3) s3=-1, e3=1;
@@ -349,17 +349,17 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1,
 //                                    int ox2, int ox3, enum BoundaryFlag* bcs,
-//                                    int64_t rbx, int64_t rby, int64_t rbz, int rl)
+//                                    std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl)
 //  \brief find a neighboring block, called from the root of the tree
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
 //         Note that this function must be called on a completed tree only
 
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2,
-  int ox3, enum BoundaryFlag* bcs, int64_t rbx, int64_t rby, int64_t rbz,
+  int ox3, enum BoundaryFlag* bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
   int rl, bool amrflag) {
   std::stringstream msg;
-  int64_t lx, ly, lz;
+  std::int64_t lx, ly, lz;
   int ll;
   int ox, oy, oz;
   MeshBlockTree *bt = this;
@@ -398,7 +398,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
       return NULL;
     }
   }
-  int64_t num_x3 = rbz<<(ll-rl);
+  std::int64_t num_x3 = rbz<<(ll-rl);
   if (lz<0) {
     if (bcs[INNER_X3]==PERIODIC_BNDRY) lz=num_x3-1;
     else return NULL;

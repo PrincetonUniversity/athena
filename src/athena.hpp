@@ -10,7 +10,7 @@
 
 // C headers
 #include <math.h>
-#include <cstdint>  // int64_t
+#include <cstdint>  // std::int64_t
 
 // C++ headers
 
@@ -57,7 +57,7 @@ class FieldDiffusion;
 
 typedef struct LogicalLocation {
   // These values can exceed the range of std::int32_t if >= 30 levels of AMR are used
-  int64_t lx1, lx2, lx3;
+  std::int64_t lx1, lx2, lx3;
   int level;
 
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}

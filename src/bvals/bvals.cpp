@@ -215,7 +215,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       throw std::runtime_error(msg.str().c_str());
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // possible loss of precision to 32 bit int, if int64_t nrbx3 is large
+    // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
@@ -228,7 +228,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       throw std::runtime_error(msg.str().c_str());
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // possible loss of precision to 32 bit int, if int64_t nrbx3 is large
+    // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_south_polar_blocks_ = 0;
@@ -312,8 +312,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     x2size_ = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
     x3size_ = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
     int level = pmb->loc.level - pmy_mesh->root_level;
-    int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
-    int64_t nrbx2 = pmy_mesh->nrbx2*(1L << level);
+    std::int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+    std::int64_t nrbx2 = pmy_mesh->nrbx2*(1L << level);
 
     shbb_.outer = false;
     shbb_.inner = false;
@@ -566,7 +566,7 @@ BoundaryValues::~BoundaryValues() {
 
   if (SHEARING_BOX) {
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
-    int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
+    std::int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
       shboxvar_inner_hydro_.DeleteAthenaArray();
       flx_inner_hydro_.DeleteAthenaArray();
@@ -812,9 +812,9 @@ void BoundaryValues::Initialize(void) {
   cng2=cng*f2d;
   cng3=cng*f3d;
   int ssize, rsize;
-  int64_t &lx1=pmb->loc.lx1;
-  int64_t &lx2=pmb->loc.lx2;
-  int64_t &lx3=pmb->loc.lx3;
+  std::int64_t &lx1=pmb->loc.lx1;
+  std::int64_t &lx2=pmb->loc.lx2;
+  std::int64_t &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
   myox1=(static_cast<int>(lx1&1L));
   myox2=(static_cast<int>(lx2&1L));
@@ -1127,8 +1127,8 @@ void BoundaryValues::Initialize(void) {
   if (SHEARING_BOX) {
     Mesh *pmesh = pmb->pmy_mesh;
     int level = pmb->loc.level - pmesh->root_level;
-    int64_t nrbx1 = pmesh->nrbx1*(1L << level);
-    int64_t nrbx2 = pmesh->nrbx2*(1L << level);
+    std::int64_t nrbx1 = pmesh->nrbx1*(1L << level);
+    std::int64_t nrbx2 = pmesh->nrbx2*(1L << level);
     int nbtotal = pmesh->nbtotal;
     int *ranklist = pmesh->ranklist;
     int *nslist = pmesh->nslist;
@@ -1561,9 +1561,9 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
      const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
-  int64_t &lx1=pmb->loc.lx1;
-  int64_t &lx2=pmb->loc.lx2;
-  int64_t &lx3=pmb->loc.lx3;
+  std::int64_t &lx1=pmb->loc.lx1;
+  std::int64_t &lx2=pmb->loc.lx2;
+  std::int64_t &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
 
   for (int n=0; n<nneighbor; n++) {

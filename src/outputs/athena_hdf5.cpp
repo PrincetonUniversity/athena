@@ -82,7 +82,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   int num_blocks_local;                       // number of MeshBlocks on this Mesh
   int *levels_mesh;                           // array of refinement levels on Mesh
-  int64_t *locations_mesh;                   // array of logical locations on Mesh
+  std::int64_t *locations_mesh;                   // array of logical locations on Mesh
   H5Real *x1f_mesh;                            // array of x1 values on Mesh
   H5Real *x2f_mesh;                            // array of x2 values on Mesh
   H5Real *x3f_mesh;                            // array of x3 values on Mesh
@@ -246,7 +246,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   // Allocate contiguous buffers for data in memory
   levels_mesh = new int[num_blocks_local];
-  locations_mesh = new int64_t[num_blocks_local * 3];
+  locations_mesh = new std::int64_t[num_blocks_local * 3];
   x1f_mesh = new H5Real[num_blocks_local * (nx1+1)];
   x2f_mesh = new H5Real[num_blocks_local * (nx2+1)];
   x3f_mesh = new H5Real[num_blocks_local * (nx3+1)];

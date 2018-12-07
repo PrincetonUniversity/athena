@@ -115,10 +115,10 @@ public:
                       LogicalLocation loc, RegionSize bsize);
   virtual void ApplyKernel(int mode);
 
-  int64_t GetIndex(const int i, const int j, const int k);
-  int64_t GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
+  std::int64_t GetIndex(const int i, const int j, const int k);
+  std::int64_t GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
 
-  int64_t GetGlobalIndex(const int i, const int j, const int k);
+  std::int64_t GetGlobalIndex(const int i, const int j, const int k);
 
   void DestroyPlan(AthenaFFTPlan *plan);
   void MpiInitialize();
@@ -153,7 +153,7 @@ public:
   friend class Mesh;
 
 protected:
-  int64_t cnt_,gcnt_;
+  std::int64_t cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
   AthenaFFTComplex *in_, *out_;
@@ -192,7 +192,7 @@ public:
   friend class Mesh;
 
 protected:
-  int64_t gcnt_;
+  std::int64_t gcnt_;
   int nranks_, nblocks_;
   int *ranklist_, *nslist_, *nblist_;
   Mesh *pmy_mesh_;
