@@ -10,7 +10,9 @@
 //  The Mesh is the overall grid structure, and MeshBlocks are local patches of data
 //  (potentially on different levels) that tile the entire domain.
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <cstdint>  // std::int64_t
 #include <string>
 

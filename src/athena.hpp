@@ -9,10 +9,10 @@
 //  \brief contains Athena++ general purpose types, structures, enums, etc.
 
 // C headers
-#include <math.h>
-#include <cstdint>  // std::int64_t
 
 // C++ headers
+#include <cmath>
+#include <cstdint>  // std::int64_t
 
 // Athena++ headers
 #include "athena_arrays.hpp"

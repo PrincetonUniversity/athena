@@ -8,7 +8,10 @@
 //!   \file grav_task_list.hpp
 //    \brief provides functionality to control dynamic execution using tasks
 
-#include <cstdint>
+// C headers
+
+// C++ headers
+#include <cstdint>      // std::uint64_t
 
 // Athena++ headers
 #include "../athena.hpp"

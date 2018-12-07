@@ -17,10 +17,10 @@
 //========================================================================================
 
 // C headers
-#include <cstdint>   // std::int64_t
 
 // C++ headers
 #include <csignal>    // sigset_t, signal(), sigemptyset(), SIGTERM
+#include <cstdint>    // std::int64_t
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
