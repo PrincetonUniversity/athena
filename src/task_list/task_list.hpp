@@ -40,8 +40,8 @@ struct IntegratorWeight {
 //  \brief data and function pointer for an individual Task
 
 struct Task {
-  std::uint64_t task_id;      // encodes task using bit positions in HydroIntegratorTaskNames
-  std::uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
+  std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 

@@ -119,7 +119,8 @@ std::int64_t FFTBlock::GetGlobalIndex(const int i, const int j, const int k) {
   return i + disp[0] + Nx[0]* ( j + disp[1] + Nx[1]* ( k + disp[2]) );
 }
 
-std::int64_t FFTBlock::GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx) {
+std::int64_t FFTBlock::GetIndex(const int i, const int j, const int k,
+                                AthenaFFTIndex *pidx) {
   int old_idx[3]={i,j,k};
   int new_idx[3];
   new_idx[0]=old_idx[pidx->iloc[0]];
@@ -514,7 +515,8 @@ void FFTBlock::MpiInitialize() {
 AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize,
                                RegionSize bsize) {
   dim_=dim;
-  // loc.lxi are std::int64_t in general, but w/o AMR, they are unilikely to overflow std::int32_t
+  // loc.lxi are std::int64_t in general, but w/o AMR, they are unilikely to overflow
+  // std::int32_t type limits
   Lx[0] = msize.x1max-msize.x1min;
   Nx[0] = msize.nx1;
   np[0] = msize.nx1/bsize.nx1;

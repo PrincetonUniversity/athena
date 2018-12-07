@@ -261,11 +261,13 @@ private:
 
 
 //----------------------------------------------------------------------------------------
-// \!fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange, bool sym_interval)
+// \!fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
+//                                 bool sym_interval)
 // \brief wrapper fn to compute Real x logical location for either [0., 1.] or [-0.5, 0.5]
 //        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
 
-inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange, bool sym_interval) {
+inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
+                                  bool sym_interval) {
   // index is typically 0, ... nrange for non-ghost boundaries
   if (sym_interval == false) {
     // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
