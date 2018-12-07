@@ -7,15 +7,15 @@
 //  \brief implementation of functions in Mesh class
 
 // C headers
-#include <stdlib.h>
-#include <string.h>  // memcpy
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h> // std::int64_t format macro PRId64
 
 // C++ headers
-#include <algorithm>  // sort
+#include <algorithm>  // std::sort
 #include <cfloat>     // FLT_MAX
-#include <cmath>      // std::abs(), pow()
+#include <cinttypes>  // std::int64_t format macro PRId64
+#include <cmath>      // std::abs(), std::pow()
+#include <cstdlib>
+#include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -570,20 +570,20 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MPI_Bcast(headerdata, headersize, MPI_BYTE, 0, MPI_COMM_WORLD);
 #endif
   IOWrapperSize_t hdos = 0;
-  memcpy(&nbtotal, &(headerdata[hdos]), sizeof(int));
+  std::memcpy(&nbtotal, &(headerdata[hdos]), sizeof(int));
   hdos+=sizeof(int);
-  memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
+  std::memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
   hdos+=sizeof(int);
   current_level=root_level;
-  memcpy(&mesh_size, &(headerdata[hdos]), sizeof(RegionSize));
+  std::memcpy(&mesh_size, &(headerdata[hdos]), sizeof(RegionSize));
   hdos+=sizeof(RegionSize);
-  memcpy(&time, &(headerdata[hdos]), sizeof(Real));
+  std::memcpy(&time, &(headerdata[hdos]), sizeof(Real));
   hdos+=sizeof(Real);
-  memcpy(&dt, &(headerdata[hdos]), sizeof(Real));
+  std::memcpy(&dt, &(headerdata[hdos]), sizeof(Real));
   hdos+=sizeof(Real);
-  memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
+  std::memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
   hdos+=sizeof(int);
-  memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
+  std::memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
   hdos+=sizeof(IOWrapperSize_t);
 
   delete [] headerdata;
@@ -689,12 +689,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
     IOWrapperSize_t udoffset=0;
     for (int n=0; n<nint_user_mesh_data_; n++) {
-      memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
+      std::memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
              iuser_mesh_data[n].GetSizeInBytes());
       udoffset+=iuser_mesh_data[n].GetSizeInBytes();
     }
     for (int n=0; n<nreal_user_mesh_data_; n++) {
-      memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
+      std::memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
              ruser_mesh_data[n].GetSizeInBytes());
       udoffset+=ruser_mesh_data[n].GetSizeInBytes();
     }
@@ -719,9 +719,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   int os=0;
   for (int i=0;i<nbtotal;i++) {
-    memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
+    std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
-    memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
+    std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
     os+=sizeof(Real);
     if (loclist[i].level>current_level) current_level=loclist[i].level;
   }

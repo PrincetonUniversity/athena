@@ -12,7 +12,7 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
+#include <cstring>    // std::memcpy
 #include <cstdlib>
 #include <cmath>
 

@@ -7,11 +7,11 @@
 //  \brief implementation of functions in MeshBlock class
 
 // C headers
-#include <stdlib.h>
-#include <string.h>  // memcpy
 
 // C++ headers
-#include <algorithm>  // sort
+#include <algorithm>  // std::sort()
+#include <cstdlib>
+#include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -233,42 +233,42 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   int os=0;
   // load hydro and field data
-  memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
+  std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
   // load it into the half-step arrays too
-  memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+  std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
+    std::memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
     os += phydro->w.GetSizeInBytes();
-    memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
+    std::memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
     os += phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-    memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
+    std::memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
     os += pfield->b.x1f.GetSizeInBytes();
-    memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-    memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
+    std::memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
     os += pfield->b.x2f.GetSizeInBytes();
-    memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-    memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
+    std::memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
   // NEW_PHYSICS: add load of new physics from restart file here
   if (SELF_GRAVITY_ENABLED >= 1) {
-    memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
+    std::memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
     os += pgrav->phi.GetSizeInBytes();
   }
 
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
-    memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
+    std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
            iuser_meshblock_data[n].GetSizeInBytes());
     os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
   for (int n=0; n<nreal_user_meshblock_data_; n++) {
-    memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
+    std::memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
            ruser_meshblock_data[n].GetSizeInBytes());
     os+=ruser_meshblock_data[n].GetSizeInBytes();
   }

@@ -7,9 +7,9 @@
 //  \brief writes restart files
 
 // C headers
-#include <string.h>
 
 // C++ headers
+#include <cstring>  // std::memcpy
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -112,12 +112,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
       for (int n=0; n<pm->nint_user_mesh_data_; n++) {
-        memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
+        std::memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
                pm->iuser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->iuser_mesh_data[n].GetSizeInBytes();
       }
       for (int n=0; n<pm->nreal_user_mesh_data_; n++) {
-        memcpy(&(ud[udoffset]), pm->ruser_mesh_data[n].data(),
+        std::memcpy(&(ud[udoffset]), pm->ruser_mesh_data[n].data(),
                pm->ruser_mesh_data[n].GetSizeInBytes());
         udoffset+=pm->ruser_mesh_data[n].GetSizeInBytes();
       }
@@ -134,9 +134,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   pmb=pm->pblock;
   int os=0;
   while(pmb!=NULL) {
-    memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
+    std::memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
-    memcpy(&(idlist[os]), &(pmb->cost), sizeof(Real));
+    std::memcpy(&(idlist[os]), &(pmb->cost), sizeof(Real));
     os+=sizeof(Real);
     pmb=pmb->next;
   }
@@ -152,20 +152,20 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   pmb=pm->pblock;
   while (pmb != NULL) {
     char *pdata=&(data[pmb->lid*datasize]);
-    memcpy(pdata,pmb->phydro->u.data(), pmb->phydro->u.GetSizeInBytes());
+    std::memcpy(pdata,pmb->phydro->u.data(), pmb->phydro->u.GetSizeInBytes());
     pdata+=pmb->phydro->u.GetSizeInBytes();
     if (GENERAL_RELATIVITY) {
-      memcpy(pdata,pmb->phydro->w.data(), pmb->phydro->w.GetSizeInBytes());
+      std::memcpy(pdata,pmb->phydro->w.data(), pmb->phydro->w.GetSizeInBytes());
       pdata+=pmb->phydro->w.GetSizeInBytes();
-      memcpy(pdata,pmb->phydro->w1.data(), pmb->phydro->w1.GetSizeInBytes());
+      std::memcpy(pdata,pmb->phydro->w1.data(), pmb->phydro->w1.GetSizeInBytes());
       pdata+=pmb->phydro->w1.GetSizeInBytes();
     }
     if (MAGNETIC_FIELDS_ENABLED) {
-      memcpy(pdata,pmb->pfield->b.x1f.data(),pmb->pfield->b.x1f.GetSizeInBytes());
+      std::memcpy(pdata,pmb->pfield->b.x1f.data(),pmb->pfield->b.x1f.GetSizeInBytes());
       pdata+=pmb->pfield->b.x1f.GetSizeInBytes();
-      memcpy(pdata,pmb->pfield->b.x2f.data(),pmb->pfield->b.x2f.GetSizeInBytes());
+      std::memcpy(pdata,pmb->pfield->b.x2f.data(),pmb->pfield->b.x2f.GetSizeInBytes());
       pdata+=pmb->pfield->b.x2f.GetSizeInBytes();
-      memcpy(pdata,pmb->pfield->b.x3f.data(),pmb->pfield->b.x3f.GetSizeInBytes());
+      std::memcpy(pdata,pmb->pfield->b.x3f.data(),pmb->pfield->b.x3f.GetSizeInBytes());
       pdata+=pmb->pfield->b.x3f.GetSizeInBytes();
     }
 
@@ -175,12 +175,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
     // pack the user MeshBlock data
     for (int n=0; n<pmb->nint_user_meshblock_data_; n++) {
-      memcpy(pdata, pmb->iuser_meshblock_data[n].data(),
+      std::memcpy(pdata, pmb->iuser_meshblock_data[n].data(),
              pmb->iuser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->iuser_meshblock_data[n].GetSizeInBytes();
     }
     for (int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
-      memcpy(pdata, pmb->ruser_meshblock_data[n].data(),
+      std::memcpy(pdata, pmb->ruser_meshblock_data[n].data(),
              pmb->ruser_meshblock_data[n].GetSizeInBytes());
       pdata+=pmb->ruser_meshblock_data[n].GetSizeInBytes();
     }

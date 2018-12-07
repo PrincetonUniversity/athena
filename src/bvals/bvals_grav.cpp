@@ -9,7 +9,7 @@
 // C++ headers
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // memcpy
+#include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream

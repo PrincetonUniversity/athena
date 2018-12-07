@@ -7,6 +7,7 @@
 //! \brief executes unix 'chdir' command to change dir in which Athena++ runs
 
 // C headers
+// POSIX C extensions
 #include <sys/stat.h>  // mkdir()
 #include <unistd.h>    // chdir()
 
