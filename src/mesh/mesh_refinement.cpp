@@ -6,8 +6,11 @@
 //! \file mesh_refinement.cpp
 //  \brief implements functions for static/adaptive mesh refinement
 
+// C headers
+
 // C++ headers
 #include <cmath>
+#include <cstring>     // strcmp
 #include <algorithm>   // max
 
 // Athena++ classes headers

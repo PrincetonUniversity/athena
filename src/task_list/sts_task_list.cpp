@@ -10,7 +10,10 @@
 // Meyer, C. D., Balsara, D. S., & Aslam, T. D. 2014, J. Comput. Phys.,
 //    257A, 594-626
 
+// C headers
+
 // C++ headers
+#include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -44,7 +47,6 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
         << "Super-time-stepping requires setting parameters for "
         << "diffusive processes in input file." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
   // TODO(pdmullen): time-dep BC's require knowing the time within
   //                 an RKL1 operator-split STS, what is the time?
@@ -54,7 +56,6 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
         << "Super-time-stepping is not yet compatible "
         << "with shearing box BC's." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
@@ -64,17 +65,15 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
         << "Super-time-stepping is not yet compatible "
         << "with source terms." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
   // TODO(pdmullen): fix non-Cartesian compatibility; this requires the
   //                 handling of coordinate source terms.
-  if (COORDINATE_SYSTEM != "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatibile "
         << "with non-Cartesian coordinates." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
   // TODO(pdmullen): add mesh-refinement functionality
   if (pm->multilevel==true) {
@@ -83,7 +82,6 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
         << "Super-time-stepping is not yet compatibile "
         << "with mesh refinement." << std::endl;
     throw std::runtime_error(msg.str().c_str());
-    return;
   }
 
   // Now assemble list of tasks for each stage of SuperTimeStep integrator
@@ -258,7 +256,7 @@ enum TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int 
 
 enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
+  // Field *pfield=pmb->pfield;
 
   if (stage <= nstages) {
     phydro->CalculateFluxes_STS();
