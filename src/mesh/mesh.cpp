@@ -7,12 +7,13 @@
 //  \brief implementation of functions in Mesh class
 
 // C headers
-#define __STDC_FORMAT_MACROS
+// pre-C11: needed before including inttypes.h, else won't define int64_t for C++ code
+// #define __STDC_FORMAT_MACROS
 
 // C++ headers
 #include <algorithm>  // std::sort
 #include <cfloat>     // FLT_MAX
-#include <cinttypes>  // std::int64_t format macro PRId64
+#include <cinttypes>  // std::int64_t format macro PRId64 for fixed-width integer types
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdlib>
 #include <cstring>    // std::memcpy
