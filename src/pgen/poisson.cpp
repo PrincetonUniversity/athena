@@ -104,8 +104,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phia = - gconst*M/std::sqrt(r2+SQR(a0));
     } else if (iprob == 3) {
       Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-      den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
-      phia = four_pi_G*exp(-a0*r2);
+      den = (4.0*SQR(a0)*r2-6.0*a0)*std::exp(-a0*r2);
+      phia = four_pi_G*std::exp(-a0*r2);
     }
 
     if (nlim > 0) {

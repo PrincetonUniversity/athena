@@ -69,7 +69,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         Real x1 = pcoord->x1v(i);
-        pfield->b.x2f(k,j,i) = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        pfield->b.x2f(k,j,i) = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
@@ -87,7 +87,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real cost = Ly/std::sqrt(SQR(Lx)+SQR(Ly));
         Real sint = Lx/std::sqrt(SQR(Lx)+SQR(Ly));
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
-        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = -bprim*sint;
       }}}
       for (int k=ks; k<=ke; k++) {
@@ -96,7 +96,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real cost = Ly/std::sqrt(SQR(Lx)+SQR(Ly));
         Real sint = Lx/std::sqrt(SQR(Lx)+SQR(Ly));
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
-        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*cost;
       }}}
       for (int k=ks; k<=ke+1; k++) {
@@ -118,7 +118,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x1=rad*std::cos(phi);
         Real x2=rad*std::sin(phi);
         Real x3=z;
-        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = bprim*std::sin(phi);
       }}}
       for (int k=ks; k<=ke; k++) {
@@ -130,7 +130,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x1=rad*std::cos(phi);
         Real x2=rad*std::sin(phi);
         Real x3=z;
-        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
+        Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*std::cos(phi);
       }}}
       for (int k=ks; k<=ke+1; k++) {

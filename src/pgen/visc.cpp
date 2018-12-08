@@ -77,7 +77,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x3=pcoord->x3v(k);
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
-            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*std::exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
           } else if (COORDINATE_SYSTEM == "cylindrical") {
@@ -87,7 +87,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x1=rad*std::cos(phi);
             x2=rad*std::sin(phi);
             x3=z;
-            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*std::exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(
                 v1*std::cos(phi) + v2*std::sin(phi));
@@ -102,7 +102,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x1=rad*std::cos(phi);
             x2=rad*std::sin(phi);
             x3=z;
-            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
+            v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*std::exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
             phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)*std::sin(theta)
                                                          +v2*std::sin(phi)*std::sin(theta)
@@ -129,7 +129,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           rad=pcoord->x1v(i);
-          d0 = exp(-SQR(rad-x0)/2.0/SQR(width));
+          d0 = std::exp(-SQR(rad-x0)/2.0/SQR(width));
           if (d0 < 1e-6) d0 += 1e-6;
           v1 = -3.0*nuiso*(0.5/rad - (rad-x0)/SQR(width));
           v2 = std::sqrt(gm0/rad); // set it to be Mach=100

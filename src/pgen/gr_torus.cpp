@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), max_element(), min(), min_element()
-#include <cmath>      // abs(), std::cos(), exp(), log(), NAN, std::pow(), std::sin(), sqrt()
+#include <cmath>      // abs(), cos(), exp(), log(), NAN, pow(), sin(), sqrt()
 #include <iostream>   // endl
 #include <limits>     // numeric_limits::max()
 #include <sstream>    // stringstream
@@ -1562,9 +1562,9 @@ static Real LogHAux(Real r, Real sin_theta) {
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
   Real sigma = SQR(r) + SQR(a)*cos_sq_theta;                 // \Sigma
   Real aa = SQR(SQR(r)+SQR(a)) - delta*SQR(a)*sin_sq_theta;  // A
-  Real exp_2nu = sigma * delta / aa;                         // \exp(2\nu) (FM 3.5)
-  Real exp_2psi = aa / sigma * sin_sq_theta;                 // \exp(2\psi) (FM 3.5)
-  Real exp_neg2chi = exp_2nu / exp_2psi;                     // \exp(-2\chi) (cf. FM 2.15)
+  Real exp_2nu = sigma * delta / aa;                         // exp(2\nu) (FM 3.5)
+  Real exp_2psi = aa / sigma * sin_sq_theta;                 // exp(2\psi) (FM 3.5)
+  Real exp_neg2chi = exp_2nu / exp_2psi;                     // exp(-2\chi) (cf. FM 2.15)
   Real omega = 2.0*m*a*r/aa;                                 // \omega (FM 3.5)
   Real var_a = std::sqrt(1.0 + 4.0*SQR(l)*exp_neg2chi);
   Real var_b = 0.5 * std::log((1.0+var_a)
@@ -1592,9 +1592,9 @@ static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
   Real sigma = SQR(r) + SQR(a)*cos_sq_theta;                 // \Sigma
   Real aa = SQR(SQR(r)+SQR(a)) - delta*SQR(a)*sin_sq_theta;  // A
-  Real exp_2nu = sigma * delta / aa;                         // \exp(2\nu) (FM 3.5)
-  Real exp_2psi = aa / sigma * sin_sq_theta;                 // \exp(2\psi) (FM 3.5)
-  Real exp_neg2chi = exp_2nu / exp_2psi;                     // \exp(-2\chi) (cf. FM 2.15)
+  Real exp_2nu = sigma * delta / aa;                         // exp(2\nu) (FM 3.5)
+  Real exp_2psi = aa / sigma * sin_sq_theta;                 // exp(2\psi) (FM 3.5)
+  Real exp_neg2chi = exp_2nu / exp_2psi;                     // exp(-2\chi) (cf. FM 2.15)
   Real u_phi_proj_a = 1.0 + 4.0*SQR(l)*exp_neg2chi;
   Real u_phi_proj_b = -1.0 + std::sqrt(u_phi_proj_a);
   Real u_phi_proj = std::sqrt(0.5 * u_phi_proj_b);           // (FM 3.3)

@@ -191,10 +191,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         sinkx = std::sin(x*kwave);
         coskx = std::cos(x*kwave);
         if (omega2 < 0) {
-          sinot = -exp(omega*tlim);//time dependent factor of vel
+          sinot = -std::exp(omega*tlim);//time dependent factor of vel
           // unstable case v = amp*omega/k * coskx * e^omega*t
           // minus sign counters minus sign in m
-          cosot = exp(omega*tlim);//time dependent factor of rho
+          cosot = std::exp(omega*tlim);//time dependent factor of rho
         } else {
           sinot = std::sin(omega*tlim);//time dependent factor of vel
           cosot = std::cos(omega*tlim);//time dependent factor of rho

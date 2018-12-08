@@ -191,7 +191,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // [default, used by HGB]
         if (ipert == 1) {
           rval = amp*(ran2(&iseed) - 0.5);
-          rd = den*exp(-x3*x3)*(1.0+2.0*rval);
+          rd = den*std::exp(-x3*x3)*(1.0+2.0*rval);
           if (rd < dfloor) rd = dfloor;
           if (NON_BAROTROPIC_EOS) {
             rp = pres/den*rd;
@@ -211,7 +211,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SumRvz += rvz;
           // no perturbations
         } else {
-          rd = den*exp(-x3*x3);
+          rd = den*std::exp(-x3*x3);
           rvx = 0;
           rvy = 0;
           rvz = 0;
@@ -285,10 +285,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 6) {
             // net toroidal field with constant \beta with height
             pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = std::sqrt(den*exp(-x3*x3)*SQR(Omega_0)/beta);
+            pfield->b.x2f(k,j,i) = std::sqrt(den*std::exp(-x3*x3)*SQR(Omega_0)/beta);
             pfield->b.x3f(k,j,i) = 0.0;
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = std::sqrt(den*exp(-x3*x3)*
+            if (j==je) pfield->b.x2f(k,je+1,i) = std::sqrt(den*std::exp(-x3*x3)*
                                                            SQR(Omega_0)/beta);
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
@@ -448,7 +448,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
         }
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
-        prim(IDN,ks-k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
+        prim(IDN,ks-k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
                                      (2.0*Tks/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
@@ -524,7 +524,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
         }
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
-        prim(IDN,ke+k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
+        prim(IDN,ke+k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
                                      (2.0*Tke/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
