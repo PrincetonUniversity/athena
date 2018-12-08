@@ -486,7 +486,7 @@ enum TaskStatus SuperTimeStepTaskList::StartupIntegrator_STS(MeshBlock *pmb, int
     // Set RKL1 params
     pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
     pmb->pmy_mesh->nuj = (1.-stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(pow(nstages,2.)+nstages);
+    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages,2.)+nstages);
 
     // Clear flux arrays from previous stage
     pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);

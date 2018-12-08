@@ -7,8 +7,10 @@
 //  \brief implements functions for spherical polar (r-theta-phi) coordinates in a
 //  derived class of the Coordinates abstract base class.
 
-// C/C++ headers
-#include <math.h>  // pow, trig functions
+// C headers
+
+// C++ headers
+#include <cmath>  // pow, trig functions
 
 // Athena++ headers
 #include "coordinates.hpp"
@@ -78,7 +80,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^4/4)/d(r^3/3)
   for (int i=il-ng; i<=iu+ng; ++i) {
-    x1v(i) = 0.75*(pow(x1f(i+1),4) - pow(x1f(i),4))/(pow(x1f(i+1),3) - pow(x1f(i),3));
+    x1v(i) = 0.75*(std::pow(x1f(i+1),4) - std::pow(x1f(i),4))/(std::pow(x1f(i+1),3) - std::pow(x1f(i),3));
   }
   for (int i=il-ng; i<=iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
@@ -144,7 +146,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
-      x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
+      x1s2(i) = x1s3(i) = (2.0/3.0)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3))
                           /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
     if (pmb->block_size.nx2 == 1) {

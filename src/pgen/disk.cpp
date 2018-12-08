@@ -159,7 +159,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
   Real den;
   Real p_over_r = p0_over_r0;
   if (NON_BAROTROPIC_EOS) p_over_r = PoverR(rad, phi, z);
-  Real denmid = rho0*pow(rad/r0,dslope);
+  Real denmid = rho0*std::pow(rad/r0,dslope);
   Real dentem = denmid*exp(gm0/p_over_r*(1./std::sqrt(SQR(rad)+SQR(z))-1./rad));
   den = dentem;
   return std::max(den,dfloor);
@@ -170,7 +170,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
 
 static Real PoverR(const Real rad, const Real phi, const Real z) {
   Real poverr;
-  poverr = p0_over_r0*pow(rad/r0, pslope);
+  poverr = p0_over_r0*std::pow(rad/r0, pslope);
   return poverr;
 }
 

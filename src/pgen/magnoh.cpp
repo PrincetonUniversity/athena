@@ -117,7 +117,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phi = atan2(x2, x1);
       }
       // if (rad==0.0) rad=3.0/100000;
-      az(j,i) = (bphi0/(beta+1))*pow(rad,beta+1)*(1+perturb*cos(mphi*phi));
+      az(j,i) = (bphi0/(beta+1))*std::pow(rad,beta+1)*(1+perturb*cos(mphi*phi));
     }
   }
 
@@ -134,8 +134,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
              x2=pcoord->x2v(j);
              rad = std::sqrt(SQR(x1) + SQR(x2));
          }
-         Real rho = rho0*pow(rad, alpha);
-         Real P   = P0  *pow(rad, 2*beta);
+         Real rho = rho0*std::pow(rad, alpha);
+         Real P   = P0  *std::pow(rad, 2*beta);
 
          phydro->u(IDN,k,j,i) = rho;
 
@@ -179,7 +179,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real rad;
           if (COORDINATE_SYSTEM == "cylindrical") rad = pcoord->x1v(i);
           else rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
-          pfield->b.x3f(k,j,i) = bz*pow(rad,beta);
+          pfield->b.x3f(k,j,i) = bz*std::pow(rad,beta);
         }
       }
     }

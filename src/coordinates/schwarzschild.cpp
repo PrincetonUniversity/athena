@@ -16,7 +16,7 @@
 //     where \alpha = \sqrt(1 - 2M/r)
 
 // C++ headers
-#include <cmath>  // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
+#include <cmath>  // abs(), acos(), cos(), log(), std::pow(), sin(), sqrt()
 
 // Athena++ headers
 #include "coordinates.hpp"

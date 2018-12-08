@@ -7,7 +7,7 @@
 //  \brief Problem generator for spherically symmetric black hole accretion.
 
 // C++ headers
-#include <cmath>  // abs(), NAN, pow(), sqrt()
+#include <cmath>  // abs(), NAN, std::pow(), sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"

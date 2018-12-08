@@ -7,8 +7,10 @@
 //  \brief implements functions for cylindrical (r-phi-z) coordinates in a derived class
 //  of the Coordinates abstract base class.
 
-// C/C++ headers
-#include <math.h>   // pow function
+// C headers
+
+// C++ headers
+#include <cmath>   // pow function
 
 // Athena++ headers
 #include "coordinates.hpp"
@@ -78,7 +80,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
   for (int i=il-ng; i<=iu+ng; ++i) {
-    x1v(i) = (TWO_3RD)*(pow(x1f(i+1),3)-pow(x1f(i),3))/(pow(x1f(i+1),2) - pow(x1f(i),2));
+    x1v(i) = (TWO_3RD)*(std::pow(x1f(i+1),3)-std::pow(x1f(i),3))/(std::pow(x1f(i+1),2) - std::pow(x1f(i),2));
   }
   for (int i=il-ng; i<=iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);

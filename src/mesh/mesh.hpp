@@ -295,8 +295,8 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   if (rs.x1rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x1rat,rs.nx1);
-    Real rnx=pow(rs.x1rat,x*rs.nx1);
+    Real ratn=std::pow(rs.x1rat,rs.nx1);
+    Real rnx=std::pow(rs.x1rat,x*rs.nx1);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
@@ -313,8 +313,8 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   if (rs.x2rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x2rat,rs.nx2);
-    Real rnx=pow(rs.x2rat,x*rs.nx2);
+    Real ratn=std::pow(rs.x2rat,rs.nx2);
+    Real rnx=std::pow(rs.x2rat,x*rs.nx2);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
@@ -330,8 +330,8 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   if (rs.x3rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x3rat,rs.nx3);
-    Real rnx=pow(rs.x3rat,x*rs.nx3);
+    Real ratn=std::pow(rs.x3rat,rs.nx3);
+    Real rnx=std::pow(rs.x3rat,x*rs.nx3);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }

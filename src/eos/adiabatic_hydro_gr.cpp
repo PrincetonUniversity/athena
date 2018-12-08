@@ -10,7 +10,7 @@
 // C++ headers
 #include <algorithm>  // max()
 #include <cfloat>     // FLT_MIN
-#include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
+#include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), std::pow()
 
 // Athena++ headers
 #include "eos.hpp"
