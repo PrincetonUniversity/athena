@@ -8,7 +8,8 @@
 
 // C++ headers
 #include <cassert>  // assert
-#include <cmath>    // std::pow(), std::sin(), sqrt()
+#include <cmath>    // pow(), sin(), sqrt()
+#include <cstring>  // strcmp()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -33,6 +34,7 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int is, int ie, int js, int je, int ks, int ke, int ngh);
+// TODO(felker): can the 4x copies of this function in pgen/ files be shared?
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
 
@@ -159,7 +161,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi) {
-  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
+      std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
     *ptheta = x2;
     *pphi = x3;

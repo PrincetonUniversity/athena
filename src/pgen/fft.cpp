@@ -79,7 +79,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
@@ -136,7 +136,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);

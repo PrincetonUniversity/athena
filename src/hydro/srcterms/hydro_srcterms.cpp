@@ -32,8 +32,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   // cylindrical.
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   if (gm_ != 0.0) {
-    if (COORDINATE_SYSTEM == "spherical_polar"
-    || (COORDINATE_SYSTEM == "cylindrical"
+    if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0
+    || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
     && phyd->pmy_block->block_size.nx3==1)) {
       hydro_sourceterms_defined = true;
     } else {

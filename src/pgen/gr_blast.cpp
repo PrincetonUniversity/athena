@@ -228,7 +228,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
     Real *px, Real *py, Real *pz) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
     *py = x2;
@@ -250,7 +250,7 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
     *pa2 = ay;
@@ -271,7 +271,7 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 
 static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
   Real distance = 0.0;
-  if (COORDINATE_SYSTEM == "minkowski") {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
   }
   return distance;

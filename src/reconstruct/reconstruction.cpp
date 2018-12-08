@@ -80,7 +80,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   // Perform checks of fourth-order solver configuration restrictions:
   if (xorder == 4) {
     // Uniform, Cartesian mesh with square cells (dx1f=dx2f=dx3f)
-    if (COORDINATE_SYSTEM == "cartesian") {
+    if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
       if (pmb->block_size.x1rat != 1.0 || pmb->block_size.x2rat != 1.0 ||
           pmb->block_size.x3rat != 1.0) {
         std::stringstream msg;
@@ -171,7 +171,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
-  if ((COORDINATE_SYSTEM == "cylindrical") || (COORDINATE_SYSTEM == "spherical_polar")) {
+  if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
+      (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
     // curvilinear: all directions, regardless of non/uniformity
     uniform_limiter[0]=false;
     uniform_limiter[1]=false;
@@ -266,12 +267,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       }
       // Compute curvilinear geometric factors for limiter (Mignone eq 48)
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
-        if ((COORDINATE_SYSTEM == "cylindrical") ||
-            (COORDINATE_SYSTEM == "spherical_polar")) {
+        if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
+            (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
           Real h_plus, h_minus;
           Real& dx_i   = pmb->pcoord->dx1f(i);
           Real& xv_i   = pmb->pcoord->x1v(i);
-          if (COORDINATE_SYSTEM == "cylindrical") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             // cylindrical radial coordinate
             h_plus = 3.0 + dx_i/(2.0*xv_i);
             h_minus = 3.0 - dx_i/(2.0*xv_i);
@@ -344,7 +345,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
         for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j) {
           // corrections to PPMx2 only for spherical polar coordinates
-          if (COORDINATE_SYSTEM == "spherical_polar") {
+          if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             // x2 = theta polar coordinate adjustment
             Real h_plus, h_minus;
             Real& dx_j   = pmb->pcoord->dx2f(j);

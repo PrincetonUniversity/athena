@@ -140,11 +140,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //!\f transform to cylindrical coordinate
 
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k) {
-  if (COORDINATE_SYSTEM == "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     rad=pco->x1v(i);
     phi=pco->x2v(j);
     z=pco->x3v(k);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     rad=fabs(pco->x1v(i)*std::sin(pco->x2v(j)));
     phi=pco->x3v(i);
     z=pco->x1v(i)*std::cos(pco->x2v(j));
@@ -183,11 +183,11 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/std::sqrt(rad*rad+z*z);
   vel = std::sqrt(gm0/rad)*std::sqrt(vel);
-  if (COORDINATE_SYSTEM == "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     v1=0.0;
     v2=vel;
     v3=0.0;
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     v1=0.0;
     v2=0.0;
     v3=vel;

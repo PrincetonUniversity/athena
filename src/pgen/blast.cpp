@@ -14,6 +14,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -54,15 +55,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x2_0   = pin->GetOrAddReal("problem","x2_0",0.0);
   Real x3_0   = pin->GetOrAddReal("problem","x3_0",0.0);
   Real x0,y0,z0;
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     x0 = x1_0;
     y0 = x2_0;
     z0 = x3_0;
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     x0 = x1_0*std::cos(x2_0);
     y0 = x1_0*std::sin(x2_0);
     z0 = x3_0;
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     x0 = x1_0*std::sin(x2_0)*std::cos(x3_0);
     y0 = x1_0*std::sin(x2_0)*std::sin(x3_0);
     z0 = x1_0*std::cos(x2_0);
@@ -79,17 +80,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     Real rad;
-    if (COORDINATE_SYSTEM == "cartesian") {
+    if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
       Real x = pcoord->x1v(i);
       Real y = pcoord->x2v(j);
       Real z = pcoord->x3v(k);
       rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    } else if (COORDINATE_SYSTEM == "cylindrical") {
+    } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
       Real x = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j));
       Real z = pcoord->x3v(k);
       rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    } else { // if (COORDINATE_SYSTEM == "spherical_polar")
+    } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
       Real x = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::cos(pcoord->x3v(k));
       Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::sin(pcoord->x3v(k));
       Real z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
@@ -133,13 +134,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
         for (int i = is; i <= ie+1; ++i) {
-          if (COORDINATE_SYSTEM == "cartesian") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
             pfield->b.x1f(k,j,i) = b0 * std::cos(angle);
-          } else if (COORDINATE_SYSTEM == "cylindrical") {
+          } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             Real phi = pcoord->x2v(j);
             pfield->b.x1f(k,j,i) =
                 b0 * (std::cos(angle) * std::cos(phi) + std::sin(angle) * std::sin(phi));
-          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x1f(k,j,i) = b0 * std::abs(std::sin(theta))
@@ -151,13 +152,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je+1; ++j) {
         for (int i = is; i <= ie; ++i) {
-          if (COORDINATE_SYSTEM == "cartesian") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
             pfield->b.x2f(k,j,i) = b0 * std::sin(angle);
-          } else if (COORDINATE_SYSTEM == "cylindrical") {
+          } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             Real phi = pcoord->x2v(j);
             pfield->b.x2f(k,j,i) =
                 b0 * (std::sin(angle) * std::cos(phi) - std::cos(angle) * std::sin(phi));
-          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x2f(k,j,i) = b0 * std::cos(theta)
@@ -171,9 +172,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k = ks; k <= ke+1; ++k) {
       for (int j = js; j <= je; ++j) {
         for (int i = is; i <= ie; ++i) {
-          if (COORDINATE_SYSTEM == "cartesian" || COORDINATE_SYSTEM == "cylindrical") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
+              || std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             pfield->b.x3f(k,j,i) = 0.0;
-          } else { //if (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             Real phi = pcoord->x3v(k);
             pfield->b.x3f(k,j,i) =
                 b0 * (std::sin(angle) * std::cos(phi) - std::cos(angle) * std::sin(phi));
@@ -212,15 +214,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Real x2_0   = pin->GetOrAddReal("problem","x2_0",0.0);
   Real x3_0   = pin->GetOrAddReal("problem","x3_0",0.0);
   Real x0,y0,z0;
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     x0 = x1_0;
     y0 = x2_0;
     z0 = x3_0;
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     x0 = x1_0*std::cos(x2_0);
     y0 = x1_0*std::sin(x2_0);
     z0 = x3_0;
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     x0 = x1_0*std::sin(x2_0)*std::cos(x3_0);
     y0 = x1_0*std::sin(x2_0)*std::sin(x3_0);
     z0 = x1_0*std::cos(x2_0);
@@ -318,15 +320,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       Real x1m=pblock->pcoord->x1v(imax);
       Real x2m=pblock->pcoord->x2v(jmax);
       Real x3m=pblock->pcoord->x3v(kmax);
-      if (COORDINATE_SYSTEM == "cartesian") {
+      if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
         xm = x1m;
         ym = x2m;
         zm = x3m;
-      } else if (COORDINATE_SYSTEM == "cylindrical") {
+      } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
         xm = x1m*std::cos(x2m);
         ym = x1m*std::sin(x2m);
         zm = x3m;
-      } else {  // if (COORDINATE_SYSTEM == "spherical_polar") {
+      } else {  // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
         xm = x1m*std::sin(x2m)*std::cos(x3m);
         ym = x1m*std::sin(x2m)*std::sin(x3m);
         zm = x1m*std::cos(x2m);
@@ -347,11 +349,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Real  x2c = pblock->pcoord->x2v(jc);
   Real dx2c = pblock->pcoord->dx2f(jc);
   Real dx3c = pblock->pcoord->dx3f(kc);
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     dr_max = std::max(std::max(dx1c, dx2c), dx3c);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     dr_max = std::max(std::max(dx1c, x1c*dx2c), dx3c);
-  } else { // if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     dr_max = std::max(std::max(dx1c, x1c*dx2c), x1c*std::sin(x2c)*dx3c);
   }
   Real deform=(rmax-rmin)/dr_max;

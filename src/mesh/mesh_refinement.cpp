@@ -33,19 +33,19 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   AMRFlag_=pmb->pmy_mesh->AMRFlag_;
 
   // Create coarse mesh object for parent grid
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoarsec = new Cartesian(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     pcoarsec = new Cylindrical(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     pcoarsec = new SphericalPolar(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "minkowski") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoarsec = new Minkowski(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoarsec = new Schwarzschild(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     pcoarsec = new KerrSchild(pmb, pin, true);
-  } else if (COORDINATE_SYSTEM == "gr_user") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoarsec = new GRUser(pmb, pin, true);
   }
 

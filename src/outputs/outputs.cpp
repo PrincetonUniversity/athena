@@ -49,7 +49,7 @@
 
 // C headers
 
-// C/C++ headers
+// C++ headers
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
@@ -189,7 +189,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name,"ghost_zones",false);
 
         // read ghost cell option
-        if (COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
+            std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
           op.cartesian_vector=pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
                                                    false);
         else
@@ -889,7 +890,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
 void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                           Coordinates *pco) {
   Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
-  if (COORDINATE_SYSTEM == "spherical_polar") {
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     if (out_ks==out_ke) { // 2D
       for (int k=out_ks; k<=out_ke; k++) {
         for (int j=out_js; j<=out_je; j++) {
@@ -925,7 +926,7 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
       }
     }
   }
-  if (COORDINATE_SYSTEM == "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     for (int k=out_ks; k<=out_ke; k++) {
       for (int j=out_js; j<=out_je; j++) {
         n1x=std::cos(pco->x2v(j));

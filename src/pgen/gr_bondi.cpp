@@ -7,7 +7,8 @@
 //  \brief Problem generator for spherically symmetric black hole accretion.
 
 // C++ headers
-#include <cmath>  // abs(), NAN, std::pow(), sqrt()
+#include <cmath>   // abs(), NAN, std::pow(), sqrt()
+#include <cstring> // strcmp()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -255,7 +256,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi) {
-  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
+      std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
     *ptheta = x2;
     *pphi = x3;
@@ -275,12 +277,12 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
                      Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
-  if (COORDINATE_SYSTEM == "schwarzschild") {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
     *pa2 = a2_bl;
     *pa3 = a3_bl;
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     Real delta = SQR(r) - 2.0*m*r + SQR(a);
     *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
     *pa1 = a1_bl;

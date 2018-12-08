@@ -28,6 +28,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -107,7 +108,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
       Real rad,phi;
-      if (COORDINATE_SYSTEM == "cylindrical") {
+      if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
         rad = pcoord->x1f(i);
         phi = pcoord->x2f(j);
       } else { // cartesian
@@ -127,7 +128,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i=is; i<=ie; i++) {
         // Volume centered coordinates and quantities
          Real rad,x1,x2;
-         if(COORDINATE_SYSTEM == "cylindrical") {
+         if(std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
              rad = pcoord->x1v(i);
          } else { // cartesian
              x1=pcoord->x1v(i);
@@ -139,7 +140,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
          phydro->u(IDN,k,j,i) = rho;
 
-         if(COORDINATE_SYSTEM == "cylindrical") {
+         if(std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
              phydro->u(IM1,k,j,i) = rho*vr;
              phydro->u(IM2,k,j,i) = 0.0;
          } else { // cartesian
@@ -159,7 +160,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
           Real geom_coeff=1.0;
-          if (COORDINATE_SYSTEM == "cylindrical") geom_coeff=1.0/pcoord->x1f(i);
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff=1.0/pcoord->x1f(i);
+          }
           pfield->b.x1f(k,j,i) = geom_coeff*(az(j+1,i) - az(j,i))/pcoord->dx2f(j);
         }
       }
@@ -168,7 +171,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
           Real geom_coeff=1.0;
-          if (COORDINATE_SYSTEM == "cylindrical") geom_coeff=-1.0; // Left hand system?
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff=-1.0; // Left hand system?
+          }
           pfield->b.x2f(k,j,i) = geom_coeff*(az(j,i) - az(j,i+1))/pcoord->dx1f(i);
         }
       }
@@ -177,7 +182,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           Real rad;
-          if (COORDINATE_SYSTEM == "cylindrical") rad = pcoord->x1v(i);
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            rad = pcoord->x1v(i);
+          }
           else rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
           pfield->b.x3f(k,j,i) = bz*std::pow(rad,beta);
         }

@@ -71,7 +71,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for(int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          if (COORDINATE_SYSTEM == "cartesian") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
             x1=pcoord->x1v(i);
             x2=pcoord->x2v(j);
             x3=pcoord->x3v(k);
@@ -80,7 +80,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*std::exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-          } else if (COORDINATE_SYSTEM == "cylindrical") {
+          } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             rad=pcoord->x1v(i);
             phi=pcoord->x2v(j);
             z=pcoord->x3v(k);
@@ -94,7 +94,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(
                 -v1*std::sin(phi) + v2*std::cos(phi));
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
-          } else { // (COORDINATE_SYSTEM == "spherical_polar") {
+          } else { // (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             rad=fabs(pcoord->x1v(i)*std::sin(pcoord->x2v(j)));
             phi=pcoord->x3v(k);
             theta=pcoord->x2v(j);

@@ -101,19 +101,19 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pbval  = new BoundaryValues(this, input_bcs, pin);
 
   // Coordinates
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoord = new Cartesian(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     pcoord = new Cylindrical(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     pcoord = new SphericalPolar(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "minkowski") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     pcoord = new KerrSchild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "gr_user") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoord = new GRUser(this, pin, false);
   }
 
@@ -204,19 +204,19 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // Coordinates
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoord = new Cartesian(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     pcoord = new Cylindrical(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     pcoord = new SphericalPolar(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "minkowski") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     pcoord = new KerrSchild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "gr_user") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoord = new GRUser(this, pin, false);
   }
 
