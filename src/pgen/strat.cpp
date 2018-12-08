@@ -515,12 +515,12 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
         if (NON_BAROTROPIC_EOS) {
           Real presske = prim(IPR,ke,j,i);
           presske = std::max(presske,pfloor);
-          Real Tke = presske/den;
+          Tke = presske/den;
         }
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
         prim(IDN,ke+k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
-                               (2.0*Tke/SQR(Omega_0)));
+                                     (2.0*Tke/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
         prim(IVX,ke+k,j,i) = prim(IVX,ke,j,i);
