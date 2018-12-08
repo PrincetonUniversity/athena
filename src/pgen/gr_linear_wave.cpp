@@ -947,7 +947,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0) {
   Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
   Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
   if (r*r - q*q*q < 0.0) {
-    Real theta = astd::cos(r/std::sqrt(q*q*q));                 // (NR 5.6.11)
+    Real theta = std::acos(r/std::sqrt(q*q*q));                 // (NR 5.6.11)
     return -2.0 * std::sqrt(q) * std::cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
   } else {
     Real a = -copysign(1.0, r)
