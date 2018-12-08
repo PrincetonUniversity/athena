@@ -109,7 +109,7 @@ public:
   MeshBlock *prev, *next;
 
   // functions
-  size_t GetBlockSizeInBytes(void);
+  std::size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen

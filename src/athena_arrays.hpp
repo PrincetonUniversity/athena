@@ -13,7 +13,7 @@
 //  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
 
 // C++ headers
-#include <cstddef>  // size_t
+#include <cstddef>  // std::size_t
 
 template<typename T>
 class AthenaArray {
@@ -45,7 +45,7 @@ public:
 
   // a function to get the total size of the array
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
-  size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
+  std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
 
   bool IsShallowCopy() { return (scopy_ == true); }
   T *data() { return pdata_; }

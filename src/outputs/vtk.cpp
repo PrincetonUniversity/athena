@@ -153,7 +153,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<size_t>(ncoord1),pfile);
+    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord1),pfile);
 
     // write x2-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
@@ -165,7 +165,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<size_t>(ncoord2),pfile);
+    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord2),pfile);
 
     // write x3-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
@@ -177,7 +177,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<size_t>(ncoord3),pfile);
+    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord3),pfile);
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
     //  in the OutputData linked lists), all in binary floats format
@@ -200,7 +200,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
         // write data in big endian order
         if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
-        fwrite(data,sizeof(float),static_cast<size_t>(nvar*ncells1),pfile);
+        fwrite(data,sizeof(float),static_cast<std::size_t>(nvar*ncells1),pfile);
 
       }}
 

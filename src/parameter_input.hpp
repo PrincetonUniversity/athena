@@ -12,7 +12,7 @@
 // information on the Athena++ input file format.
 
 // C++ headers
-#include <cstddef>  // size_t
+#include <cstddef>  // std::size_t
 #include <ostream>  // ostream
 #include <string>   // string
 

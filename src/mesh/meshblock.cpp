@@ -382,11 +382,11 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
+//! \fn std::size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
-size_t MeshBlock::GetBlockSizeInBytes(void) {
-  size_t size;
+std::size_t MeshBlock::GetBlockSizeInBytes(void) {
+  std::size_t size;
 
   size=phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
