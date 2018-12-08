@@ -9,7 +9,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), cbrt(), sin(), sqrt()
-#include <cstdio>     // fopen(), fprintf(), freopen()
+#include <cstdio>     // fopen(), std::fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -519,23 +519,23 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
               << "Error output file could not be opened" << std::endl;
           throw std::runtime_error(msg.str().c_str());
         }
-        fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  RMS-Error  D  E  M1  M2  M3");
+        std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  RMS-Error  D  E  M1  M2  M3");
         if (MAGNETIC_FIELDS_ENABLED) {
-          fprintf(pfile, "  B1c  B2c  B3c");
+          std::fprintf(pfile, "  B1c  B2c  B3c");
         }
-        fprintf(pfile, "\n");
+        std::fprintf(pfile, "\n");
       }
 
       // Write errors
-      fprintf(pfile, "%d  %d  %d  %d  %e", mesh_size.nx1, mesh_size.nx2, mesh_size.nx3,
+      std::fprintf(pfile, "%d  %d  %d  %d  %e", mesh_size.nx1, mesh_size.nx2, mesh_size.nx3,
           ncycle, total_error);
-      fprintf(pfile, "  %e  %e  %e  %e  %e", errors[IDN], errors[IEN], errors[IM1],
+      std::fprintf(pfile, "  %e  %e  %e  %e  %e", errors[IDN], errors[IEN], errors[IM1],
           errors[IM2], errors[IM3]);
       if (MAGNETIC_FIELDS_ENABLED) {
-        fprintf(pfile,"  %e  %e  %e", errors[NHYDRO+IB1], errors[NHYDRO+IB2],
+        std::fprintf(pfile,"  %e  %e  %e", errors[NHYDRO+IB1], errors[NHYDRO+IB2],
             errors[NHYDRO+IB3]);
       }
-      fprintf(pfile, "\n");
+      std::fprintf(pfile, "\n");
 
       // Close file
       fclose(pfile);

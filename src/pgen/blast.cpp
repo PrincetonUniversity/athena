@@ -379,9 +379,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         throw std::runtime_error(msg.str().c_str());
       }
     }
-    fprintf(pfile,"# Offset blast wave test in %s coordinates:\n",COORDINATE_SYSTEM);
-    fprintf(pfile,"# Rmax       Rmin       Rave        Deformation\n");
-    fprintf(pfile,"%e  %e  %e  %e \n",rmax,rmin,rave,deform);
+    std::fprintf(pfile,"# Offset blast wave test in %s coordinates:\n",COORDINATE_SYSTEM);
+    std::fprintf(pfile,"# Rmax       Rmin       Rave        Deformation\n");
+    std::fprintf(pfile,"%e  %e  %e  %e \n",rmax,rmin,rave,deform);
     fclose(pfile);
   }
 

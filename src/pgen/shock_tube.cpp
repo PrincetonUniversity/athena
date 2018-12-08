@@ -231,19 +231,19 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
-    if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
-    fprintf(pfile,"\n");
+    std::fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
+    if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c  B2c  B3c");
+    std::fprintf(pfile,"\n");
   }
 
   // write errors
-  fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
-  fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
-  fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
+  std::fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
+  std::fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
+  std::fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
   if (MAGNETIC_FIELDS_ENABLED) {
-    fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
+    std::fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
   }
-  fprintf(pfile,"\n");
+  std::fprintf(pfile,"\n");
   fclose(pfile);
 
   return;

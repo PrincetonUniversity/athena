@@ -87,9 +87,9 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // where XXXXX = 5-digit file_number
     std::string fname;
     char number[6];
-    sprintf(number,"%05d",output_params.file_number);
+    std::sprintf(number,"%05d",output_params.file_number);
     char blockid[12];
-    sprintf(blockid,"block%d",pmb->gid);
+    std::sprintf(blockid,"block%d",pmb->gid);
 
     fname.assign(output_params.file_basename);
     fname.append(".");
@@ -111,15 +111,15 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
     // There are five basic parts to the VTK "legacy" file format.
     //  1. Write file version and identifier
-    fprintf(pfile,"# vtk DataFile Version 2.0\n");
+    std::fprintf(pfile,"# vtk DataFile Version 2.0\n");
 
     //  2. Header
-    fprintf(pfile,"# Athena++ data at time=%e",pm->time);
-    fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
-    fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
+    std::fprintf(pfile,"# Athena++ data at time=%e",pm->time);
+    std::fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
+    std::fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
 
     //  3. File format
-    fprintf(pfile,"BINARY\n");
+    std::fprintf(pfile,"BINARY\n");
 
     //  4. Dataset structure
     int ncells1 = out_ie - out_is + 1;
@@ -140,11 +140,11 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
     // Specify the type of data, dimensions, and coordinates.  If N>1, then write N+1
     // cell faces as binary floats.  If N=1, then write 1 cell center position.
-    fprintf(pfile,"DATASET RECTILINEAR_GRID\n");
-    fprintf(pfile,"DIMENSIONS %d %d %d\n",ncoord1,ncoord2,ncoord3);
+    std::fprintf(pfile,"DATASET RECTILINEAR_GRID\n");
+    std::fprintf(pfile,"DIMENSIONS %d %d %d\n",ncoord1,ncoord2,ncoord3);
 
     // write x1-coordinates as binary float in big endian order
-    fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
+    std::fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
     if (ncells1 == 1) {
         data[0] = static_cast<float>(pmb->pcoord->x1v(out_is));
     } else {
@@ -156,7 +156,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     fwrite(data,sizeof(float),static_cast<size_t>(ncoord1),pfile);
 
     // write x2-coordinates as binary float in big endian order
-    fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
+    std::fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
     if (ncells2 == 1) {
         data[0] = static_cast<float>(pmb->pcoord->x2v(out_js));
     } else {
@@ -168,7 +168,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     fwrite(data,sizeof(float),static_cast<size_t>(ncoord2),pfile);
 
     // write x3-coordinates as binary float in big endian order
-    fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
+    std::fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
     if (ncells3 == 1) {
         data[0] = static_cast<float>(pmb->pcoord->x3v(out_ks));
     } else {
@@ -181,15 +181,15 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
     //  in the OutputData linked lists), all in binary floats format
-    fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
+    std::fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
       // write data type (SCALARS or VECTORS) and name
-      fprintf(pfile,"\n%s %s float\n",pdata->type.c_str(), pdata->name.c_str());
+      std::fprintf(pfile,"\n%s %s float\n",pdata->type.c_str(), pdata->name.c_str());
 
       int nvar = pdata->data.GetDim4();
-      if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
+      if (nvar == 1) std::fprintf(pfile,"LOOKUP_TABLE default\n");
       for (int k=out_ks; k<=out_ke; ++k) {
       for (int j=out_js; j<=out_je; ++j) {
 

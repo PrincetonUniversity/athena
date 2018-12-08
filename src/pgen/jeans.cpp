@@ -277,36 +277,36 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
-      fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
-      fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1");
-      if (NON_BAROTROPIC_EOS) fprintf(pfile,"  E_L1 ");
-      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_L1  B2c_L1  B3c_L1");
-      fprintf(pfile,"  Largest-Max/L1  d_max  M1_max  M2_max  M3_max");
-      if (NON_BAROTROPIC_EOS) fprintf(pfile,"  E_max ");
-      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_max  B2c_max  B3c_max");
-      fprintf(pfile,"\n");
+      std::fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
+      std::fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1");
+      if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"  E_L1 ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c_L1  B2c_L1  B3c_L1");
+      std::fprintf(pfile,"  Largest-Max/L1  d_max  M1_max  M2_max  M3_max");
+      if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"  E_max ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c_max  B2c_max  B3c_max");
+      std::fprintf(pfile,"\n");
     }
 
     // write errors
-    fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
-    fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
-    fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
-    fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
-    if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",l1_err[IEN]);
+    std::fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+    std::fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
+    std::fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
+    std::fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
+    if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"  %e",l1_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
+      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
+      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
+      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
     }
-    fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
-    if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",max_err[IEN]);
+    std::fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
+    std::fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
+    if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"  %e",max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB3]);
+      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
+      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
+      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB3]);
     }
-    fprintf(pfile,"\n");
+    std::fprintf(pfile,"\n");
     fclose(pfile);
   }
 

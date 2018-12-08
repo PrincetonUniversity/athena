@@ -49,7 +49,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // where XXXXX = 5-digit file_number
   std::string fname;
   char number[6];
-  sprintf(number,"%05d",output_params.file_number);
+  std::sprintf(number,"%05d",output_params.file_number);
 
   fname.assign(output_params.file_basename);
   fname.append(".");

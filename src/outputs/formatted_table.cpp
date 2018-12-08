@@ -35,7 +35,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 
 //----------------------------------------------------------------------------------------
 //! \fn void FormattedTableOutput:::WriteOutputFile(Mesh *pm)
-//  \brief writes OutputData to file in tabular format using C style fprintf
+//  \brief writes OutputData to file in tabular format using C style std::fprintf
 //         Writes one file per MeshBlock
 
 void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
@@ -66,9 +66,9 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // where XXXXX = 5-digit file_number
     std::string fname;
     char number[6];
-    sprintf(number,"%05d",output_params.file_number);
+    std::sprintf(number,"%05d",output_params.file_number);
     char blockid[12];
-    sprintf(blockid,"block%d",pmb->gid);
+    std::sprintf(blockid,"block%d",pmb->gid);
 
     fname.assign(output_params.file_basename);
     fname.append(".");
@@ -89,28 +89,28 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     }
 
     // print file header
-    fprintf(pfile,"# Athena++ data at time=%e",pm->time);
-    fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
-    fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
+    std::fprintf(pfile,"# Athena++ data at time=%e",pm->time);
+    std::fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
+    std::fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
 
     // write x1, x2, x3 column headers
-    fprintf(pfile,"#");
-    if (out_is != out_ie) fprintf(pfile," i       x1v     ");
-    if (out_js != out_je) fprintf(pfile," j       x2v     ");
-    if (out_ks != out_ke) fprintf(pfile," k       x3v     ");
+    std::fprintf(pfile,"#");
+    if (out_is != out_ie) std::fprintf(pfile," i       x1v     ");
+    if (out_js != out_je) std::fprintf(pfile," j       x2v     ");
+    if (out_ks != out_ke) std::fprintf(pfile," k       x3v     ");
     // write data column headers from "name" stored in linked-list of OutputData's
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
       if (pdata->type == "VECTORS") {
         for (int index = 1; index <= 3; ++index) {
-          fprintf(pfile, "    %s%d     ", pdata->name.c_str(), index);
+          std::fprintf(pfile, "    %s%d     ", pdata->name.c_str(), index);
         }
       } else {
-        fprintf(pfile, "    %s      ", pdata->name.c_str());
+        std::fprintf(pfile, "    %s      ", pdata->name.c_str());
       }
       pdata = pdata->pnext;
     }
-    fprintf(pfile,"\n"); // terminate line
+    std::fprintf(pfile,"\n"); // terminate line
 
     // loop over all cells in data arrays
     for (int k=out_ks; k<=out_ke; ++k) {
@@ -119,28 +119,28 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
 
       // write x1, x2, x3 indices and coordinates on start of new line
       if (out_is != out_ie) {
-        fprintf(pfile,"%04d",i);
-        fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
+        std::fprintf(pfile,"%04d",i);
+        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
       }
       if (out_js != out_je) {
-        fprintf(pfile," %04d",j);  // note extra space for formatting
-        fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
+        std::fprintf(pfile," %04d",j);  // note extra space for formatting
+        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
       }
       if (out_ks != out_ke) {
-        fprintf(pfile," %04d",k);  // note extra space for formatting
-        fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
+        std::fprintf(pfile," %04d",k);  // note extra space for formatting
+        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
       }
 
       // step through linked-list of OutputData's and write each on same line
       OutputData *pdata = pfirst_data_;
       while (pdata != NULL) {
         for (int n=0; n<(pdata->data.GetDim4()); ++n) {
-          fprintf(pfile, output_params.data_format.c_str(), pdata->data(n,k,j,i));
+          std::fprintf(pfile, output_params.data_format.c_str(), pdata->data(n,k,j,i));
         }
         pdata = pdata->pnext;
       }
 
-      fprintf(pfile,"\n"); // terminate line
+      std::fprintf(pfile,"\n"); // terminate line
     }}}
 
     // don't forget to close the output file and clean up ptrs to data in OutputData

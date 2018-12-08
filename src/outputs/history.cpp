@@ -127,33 +127,33 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // If this is the first output, write header
     int iout = 1;
     if (output_params.file_number == 0) {
-      fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
-      fprintf(pfile,"# [%d]=time     ", iout++);
-      fprintf(pfile,"[%d]=dt       ", iout++);
-      fprintf(pfile,"[%d]=mass     ", iout++);
-      fprintf(pfile,"[%d]=1-mom    ", iout++);
-      fprintf(pfile,"[%d]=2-mom    ", iout++);
-      fprintf(pfile,"[%d]=3-mom    ", iout++);
-      fprintf(pfile,"[%d]=1-KE     ", iout++);
-      fprintf(pfile,"[%d]=2-KE     ", iout++);
-      fprintf(pfile,"[%d]=3-KE     ", iout++);
-      if (NON_BAROTROPIC_EOS) fprintf(pfile,"[%d]=tot-E   ", iout++);
+      std::fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
+      std::fprintf(pfile,"# [%d]=time     ", iout++);
+      std::fprintf(pfile,"[%d]=dt       ", iout++);
+      std::fprintf(pfile,"[%d]=mass     ", iout++);
+      std::fprintf(pfile,"[%d]=1-mom    ", iout++);
+      std::fprintf(pfile,"[%d]=2-mom    ", iout++);
+      std::fprintf(pfile,"[%d]=3-mom    ", iout++);
+      std::fprintf(pfile,"[%d]=1-KE     ", iout++);
+      std::fprintf(pfile,"[%d]=2-KE     ", iout++);
+      std::fprintf(pfile,"[%d]=3-KE     ", iout++);
+      if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
       if (MAGNETIC_FIELDS_ENABLED) {
-        fprintf(pfile,"[%d]=1-ME    ", iout++);
-        fprintf(pfile,"[%d]=2-ME    ", iout++);
-        fprintf(pfile,"[%d]=3-ME    ", iout++);
+        std::fprintf(pfile,"[%d]=1-ME    ", iout++);
+        std::fprintf(pfile,"[%d]=2-ME    ", iout++);
+        std::fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
       for (int n=0; n<pm->nuser_history_output_; n++)
-        fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
-      fprintf(pfile,"\n");                              // terminate line
+        std::fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
+      std::fprintf(pfile,"\n");                              // terminate line
     }
 
     // write history variables
-    fprintf(pfile, output_params.data_format.c_str(), pm->time);
-    fprintf(pfile, output_params.data_format.c_str(), pm->dt);
+    std::fprintf(pfile, output_params.data_format.c_str(), pm->time);
+    std::fprintf(pfile, output_params.data_format.c_str(), pm->dt);
     for (int n=0; n<nhistory_output; ++n)
-      fprintf(pfile, output_params.data_format.c_str(), data_sum[n]);
-    fprintf(pfile,"\n"); // terminate line
+      std::fprintf(pfile, output_params.data_format.c_str(), data_sum[n]);
+    std::fprintf(pfile,"\n"); // terminate line
     fclose(pfile);
   }
 

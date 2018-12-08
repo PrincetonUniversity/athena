@@ -951,37 +951,37 @@ void Mesh::OutputMeshStructure(int dim) {
         mincost=std::min(mincost,costlist[i]);
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
-        fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
-        fprintf(fp,
+        std::fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
+        std::fprintf(fp,
                 "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
                 ll, lx1, lx2, lx3);
         if (dim==2) {
-          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
-          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
-          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
-          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2max);
-          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
-          fprintf(fp, "\n\n");
+          std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
+          std::fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
+          std::fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
+          std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2max);
+          std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
+          std::fprintf(fp, "\n\n");
         }
         if (dim==3) {
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
-          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
-          fprintf(fp, "\n\n");
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          std::fprintf(fp, "\n\n");
         }
       }
     }
