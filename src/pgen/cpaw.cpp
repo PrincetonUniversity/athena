@@ -82,13 +82,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
   // User should never input -999.9 in angles
-  if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
-  sin_a3 = sin(ang_3);
-  cos_a3 = cos(ang_3);
+  if (ang_3 == -999.9) ang_3 = std::atan(x1size/x2size);
+  sin_a3 = std::sin(ang_3);
+  cos_a3 = std::cos(ang_3);
 
-  if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-  sin_a2 = sin(ang_2);
-  cos_a2 = cos(ang_2);
+  if (ang_2 == -999.9) ang_2 = std::atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
+  sin_a2 = std::sin(ang_2);
+  cos_a2 = std::cos(ang_2);
 
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
@@ -130,8 +130,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                        + pmb->pcoord->x3v(k)*sin_a2;
-        Real sn = sin(k_par*x);
-        Real cs = fac*cos(k_par*x);
+        Real sn = std::sin(k_par*x);
+        Real cs = fac*std::cos(k_par*x);
 
         err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
 
@@ -333,8 +333,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int i=is; i<=ie; i++) {
       Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
                pcoord->x3v(k)*sin_a2;
-      Real sn = sin(k_par*x);
-      Real cs = fac*cos(k_par*x);
+      Real sn = std::sin(k_par*x);
+      Real cs = fac*std::cos(k_par*x);
 
       phydro->u(IDN,k,j,i) = den;
 
@@ -368,8 +368,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 static Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
-  Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;
+  Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
+  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return -Ay*sin_a3 - Az*sin_a2*cos_a3;
 }
@@ -381,8 +381,8 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 static Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay = fac*(b_perp/k_par)*sin(k_par*(x));
-  Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;
+  Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
+  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return Ay*cos_a3 - Az*sin_a2*sin_a3;
 }
@@ -394,7 +394,7 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 static Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Az = (b_perp/k_par)*cos(k_par*(x)) + b_par*y;
+  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return Az*cos_a2;
 }

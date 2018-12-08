@@ -15,7 +15,7 @@
 // pressure = 1.E-6*B^2   actually zero in the exact solution
 //
 // Can apply sine wave perturbation in a form
-//   *(1+perturb*cos(mphi*phi)) to the magnetic potential Az
+//   *(1+perturb*std::cos(mphi*phi)) to the magnetic potential Az
 //
 // REFERENCES:
 // 1) Velikovich, Giuliani, Zalesak, Gardiner, "Exact self-similar solutions for the
@@ -117,7 +117,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phi = atan2(x2, x1);
       }
       // if (rad==0.0) rad=3.0/100000;
-      az(j,i) = (bphi0/(beta+1))*std::pow(rad,beta+1)*(1+perturb*cos(mphi*phi));
+      az(j,i) = (bphi0/(beta+1))*std::pow(rad,beta+1)*(1+perturb*std::cos(mphi*phi));
     }
   }
 

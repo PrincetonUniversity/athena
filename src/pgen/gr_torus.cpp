@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), max_element(), min(), min_element()
-#include <cmath>      // abs(), cos(), exp(), log(), NAN, std::pow(), sin(), sqrt()
+#include <cmath>      // abs(), std::cos(), exp(), log(), NAN, std::pow(), std::sin(), sqrt()
 #include <iostream>   // endl
 #include <limits>     // numeric_limits::max()
 #include <sstream>    // stringstream

@@ -350,12 +350,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             Real& dx_j   = pmb->pcoord->dx2f(j);
             Real& xf_j   = pmb->pcoord->x2f(j);
             Real& xf_jp1   = pmb->pcoord->x2f(j+1);
-            Real dmu = cos(xf_j) - cos(xf_jp1);
-            Real dmu_tilde = sin(xf_j) - sin(xf_jp1);
-            h_plus = (dx_j*(dmu_tilde + dx_j*cos(xf_jp1)))/(
-                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
-            h_minus = -(dx_j*(dmu_tilde + dx_j*cos(xf_j)))/(
-                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
+            Real dmu = std::cos(xf_j) - std::cos(xf_jp1);
+            Real dmu_tilde = std::sin(xf_j) - std::sin(xf_jp1);
+            h_plus = (dx_j*(dmu_tilde + dx_j*std::cos(xf_jp1)))/(
+                dx_j*(std::sin(xf_j) + std::sin(xf_jp1)) - 2.0*dmu);
+            h_minus = -(dx_j*(dmu_tilde + dx_j*std::cos(xf_j)))/(
+                dx_j*(std::sin(xf_j) + std::sin(xf_jp1)) - 2.0*dmu);
             hplus_ratio_j(j) = (h_plus + 1.0)/(h_minus - 1.0);
             hminus_ratio_j(j) = (h_minus + 1.0)/(h_plus - 1.0);
           } else {

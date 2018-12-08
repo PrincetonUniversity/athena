@@ -116,10 +116,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (pcoord->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phydro->u(IM2,k,j,i) = (1.0 + cos(kx*pcoord->x1v(i)))*
-              (1.0 + cos(ky*pcoord->x2v(j)))/4.0;
+          phydro->u(IM2,k,j,i) = (1.0 + std::cos(kx*pcoord->x1v(i)))*
+              (1.0 + std::cos(ky*pcoord->x2v(j)))/4.0;
         } else {
-          phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pcoord->x2v(j)));
+          phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+std::cos(ky*pcoord->x2v(j)));
         }
 
         phydro->u(IDN,k,j,i) = den;
@@ -172,10 +172,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (pcoord->x3v(k) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phydro->u(IM3,k,j,i) = (1.0+cos(kx*(pcoord->x1v(i))))/8.0
-                     *(1.0+cos(ky*pcoord->x2v(j)))*(1.0+cos(kz*pcoord->x3v(k)));
+          phydro->u(IM3,k,j,i) = (1.0+std::cos(kx*(pcoord->x1v(i))))/8.0
+                     *(1.0+std::cos(ky*pcoord->x2v(j)))*(1.0+std::cos(kz*pcoord->x3v(k)));
         } else {
-          phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pcoord->x3v(k)));
+          phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+std::cos(kz*pcoord->x3v(k)));
         }
 
         phydro->u(IDN,k,j,i) = den;
@@ -201,7 +201,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (pcoord->x3v(k) > 0.0) {
           pfield->b.x1f(k,j,i) = b0;
         } else {
-          pfield->b.x1f(k,j,i) = b0*cos(angle);
+          pfield->b.x1f(k,j,i) = b0*std::cos(angle);
         }
       }}}
       for (int k=ks; k<=ke; k++) {
@@ -210,7 +210,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (pcoord->x3v(k) > 0.0) {
           pfield->b.x2f(k,j,i) = 0.0;
         } else {
-          pfield->b.x2f(k,j,i) = b0*sin(angle);
+          pfield->b.x2f(k,j,i) = b0*std::sin(angle);
         }
       }}}
       for (int k=ks; k<=ke+1; k++) {

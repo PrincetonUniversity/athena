@@ -93,9 +93,9 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     dx2v(jl) = dx2f(jl);
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
-      x2v(j) = ((sin(x2f(j+1)) - x2f(j+1)*cos(x2f(j+1))) -
-                (sin(x2f(j  )) - x2f(j  )*cos(x2f(j  ))))/
-                (cos(x2f(j  )) - cos(x2f(j+1)));
+      x2v(j) = ((std::sin(x2f(j+1)) - x2f(j+1)*std::cos(x2f(j+1))) -
+                (std::sin(x2f(j  )) - x2f(j  )*std::cos(x2f(j  ))))/
+                (std::cos(x2f(j  )) - std::cos(x2f(j+1)));
     }
     for (int j=jl-ng; j<=ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
@@ -130,16 +130,16 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // x2-direction
   if (pmb->block_size.nx2 == 1) {
-    h32v(jl) = sin(x2v(jl));
-    h32f(jl) = sin(x2f(jl));
-    dh32vd2(jl) = cos(x2v(jl));
-    dh32fd2(jl) = cos(x2f(jl));
+    h32v(jl) = std::sin(x2v(jl));
+    h32f(jl) = std::sin(x2f(jl));
+    dh32vd2(jl) = std::cos(x2v(jl));
+    dh32fd2(jl) = std::cos(x2f(jl));
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
-      h32v(j) = sin(x2v(j));
-      h32f(j) = sin(x2f(j));
-      dh32vd2(j) = cos(x2v(j));
-      dh32fd2(j) = cos(x2f(j));
+      h32v(j) = std::sin(x2v(j));
+      h32f(j) = std::sin(x2f(j));
+      dh32vd2(j) = std::cos(x2v(j));
+      dh32fd2(j) = std::cos(x2f(j));
     }
   }
 
@@ -225,10 +225,10 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     if (pmb->block_size.nx2 > 1) {
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        Real sm = fabs(sin(x2f(j  )));
-        Real sp = fabs(sin(x2f(j+1)));
-        Real cm = cos(x2f(j  ));
-        Real cp = cos(x2f(j+1));
+        Real sm = fabs(std::sin(x2f(j  )));
+        Real sp = fabs(std::sin(x2f(j+1)));
+        Real cm = std::cos(x2f(j  ));
+        Real cp = std::cos(x2f(j+1));
         // d(sin theta) = d(-cos theta)
         coord_area1_j_(j) = fabs(cm - cp);
         // sin theta
@@ -242,24 +242,24 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
         coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
         // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
+        coord_area1vc_j_(j)= fabs(std::cos(x2v(j))-std::cos(x2v(j+1)));
         // sin theta at the volume center for non-ideal MHD
-        coord_area2vc_j_(j)= fabs(sin(x2v(j)));
+        coord_area2vc_j_(j)= fabs(std::sin(x2v(j)));
       }
-      coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
+      coord_area2_j_(ju+ng+1) = fabs(std::sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
-        coord_area1vc_j_(jl-1)= 2.0-cos(x2v(jl-1))-cos(x2v(jl));
+        coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
       if (IsPole(ju+1))   // outer polar boundary
-        coord_area1vc_j_(ju)  = 2.0+cos(x2v(ju))+cos(x2v(ju+1));
+        coord_area1vc_j_(ju)  = 2.0+std::cos(x2v(ju))+std::cos(x2v(ju+1));
     } else {
-      Real sm = fabs(sin(x2f(jl  )));
-      Real sp = fabs(sin(x2f(jl+1)));
-      Real cm = cos(x2f(jl  ));
-      Real cp = cos(x2f(jl+1));
+      Real sm = fabs(std::sin(x2f(jl  )));
+      Real sp = fabs(std::sin(x2f(jl+1)));
+      Real cm = std::cos(x2f(jl  ));
+      Real cp = std::cos(x2f(jl+1));
       coord_area1_j_(jl) = fabs(cm - cp);
       coord_area2_j_(jl) = sm;
       coord_area1vc_j_(jl)= coord_area1_j_(jl);
-      coord_area2vc_j_(jl)= sin(x2v(jl));
+      coord_area2vc_j_(jl)= std::sin(x2v(jl));
       coord_vol_j_(jl) = coord_area1_j_(jl);
       coord_src1_j_(jl) = (sp - sm)/coord_vol_j_(jl);
       coord_src2_j_(jl) = (sp - sm)/((sm + sp)*coord_vol_j_(jl));
@@ -333,7 +333,7 @@ void SphericalPolar::Edge3Length(const int k, const int j, const int il, const i
   AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // length3 = r sin(theta) d(phi)
+    // length3 = r std::sin(theta) d(phi)
     len(i) = x1f(i)*coord_area2_j_(j)*dx3f(k);
   }
   return;
@@ -370,7 +370,7 @@ void SphericalPolar::VolCenter3Length(const int k, const int j, const int il,
                                       const int iu, AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // length3 = r sin(theta) d(phi)
+    // length3 = r std::sin(theta) d(phi)
     len(i) = x1v(i)*coord_area2vc_j_(j)*dx3v(k);
   }
   return;
@@ -392,7 +392,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
                                   AthenaArray<Real> &dx3) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
+    dx3(i) = x1v(i)*fabs(std::sin(x2v(j)))*dx3f(k);
   }
   return;
 }
@@ -484,7 +484,7 @@ void SphericalPolar::CellVolume(const int k, const int j, const int il, const in
   AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
+    // volume = r^2 std::sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
     vol(i) = coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
   }
   return;

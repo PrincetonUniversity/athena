@@ -61,12 +61,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
   // User should never input -999.9 in angles
-  if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
-  sin_a3 = sin(ang_3);
-  cos_a3 = cos(ang_3);
-  if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-  sin_a2 = sin(ang_2);
-  cos_a2 = cos(ang_2);
+  if (ang_3 == -999.9) ang_3 = std::atan(x1size/x2size);
+  sin_a3 = std::sin(ang_3);
+  cos_a3 = std::cos(ang_3);
+  if (ang_2 == -999.9) ang_2 = std::atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
+  sin_a2 = std::sin(ang_2);
+  cos_a2 = std::cos(ang_2);
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
@@ -132,10 +132,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int i=is; i<=ie; ++i) {
     Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3)
            + pcoord->x3v(k)*sin_a2;
-    sinkx = sin(x*kwave);
-    coskx = cos(x*kwave);
+    sinkx = std::sin(x*kwave);
+    coskx = std::cos(x*kwave);
 
-    phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*sin(pcoord->x1v(i)*kwave));
+    phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*std::sin(pcoord->x1v(i)*kwave));
 
     //when unstable initial v omega/kwave*amp*coskx
     //when stable initial v 0
@@ -188,16 +188,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int i=is; i<=ie; ++i) {
         Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3)
                + pcoord->x3v(k)*sin_a2;
-        sinkx = sin(x*kwave);
-        coskx = cos(x*kwave);
+        sinkx = std::sin(x*kwave);
+        coskx = std::cos(x*kwave);
         if (omega2 < 0) {
           sinot = -exp(omega*tlim);//time dependent factor of vel
           // unstable case v = amp*omega/k * coskx * e^omega*t
           // minus sign counters minus sign in m
           cosot = exp(omega*tlim);//time dependent factor of rho
         } else {
-          sinot = sin(omega*tlim);//time dependent factor of vel
-          cosot = cos(omega*tlim);//time dependent factor of rho
+          sinot = std::sin(omega*tlim);//time dependent factor of vel
+          cosot = std::cos(omega*tlim);//time dependent factor of rho
         }
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));

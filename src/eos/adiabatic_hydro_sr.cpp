@@ -8,7 +8,7 @@
 //  special-relativistic hydrodynamics, as well as for computing wavespeeds.
 
 // C++ headers
-#include <cmath>   // atan2(), cbrt(), cos(), sqrt()
+#include <cmath>   // atan2(), cbrt(), std::cos(), sqrt()
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
@@ -65,7 +65,7 @@ EquationOfState::~EquationOfState() {}
 //          c3 = c1^3 + c2^2
 //     4) find real root of new cubic:
 //          if c3 >= 0, y0 = (c2 + sqrt(c3))^(1/3) + (c2 - sqrt(c3))^(1/3)
-//          otherwise use y0 = 2 (c2^2 + c3)^(1/6) cos((1/3) atan2(sqrt(-c2), c3))
+//          otherwise use y0 = 2 (c2^2 + c3)^(1/6) std::cos((1/3) atan2(sqrt(-c2), c3))
 //          formulas are equivalent except for implicit assumptions about branch cuts
 //     5) find real root of original (resolvent) cubic:
 //          x0 = y0 - b2/3

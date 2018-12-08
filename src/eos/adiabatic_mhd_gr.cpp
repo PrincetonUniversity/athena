@@ -462,7 +462,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     // Step 2: Calculate correct root of cubic equation
     Real phi, eee, ll, v_sq;
     if (n%3 != 2) {
-      phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
+      phi = std::astd::cos(1.0/a * std::sqrt(27.0*d/(4.0*a)));                     // (NH 5.10)
       eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
       ll = eee - bb_sq;                                                       // (NH 5.5)
       v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
@@ -506,7 +506,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   }
   Real a = ee + prim(IPR,k,j,i) + 0.5*bb_sq;                      // (NH 5.7)
   a = std::max(a, a_min);
-  Real phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
+  Real phi = std::astd::cos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
   Real eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));  // (NH 5.11)
   Real ll = eee - bb_sq;                                          // (NH 5.5)
   Real v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll))
@@ -767,8 +767,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         Real s2 = r2 - q3;
         Real z0;
         if (s2 < 0.0) {
-          Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
-          z0 = -2.0 * std::sqrt(q) * cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
+          Real theta = std::astd::cos(r/std::sqrt(q3));             // (NR 5.6.11)
+          z0 = -2.0 * std::sqrt(q) * std::cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
         } else {
           Real s = std::sqrt(s2);
           Real aa = -copysign(1.0, r) * std::cbrt(std::abs(r) + s);  // (NR 5.6.15)

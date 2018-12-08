@@ -88,9 +88,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       ang_2 = PI/4.0;
       cos_a2 = sin_a2 = std::sqrt(0.5);
     } else {
-      ang_2 = atan(x1size/x3size);
-      sin_a2 = sin(ang_2);
-      cos_a2 = cos(ang_2);
+      ang_2 = std::atan(x1size/x3size);
+      sin_a2 = std::sin(ang_2);
+      cos_a2 = std::cos(ang_2);
     }
     // Use the larger angle to determine the wavelength
     if (cos_a2 >= sin_a2) {
@@ -147,13 +147,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // (iprob=4): rotated cylindrical field loop in 3D.  Similar to iprob=1 with a
     // rotation about the x2-axis.  Define coordinate systems (x1,x2,x3) and (x,y,z)
     // with the following transformation rules:
-    //    x =  x1*cos(ang_2) + x3*sin(ang_2)
+    //    x =  x1*std::cos(ang_2) + x3*std::sin(ang_2)
     //    y =  x2
-    //    z = -x1*sin(ang_2) + x3*cos(ang_2)
+    //    z = -x1*std::sin(ang_2) + x3*std::cos(ang_2)
     // This inverts to:
-    //    x1  = x*cos(ang_2) - z*sin(ang_2)
+    //    x1  = x*std::cos(ang_2) - z*std::sin(ang_2)
     //    x2  = y
-    //    x3  = x*sin(ang_2) + z*cos(ang_2)
+    //    x3  = x*std::sin(ang_2) + z*std::cos(ang_2)
 
     if (iprob==4) {
       Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;

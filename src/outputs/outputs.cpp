@@ -893,10 +893,10 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
     if (out_ks==out_ke) { // 2D
       for (int k=out_ks; k<=out_ke; k++) {
         for (int j=out_js; j<=out_je; j++) {
-          n1x=sin(pco->x2v(j));
-          n1z=cos(pco->x2v(j));
-          n2x=cos(pco->x2v(j));
-          n2z=-sin(pco->x2v(j));
+          n1x=std::sin(pco->x2v(j));
+          n1z=std::cos(pco->x2v(j));
+          n2x=std::cos(pco->x2v(j));
+          n2z=-std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
             dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
             dst(1,k,j,i)=src(2,k,j,i);
@@ -906,16 +906,16 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
       }
     } else { // 3D
       for (int k=out_ks; k<=out_ke; k++) {
-        n3x=-sin(pco->x3v(k));
-        n3y=cos(pco->x3v(k));
+        n3x=-std::sin(pco->x3v(k));
+        n3y=std::cos(pco->x3v(k));
         n3z=0.0;
         for (int j=out_js; j<=out_je; j++) {
-          n1x=sin(pco->x2v(j))*cos(pco->x3v(k));
-          n1y=sin(pco->x2v(j))*sin(pco->x3v(k));
-          n1z=cos(pco->x2v(j));
-          n2x=cos(pco->x2v(j))*cos(pco->x3v(k));
-          n2y=cos(pco->x2v(j))*sin(pco->x3v(k));
-          n2z=-sin(pco->x2v(j));
+          n1x=std::sin(pco->x2v(j))*std::cos(pco->x3v(k));
+          n1y=std::sin(pco->x2v(j))*std::sin(pco->x3v(k));
+          n1z=std::cos(pco->x2v(j));
+          n2x=std::cos(pco->x2v(j))*std::cos(pco->x3v(k));
+          n2y=std::cos(pco->x2v(j))*std::sin(pco->x3v(k));
+          n2z=-std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
             dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
             dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
@@ -928,10 +928,10 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
   if (COORDINATE_SYSTEM == "cylindrical") {
     for (int k=out_ks; k<=out_ke; k++) {
       for (int j=out_js; j<=out_je; j++) {
-        n1x=cos(pco->x2v(j));
-        n1y=sin(pco->x2v(j));
-        n2x=-sin(pco->x2v(j));
-        n2y=cos(pco->x2v(j));
+        n1x=std::cos(pco->x2v(j));
+        n1y=std::sin(pco->x2v(j));
+        n2x=-std::sin(pco->x2v(j));
+        n2y=std::cos(pco->x2v(j));
         for (int i=out_is; i<=out_ie; i++) {
           dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
           dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y;

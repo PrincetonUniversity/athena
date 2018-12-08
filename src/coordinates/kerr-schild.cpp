@@ -26,7 +26,7 @@
 //   other "Kerr-Schild" coordinates exist
 
 // C++ headers
-#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
+#include <cmath>  // abs(), std::cos(), log(), std::sin(), sqrt()
 
 // Athena++ headers
 #include "coordinates.hpp"

@@ -145,9 +145,9 @@ static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j
     phi=pco->x2v(j);
     z=pco->x3v(k);
   } else if (COORDINATE_SYSTEM == "spherical_polar") {
-    rad=fabs(pco->x1v(i)*sin(pco->x2v(j)));
+    rad=fabs(pco->x1v(i)*std::sin(pco->x2v(j)));
     phi=pco->x3v(i);
-    z=pco->x1v(i)*cos(pco->x2v(j));
+    z=pco->x1v(i)*std::cos(pco->x2v(j));
   }
   return;
 }

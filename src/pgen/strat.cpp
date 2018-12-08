@@ -13,10 +13,10 @@
 //   Gammie & Balbus.
 //
 // Several different field configurations and perturbations are possible:
-//  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
 //  ifield = 2 - uniform Bz
-//  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
-//  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+//  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*std::sin(kx*x1))
+//  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
 //  ifield = 5 - uniform By, but only for |z|<2
 //  ifield = 6 - By with constant \beta versus z
 //  ifield = 7 - zero field everywhere
@@ -226,10 +226,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         } // Hydro
 
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
-        //  ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+        //  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
         //  ifield = 2 - uniform Bz
-        //  ifield = 3 - Bz(1+0.5*sin(kx*x1))
-        //  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+        //  ifield = 3 - Bz(1+0.5*std::sin(kx*x1))
+        //  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
         //  ifield = 5 - uniform By, but only for |z|<2
         //  ifield = 6 - By with constant \beta versus z
         //  ifield = 7 - zero field everywhere
@@ -237,10 +237,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 1) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+            pfield->b.x3f(k,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 2) {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -253,19 +253,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (ifield == 3) {
             pfield->b.x1f(k,j,i) = 0.0;
             pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*sin(static_cast<Real>(kx)*x1));
+            pfield->b.x3f(k,j,i) = B0*(1.0+0.5*std::sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
             if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(1.0 + 0.5*
-                                                     sin(static_cast<Real>(kx)*x1));
+                                                     std::sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 4) {
             pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0*(cos(static_cast<Real>(kx)*x1));
-            pfield->b.x3f(k,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+            pfield->b.x2f(k,j,i) = B0*(std::cos(static_cast<Real>(kx)*x1));
+            pfield->b.x3f(k,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(cos(static_cast<Real>(kx)*x1));
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(std::cos(static_cast<Real>(kx)*x1));
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
           }
           if (ifield == 5 && fabs(x3) < 2.0) {
             pfield->b.x1f(k,j,i) = 0.0;

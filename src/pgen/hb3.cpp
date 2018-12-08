@@ -16,7 +16,7 @@
 //  - ipert = 1 - isentropic perturbations to P & d [default]
 //  - ipert = 2 - uniform Vx=amp, sinusoidal density
 //
-//  - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//  - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
 //  - ifield = 2 - uniform Bz
 //
 //  PRIVATE FUNCTION PROTOTYPES:
@@ -165,7 +165,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rvx = 0.0;
       } else if (ipert == 2) {
         rp = p0;
-        rd = d0*(1.0+0.1*sin(static_cast<Real>(kx)*x1));
+        rd = d0*(1.0+0.1*std::sin(static_cast<Real>(kx)*x1));
         if (NON_BAROTROPIC_EOS) {
           rvx = amp*std::sqrt((gm1+1.0)*p0/d0);
         } else {
@@ -189,16 +189,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 // Initialize magnetic field.  For 2D shearing box
 // B1=Bx, B2=Bz, B3=By
-// ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+// ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
 // ifield = 2 - uniform Bz
 // ifield = 3 - sinusiodal modes (Nordita workshop test)
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 1) {
           pfield->b.x1f(ks,j,i) = 0.0;
-          pfield->b.x2f(ks,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+          pfield->b.x2f(ks,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
           pfield->b.x3f(ks,j,i) = 0.0;
           if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin(static_cast<Real>(kx)*x1));
+          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
         } else if (ifield == 2) {
             pfield->b.x1f(ks,j,i) = 0.0;
             pfield->b.x2f(ks,j,i) = B0;

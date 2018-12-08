@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // abs(), cbrt(), sin(), sqrt()
+#include <cmath>      // abs(), cbrt(), std::sin(), sqrt()
 #include <cstdio>     // std::fopen(), std::fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -946,8 +946,8 @@ static Real CubicRootReal(Real a2, Real a1, Real a0) {
   Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
   Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
   if (r*r - q*q*q < 0.0) {
-    Real theta = acos(r/std::sqrt(q*q*q));                 // (NR 5.6.11)
-    return -2.0 * std::sqrt(q) * cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
+    Real theta = astd::cos(r/std::sqrt(q*q*q));                 // (NR 5.6.11)
+    return -2.0 * std::sqrt(q) * std::cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
   } else {
     Real a = -copysign(1.0, r)
         * std::cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)

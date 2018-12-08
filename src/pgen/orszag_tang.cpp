@@ -55,7 +55,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize vector potential
   for (int j=js; j<=je+1; ++j) {
   for (int i=is; i<=ie+1; ++i) {
-    az(j,i) = B0/(4.0*PI)*(cos(4.0*PI*pcoord->x1f(i)) - 2.0*cos(2.0*PI*pcoord->x2f(j)));
+    az(j,i) = B0/(4.0*PI)*(std::cos(4.0*PI*pcoord->x1f(i)) - 2.0*std::cos(2.0*PI*pcoord->x2f(j)));
   }}
 
   // Initialize density, momentum, face-centered fields
@@ -63,8 +63,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     phydro->u(IDN,k,j,i) = d0;
-    phydro->u(IM1,k,j,i) =  d0*v0*sin(2.0*PI*pcoord->x2v(j));
-    phydro->u(IM2,k,j,i) = -d0*v0*sin(2.0*PI*pcoord->x1v(i));
+    phydro->u(IM1,k,j,i) =  d0*v0*std::sin(2.0*PI*pcoord->x2v(j));
+    phydro->u(IM2,k,j,i) = -d0*v0*std::sin(2.0*PI*pcoord->x1v(i));
     phydro->u(IM3,k,j,i) = 0.0;
   }}}
 

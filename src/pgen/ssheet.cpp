@@ -125,8 +125,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM3,k,j,i) = 0.0;
       } else if (ipert == 1) {
         // 2) initialize with shwave in velocity
-        rvx = amp*iso_cs*sin(kx*x1 + ky*x2);
-        rvy = amp*iso_cs*(kx/ky)*sin(kx*x1 + ky*x2);
+        rvx = amp*iso_cs*std::sin(kx*x1 + ky*x2);
+        rvy = amp*iso_cs*(kx/ky)*std::sin(kx*x1 + ky*x2);
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);

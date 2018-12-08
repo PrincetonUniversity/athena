@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <cassert>  // assert
-#include <cmath>    // std::pow(), sin(), sqrt()
+#include <cmath>    // std::pow(), std::sin(), sqrt()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"

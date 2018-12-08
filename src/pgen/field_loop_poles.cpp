@@ -247,9 +247,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
                           Real &v1, Real &v2, Real &v3) {
-  v1 = vy0*sin(x2)*sin(x3);
-  v2 = vy0*cos(x2)*sin(x3);
-  v3 = vy0*cos(x3);
+  v1 = vy0*std::sin(x2)*std::sin(x3);
+  v2 = vy0*std::cos(x2)*std::sin(x3);
+  v3 = vy0*std::cos(x3);
   return;
 }
 
@@ -267,17 +267,17 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 static Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
-  Real x=x1*fabs(sin(x2))*cos(x3);
-  Real y=x1*fabs(sin(x2))*sin(x3);
+  Real x=x1*fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
-  Real z=x1*cos(x2);
+  Real z=x1*std::cos(x2);
   if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
-  a2=-az*fabs(sin(x2));
+  a2=-az*fabs(std::sin(x2));
   return a2;
 }
 
@@ -287,17 +287,17 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 static Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
-  Real x=x1*fabs(sin(x2))*cos(x3);
-  Real y=x1*fabs(sin(x2))*sin(x3);
+  Real x=x1*fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
-  Real z=x1*cos(x2);
+  Real z=x1*std::cos(x2);
   if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
-  a1=az*cos(x2);
+  a1=az*std::cos(x2);
   return a1;
 }
 

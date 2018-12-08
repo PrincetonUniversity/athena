@@ -84,31 +84,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             rad=pcoord->x1v(i);
             phi=pcoord->x2v(j);
             z=pcoord->x3v(k);
-            x1=rad*cos(phi);
-            x2=rad*sin(phi);
+            x1=rad*std::cos(phi);
+            x2=rad*std::sin(phi);
             x3=z;
             v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
-            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*cos(phi)+v2*sin(phi));
-            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*sin(phi)+v2*cos(phi));
+            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)+v2*std::sin(phi));
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*std::sin(phi)+v2*std::cos(phi));
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
           } else { // (COORDINATE_SYSTEM == "spherical_polar") {
-            rad=fabs(pcoord->x1v(i)*sin(pcoord->x2v(j)));
+            rad=fabs(pcoord->x1v(i)*std::sin(pcoord->x2v(j)));
             phi=pcoord->x3v(k);
             theta=pcoord->x2v(j);
-            z=pcoord->x1v(i)*cos(pcoord->x2v(j));
-            x1=rad*cos(phi);
-            x2=rad*sin(phi);
+            z=pcoord->x1v(i)*std::cos(pcoord->x2v(j));
+            x1=rad*std::cos(phi);
+            x2=rad*std::sin(phi);
             x3=z;
             v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
-            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*cos(phi)*sin(theta)
-                                                         +v2*sin(phi)*sin(theta)
-                                                         +v3*cos(theta));
-            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(v1*cos(phi)*cos(theta)
-                                                         +v2*sin(phi)*cos(theta)
-                                                         +v3*sin(theta));
-            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*sin(phi)+v2*cos(phi));
+            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)*std::sin(theta)
+                                                         +v2*std::sin(phi)*std::sin(theta)
+                                                         +v3*std::cos(theta));
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)*std::cos(theta)
+                                                         +v2*std::sin(phi)*std::cos(theta)
+                                                         +v3*std::sin(theta));
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*std::sin(phi)+v2*std::cos(phi));
           }
         }
       }
