@@ -296,24 +296,28 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
           l1_err[IDN] += std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-          max_err[IDN] = std::max(static_cast<Real>(std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
-                                  max_err[IDN]);
-
+          max_err[IDN] = std::max(
+              static_cast<Real>(std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
+              max_err[IDN]);
           l1_err[IM1] += std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
           l1_err[IM2] += std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
           l1_err[IM3] += std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-          max_err[IM1] = std::max(static_cast<Real>(std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
-                                  max_err[IM1]);
-          max_err[IM2] = std::max(static_cast<Real>(std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
-                                  max_err[IM2]);
-          max_err[IM3] = std::max(static_cast<Real>(std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
-                                  max_err[IM3]);
+          max_err[IM1] = std::max(
+              static_cast<Real>(std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
+              max_err[IM1]);
+          max_err[IM2] = std::max(
+              static_cast<Real>(std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
+              max_err[IM2]);
+          max_err[IM3] = std::max(
+              static_cast<Real>(std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
+              max_err[IM3]);
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = cons_(IEN,k,j,i);
             l1_err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-            max_err[IEN] = std::max(static_cast<Real>(std::fabs(e0-pmb->phydro->u(IEN,k,j,i))),
-                                    max_err[IEN]);
+            max_err[IEN] = std::max(
+                static_cast<Real>(std::fabs(e0-pmb->phydro->u(IEN,k,j,i))),
+                max_err[IEN]);
           }
 
           if (MAGNETIC_FIELDS_ENABLED) {
