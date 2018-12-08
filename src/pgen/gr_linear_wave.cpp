@@ -527,13 +527,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       }
 
       // Write errors
-      std::fprintf(pfile, "%d  %d  %d  %d  %e", mesh_size.nx1, mesh_size.nx2, mesh_size.nx3,
-          ncycle, total_error);
+      std::fprintf(pfile, "%d  %d  %d  %d  %e",
+                   mesh_size.nx1, mesh_size.nx2, mesh_size.nx3,
+                   ncycle, total_error);
       std::fprintf(pfile, "  %e  %e  %e  %e  %e", errors[IDN], errors[IEN], errors[IM1],
-          errors[IM2], errors[IM3]);
+                   errors[IM2], errors[IM3]);
       if (MAGNETIC_FIELDS_ENABLED) {
         std::fprintf(pfile,"  %e  %e  %e", errors[NHYDRO+IB1], errors[NHYDRO+IB2],
-            errors[NHYDRO+IB3]);
+                     errors[NHYDRO+IB3]);
       }
       std::fprintf(pfile, "\n");
 

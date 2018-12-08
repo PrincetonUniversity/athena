@@ -60,7 +60,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //Real rad, phi, z;
   Real v1=0.0, v2=0.0, v3=0.0;
   Real d0 = 1.0, p0=1.0, x0=0.0;
-  Real x1,x2,x3;
+  Real x1, x2, x3;
   Real rad,z,phi,theta;
 
   //  Initialize density and momenta in Cartesian grids
@@ -89,8 +89,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             x3=z;
             v2 = v0/std::sqrt(4.0*PI*nuiso*t0)*exp(-SQR(x1-x0)/(4.0*nuiso*t0));
             phydro->u(IDN,k,j,i) = d0;
-            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)+v2*std::sin(phi));
-            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*std::sin(phi)+v2*std::cos(phi));
+            phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*(
+                v1*std::cos(phi) + v2*std::sin(phi));
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(
+                -v1*std::sin(phi) + v2*std::cos(phi));
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
           } else { // (COORDINATE_SYSTEM == "spherical_polar") {
             rad=fabs(pcoord->x1v(i)*std::sin(pcoord->x2v(j)));
@@ -108,7 +110,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*(v1*std::cos(phi)*std::cos(theta)
                                                          +v2*std::sin(phi)*std::cos(theta)
                                                          +v3*std::sin(theta));
-            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*(-v1*std::sin(phi)+v2*std::cos(phi));
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*(
+                -v1*std::sin(phi) + v2*std::cos(phi));
           }
         }
       }

@@ -112,9 +112,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real B0 = 0.0;
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
-  Real x1,x2,x3,xmin,xmax;
-  Real x1f,x2f,x3f;
-  Real rd,rp,rvx,rvy,rvz,rbx,rby,rbz;
+  Real x1, x2, x3, xmin, xmax;
+  Real x1f, x2f, x3f;
+  Real rd, rp, rvx, rvy, rvz, rbx, rby, rbz;
   Real rval;
 
   // initialize density
@@ -229,7 +229,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         //  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
         //  ifield = 2 - uniform Bz
         //  ifield = 3 - Bz(1+0.5*std::sin(kx*x1))
-        //  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
+        //  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1)) =
+        //               zero-net flux w/ helicity
         //  ifield = 5 - uniform By, but only for |z|<2
         //  ifield = 6 - By with constant \beta versus z
         //  ifield = 7 - zero field everywhere

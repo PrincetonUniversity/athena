@@ -144,7 +144,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
       for (int n=0; n<pm->nuser_history_output_; n++)
-        std::fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
+        std::fprintf(pfile,"[%d]=%-8s", iout++,
+                     pm->user_history_output_names_[n].c_str());
       std::fprintf(pfile,"\n");                              // terminate line
     }
 

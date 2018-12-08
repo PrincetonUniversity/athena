@@ -381,7 +381,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         Real s2 = r2 - q3;
         Real z0;
         if (s2 < 0.0) {
-          Real theta = std::astd::cos(r/std::sqrt(q3));             // (NR 5.6.11)
+          Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
           z0 = -2.0 * std::sqrt(q) * std::cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
         } else {
           Real s = std::sqrt(s2);

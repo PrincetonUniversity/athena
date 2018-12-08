@@ -100,13 +100,13 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   if (pmb->block_size.nx2 == 1) {
     Real theta_m = x2f(jl);
     Real theta_p = x2f(jl+1);
-    x2v(jl) = std::astd::cos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+    x2v(jl) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
     dx2v(jl) = dx2f(jl);
   } else {
     for (int j = jl-ng; j <= ju+ng; ++j) {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
-      x2v(j) = std::astd::cos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+      x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
     }
     for (int j = jl-ng; j <= ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
