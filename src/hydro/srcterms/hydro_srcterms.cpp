@@ -7,6 +7,7 @@
 
 // C++ headers
 #include <iostream>
+#include <cstring>    // strcmp
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -100,4 +101,3 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
 
   return;
 }
-
