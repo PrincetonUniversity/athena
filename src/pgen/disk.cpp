@@ -7,16 +7,19 @@
 //  \brief Initializes stratified Keplerian accretion disk in both cylindrical and
 //  spherical polar coordinates.  Initial conditions are in vertical hydrostatic eqm.
 
+// C headers
+
 // C++ headers
+#include <algorithm>  // min
+#include <cfloat>     // FLT_MIN
+#include <cmath>      // sqrt
+#include <cstdlib>    // srand
+#include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <fstream>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>      // sqrt
-#include <algorithm>  // min
-#include <cstdlib>    // srand
-#include <cfloat>     // FLT_MIN
 
 // Athena++ headers
 #include "../athena.hpp"

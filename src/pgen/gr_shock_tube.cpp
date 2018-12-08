@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

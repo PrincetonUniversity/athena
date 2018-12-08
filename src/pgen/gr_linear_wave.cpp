@@ -8,8 +8,9 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // abs(), cbrt(), std::sin(), sqrt()
-#include <cstdio>     // std::fopen(), std::fprintf(), freopen()
+#include <cmath>      // abs(), cbrt(), sin(), sqrt()
+#include <cstdio>     // fopen(), fprintf(), freopen()
+#include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
