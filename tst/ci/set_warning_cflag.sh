@@ -10,7 +10,6 @@ set_warning_cflag () {
     if [ "$1" = "g++" ]; then
 	warn_flags+=("-Wno-unused-private-field"
 		     "-Wno-maybe-uninitialized"
-		     "-Wno-address"
 		     "-Wno-unused-but-set-variable"
 		     "-Wno-unused-variable"
 		     "-Wno-unused-parameter"
@@ -18,7 +17,6 @@ set_warning_cflag () {
 		     "-Wno-unused-function")
     elif [ "$1" == "clang++" ]; then
 	warn_flags+=("-Wno-unused-private-field"
-		     "-Wno-address"
 		     "-Wno-unused-variable"
 		     "-Wno-unused-parameter"
 		     "-Wno-unknown-pragmas"
