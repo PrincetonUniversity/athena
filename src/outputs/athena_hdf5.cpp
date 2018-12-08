@@ -164,7 +164,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if (pod->type=="VECTORS") {
       for (int i=1; i<=3; i++) {
         char sn[3];
-        std::std::sprintf(sn,"%d", i);
+        std::sprintf(sn,"%d", i);
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
