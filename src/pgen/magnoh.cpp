@@ -90,7 +90,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gm1 = peos->GetGamma() - 1.0;
 
-  if (COORDINATE_SYSTEM != "cartesian" &&  COORDINATE_SYSTEM != "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0 &&
+      std::strcmp(COORDINATE_SYSTEM, "cylindrical") != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in magnoh.cpp ProblemGenerator" << std::endl
         << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl

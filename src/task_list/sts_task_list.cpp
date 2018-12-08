@@ -68,7 +68,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
   }
   // TODO(pdmullen): fix non-Cartesian compatibility; this requires the
   //                 handling of coordinate source terms.
-  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatibile "

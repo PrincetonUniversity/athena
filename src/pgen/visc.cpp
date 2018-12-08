@@ -10,8 +10,8 @@
 // C++ headers
 #include <algorithm>  // min
 #include <cstdlib>    // srand
-#include <cfloat>     // FLT_MIN
-#include <cmath>      // std::sqrt()
+#include <cstring>    // strcmp()
+#include <cmath>      // sqrt()
 #include <fstream>
 #include <iostream>   // endl
 #include <stdexcept>  // runtime_error
@@ -31,8 +31,8 @@
 #include "../coordinates/coordinates.hpp"
 
 // problem parameters which are useful to make global to this file
-static Real v0,t0;
-static Real nuiso,gm0;
+static Real v0, t0;
+static Real nuiso, gm0;
 static int iprob;
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -117,7 +117,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   } else if (iprob == 1) { // visc ring gaussian profile at t=0
-    if (COORDINATE_SYSTEM != "cylindrical" && gm0 == 0.0) {
+    if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") != 0 && gm0 == 0.0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
           << "viscous ring test only compatible with cylindrical coord"

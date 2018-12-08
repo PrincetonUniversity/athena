@@ -7,6 +7,7 @@
 //  \brief
 
 // C++ headers
+#include <cstring>    // strcmp()
 #include <iomanip>
 #include <limits>
 #include <sstream>

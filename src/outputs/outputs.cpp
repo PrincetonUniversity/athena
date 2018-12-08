@@ -52,6 +52,7 @@
 // C++ headers
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>    // strcmp
 #include <iomanip>
 #include <iostream>
 #include <sstream>

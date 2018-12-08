@@ -9,6 +9,7 @@
 // C++ headers
 #include <algorithm>  // min()
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
