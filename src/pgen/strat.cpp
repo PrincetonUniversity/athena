@@ -26,15 +26,16 @@
 // Code must be configured using -shear
 //
 // REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
-// (1996)
+//                (1996)
 //            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
 //============================================================================
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>
-#include <cfloat>     // DBL_EPSILON
+#include <cfloat>     // FLT_MIN
 #include <cmath>      // sqrt()
-#include <cstdlib>    // exit()
 #include <iostream>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -55,6 +56,7 @@
 #error "This problem generator requires shearing box"
 #endif
 
+// TODO(felker): many unused arguments in these functions: time, iout, ...
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
               AthenaArray<Real> &cons);
@@ -80,20 +82,20 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
-// Read problem parameters
+  // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
 
-// Enroll user-defined physical source terms
-//   vertical external gravitational potential
+  // Enroll user-defined physical source terms
+  //   vertical external gravitational potential
   EnrollUserExplicitSourceFunction(VertGrav);
 
-// enroll user-defined boundary conditions
+  // enroll user-defined boundary conditions
   if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
-      EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
+    EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
   }
   if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
-      EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
+    EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
   }
 
   return;
@@ -112,6 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real B0 = 0.0;
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
+  // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
   Real x1, x2, x3, xmin, xmax;
   Real x1f, x2f, x3f;
   Real rd, rp, rvx, rvy, rvz, rbx, rby, rbz;
@@ -140,8 +143,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gam = peos->GetGamma();
 
   if (pmy_mesh->mesh_size.nx3 == 1) {
-    std::cout << "[strat.cpp]: Strat only works on a 3D grid"
-      << std::endl;
+    std::stringstream msg;
+    msg << "### FATAL ERROR in strat.cpp ProblemGenerator" << std::endl
+        << "Stratified shearing sheet only works on a 3D grid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 
   // Read problem parameters for initial conditions
@@ -154,6 +159,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ifield = pin->GetOrAddInteger("problem","ifield", 1);
     beta = pin->GetReal("problem","beta");
   }
+
   // Compute pressure based on the EOS.
   if (NON_BAROTROPIC_EOS) {
     pres  = pin->GetOrAddReal("problem","pres",1.0);
@@ -162,14 +168,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     pres = den*SQR(iso_cs);
   }
 
-  //Compute field strength based on beta.
+  // Compute field strength based on beta.
   if (MAGNETIC_FIELDS_ENABLED) {
     B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
     std::cout << "B0=" << B0 << std::endl;
   }
 
   // With viscosity and/or resistivity, read eta_Ohm and nu_V
-  // to be filled in
+  // (to be filled in) ???
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -180,7 +186,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         x2f = pcoord->x2f(j);
         x3f = pcoord->x3f(k);
 
-        //Initialize perturbations
+        // Initialize perturbations
         // ipert = 1 - random perturbations to P/d and V
         // [default, used by HGB]
         if (ipert == 1) {
@@ -203,7 +209,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           rvz = 0.4*rval*std::sqrt(pres/den);
           rvz = (0.4/std::sqrt(3.0)) *rval*1e-3;
           SumRvz += rvz;
-        // no perturbations
+          // no perturbations
         } else {
           rd = den*exp(-x3*x3);
           rvx = 0;
@@ -220,9 +226,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM3,k,j,i) = rd*rvz;
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/(gam-1.0)
-            + 0.5*(SQR(phydro->u(IM1,k,j,i))
-                + SQR(phydro->u(IM2,k,j,i))
-                + SQR(phydro->u(IM3,k,j,i)))/rd;
+              + 0.5*(SQR(phydro->u(IM1,k,j,i))
+                     + SQR(phydro->u(IM2,k,j,i))
+                     + SQR(phydro->u(IM3,k,j,i)))/rd;
         } // Hydro
 
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
@@ -283,7 +289,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             pfield->b.x3f(k,j,i) = 0.0;
             if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
             if (j==je) pfield->b.x2f(k,je+1,i) = std::sqrt(den*exp(-x3*x3)*
-                                                    SQR(Omega_0)/beta);
+                                                           SQR(Omega_0)/beta);
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
           }
           if (ifield == 7) {
@@ -344,9 +350,9 @@ void MeshBlock::UserWorkInLoop(void) {
           Real di = 1.0/u_d;
           Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
           u_e = w_p/(gam-1.0)+ke;
+        }
       }
-    }
-  }}
+    }}
   return;
 }
 
@@ -386,21 +392,20 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
   return;
 }
 
- //  Here is the lower z outflow boundary.
- //  The basic idea is that the pressure and density
- //  are exponentially extrapolated in the ghost zones
- //  assuming a constant temperature there (i.e., an
- //  isothermal atmosphere). The z velocity (NOT the
- //  momentum) are set to zero in the ghost zones in the
- //  case of the last lower physical zone having an inward
- //  flow.  All other variables are extrapolated into the
- //  ghost zones with zero slope.
+//  Here is the lower z outflow boundary.
+//  The basic idea is that the pressure and density
+//  are exponentially extrapolated in the ghost zones
+//  assuming a constant temperature there (i.e., an
+//  isothermal atmosphere). The z velocity (NOT the
+//  momentum) are set to zero in the ghost zones in the
+//  case of the last lower physical zone having an inward
+//  flow.  All other variables are extrapolated into the
+//  ghost zones with zero slope.
 
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
-    AthenaArray<Real> &prim, FaceField &b,
-    Real time, Real dt, int is, int ie, int js,
-    int je, int ks, int ke, int ngh) {
-
+                         AthenaArray<Real> &prim, FaceField &b,
+                         Real time, Real dt, int is, int ie, int js,
+                         int je, int ks, int ke, int ngh) {
   // Copy field components from last physical zone
   // zero slope boundary for B field
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -444,7 +449,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
         prim(IDN,ks-k,j,i) = den*exp(-(SQR(x3)-SQR(x3b))/
-                                (2.0*Tks/SQR(Omega_0)));
+                                     (2.0*Tks/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
         prim(IVX,ks-k,j,i) = prim(IVX,ks,j,i);
@@ -465,20 +470,20 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 
 }
 
- // Here is the upper z outflow boundary.
- // The basic idea is that the pressure and density
- // are exponentially extrapolated in the ghost zones
- // assuming a constant temperature there (i.e., an
- // isothermal atmosphere). The z velocity (NOT the
- // momentum) are set to zero in the ghost zones in the
- // case of the last upper physical zone having an inward
- // flow.  All other variables are extrapolated into the
- // ghost zones with zero slope.
+// Here is the upper z outflow boundary.
+// The basic idea is that the pressure and density
+// are exponentially extrapolated in the ghost zones
+// assuming a constant temperature there (i.e., an
+// isothermal atmosphere). The z velocity (NOT the
+// momentum) are set to zero in the ghost zones in the
+// case of the last upper physical zone having an inward
+// flow.  All other variables are extrapolated into the
+// ghost zones with zero slope.
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
-                  AthenaArray<Real> &prim,
-                  FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke, int ngh) {
-// Copy field components from last physical zone
+                         AthenaArray<Real> &prim,
+                         FaceField &b, Real time, Real dt,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh) {
+  // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=ngh; k++) {
       for (int j=js; j<=je; j++) {

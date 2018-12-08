@@ -44,8 +44,6 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstdlib>    // exit()
-#include <cfloat>     // DBL_EPSILON
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -66,17 +64,18 @@
 #endif
 
 Real Lx,Ly,Lz; // root grid size, global to share with output functions
+// TODO(felker): iout is unused in all 3x of these functions
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 static Real hst_dBy(MeshBlock *pmb, int iout);
 static Real Omega_0,qshear;
-//====================================================================================
+// ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(3);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
   EnrollUserHistoryOutput(2, hst_dBy, "dBy");
-// Read problem parameters
+  // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
   return;
@@ -111,7 +110,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       dir_sgn = -1.0;
   }
 
-// Compute pressure based on the EOS.
+  // Compute pressure based on the EOS.
   Real den = 1.0, pres =1.0, gamma=1.0, iso_cs=1.0;
   if (NON_BAROTROPIC_EOS) {
     gamma = peos->GetGamma();
@@ -120,15 +119,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     iso_cs =peos->GetIsoSoundSpeed();
     pres = den*SQR(iso_cs);
   }
-// Compute field strength based on beta.
+  // Compute field strength based on beta.
   Real B0  = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
     B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
 
-// Ensure a different initial random seed for each meshblock.
+  // Ensure a different initial random seed for each meshblock.
   std::int64_t iseed = -1 - gid;
 
-// Initialize boxsize
+  // Initialize boxsize
   Lx = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   Ly = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
   Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
@@ -141,10 +140,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
   Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
 
-// For PF density wave test, read data from file: not implemented yet.
+  // For PF density wave test, read data from file: not implemented yet.
 
 
-// Rescale amp to sound speed for ipert 2,3
+  // Rescale amp to sound speed for ipert 2,3
   if (NON_BAROTROPIC_EOS) {
     if (ipert == 2 || ipert == 3)
       amp *= std::sqrt(gamma*pres/den);
@@ -153,7 +152,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       amp *= iso_cs;
   }
 
-  Real x1,x2,x3,xmin,xmax;
+  Real x1,x2,x3;  // xmin,xmax;
   Real x1f,x2f,x3f;
   Real rd,rp,rvx,rvy,rvz,rbx,rby,rbz;
   Real rval;
@@ -215,8 +214,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rvz = 0.0;
       }
       if (ipert == 4) {
-        std::cout << "[hgb.cpp]: ipert=4 not implemented yet!" << std::endl;
-        exit(0);
+        std::stringstream msg;
+        msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
+            << "ipert=4 (nonlinear density wave test of Fromang & Papaloizou)"
+            << " not implemented yet!" << std::endl;
+        throw std::runtime_error(msg.str().c_str());
       }
       // Note: ICs in JGG for this test are incorrect.
       if (ipert == 5) {
@@ -266,8 +268,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rvz = 0.0;
       }
 
-// Initialize (d, M, P)
-// for_the_future: if FARGO do not initialize the bg shear
+      // Initialize (d, M, P)
+      // for_the_future: if FARGO do not initialize the bg shear
       phydro->u(IDN,k,j,i) = rd;
       phydro->u(IM1,k,j,i) = rd*rvx;
       phydro->u(IM2,k,j,i) = rd*rvy;
@@ -280,12 +282,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                + SQR(phydro->u(IM3,k,j,i)))/rd;
       } // Hydro
 
-// Initialize b.  For 3D shearing box B1=Bx, B2=By, B3=Bz
-// ifield = 0 - used with ipert=5 or 6
-// ifield = 1 - Bz=B0std::sin(x1) field with zero-net-flux[default]
-// ifield = 2 - uniform Bz
-// ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))=zero-net flux w helicity
-// ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
+      // Initialize b.  For 3D shearing box B1=Bx, B2=By, B3=Bz
+      // ifield = 0 - used with ipert=5 or 6
+      // ifield = 1 - Bz=B0std::sin(x1) field with zero-net-flux[default]
+      // ifield = 2 - uniform Bz
+      // ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))=zero-net flux w helicity
+      // ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 0) {
           pfield->b.x1f(k,j,i) = rbx;
@@ -356,9 +358,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }}
 
 
-// For random perturbations as in HGB, ensure net momentum is zero by
-// subtracting off mean of perturbations
-
+  // For random perturbations as in HGB, ensure net momentum is zero by
+  // subtracting off mean of perturbations
   if (ipert == 1) {
     int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
     SumRvx /= cell_num;
