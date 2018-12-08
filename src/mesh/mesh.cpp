@@ -886,7 +886,7 @@ void Mesh::OutputMeshStructure(int dim) {
 
   // open 'mesh_structure.dat' file
   if (dim>=2) {
-    if ((fp = fopen("mesh_structure.dat","wb")) == NULL) {
+    if ((fp = std::fopen("mesh_structure.dat","wb")) == NULL) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
                 << "Cannot open mesh_structure.dat" << std::endl;
       return;
@@ -988,7 +988,7 @@ void Mesh::OutputMeshStructure(int dim) {
   }
 
   // close file, final outputs
-  if (dim>=2) fclose(fp);
+  if (dim>=2) std::fclose(fp);
   std::cout << "Load Balancing:" << std::endl;
   std::cout << "  Minimum cost = " << mincost << ", Maximum cost = " << maxcost
             << ", Average cost = " << totalcost/nbtotal << std::endl << std::endl;

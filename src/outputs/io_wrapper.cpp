@@ -23,7 +23,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Open(const char* fname, enum rwmode rw)
-//  \brief wrapper for {MPI_File_open} versus {fopen} including error check
+//  \brief wrapper for {MPI_File_open} versus {std::fopen} including error check
 
 int IOWrapper::Open(const char* fname, enum rwmode rw) {
   std::stringstream msg;
@@ -33,7 +33,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh_)
        !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
 #else
-    if ((fh_ = fopen(fname,"rb")) == NULL) {
+    if ((fh_ = std::fopen(fname,"rb")) == NULL) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Input file '" << fname << "' could not be opened" <<std::endl;
@@ -47,7 +47,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
                      MPI_INFO_NULL,&fh_) != MPI_SUCCESS) {
 #else
-    if ((fh_ = fopen(fname,"wb")) == NULL) {
+    if ((fh_ = std::fopen(fname,"wb")) == NULL) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Output file '" << fname << "' could not be opened" <<std::endl;
@@ -63,7 +63,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
-//  \brief wrapper for {MPI_File_read} versus {fread}
+//  \brief wrapper for {MPI_File_read} versus {std::fread}
 
 std::size_t IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
 #ifdef MPI_PARALLEL
@@ -73,13 +73,13 @@ std::size_t IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t cou
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
-  return fread(buf,size,count,fh_);
+  return std::fread(buf,size,count,fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
-//  \brief wrapper for {MPI_File_read_all} versus {fread}
+//  \brief wrapper for {MPI_File_read_all} versus {std::fread}
 
 std::size_t IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count) {
 #ifdef MPI_PARALLEL
@@ -89,14 +89,14 @@ std::size_t IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
-  return fread(buf,size,count,fh_);
+  return std::fread(buf,size,count,fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 //                             IOWrapperSize_t count, IOWrapperSize_t offset)
-//  \brief wrapper for {MPI_File_read_at_all} versus {fseek+fread}
+//  \brief wrapper for {MPI_File_read_at_all} versus {std::fseek+std::fread}
 
 std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
                            IOWrapperSize_t count, IOWrapperSize_t offset) {
@@ -108,14 +108,14 @@ std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
 #else
-  fseek(fh_, offset, SEEK_SET);
-  return fread(buf,size,count,fh_);
+  std::fseek(fh_, offset, SEEK_SET);
+  return std::fread(buf,size,count,fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
-//  \brief wrapper for {MPI_File_write} versus {fwrite}
+//  \brief wrapper for {MPI_File_write} versus {std::fwrite}
 
 std::size_t IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt) {
 #ifdef MPI_PARALLEL
@@ -126,14 +126,14 @@ std::size_t IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSiz
   if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
-  return fwrite(buf,size,cnt,fh_);
+  return std::fwrite(buf,size,cnt,fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
 //                                  IOWrapperSize_t cnt, IOWrapperSize_t offset)
-//  \brief wrapper for {MPI_File_write_at_all} versus {fseek+fwrite}.
+//  \brief wrapper for {MPI_File_write_at_all} versus {std::fseek+std::fwrite}.
 
 std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
                             IOWrapperSize_t cnt, IOWrapperSize_t offset) {
@@ -146,33 +146,33 @@ std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
   if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
-  fseek(fh_, offset, SEEK_SET);
-  return fwrite(buf,size,cnt,fh_);
+  std::fseek(fh_, offset, SEEK_SET);
+  return std::fwrite(buf,size,cnt,fh_);
 #endif
 }
 
 
 //----------------------------------------------------------------------------------------
 //! \fn void IOWrapper::Close(void)
-//  \brief wrapper for {MPI_File_close} versus {fclose}
+//  \brief wrapper for {MPI_File_close} versus {std::fclose}
 
 int IOWrapper::Close(void) {
 #ifdef MPI_PARALLEL
   return MPI_File_close(&fh_);
 #else
-  return fclose(fh_);
+  return std::fclose(fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Seek(IOWrapperSize_t offset)
-//  \brief wrapper for {MPI_File_seek} versus {fseek}
+//  \brief wrapper for {MPI_File_seek} versus {std::fseek}
 
 int IOWrapper::Seek(IOWrapperSize_t offset) {
 #ifdef MPI_PARALLEL
   return MPI_File_seek(fh_,offset,MPI_SEEK_SET);
 #else
-  return fseek(fh_, offset, SEEK_SET);
+  return std::fseek(fh_, offset, SEEK_SET);
 #endif
 }
 

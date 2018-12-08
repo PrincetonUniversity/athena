@@ -217,7 +217,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   FILE *pfile;
 
   // The file exists -- reopen the file in append mode
-  if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
+  if ((pfile = std::fopen(fname.c_str(),"r")) != NULL) {
     if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
@@ -226,7 +226,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   // The file does not exist -- open the file in write mode and add headers
   } else {
-    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -244,7 +244,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
   }
   std::fprintf(pfile,"\n");
-  fclose(pfile);
+  std::fclose(pfile);
 
   return;
 }

@@ -12,7 +12,7 @@
 
 // C++ headers
 #include <algorithm>
-#include <cstdio>
+#include <cstdio>      // std::fwrite(), std::fclose(), std::fopen()
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -103,7 +103,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -153,7 +153,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord1),pfile);
+    std::fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord1),pfile);
 
     // write x2-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
@@ -165,7 +165,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord2),pfile);
+    std::fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord2),pfile);
 
     // write x3-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
@@ -177,7 +177,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
     }
     if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
-    fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord3),pfile);
+    std::fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord3),pfile);
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
     //  in the OutputData linked lists), all in binary floats format
@@ -200,7 +200,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
         // write data in big endian order
         if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
-        fwrite(data,sizeof(float),static_cast<std::size_t>(nvar*ncells1),pfile);
+        std::fwrite(data,sizeof(float),static_cast<std::size_t>(nvar*ncells1),pfile);
 
       }}
 
@@ -208,7 +208,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     }
 
     // don't forget to close the output file and clean up ptrs to data in OutputData
-    fclose(pfile);
+    std::fclose(pfile);
     ClearOutputData();  // required when LoadOutputData() is used.
     delete [] data;
 

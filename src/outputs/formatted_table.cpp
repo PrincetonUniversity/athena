@@ -82,7 +82,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
@@ -144,7 +144,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     }}}
 
     // don't forget to close the output file and clean up ptrs to data in OutputData
-    fclose(pfile);
+    std::fclose(pfile);
     ClearOutputData(); // required when LoadOutputData() is used.
 
     pmb=pmb->next;

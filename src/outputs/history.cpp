@@ -118,7 +118,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = fopen(fname.c_str(),"a")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"a")) == NULL) {
       msg << "### FATAL ERROR in function [OutputType::HistoryFile]" << std::endl
           << "Output file '" << fname << "' could not be opened";
       throw std::runtime_error(msg.str().c_str());
@@ -154,7 +154,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     for (int n=0; n<nhistory_output; ++n)
       std::fprintf(pfile, output_params.data_format.c_str(), data_sum[n]);
     std::fprintf(pfile,"\n"); // terminate line
-    fclose(pfile);
+    std::fclose(pfile);
   }
 
   // increment counters, clean up
