@@ -267,17 +267,17 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 static Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
-  Real x=x1*fabs(std::sin(x2))*std::cos(x3);
-  Real y=x1*fabs(std::sin(x2))*std::sin(x3);
+  Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
   Real z=x1*std::cos(x2);
-  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
-  a2=-az*fabs(std::sin(x2));
+  a2=-az*std::fabs(std::sin(x2));
   return a2;
 }
 
@@ -287,14 +287,14 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 static Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
-  Real x=x1*fabs(std::sin(x2))*std::cos(x3);
-  Real y=x1*fabs(std::sin(x2))*std::sin(x3);
+  Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
    x=-x;
    y=-y;
   }
   Real z=x1*std::cos(x2);
-  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
   a1=az*std::cos(x2);

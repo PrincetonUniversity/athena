@@ -70,7 +70,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
-    Real a = 0.5*std::max( (fabs(wli[IVX]) + cfl), (fabs(wri[IVX]) + cfr) );
+    Real a = 0.5*std::max( (std::fabs(wli[IVX]) + cfl), (std::fabs(wri[IVX]) + cfr) );
 
 //--- Step 3.  Compute L/R fluxes
 

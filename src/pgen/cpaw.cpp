@@ -133,7 +133,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         Real sn = std::sin(k_par*x);
         Real cs = fac*std::cos(k_par*x);
 
-        err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
+        err[IDN] += std::fabs(den - pmb->phydro->u(IDN,k,j,i));
 
         Real mx = den*v_par;
         Real my = -fac*den*v_perp*sn;
@@ -141,9 +141,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
         Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
         Real m3 = mx*sin_a2                    + mz*cos_a2;
-        err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
-        err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
-        err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+        err[IM1] += std::fabs(m1 - pmb->phydro->u(IM1,k,j,i));
+        err[IM2] += std::fabs(m2 - pmb->phydro->u(IM2,k,j,i));
+        err[IM3] += std::fabs(m3 - pmb->phydro->u(IM3,k,j,i));
 
         Real bx = b_par;
         Real by = b_perp*sn;
@@ -151,14 +151,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
         Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
         Real b3 = bx*sin_a2                    + bz*cos_a2;
-        err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-        err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-        err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+        err[NHYDRO + IB1] += std::fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+        err[NHYDRO + IB2] += std::fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+        err[NHYDRO + IB3] += std::fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
 
         if (NON_BAROTROPIC_EOS) {
           Real e0 = pres/gm1 + 0.5*(m1*m1 + m2*m2 + m3*m3)/den
             + 0.5*(b1*b1+b2*b2+b3*b3);
-          err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+          err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i));
         }
 
       }

@@ -226,12 +226,12 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     if (pmb->block_size.nx2 > 1) {
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        Real sm = fabs(std::sin(x2f(j  )));
-        Real sp = fabs(std::sin(x2f(j+1)));
+        Real sm = std::fabs(std::sin(x2f(j  )));
+        Real sp = std::fabs(std::sin(x2f(j+1)));
         Real cm = std::cos(x2f(j  ));
         Real cp = std::cos(x2f(j+1));
         // d(sin theta) = d(-cos theta)
-        coord_area1_j_(j) = fabs(cm - cp);
+        coord_area1_j_(j) = std::fabs(cm - cp);
         // sin theta
         coord_area2_j_(j) = sm;
         // d(sin theta) = d(-cos theta)
@@ -243,21 +243,21 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
         coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
         // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= fabs(std::cos(x2v(j))-std::cos(x2v(j+1)));
+        coord_area1vc_j_(j)= std::fabs(std::cos(x2v(j))-std::cos(x2v(j+1)));
         // sin theta at the volume center for non-ideal MHD
-        coord_area2vc_j_(j)= fabs(std::sin(x2v(j)));
+        coord_area2vc_j_(j)= std::fabs(std::sin(x2v(j)));
       }
-      coord_area2_j_(ju+ng+1) = fabs(std::sin(x2f(ju+ng+1)));
+      coord_area2_j_(ju+ng+1) = std::fabs(std::sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
         coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
       if (IsPole(ju+1))   // outer polar boundary
         coord_area1vc_j_(ju)  = 2.0+std::cos(x2v(ju))+std::cos(x2v(ju+1));
     } else {
-      Real sm = fabs(std::sin(x2f(jl  )));
-      Real sp = fabs(std::sin(x2f(jl+1)));
+      Real sm = std::fabs(std::sin(x2f(jl  )));
+      Real sp = std::fabs(std::sin(x2f(jl+1)));
       Real cm = std::cos(x2f(jl  ));
       Real cp = std::cos(x2f(jl+1));
-      coord_area1_j_(jl) = fabs(cm - cp);
+      coord_area1_j_(jl) = std::fabs(cm - cp);
       coord_area2_j_(jl) = sm;
       coord_area1vc_j_(jl)= coord_area1_j_(jl);
       coord_area2vc_j_(jl)= std::sin(x2v(jl));
@@ -393,7 +393,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
                                   AthenaArray<Real> &dx3) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    dx3(i) = x1v(i)*fabs(std::sin(x2v(j)))*dx3f(k);
+    dx3(i) = x1v(i)*std::fabs(std::sin(x2v(j)))*dx3f(k);
   }
   return;
 }

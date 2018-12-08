@@ -880,8 +880,8 @@ void BoundaryValues::RemapFlux(const int n, const int k, const int jinner,
 
       dUm = 0.0;
       if (dUl*dUr > 0.0) {
-        lim_slope = std::min(fabs(dUl),fabs(dUr));
-        dUm = SIGN(dUc)*std::min(0.5*fabs(dUc),2.0*lim_slope);
+        lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
+        dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
       }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary

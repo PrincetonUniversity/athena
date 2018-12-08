@@ -156,8 +156,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
-    spd[1] = spd[2] - fabs(bxi)/sqrtdl;
-    spd[3] = spd[2] + fabs(bxi)/sqrtdr;
+    spd[1] = spd[2] - std::fabs(bxi)/sqrtdl;
+    spd[3] = spd[2] + std::fabs(bxi)/sqrtdr;
 
 //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
@@ -170,7 +170,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
-    if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       ulst.my = ulst.d * wli[IVY];
       ulst.mz = ulst.d * wli[IVZ];
@@ -198,7 +198,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
-    if (fabs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::fabs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       urst.my = urst.d * wri[IVY];
       urst.mz = urst.d * wri[IVZ];

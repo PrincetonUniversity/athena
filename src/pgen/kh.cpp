@@ -70,7 +70,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
       phydro->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
       phydro->u(IM3,k,j,i) = 0.0;
-      if (fabs(pcoord->x2v(j)) < 0.25) {
+      if (std::fabs(pcoord->x2v(j)) < 0.25) {
         phydro->u(IDN,k,j,i) = drat;
         phydro->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
         phydro->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
@@ -173,11 +173,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phydro->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pcoord->x2v(j))-0.5)/a);
-      phydro->u(IM1,k,j,i) = vflow*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IDN,k,j,i) = 0.505 + 0.495*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IM1,k,j,i) = vflow*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
       phydro->u(IM2,k,j,i) = amp*vflow*std::sin(2.0*PI*pcoord->x1v(i))
-          *std::exp(-((fabs(pcoord->x2v(j))-0.5)
-                      *(fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
+          *std::exp(-((std::fabs(pcoord->x2v(j))-0.5)
+                      *(std::fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
       if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
       phydro->u(IM1,k,j,i) *= phydro->u(IDN,k,j,i);
       phydro->u(IM2,k,j,i) *= phydro->u(IDN,k,j,i);
@@ -228,10 +228,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       phydro->u(IDN,k,j,i) = 1.0;
-      phydro->u(IM1,k,j,i) = vflow*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IM1,k,j,i) = vflow*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
       phydro->u(IM2,k,j,i) = amp*std::sin(2.0*PI*pcoord->x1v(i))
-          *std::exp(-((fabs(pcoord->x2v(j))-0.5)
-                      *(fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
+          *std::exp(-((std::fabs(pcoord->x2v(j))-0.5)
+                      *(std::fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
       if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
       phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
@@ -247,7 +247,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        pfield->b.x1f(k,j,i) = b0*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+        pfield->b.x1f(k,j,i) = b0*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {

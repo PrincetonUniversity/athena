@@ -136,8 +136,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real mxhll = (spd[4]*ur.mx - spd[0]*ul.mx - fr.mx + fl.mx)*idspd;
 
     // S*_L and S*_R from Mignone eqn. (29)
-    spd[1] = ustar - fabs(bxi)/sqrtdhll;
-    spd[3] = ustar + fabs(bxi)/sqrtdhll;
+    spd[1] = ustar - std::fabs(bxi)/sqrtdhll;
+    spd[3] = ustar + std::fabs(bxi)/sqrtdhll;
 
 //--- Step 5. Compute intermediate states
 
@@ -146,7 +146,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ulst.mx = mxhll; // eqn. (24) of Mignone
 
     Real tmp = (spd[0]-spd[1])*(spd[0]-spd[3]);
-    if (fabs(spd[0]-spd[1]) < (SMALL_NUMBER)*cs) {
+    if (std::fabs(spd[0]-spd[1]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       ulst.my = ul.my;
       ulst.mz = ul.mz;
@@ -167,7 +167,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     urst.mx = mxhll; // eqn. (24) of Mignone
 
     tmp = (spd[4]-spd[1])*(spd[4]-spd[3]);
-    if (fabs(spd[4]-spd[3]) < (SMALL_NUMBER)*cs) {
+    if (std::fabs(spd[4]-spd[3]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       urst.my = ur.my;
       urst.mz = ur.mz;
