@@ -465,11 +465,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
   Real qomL = qshear_*Omega_0_*x1size_;
   Real yshear = qomL*time;
-  Real deltay = fmod(yshear,x2size_);
+  Real deltay = std::fmod(yshear,x2size_);
   int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
   int Ngrids  = static_cast<int>(joffset/nx2);
   joverlap_   = joffset - Ngrids*nx2;
-  eps_ = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
+  eps_ = (std::fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
 
   if (shbb_.inner == true) { // if inner block
     for (int n=0; n<4; n++) {
