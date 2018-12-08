@@ -6,7 +6,7 @@
 //! \file turbulence.cpp
 //  \brief implementation of functions in class Turbulence
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

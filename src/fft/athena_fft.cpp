@@ -6,7 +6,7 @@
 //! \file athena_fft.cpp
 //  \brief
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error

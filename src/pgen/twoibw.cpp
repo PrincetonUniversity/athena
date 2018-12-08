@@ -10,7 +10,7 @@
 //   fluid flow with strong shocks", JCP, 54, 115, sect. IVa
 //========================================================================================
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

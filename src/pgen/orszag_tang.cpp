@@ -10,7 +10,7 @@
 //   MHD codes", JCP, 161, 605 (2000)
 //========================================================================================
 
-// C/C++ headers
+// C++ headers
 #include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream

@@ -5,7 +5,7 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the hydro equations
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 

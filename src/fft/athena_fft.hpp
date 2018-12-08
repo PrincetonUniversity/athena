@@ -9,7 +9,7 @@
 //! \file athena_fft.hpp
 //  \brief defines FFT class which implements parallel FFT using MPI/OpenMP
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 
 // Athena++ headers

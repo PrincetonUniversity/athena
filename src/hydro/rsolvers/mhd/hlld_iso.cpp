@@ -10,7 +10,7 @@
 // - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
 //   1427 (2007)
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 

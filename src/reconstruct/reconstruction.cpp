@@ -6,7 +6,7 @@
 //! \file reconstruction.cpp
 //  \brief
 
-// C/C++ headers
+// C++ headers
 #include <iomanip>
 #include <limits>
 #include <sstream>

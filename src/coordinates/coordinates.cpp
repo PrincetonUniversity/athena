@@ -6,7 +6,7 @@
 //! \file coordinates.cpp
 //  \brief implements functions for Coordinates abstract base class
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>
 
 // Athena++ headers

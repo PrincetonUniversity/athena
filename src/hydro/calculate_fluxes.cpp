@@ -6,7 +6,7 @@
 //! \file calculate_fluxes.cpp
 //  \brief Calculate hydro/MHD fluxes
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>   // min,max
 
 // Athena++ headers

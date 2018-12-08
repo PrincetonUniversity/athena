@@ -7,7 +7,7 @@
 //  \brief derived class for time integrator task list.  Can create task lists for one
 //  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

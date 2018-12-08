@@ -10,7 +10,7 @@
 // Meyer, C. D., Balsara, D. S., & Aslam, T. D. 2014, J. Comput. Phys.,
 //    257A, 594-626
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

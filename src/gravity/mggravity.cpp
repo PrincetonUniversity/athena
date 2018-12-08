@@ -6,7 +6,7 @@
 //! \file mggravity.cpp
 //  \brief create multigrid solver for gravity
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

@@ -11,7 +11,7 @@
 //  as geometrical factors (areas, volumes, coordinate source terms) for various
 //  coordinate systems.
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 
 // Athena++ headers

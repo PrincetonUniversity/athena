@@ -6,7 +6,7 @@
 //! \file fft_driver.cpp
 //  \brief implementation of functions in class FFTDriver
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

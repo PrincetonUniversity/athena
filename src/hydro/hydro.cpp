@@ -6,7 +6,7 @@
 //! \file hydro.cpp
 //  \brief implementation of functions in class Hydro
 
-// C/C++ headers
+// C++ headers
 #include <string>
 
 // Athena++ headers

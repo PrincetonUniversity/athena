@@ -7,7 +7,7 @@
 //  \brief Problem generator for resistivy diffusion of B-field.
 //========================================================================================
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <cmath>      // std::sqrt()
 #include <cstring>    // strcmp()

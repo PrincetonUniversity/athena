@@ -6,7 +6,7 @@
 //! \file multigrid_driver.cpp
 //  \brief implementation of functions in class MultigridDriver
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>
 #include <cmath>
 #include <iostream>   // endl

@@ -6,7 +6,7 @@
 //! \file new_blockdt.cpp
 //  \brief computes timestep using CFL condition on a MEshBlock
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // fabs(), sqrt()

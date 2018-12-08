@@ -6,7 +6,7 @@
 //! \file grav_task_list.cpp
 //  \brief
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

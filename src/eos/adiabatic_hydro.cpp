@@ -6,7 +6,7 @@
 //! \file adiabatic_hydro.cpp
 //  \brief implements functions in class EquationOfState for adiabatic hydrodynamics`
 
-// C/C++ headers
+// C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 

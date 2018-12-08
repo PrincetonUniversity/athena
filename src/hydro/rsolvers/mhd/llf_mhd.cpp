@@ -15,7 +15,7 @@
 // - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
 //   Springer-Verlag, Berlin, (1999) chpt. 10.
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 

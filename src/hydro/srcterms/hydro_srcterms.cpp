@@ -5,7 +5,7 @@
 //========================================================================================
 //  \brief Class to implement source terms in the hydro equations
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error

@@ -24,7 +24,7 @@
 // constrined transport", JCP, 205, 509 (2005)
 //========================================================================================
 
-// C/C++ headers
+// C++ headers
 #include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream

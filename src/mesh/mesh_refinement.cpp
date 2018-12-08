@@ -6,7 +6,7 @@
 //! \file mesh_refinement.cpp
 //  \brief implements functions for static/adaptive mesh refinement
 
-// C/C++ headers
+// C++ headers
 #include <cmath>
 #include <algorithm>   // max
 

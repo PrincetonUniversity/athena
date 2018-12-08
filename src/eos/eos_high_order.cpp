@@ -6,7 +6,7 @@
 //! \file eos_high_order.cpp
 //  \brief functions for variable conversion at greater than second-order spatial accuracy
 
-// C/C++ headers
+// C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 

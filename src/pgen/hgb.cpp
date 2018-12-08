@@ -38,7 +38,7 @@
 //============================================================================
 
 
-// C/C++ headers
+// C++ headers
 #include <cmath>      // sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream

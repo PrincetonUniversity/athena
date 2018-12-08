@@ -9,7 +9,7 @@
 //! \file multigrid.hpp
 //  \brief
 
-// C/C++ headers
+// C++ headers
 #include <iostream>
 #ifdef MPI_PARALLEL
 #include <mpi.h>

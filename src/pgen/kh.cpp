@@ -12,7 +12,7 @@
 //   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
 //   - iprob=4: tanh profiles for v and d, "Lecoanet" test
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // min, max
 #include <cmath>
 #include <cstring>    // strcmp()

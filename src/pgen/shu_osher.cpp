@@ -11,7 +11,7 @@
 //   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)
 //========================================================================================
 
-// C/C++ headers
+// C++ headers
 #include <cmath>  // std::sin()
 
 // Athena++ headers

@@ -6,7 +6,7 @@
 //! \file mg_task_list.cpp
 //  \brief functions for MultigridTaskList class
 
-// C/C++ headers
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error

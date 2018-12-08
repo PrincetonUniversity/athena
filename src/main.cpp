@@ -19,7 +19,7 @@
 // C headers
 
 // C++ headers
-#include <csignal>    // signal() ISO C/C++ and sigset_t, sigemptyset() POSIX C extensions
+#include <csignal>    // ISO C/C++ signal() and sigset_t, sigemptyset() POSIX C extensions
 #include <cstdint>    // std::int64_t
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol

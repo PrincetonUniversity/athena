@@ -19,7 +19,7 @@
 // - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
 //   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 

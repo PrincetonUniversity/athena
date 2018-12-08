@@ -14,7 +14,7 @@
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
 //   JCP, 43, 357 (1981).
 
-// C/C++ headers
+// C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
