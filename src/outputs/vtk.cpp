@@ -9,11 +9,11 @@
 //  Writes one file per MeshBlock.
 
 // C headers
-#include <stdio.h>
-#include <stdlib.h>
 
 // C++ headers
 #include <algorithm>
+#include <cstdio>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>

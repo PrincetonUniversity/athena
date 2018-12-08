@@ -61,28 +61,28 @@ ATHDF5Output::ATHDF5Output(OutputParameters oparams)
 
 void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // HDF5 structures
-  hid_t file;                                   // file to be written to
-  hsize_t dims_start[5], dims_count[5];         // array sizes
-  hid_t dataset_levels;                         // datasets to be written
+  hid_t file;                                  // file to be written to
+  hsize_t dims_start[5], dims_count[5];        // array sizes
+  hid_t dataset_levels;                        // datasets to be written
   hid_t dataset_locations;
   hid_t dataset_x1f, dataset_x2f, dataset_x3f;
   hid_t dataset_x1v, dataset_x2v, dataset_x3v;
   hid_t *datasets_celldata;
-  hid_t filespace_blocks;                       // local dataspaces for file
+  hid_t filespace_blocks;                      // local dataspaces for file
   hid_t filespace_blocks_3;
   hid_t filespace_blocks_nx1,  filespace_blocks_nx2,  filespace_blocks_nx3;
   hid_t filespace_blocks_nx1v, filespace_blocks_nx2v, filespace_blocks_nx3v;
   hid_t *filespaces_vars_blocks_nx3_nx2_nx1;
-  hid_t memspace_blocks;                        // local dataspaces for memory
+  hid_t memspace_blocks;                       // local dataspaces for memory
   hid_t memspace_blocks_3;
   hid_t memspace_blocks_nx1,  memspace_blocks_nx2,  memspace_blocks_nx3;
   hid_t memspace_blocks_nx1v, memspace_blocks_nx2v, memspace_blocks_nx3v;
   hid_t *memspaces_vars_blocks_nx3_nx2_nx1;
-  hid_t property_list;                          // properties for writing
+  hid_t property_list;                         // properties for writing
 
-  int num_blocks_local;                       // number of MeshBlocks on this Mesh
-  int *levels_mesh;                           // array of refinement levels on Mesh
-  std::int64_t *locations_mesh;                   // array of logical locations on Mesh
+  int num_blocks_local;                        // number of MeshBlocks on this Mesh
+  int *levels_mesh;                            // array of refinement levels on Mesh
+  std::int64_t *locations_mesh;                // array of logical locations on Mesh
   H5Real *x1f_mesh;                            // array of x1 values on Mesh
   H5Real *x2f_mesh;                            // array of x2 values on Mesh
   H5Real *x3f_mesh;                            // array of x3 values on Mesh

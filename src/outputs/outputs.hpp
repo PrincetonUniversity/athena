@@ -8,8 +8,10 @@
 //! \file outputs.hpp
 //  \brief provides classes to handle ALL types of data output
 
-// C/C++ headers
-#include <stdio.h>  // size_t
+// C headers
+
+// C++ headers
+#include <cstdio>  // std::size_t
 #include <string>
 
 // Athena++ headers

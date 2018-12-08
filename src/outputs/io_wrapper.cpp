@@ -7,10 +7,10 @@
 //  \brief functions that provide wrapper for MPI-IO versus serial input/output
 
 // C headers
-#include <stdio.h>
-#include <stdlib.h>
 
 // C++ headers
+#include <cstdlib>
+#include <cstdio>
 #include <iomanip>
 #include <iostream>
 #include <sstream>

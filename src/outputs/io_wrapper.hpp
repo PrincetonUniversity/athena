@@ -9,7 +9,9 @@
 //  \brief defines a set of small wrapper functions for MPI versus Serial Output.
 
 // C headers
-#include <stdio.h>
+
+// C++ headers
+#include <cstdio>
 
 // Athena++ headers
 #include "../athena.hpp"

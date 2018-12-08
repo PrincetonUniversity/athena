@@ -9,10 +9,10 @@
 //  slices and/or sums.  Writes one file per Meshblock.
 
 // C headers
-#include <stdio.h>
-#include <stdlib.h>
 
 // C++ headers
+#include <cstdio>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <sstream>

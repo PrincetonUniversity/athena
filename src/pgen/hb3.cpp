@@ -27,11 +27,11 @@
 //======================================================================================
 
 // C headers
-#include <stdlib.h>   // exit
 
 // C++ headers
 #include <cfloat>     // DBL_EPSILON
-#include <cmath>      // sqrt()
+#include <cmath>      // std::sqrt()
+#include <cstdlib>    // std::exit
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -97,13 +97,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
       std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
-      exit(0);
+      std::exit(0);
   }
 
 
   if (ShBoxCoord != 2) {
       std::cout << "[hb3.cpp]: only works for x-z plane with ShBoxCoord = 2" << std::endl;
-      exit(0);
+      std::exit(0);
   }
   // allocate 1D array for cell volume used in usr def history
   int ncells1 = block_size.nx1 + 2*(NGHOST);
@@ -173,7 +173,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else {
           std::cout << "[hb3.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
-          exit(0);
+          std::exit(0);
       }
       phydro->u(IDN,ks,j,i) = rd;
       phydro->u(IM1,ks,j,i) = rd*rvx;
@@ -207,7 +207,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (j==je) pfield->b.x2f(ks,je+1,i) = B0;
         } else {
             std::cout << "[hb3.cpp] ifield = " <<ifield <<" is unrecognized " <<std::endl;
-            exit(0);
+            std::exit(0);
         }
           if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,ks,j,i) += 0.5*(

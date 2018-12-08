@@ -14,10 +14,10 @@
 //======================================================================================
 
 // C headers
-#include <stdlib.h>   // exit
 
 // C++ headers
-#include <cmath>      // sqrt()
+#include <cmath>      // std::sqrt()
+#include <cstdlib>   // std::exit()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -63,8 +63,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   return;
 }
 
-
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
@@ -73,12 +71,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
       std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
-      exit(0);
+      std::exit(0);
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
       std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
-      exit(0);
+      std::exit(0);
   }
 
   Real d0 = 1.0;
@@ -153,7 +151,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
           std::cout << "[ssheet.cpp] ipert = " << ipert
                     << " is unrecognized " <<std::endl;
-          exit(0);
+          std::exit(0);
       }
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +

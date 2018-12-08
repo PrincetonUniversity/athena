@@ -8,10 +8,10 @@
 //         frequently in time to trace their history.
 
 // C headers
-#include <stdio.h>
-#include <stdlib.h>
 
 // C++ headers
+#include <cstdlib>
+#include <cstdio>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
