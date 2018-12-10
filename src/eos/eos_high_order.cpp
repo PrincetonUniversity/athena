@@ -36,8 +36,8 @@ void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
 
   int nl = 0;
   int nu = NHYDRO-1;
-  // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
-  // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+  // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
+  // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
   Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
   Real C = (h*h)/24.0;
 

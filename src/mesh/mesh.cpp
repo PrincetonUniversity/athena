@@ -1399,8 +1399,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
         // Compute and store Laplacian of cell-averaged conserved variables
         pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
-        // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-        // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+        // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+        // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
         Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
         Real C = (h*h)/24.0;
 
@@ -1489,7 +1489,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (pbval->nblevel[0][1][1] != -1) kl+=1;
         if (pbval->nblevel[2][1][1] != -1) ku-=1;
         // for MHD, shrink buffer by 3
-        // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
+        // TODO(felker): add MHD loop limit calculation for 4th order W(U)
         pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
                                                    phydro->w, pfield->bcc, pmb->pcoord,
                                                    il, iu, jl, ju, kl, ku);

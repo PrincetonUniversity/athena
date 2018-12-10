@@ -78,7 +78,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
-  // TODO(kfelker): fix loop limits for fourth-order hydro
+  // TODO(felker): fix loop limits for fourth-order hydro
   //  if (MAGNETIC_FIELDS_ENABLED) {
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) // 2D
@@ -109,8 +109,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     pmb->pcoord->LaplacianX1(wl, laplacian_l_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
     pmb->pcoord->LaplacianX1(wr, laplacian_r_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
 
-    // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
-    // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+    // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
+    // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
     Real h = pmb->pcoord->dx1f(is);  // pco->dx1f(i); inside loop
     Real C = (h*h)/24.0;
 
@@ -123,7 +123,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
             wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
             wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
             // reapply primitive variable floors to face-centered L/R Riemann states
-            // TODO(kfelker): only needs to be called 1x for all NWAVE
+            // TODO(felker): only needs to be called 1x for all NWAVE
             pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
             pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
           }
@@ -132,7 +132,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     }
 
     // Compute x1 interface fluxes from face-centered primitive variables
-    // TODO(kfelker): check that e3x1,e2x1 arguments added in late 2017 work here
+    // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
     RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1, wl_fc_, wr_fc_, flux_fc, e3x1, e2x1);
 
     // Compute Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -179,7 +179,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
-    // TODO(kfelker): fix loop limits for fourth-order hydro
+    // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx3 == 1) // 2D
       il=is-1, iu=ie+1, kl=ks, ku=ke;
@@ -208,8 +208,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->pcoord->LaplacianX2(wl, laplacian_l_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
       pmb->pcoord->LaplacianX2(wr, laplacian_r_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
 
-      // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
-      // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
+      // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
       Real h = pmb->pcoord->dx2f(js);  // pco->dx2f(j); inside loop
       Real C = (h*h)/24.0;
 
@@ -222,7 +222,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
-              // TODO(kfelker): only needs to be called 1x for all NWAVE
+              // TODO(felker): only needs to be called 1x for all NWAVE
               pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
               pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
             }
@@ -231,7 +231,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       }
 
       // Compute x2 interface fluxes from face-centered primitive variables
-      // TODO(kfelker): check that e1x2,e3x2 arguments added in late 2017 work here
+      // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
       RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2, wl_fc_, wr_fc_, flux_fc,
                     e1x2, e3x2);
 
@@ -280,7 +280,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
     // set the loop limits
     il=is, iu=ie, jl=js, ju=je;
-    // TODO(kfelker): fix loop limits for fourth-order hydro
+    // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED)
     il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
@@ -305,8 +305,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->pcoord->LaplacianX3(wl, laplacian_l_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
       pmb->pcoord->LaplacianX3(wr, laplacian_r_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
 
-      // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
-      // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
+      // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
       Real h = pmb->pcoord->dx3f(ks);  // pco->dx3f(k); inside loop
       Real C = (h*h)/24.0;
 
@@ -319,7 +319,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               wl_fc_(n,k,j,i) = wl(n,k,j,i) - C*laplacian_l_fc(n,k,j,i);
               wr_fc_(n,k,j,i) = wr(n,k,j,i) - C*laplacian_r_fc(n,k,j,i);
               // reapply primitive variable floors to face-centered L/R Riemann states
-              // TODO(kfelker): only needs to be called 1x for all NWAVE
+              // TODO(felker): only needs to be called 1x for all NWAVE
               pmb->peos->ApplyPrimitiveFloors(wl_fc_, k, j, i);
               pmb->peos->ApplyPrimitiveFloors(wr_fc_, k, j, i);
             }
@@ -328,7 +328,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       }
 
       // Compute x3 interface fluxes from face-centered primitive variables
-      // TODO(kfelker): check that e1x3,e3x3 arguments added in late 2017 work here
+      // TODO(felker): check that e1x3,e3x3 arguments added in late 2017 work here
       RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3, wl_fc_, wr_fc_, flux_fc,
                     e2x3, e1x3);
 

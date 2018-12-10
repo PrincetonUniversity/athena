@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file jet.cpp
-//  \brief Sets up a jet introduced through L-x1 boundary (left edge)
+//  \brief Sets up a nonrelativistic jet introduced through L-x1 boundary (left edge)
 //========================================================================================
 
 // C++ headers
@@ -29,7 +29,6 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 static Real r_amb,d_amb,p_amb,vx_amb,vy_amb,vz_amb,bx_amb,by_amb,bz_amb;
 static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
-
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

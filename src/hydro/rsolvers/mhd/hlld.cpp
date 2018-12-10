@@ -161,7 +161,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
-    // TODO(kfelker): place an assertion that ptstl==ptstr
+    // TODO(felker): place an assertion that ptstl==ptstr
     Real ptstl = ptl + ul.d*sdl*(spd[2]-wli[IVX]);
     Real ptstr = ptr + ur.d*sdr*(spd[2]-wri[IVX]);
     // Real ptstl = ptl + ul.d*sdl*(sdl-sdml); // these equations had issues when averaged

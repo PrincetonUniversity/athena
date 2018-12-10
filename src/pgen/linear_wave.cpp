@@ -266,8 +266,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
       pmb->pcoord->Laplacian(cons_, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
 
-      // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-      // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+      // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
       Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
       Real C = (h*h)/24.0;
 

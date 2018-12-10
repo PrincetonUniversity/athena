@@ -863,7 +863,7 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       if (pbval->nblevel[0][1][1] != -1) kl+=1;
       if (pbval->nblevel[2][1][1] != -1) ku-=1;
       // for MHD, shrink buffer by 3
-      // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
+      // TODO(felker): add MHD loop limit calculation for 4th order W(U)
       pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
                                                  phydro->w1, pfield->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);

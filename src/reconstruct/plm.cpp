@@ -110,7 +110,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 #pragma omp simd
       for (int i=il-1; i<=iu; ++i) {
         // Reapply EOS floors to both L/R reconstructed primitive states
-        // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
+        // TODO(felker): check that fused loop with NWAVE redundant application is slower
         pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
