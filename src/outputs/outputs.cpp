@@ -133,7 +133,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x1=" << x1 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -146,7 +146,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x2=" << x2 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -159,7 +159,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x3=" << x3 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -169,21 +169,21 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x1-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         op.output_sumx2 = pin->GetOrAddBoolean(op.block_name,"x2_sum",false);
         if ((op.output_slicex2) && (op.output_sumx2)) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x2-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         op.output_sumx3 = pin->GetOrAddBoolean(op.block_name,"x3_sum",false);
         if ((op.output_slicex3) && (op.output_sumx3)) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x3-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
 
         // read ghost cell option
@@ -223,13 +223,13 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Executable not configured for HDF5 outputs, but HDF5 file format "
               << "is requested in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
 #endif
         } else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Unrecognized file format = '" << op.file_type
               << "' in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
 
         // Add type as node in linked list
@@ -249,7 +249,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
     msg << "### FATAL ERROR in Outputs constructor" << std::endl
         << "More than one history or restart output block detected in input file"
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Move restarts to the end of the OutputType list, so file counters for other
@@ -591,7 +591,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
         << "Output variable '" << output_params.variable << "' not implemented"
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   return;

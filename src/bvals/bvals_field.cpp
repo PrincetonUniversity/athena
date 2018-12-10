@@ -97,7 +97,7 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:LoadFieldShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
    }
 
   int p=0;
@@ -350,7 +350,7 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
    }
 
   // set [sj:ej] of current meshblock

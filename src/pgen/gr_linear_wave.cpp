@@ -74,7 +74,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
         << "wave_flag=" << wave_flag << " must be between 0 and " << NWAVE-1 << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   amp = pin->GetReal("problem", "amp");
   compute_error = pin->GetOrAddBoolean("problem", "compute_error", false);
@@ -511,14 +511,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         if (pfile == NULL) {
           msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
               << "Error output file could not be opened" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
       } else {  // file does not exist
         pfile = std::fopen(filename.c_str(), "w");
         if (pfile == NULL) {
           msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
               << "Error output file could not be opened" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  RMS-Error  D  E  M1  M2  M3");
         if (MAGNETIC_FIELDS_ENABLED) {

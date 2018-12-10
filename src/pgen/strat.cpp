@@ -146,7 +146,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in strat.cpp ProblemGenerator" << std::endl
         << "Stratified shearing sheet only works on a 3D grid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Read problem parameters for initial conditions

@@ -46,7 +46,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
         << "diffusive processes in input file." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): time-dep BC's require knowing the time within
   //                 an RKL1 operator-split STS, what is the time?
@@ -55,7 +55,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
         << "with shearing box BC's." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
@@ -64,7 +64,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
         << "with source terms." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): fix non-Cartesian compatibility; this requires the
   //                 handling of coordinate source terms.
@@ -73,7 +73,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatibile "
         << "with non-Cartesian coordinates." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): add mesh-refinement functionality
   if (pm->multilevel==true) {
@@ -81,7 +81,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatibile "
         << "with mesh refinement." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Now assemble list of tasks for each stage of SuperTimeStep integrator
@@ -231,7 +231,7 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
       std::stringstream msg;
       msg << "### FATAL ERROR in AddSuperTimeStepTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   ntasks++;
   return;

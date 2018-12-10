@@ -46,14 +46,14 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
         << "Turbulence flag is set to zero! Shouldn't reach here!" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   } else {
 #ifndef FFT
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
         << "non zero Turbulence flag is set without FFT!" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
 #endif
   }
@@ -108,7 +108,7 @@ void TurbulenceDriver::Driving(void) {
       std::stringstream msg;
       msg << "### FATAL ERROR in TurbulenceDriver::Driving" << std::endl
           << "Turbulence flag " << pm->turb_flag << " is not supported!" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
 
   return;
@@ -244,7 +244,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   if (mpierr) {
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // Ask Changgoo about this
   for (int n=0; n<4; n++) m[n]=gm[n];
@@ -292,7 +292,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   if (mpierr) {
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   //  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
   m[0] = gm[0];  m[1] = gm[1];

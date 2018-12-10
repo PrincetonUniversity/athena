@@ -106,7 +106,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     // There are five basic parts to the VTK "legacy" file format.

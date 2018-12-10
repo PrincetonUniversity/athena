@@ -218,7 +218,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
             << "ipert=4 (nonlinear density wave test of Fromang & Papaloizou)"
             << " not implemented yet!" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       // Note: ICs in JGG for this test are incorrect.
       if (ipert == 5) {

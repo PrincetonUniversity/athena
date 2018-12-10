@@ -80,7 +80,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The MeshBlock size must be power of two." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return;
     }
     // *** temporary ***
@@ -88,7 +88,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return;
     }
   }

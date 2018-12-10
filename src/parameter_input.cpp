@@ -131,7 +131,7 @@ void ParameterInput::LoadFromStream(std::istream &is) {
         msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
             << std::endl << "Block name '" << block_name
             << "' in the input stream'" << "' not properly ended";
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
 
       pib = FindOrAddBlock(block_name);  // find or add block to linked list
@@ -140,7 +140,7 @@ void ParameterInput::LoadFromStream(std::istream &is) {
         msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
             << std::endl << "Block name '" << block_name
             << "' could not be found/added";
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       continue;  // skip to next line if block name was found
     }
@@ -185,7 +185,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input) {
       msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]"
           << "<par_end> is not found in the first 40KBytes." << std::endl
           << "Probably the file is broken or a wrong file is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   } while(ret == bufsize); // till EOF (or par_end is found)
 
@@ -346,7 +346,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
     if (pb == NULL) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Block name '" << block << "' on command line not found";
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     // get pointer to node with same parameter name in linked list of InputLines
@@ -355,7 +355,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Parameter '" << name << "' in block '" << block
           << "' on command line not found";
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     pl->param_value.assign(value);   // replace existing value
 
@@ -405,7 +405,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // get pointer to node with same parameter name in linked list of InputLines
@@ -413,7 +413,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   std::string val=pl->param_value;
@@ -440,7 +440,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // get pointer to node with same parameter name in linked list of InputLines
@@ -448,7 +448,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   std::string val=pl->param_value;
@@ -475,7 +475,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // get pointer to node with same parameter name in linked list of InputLines
@@ -483,7 +483,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   std::string val=pl->param_value;
@@ -521,7 +521,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // get pointer to node with same parameter name in linked list of InputLines
@@ -529,7 +529,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   std::string val=pl->param_value;
@@ -680,7 +680,7 @@ void ParameterInput::RollbackNextTime() {
         msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
             << std::endl << "Parameter name 'next_time' not found in block '"
             << pb->block_name << "'";
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       pl = pb->GetPtrToLine("dt");
@@ -688,7 +688,7 @@ void ParameterInput::RollbackNextTime() {
         msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
             << std::endl << "Parameter name 'dt' not found in block '"
             << pb->block_name << "'";
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       next_time -= static_cast<Real>(atof(pl->param_value.c_str()));
       msg << next_time;
@@ -726,7 +726,7 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
         msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]"
             << std::endl << "Parameter name 'dt' not found in block '"
             << pb->block_name << "'";
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       dt0 = static_cast<Real>(atof(pl->param_value.c_str()));
       dt = dt0 * static_cast<int>((mesh_time - next_time) / dt0) + dt0;

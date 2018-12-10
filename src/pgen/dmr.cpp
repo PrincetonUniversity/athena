@@ -75,7 +75,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (block_size.nx3 > 1) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3="
         << block_size.nx3 << " but this test only works for 2D" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Initialize shock using parameters defined in Woodward & Colella.  Note we smooth the

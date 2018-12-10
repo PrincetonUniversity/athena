@@ -42,7 +42,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (shk_dir < 1 || shk_dir > 3) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl
         << "shk_dir = " << shk_dir << " must be either 1,2, or 3" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   for (int k=ks; k<=ke; ++k) {

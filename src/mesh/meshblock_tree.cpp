@@ -426,7 +426,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
       } else {
         msg << "### FATAL ERROR in FindNeighbor" << std::endl
             << "Neighbor search failed. The Block Tree is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
         return NULL;
       }
     }
@@ -439,7 +439,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     if (bt==NULL) {
       msg << "### FATAL ERROR in FindNeighbor" << std::endl
           << "Neighbor search failed. The Block Tree is broken." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return NULL;
     }
   }
@@ -455,7 +455,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   if (amrflag==false) {
     msg << "### FATAL ERROR in FindNeighbor" << std::endl
         << "Neighbor search failed. The Block Tree is broken." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   return bt;
 }

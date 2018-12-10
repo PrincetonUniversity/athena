@@ -71,14 +71,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
         << "Shearing wave sheet only works on a 2D grid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
         << "Shearing wave sheet is currently incompatible with MHD" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   Real d0 = 1.0;
@@ -153,7 +153,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           std::stringstream msg;
           msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
               << "Shearing wave sheet ipert=" << ipert << " is unrecognized" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +

@@ -69,7 +69,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
         << "file " << filename << " cannot be opened" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   for (int n = 0; n < num_lines; ++n) {
     Real r, rho, ur, uphi, bbr, bbphi;

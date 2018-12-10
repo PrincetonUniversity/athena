@@ -122,7 +122,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
           << "viscous ring test only compatible with cylindrical coord"
           << std::endl << "with point mass in center" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     Real width = 0.1;
     for(int k=ks; k<=ke; ++k) {
@@ -144,7 +144,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       std::stringstream msg;
       msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
           << "viscous iprob has to be either 0 or 1" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
 
   return;

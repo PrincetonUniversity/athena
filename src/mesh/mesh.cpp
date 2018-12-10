@@ -98,7 +98,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
         << num_mesh_threads_ << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // read number of grid cells in root level of mesh from input file.
@@ -107,7 +107,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx1 must be >= 4, but nx1="
         << mesh_size.nx1 << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   mesh_size.nx2 = pin->GetInteger("mesh","nx2");
@@ -115,7 +115,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx2 must be >= 1, but nx2="
         << mesh_size.nx2 << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   mesh_size.nx3 = pin->GetInteger("mesh","nx3");
@@ -123,13 +123,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx3 must be >= 1, but nx3="
         << mesh_size.nx3 << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mesh_size.nx2 == 1 && mesh_size.nx3 > 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file: nx2=1, nx3=" << mesh_size.nx3
         << ", 2D problems in x1-x3 plane not supported" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   dim=1;
@@ -149,19 +149,19 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Input x1max must be larger than x1min: x1min=" << mesh_size.x1min
         << " x1max=" << mesh_size.x1max << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mesh_size.x2max <= mesh_size.x2min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Input x2max must be larger than x2min: x2min=" << mesh_size.x2min
         << " x2max=" << mesh_size.x2max << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mesh_size.x3max <= mesh_size.x3min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Input x3max must be larger than x3min: x3min=" << mesh_size.x3min
         << " x3max=" << mesh_size.x3max << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // read ratios of grid cell size in each direction
@@ -194,13 +194,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   || mesh_size.nx3 % block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
      || (block_size.nx3 < 4 && dim==3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 meshes." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // calculate the number of the blocks
@@ -269,7 +269,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The number of the refinement level must be smaller than "
           << 63-root_level+1 << "." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   } else {
     max_level = 63;
@@ -283,7 +283,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
       << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
       << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     InputBlock *pib = pin->pfirst_block;
@@ -313,27 +313,27 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         if (ref_lev<1) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Refinement level must be larger than 0 (root level = 0)" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         if (lrlev > max_level) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Refinement level exceeds the maximum level (specify"
               << "maxlevel in <mesh> if adaptive)."
               << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         if (ref_size.x1min > ref_size.x1max || ref_size.x2min > ref_size.x2max
         || ref_size.x3min > ref_size.x3max)  {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Invalid refinement region is specified."<<  std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         if (ref_size.x1min < mesh_size.x1min || ref_size.x1max > mesh_size.x1max
         || ref_size.x2min < mesh_size.x2min || ref_size.x2max > mesh_size.x2max
         || ref_size.x3min < mesh_size.x3min || ref_size.x3max > mesh_size.x3max) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Refinement region must be smaller than the whole mesh." << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
@@ -433,7 +433,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
           << Globals::nranks << ")" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
@@ -541,7 +541,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
         << num_mesh_threads_ << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // read BC flags for each of the 6 boundaries
@@ -563,7 +563,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     if (resfile.Read(headerdata,1,headersize)!=headersize) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
 #ifdef MPI_PARALLEL
@@ -660,7 +660,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The number of the refinement level must be smaller than "
           << 63-root_level+1 << "." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   } else {
     max_level = 63;
@@ -680,7 +680,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       if (resfile.Read(userdata,1,udsize)!=udsize) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
             << "The restart file is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
     }
 #ifdef MPI_PARALLEL
@@ -710,7 +710,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     if (resfile.Read(idlist,listsize,nbtotal)!=static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
 #ifdef MPI_PARALLEL
@@ -743,7 +743,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Tree reconstruction failed. The total numbers of the blocks do not match. ("
         << nbtotal << " != " << nnb << ")" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
 #ifdef MPI_PARALLEL
@@ -752,7 +752,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
           << Globals::nranks << ")" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
@@ -799,7 +799,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   for (i=nbs;i<=nbe;i++) {
     // Match fixed-width integer precision of IOWrapperSize_t datasize
@@ -825,7 +825,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // clean up
@@ -1068,13 +1068,13 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc) {
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mesh_bcs[dir]!=USER_BNDRY) {
     msg << "### FATAL ERROR in EnrollUserBoundaryFunction" << std::endl
         << "The boundary condition flag must be set to the string 'user' in the "
         << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   BoundaryFunction_[dir]=my_bc;
   return;
@@ -1099,25 +1099,25 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
   if (dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (dir == X1DIR && mesh_size.x1rat > 0.0) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "x1rat = " << mesh_size.x1rat <<
         " must be negative for user-defined mesh generator in X1DIR " << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (dir == X2DIR && mesh_size.x2rat > 0.0) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "x2rat = " << mesh_size.x2rat <<
         " must be negative for user-defined mesh generator in X2DIR " << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (dir == X3DIR && mesh_size.x3rat > 0.0) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "x3rat = " << mesh_size.x3rat <<
         " must be negative for user-defined mesh generator in X3DIR " << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   use_uniform_meshgen_fn_[dir]=false;
   MeshGenerator_[dir]=my_mg;
@@ -1164,7 +1164,7 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const cha
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
         << "The number of the user-defined history output (" << i << ") "
         << "exceeds the declared number (" << nuser_history_output_ << ")." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   user_history_output_names_[i] = name;
   user_history_func_[i] = my_func;
@@ -1214,7 +1214,7 @@ void Mesh::AllocateRealUserMeshDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateRealUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   nreal_user_mesh_data_=n;
   ruser_mesh_data = new AthenaArray<Real>[n];
@@ -1230,7 +1230,7 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateIntUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   nint_user_mesh_data_=n;
   iuser_mesh_data = new AthenaArray<int>[n];
@@ -1247,7 +1247,7 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   MGBoundaryFunction_[dir]=my_bc;
   return;
@@ -1587,7 +1587,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
       msg << "### FATAL ERROR in LoadBalance" << std::endl
           << "There is at least one process which has no MeshBlock" << std::endl
           << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     mycost+=clist[i];
     rlist[i]=j;
@@ -1620,7 +1620,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
     msg << "### FATAL ERROR in LoadBalance" << std::endl
         << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
         << "Decrease the number of threads or use more MeshBlocks." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   return;

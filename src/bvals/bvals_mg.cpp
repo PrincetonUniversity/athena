@@ -112,7 +112,7 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType ty
         std::stringstream msg;
         msg << "### FATAL ERROR in InitBoundaryData" << std::endl
             << "Invalid boundary type is specified." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       break;
     }

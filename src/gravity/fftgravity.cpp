@@ -38,7 +38,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
    msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 

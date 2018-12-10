@@ -36,7 +36,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 
@@ -97,7 +97,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
         << nmb << " MeshBlocks will be loaded to the FFT block."  << std::endl
         << "Number of FFT blocks " << pm->nbtotal/nmb << " are not matched with "
         << "Number of processors " << nranks_ << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 

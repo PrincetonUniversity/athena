@@ -90,7 +90,7 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:LoadHydroShearing "
           << std::endl << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
 
   int p=0;
@@ -361,7 +361,7 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real>
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:SetHydroShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
 
   // set [sj:ej] of current meshblock

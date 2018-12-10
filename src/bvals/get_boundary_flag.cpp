@@ -40,6 +40,6 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
         << "Input string=" << input_string << " not valid boundary type" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 }

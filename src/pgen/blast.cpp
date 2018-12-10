@@ -72,7 +72,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in blast.cpp ProblemGenerator" << std::endl
         << "Unrecognized COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // setup uniform ambient medium with spherical over-pressured region
@@ -231,7 +231,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in blast.cpp ParameterInput" << std::endl
         << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // find indices of the center
@@ -370,7 +370,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
 
     // The file does not exist -- open the file in write mode and add headers
@@ -378,7 +378,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
     }
     std::fprintf(pfile,"# Offset blast wave test in %s coordinates:\n",COORDINATE_SYSTEM);

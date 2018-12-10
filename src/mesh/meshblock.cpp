@@ -317,7 +317,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   nreal_user_meshblock_data_=n;
   ruser_meshblock_data = new AthenaArray<Real>[n];
@@ -333,7 +333,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   nint_user_meshblock_data_=n;
@@ -351,7 +351,7 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
         << std::endl << "User output variables are already allocated." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   nuser_out_var=n;
@@ -374,7 +374,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
         << std::endl << "User output variable is not allocated." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   user_out_var_names_[n]=name;

@@ -202,7 +202,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
         << "integrator=" << integrator << " not valid time integrator" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Set cfl_number based on user input and time integrator CFL limit
@@ -495,7 +495,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   ntasks++;
   return;

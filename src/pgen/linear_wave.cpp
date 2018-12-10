@@ -379,7 +379,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
 
     // The file does not exist -- open the file in write mode and add headers
@@ -387,7 +387,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       std::fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
       std::fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");

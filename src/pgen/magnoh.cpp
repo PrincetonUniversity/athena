@@ -96,7 +96,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     msg << "### FATAL ERROR in magnoh.cpp ProblemGenerator" << std::endl
         << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl
         << "Only Cartesian and cylindrical are supported for this problem" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // initialize vector potential for inflowing B

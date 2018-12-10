@@ -108,4 +108,10 @@
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
+#ifdef ENABLE_EXCEPTIONS
+#define ATHENA_ERROR(x) throw std::runtime_error(x.str().c_str())
+#else
+#define ATHENA_ERROR(x) std::cout << x.str(); << std::exit(EXIT_FAILURE)
+#endif
+
 #endif // DEFS_HPP_

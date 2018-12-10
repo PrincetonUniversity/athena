@@ -221,7 +221,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
   // The file does not exist -- open the file in write mode and add headers
@@ -229,7 +229,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     std::fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
     if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c  B2c  B3c");
@@ -266,19 +266,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                        xshock > pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x1 domain for shkdir=" << shk_dir << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (shk_dir == 2 && (xshock < pmy_mesh->mesh_size.x2min ||
                        xshock > pmy_mesh->mesh_size.x2max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x2 domain for shkdir=" << shk_dir << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (shk_dir == 3 && (xshock < pmy_mesh->mesh_size.x3min ||
                        xshock > pmy_mesh->mesh_size.x3max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x3 domain for shkdir=" << shk_dir << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Parse left state read from input file: dl,ul,vl,wl,[pl]
@@ -398,7 +398,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   default:
     msg << "### FATAL ERROR in Problem Generator" << std::endl
         << "shock_dir=" << shk_dir << " must be either 1,2, or 3" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
 // now set face-centered (interface) magnetic fields -----------------------------------

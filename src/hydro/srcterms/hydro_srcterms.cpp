@@ -43,7 +43,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
           << "The point mass gravity works only in spherical polar coordinates"
           << "or in 2D cylindrical coordinates." << std::endl
           << "Check <problem> GM parameter in the input file." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);

@@ -60,7 +60,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
         << "xorder=" << input_recon << " not valid choice for reconstruction"<< std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
@@ -74,7 +74,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "xorder=" << input_recon <<
           " (PPM) reconstruction selected, but nghost=" << NGHOST << std::endl
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
 
@@ -96,7 +96,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "x1rat= " << pmb->block_size.x1rat << std::endl
             << "x2rat= " << pmb->block_size.x2rat << std::endl
             << "x3rat= " << pmb->block_size.x3rat << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
@@ -127,14 +127,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "dx1f=" << dx_i << std::endl
             << "dx2f=" << dx_j << std::endl
             << "dx3f=" << dx_k << std::endl;
-        // throw std::runtime_error(msg.str().c_str());
+        // ATHENA_ERROR(msg);
       }
       if (pmb->pmy_mesh->multilevel==true) {
         std::stringstream msg;
         msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
             << " currently does not support SMR/AMR " << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
     } else {
       std::stringstream msg;
@@ -142,7 +142,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM
           << " is incompatible with selected time/xorder=" << input_recon << std::endl
           << "Reconfigure with Cartesian coordinates " << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     if (SHEARING_BOX) {
@@ -150,7 +150,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
           << "Selected time/xorder=" << input_recon << " flux calculations"
           << "currently does not support shearing box boundary conditions " << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return;
     }
 
@@ -166,7 +166,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "time/xorder=" << input_recon
           << " reconstruction selected, but nghost=" << NGHOST << std::endl
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
   }

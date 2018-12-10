@@ -114,7 +114,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       msg << "### FATAL ERROR in Problem Generator\n"
           << "unrecognized field_config="
           << field_config_str << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     if (field_config != vertical) {
@@ -503,7 +503,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         std::stringstream msg;
         msg << "### FATAL ERROR in Problem Generator\n"
             << "tilted disks cannot use field_config=renorm" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
 
       // Prepare global 2D sample arrays for integrating
@@ -858,7 +858,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Problem Generator\n"
           << "field_config must be \"normal\", \"renorm\", or \"vertical\"" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     // Set magnetic fields according to vector potential in vertical case

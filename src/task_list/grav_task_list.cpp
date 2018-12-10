@@ -84,7 +84,7 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
       std::stringstream msg;
       msg << "### FATAL ERROR in AddGravitySolverTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   ntasks++;
   return;

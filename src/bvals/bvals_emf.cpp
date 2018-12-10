@@ -93,7 +93,7 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
    }
 
   int p=0;
@@ -264,7 +264,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
    }
 
   int p=0;

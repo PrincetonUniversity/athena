@@ -39,7 +39,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Currently the Multigrid solver works only in 3D." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   if (pmy_mesh_->use_uniform_meshgen_fn_[X1DIR]==false
@@ -48,7 +48,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   int nbx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
@@ -58,7 +58,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 

@@ -55,7 +55,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
         << "non zero Turbulence flag is set without FFT!" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
 #endif
   }

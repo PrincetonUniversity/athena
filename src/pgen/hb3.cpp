@@ -96,7 +96,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
         << "Shearing sheet only works on a 2D grid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
 
@@ -104,7 +104,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
         << "Shearing sheet only works for x-z plane with ShBoxCoord=2" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   // allocate 1D array for cell volume used in usr def history
   int ncells1 = block_size.nx1 + 2*(NGHOST);
@@ -176,7 +176,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           std::stringstream msg;
           msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
               << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
       }
       phydro->u(IDN,ks,j,i) = rd;
       phydro->u(IM1,ks,j,i) = rd*rvx;
@@ -212,7 +212,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           std::stringstream msg;
           msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
               << "Shearing sheet ifield=" << ifield << " is unrecognized" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,ks,j,i) += 0.5*(

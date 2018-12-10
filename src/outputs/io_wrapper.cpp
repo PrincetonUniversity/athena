@@ -37,7 +37,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Input file '" << fname << "' could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return false;
     }
 
@@ -51,7 +51,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Output file '" << fname << "' could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return false;
     }
   } else {

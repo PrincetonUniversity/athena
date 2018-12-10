@@ -74,7 +74,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Flag ix1_bc=" << block_bcs[INNER_X1] << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       break;
    }
 
@@ -101,7 +101,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Flag ox1_bc=" << block_bcs[OUTER_X1] << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
 
   if (pmb->block_size.nx2 > 1) {
@@ -129,7 +129,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
             << "Flag ix2_bc=" << block_bcs[INNER_X2] << " not valid" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
      }
 
     // Outer x2
@@ -155,7 +155,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
             << "Flag ox2_bc=" << block_bcs[OUTER_X2] << " not valid" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
     }
   }
 
@@ -180,7 +180,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
             << "Flag ix3_bc=" << block_bcs[INNER_X3] << " not valid" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
      }
 
     // Outer x3
@@ -202,7 +202,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
             << "Flag ox3_bc=" << block_bcs[OUTER_X3] << " not valid" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
     }
   }
 
@@ -212,7 +212,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
@@ -225,7 +225,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
@@ -770,7 +770,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         std::stringstream msg;
         msg << "### FATAL ERROR in InitBoundaryData" << std::endl
             << "Invalid boundary type is specified." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       break;
     }
@@ -1177,7 +1177,7 @@ void BoundaryValues::CheckBoundary(void) {
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
             << "A user-defined boundary is specified but the hydro boundary function "
             << "is not enrolled in direction " << i  << "." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
     }
   }

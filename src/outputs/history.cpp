@@ -121,7 +121,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if ((pfile = std::fopen(fname.c_str(),"a")) == NULL) {
       msg << "### FATAL ERROR in function [OutputType::HistoryFile]" << std::endl
           << "Output file '" << fname << "' could not be opened";
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     // If this is the first output, write header

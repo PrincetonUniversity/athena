@@ -45,7 +45,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mode_>=2 && eps_<0.0) {
    std::stringstream msg;
@@ -53,7 +53,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
         << "Convergence threshold must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitatyThreshold for the iterative mode." << std::endl
         << "Set the threshold = 0.0 for automatic convergence control." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Allocate multigrid objects

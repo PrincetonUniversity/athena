@@ -73,13 +73,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     default:
       msg << "### FATAL ERROR in Problem Generator\n"
           << "shock_dir=" << shock_dir << " must be either 1, 2, or 3" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   if (shock_pos < min_bound || shock_pos > max_bound) {
     msg << "### FATAL ERROR in Problem Generator\n"
         << "xshock=" << shock_pos << " lies outside x" << shock_dir
             << " domain for shkdir=" << shock_dir << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Read left state

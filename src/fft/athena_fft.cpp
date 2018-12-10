@@ -463,7 +463,7 @@ void FFTBlock::MpiInitialize() {
           << "Current MPI Configuration is "
           << orig_idx_->np[0] << " x " << orig_idx_->np[1]
           << " x " << orig_idx_->np[2] << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   } else {
     // For 3D block decompsition, simply set indices as in original Athena Array.

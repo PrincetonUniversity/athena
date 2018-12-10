@@ -32,7 +32,7 @@ void ChangeRunDir(const char *pdir) {
   if (chdir(pdir)) {
     msg << "### FATAL ERROR in function [ChangeToRunDir]" << std::endl
         << "Cannot cd to directory '" << pdir << "'";
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   return;
