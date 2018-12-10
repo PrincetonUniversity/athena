@@ -7,6 +7,7 @@
 //  \brief Implements HDF5 reader functions
 
 // C++ headers
+#include <iostream>   // cout
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // string

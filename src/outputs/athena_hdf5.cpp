@@ -9,6 +9,7 @@
 #include <cstring>    // strlen(), strncpy()
 #include <fstream>    // ofstream
 #include <iomanip>    // setfill(), setw()
+#include <iostream>   // cout
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // string
