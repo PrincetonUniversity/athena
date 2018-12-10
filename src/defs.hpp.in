@@ -58,12 +58,9 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
-// allow try/throw/catch C++ exception handling? default=1 (true)
-#define EXCEPTION_HANDLING_ENABLED @EXCEPTION_HANDLING_ENABLED@
-
 
 // configure.py dict(definitions) Boolean string macros:
-// (all of these options have the latter (false) option as defaults)
+// (these options have the latter (false) option as defaults, unless noted otherwise)
 // make use of FFT? (FFT or NO_FFT)
 #define @FFT_OPTION@
 
@@ -78,6 +75,10 @@
 
 // debug build macros (DEBUG or NOT_DEBUG)
 #define @DEBUG_OPTION@
+
+// try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
+// (enabled by default)
+#define @EXCEPTION_HANDLING_OPTION@
 
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"

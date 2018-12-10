@@ -532,7 +532,7 @@ else:
 
 # -coverage argument
 if args['coverage']:
-    definitions['EXCEPTION_HANDLING_ENABLED'] = '0'
+    definitions['EXCEPTION_HANDLING_OPTION'] = 'DISABLE_EXCEPTIONS'
     # For now, append new compiler flags and don't override --cxx set, but set code to be
     # unoptimized (-O0 instead of -O3) to get useful statement annotations. Should we add
     # '-g -fopenmp-simd', by default? Don't combine lines when writing source code!
@@ -557,7 +557,7 @@ else:
     # Enable C++ try/throw/catch exception handling, by default. Disable only when testing
     # code coverage, since it causes Gcov and other tools to report misleadingly low
     # branch coverage statstics due to untested throwing of exceptions from function calls
-    definitions['EXCEPTION_HANDLING_ENABLED'] = '1'
+    definitions['EXCEPTION_HANDLING_OPTION'] = 'ENABLE_EXCEPTIONS'
 
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
