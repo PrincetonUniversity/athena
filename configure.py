@@ -515,7 +515,7 @@ else:
 
 # -debug argument
 if args['debug']:
-    definitions['DEBUG'] = 'DEBUG'
+    definitions['DEBUG_OPTION'] = 'DEBUG'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
@@ -528,7 +528,7 @@ if args['debug']:
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
 else:
-    definitions['DEBUG'] = 'NOT_DEBUG'
+    definitions['DEBUG_OPTION'] = 'NOT_DEBUG'
 
 # -coverage argument
 if args['coverage']:
@@ -631,9 +631,9 @@ else:
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
-definitions['FFT_DEFINE'] = 'NO_FFT'
+definitions['FFT_OPTION'] = 'NO_FFT'
 if args['fft']:
-    definitions['FFT_DEFINE'] = 'FFT'
+    definitions['FFT_OPTION'] = 'FFT'
     if args['fftw_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['fftw_path'])

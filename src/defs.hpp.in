@@ -63,8 +63,9 @@
 
 
 // configure.py dict(definitions) Boolean string macros:
+// (all of these options have the latter (false) option as defaults)
 // make use of FFT? (FFT or NO_FFT)
-#define @FFT_DEFINE@
+#define @FFT_OPTION@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
@@ -75,6 +76,8 @@
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
+// debug build macros (DEBUG or NOT_DEBUG)
+#define @DEBUG_OPTION@
 
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
