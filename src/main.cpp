@@ -200,7 +200,9 @@ int main(int argc, char *argv[]) {
 
   ParameterInput *pinput;
   IOWrapper infile, restartfile;
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     pinput = new ParameterInput;
     if (res_flag==1) {
       restartfile.Open(restart_filename, IO_WRAPPER_READ_MODE);
@@ -216,7 +218,8 @@ int main(int argc, char *argv[]) {
       pinput->LoadFromFile(infile);
       infile.Close();
     }
-    pinput->ModifyFromCmdline(argc,argv);
+    pinput->ModifyFromCmdline(argc ,argv);
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -236,18 +239,22 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+#endif // ENABLE_EXCEPTIONS
 
 //--- Step 4. ----------------------------------------------------------------------------
 // Construct and initialize Mesh
 
   Mesh *pmesh;
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     if (res_flag==0) {
       pmesh = new Mesh(pinput, mesh_flag);
     } else {
       pmesh = new Mesh(pinput, restartfile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -267,6 +274,7 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+#endif // ENABLE_EXCEPTIONS
 
   // With current mesh time possibly read from restart file, correct next_time for outputs
   if (iarg_flag == 1 && res_flag == 1) {
@@ -298,8 +306,11 @@ int main(int argc, char *argv[]) {
 // Construct and initialize TaskList
 
   TaskList *ptlist;
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -309,11 +320,15 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+#endif // ENABLE_EXCEPTIONS
 
   TaskList *pststlist = NULL;
   if (STS_ENABLED) {
+#ifdef ENABLE_EXCEPTIONS
     try {
+#endif
       pststlist = new SuperTimeStepTaskList(pinput, pmesh);
+#ifdef ENABLE_EXCEPTIONS
     }
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -323,13 +338,17 @@ int main(int argc, char *argv[]) {
 #endif
       return(0);
     }
+#endif // ENABLE_EXCEPTIONS
   }
 
 //--- Step 6. ----------------------------------------------------------------------------
 // Set initial conditions by calling problem generator, or reading restart file
 
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     pmesh->Initialize(res_flag, pinput);
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -346,16 +365,19 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
-
+#endif // ENABLE_EXCEPTIONS
 
 //--- Step 7. ----------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
 
   Outputs *pouts;
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     if (res_flag==0) pouts->MakeOutputs(pmesh,pinput);
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -373,6 +395,7 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+#endif // ENABLE_EXCEPTIONS
 
 //=== Step 9. === START OF MAIN INTEGRATION LOOP =========================================
 // For performance, there is no error handler protecting this step (except outputs)
@@ -428,9 +451,11 @@ int main(int argc, char *argv[]) {
       pmesh->AdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
-
+#ifdef ENABLE_EXCEPTIONS
     try {
+#endif
       pouts->MakeOutputs(pmesh,pinput);
+#ifdef ENABLE_EXCEPTIONS
     }
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl
@@ -447,6 +472,7 @@ int main(int argc, char *argv[]) {
 #endif
       return(0);
     }
+#endif // ENABLE_EXCEPTIONS
 
     // check for signals
     if (SignalHandler::CheckSignalFlags() != 0) break;
@@ -458,8 +484,11 @@ int main(int argc, char *argv[]) {
     SignalHandler::CancelWallTimeAlarm();
 
   // make the final outputs
+#ifdef ENABLE_EXCEPTIONS
   try {
+#endif
     pouts->MakeOutputs(pmesh,pinput,true);
+#ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -476,6 +505,7 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
+#endif // ENABLE_EXCEPTIONS
 
   pmesh->UserWorkAfterLoop(pinput);
 
