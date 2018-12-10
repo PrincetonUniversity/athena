@@ -48,7 +48,7 @@ GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *
   pmy_block_=pmb;
   for (int i=0; i<6; i++) {
     if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
-      GravityBoundaryFunction_[i]=NULL;
+      GravityBoundaryFunction_[i]=nullptr;
     // else
   }
 
@@ -77,11 +77,11 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.sflag[n]=BNDRY_WAITING;
-    bd.send[n]=NULL;
-    bd.recv[n]=NULL;
+    bd.send[n]=nullptr;
+    bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
-    bd.req_send[n]=MPI_REQUEST_NULL;
-    bd.req_recv[n]=MPI_REQUEST_NULL;
+    bd.req_send[n]=MPI_REQUEST_nullptr;
+    bd.req_recv[n]=MPI_REQUEST_nullptr;
 #endif
 
     // Allocate buffers
@@ -103,9 +103,9 @@ void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
-    if (bd.req_send[n]!=MPI_REQUEST_NULL)
+    if (bd.req_send[n]!=MPI_REQUEST_nullptr)
       MPI_Request_free(&bd.req_send[n]);
-    if (bd.req_recv[n]!=MPI_REQUEST_NULL)
+    if (bd.req_recv[n]!=MPI_REQUEST_nullptr)
       MPI_Request_free(&bd.req_recv[n]);
 #endif
   }
@@ -123,32 +123,32 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
       bks=pmb->ks, bke=pmb->ke;
   Real time=pmy_mesh_->time;
   Real dt=pmy_mesh_->dt;
-  if (GravityBoundaryFunction_[INNER_X2]==NULL
+  if (GravityBoundaryFunction_[INNER_X2]==nullptr
      && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if (GravityBoundaryFunction_[OUTER_X2]==NULL
+  if (GravityBoundaryFunction_[OUTER_X2]==nullptr
      && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if (GravityBoundaryFunction_[INNER_X3]==NULL
+  if (GravityBoundaryFunction_[INNER_X3]==nullptr
      && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if (GravityBoundaryFunction_[OUTER_X3]==NULL
+  if (GravityBoundaryFunction_[OUTER_X3]==nullptr
      && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   // Apply boundary function on inner-x1
-  if (GravityBoundaryFunction_[INNER_X1] != NULL)
+  if (GravityBoundaryFunction_[INNER_X1] != nullptr)
     GravityBoundaryFunction_[INNER_X1](pmb, pco, dst, time, dt,
                                        pmb->is, pmb->ie, bjs, bje, bks, bke);
   // Apply boundary function on outer-x1
-  if (GravityBoundaryFunction_[OUTER_X1] != NULL)
+  if (GravityBoundaryFunction_[OUTER_X1] != nullptr)
     GravityBoundaryFunction_[OUTER_X1](pmb, pco, dst, time, dt,
                                        pmb->is, pmb->ie, bjs, bje, bks, bke);
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
 
     // Apply boundary function on inner-x2
-    if (GravityBoundaryFunction_[INNER_X2] != NULL)
+    if (GravityBoundaryFunction_[INNER_X2] != nullptr)
       GravityBoundaryFunction_[INNER_X2](pmb, pco, dst, time, dt,
                                          bis, bie, pmb->js, pmb->je, bks, bke);
     // Apply boundary function on outer-x2
-    if (GravityBoundaryFunction_[OUTER_X2] != NULL)
+    if (GravityBoundaryFunction_[OUTER_X2] != nullptr)
       GravityBoundaryFunction_[OUTER_X2](pmb, pco, dst, time, dt,
                                          bis, bie, pmb->js, pmb->je, bks, bke);
   }
@@ -156,11 +156,11 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
   if (pmb->block_size.nx3>1) { // 3D
 
     // Apply boundary function on inner-x3
-    if (GravityBoundaryFunction_[INNER_X3] != NULL)
+    if (GravityBoundaryFunction_[INNER_X3] != nullptr)
       GravityBoundaryFunction_[INNER_X3](pmb, pco, dst, time, dt,
                                          bis, bie, bjs, bje, pmb->ks, pmb->ke);
     // Apply boundary function on outer-x3
-    if (GravityBoundaryFunction_[OUTER_X3] != NULL)
+    if (GravityBoundaryFunction_[OUTER_X3] != nullptr)
       GravityBoundaryFunction_[OUTER_X3](pmb, pco, dst, time, dt,
                                          bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }

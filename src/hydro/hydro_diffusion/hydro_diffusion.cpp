@@ -53,7 +53,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
     divv_.NewAthenaArray(ncells3,ncells2,ncells1);
 
     nu.NewAthenaArray(2,ncells3,ncells2,ncells1);
-    if(pmb_->pmy_mesh->ViscosityCoeff_==NULL)
+    if(pmb_->pmy_mesh->ViscosityCoeff_==nullptr)
       CalcViscCoeff_ = ConstViscosity;
     else
       CalcViscCoeff_ = pmb_->pmy_mesh->ViscosityCoeff_;
@@ -70,7 +70,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
       cndflx[X3DIR].NewAthenaArray(ncells3+1,ncells2,ncells1);
 
       kappa.NewAthenaArray(2,ncells3,ncells2,ncells1);
-      if(pmb_->pmy_mesh->ConductionCoeff_==NULL)
+      if(pmb_->pmy_mesh->ConductionCoeff_==nullptr)
         CalcCondCoeff_ = ConstConduction;
       else
         CalcCondCoeff_ = pmb_->pmy_mesh->ConductionCoeff_;

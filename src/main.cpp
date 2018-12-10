@@ -59,8 +59,8 @@
 
 int main(int argc, char *argv[]) {
   std::string athena_version = "version 1.1.1 - July 2018";
-  char *input_filename=NULL, *restart_filename=NULL;
-  char *prundir = NULL;
+  char *input_filename=nullptr, *restart_filename=nullptr;
+  char *prundir = nullptr;
   int res_flag=0;   // set to 1 if -r        argument is on cmdline
   int narg_flag=0;  // set to 1 if -n        argument is on cmdline
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
         narg_flag = 1;
         break;
       case 'm':
-        mesh_flag = static_cast<int>(std::strtol(argv[++i],NULL,10));
+        mesh_flag = static_cast<int>(std::strtol(argv[++i],nullptr,10));
         break;
       case 't':
         int wth, wtm, wts;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     } // else if argv[i] not of form "-?" ignore it here (tested in ModifyFromCmdline)
   }
 
-  if (restart_filename==NULL && input_filename==NULL) {
+  if (restart_filename==nullptr && input_filename==nullptr) {
     // no input file is given
     std::cout << "### FATAL ERROR in main" << std::endl
               << "No input file or restart file is specified." << std::endl;
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
-  TaskList *pststlist = NULL;
+  TaskList *pststlist = nullptr;
   if (STS_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
     try {

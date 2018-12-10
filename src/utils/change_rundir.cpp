@@ -26,7 +26,7 @@
 void ChangeRunDir(const char *pdir) {
   std::stringstream msg;
 
-  if (pdir == NULL || *pdir == '\0') return;
+  if (pdir == nullptr || *pdir == '\0') return;
 
   mkdir(pdir, 0775);
   if (chdir(pdir)) {

@@ -92,7 +92,7 @@ private:
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(NULL), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
+  : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
 }
 
 // destructor
@@ -287,10 +287,10 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, i
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
   if (scopy_) {
-    pdata_ = NULL;
+    pdata_ = nullptr;
   } else {
     delete[] pdata_;
-    pdata_ = NULL;
+    pdata_ = nullptr;
     scopy_ = true;
   }
 }

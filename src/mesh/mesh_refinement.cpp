@@ -974,7 +974,7 @@ void MeshRefinement::CheckRefinementCondition(void) {
 
   // *** should be implemented later ***
   // loop-over refinement criteria
-  if (AMRFlag_!=NULL)
+  if (AMRFlag_!=nullptr)
     ret=AMRFlag_(pmb);
   aret=std::max(aret,ret);
 

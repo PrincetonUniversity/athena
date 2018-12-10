@@ -53,7 +53,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
   } else {
     for (int i=0; i<6; i++) {
       if (block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
-        MGBoundaryFunction_[i]=NULL;
+        MGBoundaryFunction_[i]=nullptr;
       else
         MGBoundaryFunction_[i]=MGBoundary[i];
     }
@@ -77,14 +77,14 @@ MGBoundaryValues::~MGBoundaryValues() {
 //  \brief Initialize MGBoundaryData structure
 
 void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type) {
-  int size;
+  int size = 0;
   bd.nbmax=maxneighbor_;
   for (int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.sflag[n]=BNDRY_WAITING;
-    bd.send[n]=NULL;
-    bd.recv[n]=NULL;
+    bd.send[n]=nullptr;
+    bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
     bd.req_send[n]=MPI_REQUEST_NULL;
     bd.req_recv[n]=MPI_REQUEST_NULL;
@@ -157,36 +157,36 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void) {
   Real y0=block_size_.x2min-(static_cast<Real>(ngh)+0.5)*dy;
   Real z0=block_size_.x3min-(static_cast<Real>(ngh)+0.5)*dz;
   Real time=pmy_mesh_->time;
-  if (MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh;
-  if (MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh;
-  if (MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh;
-  if (MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh;
+  if (MGBoundaryFunction_[INNER_X2]==nullptr) bjs=js-ngh;
+  if (MGBoundaryFunction_[OUTER_X2]==nullptr) bje=je+ngh;
+  if (MGBoundaryFunction_[INNER_X3]==nullptr) bks=ks-ngh;
+  if (MGBoundaryFunction_[OUTER_X3]==nullptr) bke=ke+ngh;
 
   // Apply boundary function on inner-x1
-  if (MGBoundaryFunction_[INNER_X1] != NULL)
+  if (MGBoundaryFunction_[INNER_X1] != nullptr)
     MGBoundaryFunction_[INNER_X1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x1
-  if (MGBoundaryFunction_[OUTER_X1] != NULL)
+  if (MGBoundaryFunction_[OUTER_X1] != nullptr)
     MGBoundaryFunction_[OUTER_X1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
                                   x0, y0, z0, dx, dy, dz);
 
   // Apply boundary function on inner-x2
-  if (MGBoundaryFunction_[INNER_X2] != NULL)
+  if (MGBoundaryFunction_[INNER_X2] != nullptr)
     MGBoundaryFunction_[INNER_X2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x2
-  if (MGBoundaryFunction_[OUTER_X2] != NULL)
+  if (MGBoundaryFunction_[OUTER_X2] != nullptr)
     MGBoundaryFunction_[OUTER_X2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
                                   x0, y0, z0, dx, dy, dz);
 
   bjs=js-ngh, bje=je+ngh;
   // Apply boundary function on inner-x3
-  if (MGBoundaryFunction_[INNER_X3] != NULL)
+  if (MGBoundaryFunction_[INNER_X3] != nullptr)
     MGBoundaryFunction_[INNER_X3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x3
-  if (MGBoundaryFunction_[OUTER_X3] != NULL)
+  if (MGBoundaryFunction_[OUTER_X3] != nullptr)
     MGBoundaryFunction_[OUTER_X3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
                                   x0, y0, z0, dx, dy, dz);
 
@@ -216,7 +216,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
-      int size;
+      int size = 0;
       if (pmy_mesh_->multilevel==true) { // with refinement - NGHOST = 1
         if (nb.level == mylevel) { // same
           if (nb.type==NEIGHBOR_FACE) size=SQR(nc);

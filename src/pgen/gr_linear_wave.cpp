@@ -448,7 +448,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // Go through blocks to calculate errors
     MeshBlock *pmb = pblock;
-    while (pmb != NULL) {
+    while (pmb != nullptr) {
       for (int k = pmb->ks; k <= pmb->ke; ++k) {
         for (int j = pmb->js; j <= pmb->je; ++j) {
           pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
@@ -506,16 +506,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       // Open file
       pfile = std::fopen(filename.c_str(), "r");
-      if (pfile != NULL) {  // file exists
+      if (pfile != nullptr) {  // file exists
         pfile = freopen(filename.c_str(), "a", pfile);
-        if (pfile == NULL) {
+        if (pfile == nullptr) {
           msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
               << "Error output file could not be opened" << std::endl;
           ATHENA_ERROR(msg);
         }
       } else {  // file does not exist
         pfile = std::fopen(filename.c_str(), "w");
-        if (pfile == NULL) {
+        if (pfile == nullptr) {
           msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
               << "Error output file could not be opened" << std::endl;
           ATHENA_ERROR(msg);

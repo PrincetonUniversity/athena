@@ -75,7 +75,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   MeshBlock *pmb = pmesh->pblock;
   // initialize counters stored in each MeshBlock
-  while (pmb != NULL)  {
+  while (pmb != nullptr)  {
     pmb->tasks.Reset(ntasks);
     pmb=pmb->next;
   }

@@ -64,7 +64,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int big_end = IsBigEndian(); // =1 on big endian machine
 
   // Loop over MeshBlocks
-  while (pmb != NULL) {
+  while (pmb != nullptr) {
     // set start/end array indices depending on whether ghost zones are included
     out_is=pmb->is; out_ie=pmb->ie;
     out_js=pmb->js; out_je=pmb->je;
@@ -103,7 +103,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
       msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
       ATHENA_ERROR(msg);
@@ -184,7 +184,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
     OutputData *pdata = pfirst_data_;
-    while (pdata != NULL) {
+    while (pdata != nullptr) {
       // write data type (SCALARS or VECTORS) and name
       std::fprintf(pfile,"\n%s %s float\n",pdata->type.c_str(), pdata->name.c_str());
 

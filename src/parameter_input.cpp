@@ -38,7 +38,7 @@
 // C++ headers
 #include <algorithm>  // transform
 #include <cmath>      // std::fmod()
-#include <cstdlib>    // atoi(), atof(), NULL, std::size_t
+#include <cstdlib>    // atoi(), atof(), nullptr, std::size_t
 #include <fstream>    // ifstream
 #include <iostream>   // endl, ostream
 #include <sstream>    // stringstream
@@ -60,7 +60,7 @@
 // ParameterInput constructor
 
 ParameterInput::ParameterInput() {
-  pfirst_block = NULL;
+  pfirst_block = nullptr;
   last_filename_ = "";
 #ifdef OPENMP_PARALLEL
   omp_init_lock(&rlock_);
@@ -73,7 +73,7 @@ ParameterInput::ParameterInput() {
 
 ParameterInput::~ParameterInput() {
   InputBlock *pib = pfirst_block;
-  while (pib != NULL) {
+  while (pib != nullptr) {
     InputBlock *pold_block = pib;
     pib = pib->pnext;
     delete pold_block;
@@ -94,7 +94,7 @@ InputBlock::InputBlock() {
 
 InputBlock::~InputBlock() {
   InputLine *pil = pline;
-  while (pil != NULL) {
+  while (pil != nullptr) {
     InputLine *pold_line = pil;
     pil = pil->pnext;
     delete pold_line;
@@ -136,7 +136,7 @@ void ParameterInput::LoadFromStream(std::istream &is) {
 
       pib = FindOrAddBlock(block_name);  // find or add block to linked list
 
-      if (pib == NULL) {
+      if (pib == nullptr) {
         msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
             << std::endl << "Block name '" << block_name
             << "' could not be found/added";
@@ -209,7 +209,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name) {
   pib = pfirst_block;
 
   // Search linked list of InputBlocks to see if name exists, return if found.
-  while (pib != NULL) {
+  while (pib != nullptr) {
     if (name.compare(pib->block_name) == 0) return pib;
     plast = pib;
     pib = pib->pnext;
@@ -218,11 +218,11 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name) {
   // Create new block in list if not found above
   pib = new InputBlock;
   pib->block_name.assign(name);  // store the new block name
-  pib->pline = NULL;             // Terminate the InputLine list
-  pib->pnext = NULL;             // Terminate the InputBlock list
+  pib->pline = nullptr;             // Terminate the InputLine list
+  pib->pnext = nullptr;             // Terminate the InputBlock list
 
   // if this is the first block in list, save pointer to it in class
-  if (pfirst_block == NULL) {
+  if (pfirst_block == nullptr) {
      pfirst_block = pib;
   } else {
     plast->pnext = pib;      // link new node into list
@@ -284,7 +284,7 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
   // to point to last member of list
   pl = pb->pline;
   plast = pb->pline;
-  while (pl != NULL) {
+  while (pl != nullptr) {
     if (name.compare(pl->param_name) == 0) {   // param name already exists
       pl->param_value.assign(value);           // replace existing param value
       pl->param_comment.assign(comment);       // replace exisiting param comment
@@ -300,10 +300,10 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
   pl->param_name.assign(name);
   pl->param_value.assign(value);
   pl->param_comment.assign(comment);
-  pl->pnext = NULL;
+  pl->pnext = nullptr;
 
   // if this is the first parameter in list, save pointer to it in block.
-  if (pb->pline == NULL) {
+  if (pb->pline == nullptr) {
     pb->pline = pl;
     pb->max_len_parname = name.length();
     pb->max_len_parvalue = value.length();
@@ -343,7 +343,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
 
     // get pointer to node with same block name in linked list of InputBlocks
     pb = GetPtrToBlock(block);
-    if (pb == NULL) {
+    if (pb == nullptr) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Block name '" << block << "' on command line not found";
       ATHENA_ERROR(msg);
@@ -351,7 +351,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
 
     // get pointer to node with same parameter name in linked list of InputLines
     pl = pb->GetPtrToLine(name);
-    if (pl == NULL) {
+    if (pl == nullptr) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Parameter '" << name << "' in block '" << block
           << "' on command line not found";
@@ -369,10 +369,10 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
 
 InputBlock* ParameterInput::GetPtrToBlock(std::string name) {
   InputBlock *pb;
-  for (pb = pfirst_block; pb != NULL; pb = pb->pnext) {
+  for (pb = pfirst_block; pb != nullptr; pb = pb->pnext) {
     if (name.compare(pb->block_name) == 0) return pb;
   }
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------------------
@@ -383,9 +383,9 @@ int ParameterInput::DoesParameterExist(std::string block, std::string name) {
   InputLine *pl;
   InputBlock *pb;
   pb = GetPtrToBlock(block);
-  if (pb == NULL) return 0;
+  if (pb == nullptr) return 0;
   pl = pb->GetPtrToLine(name);
-  return (pl == NULL ? 0 : 1);
+  return (pl == nullptr ? 0 : 1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -401,7 +401,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
-  if (pb == NULL) {
+  if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
@@ -410,7 +410,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
 
   // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
-  if (pl == NULL) {
+  if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
@@ -436,7 +436,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
-  if (pb == NULL) {
+  if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
@@ -445,7 +445,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
 
   // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
-  if (pl == NULL) {
+  if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
@@ -471,7 +471,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
-  if (pb == NULL) {
+  if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
@@ -480,7 +480,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
 
   // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
-  if (pl == NULL) {
+  if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
@@ -517,7 +517,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
-  if (pb == NULL) {
+  if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
@@ -526,7 +526,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
 
   // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
-  if (pl == NULL) {
+  if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
@@ -673,10 +673,10 @@ void ParameterInput::RollbackNextTime() {
   std::stringstream msg;
   Real next_time;
 
-  while (pb != NULL) {
+  while (pb != nullptr) {
     if (pb->block_name.compare(0, 6, "output") == 0) {
       pl = pb->GetPtrToLine("next_time");
-      if (pl == NULL) {
+      if (pl == nullptr) {
         msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
             << std::endl << "Parameter name 'next_time' not found in block '"
             << pb->block_name << "'";
@@ -684,7 +684,7 @@ void ParameterInput::RollbackNextTime() {
       }
       next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       pl = pb->GetPtrToLine("dt");
-      if (pl == NULL) {
+      if (pl == nullptr) {
         msg << "### FATAL ERROR in function [ParameterInput::RollbackNextTime]"
             << std::endl << "Parameter name 'dt' not found in block '"
             << pb->block_name << "'";
@@ -710,11 +710,11 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
   Real dt0, dt;
   bool fresh = false;
 
-  while (pb != NULL) {
+  while (pb != nullptr) {
     if (pb->block_name.compare(0, 6, "output") == 0) {
       std::stringstream msg;
       pl = pb->GetPtrToLine("next_time");
-      if (pl == NULL) {
+      if (pl == nullptr) {
         next_time = mesh_time;
         // This is a freshly added output
         fresh = true;
@@ -722,7 +722,7 @@ void ParameterInput::ForwardNextTime(Real mesh_time) {
         next_time = static_cast<Real>(atof(pl->param_value.c_str()));
       }
       pl = pb->GetPtrToLine("dt");
-      if (pl == NULL) {
+      if (pl == nullptr) {
         msg << "### FATAL ERROR in function [ParameterInput::ForwardNextTime]"
             << std::endl << "Parameter name 'dt' not found in block '"
             << pb->block_name << "'";
@@ -756,9 +756,9 @@ void ParameterInput::ParameterDump(std::ostream& os) {
 
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
 
-  for (pb = pfirst_block; pb != NULL; pb = pb->pnext) { // loop over InputBlocks
+  for (pb = pfirst_block; pb != nullptr; pb = pb->pnext) { // loop over InputBlocks
     os<< "<" << pb->block_name << ">" << std::endl;     // write block name
-    for (pl = pb->pline; pl != NULL; pl = pl->pnext) {   // loop over InputLines
+    for (pl = pb->pline; pl != nullptr; pl = pl->pnext) {   // loop over InputLines
       param_name.assign(pl->param_name);
       param_value.assign(pl->param_value);
 
@@ -780,10 +780,10 @@ void ParameterInput::ParameterDump(std::ostream& os) {
 //  \brief return pointer to InputLine containing specified parameter if it exists
 
 InputLine* InputBlock::GetPtrToLine(std::string name) {
-  for (InputLine* pl = pline; pl != NULL; pl = pl->pnext) {
+  for (InputLine* pl = pline; pl != nullptr; pl = pl->pnext) {
     if (name.compare(pl->param_name) == 0) return pl;
   }
-  return NULL;
+  return nullptr;
 }
 
 

@@ -137,7 +137,7 @@ void TurbulenceDriver::Generate(void) {
 
     for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
-      if (pmb != NULL) {
+      if (pmb != nullptr) {
         dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
         pfb->RetrieveResult(dv_mb,1,NGHOST,pmb->loc,pmb->block_size);
       }
@@ -223,7 +223,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
-    if (pmb != NULL) {
+    if (pmb != nullptr) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
@@ -267,7 +267,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   m[1] = 0.0;
   for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
-    if (pmb != NULL) {
+    if (pmb != nullptr) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
@@ -324,7 +324,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   // Apply momentum pertubations
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
-    if (pmb != NULL) {
+    if (pmb != nullptr) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {

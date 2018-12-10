@@ -161,7 +161,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // set variable names, loop over outputdata
   int n_variable = 0;
   pod=pfirst_data_;
-  while(pod!=NULL) {
+  while(pod!=nullptr) {
     if (pod->type=="VECTORS") {
       for (int i=1; i<=3; i++) {
         char sn[3];
@@ -188,7 +188,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   || output_params.output_slicex3) {
     int nb=0, nba=0;
     pmb=pm->pblock;
-    while(pmb!=NULL) {
+    while(pmb!=nullptr) {
       if (output_params.output_slicex1) {
         if (pmb->block_size.x1min >  output_params.x1_slice
         || pmb->block_size.x1max <= output_params.x1_slice)
@@ -259,7 +259,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
   int nb=0, nba=0;
-  while(pmb!=NULL) {
+  while(pmb!=nullptr) {
     // Load the output data
     if (active_flags[nb] == true) {
       // set the default size because TransformOutputData will override it
@@ -357,7 +357,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         int n_dataset=0;
         int ndv=0;
         pod=pfirst_data_;
-        while(pod!=NULL) {
+        while(pod!=nullptr) {
           if (pod->name=="Bcc") {
             n_dataset++;
             ndv=0;
@@ -379,7 +379,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       } else {
         int ndv=0;
         pod=pfirst_data_;
-        while(pod!=NULL) {
+        while(pod!=nullptr) {
           int nv=1;
           if (pod->type=="VECTORS") nv=3;
           for (int v=0; v < nv; v++, ndv++) {

@@ -62,7 +62,7 @@ typedef struct OutputData {
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
 
-  OutputData() : pnext(NULL),  pprev(NULL) {}
+  OutputData() : pnext(nullptr),  pprev(nullptr) {}
 } OutputData;
 
 //----------------------------------------------------------------------------------------

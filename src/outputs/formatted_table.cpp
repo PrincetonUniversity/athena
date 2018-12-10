@@ -42,7 +42,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
   MeshBlock *pmb=pm->pblock;
 
   // Loop over MeshBlocks
-  while (pmb != NULL) {
+  while (pmb != nullptr) {
 
     // set start/end array indices depending on whether ghost zones are included
     out_is=pmb->is; out_ie=pmb->ie;
@@ -82,7 +82,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // open file for output
     FILE *pfile;
     std::stringstream msg;
-    if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
       msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
           <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
       ATHENA_ERROR(msg);
@@ -100,7 +100,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     if (out_ks != out_ke) std::fprintf(pfile," k       x3v     ");
     // write data column headers from "name" stored in linked-list of OutputData's
     OutputData *pdata = pfirst_data_;
-    while (pdata != NULL) {
+    while (pdata != nullptr) {
       if (pdata->type == "VECTORS") {
         for (int index = 1; index <= 3; ++index) {
           std::fprintf(pfile, "    %s%d     ", pdata->name.c_str(), index);
@@ -133,7 +133,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
 
       // step through linked-list of OutputData's and write each on same line
       OutputData *pdata = pfirst_data_;
-      while (pdata != NULL) {
+      while (pdata != nullptr) {
         for (int n=0; n<(pdata->data.GetDim4()); ++n) {
           std::fprintf(pfile, output_params.data_format.c_str(), pdata->data(n,k,j,i));
         }

@@ -298,7 +298,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x1 face
   for (int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(loc,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
-    if (neibt==NULL) { bufid+=nf1*nf2; continue;}
+    if (neibt==nullptr) { bufid+=nf1*nf2; continue;}
     if (neibt->flag==false) { // neighbor at finer level
       int fface=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
       nblevel[1][1][n+1]=neibt->loc.level+1;
@@ -340,7 +340,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x2 face
   for (int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(loc,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
-    if (neibt==NULL) { bufid+=nf1*nf2; continue;}
+    if (neibt==nullptr) { bufid+=nf1*nf2; continue;}
     if (neibt->flag==false) { // neighbor at finer level
       int fface=1-(n+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
       nblevel[1][n+1][1]=neibt->loc.level+1;
@@ -383,7 +383,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     for (int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc, 0, 0, n, block_bcs, nrbx1, nrbx2, nrbx3,
                               pmy_mesh_->root_level);
-      if (neibt==NULL) { bufid+=nf1*nf2; continue;}
+      if (neibt==nullptr) { bufid+=nf1*nf2; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int fface=1-(n+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
         nblevel[n+1][1][1]=neibt->loc.level+1;
@@ -422,7 +422,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     for (int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc, n, m, 0, block_bcs, nrbx1, nrbx2, nrbx3,
                               pmy_mesh_->root_level);
-      if (neibt==NULL) { bufid+=nf2; continue;}
+      if (neibt==nullptr) { bufid+=nf2; continue;}
       bool polar=false;
       if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
           or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
@@ -514,7 +514,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     for (int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc, n, 0, m, block_bcs, nrbx1, nrbx2, nrbx3,
                               pmy_mesh_->root_level);
-      if (neibt==NULL) { bufid+=nf1; continue;}
+      if (neibt==nullptr) { bufid+=nf1; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int ff1=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
         int ff2=1-(m+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
@@ -561,7 +561,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     for (int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc, 0, n, m, block_bcs, nrbx1, nrbx2, nrbx3,
                               pmy_mesh_->root_level);
-      if (neibt==NULL) { bufid+=nf1; continue;}
+      if (neibt==nullptr) { bufid+=nf1; continue;}
       if (neibt->flag==false) { // neighbor at finer level
         int ff1=1-(n+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
         int ff2=1-(m+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
@@ -609,7 +609,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       for (int n=-1; n<=1; n+=2) {
         neibt=tree.FindNeighbor(loc, n, m, l, block_bcs, nrbx1, nrbx2, nrbx3,
                                 pmy_mesh_->root_level);
-        if (neibt==NULL) { bufid++; continue;}
+        if (neibt==nullptr) { bufid++; continue;}
         bool polar=false;
         if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
             or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {

@@ -205,7 +205,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign = 1.0;
-      if (flip!=NULL) sign =flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign =flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -299,7 +299,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign = 1.0;
-      if (flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -372,7 +372,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign=1.0;
-      if (flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -396,7 +396,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
                                                         enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
-  bool *flip=NULL;
+  bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
   BoundaryData *pbd;
@@ -459,7 +459,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
                                                                 enum CCBoundaryType
                                                                 type) {
   MeshBlock *pmb=pmy_block_;
-  bool *flip=NULL;
+  bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
   BoundaryData *pbd;

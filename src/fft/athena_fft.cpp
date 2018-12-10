@@ -31,8 +31,8 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   dx1=(msize_.x1max-msize_.x1min)/static_cast<Real>(msize_.nx1);
   dx2=(msize_.x2max-msize_.x2min)/static_cast<Real>(msize_.nx2);
   dx3=(msize_.x3max-msize_.x3min)/static_cast<Real>(msize_.nx3);
-  fplan_=NULL;
-  bplan_=NULL;
+  fplan_=nullptr;
+  bplan_=nullptr;
 
   cnt_ = bsize_.nx1*bsize_.nx2*bsize_.nx3;
   gcnt_ = pmy_driver_->gcnt_;
@@ -81,17 +81,17 @@ FFTBlock::~FFTBlock() {
     delete f_out_;
     delete b_in_;
     delete b_out_;
-    if (fplan_!=NULL) DestroyPlan(fplan_);
-    if (bplan_!=NULL) DestroyPlan(bplan_);
+    if (fplan_!=nullptr) DestroyPlan(fplan_);
+    if (bplan_!=nullptr) DestroyPlan(bplan_);
 }
 
 void FFTBlock::DestroyPlan(AthenaFFTPlan *plan) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if (plan->plan3d != NULL) fft_3d_destroy_plan(plan->plan3d);
-  if (plan->plan2d != NULL) fft_2d_destroy_plan(plan->plan2d);
+  if (plan->plan3d != nullptr) fft_3d_destroy_plan(plan->plan3d);
+  if (plan->plan2d != nullptr) fft_2d_destroy_plan(plan->plan2d);
 #endif
-  if (plan->plan != NULL) fftw_destroy_plan(plan->plan);
+  if (plan->plan != nullptr) fftw_destroy_plan(plan->plan);
   delete plan;
 #endif
 }
@@ -243,7 +243,7 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 //  \brief initialize FFT plan for 1D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir) {
-  AthenaFFTPlan *plan = NULL;
+  AthenaFFTPlan *plan = nullptr;
 #ifdef FFT
   plan = new AthenaFFTPlan;
   plan->dir = dir;
@@ -264,7 +264,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                      AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir) {
-  AthenaFFTPlan *plan = NULL;
+  AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -293,8 +293,8 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                       b_out_->ie[b_in_->iloc[1]],
                                       0, permute2_, &nbuf);
   }
-  plan->plan3d=NULL;
-  plan->plan=NULL;
+  plan->plan3d=nullptr;
+  plan->plan=nullptr;
 #else // MPI_PARALLEL
   if (dir == AthenaFFTForward)
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
@@ -315,7 +315,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                      AthenaFFTComplex *data,
                                      enum AthenaFFTDirection dir) {
-  AthenaFFTPlan *plan = NULL;
+  AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -353,8 +353,8 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                       ois[2],oie[2],
                                       0, permute2_, &nbuf);
   }
-  plan->plan2d=NULL;
-  plan->plan=NULL;
+  plan->plan2d=nullptr;
+  plan->plan=nullptr;
 #else // MPI_PARALLEL
   if (dir == AthenaFFTForward) {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);

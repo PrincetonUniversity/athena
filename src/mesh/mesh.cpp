@@ -234,13 +234,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   for (int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=NULL;
-  AMRFlag_=NULL;
-  UserSourceTerm_=NULL;
-  UserTimeStep_=NULL;
-  ViscosityCoeff_=NULL;
-  ConductionCoeff_=NULL;
-  FieldDiffusivity_=NULL;
+    BoundaryFunction_[dir]=nullptr;
+  AMRFlag_=nullptr;
+  UserSourceTerm_=nullptr;
+  UserTimeStep_=nullptr;
+  ViscosityCoeff_=nullptr;
+  ConductionCoeff_=nullptr;
+  FieldDiffusivity_=nullptr;
   MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
   MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
   MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
@@ -287,7 +287,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     }
 
     InputBlock *pib = pin->pfirst_block;
-    while (pib != NULL) {
+    while (pib != nullptr) {
       if (pib->block_name.compare(0,10,"refinement") == 0) {
         RegionSize ref_size;
         ref_size.x1min=pin->GetReal(pib->block_name,"x1min");
@@ -424,7 +424,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   tree.CountMeshBlock(nbtotal);
   loclist=new LogicalLocation[nbtotal];
-  tree.GetMeshBlockList(loclist,NULL,nbtotal);
+  tree.GetMeshBlockList(loclist,nullptr,nbtotal);
 
 #ifdef MPI_PARALLEL
   // check if there are sufficient blocks
@@ -634,13 +634,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 
   for (int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=NULL;
-  AMRFlag_=NULL;
-  UserSourceTerm_=NULL;
-  UserTimeStep_=NULL;
-  ViscosityCoeff_=NULL;
-  ConductionCoeff_=NULL;
-  FieldDiffusivity_=NULL;
+    BoundaryFunction_[dir]=nullptr;
+  AMRFlag_=nullptr;
+  UserSourceTerm_=nullptr;
+  UserTimeStep_=nullptr;
+  ViscosityCoeff_=nullptr;
+  ConductionCoeff_=nullptr;
+  FieldDiffusivity_=nullptr;
   MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
   MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
   MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
@@ -738,7 +738,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
   // check the tree structure, and assign GID
-  tree.GetMeshBlockList(loclist, NULL, nnb);
+  tree.GetMeshBlockList(loclist, nullptr, nnb);
   if (nnb!=nbtotal) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Tree reconstruction failed. The total numbers of the blocks do not match. ("
@@ -844,9 +844,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 // destructor
 
 Mesh::~Mesh() {
-  while(pblock->prev != NULL) // should not be true
+  while(pblock->prev != nullptr) // should not be true
     delete pblock->prev;
-  while(pblock->next != NULL)
+  while(pblock->next != nullptr)
     delete pblock->next;
   delete pblock;
   delete [] nslist;
@@ -883,11 +883,11 @@ Mesh::~Mesh() {
 void Mesh::OutputMeshStructure(int dim) {
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
-  FILE *fp;
+  FILE *fp = nullptr;
 
   // open 'mesh_structure.dat' file
   if (dim>=2) {
-    if ((fp = std::fopen("mesh_structure.dat","wb")) == NULL) {
+    if ((fp = std::fopen("mesh_structure.dat","wb")) == nullptr) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
                 << "Cannot open mesh_structure.dat" << std::endl;
       return;
@@ -1035,7 +1035,7 @@ void Mesh::NewTimeStep(void) {
   Real min_dt_hyperbolic=pmb->new_block_dt_hyperbolic;
   Real min_dt_parabolic =pmb->new_block_dt_parabolic;
   pmb=pmb->next;
-  while (pmb != NULL)  {
+  while (pmb != nullptr)  {
     min_dt=std::min(min_dt,pmb->new_block_dt);
     min_dt_hyperbolic = std::min(min_dt_hyperbolic, pmb->new_block_dt_hyperbolic);
     min_dt_parabolic  = std::min(min_dt_parabolic , pmb->new_block_dt_parabolic );
@@ -1150,7 +1150,7 @@ void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
   user_history_func_ = new HistoryOutputFunc_t[n];
-  for (int i=0; i<n; i++) user_history_func_[i] = NULL;
+  for (int i=0; i<n; i++) user_history_func_[i] = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
@@ -1259,7 +1259,7 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
-  while (pmb != NULL)  {
+  while (pmb != nullptr)  {
     pmb->UserWorkBeforeOutput(pin);
     pmb=pmb->next;
   }
@@ -1557,7 +1557,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
   MeshBlock *pbl=pblock;
-  while (pbl!=NULL) {
+  while (pbl!=nullptr) {
     if (pbl->gid==tgid)
       break;
     pbl=pbl->next;
@@ -1731,7 +1731,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   nref[Globals::my_rank]=0;
   nderef[Globals::my_rank]=0;
   pmb=pblock;
-  while(pmb!=NULL) {
+  while(pmb!=nullptr) {
     if (pmb->pmr->refine_flag_== 1) nref[Globals::my_rank]++;
     if (pmb->pmr->refine_flag_==-1) nderef[Globals::my_rank]++;
     pmb=pmb->next;
@@ -1774,7 +1774,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // collect the locations and costs
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
   pmb=pblock;
-  while(pmb!=NULL) {
+  while(pmb!=nullptr) {
     if (pmb->pmr->refine_flag_== 1)
       lref[iref++]=pmb->loc;
     if (pmb->pmr->refine_flag_==-1 && tnderef>=nlbl)
@@ -2095,7 +2095,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 7. construct a new MeshBlock list
   // move the data within the node
-  MeshBlock *newlist=NULL;
+  MeshBlock *newlist=nullptr;
 
   RegionSize block_size=pblock->block_size;
 
@@ -2104,12 +2104,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
       // on the same node and same level -> just move it
       MeshBlock* pob=FindMeshBlock(on);
-      if (pob->prev==NULL) pblock=pob->next;
+      if (pob->prev==nullptr) pblock=pob->next;
       else pob->prev->next=pob->next;
-      if (pob->next!=NULL) pob->next->prev=pob->prev;
-      pob->next=NULL;
+      if (pob->next!=nullptr) pob->next->prev=pob->prev;
+      pob->next=nullptr;
       if (n==nbs) { // first
-        pob->prev=NULL;
+        pob->prev=nullptr;
         newlist=pob;
         pmb=newlist;
       } else {
@@ -2245,8 +2245,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // discard remaining MeshBlocks
   // they could be reused, but for the moment, just throw them away for simplicity
-  if (pblock!=NULL) {
-    while(pblock->next != NULL)
+  if (pblock!=nullptr) {
+    while(pblock->next != nullptr)
       delete pblock->next;
     delete pblock;
   }
@@ -2390,7 +2390,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // re-initialize the MeshBlocks
   pmb=pblock;
-  while(pmb!=NULL) {
+  while(pmb!=nullptr) {
     pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
     pmb=pmb->next;
   }

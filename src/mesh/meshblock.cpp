@@ -49,8 +49,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pmy_mesh = pm;
   root_level = pm->root_level;
   block_size = input_block;
-  prev=NULL;
-  next=NULL;
+  prev=nullptr;
+  next=nullptr;
   gid=igid;
   lid=ilid;
   loc=iloc;
@@ -147,8 +147,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            Real icost, char *mbdata, int igflag) {
   std::stringstream msg;
   pmy_mesh = pm;
-  prev=NULL;
-  next=NULL;
+  prev=nullptr;
+  next=nullptr;
   gid=igid;
   lid=ilid;
   loc=iloc;
@@ -280,8 +280,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-  if (prev!=NULL) prev->next=next;
-  if (next!=NULL) next->prev=prev;
+  if (prev!=nullptr) prev->next=next;
+  if (next!=nullptr) next->prev=prev;
 
   delete pcoord;
   delete pbval;

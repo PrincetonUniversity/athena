@@ -366,8 +366,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if ((pfile = std::fopen(fname.c_str(),"r")) != NULL) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
+    if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -375,7 +375,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if ((pfile = std::fopen(fname.c_str(),"w")) == NULL) {
+      if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);

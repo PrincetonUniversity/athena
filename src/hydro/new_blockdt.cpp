@@ -153,7 +153,7 @@ Real Hydro::NewBlockTimeStep(void) {
 
   min_dt *= pmb->pmy_mesh->cfl_number;
 
-  if (UserTimeStep_!=NULL) {
+  if (UserTimeStep_!=nullptr) {
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
   }
 

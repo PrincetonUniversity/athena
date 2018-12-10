@@ -57,7 +57,7 @@ int CheckSignalFlags(void) {
   // main.cpp; i.e. if an issue prevents a process from reaching the end of a cycle, the
   // signals will never be handled by that process / the solver may hang
   int ret = 0;
-  sigprocmask(SIG_BLOCK, &mask, NULL);
+  sigprocmask(SIG_BLOCK, &mask, nullptr);
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE,
                 const_cast<void *>(reinterpret_cast<volatile void *>(signalflag)),
@@ -65,7 +65,7 @@ int CheckSignalFlags(void) {
 #endif
   for (int n=0; n<nsignal; n++)
     ret+=signalflag[n];
-  sigprocmask(SIG_UNBLOCK,&mask,NULL);
+  sigprocmask(SIG_UNBLOCK,&mask,nullptr);
   return ret;
 }
 

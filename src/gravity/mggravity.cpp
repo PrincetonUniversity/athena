@@ -65,7 +65,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
   LogicalLocation lroot;
   lroot.lx1=0, lroot.lx2=0, lroot.lx3=0, lroot.level=0;
   mgroot_= new MGGravity(this,lroot,-1,-1,root_size,MGBoundary,pmy_mesh_->mesh_bcs,true);
-  pmg_=NULL;
+  pmg_=nullptr;
   // Multigrid *pfirst;
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
@@ -94,9 +94,9 @@ void MGGravityDriver::Solve(int stage) {
   AthenaArray<Real> in;
 
   // Load the source
-  while(pmggrav!=NULL) {
+  while(pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb!=NULL) {
+    if (pmb!=nullptr) {
       in.InitWithShallowCopy(pmb->phydro->u);
       pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
       if (mode_>=2) // iterative mode - load initial guess
@@ -115,9 +115,9 @@ void MGGravityDriver::Solve(int stage) {
 
   // Return the result
   pmggrav=pmg_;
-  while(pmggrav!=NULL) {
+  while(pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb!=NULL) {
+    if (pmb!=nullptr) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho=mean_rho;
     }

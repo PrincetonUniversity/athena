@@ -75,11 +75,11 @@
 
 OutputType::OutputType(OutputParameters oparams) {
   output_params = oparams;
-  pnext_type = NULL;   // Terminate this node in linked list with NULL ptr
+  pnext_type = nullptr;   // Terminate this node in linked list with nullptr
 
   num_vars_ = 0;
-  pfirst_data_ = NULL; // Initialize start of linked list of OutputData's to NULL
-  plast_data_ = NULL;  // Initialize end   of linked list of OutputData's to NULL
+  pfirst_data_ = nullptr; // Initialize start of linked list of OutputData's to nullptr
+  plast_data_ = nullptr;  // Initialize end   of linked list of OutputData's to nullptr
 }
 
 // destructor
@@ -91,7 +91,7 @@ OutputType::~OutputType() {
 // Outputs constructor
 
 Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
-  pfirst_type_ = NULL;
+  pfirst_type_ = nullptr;
   std::stringstream msg;
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_type;
@@ -100,7 +100,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
   // loop over input block names.  Find those that start with "output", read parameters,
   // and construct linked list of OutputTypes.
-  while (pib != NULL) {
+  while (pib != nullptr) {
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
@@ -233,7 +233,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         }
 
         // Add type as node in linked list
-        if (pfirst_type_ == NULL) {
+        if (pfirst_type_ == nullptr) {
           pfirst_type_ = pnew_type;
         } else {
           plast->pnext_type = pnew_type;
@@ -256,11 +256,11 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
-  while(pot!=NULL) {
+  while(pot!=nullptr) {
     if (pot->output_params.file_type.compare("rst")==0) {
       prst=pot;
       found=1;
-      if (pot->pnext_type==NULL) found=2;
+      if (pot->pnext_type==nullptr) found=2;
       break;
     }
     pos++;
@@ -276,9 +276,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         pot=pot->pnext_type;
       pot->pnext_type=prst->pnext_type; // remove it
     }
-    while(pot->pnext_type!=NULL)
+    while(pot->pnext_type!=nullptr)
       pot=pot->pnext_type; // find the end
-    prst->pnext_type=NULL;
+    prst->pnext_type=nullptr;
     pot->pnext_type=prst;
   }
   // if found==2, do nothing; it's already at the end of the list
@@ -288,7 +288,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
 Outputs::~Outputs() {
   OutputType *ptype = pfirst_type_;
-  while(ptype != NULL) {
+  while(ptype != nullptr) {
     OutputType *ptype_old = ptype;
     ptype = ptype->pnext_type;
     delete ptype_old;
@@ -602,7 +602,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 //  \brief
 
 void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
-  if (pfirst_data_ == NULL) {
+  if (pfirst_data_ == nullptr) {
     pfirst_data_ = pnew_data;
   } else {
     pnew_data->pprev = plast_data_;
@@ -618,7 +618,7 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
 void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
   if (pold == pfirst_data_) {
     pfirst_data_ = pnew;
-    if (pold->pnext != NULL) {    // there is another node in the list
+    if (pold->pnext != nullptr) {    // there is another node in the list
       pnew->pnext = pold->pnext;
       pnew->pnext->pprev = pnew;
     } else {                      // there is only one node in the list
@@ -643,13 +643,13 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
 
 void OutputType::ClearOutputData() {
   OutputData *pdata = pfirst_data_;
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     OutputData *pdata_old = pdata;
     pdata = pdata->pnext;
     delete pdata_old;
   }
-  pfirst_data_ = NULL;
-  plast_data_  = NULL;
+  pfirst_data_ = nullptr;
+  plast_data_  = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
@@ -659,7 +659,7 @@ void OutputType::ClearOutputData() {
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
-  while (ptype != NULL) {
+  while (ptype != nullptr) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
@@ -758,7 +758,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     pnew = new OutputData;
     pnew->type = pdata->type;
     pnew->name = pdata->name;
@@ -824,7 +824,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     pnew = new OutputData;
     pnew->type = pdata->type;
     pnew->name = pdata->name;

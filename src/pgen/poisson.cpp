@@ -164,7 +164,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       for (int n=0; n < ncycle; n++) {
         pmb=pblock;
-        while(pmb!=NULL) {
+        while(pmb!=nullptr) {
           std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
           pmb=pmb->next;
         }
@@ -211,7 +211,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       Real err1=0.0,err2=0.0,maxphi=0.0;
       pmb=pblock;
-      while(pmb!=NULL) {
+      while(pmb!=nullptr) {
         Hydro *phydro = pmb->phydro;
         Gravity *pgrav = pmb->pgrav;
         for (int k=ks; k<=ke; ++k) {

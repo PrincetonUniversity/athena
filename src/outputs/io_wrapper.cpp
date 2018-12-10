@@ -33,7 +33,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh_)
        !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
 #else
-    if ((fh_ = std::fopen(fname,"rb")) == NULL) {
+    if ((fh_ = std::fopen(fname,"rb")) == nullptr) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Input file '" << fname << "' could not be opened" <<std::endl;
@@ -47,7 +47,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
                      MPI_INFO_NULL,&fh_) != MPI_SUCCESS) {
 #else
-    if ((fh_ = std::fopen(fname,"wb")) == NULL) {
+    if ((fh_ = std::fopen(fname,"wb")) == nullptr) {
 #endif
       msg << "### FATAL ERROR in function [IOWrapper:Open]"
           <<std::endl<< "Output file '" << fname << "' could not be opened" <<std::endl;

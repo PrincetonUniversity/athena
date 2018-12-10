@@ -41,8 +41,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
   rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
   rdy_=(size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
   rdz_=(size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
-  prev=NULL;
-  next=NULL;
+  prev=nullptr;
+  next=nullptr;
 
   nlevel_=0;
   if (root_flag_ == true) {
@@ -115,8 +115,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
 //  \brief Multigrid destroctor
 
 Multigrid::~Multigrid() {
-  if (prev!=NULL) prev->next=next;
-  if (next!=NULL) next->prev=prev;
+  if (prev!=nullptr) prev->next=next;
+  if (next!=nullptr) next->prev=prev;
 
   for (int l=0; l<nlevel_; l++) {
     u_[l].DeleteAthenaArray();
