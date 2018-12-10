@@ -421,10 +421,10 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 #endif
   if (file < 0) {
-    std::stringstream message;
-    message << "### FATAL ERROR in athdf5 initialization\n"
+    std::stringstream msg;
+    msg << "### FATAL ERROR in athdf5 initialization\n"
             << "Could not open " << filename << "\n";
-    throw std::runtime_error(message.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Prepare datatypes and dataspaces for writing attributes
@@ -455,10 +455,10 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   // Write coordinate system
   if (std::strlen(COORDINATE_SYSTEM) > max_name_length) {
-    std::stringstream message;
-    message << "### FATAL ERROR in athdf5 initialization\n"
+    std::stringstream msg;
+    msg << "### FATAL ERROR in athdf5 initialization\n"
             << "Coordinate name too long\n";
-    throw std::runtime_error(message.str().c_str());
+    ATHENA_ERROR(msg);
   }
   attribute = H5Acreate2(file, "Coordinates", string_type, dataspace_scalar,
       H5P_DEFAULT, H5P_DEFAULT);

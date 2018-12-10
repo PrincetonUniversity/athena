@@ -47,16 +47,16 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
   // Check that user is not trying to exceed limits of HDF5 array or AthenaArray
   // dimensionality
   if (rank_file > MAX_RANK_FILE) {
-    std::stringstream message;
-    message << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_file
+    std::stringstream msg;
+    msg << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_file
             << "\nExceeding MAX_RANK_FILE=" << MAX_RANK_FILE << std::endl;
-    throw std::runtime_error(message.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (rank_mem > MAX_RANK_MEM) {
-    std::stringstream message;
-    message << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_mem
+    std::stringstream msg;
+    msg << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_mem
             << "\nExceeding MAX_RANK_MEM=" << MAX_RANK_MEM << std::endl;
-    throw std::runtime_error(message.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Cast selection arrays to appropriate types
@@ -94,9 +94,9 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
   hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, property_list_file);
   H5Pclose(property_list_file);
   if (file < 0) {
-    std::stringstream message;
-    message << "### FATAL ERROR\nCould not open " << filename << "\n";
-    throw std::runtime_error(message.str().c_str());
+    std::stringstream msg;
+    msg << "### FATAL ERROR\nCould not open " << filename << "\n";
+    ATHENA_ERROR(msg);
   }
   hid_t property_list_transfer = H5Pcreate(H5P_DATASET_XFER);
   #ifdef MPI_PARALLEL
