@@ -80,8 +80,8 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
     bd.send[n]=nullptr;
     bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
-    bd.req_send[n]=MPI_REQUEST_nullptr;
-    bd.req_recv[n]=MPI_REQUEST_nullptr;
+    bd.req_send[n]=MPI_REQUEST_NULL;
+    bd.req_recv[n]=MPI_REQUEST_NULL;
 #endif
 
     // Allocate buffers
@@ -103,9 +103,9 @@ void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
-    if (bd.req_send[n]!=MPI_REQUEST_nullptr)
+    if (bd.req_send[n]!=MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_send[n]);
-    if (bd.req_recv[n]!=MPI_REQUEST_nullptr)
+    if (bd.req_recv[n]!=MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_recv[n]);
 #endif
   }
