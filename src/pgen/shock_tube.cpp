@@ -72,7 +72,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real r, d0, mx, my, mz, e0, bx, by, bz;
+        Real r(0.0), d0, mx, my, mz, e0, bx, by, bz;
         if (shk_dir == 1) r = pmb->pcoord->x1v(i);
         if (shk_dir == 2) r = pmb->pcoord->x2v(j);
         if (shk_dir == 3) r = pmb->pcoord->x3v(k);
@@ -166,7 +166,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real r,d0,m0,e0;
+        Real r(0.0), d0, m0, e0;
         if (shk_dir == 1) r = pmb->pcoord->x1v(i);
         if (shk_dir == 2) r = pmb->pcoord->x2v(j);
         if (shk_dir == 3) r = pmb->pcoord->x3v(k);
