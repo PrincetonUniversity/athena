@@ -13,20 +13,23 @@
 //----------------------------------------------------------------------------------------
 // macros which define physics and algorithms
 
+// configure.py dict(definitions) string values:
 // problem generator
 #define PROBLEM_GENERATOR "@PROBLEM@"
 
 // coordinate system
 #define COORDINATE_SYSTEM "@COORDINATE_SYSTEM@"
 
+// Riemann solver
+#define RIEMANN_SOLVER "@RSOLVER@"
+
+
+// configure.py dict(definitions) Boolean values:
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
-
-// Riemann solver
-#define RIEMANN_SOLVER "@RSOLVER@"
 
 // include magnetic fields? default=0 (false)
 #define MAGNETIC_FIELDS_ENABLED @MAGNETIC_FIELDS_ENABLED@
@@ -49,23 +52,29 @@
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
-// floating-point single precision option
+// use single precision floating-point values (binary32)? default=0 (false; use binary64)
 #define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
 
+// use double precision for HDF5 output? default=0 (false; write out binary32)
+#define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
+
+// allow try/throw/catch C++ exception handling? default=1 (true)
+#define EXCEPTION_HANDLING_ENABLED @EXCEPTION_HANDLING_ENABLED@
+
+
+// configure.py dict(definitions) Boolean string macros:
 // make use of FFT? (FFT or NO_FFT)
 #define @FFT_DEFINE@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
 
-// openMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
+// OpenMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
 #define @OPENMP_OPTION@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
-// HDF5 floating-point ouptut precision option
-#define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
