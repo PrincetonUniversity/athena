@@ -101,7 +101,7 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 //! \fn void FFTGravity::ApplyKernel(const AthenaArray<Real> &src, int ns)
 //  \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
-  Real pcoeff;
+  Real pcoeff(0.0);
   Real dx1sq=SQR(2*PI/(kNx[0]*dkx[0]));
   Real dx2sq=SQR(2*PI/(kNx[1]*dkx[1]));
   Real dx3sq=SQR(2*PI/(kNx[2]*dkx[2]));

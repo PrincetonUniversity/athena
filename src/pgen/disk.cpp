@@ -112,8 +112,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real rad, phi, z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
 
   //  Initialize density and momenta
   for (int k=ks; k<=ke; ++k) {
@@ -204,8 +204,8 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=1; i<=ngh; ++i) {
@@ -224,8 +224,8 @@ void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=1; i<=ngh; ++i) {
@@ -244,8 +244,8 @@ void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=is; i<=ie; ++i) {
@@ -264,8 +264,8 @@ void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=is; i<=ie; ++i) {
@@ -284,8 +284,8 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=1; k<=ngh; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
@@ -304,8 +304,8 @@ void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 void DiskOuterX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
-  Real v1, v2, v3;
+  Real rad(0.0), phi(0.0), z(0.0);
+  Real v1(0.0), v2(0.0), v3(0.0);
   for (int k=1; k<=ngh; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {

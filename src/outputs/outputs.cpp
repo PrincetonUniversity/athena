@@ -710,7 +710,7 @@ bool OutputType::TransformOutputData(MeshBlock *pmb) {
 //  \brief perform data slicing and update the data list
 
 bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
-  int islice, jslice, kslice;
+  int islice(0), jslice(0), kslice(0);
 
   // Compute i,j,k indices of slice; check if in range of data in this block
   if (dim == 1) {

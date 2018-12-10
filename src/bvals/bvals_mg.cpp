@@ -253,7 +253,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
 
 void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type) {
   bool faceonly=false;
-  MGBoundaryData *pbd;
+  MGBoundaryData *pbd{};
 
   if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
     pbd=&bd_mggrav_;
@@ -307,7 +307,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   int nvar, tag, ngh, phys;
   bool faceonly=false;
   bool bflag=true;
-  MGBoundaryData *pbd, *ptarget;
+  MGBoundaryData *pbd{}, *ptarget{};
 
   if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
@@ -320,7 +320,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     NeighborBlock& nb = neighbor[n];
     if (faceonly && nb.type>NEIGHBOR_FACE) break;
     if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
-    int ssize;
+    int ssize = 0;
     if (nb.rank == Globals::my_rank) {
       Multigrid *pmg=pmy_mg_->pmy_driver_->FindMultigrid(nb.gid);
       if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
@@ -391,7 +391,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
                                                        int nc, enum BoundaryType type) {
   bool bflag=true, faceonly=false;
   int nvar, ngh;
-  MGBoundaryData *pbd;
+  MGBoundaryData *pbd{};
 
   if (type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;

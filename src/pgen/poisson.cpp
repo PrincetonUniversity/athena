@@ -61,7 +61,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x0=0.0, y0=0.0, z0=0.0;
   Real x, y, z;
   Real r, r2;
-  Real den, phia;
+  Real den(0.0), phia(0.0);
   RegionSize &mesh_size = pmy_mesh->mesh_size;
 
   Real x1size = mesh_size.x1max - mesh_size.x1min;

@@ -259,7 +259,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     else if (o==6) kos= 10;
     for (int d=0; d<6; d++) {
       Real pmax=0.0;
-      int imax, jmax, kmax;
+      int imax(0), jmax(0), kmax(0);
       if (d==0) {
         if (ios!=0) continue;
         jmax=jc+jos, kmax=kc+kos;

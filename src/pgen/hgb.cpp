@@ -152,9 +152,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       amp *= iso_cs;
   }
 
-  Real x1,x2,x3;  // xmin,xmax;
-  Real x1f,x2f,x3f;
-  Real rd,rp,rvx,rvy,rvz,rbx,rby,rbz;
+  Real x1, x2, x3;  // xmin, xmax;
+  Real x1f, x2f, x3f;
+  Real rd(0.0), rp(0.0), rvx(0.0), rvy(0.0), rvz(0.0), rbx(0.0), rby(0.0), rbz(0.0);
   Real rval;
 
   for (int k=ks; k<=ke; k++) {

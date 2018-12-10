@@ -9,7 +9,6 @@ set_warning_cflag () {
     # Suppress or add warnings based on C++ compiler
     if [ "$1" = "g++" ]; then
 	warn_flags+=("-Wno-unused-private-field"
-		     "-Wno-maybe-uninitialized"
 		     "-Wno-unused-but-set-variable"
 		     "-Wno-unused-variable"
 		     "-Wno-unused-parameter"
@@ -21,12 +20,13 @@ set_warning_cflag () {
 		     "-Wno-unused-parameter"
 		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function"
+		     # Add even more warnings:
 		     "-Wshorten-64-to-32")
     elif [ "$1" == "icc" ]; then
 	warn_flags+=("-diag-disable=175"
 		     "-Wno-unused-variable"
 		     "-Wno-unused-function")
-	# There are still illegal narrowing warnings with icc to be fixed
+	# There are still illegal narrowing warnings with icc that need to be addressed
 		     #"-Wshorten-64-to-32")
     else
 	echo "Unknown CXX=$1 compiler"

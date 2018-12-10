@@ -115,11 +115,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   a = pcoord->GetSpin();
 
   // Prepare variables to hold results from multiple-return functions
-  Real r, theta, phi;   // Boyer-Lindquist (BL) coordinates
+  Real r(0.0), theta(0.0), phi(0.0);   // Boyer-Lindquist (BL) coordinates
   Real rho;             // density
   Real ut, ur, uphi;    // BL u^\mu
   Real bt, br, bphi;    // BL b^\mu
-  Real u0, u1, u2, u3;  // preferred coordinates u^\mu
+  Real u0(0.0), u1(0.0), u2(0.0), u3(0.0);  // preferred coordinates u^\mu
   Real b0, b1, b2, b3;  // preferred coordinates b^\mu
 
   // Initialize magnetic field
@@ -269,7 +269,8 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                            Real theta, Real phi,
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;

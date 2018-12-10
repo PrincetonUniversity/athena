@@ -117,7 +117,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
   Real x1, x2, x3, xmin, xmax;
   Real x1f, x2f, x3f;
-  Real rd, rp, rvx, rvy, rvz, rbx, rby, rbz;
+  Real rd(0.0), rp(0.0);
+  Real rvx, rvy, rvz, rbx, rby, rbz;
   Real rval;
 
   // initialize density

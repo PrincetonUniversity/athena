@@ -123,12 +123,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = jl; j <= ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i) {
-        Real r, theta, phi;
+        Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
             &theta, &phi);
         Real rho, pgas, ut, ur;
         CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
-        Real u0, u1, u2, u3;
+        Real u0(0.0), u1(0.0), u2(0.0), u3(0.0);
         TransformVector(ut, ur, 0.0, 0.0, r, theta, phi, &u0, &u1, &u2, &u3);
         Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;

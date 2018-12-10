@@ -60,7 +60,7 @@
 Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
-  MeshBlock *pfirst;
+  MeshBlock *pfirst{};
   enum BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
   int dim;
@@ -513,9 +513,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
-  MeshBlock *pfirst;
+  MeshBlock *pfirst{};
   int i, dim;
-  IOWrapperSize_t *offset, datasize, listsize, headeroffset;
+  IOWrapperSize_t *offset{};
+  IOWrapperSize_t datasize, listsize, headeroffset;
 
   // mesh test
   if (mesh_test>0) Globals::nranks=mesh_test;
@@ -593,7 +594,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   if (mesh_size.nx2>1) dim=2;
   if (mesh_size.nx3>1) dim=3;
 
-  //initialize
+  // initialize
   loclist=new LogicalLocation[nbtotal];
   offset=new IOWrapperSize_t[nbtotal];
   costlist=new Real[nbtotal];
@@ -757,6 +758,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
           << Globals::nranks << ")" << std::endl;
+      delete [] offset;
       return;
     }
   }
@@ -1763,7 +1765,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
 
   // allocate memory for the location arrays
-  LogicalLocation *lref, *lderef, *clderef;
+  LogicalLocation *lref{}, *lderef{}, *clderef{};
   if (tnref>0)
     lref = new LogicalLocation[tnref];
   if (tnderef>=nlbl) {

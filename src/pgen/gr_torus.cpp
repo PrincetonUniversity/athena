@@ -234,7 +234,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i = il; i <= iu; ++i) {
 
         // Calculate Boyer-Lindquist coordinates of cell
-        Real r, theta, phi;
+        Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
             &theta, &phi);
         Real sin_theta = std::sin(theta);

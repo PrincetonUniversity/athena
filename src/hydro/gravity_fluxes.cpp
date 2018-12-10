@@ -28,7 +28,7 @@ void Hydro::AddGravityFlux(void) {
   AthenaArray<Real> &x3flux=flux[X3DIR];
   AthenaArray<Real> &phi=pmb->pgrav->phi;
   Real phil;
-  Real gxl,gyl,gzl;
+  Real gxl, gyl(0.0), gzl(0.0);
 
   // i-direction
   for (int k=ks; k<=ke; ++k) {

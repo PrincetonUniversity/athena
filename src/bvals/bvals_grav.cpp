@@ -71,9 +71,9 @@ GravityBoundaryValues::~GravityBoundaryValues() {
 //  \brief Initialize GravityBoundaryData structure
 void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
   MeshBlock *pmb=pmy_block_;
-  int size;
   bd.nbmax=maxneighbor_;
   for (int n=0;n<bd.nbmax;n++) {
+    int size;
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.sflag[n]=BNDRY_WAITING;
@@ -174,20 +174,16 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
 
 void GravityBoundaryValues::StartReceivingGravity(void) {
   MeshBlock *pmb=pmy_block_;
-  int tag;
-  GravityBoundaryData *pbd;
-
-  pbd=&bd_gravity_;
+  GravityBoundaryData *pbd = &bd_gravity_;
 
   for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
-      int size;
-      size=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
+      int size=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
           *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
           *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
-      tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
+      int tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL,
                 nb.rank, tag, MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
     }
@@ -202,9 +198,7 @@ void GravityBoundaryValues::StartReceivingGravity(void) {
 //  \brief clean up the boundary flags after each loop for multigrid
 
 void GravityBoundaryValues::ClearBoundaryGravity(void) {
-  GravityBoundaryData *pbd;
-
-  pbd=&bd_gravity_;
+  GravityBoundaryData *pbd = &bd_gravity_;
 
   for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
@@ -246,17 +240,14 @@ int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> 
 bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
-  GravityBoundaryData *pbd, *ptarget;
+  GravityBoundaryData *pbd = &bd_gravity_;
+  GravityBoundaryData *ptarget{};
   bool bflag=true;
-  int tag;
-
-
-  pbd=&bd_gravity_;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
-    int ssize;
+    int ssize=0;
 
     if (nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
@@ -274,7 +265,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
 #ifdef MPI_PARALLEL
     } else { // MPI
-      tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
+      int tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
     }

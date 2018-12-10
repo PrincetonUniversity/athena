@@ -491,7 +491,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_inner_emf_flag_[n]=BNDRY_COMPLETED;
       }
     }
-    int jblock;
+    int jblock=0;
     for (int j=0; j<nrbx2; j++) {
       // index of current meshblock on the shearingboundary block list
       if (shbb_.igidlist[j] == pmb->gid)  jblock = j;
@@ -682,7 +682,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_outer_emf_flag_[n]=BNDRY_COMPLETED;
       }
     }
-    int jblock;
+    int jblock=0;
     for (int j=0; j<nrbx2; j++) {
       // index of current meshblock on the shearingboundary block list
       if (shbb_.ogidlist[j] == pmb->gid) jblock = j;

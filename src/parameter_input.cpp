@@ -112,7 +112,7 @@ void ParameterInput::LoadFromStream(std::istream &is) {
   std::string line, block_name, param_name, param_value, param_comment;
   std::size_t first_char,last_char;
   std::stringstream msg;
-  InputBlock *pib;
+  InputBlock *pib{};
 
   while (is.good()) {
     getline(is,line);

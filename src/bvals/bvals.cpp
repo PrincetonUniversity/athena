@@ -636,7 +636,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
   cng=cng1=pmb->cnghost;
   cng2=cng*f2d;
   cng3=cng*f3d;
-  int size;
+  int size=0;
   bd.nbmax=maxneighbor_;
   if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
     for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);

@@ -137,11 +137,11 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src
 //  \brief Send boundary buffers of cell-centered variables
 void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                                      enum CCBoundaryType type) {
-  MeshBlock *pmb=pmy_block_, *pbl;
+  MeshBlock *pmb=pmy_block_, *pbl=nullptr;
   int mylevel=pmb->loc.level;
   int ns, ne;
   AthenaArray<Real> cbuf;
-  BoundaryData *pbd, *ptarget;
+  BoundaryData *pbd{}, *ptarget{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
@@ -399,7 +399,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
   bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
-  BoundaryData *pbd;
+  BoundaryData *pbd{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
@@ -462,7 +462,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
   bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
-  BoundaryData *pbd;
+  BoundaryData *pbd{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
