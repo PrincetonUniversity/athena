@@ -14,11 +14,13 @@ sudo: false # use faster container-based build
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty-5.0
     packages:
       - "python3"
       - "python3-pip"
-      - "clang-5.0"  # Ubuntu 14.04 ships wit Clang 3.5.0 as of 2018-10-29
+      - "g++-7"      # Ubuntu 14.04.05 ships with GCC 4.8.4 (not 4.8.2) as of 2018-12-11
+      - "clang-5.0"  # Ubuntu 14.04.05 ships with Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
 env:
   matrix:
