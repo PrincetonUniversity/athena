@@ -125,8 +125,13 @@ matrix:
       # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
       script: cd tst/style/ && ./cpplint_athena.sh
 
-# Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
+# Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:
+  # Specify upgraded compilers on Ubuntu image builds:
+  - if [ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" = "clang++" ]; eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" = "g++" ]; eval "CC=gcc-7 && CXX=g++-7"; fi
+  - g++ --version
+  - clang++ --version
   - test -n $CC  && unset CC
   # Cache compiler variable from Travis CI Build Matrix before unsetting
   - export TEMP_CXX=$CXX
