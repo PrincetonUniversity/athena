@@ -130,12 +130,15 @@ before_install:
   # Specify upgraded compilers on Ubuntu image builds:
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "g++" ]]; then eval "CC=gcc-7 && CXX=g++-7"; fi
+  - test -n $CC  && unset CC
+  # Cache general 'compiler' choice (g++ vs. clang++) from Travis CI Build Matrix before unsetting
+  - export TEMP_CXX=$CXX_FOR_BUILD
+  - export TEMP_CCMD=$CXX
+  - test -n $CXX && unset CXX
+  # Dump default system and (possibly upgraded) selected C++ compiler versions
   - g++ --version
   - clang++ --version
-  - test -n $CC  && unset CC
-  # Cache compiler variable from Travis CI Build Matrix before unsetting
-  - export TEMP_CXX=$CXX
-  - test -n $CXX && unset CXX
+  - ${TEMP_CCMD} --version
 # Install OpenMPI, MPICH, and FFTW
 install:
   - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
