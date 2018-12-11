@@ -128,8 +128,8 @@ matrix:
 # Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:
   # Specify upgraded compilers on Ubuntu image builds:
-  - if [ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" = "clang++" ]; eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" = "g++" ]; eval "CC=gcc-7 && CXX=g++-7"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "g++" ]]; then eval "CC=gcc-7 && CXX=g++-7"; fi
   - g++ --version
   - clang++ --version
   - test -n $CC  && unset CC
