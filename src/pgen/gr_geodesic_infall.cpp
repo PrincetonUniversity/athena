@@ -99,8 +99,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
   gi.NewAthenaArray(NMETRIC, iu+1);
-  for (int j = jl; j <= ju; j++) {
-    for (int i = il; i <= iu; i++) {
+  for (int j=jl; j<=ju; j++) {
+    for (int i=il; i<=iu; i++) {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
@@ -114,7 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real uu3 = 0.0;
 
       // Set primitive values
-      for (int k = kl; k <= ku; k++) {
+      for (int k=kl; k<=ku; k++) {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;

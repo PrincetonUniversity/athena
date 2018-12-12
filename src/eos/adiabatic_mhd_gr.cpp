@@ -664,7 +664,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 
   // Go through states
 #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
     const Real &pgas = prim(IPR,k,j,i);

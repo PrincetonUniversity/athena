@@ -111,12 +111,12 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   const Real &a = bh_spin_;
 
   // Initialize volume-averaged coordinates and spacings: r-direction
-  for (int i = ill; i <= iuu; ++i) {
+  for (int i=ill; i<=iuu; ++i) {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = 0.5 * (r_m + r_p);  // at least 2nd-order accurate
   }
-  for (int i = ill; i <= iuu-1; ++i) {
+  for (int i=ill; i<=iuu-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
   }
 
@@ -127,12 +127,12 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     x2v(jl) = 0.5 * (theta_m + theta_p);  // at least 2nd-order accurate
     dx2v(jl) = dx2f(jl);
   } else {
-    for (int j = jll; j <= juu; ++j) {
+    for (int j=jll; j<=juu; ++j) {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = 0.5 * (theta_m + theta_p);  // at least 2nd-order accurate
     }
-    for (int j = jll; j <= juu-1; ++j) {
+    for (int j=jll; j<=juu-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
     }
   }
@@ -144,32 +144,32 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     x3v(kl) = 0.5 * (phi_m + phi_p);  // at least 2nd-order accurate
     dx3v(kl) = dx3f(kl);
   } else {
-    for (int k = kll; k <= kuu; ++k) {
+    for (int k=kll; k<=kuu; ++k) {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);  // at least 2nd-order accurate
     }
-    for (int k = kll; k <= kuu-1; ++k) {
+    for (int k=kll; k<=kuu-1; ++k) {
       dx3v(k) = x3v(k+1) - x3v(k);
     }
   }
 
   // Initialize area-averaged coordinates used with MHD AMR
   if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    for (int i = ill; i <= iuu; ++i) {
+    for (int i=ill; i<=iuu; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
     if (block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
-      for (int j = jll; j <= juu; ++j) {
+      for (int j=jll; j<=juu; ++j) {
         x2s1(j) = x2s3(j) = x2v(j);
       }
     }
     if (block_size.nx3 == 1) {
       x3s1(kl) = x3s2(kl) = x3v(kl);
     } else {
-      for (int k = kll; k <= kuu; ++k) {
+      for (int k=kll; k<=kuu; ++k) {
         x3s1(k) = x3s2(k) = x3v(k);
       }
     }
@@ -211,9 +211,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate cell-centered geometric quantities
-  for (int k = kll; k <= kuu; ++k) {
-    for (int j = jll; j <= juu; ++j) {
-      for (int i = ill; i <= iuu; ++i) {
+  for (int k=kll; k<=kuu; ++k) {
+    for (int j=jll; j<=juu; ++j) {
+      for (int i=ill; i<=iuu; ++i) {
         // Get position and separations
         Real x1 = x1v(i);
         Real x2 = x2v(j);
@@ -258,9 +258,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x1-face-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu; ++k) {
-      for (int j = jll; j <= juu; ++j) {
-        for (int i = ill; i <= iuu+1; ++i) {
+    for (int k=kll; k<=kuu; ++k) {
+      for (int j=jll; j<=juu; ++j) {
+        for (int i=ill; i<=iuu+1; ++i) {
           // Get position and separations
           Real x1 = x1f(i);
           Real x2 = x2v(j);
@@ -295,9 +295,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x2-face-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu; ++k) {
-      for (int j = jll; j <= juu+1; ++j) {
-        for (int i = ill; i <= iuu; ++i) {
+    for (int k=kll; k<=kuu; ++k) {
+      for (int j=jll; j<=juu+1; ++j) {
+        for (int i=ill; i<=iuu; ++i) {
           // Get position and separations
           Real x1 = x1v(i);
           Real x2 = x2f(j);
@@ -332,9 +332,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x3-face-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu+1; ++k) {
-      for (int j = jll; j <= juu; ++j) {
-        for (int i = ill; i <= iuu; ++i) {
+    for (int k=kll; k<=kuu+1; ++k) {
+      for (int j=jll; j<=juu; ++j) {
+        for (int i=ill; i<=iuu; ++i) {
           // Get position and separations
           Real x1 = x1v(i);
           Real x2 = x2v(j);
@@ -369,9 +369,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x1-edge-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu+1; ++k) {
-      for (int j = jll; j <= juu+1; ++j) {
-        for (int i = ill; i <= iuu; ++i) {
+    for (int k=kll; k<=kuu+1; ++k) {
+      for (int j=jll; j<=juu+1; ++j) {
+        for (int i=ill; i<=iuu; ++i) {
           // Get position and separation
           Real x1 = x1v(i);
           Real x2 = x2f(j);
@@ -391,9 +391,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x2-edge-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu+1; ++k) {
-      for (int j = jll; j <= juu; ++j) {
-        for (int i = ill; i <= iuu+1; ++i) {
+    for (int k=kll; k<=kuu+1; ++k) {
+      for (int j=jll; j<=juu; ++j) {
+        for (int i=ill; i<=iuu+1; ++i) {
           // Get position and separation
           Real x1 = x1f(i);
           Real x2 = x2v(j);
@@ -413,9 +413,9 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate x3-edge-centered geometric quantities
   if (!coarse_flag) {
-    for (int k = kll; k <= kuu; ++k) {
-      for (int j = jll; j <= juu+1; ++j) {
-        for (int i = ill; i <= iuu+1; ++i) {
+    for (int k=kll; k<=kuu; ++k) {
+      for (int j=jll; j<=juu+1; ++j) {
+        for (int i=ill; i<=iuu+1; ++i) {
           // Get position and separation
           Real x1 = x1f(i);
           Real x2 = x2f(j);
@@ -496,7 +496,7 @@ void GRUser::Edge1Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^1
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len1_kji_(k,j,i);
   }
   return;
@@ -506,7 +506,7 @@ void GRUser::Edge2Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^2
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len2_kji_(k,j,i);
   }
   return;
@@ -516,7 +516,7 @@ void GRUser::Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^3
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len3_kji_(k,j,i);
   }
   return;
@@ -585,7 +585,7 @@ void GRUser::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^2 \Delta x^3
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     areas(i) = coord_area1_kji_(k,j,i);
   }
   return;
@@ -595,7 +595,7 @@ void GRUser::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^3
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     areas(i) = coord_area2_kji_(k,j,i);
   }
   return;
@@ -605,7 +605,7 @@ void GRUser::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^2
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     areas(i) = coord_area3_kji_(k,j,i);
   }
   return;
@@ -645,7 +645,7 @@ void GRUser::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes) {
   // \Delta V \approx \sqrt{-g} \Delta x^1 \Delta x^2 \Delta x^3
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     volumes(i) = coord_vol_kji_(k,j,i);
   }
   return;
@@ -816,7 +816,7 @@ void GRUser::CellMetric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
-    for (int i = il; i <= iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       g(n,i) = metric_cell_kji_(0,n,k,j,i);
       g_inv(n,i) = metric_cell_kji_(1,n,k,j,i);
     }
@@ -828,7 +828,7 @@ void GRUser::Face1Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
-    for (int i = il; i <= iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       g(n,i) = metric_face1_kji_(0,n,k,j,i);
       g_inv(n,i) = metric_face1_kji_(1,n,k,j,i);
     }
@@ -840,7 +840,7 @@ void GRUser::Face2Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
-    for (int i = il; i <= iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       g(n,i) = metric_face2_kji_(0,n,k,j,i);
       g_inv(n,i) = metric_face2_kji_(1,n,k,j,i);
     }
@@ -852,7 +852,7 @@ void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
     #pragma omp simd
-    for (int i = il; i <= iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       g(n,i) = metric_face3_kji_(0,n,k,j,i);
       g_inv(n,i) = metric_face3_kji_(1,n,k,j,i);
     }
@@ -886,7 +886,7 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face1_kji_(1,T10,k,j,i);
@@ -1056,7 +1056,7 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face2_kji_(1,T10,k,j,i);
@@ -1226,7 +1226,7 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face3_kji_(1,T10,k,j,i);
@@ -1393,7 +1393,7 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &m0_t = trans_face1_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face1_kji_(0,T10,k,j,i);
@@ -1504,7 +1504,7 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &m0_t = trans_face2_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face2_kji_(0,T30,k,j,i);
@@ -1615,7 +1615,7 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
   #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &m0_t = trans_face3_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face3_kji_(0,T20,k,j,i);

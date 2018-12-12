@@ -94,10 +94,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gi.NewAthenaArray(NMETRIC, ncells1);
 
   // Initialize hydro variables
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) {
+      for (int i=il; i<=iu; ++i) {
         // Calculate distance to nearest blast center
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
@@ -165,9 +165,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
+        for (int i=il; i<=iu+1; ++i) {
           Real ut = 1.0;
           Real ux = 0.0;
           Real uy = 0.0;

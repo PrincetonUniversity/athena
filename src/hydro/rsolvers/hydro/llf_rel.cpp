@@ -48,8 +48,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
         LLFNonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
       } else {
@@ -113,7 +113,7 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 
   // Go through each interface
 #pragma omp simd simdlen(SIMD_WIDTH)
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract left primitives
     Real rho_l = prim_l(IDN,k,j,i);
     Real pgas_l = prim_l(IPR,k,j,i);
@@ -266,7 +266,7 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
 
   // Go through each interface
 #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+  for (int i=il; i<=iu; ++i) {
     // Extract metric
     const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
                &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),

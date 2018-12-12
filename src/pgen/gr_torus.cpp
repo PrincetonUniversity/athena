@@ -230,10 +230,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gi.NewAthenaArray(NMETRIC, iu+1);
 
   // Initialize primitive values
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) {
+      for (int i=il; i<=iu; ++i) {
         // Calculate Boyer-Lindquist coordinates of cell
         Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
@@ -366,8 +366,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (field_config == normal) {
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
-        for (int j = jl; j <= ju+1; ++j) {
-          for (int i = il; i <= iu+1; ++i) {
+        for (int j=jl; j<=ju+1; ++j) {
+          for (int i=il; i<=iu+1; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
                 &r, &theta, &phi);
@@ -387,8 +387,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
       // Calculate cell-centered vector potential values for untilted disks
       if (psi == 0.0) {
-        for (int j = jl; j <= ju; ++j) {
-          for (int i = il; i <= iu; ++i) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
                 &r, &theta, &phi);
@@ -408,9 +408,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
       // Calculate A_theta and A_phi for tilted disks
       if (psi != 0.0) {
-        for (int k = kl; k <= ku+1; ++k) {
-          for (int j = jl; j <= ju+1; ++j) {
-            for (int i = il; i <= iu+1; ++i) {
+        for (int k=kl; k<=ku+1; ++k) {
+          for (int j=jl; j<=ju+1; ++j) {
+            for (int i=il; i<=iu+1; ++i) {
               Real r_vals[4], theta_vals[4], phi_vals[4];
               if (i != iu+1 && j != ju+1 && k != ku+1) {
                 GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
@@ -726,8 +726,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Interpolate edge-centered vector potential onto local grid
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+      for (int j=jl; j<=ju+1; ++j) {
+        for (int i=il; i<=iu+1; ++i) {
           Real r_c, theta_c, phi;
           GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
               &r_c, &theta_c, &phi);
@@ -777,8 +777,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Interpolate cell-centered vector potential onto local grid
-      for (int j = jl; j <= ju; ++j) {
-        for (int i = il; i <= iu; ++i) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=il; i<=iu; ++i) {
           Real r_c, theta_c, phi;
           GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
               &r_c, &theta_c, &phi);
@@ -857,9 +857,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // Set magnetic fields according to vector potential in vertical case
     if (field_config == vertical) {
       // Set B^1
-      for (int k = kl; k <= ku; ++k) {
-        for (int j = jl; j <= ju; ++j) {
-          for (int i = il; i <= iu+1; ++i) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu+1; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
                 &r, &theta, &phi);
@@ -888,9 +888,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Set B^2
-      for (int k = kl; k <= ku; ++k) {
-        for (int j = jl; j <= ju+1; ++j) {
-          for (int i = il; i <= iu; ++i) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju+1; ++j) {
+          for (int i=il; i<=iu; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
                 &r, &theta, &phi);
@@ -919,9 +919,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Set B^3
-      for (int k = kl; k <= ku+1; ++k) {
-        for (int j = jl; j <= ju; ++j) {
-          for (int i = il; i <= iu; ++i) {
+      for (int k=kl; k<=ku+1; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
             pfield->b.x3f(k,j,i) = 0.0;
           }
         }
@@ -930,9 +930,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // Set magnetic fields according to vector potential for untilted disks
     } else if (psi == 0.0) {
       // Set B^1
-      for (int k = kl; k <= ku; ++k) {
-        for (int j = jl; j <= ju; ++j) {
-          for (int i = il; i <= iu+1; ++i) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu+1; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
                 &r, &theta, &phi);
@@ -987,9 +987,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Set B^2
-      for (int k = kl; k <= ku; ++k) {
-        for (int j = jl; j <= ju+1; ++j) {
-          for (int i = il; i <= iu; ++i) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju+1; ++j) {
+          for (int i=il; i<=iu; ++i) {
             Real r, theta, phi;
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
                 &r, &theta, &phi);
@@ -1043,9 +1043,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Set B^3
-      for (int k = kl; k <= ku+1; ++k) {
-        for (int j = jl; j <= ju; ++j) {
-          for (int i = il; i <= iu; ++i) {
+      for (int k=kl; k<=ku+1; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
             pfield->b.x3f(k,j,i) = 0.0;
           }
         }
@@ -1053,9 +1053,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Set magnetic fields according to vector potential for tilted disks
     } else {
-      for (int k = kl+1; k <= ku; ++k) {
-        for (int j = jl+1; j <= ju; ++j) {
-          for (int i = il+1; i <= iu; ++i) {
+      for (int k=kl+1; k<=ku; ++k) {
+        for (int j=jl+1; j<=ju; ++j) {
+          for (int i=il+1; i<=iu; ++i) {
             // Declare variables to hold coordinates and fields
             Real r, r_m, r_p, delta_r;
             Real theta, theta_m, theta_p, delta_theta;
@@ -1233,9 +1233,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Impose density and pressure floors
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
-      for (int i = il; i <= iu; ++i) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      for (int i=il; i<=iu; ++i) {
         Real r, theta, phi;
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
             &theta, &phi);

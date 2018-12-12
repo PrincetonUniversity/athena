@@ -121,10 +121,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   c2 = SQR(1.0 + (n_adi+1.0) * t_crit) * (1.0 - 3.0*m/(2.0*r_crit));        // (HSW 69)
 
   // Initialize primitive values
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) {
+      for (int i=il; i<=iu; ++i) {
         Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
             &theta, &phi);
@@ -160,9 +160,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real normalization = std::sqrt(bsq_over_rho/bsq_over_rho_actual);
 
     // Set face-centered field
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
+        for (int i=il; i<=iu+1; ++i) {
           // Set B^1
           if (j != ju+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),

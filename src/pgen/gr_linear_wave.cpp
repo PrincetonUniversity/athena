@@ -604,14 +604,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wavenumber = 2.0*PI / (arg_max - arg_min);
 
   // Initialize hydro variables
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       #if GENERAL_RELATIVITY
       {
         pcoord->CellMetric(k, j, il, iu, g, gi);
       }
       #endif  // GENERAL_RELATIVITY
-      for (int i = il; i <= iu; ++i) {
+      for (int i=il; i<=iu; ++i) {
         // Find location of cell in spacetime
         Real t, x, y, z;
         #if GENERAL_RELATIVITY
@@ -721,9 +721,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
+        for (int i=il; i<=iu+1; ++i) {
           #if GENERAL_RELATIVITY
           {
             // Set B^1 if needed
