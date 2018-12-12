@@ -234,7 +234,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = jl; j <= ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i) {
-
         // Calculate Boyer-Lindquist coordinates of cell
         Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
@@ -283,7 +282,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
         // Overwrite primitives inside torus
         if (in_torus) {
-
           // Calculate thermodynamic variables
           Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
           rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
@@ -327,7 +325,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Determine limits of sample grid
     Real r_vals[8], theta_vals[8], phi_vals[8];
     for (int p = 0; p < 8; ++p) {
@@ -367,7 +364,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Calculate vector potential in normal case
     if (field_config == normal) {
-
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
         for (int j = jl; j <= ju+1; ++j) {
@@ -488,7 +484,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
         }
       }
-
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
         normalization = 0.0;
@@ -496,10 +491,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real beta_min_actual = CalculateBetaMin();
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
-
     // Calculate vector potential in renormalized case
     } else if (field_config == renorm) {
-
       // Check that this is not a tilted disk
       if (psi != 0.0) {
         std::stringstream msg;
@@ -846,7 +839,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Calculate normalization in vertical case
     } else if (field_config == vertical) {
-
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
         normalization = 0.0;
@@ -854,7 +846,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real beta_min_actual = CalculateBetaMin();
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
-
     // Handle unknown input
     } else {
       std::stringstream msg;
@@ -865,7 +856,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Set magnetic fields according to vector potential in vertical case
     if (field_config == vertical) {
-
       // Set B^1
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
@@ -939,7 +929,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Set magnetic fields according to vector potential for untilted disks
     } else if (psi == 0.0) {
-
       // Set B^1
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
@@ -1067,7 +1056,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k = kl+1; k <= ku; ++k) {
         for (int j = jl+1; j <= ju; ++j) {
           for (int i = il+1; i <= iu; ++i) {
-
             // Declare variables to hold coordinates and fields
             Real r, r_m, r_p, delta_r;
             Real theta, theta_m, theta_p, delta_theta;
@@ -1304,7 +1292,6 @@ void MeshBlock::UserWorkInLoop() {
     for (int j = js; j <= je; ++j) {
       pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
-
         // Calculate normal-frame Lorentz factor
         Real uu1 = phydro->w(IM1,k,j,i);
         Real uu2 = phydro->w(IM2,k,j,i);
@@ -1701,7 +1688,6 @@ static Real CalculateBetaMin() {
 
   // Go through sample grid in phi
   for (int k = 0; k < sample_n_phi; ++k) {
-
     // Calculate phi values
     Real phi_m = phi_min + static_cast<Real>(k)/static_cast<Real>(sample_n_phi)
         * (phi_max-phi_min);
@@ -1711,7 +1697,6 @@ static Real CalculateBetaMin() {
 
     // Go through sample grid in theta
     for (int j = 0; j < sample_n_theta; ++j) {
-
       // Calculate theta values
       Real theta_m = theta_min + static_cast<Real>(j)/static_cast<Real>(sample_n_theta)
           * (theta_max-theta_min);
@@ -1723,7 +1708,6 @@ static Real CalculateBetaMin() {
       Real r_m, delta_r;
       Real r_p = 0.0;
       for (int i = 0; i < sample_n_r; ++i) {
-
         // Calculate r values
         if (i == 0) {
           r_m = r_min;

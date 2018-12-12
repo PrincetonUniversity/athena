@@ -48,7 +48,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 }
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-
   // Determine locations of initial values
   std::string input_filename = pin->GetString("problem", "input_filename");
   std::string dataset_cons = pin->GetString("problem", "dataset_cons");
@@ -113,7 +112,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Set magnetic field values from file
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Set B1
     count_field_file[1] = block_size.nx3;
     count_field_file[2] = block_size.nx2;

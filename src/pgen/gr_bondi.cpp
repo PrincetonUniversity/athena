@@ -146,7 +146,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Find normalization
     Real r, theta, phi;
     GetBoyerLindquistCoordinates(pcoord->x1f(is), pcoord->x2v((jl+ju)/2),
@@ -164,7 +163,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k = kl; k <= ku+1; ++k) {
       for (int j = jl; j <= ju+1; ++j) {
         for (int i = il; i <= iu+1; ++i) {
-
           // Set B^1
           if (j != ju+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),

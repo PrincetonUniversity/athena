@@ -127,7 +127,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
       #endif  // GENERAL_RELATIVITY
       for (int i = is; i <= ie; ++i) {
-
         // Determine which variables to use
         Real rho = rho_right;
         Real pgas = pgas_right;
@@ -233,7 +232,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k = ks; k <= ke+1; ++k) {
       for (int j = js; j <= je+1; ++j) {
         for (int i = is; i <= ie+1; ++i) {
-
           // Determine which variables to use
           Real vx = vx_right;
           Real vy = vy_right;

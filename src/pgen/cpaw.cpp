@@ -162,7 +162,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             + 0.5*(b1*b1+b2*b2+b3*b3);
           err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i));
         }
-
       }
     }}
     pmb=pmb->next;

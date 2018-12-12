@@ -131,7 +131,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         break;
       }
       case 1: case 5: {  // Alfven (A 65)
-
         // Calculate wavespeed
         Real lambda_ap = (b[1] + std::sqrt(wtot) * u[1])
             / (b[0] + std::sqrt(wtot) * u[0]);            // (A 38)
@@ -183,7 +182,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         break;
       }
       default: {  // magnetosonic (A 71)
-
         // Calculate wavespeed
         Real factor_a = wgas * (1.0/cs_sq - 1.0);
         Real factor_b = -(wgas + b_sq/cs_sq);
@@ -338,7 +336,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       }
     }
   } else {  // hydro
-
     // Calculate perturbation in 4-velocity components (Q of FK)
     switch (wave_flag) {
       case 1:  // entropy 1/3
@@ -441,7 +438,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   // Calculate L1 error against initial conditions
   if (compute_error) {
-
     // Prepare error calculation variables
     Real errors[(NHYDRO+NFIELD)+1];
     for (int n = 0; n < (NHYDRO+NFIELD)+1; ++n) {
@@ -487,7 +483,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // Write errors to file if root
     if (Globals::my_rank == 0) {
-
       // Divide volume-weighted errors by total volume
       for (int n = 0; n < (NHYDRO+NFIELD); ++n) {
         errors[n] /= errors[(NHYDRO+NFIELD)];
@@ -617,7 +612,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
       #endif  // GENERAL_RELATIVITY
       for (int i = il; i <= iu; ++i) {
-
         // Find location of cell in spacetime
         Real t, x, y, z;
         #if GENERAL_RELATIVITY

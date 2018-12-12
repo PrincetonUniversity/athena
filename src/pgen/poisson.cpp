@@ -122,7 +122,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,k,j,i) = 0.0;
     }
   }}}
-
 }
 
 //========================================================================================

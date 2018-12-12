@@ -466,9 +466,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
       }
     }
   }
-
   return;
-
 }
 
 // Here is the upper z outflow boundary.

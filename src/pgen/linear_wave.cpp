@@ -625,9 +625,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
   Real eigenvalues[(NWAVE)],
   Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
   if (MAGNETIC_FIELDS_ENABLED) {
-
 //--- Adiabatic MHD ---
-
     if (NON_BAROTROPIC_EOS) {
       Real vsq,btsq,bt_starsq,vaxsq,hp,twid_asq,cfsq,cf,cssq,cs;
       Real bt,bt_star,bet2,bet3,bet2_star,bet3_star,bet_starsq,vbet,alpha_f,alpha_s;
@@ -1023,9 +1021,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[5][5] = left_eigenmatrix[0][5];
     }
   } else {
-
 //--- Adiabatic Hydrodynamics ---
-
     if (NON_BAROTROPIC_EOS) {
       Real vsq = v1*v1 + v2*v2 + v3*v3;
       Real asq = gm1*std::max((h-0.5*vsq), TINY_NUMBER);

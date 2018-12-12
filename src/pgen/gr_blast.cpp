@@ -98,7 +98,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = jl; j <= ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i) {
-
         // Calculate distance to nearest blast center
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);

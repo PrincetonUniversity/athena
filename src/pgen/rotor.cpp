@@ -67,7 +67,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM1,k,j,i) = -100.0*v0*pcoord->x2v(j);
         phydro->u(IM2,k,j,i) = 100.0*v0*pcoord->x1v(i);
       } else {
-
         // smooth solution between r0 and r1.  For no smoothing, set r1<0 in input
         if (rad <= r1) {
           Real frac = (0.115 - rad)/(0.015);
@@ -76,7 +75,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM2,k,j,i) =  frac*100.0*v0*pcoord->x1v(i);
         }
       }
-
     }
   }}
 

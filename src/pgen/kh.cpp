@@ -61,7 +61,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // moving at (+vflow), random perturbations.  This is the classic, unresolved K-H test.
 
   if (iprob == 1) {
-
     // Read problem parameters
     Real drat = pin->GetReal("problem","drat");
     Real amp = pin->GetReal("problem","amp");

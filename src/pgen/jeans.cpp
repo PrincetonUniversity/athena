@@ -154,9 +154,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
     }
   }}}
-
 //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
-
 }
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {

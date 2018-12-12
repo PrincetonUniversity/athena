@@ -126,7 +126,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Initialize radial field components
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {

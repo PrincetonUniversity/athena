@@ -101,7 +101,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gi.NewAthenaArray(NMETRIC, iu+1);
   for (int j = jl; j <= ju; j++) {
     for (int i = il; i <= iu; i++) {
-
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,

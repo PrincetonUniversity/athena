@@ -49,7 +49,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; ++j) {
 #pragma omp simd
     for (int i=is; i<=ie; ++i) {
-
       if (pcoord->x1v(i) < -0.8) {
         phydro->u(IDN,k,j,i) = dl;
         phydro->u(IM1,k,j,i) = ul*dl;
