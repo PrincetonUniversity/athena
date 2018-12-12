@@ -9,14 +9,13 @@
 // C headers
 
 // C++ headers
-#include <cstring>  // std::memcpy
+#include <cstring>   // memcpy()
 #include <fstream>
 #include <iomanip>
-#include <iostream>
+#include <iostream>  // snprintf()
 #include <sstream>
 #include <stdexcept>
 #include <string>
-
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -49,7 +48,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // where XXXXX = 5-digit file_number
   std::string fname;
   char number[6];
-  std::sprintf(number,"%05d",output_params.file_number);
+  std::snprintf(number, sizeof(number), "%05d", output_params.file_number);
 
   fname.assign(output_params.file_basename);
   fname.append(".");

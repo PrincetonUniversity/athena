@@ -4,8 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 
+// C headers
+
 // C++ headers
-#include <cstdio>     // std::sprintf()
+#include <cstdio>     // sprintf()
 #include <cstring>    // strlen(), strncpy()
 #include <fstream>    // ofstream
 #include <iomanip>    // setfill(), setw()
@@ -165,7 +167,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if (pod->type=="VECTORS") {
       for (int i=1; i<=3; i++) {
         char sn[3];
-        std::sprintf(sn,"%d", i);
+        std::snprintf(sn, sizeof(sn), "%d", i);
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }

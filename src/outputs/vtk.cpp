@@ -87,9 +87,9 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // where XXXXX = 5-digit file_number
     std::string fname;
     char number[6];
-    std::sprintf(number,"%05d",output_params.file_number);
+    std::snprintf(number, sizeof(number), "%05d", output_params.file_number);
     char blockid[12];
-    std::sprintf(blockid,"block%d",pmb->gid);
+    std::snprintf(blockid, sizeof(blockid), "block%d", pmb->gid);
 
     fname.assign(output_params.file_basename);
     fname.append(".");

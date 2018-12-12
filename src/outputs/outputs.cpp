@@ -119,7 +119,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
         op.file_basename = pin->GetString("job","problem_id");
         char define_id[10];
-        std::sprintf(define_id,"out%d",op.block_number);  // default id="outN"
+        std::snprintf(define_id, sizeof(define_id),
+                      "out%d", op.block_number);  // default id="outN"
         op.file_id = pin->GetOrAddString(op.block_name,"id",define_id);
         op.file_type = pin->GetString(op.block_name,"file_type");
 
@@ -563,7 +564,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->name=pmb->user_out_var_names_[n];
       } else {
         char vn[16];
-        std::sprintf(vn, "user_out_var%d", n);
+        std::snprintf(vn, sizeof(vn), "user_out_var%d", n);
         pod->name = vn;
       }
       pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
