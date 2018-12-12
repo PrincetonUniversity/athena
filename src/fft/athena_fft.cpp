@@ -6,15 +6,17 @@
 //! \file athena_fft.cpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 
 // Athena++ headers
-#include "../globals.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/meshblock_tree.hpp"
 #include "athena_fft.hpp"

@@ -26,15 +26,15 @@
 //   other "Kerr-Schild" coordinates exist
 
 // C++ headers
-#include <cmath>  // abs(), std::cos(), log(), std::sin(), sqrt()
+#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // KerrSchild Constructor

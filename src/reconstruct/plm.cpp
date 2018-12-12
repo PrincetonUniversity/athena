@@ -6,15 +6,18 @@
 //! \file plm-uniform.cpp
 //  \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()

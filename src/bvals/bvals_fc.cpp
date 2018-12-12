@@ -6,10 +6,12 @@
 //! \file bvals_fc.cpp
 //  \brief functions that apply BCs for FACE_CENTERED variables
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // std::memcpy
+#include <cstring>    // memcpy()
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -19,7 +21,6 @@
 // Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
@@ -28,6 +29,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

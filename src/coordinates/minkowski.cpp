@@ -11,15 +11,17 @@
 //   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
+// C headers
+
 // C++ headers
-#include <cmath>  // sqrt
+#include <cmath>  // sqrt()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Minkowski constructor

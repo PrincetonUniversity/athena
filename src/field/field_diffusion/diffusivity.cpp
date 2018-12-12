@@ -5,6 +5,7 @@
 //=======================================================================================
 //  \brief functions to calculate diffusion fluxes
 
+// C headers
 
 // C++ headers
 #include <iostream>   // cout, endl
@@ -14,10 +15,10 @@
 #include "../../athena_arrays.hpp"   // AthenaArray
 #include "../../coordinates/coordinates.hpp" // Coordinates
 #include "../../hydro/hydro.hpp"     // Fluid
-#include "../field.hpp"              // Field
-#include "field_diffusion.hpp"
 #include "../../mesh/mesh.hpp"       // MeshBlock
 #include "../../parameter_input.hpp" // ParameterInput
+#include "../field.hpp"              // Field
+#include "field_diffusion.hpp"
 
 //======================================================================================
 //! \file diffusivity.cpp

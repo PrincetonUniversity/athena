@@ -6,18 +6,20 @@
 //! \file adiabatic_hydro.cpp
 //  \brief implements functions in class EquationOfState for adiabatic hydrodynamics`
 
+// C headers
+
 // C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
+#include <cmath>   // sqrt()
 
 // Athena++ headers
-#include "eos.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "eos.hpp"
 
 // EquationOfState constructor
 

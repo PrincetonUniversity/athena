@@ -1,6 +1,5 @@
 #ifndef MULTIGRID_MULTIGRID_HPP_
 #define MULTIGRID_MULTIGRID_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,19 +8,22 @@
 //! \file multigrid.hpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <iostream>
-#ifdef MPI_PARALLEL
-#include <mpi.h>
-#endif
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../bvals/bvals_mg.hpp"
+#include "../globals.hpp"
+#include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 
 class Mesh;
 class MeshBlock;

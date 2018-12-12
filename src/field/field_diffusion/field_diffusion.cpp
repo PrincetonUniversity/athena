@@ -5,19 +5,22 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the induction equations
 
+// C headers
+
+// C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MA
+#include <cfloat>     // FLT_MAX
 #include <cmath>      // sqrt(), fabs()
 
 // Athena++ headers
-#include "field_diffusion.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../field.hpp"
 #include "../../hydro/hydro.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
+#include "../field.hpp"
+#include "field_diffusion.hpp"
 
 // FieldDiffusion constructor
 

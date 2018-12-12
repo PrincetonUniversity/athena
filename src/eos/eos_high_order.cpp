@@ -6,17 +6,19 @@
 //! \file eos_high_order.cpp
 //  \brief functions for variable conversion at greater than second-order spatial accuracy
 
+// C headers
+
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
-#include "eos.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "eos.hpp"
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,

@@ -5,9 +5,11 @@
 //========================================================================================
 //! \file ran2.cpp
 
+// C headers
+
 // C++ headers
-#include <iostream>
 #include <cfloat>
+#include <iostream>
 
 // Athena headers
 #include "../athena.hpp"

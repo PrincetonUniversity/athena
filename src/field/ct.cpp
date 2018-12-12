@@ -6,16 +6,18 @@
 //! \file ct.cpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 
 // Athena++ headers
-#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
 #include "../bvals/bvals.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "field.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

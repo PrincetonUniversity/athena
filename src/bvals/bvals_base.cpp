@@ -6,24 +6,24 @@
 //! \file bvals_buffer.cpp
 //  \brief utility functions for BoundaryValues buffers
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy()
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // std::memcpy
-#include <cstdlib>
-#include <cmath>
 
 // Athena++ class headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../utils/buffer_utils.hpp"
-
-// this class header
 #include "bvals.hpp"
 
 // forward declaration of static members of this class

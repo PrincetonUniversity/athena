@@ -6,18 +6,21 @@
 //! \file corner_emf.cpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "field.hpp"
 #include "field_diffusion/field_diffusion.hpp"
+
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief

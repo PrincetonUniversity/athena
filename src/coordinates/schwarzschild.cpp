@@ -15,16 +15,18 @@
 //     ds^2 = -\alpha^2 dt^2 + 1/\alpha^2 * dr^2 + r^2 (d\theta^2 + \sin^2\theta d\phi^2)
 //     where \alpha = \sqrt(1 - 2M/r)
 
+// C headers
+
 // C++ headers
-#include <cmath>  // abs(), std::acos(), std::cos(), log(), std::pow(), std::sin(), sqrt()
+#include <cmath>  // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Schwarzschild Constructor

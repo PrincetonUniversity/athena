@@ -7,12 +7,16 @@
 //  \brief implements functions for Cartesian (x-y-z) coordinates in a derived class of
 //  the Coordinates abstract base class.
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Cartesian coordinates constructor

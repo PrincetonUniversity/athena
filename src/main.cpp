@@ -19,12 +19,12 @@
 // C headers
 
 // C++ headers
+#include <cmath>      // sqrt()
 #include <csignal>    // ISO C/C++ signal() and sigset_t, sigemptyset() POSIX C extensions
-#include <cstdint>    // std::int64_t
+#include <cstdint>    // int64_t
 #include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
-#include <cmath>      // std::sqrt()
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
 #include <iostream>   // cout, endl

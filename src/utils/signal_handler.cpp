@@ -16,9 +16,9 @@
 #include <iostream>
 
 // Athena++ headers
-#include "utils.hpp"
 #include "../defs.hpp"
 #include "../globals.hpp"
+#include "utils.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>

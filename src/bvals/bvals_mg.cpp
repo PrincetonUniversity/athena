@@ -6,10 +6,12 @@
 //! \file bvals_mg.cpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // std::memcpy
+#include <cstring>    // memcpy()
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -17,7 +19,6 @@
 #include <string>     // c_str()
 
 // Athena++ class headers
-#include "bvals_mg.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -26,6 +27,7 @@
 #include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "bvals_mg.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

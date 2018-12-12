@@ -6,6 +6,8 @@
 //! \file reconstruction.cpp
 //  \brief
 
+// C headers
+
 // C++ headers
 #include <cstring>    // strcmp()
 #include <iomanip>
@@ -15,12 +17,12 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "reconstruction.hpp"
 
 // constructor
 

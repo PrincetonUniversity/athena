@@ -6,17 +6,19 @@
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 
+// C headers
+
 // C++ headers
 #include <string>
 
 // Athena++ headers
-#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "field.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 
 // constructor, initializes data structures and parameters
 

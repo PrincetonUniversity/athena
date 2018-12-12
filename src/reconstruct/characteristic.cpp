@@ -6,15 +6,17 @@
 //! \file characteristic.cpp
 //  \brief Functions to transform vectors between primitive and characteristic variables
 
+// C headers
+
 // C++ headers
 #include <cmath>
 
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
+#include "../mesh/mesh.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::LeftEigenmatrixDotVector()

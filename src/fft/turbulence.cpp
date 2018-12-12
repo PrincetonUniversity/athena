@@ -6,24 +6,26 @@
 //! \file turbulence.cpp
 //  \brief implementation of functions in class Turbulence
 
+// C headers
+
 // C++ headers
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
-#include <algorithm>
 
 // Athena++ headers
-#include "athena_fft.hpp"
-#include "turbulence.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
+#include "athena_fft.hpp"
+#include "turbulence.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)

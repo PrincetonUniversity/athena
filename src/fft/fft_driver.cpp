@@ -6,18 +6,20 @@
 //! \file fft_driver.cpp
 //  \brief implementation of functions in class FFTDriver
 
+// C headers
+
 // C++ headers
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "athena_fft.hpp"
 

@@ -8,16 +8,18 @@
 //  functions evaluated numerically based on the metric.
 //  Original implementation by CJ White.
 
+// C headers
+
 // C++ headers
 #include <cmath>  // sqrt()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 // Declarations
 static Real Determinant(const AthenaArray<Real> &g);
