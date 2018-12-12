@@ -12,18 +12,18 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
-#include "task_list.hpp"
-#include "grav_task_list.hpp"
+// Athena++ class headers
 #include "../athena.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../bvals/bvals_grav.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "grav_task_list.hpp"
+#include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //  GravitySolverTaskList constructor

@@ -11,7 +11,7 @@
 // C++ headers
 #include <string>   // string
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 

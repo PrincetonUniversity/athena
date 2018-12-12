@@ -19,7 +19,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
@@ -27,12 +27,13 @@
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "task_list.hpp"
+
 //----------------------------------------------------------------------------------------
 //  SuperTimeStepTaskList constructor
 

@@ -6,6 +6,8 @@
 //! \file bvals.cpp
 //  \brief constructor/destructor and utility functions for BoundaryValues class
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>
@@ -17,8 +19,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
-#include "bvals.hpp"
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -32,7 +33,7 @@
 #include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
-
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

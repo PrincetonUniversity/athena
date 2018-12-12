@@ -24,7 +24,7 @@
 #include <string>     // c_str()
 #include <vector>
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"

@@ -9,7 +9,7 @@
 //! \file turbulence.hpp
 //  \brief defines Turbulence class
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "athena_fft.hpp"

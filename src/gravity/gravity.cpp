@@ -6,6 +6,8 @@
 //! \file gravity.cpp
 //  \brief implementation of functions in class Gravity
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>    // sstream
@@ -13,13 +15,13 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals_grav.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "gravity.hpp"
 
 // constructor, initializes data structures and parameters
 

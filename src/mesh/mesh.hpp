@@ -13,18 +13,18 @@
 // C headers
 
 // C++ headers
-#include <cstdint>  // std::int64_t
+#include <cstdint>  // int64_t
 #include <string>
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../outputs/io_wrapper.hpp"
-#include "../task_list/task_list.hpp"
 #include "../bvals/bvals.hpp"
-#include "meshblock_tree.hpp"
+#include "../outputs/io_wrapper.hpp"
+#include "../parameter_input.hpp"
+#include "../task_list/task_list.hpp"
 #include "mesh_refinement.hpp"
+#include "meshblock_tree.hpp"
 
 // Forward declarations
 class ParameterInput;

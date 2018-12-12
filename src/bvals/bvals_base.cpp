@@ -16,7 +16,7 @@
 #include <cstdlib>
 #include <cmath>
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"

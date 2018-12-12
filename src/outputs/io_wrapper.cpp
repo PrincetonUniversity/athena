@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include <string>
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "io_wrapper.hpp"
 

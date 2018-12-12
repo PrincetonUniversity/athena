@@ -6,28 +6,30 @@
 //! \file flux_correction_fc.cpp
 //  \brief functions that perform flux correction for FACE_CENTERED variables
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy()
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // std::memcpy
-#include <cstdlib>
-#include <cmath>
 
-// Athena++ classes headers
-#include "bvals.hpp"
+// Athena++ class headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

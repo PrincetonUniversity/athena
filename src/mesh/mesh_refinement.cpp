@@ -9,17 +9,17 @@
 // C headers
 
 // C++ headers
+#include <algorithm>   // max()
 #include <cmath>
-#include <cstring>     // strcmp
-#include <algorithm>   // max
+#include <cstring>     // strcmp()
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
 #include "../parameter_input.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"

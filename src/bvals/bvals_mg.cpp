@@ -16,7 +16,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "bvals_mg.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

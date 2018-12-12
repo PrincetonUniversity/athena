@@ -8,7 +8,7 @@
 //! \file hydro.hpp
 //  \brief definitions for Hydro class
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 //#include "../task_list/task_list.hpp"

@@ -6,24 +6,26 @@
 //! \file fftgravity.cpp
 //  \brief implementation of functions in class FFTGravity
 
+// C headers
+
 // C++ headers
+#include <cmath>
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
 
 // Athena++ headers
-#include "fftgravity.hpp"
-#include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../task_list/grav_task_list.hpp"
+#include "fftgravity.hpp"
+#include "gravity.hpp"
 
 
 //----------------------------------------------------------------------------------------

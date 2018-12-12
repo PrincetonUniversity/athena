@@ -6,27 +6,29 @@
 //! \file mggravity.cpp
 //  \brief create multigrid solver for gravity
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../parameter_input.hpp"
+#include "gravity.hpp"
+#include "mggravity.hpp"
+
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
-
-// Athena++ headers
-#include "mggravity.hpp"
-#include "gravity.hpp"
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
-#include "../multigrid/multigrid.hpp"
-#include "../globals.hpp"
 
 class MeshBlock;
 

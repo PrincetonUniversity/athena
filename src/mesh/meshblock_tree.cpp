@@ -17,9 +17,9 @@
 #include <stdexcept>
 
 // Athena++ headers
-#include "meshblock_tree.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
+#include "meshblock_tree.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()
