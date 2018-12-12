@@ -29,7 +29,7 @@ enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 class IOWrapper {
  public:
 #ifdef MPI_PARALLEL
-  IOWrapper() : fh_=nullptr, comm_=MPI_COMM_WORLD {}
+  IOWrapper() : fh_(nullptr), comm_(MPI_COMM_WORLD) {}
   void SetCommunicator(MPI_Comm scomm) { comm_=scomm;}
 #else
   IOWrapper() {fh_=nullptr;}
