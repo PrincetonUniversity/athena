@@ -6,6 +6,8 @@
 //! \file gr_linear_wave.cpp
 //  \brief Problem generator for linear waves in special and general relativity.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), cbrt(), sin(), sqrt()

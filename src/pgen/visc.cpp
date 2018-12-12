@@ -7,28 +7,30 @@
 //  iprob = 0 - test viscous shear flow density column in various coordinate systems
 //  iprob = 1 - test viscous spreading of Keplerain ring
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
+#include <cmath>      // sqrt()
 #include <cstdlib>    // srand
 #include <cstring>    // strcmp()
-#include <cmath>      // sqrt()
 #include <fstream>
 #include <iostream>   // endl
+#include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <sstream>    // stringstream
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../bvals/bvals.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 
 // problem parameters which are useful to make global to this file
 static Real v0, t0;

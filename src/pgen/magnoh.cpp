@@ -25,6 +25,8 @@
 // solutions for the magnetized Noh problem with axial and azimuthal field", Phys. of
 // Plasmas, in prep (2018)
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>      // sqrt()

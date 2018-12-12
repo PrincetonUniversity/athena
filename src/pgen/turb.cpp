@@ -7,23 +7,25 @@
 //  \brief Problem generator for turbulence generator
 //
 
+// C headers
+
 // C++ headers
-#include <sstream>
 #include <cmath>
-#include <stdexcept>
 #include <ctime>
+#include <sstream>
+#include <stdexcept>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
 #ifdef OPENMP_PARALLEL

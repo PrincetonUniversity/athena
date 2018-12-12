@@ -11,25 +11,27 @@
 // automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
+// C headers
+
 // C++ headers
+#include <algorithm>  // min, max
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <algorithm>  // min, max
-#include <cmath>
 
 // Athena++ headers
-#include "../globals.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
 #include "../gravity/gravity.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>

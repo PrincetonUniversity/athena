@@ -12,6 +12,8 @@
 //   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
 //   - iprob=4: tanh profiles for v and d, "Lecoanet" test
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min, max
 #include <cmath>
@@ -20,12 +22,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
 Real vflow;

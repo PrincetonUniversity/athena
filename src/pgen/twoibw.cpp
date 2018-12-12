@@ -10,6 +10,8 @@
 //   fluid flow with strong shocks", JCP, 54, 115, sect. IVa
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -19,11 +21,11 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"

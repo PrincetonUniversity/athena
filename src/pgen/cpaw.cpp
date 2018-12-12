@@ -15,6 +15,8 @@
 // REFERENCE: G. Toth,  "The div(B)=0 constraint in shock capturing MHD codes", JCP,
 //   161, 605 (2000)
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>      // sqrt()

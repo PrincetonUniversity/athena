@@ -11,6 +11,8 @@
 // REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>

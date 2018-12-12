@@ -6,19 +6,21 @@
 //! \file from_array.cpp
 //  \brief Problem generator for initializing with preexisting array from HDF5 input
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max()
 #include <string>     // c_str(), string
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"              // Real
 #include "../athena_arrays.hpp"       // AthenaArray
-#include "../globals.hpp"             // Globals
-#include "../parameter_input.hpp"     // ParameterInput
 #include "../field/field.hpp"         // Field
+#include "../globals.hpp"             // Globals
 #include "../hydro/hydro.hpp"         // Hydro
 #include "../inputs/hdf5_reader.hpp"  // HDF5ReadRealArray()
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"     // ParameterInput
 
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions

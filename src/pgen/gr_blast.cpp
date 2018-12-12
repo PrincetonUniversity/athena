@@ -6,20 +6,22 @@
 //! \file gr_blast.cpp
 //  \brief Problem generator for GRMHD spherical blast wave in flat spacetime.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min()
 #include <cmath>      // sqrt()
 #include <cstring>    // strcmp()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY

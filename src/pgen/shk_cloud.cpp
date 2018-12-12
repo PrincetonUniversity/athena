@@ -18,6 +18,8 @@
 //[-2.5,2.5] (see input file in /tst).
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <cmath>      // sqrt()
 #include <iostream>   // endl
@@ -28,13 +30,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 // postshock flow variables are shared with IIB function
 static Real gmma1,dl,pl,ul;

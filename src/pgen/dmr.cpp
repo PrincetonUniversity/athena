@@ -10,6 +10,8 @@
 // REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
 // fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>

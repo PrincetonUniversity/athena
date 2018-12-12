@@ -7,6 +7,8 @@
 //  \brief Problem generator to test Poisson's solver
 //
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>

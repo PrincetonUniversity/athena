@@ -6,21 +6,23 @@
 //! \file gr_geodesic_infall.cpp
 //  \brief Problem generator for dust falling onto black hole.
 
+// C headers
+
 // C++ headers
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
 #include <cstring>  // strcmp()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // enums, Real, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY

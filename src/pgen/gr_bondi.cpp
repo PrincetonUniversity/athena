@@ -6,20 +6,22 @@
 //! \file gr_bondi.cpp
 //  \brief Problem generator for spherically symmetric black hole accretion.
 
+// C headers
+
 // C++ headers
-#include <cmath>   // abs(), NAN, std::pow(), sqrt()
+#include <cmath>   // abs(), NAN, pow(), sqrt()
 #include <cstring> // strcmp()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY

@@ -15,23 +15,23 @@
 #include <cmath>      // sqrt
 #include <cstdlib>    // srand
 #include <cstring>    // strcmp()
-#include <iostream>   // endl
 #include <fstream>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../bvals/bvals.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k);
 static Real DenProfileCyl(const Real rad, const Real phi, const Real z);

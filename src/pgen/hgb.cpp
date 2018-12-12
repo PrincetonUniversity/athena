@@ -37,6 +37,7 @@
 //            Johnson, Guan, & Gammie, ApJSupp, (2008)
 //============================================================================
 
+// C headers
 
 // C++ headers
 #include <cmath>      // sqrt()

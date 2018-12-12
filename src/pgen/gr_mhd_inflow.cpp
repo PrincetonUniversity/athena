@@ -6,6 +6,8 @@
 //! \file gr_mhd_inflow.cpp
 //  \brief Problem generator for magnetized equatorial inflow around Kerr black hole.
 
+// C headers
+
 // C++ headers
 #include <cmath>      // cos, sin, sqrt
 #include <cstring>    // strcmp()
@@ -16,14 +18,14 @@
 #include <string>     // string, c_str()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY

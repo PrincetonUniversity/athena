@@ -7,6 +7,8 @@
 //  \brief Problem generator for complex-to-complex FFT test.
 //
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <ctime>
@@ -17,15 +19,15 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #ifdef OPENMP_PARALLEL
 #include <omp.h>

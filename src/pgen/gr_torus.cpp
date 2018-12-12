@@ -6,6 +6,8 @@
 //! \file gr_torus.cpp
 //  \brief Problem generator for Fishbone-Moncrief torus.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), max_element(), min(), min_element()
 #include <cmath>      // abs(), cos(), exp(), log(), NAN, pow(), sin(), sqrt()
@@ -17,15 +19,15 @@
 #include <string>     // c_str(), string
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY

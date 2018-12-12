@@ -11,26 +11,28 @@
 //  upper (lower) pole.  Works in 2D and 3D.
 //========================================================================================
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>      // sqrt
 #include <fstream>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>      // sqrt
-#include <algorithm>  // min
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../bvals/bvals.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 
 static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,

@@ -29,7 +29,7 @@
 // C headers
 
 // C++ headers
-#include <cmath>      // std::sqrt()
+#include <cmath>      // sqrt()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error

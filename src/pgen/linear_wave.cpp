@@ -11,6 +11,8 @@
 // automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min, max
 #include <cmath>      // sqrt()

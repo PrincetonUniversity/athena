@@ -6,6 +6,8 @@
 //! \file gr_shock_tube.cpp
 //  \brief Problem generator for shock tubes in special and general relativity.
 
+// C headers
+
 // C++ headers
 #include <cmath>      // sqrt()
 #include <cstring>    // strcmp()
@@ -15,14 +17,14 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not RELATIVISTIC_DYNAMICS
