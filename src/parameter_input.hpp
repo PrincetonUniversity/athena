@@ -11,6 +11,8 @@
 // read from the input file.  See comments at start of parameter_input.cpp for more
 // information on the Athena++ input file format.
 
+// C headers
+
 // C++ headers
 #include <cstddef>  // std::size_t
 #include <ostream>  // ostream

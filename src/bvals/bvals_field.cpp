@@ -7,6 +7,8 @@
 //  \brief functions that apply shearingbox BCs for magnetic field
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>

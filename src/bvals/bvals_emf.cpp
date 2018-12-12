@@ -7,6 +7,8 @@
 //  \brief functions that apply BCs for emf corrections
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>

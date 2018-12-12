@@ -25,6 +25,8 @@
 //           \Xi = r^2 - a^2 cos^2\theta
 //   other "Kerr-Schild" coordinates exist
 
+// C headers
+
 // C++ headers
 #include <cmath>  // abs(), cos(), log(), sin(), sqrt()
 

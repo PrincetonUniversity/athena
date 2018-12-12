@@ -12,8 +12,12 @@
 //  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
 //  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
 
+// C headers
+
 // C++ headers
 #include <cstddef>  // std::size_t
+
+// Athena++ headers
 
 template<typename T>
 class AthenaArray {

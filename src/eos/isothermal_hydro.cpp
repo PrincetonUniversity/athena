@@ -6,6 +6,8 @@
 //! \file isothermal_hydro.cpp
 //  \brief implements functions in class EquationOfState for isothermal hydrodynamics`
 
+// C headers
+
 // C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()

@@ -3,6 +3,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>
