@@ -128,7 +128,11 @@ matrix:
 # Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:
   # Specify upgraded compilers on Ubuntu image builds:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
+  # /usr/local/clang-5.0.0/bin (tags/RELEASE_500/final) as of 2018-12-12
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang && CXX=clang++"; fi
+  # /usr/bin/, clang 5.0.2-svn... : won't take /usr/local/clang/lib/libomp.so workaround in run_tests_travis.sh
+  # Could try /usr/local/clang-5.0/lib/libomp.so
+  #- if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "g++" ]]; then eval "CC=gcc-7 && CXX=g++-7"; fi
   - test -n $CC  && unset CC
   # Cache general 'compiler' choice (g++ vs. clang++) from Travis CI Build Matrix before unsetting
