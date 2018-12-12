@@ -352,8 +352,10 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
   int turnlevel;
-  if (startlevel==0) turnlevel=0;
-  else turnlevel=1;
+  if (startlevel==0)
+    turnlevel=0;
+  else
+    turnlevel=1;
   for (; turnlevel<=startlevel; turnlevel++) {
     while(current_level_>0)
       OneStepToCoarser(npresmooth);

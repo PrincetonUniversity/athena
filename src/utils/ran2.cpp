@@ -48,8 +48,10 @@ double ran2(std::int64_t *idum) {
   double temp;
 
   if (*idum <= 0) { // Initialize
-    if (-(*idum) < 1) *idum=1; // Be sure to prevent idum = 0
-    else *idum = -(*idum);
+    if (-(*idum) < 1)
+      *idum=1; // Be sure to prevent idum = 0
+    else
+      *idum = -(*idum);
     idum2=(*idum);
     for (j=NTAB+7; j>=0; j--) { // Load the shuffle table (after 8 warm-ups)
       k=(*idum)/IQ1;
@@ -68,9 +70,13 @@ double ran2(std::int64_t *idum) {
   j=static_cast<int>(iy/NDIV);              // Will be in the range 0...NTAB-1
   iy=iv[j]-idum2;                // Here idum is shuffled, idum and idum2
   iv[j] = *idum;                 // are combined to generate output
-  if (iy < 1) iy += IMM1;
-  if ((temp=AM*iy) > RNMX) return RNMX; // No endpoint values
-  else return temp;
+  if (iy < 1)
+    iy += IMM1;
+
+  if ((temp=AM*iy) > RNMX)
+    return RNMX; // No endpoint values
+  else
+    return temp;
 }
 
 #undef IMR1

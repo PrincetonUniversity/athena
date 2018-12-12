@@ -1572,11 +1572,24 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     if (nb.level >= mylevel) continue;
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
-    nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
-    if (pmb->block_size.nx2==1) njs=0, nje=0;
-    else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
-    if (pmb->block_size.nx3==1) nks=0, nke=0;
-    else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
+    nis=std::max(nb.ox1-1,-1);
+    nie=std::min(nb.ox1+1,1);
+    if (pmb->block_size.nx2==1) {
+      njs=0;
+      nje=0;
+    } else {
+      njs=std::max(nb.ox2-1,-1);
+      nje=std::min(nb.ox2+1,1);
+    }
+
+    if (pmb->block_size.nx3==1) {
+      nks=0;
+      nke=0;
+    } else {
+      nks=std::max(nb.ox3-1,-1);
+      nke=std::min(nb.ox3+1,1);
+    }
+
     for (int nk=nks; nk<=nke; nk++) {
       for (int nj=njs; nj<=nje; nj++) {
         for (int ni=nis; ni<=nie; ni++) {
@@ -1588,9 +1601,13 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
           // and needs to be restricted for prolongation
           int ris, rie, rjs, rje, rks, rke;
           if (ni==0) {
-            ris=pmb->cis, rie=pmb->cie;
-            if (nb.ox1==1) ris=pmb->cie;
-            else if (nb.ox1==-1) rie=pmb->cis;
+            ris=pmb->cis;
+            rie=pmb->cie;
+            if (nb.ox1==1) {
+              ris=pmb->cie;
+            } else if (nb.ox1==-1) {
+              rie=pmb->cis;
+            }
           } else if (ni== 1) {
             ris=pmb->cie+1, rie=pmb->cie+1;
           } else { //(ni==-1)
@@ -1750,14 +1767,22 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
     // now that the ghost-ghost zones are filled
     // calculate the loop limits for the finer grid
-    fsi=(si-pmb->cis)*2+pmb->is,   fei=(ei-pmb->cis)*2+pmb->is+1;
-    if (pmb->block_size.nx2 > 1)
-      fsj=(sj-pmb->cjs)*2+pmb->js, fej=(ej-pmb->cjs)*2+pmb->js+1;
-    else fsj=pmb->js, fej=pmb->je;
-    if (pmb->block_size.nx3 > 1)
-      fsk=(sk-pmb->cks)*2+pmb->ks, fek=(ek-pmb->cks)*2+pmb->ks+1;
-    else fsk=pmb->ks, fek=pmb->ke;
-
+    fsi=(si-pmb->cis)*2+pmb->is;
+    fei=(ei-pmb->cis)*2+pmb->is+1;
+    if (pmb->block_size.nx2 > 1) {
+      fsj=(sj-pmb->cjs)*2+pmb->js;
+      fej=(ej-pmb->cjs)*2+pmb->js+1;
+    } else {
+      fsj=pmb->js;
+      fej=pmb->je;
+    }
+    if (pmb->block_size.nx3 > 1) {
+      fsk=(sk-pmb->cks)*2+pmb->ks;
+      fek=(ek-pmb->cks)*2+pmb->ks+1;
+    } else {
+      fsk=pmb->ks;
+      fek=pmb->ke;
+    }
     // prolongate hydro variables using primitive
     pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, pdst, 0, NHYDRO-1,
                                       si, ei, sj, ej, sk, ek);

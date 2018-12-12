@@ -187,12 +187,18 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
   for (oz=ozmin; oz<=ozmax; oz++) {
     nloc.lx3=loc.lx3+oz;
     if (nloc.lx3<0) {
-      if (mesh_bcs[INNER_X3]!=PERIODIC_BNDRY) continue;
-      else nloc.lx3=nzmax-1;
+      if (mesh_bcs[INNER_X3]!=PERIODIC_BNDRY) {
+        continue;
+      } else {
+        nloc.lx3=nzmax-1;
+      }
     }
     if (nloc.lx3>=nzmax) {
-      if (mesh_bcs[OUTER_X3]!=PERIODIC_BNDRY) continue;
-      else nloc.lx3=0;
+      if (mesh_bcs[OUTER_X3]!=PERIODIC_BNDRY) {
+        continue;
+      } else {
+        nloc.lx3=0;
+      }
     }
     for (oy=oymin; oy<=oymax; oy++) {
       nloc.lx2=loc.lx2+oy;
@@ -222,12 +228,18 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         if (ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;
         if (nloc.lx1<0) {
-          if (mesh_bcs[INNER_X1]!=PERIODIC_BNDRY) continue;
-          else nloc.lx1=nxmax-1;
+          if (mesh_bcs[INNER_X1]!=PERIODIC_BNDRY) {
+            continue;
+          } else {
+            nloc.lx1=nxmax-1;
+          }
         }
         if (nloc.lx1>=nxmax) {
-          if (mesh_bcs[OUTER_X1]!=PERIODIC_BNDRY) continue;
-          else nloc.lx1=0;
+          if (mesh_bcs[OUTER_X1]!=PERIODIC_BNDRY) {
+            continue;
+          } else {
+            nloc.lx1=0;
+          }
         }
         root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
       }
@@ -377,14 +389,18 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if (lx<0) {
-    if (bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY)
+    if (bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY) {
       lx=(rbx<<(ll-rl))-1;
-    else return nullptr;
+    } else {
+      return nullptr;
+    }
   }
   if (lx>=rbx<<(ll-rl)) {;
-    if (bcs[OUTER_X1]==PERIODIC_BNDRY || bcs[OUTER_X1]==SHEAR_PERIODIC_BNDRY)
+    if (bcs[OUTER_X1]==PERIODIC_BNDRY || bcs[OUTER_X1]==SHEAR_PERIODIC_BNDRY) {
       lx=0;
-    else return nullptr;
+    } else {
+      return nullptr;
+    }
   }
   bool polar = false;
   if (ly<0) {
@@ -409,12 +425,18 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   std::int64_t num_x3 = rbz<<(ll-rl);
   if (lz<0) {
-    if (bcs[INNER_X3]==PERIODIC_BNDRY) lz=num_x3-1;
-    else return nullptr;
+    if (bcs[INNER_X3]==PERIODIC_BNDRY) {
+      lz=num_x3-1;
+    } else {
+      return nullptr;
+    }
   }
   if (lz>=num_x3) {
-    if (bcs[OUTER_X3]==PERIODIC_BNDRY) lz=0;
-    else return nullptr;
+    if (bcs[OUTER_X3]==PERIODIC_BNDRY) {
+      lz=0;
+    } else {
+      return nullptr;
+    }
   }
   if (polar) lz=(lz+num_x3/2)%num_x3;
 
@@ -473,6 +495,9 @@ MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   int mx=static_cast<int>((tloc.lx1>>sh)&1L);
   int my=static_cast<int>((tloc.lx2>>sh)&1L);
   int mz=static_cast<int>((tloc.lx3>>sh)&1L);
-  if (pleaf[mz][my][mx]==nullptr) return nullptr;
-  else return pleaf[mz][my][mx]->FindMeshBlock(tloc);
+  if (pleaf[mz][my][mx]==nullptr) {
+    return nullptr;
+  } else {
+    return pleaf[mz][my][mx]->FindMeshBlock(tloc);
+  }
 }

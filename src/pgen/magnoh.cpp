@@ -187,8 +187,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real rad;
           if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             rad = pcoord->x1v(i);
+          } else {
+            rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
           }
-          else rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
           pfield->b.x3f(k,j,i) = bz*std::pow(rad,beta);
         }
       }

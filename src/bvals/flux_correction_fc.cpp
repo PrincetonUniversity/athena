@@ -55,8 +55,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if (nb.fid==INNER_X1) i=pmb->is;
-        else i=pmb->ie+1;
+        if (nb.fid==INNER_X1) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
         // pack e2
         for (int k=pmb->ks; k<=pmb->ke+1; k++) {
           for (int j=pmb->js; j<=pmb->je; j++)
@@ -83,8 +86,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if (nb.fid==INNER_X2) j=pmb->js;
-        else j=pmb->je+1;
+        if (nb.fid==INNER_X2) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         // pack e1
         for (int k=pmb->ks; k<=pmb->ke+1; k++) {
           for (int i=pmb->is; i<=pmb->ie; i++)
@@ -98,8 +104,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x3 direction
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if (nb.fid==INNER_X3) k=pmb->ks;
-        else k=pmb->ke+1;
+        if (nb.fid==INNER_X3) {
+          k=pmb->ks;
+        } else {
+          k=pmb->ke+1;
+        }
         // pack e1
         for (int j=pmb->js; j<=pmb->je+1; j++) {
           for (int i=pmb->is; i<=pmb->ie; i++)
@@ -116,8 +125,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if (nb.fid==INNER_X1) i=pmb->is;
-        else i=pmb->ie+1;
+        if (nb.fid==INNER_X1) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
         // pack e2
         // shift azimuthal velocity for x-z shearing
         if (SHEARING_BOX) {
@@ -142,8 +154,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if (nb.fid==INNER_X2) j=pmb->js;
-        else j=pmb->je+1;
+        if (nb.fid==INNER_X2) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         // pack e1
         for (int i=pmb->is; i<=pmb->ie; i++)
           buf[p++]=e1(k,j,i);
@@ -153,8 +168,11 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       }
     } else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if (nb.fid==INNER_X1) i=pmb->is;
-      else i=pmb->ie+1;
+      if (nb.fid==INNER_X1) {
+        i=pmb->is;
+      } else {
+        i=pmb->ie+1;
+      }
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
       buf[p++]=e3(k,j,i);
@@ -163,10 +181,16 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
     // x1x2 edge (both 2D and 3D)
     if (nb.eid>=0 && nb.eid<4) {
       int i, j;
-      if ((nb.eid&1)==0) i=pmb->is;
-      else i=pmb->ie+1;
-      if ((nb.eid&2)==0) j=pmb->js;
-      else j=pmb->je+1;
+      if ((nb.eid&1)==0) {
+        i=pmb->is;
+      } else {
+        i=pmb->ie+1;
+      }
+      if ((nb.eid&2)==0) {
+        j=pmb->js;
+      } else {
+        j=pmb->je+1;
+      }
       // shift azmuthal velocity if shearing boundary blocks
       if (nb.shear && nb.ox1==-1) {
         for (int k=pmb->ks; k<=pmb->ke; k++)
@@ -182,10 +206,16 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x1x3 edge
     } else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
-      if ((nb.eid&1)==0) i=pmb->is;
-      else i=pmb->ie+1;
-      if ((nb.eid&2)==0) k=pmb->ks;
-      else k=pmb->ke+1;
+      if ((nb.eid&1)==0) {
+        i=pmb->is;
+      } else {
+        i=pmb->ie+1;
+      }
+      if ((nb.eid&2)==0) {
+        k=pmb->ks;
+      } else {
+        k=pmb->ke+1;
+      }
       // pack e2
       // shift azimuthal velocity for x-z shearing
       if (SHEARING_BOX) {
@@ -207,10 +237,16 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x2x3 edge
     } else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
-      if ((nb.eid&1)==0) j=pmb->js;
-      else j=pmb->je+1;
-      if ((nb.eid&2)==0) k=pmb->ks;
-      else k=pmb->ke+1;
+      if ((nb.eid&1)==0) {
+        j=pmb->js;
+      } else {
+        j=pmb->je+1;
+      }
+      if ((nb.eid&2)==0) {
+        k=pmb->ks;
+      } else {
+        k=pmb->ke+1;
+      }
       // pack e1
       for (int i=pmb->is; i<=pmb->ie; i++)
         buf[p++]=e1(k,j,i);
@@ -240,8 +276,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if (nb.fid==INNER_X1) i=pmb->is;
-        else i=pmb->ie+1;
+        if (nb.fid==INNER_X1) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
         // restrict and pack e2
         for (int k=pmb->ks; k<=pmb->ke+1; k+=2) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
@@ -268,8 +307,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if (nb.fid==INNER_X2) j=pmb->js;
-        else j=pmb->je+1;
+        if (nb.fid==INNER_X2) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         bool pole = pco->IsPole(j);
         // restrict and pack e1
         for (int k=pmb->ks; k<=pmb->ke+1; k+=2) {
@@ -301,8 +343,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       // x3 direction
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if (nb.fid==INNER_X3) k=pmb->ks;
-        else k=pmb->ke+1;
+        if (nb.fid==INNER_X3) {
+          k=pmb->ks;
+        } else {
+          k=pmb->ke+1;
+        }
         // restrict and pack e1
         for (int j=pmb->js; j<=pmb->je+1; j+=2) {
           bool pole = pco->IsPole(j);
@@ -330,8 +375,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if (nb.fid==INNER_X1) i=pmb->is;
-        else i=pmb->ie+1;
+        if (nb.fid==INNER_X1) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
         // restrict and pack e2
         for (int j=pmb->js; j<=pmb->je; j+=2) {
           Real el1=pco->GetEdge2Length(k,j,i);
@@ -344,8 +392,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if (nb.fid==INNER_X2) j=pmb->js;
-        else j=pmb->je+1;
+        if (nb.fid==INNER_X2) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         bool pole = pco->IsPole(j);
         // restrict and pack e1
         if (!pole || !GENERAL_RELATIVITY) {
@@ -364,8 +415,11 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       }
     } else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if (nb.fid==INNER_X1) i=pmb->is;
-      else i=pmb->ie+1;
+      if (nb.fid==INNER_X1) {
+        i=pmb->is;
+      } else {
+        i=pmb->ie+1;
+      }
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
       buf[p++]=e3(k,j,i);
@@ -375,10 +429,16 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       // x1x2 edge
       if (nb.eid>=0 && nb.eid<4) {
         int i, j;
-        if ((nb.eid&1)==0) i=pmb->is;
-        else i=pmb->ie+1;
-        if ((nb.eid&2)==0) j=pmb->js;
-        else j=pmb->je+1;
+        if ((nb.eid&1)==0) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
+        if ((nb.eid&2)==0) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         bool pole = pco->IsPole(j);
         // restrict and pack e3
         for (int k=pmb->ks; k<=pmb->ke; k+=2) {
@@ -395,10 +455,16 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x1x3 edge
       } else if (nb.eid>=4 && nb.eid<8) {
         int i, k;
-        if ((nb.eid&1)==0) i=pmb->is;
-        else i=pmb->ie+1;
-        if ((nb.eid&2)==0) k=pmb->ks;
-        else k=pmb->ke+1;
+        if ((nb.eid&1)==0) {
+          i=pmb->is;
+        } else {
+          i=pmb->ie+1;
+        }
+        if ((nb.eid&2)==0) {
+          k=pmb->ks;
+        } else {
+          k=pmb->ke+1;
+        }
         // restrict and pack e2
         for (int j=pmb->js; j<=pmb->je; j+=2) {
           Real el1=pco->GetEdge2Length(k,j,i);
@@ -408,11 +474,17 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x2x3 edge
       } else if (nb.eid>=8 && nb.eid<12) {
         int j, k;
-        if ((nb.eid&1)==0) j=pmb->js;
-        else j=pmb->je+1;
+        if ((nb.eid&1)==0) {
+          j=pmb->js;
+        } else {
+          j=pmb->je+1;
+        }
         bool pole = pco->IsPole(j);
-        if ((nb.eid&2)==0) k=pmb->ks;
-        else k=pmb->ke+1;
+        if ((nb.eid&2)==0) {
+          k=pmb->ks;
+        } else {
+          k=pmb->ke+1;
+        }
         // restrict and pack e1
         if (!pole || !GENERAL_RELATIVITY) {
           pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
@@ -428,10 +500,16 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
     } else if (pmb->block_size.nx2 > 1) { // 2D
       // x1x2 edge
       int i, j;
-      if ((nb.eid&1)==0) i=pmb->is;
-      else i=pmb->ie+1;
-      if ((nb.eid&2)==0) j=pmb->js;
-      else j=pmb->je+1;
+      if ((nb.eid&1)==0) {
+        i=pmb->is;
+      } else {
+        i=pmb->ie+1;
+      }
+      if ((nb.eid&2)==0) {
+        j=pmb->js;
+      } else {
+        j=pmb->je+1;
+      }
       // pack e3
       buf[p++]=e3(pmb->ks,j,i);
     }

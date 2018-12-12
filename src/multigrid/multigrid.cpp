@@ -498,8 +498,10 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm) {
 Real Multigrid::CalculateTotal(int type, int n) {
   AthenaArray<Real> src;
   int ll=nlevel_-1-current_level_;
-  if (type==0) src.InitWithShallowCopy(src_[current_level_]);
-  else src.InitWithShallowCopy(u_[current_level_]);
+  if (type==0)
+    src.InitWithShallowCopy(src_[current_level_]);
+  else
+    src.InitWithShallowCopy(u_[current_level_]);
   Real s=0.0;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
@@ -522,8 +524,10 @@ Real Multigrid::CalculateTotal(int type, int n) {
 
 void Multigrid::SubtractAverage(int type, int n, Real ave) {
   AthenaArray<Real> dst;
-  if (type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
-  else dst.InitWithShallowCopy(u_[nlevel_-1]);
+  if (type==0)
+    dst.InitWithShallowCopy(src_[nlevel_-1]);
+  else
+    dst.InitWithShallowCopy(u_[nlevel_-1]);
   int is, ie, js, je, ks, ke;
   is=js=ks=0;
   ie=is+size_.nx1+1, je=js+size_.nx2+1, ke=ks+size_.nx3+1;

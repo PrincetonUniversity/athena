@@ -981,8 +981,11 @@ void MeshRefinement::CheckRefinementCondition(void) {
   if (aret>=0)
     deref_count_=0;
   if (aret>0) {
-    if (pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
-    else refine_flag_=1;
+    if (pmb->loc.level == pmb->pmy_mesh->max_level) {
+      refine_flag_=0;
+    } else {
+      refine_flag_=1;
+    }
   } else if (aret<0) {
     if (pmb->loc.level == pmb->pmy_mesh->root_level) {
       refine_flag_=0;
@@ -990,10 +993,20 @@ void MeshRefinement::CheckRefinementCondition(void) {
     } else {
       deref_count_++;
       int ec=0, js, je, ks, ke;
-      if (pmb->block_size.nx2 > 1) js=-1, je=1;
-      else js=0, je=0;
-      if (pmb->block_size.nx3 > 1) ks=-1, ke=1;
-      else ks=0, ke=0;
+      if (pmb->block_size.nx2 > 1) {
+        js=-1;
+        je=1;
+      } else {
+        js=0;
+        je=0;
+      }
+      if (pmb->block_size.nx3 > 1) {
+        ks=-1;
+        ke=1;
+      } else {
+        ks=0;
+        ke=0;
+      }
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=-1; i<=1; i++)
@@ -1003,8 +1016,11 @@ void MeshRefinement::CheckRefinementCondition(void) {
       if (ec>0) {
         refine_flag_=0;
       } else {
-        if (deref_count_ >= deref_threshold_) refine_flag_=-1;
-        else refine_flag_=0;
+        if (deref_count_ >= deref_threshold_) {
+          refine_flag_=-1;
+        } else {
+          refine_flag_=0;
+        }
       }
     }
   }

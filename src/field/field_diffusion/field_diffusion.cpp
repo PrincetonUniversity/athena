@@ -73,7 +73,7 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
     dx2_.NewAthenaArray(ncells1);
     dx3_.NewAthenaArray(ncells1);
 
-    if(pmb->pmy_mesh->FieldDiffusivity_==NULL)
+    if (pmb->pmy_mesh->FieldDiffusivity_==NULL)
       CalcMagDiffCoeff_ = ConstDiffusivity;
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;
@@ -128,7 +128,7 @@ void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
   Hydro *ph = pmy_block->phydro;
   Mesh  *pm = pmy_block->pmy_mesh;
 
-  if((eta_ohm==0.0) && (eta_ad==0.0)) return;
+  if ((eta_ohm==0.0) && (eta_ad==0.0)) return;
 
   SetFieldDiffusivity(ph->w,pf->bcc);
 
@@ -282,11 +282,18 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   Real fac_oa,fac_h;
-  if(pmb->block_size.nx3>1) fac_oa = 1.0/6.0;
-  else if (pmb->block_size.nx2>1) fac_oa = 0.25;
-  else fac_oa = 0.5;
-  if(pmb->block_size.nx2>1) fac_h = 1.0;
-  else fac_h=0.5;
+  if (pmb->block_size.nx3>1) {
+    fac_oa = 1.0/6.0;
+  } else if (pmb->block_size.nx2>1) {
+    fac_oa = 0.25;
+  } else {
+    fac_oa = 0.5;
+  }
+
+  if (pmb->block_size.nx2>1)
+    fac_h = 1.0;
+  else
+    fac_h=0.5;
 
   dt_oa = (FLT_MAX);
   dt_h  = (FLT_MAX);

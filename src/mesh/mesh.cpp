@@ -1917,10 +1917,16 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   int bnx1=pblock->block_size.nx1;
   int bnx2=pblock->block_size.nx2;
   int bnx3=pblock->block_size.nx3;
-  if (mesh_size.nx2>1) f2=1;
-  else f2=0;
-  if (mesh_size.nx3>1) f3=1;
-  else f3=0;
+  if (mesh_size.nx2>1) {
+    f2=1;
+  } else {
+    f2=0;
+  }
+  if (mesh_size.nx3>1) {
+    f3=1;
+  } else {
+    f3=0;
+  }
 
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
@@ -1990,8 +1996,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       } else { // same or c2f
         if (ranklist[on]==Globals::my_rank) continue;
         int size;
-        if (oloc.level == nloc.level) size=bssame;
-        else size=bsc2f;
+        if (oloc.level == nloc.level) {
+          size=bssame;
+        } else {
+          size=bsc2f;
+        }
         recvbuf[k] = new Real[size];
         int tag=CreateAMRMPITag(n-nbs, 0, 0, 0);
         MPI_Irecv(recvbuf[k], size, MPI_ATHENA_REAL, ranklist[on],
@@ -2106,8 +2115,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
       // on the same node and same level -> just move it
       MeshBlock* pob=FindMeshBlock(on);
-      if (pob->prev==nullptr) pblock=pob->next;
-      else pob->prev->next=pob->next;
+      if (pob->prev==nullptr) {
+        pblock=pob->next;
+      } else {
+        pob->prev->next=pob->next;
+      }
       if (pob->next!=nullptr) pob->next->prev=pob->prev;
       pob->next=nullptr;
       if (n==nbs) { // first
@@ -2119,7 +2131,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         pob->prev=pmb;
         pmb=pmb->next;
       }
-      pmb->gid=n; pmb->lid=n-nbs;
+      pmb->gid=n;
+      pmb->lid=n-nbs;
     } else {
       enum BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
