@@ -279,7 +279,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
         bool pole = pco->IsPole(j);
-        if (not pole) {
+        if (!pole) {
           pco->Face2Area(k,   j,  si, ei, sarea_x2_[0][0]);
           pco->Face2Area(k+1, j,  si, ei, sarea_x2_[1][0]);
         } else {
@@ -305,7 +305,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
       bool pole = pco->IsPole(j);
-      if (not pole) {
+      if (!pole) {
         pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
       } else {
         for (int ci = csi; ci <= cei; ++ci) {

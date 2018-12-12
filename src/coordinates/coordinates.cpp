@@ -81,7 +81,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
     // check that coordinate spacing is reasonable
-    if (not coarse_flag) {
+    if (!coarse_flag) {
       Real rmax=1.0, rmin=1.0;
       for (int i=is; i<=ie-1; i++) {
         rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
@@ -153,7 +153,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      if (not coarse_flag) {
+      if (!coarse_flag) {
         Real rmax=1.0, rmin=1.0;
         for (int j=js; j<=je-1; j++) {
           rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
@@ -233,7 +233,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      if (not coarse_flag) {
+      if (!coarse_flag) {
         Real rmax=1.0, rmin=1.0;
         for (int k=ks; k<=ke-1; k++) {
           rmax=std::max(dx3f(k+1)/dx3f(k),rmax);

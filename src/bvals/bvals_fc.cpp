@@ -739,7 +739,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
   }
 
   if (flag
-      and (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+      && (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY)) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }
@@ -769,7 +769,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }

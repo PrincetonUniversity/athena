@@ -414,7 +414,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           for (int j = jl; j <= ju+1; ++j) {
             for (int i = il; i <= iu+1; ++i) {
               Real r_vals[4], theta_vals[4], phi_vals[4];
-              if (i != iu+1 and j != ju+1 and k != ku+1) {
+              if (i != iu+1 && j != ju+1 && k != ku+1) {
                 GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), r_vals+0, theta_vals+0, phi_vals+0);
               }
@@ -431,9 +431,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                     pcoord->x3v(k), r_vals+3, theta_vals+3, phi_vals+3);
               }
               for (int p = 0; p < 4; ++p) {
-                if ((p == 0 and (i == iu+1 or j == ju+1 or k == ku+1))
-                    or (p == 1 and i == iu+1) or (p == 2 and j == ju+1)
-                    or (p == 3 and k == ku+1)) {
+                if ((p == 0 && (i == iu+1 || j == ju+1 || k == ku+1))
+                    || (p == 1 && i == iu+1) || (p == 2 && j == ju+1)
+                    || (p == 3 && k == ku+1)) {
                   continue;
                 }
                 if (r_vals[p] < r_edge) {
@@ -452,7 +452,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 Real varphi = std::atan2(vary, varx);
                 Real sin_varphi = std::sin(varphi);
                 Real log_h = LogHAux(r_vals[p], sin_vartheta) - log_h_edge;  // (FM 3.6)
-                if (not (log_h >= 0.0)) {
+                if (!(log_h >= 0.0)) {
                   continue;
                 }
                 Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
@@ -878,7 +878,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * sin_theta;
             Real bbr = rr * z / det;
             Real bbtheta = -SQR(rr) / (r * det);
-            if (rr < r_edge or det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+            if (rr < r_edge || det == 0.0 || (bbr == 0.0 && bbtheta == 0.0)) {
               pfield->b.x1f(k,j,i) = 0.0;
             } else {
               Real ut, uphi;
@@ -909,7 +909,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * sin_theta;
             Real bbr = rr * z / det;
             Real bbtheta = -SQR(rr) / (r * det);
-            if (rr < r_edge or det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+            if (rr < r_edge || det == 0.0 || (bbr == 0.0 && bbtheta == 0.0)) {
               pfield->b.x2f(k,j,i) = 0.0;
             } else {
               Real ut, uphi;
@@ -977,7 +977,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbtheta = -1.0/det * (a_phi_2-a_phi_1) / (r_2-r_1);
-            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+            if (det == 0.0 || (bbr == 0.0 && bbtheta == 0.0)) {
               pfield->b.x1f(k,j,i) = 0.0;
             } else {
               Real ut, uphi;
@@ -1033,7 +1033,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbr = 1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
-            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0)) {
+            if (det == 0.0 || (bbr == 0.0 && bbtheta == 0.0)) {
               pfield->b.x2f(k,j,i) = 0.0;
             } else {
               Real ut, uphi;
@@ -1096,7 +1096,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 - (a_theta_2(k+1,j,i)-a_theta_2(k,j,i))/delta_phi);
             bbtheta = -1.0/det * (a_phi_0(k,j,i)-a_phi_0(k,j,i-1))/delta_r;
             bbphi = 1.0/det * (a_theta_0(k,j,i)-a_theta_0(k,j,i-1))/delta_r;
-            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0 and bbphi == 0.0)) {
+            if (det == 0.0 || (bbr == 0.0 && bbtheta == 0.0 && bbphi == 0.0)) {
               pfield->b.x1f(k,j,i) = 0.0;
             } else {
               Real ut, ur, utheta, uphi;
@@ -1145,7 +1145,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 - (a_theta_1(k+1,j,i)-a_theta_1(k,j,i))/delta_phi);
             bbtheta = -1.0/det * (a_phi_3(k,j,i+1)-a_phi_3(k,j,i))/delta_r;
             bbphi = 1.0/det * (a_theta_3(k,j,i+1)-a_theta_3(k,j,i))/delta_r;
-            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0 and bbphi == 0.0)) {
+            if (det == 0.0 || (bbr == 0.0 && bbtheta == 0.0 && bbphi == 0.0)) {
               pfield->b.x2f(k,j,i) = 0.0;
             } else {
               Real ut, ur, utheta, uphi;
@@ -1194,7 +1194,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 - (a_theta_0(k,j,i)-a_theta_0(k-1,j,i))/delta_phi);
             bbtheta = -1.0/det * (a_phi_2(k,j,i+1)-a_phi_2(k,j,i))/delta_r;
             bbphi = 1.0/det * (a_theta_2(k,j,i+1)-a_theta_2(k,j,i))/delta_r;
-            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0 and bbphi == 0.0)) {
+            if (det == 0.0 || (bbr == 0.0 && bbtheta == 0.0 && bbphi == 0.0)) {
               pfield->b.x3f(k,j,i) = 0.0;
             } else {
               Real ut, ur, utheta, uphi;
@@ -1312,7 +1312,7 @@ void MeshBlock::UserWorkInLoop() {
                  + g(I33,i)*uu3*uu3;
         Real gamma = std::sqrt(1.0 + tmp);
         user_out_var(0,k,j,i) = gamma;
-        if (not MAGNETIC_FIELDS_ENABLED) {
+        if (!MAGNETIC_FIELDS_ENABLED) {
           continue;
         }
 
@@ -1392,7 +1392,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
       }
     }
   }
-  if (not MAGNETIC_FIELDS_ENABLED) {
+  if (!MAGNETIC_FIELDS_ENABLED) {
     return;
   }
 
@@ -1524,16 +1524,16 @@ static Real CalculateRPeakFromL(Real l_target) {
   Real l_a = CalculateLFromRPeak(r_a);
   Real l_b = CalculateLFromRPeak(r_b);
   Real l_c = CalculateLFromRPeak(r_c);
-  if (not ((l_a < l_target and l_b > l_target) or (l_a > l_target and l_b < l_target))) {
+  if (!((l_a < l_target && l_b > l_target) || (l_a > l_target && l_b < l_target))) {
     return NAN;
   }
 
   // Find root
   for (int n = 0; n < max_iterations; ++n) {
-    if (std::abs(r_b-r_a) <= 2.0*tol_r or std::abs(l_c-l_target) <= tol_l) {
+    if (std::abs(r_b-r_a) <= 2.0*tol_r || std::abs(l_c-l_target) <= tol_l) {
       break;
     }
-    if ((l_a < l_target and l_c < l_target) or (l_a > l_target and l_c > l_target)) {
+    if ((l_a < l_target && l_c < l_target) || (l_a > l_target && l_c > l_target)) {
       r_a = r_c;
       l_a = l_c;
     } else {
@@ -1832,7 +1832,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
   for (int p = 0; p < 7; ++p) {
     Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_vals[p])-1.0);
     Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-    if (p == 0 and rho < sample_cutoff) {
+    if (p == 0 && rho < sample_cutoff) {
       return false;
     }
     if (p == 0) {
@@ -1922,7 +1922,7 @@ static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p, Real theta_m, Real 
   Real pgas = pgas_over_rho * rho;
 
   // Check A_phi
-  if (a_cm == 0.0 or a_cp == 0.0 or a_mc == 0.0 or a_pc == 0.0) {
+  if (a_cm == 0.0 || a_cp == 0.0 || a_mc == 0.0 || a_pc == 0.0) {
     return false;
   }
 

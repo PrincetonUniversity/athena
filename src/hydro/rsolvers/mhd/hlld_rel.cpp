@@ -59,7 +59,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
-      if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
+      if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
         HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux,
             ey, ez);
       } else {
@@ -359,7 +359,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         Real a0 = ONE_3RD * (m_sq + bb_sq * (bb_sq - 2.0*cons_hll[IEN][m]));
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
+        Real w_init = (s2 >= 0.0 && a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
 
         // Apply Newton-Raphson method to find new W
         const int num_nr = 2;
@@ -402,14 +402,14 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         Real a0 = cons_hll[ivx][m]*flux_hll[IEN][m] - flux_hll[ivx][m]*cons_hll[IEN][m];
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        ptot_init[m] = (s2 >= 0.0 and a1 >= 0.0) ?
+        ptot_init[m] = (s2 >= 0.0 && a1 >= 0.0) ?
           -2.0*a0/(a1+s) : (-a1+s)/2.0;  // (MUB 55)
       } else {  // strong magnetic field
         ptot_init[m] = ptot_hll;
       }
 
       switch_to_hlle[m] = false;
-      if (not std::isfinite(ptot_init[m]) or ptot_init[m] <= 0.0) {
+      if (!std::isfinite(ptot_init[m]) || ptot_init[m] <= 0.0) {
         switch_to_hlle[m] = true;
       }
     }
@@ -625,7 +625,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         Real res_old = res_last;
         res_last = res_n;
         bool need_to_iterate = std::abs(res_last) > tol_res
-            and std::abs(ptot_last-ptot_old) > tol_ptot;
+            && std::abs(ptot_last-ptot_old) > tol_ptot;
         if (need_to_iterate) {
           ptot_n = (res_last*ptot_old - res_old*ptot_last) / (res_last-res_old);
         } else {
@@ -715,8 +715,8 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
       // Set total contact pressure
       ptot_c[m] = ptot_n;
 
-      if (not std::isfinite(lambda_al[m]) or not std::isfinite(lambda_ar[m]) or
-          not std::isfinite(ptot_c[m]) or ptot_c[m] <= 0.0) {
+      if (!std::isfinite(lambda_al[m]) || !std::isfinite(lambda_ar[m]) ||
+          !std::isfinite(ptot_c[m]) || ptot_c[m] <= 0.0) {
         switch_to_hlle[m] = true;
       }
 
@@ -854,10 +854,10 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
       }
 
       // Check for any remaining HLLD failures and switch to HLLE if found
-      if (not switch_to_hlle[m]) {
+      if (!switch_to_hlle[m]) {
         for (int n = 0; n < NWAVE; ++n) {
-          if (not std::isfinite(cons_interface[n][m])
-              or not std::isfinite(flux_interface[n][m])) {
+          if (!std::isfinite(cons_interface[n][m])
+              || !std::isfinite(flux_interface[n][m])) {
             switch_to_hlle[m] = true;
           }
         }

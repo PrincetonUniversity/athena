@@ -115,7 +115,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   LoadOutputData(pmb);
   // set num_datasets and num_variables
   // this must be expanded when new variables are introduced
-  if (variable.compare("prim") == 0 or variable.compare("cons") == 0) {
+  if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
     num_datasets = 1;
     if (MAGNETIC_FIELDS_ENABLED)
       num_datasets += 1;
@@ -353,7 +353,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
 
       // store the data into the data_buffers
-      if (variable.compare("prim") == 0 or variable.compare("cons") == 0) {
+      if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
         int n_dataset=0;
         int ndv=0;
         pod=pfirst_data_;

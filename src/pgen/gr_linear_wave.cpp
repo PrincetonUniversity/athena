@@ -70,7 +70,7 @@ AthenaArray<Real> volume;     // 1D array of volumes
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read information regarding desired wave and check input
   int wave_flag = pin->GetInteger("problem", "wave_flag");
-  if (wave_flag < 0 or wave_flag > NWAVE-1) {
+  if (wave_flag < 0 || wave_flag > NWAVE-1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
         << "wave_flag=" << wave_flag << " must be between 0 and " << NWAVE-1 << std::endl;
@@ -164,7 +164,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         Real g_1 = 1.0/u[0] * (by + lambda*vy / (1.0-lambda*vx) * bx);  // (A 60)
         Real g_2 = 1.0/u[0] * (bz + lambda*vz / (1.0-lambda*vx) * bx);  // (A 61)
         Real f_1, f_2;
-        if (g_1 == 0.0 and g_2 == 0.0) {
+        if (g_1 == 0.0 && g_2 == 0.0) {
           f_1 = f_2 = ONE_OVER_SQRT2;  // (A 67)
         } else {
           f_1 = g_1 / std::sqrt(SQR(g_1) + SQR(g_2));  // (A 66)
@@ -274,7 +274,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
           b_t[mu] = c_1 * alpha_1[mu] + c_2 * alpha_2[mu];  // (A 62)
         }
         Real f_1, f_2;
-        if (g_1 == 0.0 and g_2 == 0.0) {
+        if (g_1 == 0.0 && g_2 == 0.0) {
           f_1 = f_2 = ONE_OVER_SQRT2;  // (A 67)
         } else {
           f_1 = g_1 / std::sqrt(SQR(g_1) + SQR(g_2));  // (A 66)
@@ -731,7 +731,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           #if GENERAL_RELATIVITY
           {
             // Set B^1 if needed
-            if (j != ju+1 and k != ku+1) {
+            if (j != ju+1 && k != ku+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
                   &t, &x, &y, &z);
@@ -750,7 +750,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             // Set B^2 if needed
-            if (i != iu+1 and k != ku+1) {
+            if (i != iu+1 && k != ku+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
                   &t, &x, &y, &z);
@@ -769,7 +769,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             // Set B^3 if needed
-            if (i != iu+1 and j != ju+1) {
+            if (i != iu+1 && j != ju+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
                   &t, &x, &y, &z);
@@ -797,13 +797,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
             Real by_local = b_local[2]*u_local[0] - b_local[0]*u_local[2];
             Real bz_local = b_local[3]*u_local[0] - b_local[0]*u_local[3];
-            if (j != ju+1 and k != ku+1) {
+            if (j != ju+1 && k != ku+1) {
               pfield->b.x1f(k,j,i) = bx;
             }
-            if (i != iu+1 and k != ku+1) {
+            if (i != iu+1 && k != ku+1) {
               pfield->b.x2f(k,j,i) = by_local;
             }
-            if (i != iu+1 and j != ju+1) {
+            if (i != iu+1 && j != ju+1) {
               pfield->b.x3f(k,j,i) = bz_local;
             }
           }
@@ -814,7 +814,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Prepare arrays for comparing to initial conditions (only once per Mesh)
-  if (compute_error and lid == 0) {
+  if (compute_error && lid == 0) {
     int num_blocks = pmy_mesh->GetNumMeshBlocksThisRank(Globals::my_rank);
     int nx1 = block_size.nx1;
     int nx2 = block_size.nx2;

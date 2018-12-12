@@ -178,14 +178,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, gamma_adi);
         }
         Real wgas_rel_true = wgas_rel_new;
-        if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel)) {
+        if (!(wgas_rel_true > 0.0 && wgas_rel_true < max_wgas_rel)) {
           fixed_(k,j,i) = true;
           wgas_rel_true = wgas_rel_init;
         }
         Real vv_sq = qq_sq / SQR(wgas_rel_true);  // (N 28)
         gamma_sq = 1.0/(1.0-vv_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        if (std::isnan(gamma_rel) or not std::isfinite(gamma_rel) or gamma_rel < 1.0) {
+        if (std::isnan(gamma_rel) || !std::isfinite(gamma_rel) || gamma_rel < 1.0) {
           fixed_(k,j,i) = true;
           gamma_rel = 1.0;
           gamma_sq = SQR(gamma_rel);
@@ -220,11 +220,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           pressure_floor_local = std::max(pressure_floor_local,
               pgas_min_ * std::pow(pco->x1v(i), pgas_pow_));
         }
-        if (rho < density_floor_local or std::isnan(rho)) {
+        if (rho < density_floor_local || std::isnan(rho)) {
           rho = density_floor_local;
           fixed_(k,j,i) = true;
         }
-        if (pgas < pressure_floor_local or std::isnan(pgas)) {
+        if (pgas < pressure_floor_local || std::isnan(pgas)) {
           pgas = pressure_floor_local;
           fixed_(k,j,i) = true;
         }
@@ -389,7 +389,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cs_sq);
   Real c = SQR(u1) - (g11 + SQR(u1)) * cs_sq;
   Real d = SQR(b) - 4.0*a*c;
-  if (d < 0.0 and d > discriminant_tol) {
+  if (d < 0.0 && d > discriminant_tol) {
     d = 0.0;
   }
   Real d_sqrt = std::sqrt(d);

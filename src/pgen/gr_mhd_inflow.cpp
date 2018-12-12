@@ -65,7 +65,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read interpolation data from file
   std::string filename = pin->GetString("problem", "data_file");
   std::ifstream file(filename.c_str());
-  if (not file.is_open()) {
+  if (!file.is_open()) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
         << "file " << filename << " cannot be opened" << std::endl;
@@ -342,7 +342,7 @@ static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *
     Real a0 = var_c/var_a;
     Real s2 = SQR(a1) - 4.0*a0;
     Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-    ut = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
+    ut = (s2 >= 0.0 && a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
   }
   *put = ut;
   *pur = ur;

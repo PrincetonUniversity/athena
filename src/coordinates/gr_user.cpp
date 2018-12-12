@@ -175,7 +175,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate arrays for geometric quantities
   metric_cell_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2, ncells1);
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     coord_vol_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
     coord_area1_kji_.NewAthenaArray(ncells3, ncells2, ncells1+1);
     coord_area2_kji_.NewAthenaArray(ncells3, ncells2+1, ncells1);
@@ -204,7 +204,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   dg_dx1.NewAthenaArray(NMETRIC);
   dg_dx2.NewAthenaArray(NMETRIC);
   dg_dx3.NewAthenaArray(NMETRIC);
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     transformation.NewAthenaArray(2, NTRIANGULAR);
   }
 
@@ -225,20 +225,20 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
         Metric(x1, x2, x3, pin, g, g_inv, dg_dx1, dg_dx2, dg_dx3);
 
         // Calculate volumes
-        if (not coarse_flag) {
+        if (!coarse_flag) {
           Real det = Determinant(g);
           coord_vol_kji_(k,j,i) = std::sqrt(-det) * dx1 * dx2 * dx3;
         }
 
         // Calculate widths
-        if (not coarse_flag) {
+        if (!coarse_flag) {
           coord_width1_kji_(k,j,i) = std::sqrt(g(I11)) * dx1;
           coord_width2_kji_(k,j,i) = std::sqrt(g(I22)) * dx2;
           coord_width3_kji_(k,j,i) = std::sqrt(g(I33)) * dx3;
         }
 
         // Store metric derivatives
-        if (not coarse_flag) {
+        if (!coarse_flag) {
           for (int m = 0; m < NMETRIC; ++m) {
             coord_src_kji_(0,m,k,j,i) = dg_dx1(m);
             coord_src_kji_(1,m,k,j,i) = dg_dx2(m);
@@ -256,7 +256,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x1-face-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
@@ -294,7 +294,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x2-face-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu; ++i) {
@@ -332,7 +332,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x3-face-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu; ++i) {
@@ -370,7 +370,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x1-edge-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu; ++i) {
@@ -393,7 +393,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x2-edge-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
@@ -416,7 +416,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Calculate x3-edge-centered geometric quantities
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
@@ -444,7 +444,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   dg_dx1.DeleteAthenaArray();
   dg_dx2.DeleteAthenaArray();
   dg_dx3.DeleteAthenaArray();
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     transformation.DeleteAthenaArray();
   }
 }
@@ -468,7 +468,7 @@ GRUser::~GRUser() {
     x3s2.DeleteAthenaArray();
   }
   metric_cell_kji_.DeleteAthenaArray();
-  if (not coarse_flag) {
+  if (!coarse_flag) {
     coord_vol_kji_.DeleteAthenaArray();
     coord_area1_kji_.DeleteAthenaArray();
     coord_area2_kji_.DeleteAthenaArray();

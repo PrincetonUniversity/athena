@@ -164,7 +164,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i = il; i <= iu+1; ++i) {
 
           // Set B^1
-          if (j != ju+1 and k != ku+1) {
+          if (j != ju+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
                 &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
@@ -179,7 +179,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
 
           // Set B^2
-          if (i != iu+1 and k != ku+1) {
+          if (i != iu+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
                 &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
@@ -194,7 +194,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
 
           // Set B^3
-          if (i != iu+1 and j != ju+1) {
+          if (i != iu+1 && j != ju+1) {
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
                 &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
@@ -411,7 +411,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max) {
   if (std::abs(res_max) < tol_residual) {
     return t_max;
   }
-  if ((res_min < 0.0 and res_max < 0.0) or (res_min > 0.0 and res_max > 0.0)) {
+  if ((res_min < 0.0 && res_max < 0.0) || (res_min > 0.0 && res_max > 0.0)) {
     return NAN;
   }
 
@@ -426,7 +426,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max) {
     if (std::abs(res_mid) < tol_residual) {
       return t_mid;
     }
-    if ((res_mid < 0.0 and res_min < 0.0) or (res_mid > 0.0 and res_min > 0.0)) {
+    if ((res_mid < 0.0 && res_min < 0.0) || (res_mid > 0.0 && res_min > 0.0)) {
       t_min = t_mid;
       res_min = res_mid;
     } else {

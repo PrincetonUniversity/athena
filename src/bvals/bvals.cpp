@@ -1327,7 +1327,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
       bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-    if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
+    if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
       bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
@@ -1337,7 +1337,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       } else {  // must be primitive initialization
-        if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
+        if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
           MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
     }

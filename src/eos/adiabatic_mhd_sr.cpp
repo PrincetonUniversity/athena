@@ -112,7 +112,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real a0 = ONE_3RD * (m_sq + bb_sq * (bb_sq - 2.0*ee));
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
+        Real w_init = (s2 >= 0.0 && a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
 
         // Apply Newton-Raphson method to find new W
         const int num_iterations = 5;
@@ -340,8 +340,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) * denominator_inv;
       Real s2 = SQR(a1) - 4.0*a0;
       Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-      lambda_plus_no_bbx = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
-      lambda_minus_no_bbx = (s2 >= 0.0 and a1 < 0.0) ? -2.0*a0/(a1-s) : 0.5*(-a1-s);
+      lambda_plus_no_bbx = (s2 >= 0.0 && a1 >= 0.0) ? -2.0*a0/(a1+s) : 0.5*(-a1+s);
+      lambda_minus_no_bbx = (s2 >= 0.0 && a1 < 0.0) ? -2.0*a0/(a1-s) : 0.5*(-a1-s);
     }
 
     // Calculate wavespeeds in general case (MB2006 56)
@@ -401,12 +401,12 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Solve quadratic equations
         s2 = SQR(d1) - 4.0*d0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : 0.5*(-d1-s);
-        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : 0.5*(-d1+s);
+        y1 = (s2 >= 0.0 && d1 < 0.0) ? -2.0*d0/(d1-s) : 0.5*(-d1-s);
+        y2 = (s2 >= 0.0 && d1 >= 0.0) ? -2.0*d0/(d1+s) : 0.5*(-d1+s);
         s2 = SQR(e1) - 4.0*e0;
         s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : 0.5*(-e1-s);
-        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : 0.5*(-e1+s);
+        y3 = (s2 >= 0.0 && e1 < 0.0) ? -2.0*e0/(e1-s) : 0.5*(-e1-s);
+        y4 = (s2 >= 0.0 && e1 >= 0.0) ? -2.0*e0/(e1+s) : 0.5*(-e1+s);
       }
 
       // Calculate extremal original quartic roots

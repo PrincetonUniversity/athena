@@ -323,8 +323,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       bool shear=false;
       if (nlevel==loc.level) { // neighbor at same level
         tbid=FindBufferID(-n,0,0,0,0);
-        if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
-            or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+        if ((n == -1 && block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+            || (n == 1 && block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
           shear = true; // neighbor is shearing periodic
         }
       } else { // neighbor at coarser level
@@ -364,8 +364,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       int tbid;
       bool polar=false;
       if (nlevel==loc.level) { // neighbor at same level
-        if ((n == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
-            or (n == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+        if ((n == -1 && block_bcs[INNER_X2] == POLAR_BNDRY)
+            || (n == 1 && block_bcs[OUTER_X2] == POLAR_BNDRY)) {
           polar = true; // neighbor is across top or bottom pole
         }
         tbid=FindBufferID(0,polar?n:-n,0,0,0);
@@ -424,8 +424,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
                               pmy_mesh_->root_level);
       if (neibt==nullptr) { bufid+=nf2; continue;}
       bool polar=false;
-      if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
-          or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+      if ((m == -1 && block_bcs[INNER_X2] == POLAR_BNDRY)
+          || (m == 1 && block_bcs[OUTER_X2] == POLAR_BNDRY)) {
         polar = true; // neighbor is across top or bottom pole
       }
       if (neibt->flag==false) { // neighbor at finer level
@@ -453,8 +453,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int tbid;
         bool shear=false;
         if (nlevel==loc.level) { // neighbor at same level
-          if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
-              or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+          if ((n == -1 && block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+              || (n == 1 && block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
             shear = true; // neighbor is on shearing periodic bcs
           }
           tbid=FindBufferID(-n,polar?m:-m,0,0,0);
@@ -538,8 +538,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         bool shear=false;
         if (nlevel==loc.level) { // neighbor at same level
           tbid=FindBufferID(-n,0,-m,0,0);
-          if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
-              or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+          if ((n == -1 && block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+              || (n == 1 && block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
             shear = true; //neighbor is on shearing periodic boundary
           }
         } else { // neighbor at coarser level
@@ -584,8 +584,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int tbid;
         bool polar=false;
         if (nlevel==loc.level) { // neighbor at same level
-          if ((n == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
-              or (n == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+          if ((n == -1 && block_bcs[INNER_X2] == POLAR_BNDRY)
+              || (n == 1 && block_bcs[OUTER_X2] == POLAR_BNDRY)) {
             polar = true; // neighbor is across top or bottom pole
           }
           tbid=FindBufferID(0,polar?n:-n,-m,0,0);
@@ -611,8 +611,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
                                 pmy_mesh_->root_level);
         if (neibt==nullptr) { bufid++; continue;}
         bool polar=false;
-        if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
-            or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+        if ((m == -1 && block_bcs[INNER_X2] == POLAR_BNDRY)
+            || (m == 1 && block_bcs[OUTER_X2] == POLAR_BNDRY)) {
           polar = true; // neighbor is across top or bottom pole
         }
         if (neibt->flag==false) { // neighbor at finer level

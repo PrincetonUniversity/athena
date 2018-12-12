@@ -165,7 +165,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
             &gamma, &pmag);
 
         // Handle failures
-        if (not success) {
+        if (!success) {
           for (int n = 0; n < NHYDRO; ++n) {
             prim(n,k,j,i) = prim_old(n,k,j,i);
           }
@@ -181,7 +181,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
         Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
         Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
-        if (success and (rho_add > 0.0 or pgas_add > 0.0)) {
+        if (success && (rho_add > 0.0 || pgas_add > 0.0)) {
 
           // Adjust conserved density and energy
           Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
@@ -194,7 +194,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
               &gamma, &pmag);
 
           // Handle failures
-          if (not success) {
+          if (!success) {
             for (int n = 0; n < NHYDRO; ++n) {
               prim(n,k,j,i) = prim_old(n,k,j,i);
             }
@@ -206,7 +206,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &uu1 = prim(IVX,k,j,i);
         Real &uu2 = prim(IVY,k,j,i);
         Real &uu3 = prim(IVZ,k,j,i);
-        if (not success) {
+        if (!success) {
           Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
                    + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
                    + g_(I33,i)*SQR(uu3);
@@ -266,7 +266,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           pgas = pressure_floor_local;
           fixed = true;
         }
-        if (not success) {
+        if (!success) {
           rho = density_floor_local;
           pgas = pressure_floor_local;
           uu1 = uu2 = uu3 = 0.0;
@@ -477,7 +477,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
 
     // Step 3: Check for convergence
     if (n%3 != 2) {
-      if (pgas[(n+1)%3] > pgas_min and std::abs(pgas[(n+1)%3]-pgas[n%3]) < tol) {
+      if (pgas[(n+1)%3] > pgas_min && std::abs(pgas[(n+1)%3]-pgas[n%3]) < tol) {
         break;
       }
     }
@@ -485,12 +485,12 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     // Step 4: Calculate Aitken accelerant and check for convergence
     if (n%3 == 2) {
       Real rr = (pgas[2] - pgas[1]) / (pgas[1] - pgas[0]);  // (NH 7.1)
-      if (not std::isfinite(rr) or std::abs(rr) > rr_max) {
+      if (!std::isfinite(rr) || std::abs(rr) > rr_max) {
         continue;
       }
       pgas[0] = pgas[1] + (pgas[2] - pgas[1]) / (1.0 - rr);  // (NH 7.2)
       pgas[0] = std::max(pgas[0], pgas_min);
-      if (pgas[0] > pgas_min and std::abs(pgas[0]-pgas[2]) < tol) {
+      if (pgas[0] > pgas_min && std::abs(pgas[0]-pgas[2]) < tol) {
         break;
       }
     }
@@ -501,7 +501,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
     return false;
   }
   prim(IPR,k,j,i) = pgas[(n+1)%3];
-  if (not std::isfinite(prim(IPR,k,j,i))) {
+  if (!std::isfinite(prim(IPR,k,j,i))) {
     return false;
   }
   Real a = ee + prim(IPR,k,j,i) + 0.5*bb_sq;                      // (NH 5.7)
@@ -516,7 +516,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
   Real wgas = ll/gamma_sq;                                        // (NH 5.1)
   prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
-  if (not std::isfinite(prim(IDN,k,j,i))) {
+  if (!std::isfinite(prim(IDN,k,j,i))) {
     return false;
   }
   Real ss = tt/ll;                          // (NH 4.8)
@@ -526,9 +526,9 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   prim(IVX,k,j,i) = gamma*v1;               // (NH 3.3)
   prim(IVY,k,j,i) = gamma*v2;               // (NH 3.3)
   prim(IVZ,k,j,i) = gamma*v3;               // (NH 3.3)
-  if (not std::isfinite(prim(IVX,k,j,i))
-      or not std::isfinite(prim(IVY,k,j,i))
-      or not std::isfinite(prim(IVZ,k,j,i))) {
+  if (!std::isfinite(prim(IVX,k,j,i))
+      || !std::isfinite(prim(IVY,k,j,i))
+      || !std::isfinite(prim(IVZ,k,j,i))) {
     return false;
   }
   *p_gamma_lor = gamma;
@@ -800,10 +800,10 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       lambda_plus = std::max(y2, y4) - a3/4.0;
 
       // Ensure wavespeeds are not superluminal
-      if (not std::isfinite(lambda_minus) or lambda_minus < -1.0) {
+      if (!std::isfinite(lambda_minus) || lambda_minus < -1.0) {
         lambda_minus = -1.0;
       }
-      if (not std::isfinite(lambda_plus) or lambda_plus > 1.0) {
+      if (!std::isfinite(lambda_plus) || lambda_plus > 1.0) {
         lambda_plus = 1.0;
       }
     }

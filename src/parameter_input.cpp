@@ -35,6 +35,8 @@
 //   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // transform
 #include <cmath>      // std::fmod()
