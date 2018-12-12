@@ -6,6 +6,8 @@
 //! \file hdf5_reader.cpp
 //  \brief Implements HDF5 reader functions
 
+// C headers
+
 // C++ headers
 #include <iostream>   // cout
 #include <sstream>    // stringstream
@@ -13,10 +15,10 @@
 #include <string>     // string
 
 // Athena++ headers
-#include "hdf5_reader.hpp"
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../defs.hpp"           // SINGLE_PRECISION_ENABLED
+#include "hdf5_reader.hpp"
 
 // Only proceed if HDF5 enabled
 #ifdef HDF5OUTPUT

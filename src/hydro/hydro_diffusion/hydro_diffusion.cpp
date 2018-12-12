@@ -5,19 +5,21 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the hydro equations
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 
 // Athena++ headers
-#include "hydro_diffusion.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
-#include "../../parameter_input.hpp"
 #include "../../field/field.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../hydro.hpp"
+#include "hydro_diffusion.hpp"
 
 // HydroDiffusion constructor
 
@@ -270,7 +272,6 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
 
   dt_vis = (FLT_MAX);
   dt_cnd = (FLT_MAX);
-
 
   AthenaArray<Real> nu_t;
   nu_t.InitWithShallowCopy(nu_tot_);

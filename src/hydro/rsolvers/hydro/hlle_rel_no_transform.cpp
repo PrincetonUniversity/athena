@@ -6,17 +6,19 @@
 //! \file hlle_rel_no_transform.cpp
 //  \brief Implements HLLE Riemann solver for relativistic hydrodynamics in pure GR.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 // Riemann solver

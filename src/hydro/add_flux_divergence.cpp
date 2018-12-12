@@ -7,15 +7,19 @@
 //  \brief Applies divergence of the fluxes, including geometric "source terms" added
 //         by a function implemented in each Coordinate class.
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "hydro.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

@@ -14,15 +14,17 @@
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
 //   JCP, 43, 357 (1981).
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 // prototype for function to compute Roe fluxes from eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],

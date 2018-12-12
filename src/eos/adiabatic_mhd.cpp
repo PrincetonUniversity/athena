@@ -6,19 +6,21 @@
 //! \file adiabatic_mhd.cpp
 //  \brief implements functions in class EquationOfState for adiabatic MHD
 
+// C headers
+
 // C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
+#include <cmath>   // sqrt()
 
 // Athena++ headers
-#include "eos.hpp"
-#include "../hydro/hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "eos.hpp"
 
 // EquationOfState constructor
 

@@ -5,21 +5,23 @@
 //========================================================================================
 //  \brief Class to implement source terms in the hydro equations
 
+// C headers
+
 // C++ headers
-#include <iostream>
 #include <cstring>    // strcmp
+#include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
+#include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 // HydroSourceTerms constructor
 

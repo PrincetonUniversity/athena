@@ -11,13 +11,13 @@
 #include <cmath>   // sqrt()
 
 // Athena++ headers
-#include "eos.hpp"
-#include "../hydro/hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../field/field.hpp"
+#include "eos.hpp"
 
 // EquationOfState constructor
 

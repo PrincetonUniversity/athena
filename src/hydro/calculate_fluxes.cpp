@@ -6,12 +6,12 @@
 //! \file calculate_fluxes.cpp
 //  \brief Calculate hydro/MHD fluxes
 
+// C headers
+
 // C++ headers
 #include <algorithm>   // min,max
 
 // Athena++ headers
-#include "hydro.hpp"
-#include "hydro_diffusion/hydro_diffusion.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
@@ -22,7 +22,8 @@
 #include "../gravity/gravity.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
-
+#include "hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

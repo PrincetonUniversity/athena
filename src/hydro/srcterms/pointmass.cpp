@@ -5,13 +5,17 @@
 //========================================================================================
 //  \brief Adds source terms due to point mass AT ORIGIN
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::PointMass

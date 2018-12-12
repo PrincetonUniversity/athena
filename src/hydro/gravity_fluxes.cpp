@@ -6,12 +6,15 @@
 //! \file gravity_fluxes.cpp
 //  \brief Calculate gravity fluxes
 
-// Athena++ headers
-#include "hydro.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../gravity/gravity.hpp"
+// C headers
 
+// C++ headers
+
+// Athena++ headers
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../gravity/gravity.hpp"
+#include "hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFlux(void)

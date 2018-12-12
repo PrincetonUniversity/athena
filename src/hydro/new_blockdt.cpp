@@ -6,21 +6,23 @@
 //! \file new_blockdt.cpp
 //  \brief computes timestep using CFL condition on a MEshBlock
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // fabs(), sqrt()
 
 // Athena++ headers
-#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../eos/eos.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "hydro_diffusion/hydro_diffusion.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
+#include "../mesh/mesh.hpp"
+#include "hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL

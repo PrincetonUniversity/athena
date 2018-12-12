@@ -10,7 +10,6 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <cfloat>  // FLT_MIN
 
 // Athena++ headers
 #include "../athena.hpp"

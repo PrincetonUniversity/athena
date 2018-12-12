@@ -9,9 +9,9 @@
 // C headers
 
 // C++ headers
-#include <algorithm>  // std::sort()
+#include <algorithm>  // sort()
 #include <cstdlib>
-#include <cstring>    // std::memcpy
+#include <cstring>    // memcpy()
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -31,11 +31,11 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
-#include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../utils/buffer_utils.hpp"
+#include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
-#include "mesh.hpp"
 
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field

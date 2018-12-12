@@ -6,18 +6,19 @@
 //! \file hlld_rel.cpp
 //  \brief Implements HLLD Riemann solver for relativistic MHD.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), isfinite(), NAN, sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
-
+#include "../../hydro.hpp"
 
 // Declarations
 static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int il,

@@ -19,15 +19,17 @@
 // - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
 //   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver

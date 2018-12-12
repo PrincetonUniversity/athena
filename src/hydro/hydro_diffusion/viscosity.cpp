@@ -5,14 +5,18 @@
 //========================================================================================
 //  \brief functions to calculate viscous stresses
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro_diffusion.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
 #include "../../eos/eos.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../hydro.hpp"
+#include "hydro_diffusion.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::ViscousFlux_iso

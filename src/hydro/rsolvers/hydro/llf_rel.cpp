@@ -6,18 +6,19 @@
 //! \file llf_rel.cpp
 //  \brief Implements local Lax-Friedrichs Riemann solver for relativistic hydrodynamics.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
-
+#include "../../hydro.hpp"
 
 // Declarations
 static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,

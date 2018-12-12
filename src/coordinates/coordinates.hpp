@@ -11,14 +11,16 @@
 //  as geometrical factors (areas, volumes, coordinate source terms) for various
 //  coordinate systems.
 
+// C headers
+
 // C++ headers
 #include <iostream>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
 
 // forward declarations
 class MeshBlock;

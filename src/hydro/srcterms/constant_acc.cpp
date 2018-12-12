@@ -5,13 +5,17 @@
 //========================================================================================
 //  \brief source terms due to constant acceleration (e.g. for RT instability)
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::ConstantAcceleration
@@ -62,4 +66,3 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
 
   return;
 }
-

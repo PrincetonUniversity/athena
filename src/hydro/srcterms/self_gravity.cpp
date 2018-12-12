@@ -5,14 +5,18 @@
 //========================================================================================
 //  \brief source terms due to self-gravity
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
 #include "../../gravity/gravity.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::SelfGravity
@@ -87,4 +91,3 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
   }
   return;
 }
-

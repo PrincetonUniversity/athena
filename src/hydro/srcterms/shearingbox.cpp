@@ -16,14 +16,16 @@
 //  \brief Adds source terms due to local shearingbox approximation
 //======================================================================================
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../hydro.hpp"
-
-// this class header
 #include "hydro_srcterms.hpp"
 
 //--------------------------------------------------------------------------------------

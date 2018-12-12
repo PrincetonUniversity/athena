@@ -1,6 +1,5 @@
 #ifndef FFT_ATHENA_FFT_HPP_
 #define FFT_ATHENA_FFT_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,13 +8,15 @@
 //! \file athena_fft.hpp
 //  \brief defines FFT class which implements parallel FFT using MPI/OpenMP
 
+// C headers
+
 // C++ headers
 #include <iostream>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/meshblock_tree.hpp"
 
@@ -23,8 +24,8 @@
 #include <fftw3.h>
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-#include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
+#include "plimpton/fft_3d.h"
 #endif // MPI_PARALLEL
 #endif
 

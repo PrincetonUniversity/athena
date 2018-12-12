@@ -7,19 +7,20 @@
 //  \brief Implements functions for going between primitive and conserved variables in
 //  special-relativistic hydrodynamics, as well as for computing wavespeeds.
 
+// C headers
+
 // C++ headers
-#include <cmath>   // atan2(), cbrt(), std::cos(), sqrt()
 #include <cfloat>  // FLT_MIN
+#include <cmath>   // atan2(), cbrt(), cos(), sqrt()
 
 // Athena++ headers
-#include "eos.hpp"
 #include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField
 #include "../mesh/mesh.hpp"                // MeshBlock
-
+#include "../parameter_input.hpp"          // ParameterInput
+#include "eos.hpp"
 
 //----------------------------------------------------------------------------------------
 // Constructor
