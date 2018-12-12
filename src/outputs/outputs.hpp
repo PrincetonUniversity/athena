@@ -15,8 +15,8 @@
 #include <string>
 
 // Athena++ headers
-#include "io_wrapper.hpp"
 #include "../athena.hpp"
+#include "io_wrapper.hpp"
 
 #ifdef HDF5OUTPUT
 #include <hdf5.h>
@@ -47,9 +47,11 @@ typedef struct OutputParameters {
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
   // TODO(felker): some of the parameters in this class are not initialized in constructor
-  OutputParameters() : output_slicex1(false),output_slicex2(false),output_slicex3(false),
+  OutputParameters() : block_number(0), next_time(0.0), dt(0.0), file_number(0),
+                       output_slicex1(false),output_slicex2(false),output_slicex3(false),
                        output_sumx1(false), output_sumx2(false), output_sumx3(false),
-                       include_ghost_zones(false) {}
+                       include_ghost_zones(false), cartesian_vector(false),
+                       islice(0), jslice(0), kslice(0) {}
 } OutputParameters;
 
 //----------------------------------------------------------------------------------------
