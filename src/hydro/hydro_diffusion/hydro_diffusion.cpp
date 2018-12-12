@@ -125,8 +125,8 @@ HydroDiffusion::~HydroDiffusion() {
 //  \brief Calculate diffusion flux for hydro flux
 
 void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &cons, AthenaArray<Real> *flux) {
-
+                                            const AthenaArray<Real> &cons,
+                                            AthenaArray<Real> *flux) {
   Hydro *ph=pmb_->phydro;
   Field *pf=pmb_->pfield;
 
@@ -150,7 +150,6 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
 
 void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
                                                  AthenaArray<Real> *flux_des) {
-
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
@@ -188,7 +187,6 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 
 void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src,
                                            AthenaArray<Real> *flux_des) {
-
   int size1 = flux_des[X1DIR].GetSize();
 #pragma omp simd
   for (int i=0; i<size1; ++i)
@@ -266,9 +264,12 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
   Real fac;
-  if (pmb_->block_size.nx3>1) fac = 1.0/6.0;
-  else if (pmb_->block_size.nx2>1) fac = 0.25;
-  else fac = 0.5;
+  if (pmb_->block_size.nx3>1)
+    fac = 1.0/6.0;
+  else if (pmb_->block_size.nx2>1)
+    fac = 0.25;
+  else
+    fac = 0.5;
 
   dt_vis = (FLT_MAX);
   dt_cnd = (FLT_MAX);

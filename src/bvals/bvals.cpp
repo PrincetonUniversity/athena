@@ -640,12 +640,12 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
   int size=0;
   bd.nbmax=maxneighbor_;
   if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
-    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);
+    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
   }
   if (type==BNDRY_EMFCOR) {
-    for (          ; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++);
+    for (          ; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
   }
-  for (int n=0;n<bd.nbmax;n++) {
+  for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
     bd.send[n]=nullptr;

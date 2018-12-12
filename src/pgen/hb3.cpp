@@ -221,10 +221,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               SQR(pfield->b.x3f(ks,j,i)));
         }
       }
-
     }
   }
-
   return;
 }
 

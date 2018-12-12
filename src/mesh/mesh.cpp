@@ -250,7 +250,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
 
   // calculate the logical root level and maximum level
-  for (root_level=0; (1<<root_level)<nbmax; root_level++);
+  for (root_level=0; (1<<root_level)<nbmax; root_level++) {}
   current_level=root_level;
 
   // create the root grid

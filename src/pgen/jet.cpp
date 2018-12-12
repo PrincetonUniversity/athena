@@ -188,5 +188,4 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
       }
     }}
   }
-
 }

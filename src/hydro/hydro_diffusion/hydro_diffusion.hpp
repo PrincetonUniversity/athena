@@ -37,7 +37,7 @@ enum {ISO=0, ANI=1};
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class HydroDiffusion {
-public:
+ public:
   HydroDiffusion(Hydro *phyd, ParameterInput *pin);
   ~HydroDiffusion();
 
@@ -73,7 +73,7 @@ public:
   void ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
                                AthenaArray<Real> *flx);
 
-private:
+ private:
   MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
   Coordinates *pco_;  // ptr to coordinates class

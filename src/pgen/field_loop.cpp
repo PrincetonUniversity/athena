@@ -111,7 +111,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie+1; i++) {
-
     // (iprob=1): field loop in x1-x2 plane (cylinder in 3D) */
     if (iprob==1) {
       ax(k,j,i) = 0.0;
@@ -198,7 +197,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         az(k,j,i) = 0.0;
       }
     }
-
   }}}
 
   // Initialize density and momenta.  If drat != 1, then density and temperature will be
