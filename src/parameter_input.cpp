@@ -47,7 +47,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // string
 
-// Athena headers
+// Athena++ headers
 #include "athena.hpp"
 #include "defs.hpp"
 #include "globals.hpp"

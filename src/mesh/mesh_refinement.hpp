@@ -8,6 +8,10 @@
 //! \file mesh_refinement.hpp
 //  \brief defines MeshRefinement class used for static/adaptive mesh refinement
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray

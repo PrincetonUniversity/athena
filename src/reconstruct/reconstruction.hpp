@@ -8,7 +8,11 @@
 //! \file reconstruction.hpp
 //  \brief defines class Reconstruction, data and functions for spatial reconstruction
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 

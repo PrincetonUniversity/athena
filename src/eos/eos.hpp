@@ -9,7 +9,11 @@
 //  \brief defines class EquationOfState
 //  Contains data and functions that implement the equation of state
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../coordinates/coordinates.hpp" // Coordinates

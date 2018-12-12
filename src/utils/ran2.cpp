@@ -11,7 +11,7 @@
 #include <cfloat>
 #include <iostream>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------

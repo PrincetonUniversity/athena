@@ -6,6 +6,11 @@
 //! \file buffer_utils.cpp
 //  \brief namespace containing buffer utilities.
 
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "buffer_utils.hpp"

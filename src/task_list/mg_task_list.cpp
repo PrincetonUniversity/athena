@@ -19,8 +19,6 @@
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../multigrid/multigrid.hpp"
-
-// this class header
 #include "mg_task_list.hpp"
 
 using namespace MultigridTaskNames; // NOLINT (build/namespace)

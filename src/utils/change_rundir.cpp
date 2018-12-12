@@ -16,7 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------

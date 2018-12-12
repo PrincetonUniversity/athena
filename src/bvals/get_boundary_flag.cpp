@@ -13,7 +13,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "bvals.hpp"
 

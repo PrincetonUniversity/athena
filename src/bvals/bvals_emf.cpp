@@ -31,8 +31,6 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
-
-// this class header
 #include "bvals.hpp"
 
 // MPI header

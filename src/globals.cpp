@@ -10,6 +10,11 @@
 // e.g., global constants that are set once and never changed.  To prevent name collisions
 // global variables are wrapped in their own namespace.
 
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "athena.hpp"
 #include "globals.hpp"
 

@@ -8,6 +8,10 @@
 //! \file hydro.hpp
 //  \brief definitions for Hydro class
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

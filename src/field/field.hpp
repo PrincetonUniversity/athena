@@ -8,6 +8,10 @@
 //! \file field.hpp
 //  \brief defines Field class which implements data and functions for E/B fields
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

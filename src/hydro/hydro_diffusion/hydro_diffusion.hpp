@@ -9,7 +9,11 @@
 //  \brief defines class HydroDiffusion
 //  Contains data and functions that implement the diffusion processes
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 

@@ -9,7 +9,11 @@
 //  \brief defines class HydroSourceTerms
 //  Contains data and functions that implement physical (not coordinate) source terms
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 

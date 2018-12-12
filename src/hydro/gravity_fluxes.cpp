@@ -12,8 +12,8 @@
 
 // Athena++ headers
 #include "../coordinates/coordinates.hpp"
-#include "../mesh/mesh.hpp"
 #include "../gravity/gravity.hpp"
+#include "../mesh/mesh.hpp"
 #include "hydro.hpp"
 
 //----------------------------------------------------------------------------------------

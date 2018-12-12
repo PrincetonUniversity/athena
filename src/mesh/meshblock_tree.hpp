@@ -9,6 +9,10 @@
 //  \brief defines the LogicalLocation structure and MeshBlockTree class
 //======================================================================================
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

@@ -6,15 +6,16 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
-// needed for vector of pointers in DoTaskListOneStage()
+// C headers
+
+// C++ headers
 #include <vector>
+// needed for vector of pointers in DoTaskListOneStage()
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
-
-// this class header
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------

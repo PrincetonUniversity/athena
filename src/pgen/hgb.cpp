@@ -49,13 +49,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../utils/utils.hpp" //ran2()
+#include "../parameter_input.hpp"
+#include "../utils/utils.hpp" // ran2()
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"

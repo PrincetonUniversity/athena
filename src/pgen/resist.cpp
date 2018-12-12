@@ -10,9 +10,9 @@
 // C headers
 
 // C++ headers
-#include <iostream>   // endl
 #include <cmath>      // sqrt()
 #include <cstring>    // strcmp()
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -31,16 +31,16 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
-static Real amp,x0,t0,eta;
+static Real amp, x0, t0, eta;
 static int iprob;
+
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief field loop advection problem generator for 2D/3D problems.
+//  \brief
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
-
 
   // Read initial conditions, diffusion coefficients (if needed)
   Real etaO = pin->GetOrAddReal("problem","eta_ohm",0.03);

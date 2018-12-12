@@ -10,6 +10,10 @@
 //  \brief defines Gravity class which implements data and functions for gravitational
 //         potential
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

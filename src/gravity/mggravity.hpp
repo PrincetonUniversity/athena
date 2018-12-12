@@ -9,6 +9,10 @@
 //! \file mggravity.hpp
 //  \brief defines MGGravity class
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

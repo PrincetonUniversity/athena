@@ -10,7 +10,7 @@
 // C++ headers
 #include <iostream>   // cout, endl
 
-// Athena headers
+// Athena++ headers
 #include "../../athena.hpp"          // Real
 #include "../../athena_arrays.hpp"   // AthenaArray
 #include "../../coordinates/coordinates.hpp" // Coordinates
