@@ -12,7 +12,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../bvals/bvals_grav.hpp"
 #include "../eos/eos.hpp"

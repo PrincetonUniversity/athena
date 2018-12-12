@@ -13,7 +13,7 @@
 #include <cmath>
 #include <cstring>     // strcmp()
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"

@@ -9,7 +9,7 @@
 //! \file fftgravity.hpp
 //  \brief defines FFTGravity class
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../fft/athena_fft.hpp"

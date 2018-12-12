@@ -9,7 +9,7 @@
 //! \file mggravity.hpp
 //  \brief defines MGGravity class
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../multigrid/multigrid.hpp"

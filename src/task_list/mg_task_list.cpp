@@ -12,7 +12,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"

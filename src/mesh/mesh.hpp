@@ -16,7 +16,7 @@
 #include <cstdint>  // int64_t
 #include <string>
 
-// Athena++ class headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
