@@ -14,6 +14,7 @@
 
 // C++ headers
 #include <cstddef>  // size_t
+#include <cstring>  // memset
 
 template<typename T>
 class AthenaArray {
@@ -35,6 +36,7 @@ public:
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
+  void ZeroClear(void);
 
   // functions to get array dimensions
   int GetDim1() const { return nx1_; }
@@ -309,6 +311,15 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
   T* tmp_pdata_ = pdata_;
   pdata_ = array2.pdata_;
   array2.pdata_ = tmp_pdata_;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::ZeroClear()
+//  \brief  fill the array with zero
+
+template<typename T>
+void AthenaArray<T>::ZeroClear(void) {
+  std::memset(pdata_, 0, GetSizeInBytes());
 }
 
 #endif // ATHENA_ARRAYS_HPP_
