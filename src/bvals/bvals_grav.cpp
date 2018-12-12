@@ -144,7 +144,6 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
                                        pmb->is, pmb->ie, bjs, bje, bks, bke);
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
-
     // Apply boundary function on inner-x2
     if (GravityBoundaryFunction_[INNER_X2] != nullptr)
       GravityBoundaryFunction_[INNER_X2](pmb, pco, dst, time, dt,
@@ -156,7 +155,6 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
   }
 
   if (pmb->block_size.nx3>1) { // 3D
-
     // Apply boundary function on inner-x3
     if (GravityBoundaryFunction_[INNER_X3] != nullptr)
       GravityBoundaryFunction_[INNER_X3](pmb, pco, dst, time, dt,

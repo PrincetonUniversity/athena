@@ -69,9 +69,7 @@ typedef struct LogicalLocation {
     { return left.level < right.level; };
   static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
     { return left.level > right.level; };
-
 } LogicalLocation;
-
 
 //----------------------------------------------------------------------------------------
 //! \struct RegionSize
@@ -84,7 +82,6 @@ typedef struct RegionSize {
   // the size of the root grid or a MeshBlock should not exceed std::int32_t limits
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
-
 
 //---------------------------------------------------------------------------------------
 //! \struct FaceField

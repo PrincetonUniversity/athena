@@ -114,7 +114,6 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
   // Go through each interface
 #pragma omp simd simdlen(SIMD_WIDTH)
   for (int i = il; i <= iu; ++i) {
-
     // Extract left primitives
     Real rho_l = prim_l(IDN,k,j,i);
     Real pgas_l = prim_l(IPR,k,j,i);
@@ -266,9 +265,8 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-  #pragma omp simd
+#pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract metric
     const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
                &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),

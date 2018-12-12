@@ -114,6 +114,5 @@ class ParameterInput {
   void EndReading(void);
   void StartWriting(void);
   void EndWriting(void);
-
 };
 #endif // PARAMETER_INPUT_HPP_

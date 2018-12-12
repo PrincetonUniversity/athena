@@ -82,7 +82,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j=jl; j<=ju; j++) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract conserved quantities
         Real dd = cons(IDN,k,j,i);
         Real ee = cons(IEN,k,j,i);
@@ -185,7 +184,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         prim(IVX,k,j,i) = vx;
         prim(IVY,k,j,i) = vy;
         prim(IVZ,k,j,i) = vz;
-
       }
     }
   }
@@ -213,7 +211,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract primitives and magnetic fields
         Real rho = prim(IDN,k,j,i);
         Real pgas = prim(IPR,k,j,i);
@@ -289,7 +286,6 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   // Go through states
 #pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
-
     // Extract primitives
     Real rho = prim(IDN,k,j,i);
     Real pgas = prim(IPR,k,j,i);

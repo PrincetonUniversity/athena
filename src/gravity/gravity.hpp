@@ -44,7 +44,6 @@ class Gravity {
  private:
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
-
 };
 
 #endif // GRAVITY_GRAVITY_HPP_

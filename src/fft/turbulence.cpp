@@ -70,7 +70,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   InitializeFFTBlock(true);
   QuickCreatePlan();
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
-
 }
 
 // destructor
@@ -112,9 +111,7 @@ void TurbulenceDriver::Driving(void) {
           << "Turbulence flag " << pm->turb_flag << " is not supported!" << std::endl;
       ATHENA_ERROR(msg);
   }
-
   return;
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -218,7 +215,6 @@ void TurbulenceDriver::Perturb(Real dt) {
   int js=pm->pblock->js, je=pm->pblock->je;
   int ks=pm->pblock->ks, ke=pm->pblock->ke;
 
-  int mpierr;
   Real aa, b, c, s, de, v1, v2, v3, den, M1, M2, M3;
   Real m[4] = {0}, gm[4];
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
@@ -241,14 +237,15 @@ void TurbulenceDriver::Perturb(Real dt) {
   }
 
 #ifdef MPI_PARALLEL
-// Sum the perturbations over all processors
+  int mpierr;
+  // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
-  // Ask Changgoo about this
+  // TODO(felker): ask Chang-Goo about this next line:
   for (int n=0; n<4; n++) m[n]=gm[n];
 #endif // MPI_PARALLEL
 
@@ -351,7 +348,6 @@ void TurbulenceDriver::Perturb(Real dt) {
     }
   }
   return;
-
 }
 
 //----------------------------------------------------------------------------------------

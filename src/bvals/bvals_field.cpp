@@ -420,7 +420,6 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
   } // outer boundary
 
   return (flagi && flago);
-
 }
 
 //--------------------------------------------------------------------------------------

@@ -41,7 +41,6 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
@@ -286,7 +285,6 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
@@ -453,9 +451,7 @@ void Reconstruction::RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         vect(IBY,i) = v_4;
         vect(IBZ,i) = v_5;
       }
-
     }
-
   } else {
     // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {

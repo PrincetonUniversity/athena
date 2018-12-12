@@ -34,9 +34,11 @@ typedef struct Cons1D {
 //! \fn
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
@@ -244,9 +246,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     flx(ivz,k,j,i) = flxi[IVZ];
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
-
   }
   }}
-
   return;
 }

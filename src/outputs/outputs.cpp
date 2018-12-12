@@ -114,7 +114,6 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
       op.dt = pin->GetReal(op.block_name,"dt");
 
       if (op.dt > 0.0) {  // only add output if dt>0
-
         // set file number, basename, id, and format
         op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
         op.file_basename = pin->GetString("job","problem_id");
@@ -544,7 +543,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
   if (output_params.variable.compare(0, 3, "uov") == 0

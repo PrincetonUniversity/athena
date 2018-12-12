@@ -75,7 +75,6 @@ Real Hydro::NewBlockTimeStep(void) {
           if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
 
           if (MAGNETIC_FIELDS_ENABLED) {
-
             Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
             wi[IBY] = bcc(IB2,k,j,i);
             wi[IBZ] = bcc(IB3,k,j,i);
@@ -93,14 +92,11 @@ Real Hydro::NewBlockTimeStep(void) {
             bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
             cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
             dt3(i) /= (std::fabs(wi[IVZ]) + cf);
-
           } else {
-
             Real cs = pmb->peos->SoundSpeed(wi);
             dt1(i) /= (std::fabs(wi[IVX]) + cs);
             dt2(i) /= (std::fabs(wi[IVY]) + cs);
             dt3(i) /= (std::fabs(wi[IVZ]) + cs);
-
           }
         }
       }
@@ -126,7 +122,6 @@ Real Hydro::NewBlockTimeStep(void) {
           min_dt = std::min(min_dt,dt_3);
         }
       }
-
     }
   }
 

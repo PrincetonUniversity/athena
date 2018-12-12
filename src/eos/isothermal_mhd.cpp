@@ -51,31 +51,30 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   // Convert to Primitives
   for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      Real& u_d  = cons(IDN,k,j,i);
-      Real& u_m1 = cons(IVX,k,j,i);
-      Real& u_m2 = cons(IVY,k,j,i);
-      Real& u_m3 = cons(IVZ,k,j,i);
+      for (int i=il; i<=iu; ++i) {
+        Real& u_d  = cons(IDN,k,j,i);
+        Real& u_m1 = cons(IVX,k,j,i);
+        Real& u_m2 = cons(IVY,k,j,i);
+        Real& u_m3 = cons(IVZ,k,j,i);
 
-      Real& w_d  = prim(IDN,k,j,i);
-      Real& w_vx = prim(IVX,k,j,i);
-      Real& w_vy = prim(IVY,k,j,i);
-      Real& w_vz = prim(IVZ,k,j,i);
+        Real& w_d  = prim(IDN,k,j,i);
+        Real& w_vx = prim(IVX,k,j,i);
+        Real& w_vy = prim(IVY,k,j,i);
+        Real& w_vz = prim(IVZ,k,j,i);
 
-      // apply density floor, without changing momentum or energy
-      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
-      w_d = u_d;
+        // apply density floor, without changing momentum or energy
+        u_d = (u_d > density_floor_) ?  u_d : density_floor_;
+        w_d = u_d;
 
-      Real di = 1.0/u_d;
-      w_vx = u_m1*di;
-      w_vy = u_m2*di;
-      w_vz = u_m3*di;
-
+        Real di = 1.0/u_d;
+        w_vx = u_m1*di;
+        w_vy = u_m2*di;
+        w_vz = u_m3*di;
+      }
     }
-  }}
-
+  }
   return;
 }
 

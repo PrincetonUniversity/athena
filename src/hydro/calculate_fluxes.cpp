@@ -177,7 +177,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
-
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
     // TODO(felker): fix loop limits for fourth-order hydro
@@ -278,7 +277,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 // k-direction
 
   if (pmb->block_size.nx3 > 1) {
-
     // set the loop limits
     il=is, iu=ie, jl=js, ju=je;
     // TODO(felker): fix loop limits for fourth-order hydro

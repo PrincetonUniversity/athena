@@ -435,7 +435,6 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
   } // outer boundary
 
   return (flagi && flago);
-
 }
 
 //--------------------------------------------------------------------------------------

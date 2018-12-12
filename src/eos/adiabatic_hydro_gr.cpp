@@ -100,9 +100,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma omp simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
-
         // Extract metric
         const Real
             // unused:

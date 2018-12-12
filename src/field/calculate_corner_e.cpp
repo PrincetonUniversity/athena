@@ -57,7 +57,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
   // E3=-(v X B)=VyBx-VxBy
   for (int k=ks; k<=ke; ++k) {
   for (int j=js-1; j<=je+1; ++j) {
-
 #if GENERAL_RELATIVITY==1
     pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma omp simd
@@ -91,7 +90,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
       cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
     }
 #endif // GENERAL_RELATIVITY
-
   }}
 
   // integrate E3 to corner using SG07
@@ -129,13 +127,11 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
       e1(ke+1,j,i) = e1_x2f(ks,j,i);
     }}
   } else {
-
 //---- 3-D update:
     // integrate E1 to corners using GS07 (E3 already done above)
     // E1=-(v X B)=VzBy-VyBz
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js-1; j<=je+1; ++j) {
-
 #if GENERAL_RELATIVITY==1
       pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 #pragma omp simd
@@ -169,7 +165,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
       }
 #endif // GENERAL_RELATIVITY
-
     }}
 
     for (int k=ks; k<=ke+1; ++k) {
@@ -197,7 +192,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
     // E2=-(v X B)=VxBz-VzBx
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
-
 #if GENERAL_RELATIVITY==1
       pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma omp simd
@@ -231,7 +225,6 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
       }
 #endif // GENERAL_RELATIVITY
-
     }}
 
     for (int k=ks; k<=ke+1; ++k) {

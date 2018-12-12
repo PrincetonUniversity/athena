@@ -310,7 +310,6 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     } else {
       AddTimeIntegratorTask(CLEAR_ALLBND,NEW_DT);
     }
-
   } // end of using namespace block
 }
 

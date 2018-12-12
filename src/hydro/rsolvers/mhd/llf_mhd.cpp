@@ -32,10 +32,11 @@
 //  \brief The LLF Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],du[(NWAVE)];
@@ -47,7 +48,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,du,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
-
 //--- Step 1.  Load L/R states into local variables
 
     wli[IDN]=wl(IDN,k,j,i);

@@ -214,7 +214,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   for (int k = kll; k <= kuu; ++k) {
     for (int j = jll; j <= juu; ++j) {
       for (int i = ill; i <= iuu; ++i) {
-
         // Get position and separations
         Real x1 = x1v(i);
         Real x2 = x2v(j);
@@ -262,7 +261,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
-
           // Get position and separations
           Real x1 = x1f(i);
           Real x2 = x2v(j);
@@ -300,7 +298,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu; ++i) {
-
           // Get position and separations
           Real x1 = x1v(i);
           Real x2 = x2f(j);
@@ -338,7 +335,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu; ++i) {
-
           // Get position and separations
           Real x1 = x1v(i);
           Real x2 = x2v(j);
@@ -376,7 +372,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu; ++i) {
-
           // Get position and separation
           Real x1 = x1v(i);
           Real x2 = x2f(j);
@@ -399,7 +394,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu+1; ++k) {
       for (int j = jll; j <= juu; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
-
           // Get position and separation
           Real x1 = x1f(i);
           Real x2 = x2v(j);
@@ -422,7 +416,6 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int k = kll; k <= kuu; ++k) {
       for (int j = jll; j <= juu+1; ++j) {
         for (int i = ill; i <= iuu+1; ++i) {
-
           // Get position and separation
           Real x1 = x1f(i);
           Real x2 = x2f(j);
@@ -699,7 +692,6 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     for (int j = js; j <= je; ++j) {
       #pragma omp simd
       for (int i = is; i <= ie; ++i) {
-
         // Extract metric coefficients
         const Real &g_00 = metric_cell_kji_(0,I00,k,j,i);
         const Real &g_01 = metric_cell_kji_(0,I01,k,j,i);
@@ -895,7 +887,6 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face1_kji_(1,T10,k,j,i);
@@ -937,7 +928,6 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = metric_face1_kji_(0,I00,k,j,i);
       const Real &g_01 = metric_face1_kji_(0,I01,k,j,i);
@@ -1067,7 +1057,6 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face2_kji_(1,T10,k,j,i);
@@ -1109,7 +1098,6 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = metric_face2_kji_(0,I00,k,j,i);
       const Real &g_01 = metric_face2_kji_(0,I01,k,j,i);
@@ -1239,7 +1227,6 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_kji_(1,T00,k,j,i);
     const Real &mx_0 = trans_face3_kji_(1,T10,k,j,i);
@@ -1281,7 +1268,6 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = metric_face3_kji_(0,I00,k,j,i);
       const Real &g_01 = metric_face3_kji_(0,I01,k,j,i);
@@ -1408,7 +1394,6 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &m0_t = trans_face1_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face1_kji_(0,T10,k,j,i);
@@ -1520,7 +1505,6 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &m0_t = trans_face2_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face2_kji_(0,T30,k,j,i);
@@ -1632,7 +1616,6 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &m0_t = trans_face3_kji_(0,T00,k,j,i);
     const Real &m1_t = trans_face3_kji_(0,T20,k,j,i);

@@ -114,7 +114,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // ptr to diffusion object
   phdif = new HydroDiffusion(this,pin);
-
 }
 
 // destructor

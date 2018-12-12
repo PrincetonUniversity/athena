@@ -101,6 +101,7 @@ class Multigrid {
   int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
+
  private:
   bool root_flag_;
   TaskState ts_;
@@ -152,6 +153,7 @@ class MultigridDriver {
   bool fperiodic_;
   Real last_ave_;
   Real eps_;
+
  private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;

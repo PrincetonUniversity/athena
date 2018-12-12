@@ -558,7 +558,6 @@ AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc) {
 }
 
 AthenaFFTIndex::~AthenaFFTIndex() {
-
 }
 
 void AthenaFFTIndex::SetLocalIndex() {

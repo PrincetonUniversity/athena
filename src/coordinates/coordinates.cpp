@@ -288,7 +288,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     x3f(ks  ) = block_size.x3min;
     x3f(ke+1) = block_size.x3max;
   }
-
 }
 
 // destructor

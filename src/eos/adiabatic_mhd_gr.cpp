@@ -107,7 +107,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   // Go through all rows
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-
       // Calculate metric
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
 
@@ -117,7 +116,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
       // Go through cells
       for (int i=il; i<=iu; ++i) {
-
         // Set flag indicating conserved values need adjusting at end
         bool fixed = false;
 
@@ -184,7 +182,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
         Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
         if (success && (rho_add > 0.0 || pgas_add > 0.0)) {
-
           // Adjust conserved density and energy
           Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
           normal_dd_(i) += rho_add * gamma;
@@ -313,7 +310,6 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
   // Go through row
   for (int i=il; i<=iu; ++i) {
-
     // Extract metric
     const Real &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
                &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
@@ -453,7 +449,6 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   pgas[0] = std::max(pgas_old, pgas_min);
   int n;
   for (n = 0; n < max_iterations; ++n) {
-
     // Step 1: Calculate cubic coefficients
     Real a;
     if (n%3 != 2) {
@@ -516,7 +511,7 @@ static bool ConservedToPrimitiveNormal(const AthenaArray<Real> &dd_vals,
   v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-  Real wgas = ll/gamma_sq;                                        // (NH 5.1)
+  //Real wgas = ll/gamma_sq;                                        // (NH 5.1); unused
   prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
   if (!std::isfinite(prim(IDN,k,j,i))) {
     return false;
@@ -668,9 +663,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through states
-  #pragma omp simd
+#pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
     const Real &pgas = prim(IPR,k,j,i);

@@ -191,27 +191,27 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       int nvar = pdata->data.GetDim4();
       if (nvar == 1) std::fprintf(pfile,"LOOKUP_TABLE default\n");
       for (int k=out_ks; k<=out_ke; ++k) {
-      for (int j=out_js; j<=out_je; ++j) {
+        for (int j=out_js; j<=out_je; ++j) {
+          for (int i=out_is; i<=out_ie; ++i) {
+            for (int n=0; n<nvar; ++n) {
+              data[nvar*(i-out_is)+n] = static_cast<float>(pdata->data(n,k,j,i));
+            }
+          }
 
-        for (int i=out_is; i<=out_ie; ++i) {
-        for (int n=0; n<nvar; ++n) {
-          data[nvar*(i-out_is)+n] = static_cast<float>(pdata->data(n,k,j,i));
-        }}
-
-        // write data in big endian order
-        if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
-        std::fwrite(data,sizeof(float),static_cast<std::size_t>(nvar*ncells1),pfile);
-
-      }}
-
+          // write data in big endian order
+          if (!big_end) {
+            for (int i=0; i<(nvar*ncells1); ++i)
+              Swap4Bytes(&data[i]);
+          }
+          std::fwrite(data,sizeof(float),static_cast<std::size_t>(nvar*ncells1),pfile);
+        }
+      }
       pdata = pdata->pnext;
     }
-
     // don't forget to close the output file and clean up ptrs to data in OutputData
     std::fclose(pfile);
     ClearOutputData();  // required when LoadOutputData() is used.
     delete [] data;
-
     pmb=pmb->next;
   }  // end loop over MeshBlocks
 

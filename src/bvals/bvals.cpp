@@ -1493,7 +1493,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   }
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
-
     // Apply boundary function on inner-x2
     if (BoundaryFunction_[INNER_X2] != nullptr) {
       BoundaryFunction_[INNER_X2](pmb, pco, pdst, bfdst, time, dt,

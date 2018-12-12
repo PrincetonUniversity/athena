@@ -39,8 +39,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
   AthenaArray<Real> &x3flux=flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  int tid=0;
   AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
   x1area.InitWithShallowCopy(x1face_area_);
   x2area.InitWithShallowCopy(x2face_area_);
@@ -52,7 +50,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
       for (int n=0; n<NHYDRO; ++n) {

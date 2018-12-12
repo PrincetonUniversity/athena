@@ -153,7 +153,6 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     pdim_++;
   }
 #endif
-
 }
 
 // destructor
@@ -173,7 +172,6 @@ void FFTDriver::InitializeFFTBlock(bool set_norm) {
 }
 
 void FFTDriver::QuickCreatePlan(void) {
-
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
 

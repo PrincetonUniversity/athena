@@ -95,7 +95,6 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
 
   // cycle through all MeshBlocks and perform all tasks possible
   while(nmb_left > 0) {
-
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
 {
     #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
@@ -105,8 +104,6 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
       }
     }
 }
-
   }
-
   return;
 }

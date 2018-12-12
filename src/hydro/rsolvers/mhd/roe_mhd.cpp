@@ -38,10 +38,11 @@ static Real gm1, iso_cs;
 //  \brief The Roe Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)];
@@ -55,7 +56,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
-
 //--- Step 1.  Load L/R states into local variables
 
     wli[IDN]=wl(IDN,k,j,i);
@@ -241,7 +241,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 #pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
   const Real du[], const Real wli[], Real flx[], Real ev[], int &llf_flag) {
-
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];

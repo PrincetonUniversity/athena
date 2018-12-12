@@ -193,7 +193,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
   if (coarse_flag == false) {
-
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(ncells1);
     coord_vol_i2_.NewAthenaArray(ncells1);
@@ -273,7 +272,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i = il-ng; i <= iu+ng; ++i) {
-
       // Useful quantities
       Real r_c = x1v(i);
       Real r_m = x1f(i);
@@ -320,7 +318,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: theta-direction
     for (int j = jll; j <= juu; ++j) {
-
       // Useful quantities
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
@@ -408,7 +405,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Calculate intermediate geometric quantities: r-theta-direction
     for (int j = jll; j <= juu; ++j) {
       for (int i = il-ng; i <= iu+ng; ++i) {
-
         // Useful quantities
         Real a2 = SQR(a);
         Real r_c = x1v(i);
@@ -831,7 +827,6 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
     for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
-
       // Extract geometric quantities that do not depend on r
       const Real &sin = coord_src_j1_(j);
       const Real &cos = coord_src_j2_(j);
@@ -845,7 +840,6 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
       // Go through 1D slice
       #pragma omp simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
-
         // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
         const Real &g_01 = g_(I01,i);
@@ -968,7 +962,6 @@ void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract remaining useful quantities
     const Real &r = metric_cell_i1_(i);
     Real r2 = SQR(r);
@@ -1016,7 +1009,6 @@ void KerrSchild::Face1Metric(const int k, const int j, const int il, const int i
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract remaining useful quantities
     const Real &r = metric_face1_i1_(i);
     Real r2 = SQR(r);
@@ -1064,7 +1056,6 @@ void KerrSchild::Face2Metric(const int k, const int j, const int il, const int i
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract remaining useful quantities
     const Real &r = metric_face2_i1_(i);
     Real r2 = SQR(r);
@@ -1112,7 +1103,6 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract remaining useful quantities
     const Real &r = metric_face3_i1_(i);
     Real r2 = SQR(r);
@@ -1170,7 +1160,6 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
     const Real &mx_0 = trans_face1_ji5_(j,i);
@@ -1206,7 +1195,6 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1314,7 +1302,6 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
     const Real &mx_2 = trans_face2_ji3_(j,i);
@@ -1349,7 +1336,6 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1457,7 +1443,6 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
     const Real &mx_3 = trans_face3_ji4_(j,i);
@@ -1492,7 +1477,6 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1596,7 +1580,6 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
     const Real &mx_0 = trans_face1_ji5_(j,i);
@@ -1698,7 +1681,6 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
     const Real &mx_2 = trans_face2_ji3_(j,i);
@@ -1798,7 +1780,6 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
   // Go through 1D block of cells
   #pragma omp simd
   for (int i = il; i <= iu; ++i) {
-
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
     const Real &mx_3 = trans_face3_ji4_(j,i);

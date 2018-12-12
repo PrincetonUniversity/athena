@@ -99,7 +99,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract conserved quantities
         Real d = cons_copy(IDN,k,j,i);
         Real e = cons_copy(IEN,k,j,i);
@@ -199,7 +198,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         prim_copy(IVX,k,j,i) = vx;
         prim_copy(IVY,k,j,i) = vy;
         prim_copy(IVZ,k,j,i) = vz;
-
       }
     }
   }
@@ -230,7 +228,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract primitives
         Real rho = prim(IDN,k,j,i);
         Real pgas = prim(IPR,k,j,i);
@@ -257,7 +254,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         cons(IM1,k,j,i) = m1;
         cons(IM2,k,j,i) = m2;
         cons(IM3,k,j,i) = m3;
-
       }
     }
   }

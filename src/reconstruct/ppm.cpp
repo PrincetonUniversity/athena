@@ -131,7 +131,6 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
 //--- Step 1. ----------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{i-1/2} and <a>_{i+1/2}
     for (int n=0; n<(NWAVE); ++n) {
-
       // Compute average slope in i-1, i, i+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il-1; i<=iu; ++i) {
@@ -444,7 +443,6 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
 //--- Step 1. ----------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{j-1/2} and <a>_{j+1/2}
     for (int n=0; n<(NWAVE); ++n) {
-
       // Compute average slope in j-1, j, j+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -755,7 +753,6 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 //--- Step 1. ----------------------------------------------------------------------------
 // Reconstruct interface averages <a>_{k-1/2} and <a>_{k+1/2}
     for (int n=0; n<(NWAVE); ++n) {
-
       // Compute average slope in k-1, k, k+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {

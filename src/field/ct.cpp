@@ -47,7 +47,6 @@ void Field::CT(const Real wght, FaceField &b_out) {
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-
     // add curl(E) in 2D and 3D problem
     if (pmb->block_size.nx2 > 1) {
       pmb->pcoord->Face1Area(k,j,is,ie+1,area);

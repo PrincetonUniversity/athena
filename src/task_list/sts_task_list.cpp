@@ -121,7 +121,6 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     // everything else
     AddSuperTimeStepTask(PHY_BVAL,CON2PRIM);
     AddSuperTimeStepTask(CLEAR_ALLBND,PHY_BVAL);
-
   } // end of using namespace block
 }
 

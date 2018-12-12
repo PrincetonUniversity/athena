@@ -31,8 +31,7 @@
 //  GravitySolverTaskList constructor
 
 GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm) {
-
+    : TaskList(pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     AddGravitySolverTask(START_GRAV_RECV,NONE);

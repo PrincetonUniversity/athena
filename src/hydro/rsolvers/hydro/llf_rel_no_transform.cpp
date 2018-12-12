@@ -36,9 +36,11 @@
 //   cf. LLFNonTransforming() in llf_rel.cpp
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
-    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bb,
+                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                          AthenaArray<Real> &flux,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -49,7 +51,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   // Go through 1D arrays of interfaces
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
-
       // Get metric components
       switch (ivx) {
         case IVX:
@@ -64,9 +65,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       }
 
       // Go through each interface
-      #pragma omp simd
+#pragma omp simd
       for (int i = il; i <= iu; ++i) {
-
         // Extract metric
         const Real
             &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),

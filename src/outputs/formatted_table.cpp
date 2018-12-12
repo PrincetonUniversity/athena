@@ -43,7 +43,6 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
 
   // Loop over MeshBlocks
   while (pmb != nullptr) {
-
     // set start/end array indices depending on whether ghost zones are included
     out_is=pmb->is; out_ie=pmb->ie;
     out_js=pmb->js; out_je=pmb->je;
@@ -114,41 +113,40 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
 
     // loop over all cells in data arrays
     for (int k=out_ks; k<=out_ke; ++k) {
-    for (int j=out_js; j<=out_je; ++j) {
-    for (int i=out_is; i<=out_ie; ++i) {
+      for (int j=out_js; j<=out_je; ++j) {
+        for (int i=out_is; i<=out_ie; ++i) {
+          // write x1, x2, x3 indices and coordinates on start of new line
+          if (out_is != out_ie) {
+            std::fprintf(pfile,"%04d",i);
+            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
+          }
+          if (out_js != out_je) {
+            std::fprintf(pfile," %04d",j);  // note extra space for formatting
+            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
+          }
+          if (out_ks != out_ke) {
+            std::fprintf(pfile," %04d",k);  // note extra space for formatting
+            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
+          }
 
-      // write x1, x2, x3 indices and coordinates on start of new line
-      if (out_is != out_ie) {
-        std::fprintf(pfile,"%04d",i);
-        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
-      }
-      if (out_js != out_je) {
-        std::fprintf(pfile," %04d",j);  // note extra space for formatting
-        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
-      }
-      if (out_ks != out_ke) {
-        std::fprintf(pfile," %04d",k);  // note extra space for formatting
-        std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
-      }
+          // step through linked-list of OutputData's and write each on same line
+          OutputData *pdata = pfirst_data_;
+          while (pdata != nullptr) {
+            for (int n=0; n<(pdata->data.GetDim4()); ++n) {
+              std::fprintf(pfile, output_params.data_format.c_str(),
+                           pdata->data(n,k,j,i));
+            }
+            pdata = pdata->pnext;
+          }
 
-      // step through linked-list of OutputData's and write each on same line
-      OutputData *pdata = pfirst_data_;
-      while (pdata != nullptr) {
-        for (int n=0; n<(pdata->data.GetDim4()); ++n) {
-          std::fprintf(pfile, output_params.data_format.c_str(), pdata->data(n,k,j,i));
+          std::fprintf(pfile,"\n"); // terminate line
         }
-        pdata = pdata->pnext;
       }
-
-      std::fprintf(pfile,"\n"); // terminate line
-    }}}
-
+    }
     // don't forget to close the output file and clean up ptrs to data in OutputData
     std::fclose(pfile);
     ClearOutputData(); // required when LoadOutputData() is used.
-
     pmb=pmb->next;
-
   }  // end loop over MeshBlocks
 
   // increment counters

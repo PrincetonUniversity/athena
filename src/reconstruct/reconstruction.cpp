@@ -170,7 +170,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
       ATHENA_ERROR(msg);
     }
-
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
@@ -434,7 +433,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       }
     }
   }
-
 }
 
 // destructor

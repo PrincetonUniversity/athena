@@ -348,7 +348,6 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
   } // outer boundary
 
   return (flagi && flago);
-
 }
 
 

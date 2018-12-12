@@ -36,10 +36,11 @@
 //  \brief The HLLE Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -51,9 +52,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,wroe,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
-
 //--- Step 1.  Load L/R states into local variables
-
     wli[IDN]=wl(IDN,k,j,i);
     wli[IVX]=wl(ivx,k,j,i);
     wli[IVY]=wl(ivy,k,j,i);
@@ -66,8 +65,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     wri[IVZ]=wr(ivz,k,j,i);
     if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
 
-//--- Step2.  Compute Roe-averaged state
-
+//--- Step 2.  Compute Roe-averaged state
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
@@ -87,7 +85,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     }
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
-
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real a  = iso_cs;
@@ -97,7 +94,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     }
 
 //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
-
     Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
     Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
 
@@ -105,7 +101,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real bm = al < 0.0 ? al : 0.0;
 
 //-- Step 5. Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
-
     Real vxl = wli[IVX] - bm;
     Real vxr = wri[IVX] - bp;
 
@@ -132,7 +127,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     }
 
 //--- Step 6. Compute the HLLE flux at interface.
-
     Real tmp=0.0;
     if (bp != bm) tmp = 0.5*(bp + bm)/(bp - bm);
 

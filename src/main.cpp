@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
 // Check for command line options and respond.
 
   for (int i=1; i<argc; i++) {
-
     // If argv[i] is a 2 character string of the form "-?" then:
     if (*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0') {
       switch(*(argv[i]+1)) {
@@ -412,7 +411,6 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-
     if (Globals::my_rank==0) {
       if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
@@ -475,8 +473,9 @@ int main(int argc, char *argv[]) {
 #endif // ENABLE_EXCEPTIONS
 
     // check for signals
-    if (SignalHandler::CheckSignalFlags() != 0) break;
-
+    if (SignalHandler::CheckSignalFlags() != 0) {
+      break;
+    }
   } // END OF MAIN INTEGRATION LOOP ======================================================
 // Make final outputs, print diagnostics, clean up and terminate
 

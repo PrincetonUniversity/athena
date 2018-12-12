@@ -1346,7 +1346,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
     // With AMR/SMR GR send primitives to enable cons->prim before prolongation
     if (GENERAL_RELATIVITY && multilevel) {
-
       // prepare to receive primitives
 #pragma omp for
       for (int i=0; i<nmb; ++i) {

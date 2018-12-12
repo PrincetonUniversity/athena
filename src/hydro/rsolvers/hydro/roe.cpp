@@ -38,10 +38,11 @@ static Real gm1, iso_cs;
 //  \brief The Roe Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+                          const int il, const int iu, const int ivx,
+                          const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -55,9 +56,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
-
-//--- Step 1.  Load L/R states into local variables
-
+    //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,k,j,i);
     wli[IVX]=wl(ivx,k,j,i);
     wli[IVY]=wl(ivy,k,j,i);
@@ -70,8 +69,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     wri[IVZ]=wr(ivz,k,j,i);
     if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
 
-//--- Step 2.  Compute Roe-averaged data from left- and right-states
-
+    //--- Step 2.  Compute Roe-averaged data from left- and right-states
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
@@ -90,8 +88,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       wroe[IPR] = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
     }
 
-//--- Step 3.  Compute L/R fluxes
-
+    //--- Step 3.  Compute L/R fluxes
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
 
@@ -134,8 +131,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     int llf_flag = 0;
     RoeFlux(wroe,du,wli,flxi,ev,llf_flag);
 
-//--- Step 5.  Overwrite with upwind flux if flow is supersonic
-
+    //--- Step 5.  Overwrite with upwind flux if flow is supersonic
     if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
       flxi[IVX] = fl[IVX];
@@ -151,8 +147,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fr[IEN];
     }
 
-//--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
-
+    //--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
     if (llf_flag != 0) {
       Real cl = pmy_block->peos->SoundSpeed(wli);
       Real cr = pmy_block->peos->SoundSpeed(wri);
@@ -167,7 +162,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       }
     }
 
-//--- Step 7. Store results into 3D array of fluxes
+    //--- Step 7. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
@@ -207,15 +202,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 #pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
-  Real ev[], int &llf_flag) {
-
+                    Real ev[], int &llf_flag) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
   Real v3 = wroe[IVZ];
 
-//--- Adiabatic hydrodynamics
-
+  //--- Adiabatic hydrodynamics
   if (NON_BAROTROPIC_EOS) {
     Real h = wroe[IPR];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
