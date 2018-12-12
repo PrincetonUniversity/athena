@@ -43,15 +43,15 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
   four_pi_G_=pmy_mesh_->four_pi_G_;
   eps_=pmy_mesh_->grav_eps_;
   if (four_pi_G_==0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
     ATHENA_ERROR(msg);
   }
   if (mode_>=2 && eps_<0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Convergence threshold must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitatyThreshold for the iterative mode." << std::endl
         << "Set the threshold = 0.0 for automatic convergence control." << std::endl;

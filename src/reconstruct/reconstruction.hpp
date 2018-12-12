@@ -24,7 +24,7 @@ class ParameterInput;
 //  \brief member functions implement various spatial reconstruction algorithms
 
 class Reconstruction {
-public:
+ public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
   ~Reconstruction();
 
@@ -89,7 +89,7 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
     const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-private:
+ private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
   // scratch arrays used in PLM and PPM reconstruction functions

@@ -27,7 +27,7 @@ class GravityBoundaryValues;
 //  \brief gravitational potential data and functions
 
 class Gravity {
-public:
+ public:
   Gravity(MeshBlock *pmb, ParameterInput *pin);
   ~Gravity();
 
@@ -41,7 +41,7 @@ public:
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
 
-private:
+ private:
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
 

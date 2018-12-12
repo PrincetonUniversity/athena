@@ -44,7 +44,7 @@ typedef struct InputLine {
 //  \brief  node in a linked list of all input blocks contained within input file
 
 class InputBlock {
-public:
+ public:
   // constructor/destructor
   InputBlock();
   ~InputBlock();
@@ -66,7 +66,7 @@ public:
 //  Functions are implemented in parameter_input.cpp
 
 class ParameterInput {
-public:
+ public:
   // constructor/destructor
   ParameterInput();
   ~ParameterInput();
@@ -94,7 +94,7 @@ public:
   void RollbackNextTime();
   void ForwardNextTime(Real time);
 
-private:
+ private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
   InputBlock* FindOrAddBlock(std::string name);

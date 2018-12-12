@@ -28,7 +28,7 @@ class FieldDiffusion;
 
 class Field {
   friend class Hydro;
-public:
+ public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
@@ -58,7 +58,7 @@ public:
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
   void ComputeCornerE_STS();
 
-private:
+ private:
   // scratch space used to compute fluxes
   AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;

@@ -82,14 +82,14 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   for (int i=0; i<6; i++)
     block_bcs[i]=input_bcs[i];
   if (block_bcs[INNER_X2] == POLAR_BNDRY
-   || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
     // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
     int num_north_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY
-   || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
     int num_south_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
@@ -108,10 +108,10 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 //  \brief destructor of BoundaryBase
 BoundaryBase::~BoundaryBase() {
   if (block_bcs[INNER_X2] == POLAR_BNDRY
-   || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE)
+      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE)
     delete [] polar_neighbor_north;
   if (block_bcs[OUTER_X2] == POLAR_BNDRY
-   || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)
+      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)
     delete [] polar_neighbor_south;
   if (pmy_mesh_->multilevel==true) {
     sarea_[0].DeleteAthenaArray();

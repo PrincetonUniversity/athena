@@ -29,7 +29,7 @@ struct IntegratorWeight;
 class Hydro {
   friend class Field;
   friend class EquationOfState;
-public:
+ public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
   ~Hydro();
 
@@ -68,7 +68,7 @@ public:
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
   void CorrectGravityFlux(void);
 
-private:
+ private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
   AthenaArray<Real> wl_, wr_;

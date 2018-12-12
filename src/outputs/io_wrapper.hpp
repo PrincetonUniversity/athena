@@ -27,7 +27,7 @@ typedef std::uint64_t IOWrapperSize_t;
 enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {
-public:
+ public:
 #ifdef MPI_PARALLEL
   IOWrapper() {comm_=MPI_COMM_WORLD;}
   void SetCommunicator(MPI_Comm scomm) { comm_=scomm;}
@@ -48,7 +48,7 @@ public:
   int Close(void);
   int Seek(IOWrapperSize_t offset);
   IOWrapperSize_t GetPosition(void);
-private:
+ private:
   IOWrapperFile fh_;
 #ifdef MPI_PARALLEL
   MPI_Comm comm_;

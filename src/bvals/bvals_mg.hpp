@@ -46,7 +46,7 @@ typedef struct MGBoundaryData {
 //  \brief BVals data and functions
 
 class MGBoundaryValues : public BoundaryBase {
-public:
+ public:
   MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
                    MGBoundaryFunc_t *MGBoundary);
   ~MGBoundaryValues();
@@ -66,7 +66,7 @@ public:
   bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
                                        int nc, enum BoundaryType type);
 
-private:
+ private:
   Multigrid *pmy_mg_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
   MGBoundaryData bd_mggrav_;

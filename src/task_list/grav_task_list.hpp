@@ -26,7 +26,7 @@ class MeshBlock;
 //  \brief data and function definitions for GravitySolverTaskList derived class
 
 class GravitySolverTaskList : public TaskList {
-public:
+ public:
   GravitySolverTaskList(ParameterInput *pin, Mesh *pm);
   ~GravitySolverTaskList() {}
 

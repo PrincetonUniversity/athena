@@ -41,7 +41,7 @@ struct MGTask {
 //  \brief data and function definitions for MultigridTaskList class
 
 class MultigridTaskList {
-public:
+ public:
   explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {}
   ~MultigridTaskList() {}
 
@@ -74,7 +74,7 @@ public:
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
   void SetMGTaskListFMGProlongate(int flag = 0);
 
-private:
+ private:
   MultigridDriver* pmy_mgdriver_;
   struct MGTask task_list_[64];
 };

@@ -27,7 +27,7 @@ class MeshBlockTree {
   friend class Mesh;
   friend class MeshBlock;
   friend class BoundaryBase;
-public:
+ public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
   ~MeshBlockTree();
@@ -54,7 +54,7 @@ public:
                               enum BoundaryFlag* bcs, std::int64_t rbx, std::int64_t rby,
                               std::int64_t rbz, int rl, bool amrflag=false);
 
-private:
+ private:
   // data
   bool flag; // false: virtual node, has leaves; true: real node, is a leaf
   MeshBlockTree* pparent;

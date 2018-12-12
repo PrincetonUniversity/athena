@@ -46,7 +46,7 @@ class FFTDriver;
 //  \brief Constructor of the GravityBoundaryValues class
 
 GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
+    : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++) {
     if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)

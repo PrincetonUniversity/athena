@@ -53,7 +53,7 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //  \brief gravitational block
 
 class Multigrid {
-public:
+ public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
      int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
      enum BoundaryFlag *input_bcs, bool root);
@@ -93,7 +93,7 @@ public:
   friend class MGBoundaryValues;
   friend class MGGravityDriver;
 
-protected:
+ protected:
   int gid_, lid_;
   LogicalLocation loc_;
   MultigridDriver *pmy_driver_;
@@ -101,7 +101,7 @@ protected:
   int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
-private:
+ private:
   bool root_flag_;
   TaskState ts_;
 };
@@ -111,7 +111,7 @@ private:
 //  \brief Multigrid driver
 
 class MultigridDriver {
-public:
+ public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
   virtual ~MultigridDriver();
   void AddMultigrid(Multigrid *nmg);
@@ -141,7 +141,7 @@ public:
   friend class MultigridTaskList;
   friend class MGBoundaryValues;
 
-protected:
+ protected:
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
@@ -152,7 +152,7 @@ protected:
   bool fperiodic_;
   Real last_ave_;
   Real eps_;
-private:
+ private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;
   AthenaArray<Real> rootsrc_;

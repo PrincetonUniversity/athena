@@ -32,7 +32,7 @@
 //  \brief TurbulenceDriver constructor
 
 TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
- : FFTDriver(pm, pin) {
+    : FFTDriver(pm, pin) {
 
   rseed = pin->GetOrAddInteger("problem","rseed",-1); // seed for random number.
 

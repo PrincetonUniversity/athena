@@ -166,7 +166,7 @@ typedef struct ShearingBoundaryBlock {
 //  \brief Base class for all the BoundaryValues classes
 
 class BoundaryBase {
-public:
+ public:
   BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
                enum BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
@@ -187,13 +187,13 @@ public:
 
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
 
-protected:
+ protected:
   static int maxneighbor_;
   Mesh *pmy_mesh_;
   RegionSize block_size_;
   AthenaArray<Real> sarea_[2];
 
-private:
+ private:
   static bool called_;
 };
 
@@ -202,7 +202,7 @@ private:
 //  \brief BVals data and functions
 
 class BoundaryValues : public BoundaryBase {
-public:
+ public:
   BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
@@ -302,7 +302,7 @@ public:
   void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
                     const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
-private:
+ private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
   int nface_, nedge_;
   bool edge_flag_[12];

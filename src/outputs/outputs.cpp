@@ -548,7 +548,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
   if (output_params.variable.compare(0, 3, "uov") == 0
-   || output_params.variable.compare(0, 12, "user_out_var") == 0) {
+      || output_params.variable.compare(0, 12, "user_out_var") == 0) {
     int iv, ns=0, ne=pmb->nuser_out_var-1;
     if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
       if (iv>=0 && iv<pmb->nuser_out_var)

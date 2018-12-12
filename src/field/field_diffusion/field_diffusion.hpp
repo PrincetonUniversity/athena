@@ -35,7 +35,7 @@ enum {I_O=0, I_H=1, I_A=2};
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class FieldDiffusion {
-public:
+ public:
   FieldDiffusion(MeshBlock *pmb, ParameterInput *pin);
   ~FieldDiffusion();
 
@@ -69,7 +69,7 @@ public:
   // functions for energy flux
   void PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bcc);
 
-private:
+ private:
   AthenaArray<Real> bmag_; // B field strength
   EdgeField jedge_;       // curl of B
   //EdgeField eh1_,eh2_,eh3_; // scratch arrays for the Hall integrator

@@ -35,7 +35,7 @@ class MeshRefinement {
   friend class BoundaryValues;
   friend class MeshBlock;
   friend class Mesh;
-public:
+ public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
 
@@ -62,7 +62,7 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void CheckRefinementCondition(void);
 
-private:
+ private:
   // data
   MeshBlock *pmy_block_;
   Coordinates *pcoarsec;

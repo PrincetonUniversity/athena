@@ -25,7 +25,7 @@ class ParameterInput;
 //  \brief data and functions for physical source terms in the hydro
 
 class HydroSourceTerms {
-public:
+ public:
   HydroSourceTerms(Hydro *phyd, ParameterInput *pin);
   ~HydroSourceTerms();
 
@@ -55,7 +55,7 @@ public:
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
   SrcTermFunc_t UserSourceTerm;
 
-private:
+ private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms
   Real gm_;           // GM for point mass MUST BE LOCATED AT ORIGIN
   Real g1_, g2_, g3_; // constant acc'n in each direction

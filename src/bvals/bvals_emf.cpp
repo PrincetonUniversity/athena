@@ -94,7 +94,7 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
-   }
+  }
 
   int p=0;
   // pack e2
@@ -265,7 +265,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
-   }
+  }
 
   int p=0;
   // unpack e2
@@ -273,7 +273,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
     for (int j=sj; j<=ej; j++)
       dst.x2e(k,j)+=buf[p++];
   }
- // unpack e3
+  // unpack e3
   for (int k=sk; k<=ek; k++) {
     for (int j=psj; j<=pej; j++)
       dst.x3e(k,j)+=buf[p++];

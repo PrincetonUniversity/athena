@@ -66,7 +66,7 @@ class FFTDriver;
 class TurbulenceDriver;
 
 class AthenaFFTIndex{
-public:
+ public:
   AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
   ~AthenaFFTIndex();
 
@@ -93,7 +93,7 @@ public:
 
   friend class FFTDriver;
   friend class FFTBlock;
-private:
+ private:
   int dim_;
   int npermute_, swap_;
   void Permute_(int loc[], int npermute);
@@ -105,7 +105,7 @@ private:
 //  \brief
 
 class FFTBlock {
-public:
+ public:
   FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
            RegionSize msize, RegionSize bsize);
   virtual ~FFTBlock();
@@ -153,7 +153,7 @@ public:
   friend class FFTDriver;
   friend class Mesh;
 
-protected:
+ protected:
   std::int64_t cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
@@ -177,7 +177,7 @@ protected:
 //  \brief FFT driver
 
 class FFTDriver {
-public:
+ public:
   FFTDriver(Mesh *pm, ParameterInput *pin);
   virtual ~FFTDriver();
 
@@ -192,7 +192,7 @@ public:
   friend class FFTBlock;
   friend class Mesh;
 
-protected:
+ protected:
   std::int64_t gcnt_;
   int nranks_, nblocks_;
   int *ranklist_, *nslist_, *nblist_;

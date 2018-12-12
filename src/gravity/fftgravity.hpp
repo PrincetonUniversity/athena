@@ -29,7 +29,7 @@ class GravitySolverTaskList;
 //  \brief FFT gravity solver for each block
 
 class FFTGravity : public FFTBlock {
-public:
+ public:
   FFTGravity(FFTDriver *pfd, LogicalLocation iloc, int igid,
            RegionSize msize, RegionSize bsize)
   : FFTBlock(pfd, iloc, igid, msize, bsize) {}
@@ -42,12 +42,12 @@ public:
 //  \brief FFT gravity solver
 
 class FFTGravityDriver : public FFTDriver{
-public:
+ public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
   ~FFTGravityDriver();
   void Solve(int stage, int mode); // unlike MultigridDriver::Solve(), not inherited
 
-private:
+ private:
   Real four_pi_G_;
   GravitySolverTaskList *gtlist_;
 };

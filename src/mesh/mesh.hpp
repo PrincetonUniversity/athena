@@ -61,7 +61,7 @@ class MeshBlock {
   friend class ATHDF5Output;
 #endif
 
-public:
+ public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
@@ -115,7 +115,7 @@ public:
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
   void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
 
-private:
+ private:
   // data
   Real cost;
   Real new_block_dt;
@@ -161,7 +161,7 @@ class Mesh {
   friend class ATHDF5Output;
 #endif
 
-public:
+ public:
   explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
@@ -203,7 +203,7 @@ public:
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
-private:
+ private:
   // data
   int root_level, max_level, current_level;
   int num_mesh_threads_;

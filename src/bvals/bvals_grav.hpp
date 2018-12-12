@@ -46,7 +46,7 @@ typedef struct GravityBoundaryData {
 //  \brief BVals data and functions
 
 class GravityBoundaryValues : public BoundaryBase {
-public:
+ public:
   GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
   ~GravityBoundaryValues();
 
@@ -63,7 +63,7 @@ public:
                                  const NeighborBlock& nb);
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
 
-private:
+ private:
   MeshBlock *pmy_block_;
   GravityBoundaryFunc_t GravityBoundaryFunction_[6];
   GravityBoundaryData bd_gravity_;

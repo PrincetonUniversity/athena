@@ -272,8 +272,8 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
   Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
-   x=-x;
-   y=-y;
+    x=-x;
+    y=-y;
   }
   Real z=x1*std::cos(x2);
   if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
@@ -292,8 +292,8 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
   Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
-   x=-x;
-   y=-y;
+    x=-x;
+    y=-y;
   }
   Real z=x1*std::cos(x2);
   if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
@@ -308,7 +308,7 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
+  Real rad, phi, z;
   Real v1, v2, v3;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

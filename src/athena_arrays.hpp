@@ -15,13 +15,13 @@
 // C headers
 
 // C++ headers
-#include <cstddef>  // std::size_t
+#include <cstddef>  // size_t
 
 // Athena++ headers
 
 template<typename T>
 class AthenaArray {
-public:
+ public:
   AthenaArray();
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
@@ -86,7 +86,7 @@ public:
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
     const int nvar);
 
-private:
+ private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_;
   bool scopy_;  // true if shallow copy (prevents source from being deleted)

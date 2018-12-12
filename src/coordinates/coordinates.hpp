@@ -31,7 +31,7 @@ class ParameterInput;
 //  \brief abstract base class for all coordinate derived classes
 
 class Coordinates {
-public:
+ public:
   friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
   virtual ~Coordinates();
@@ -163,7 +163,7 @@ public:
   virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
       Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {}
 
-protected:
+ protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
 
   // Scratch arrays for coordinate factors
@@ -263,7 +263,7 @@ protected:
 class Cartesian : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cartesian();
 };
@@ -276,7 +276,7 @@ public:
 class Cylindrical : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cylindrical();
 
@@ -323,7 +323,7 @@ public:
 class SphericalPolar : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~SphericalPolar();
 
@@ -383,7 +383,7 @@ public:
 class Minkowski : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Minkowski();
 
@@ -435,7 +435,7 @@ public:
 class Schwarzschild : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Schwarzschild();
 
@@ -528,7 +528,7 @@ public:
 class KerrSchild : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~KerrSchild();
 
@@ -621,7 +621,7 @@ public:
 class GRUser : public Coordinates {
   friend class HydroSourceTerms;
 
-public:
+ public:
   GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~GRUser();
 

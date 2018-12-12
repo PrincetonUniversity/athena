@@ -54,7 +54,7 @@ struct Task {
 //  \brief container for task states
 
 class TaskState {
-  public:
+ public:
   std::uint64_t finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
@@ -73,7 +73,7 @@ class TaskList {
 friend class TimeIntegratorTaskList;
 friend class GravitySolverTaskList;
 friend class SuperTimeStepTaskList;
-public:
+ public:
   explicit TaskList(Mesh *pm);
   virtual ~TaskList();
 
@@ -85,7 +85,7 @@ public:
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
-private:
+ private:
   Mesh* pmy_mesh_;
   struct Task task_list_[64];
 };
@@ -95,7 +95,7 @@ private:
 //  \brief data and function definitions for TimeIntegratorTaskList derived class
 
 class TimeIntegratorTaskList : public TaskList {
-public:
+ public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   ~TimeIntegratorTaskList() {}
 
@@ -162,7 +162,7 @@ public:
 //  \brief data and function definitions for SuperTimeStepTaskList derived class
 
 class SuperTimeStepTaskList : public TaskList {
-public:
+ public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm);
   ~SuperTimeStepTaskList() {}
 
