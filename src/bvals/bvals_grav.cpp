@@ -74,7 +74,7 @@ GravityBoundaryValues::~GravityBoundaryValues() {
 void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
   MeshBlock *pmb=pmy_block_;
   bd.nbmax=maxneighbor_;
-  for (int n=0;n<bd.nbmax;n++) {
+  for (int n=0; n<bd.nbmax; n++) {
     int size;
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
@@ -101,7 +101,7 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
 //! \fn void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
 //  \brief Destroy GravityBoundaryData structure
 void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd) {
-  for (int n=0;n<bd.nbmax;n++) {
+  for (int n=0; n<bd.nbmax; n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
@@ -178,7 +178,7 @@ void GravityBoundaryValues::StartReceivingGravity(void) {
   MeshBlock *pmb=pmy_block_;
   GravityBoundaryData *pbd = &bd_gravity_;
 
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
@@ -202,7 +202,7 @@ void GravityBoundaryValues::StartReceivingGravity(void) {
 void GravityBoundaryValues::ClearBoundaryGravity(void) {
   GravityBoundaryData *pbd = &bd_gravity_;
 
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     pbd->flag[nb.bufid] = BNDRY_WAITING;
     pbd->sflag[nb.bufid] = BNDRY_WAITING;

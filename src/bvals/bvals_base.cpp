@@ -30,7 +30,7 @@
 NeighborIndexes BoundaryBase::ni[56];
 int BoundaryBase::bufid[56];
 bool BoundaryBase::called_ = false;
-int BoundaryBase::maxneighbor_ ;
+int BoundaryBase::maxneighbor_;
 
 //----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
@@ -147,8 +147,8 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
   int b=0;
   // x1 face
   for (int n=-1; n<=1; n+=2) {
-    for (int f2=0;f2<nf2;f2++) {
-      for (int f1=0;f1<nf1;f1++) {
+    for (int f2=0; f2<nf2; f2++) {
+      for (int f1=0; f1<nf1; f1++) {
         ni[b].ox1=n; ni[b].ox2=0; ni[b].ox3=0;
         ni[b].fi1=f1; ni[b].fi2=f2;
         ni[b].type=NEIGHBOR_FACE;
@@ -159,8 +159,8 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
   // x2 face
   if (dim>=2) {
     for (int n=-1; n<=1; n+=2) {
-      for (int f2=0;f2<nf2;f2++) {
-        for (int f1=0;f1<nf1;f1++) {
+      for (int f2=0; f2<nf2; f2++) {
+        for (int f1=0; f1<nf1; f1++) {
           ni[b].ox1=0; ni[b].ox2=n; ni[b].ox3=0;
           ni[b].fi1=f1; ni[b].fi2=f2;
           ni[b].type=NEIGHBOR_FACE;
@@ -172,8 +172,8 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
   if (dim==3) {
     // x3 face
     for (int n=-1; n<=1; n+=2) {
-      for (int f2=0;f2<nf2;f2++) {
-        for (int f1=0;f1<nf1;f1++) {
+      for (int f2=0; f2<nf2; f2++) {
+        for (int f1=0; f1<nf1; f1++) {
           ni[b].ox1=0; ni[b].ox2=0; ni[b].ox3=n;
           ni[b].fi1=f1; ni[b].fi2=f2;
           ni[b].type=NEIGHBOR_FACE;
@@ -187,7 +187,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
   if (dim>=2) {
     for (int m=-1; m<=1; m+=2) {
       for (int n=-1; n<=1; n+=2) {
-        for (int f1=0;f1<nf2;f1++) {
+        for (int f1=0; f1<nf2; f1++) {
           ni[b].ox1=n; ni[b].ox2=m; ni[b].ox3=0;
           ni[b].fi1=f1; ni[b].fi2=0;
           ni[b].type=NEIGHBOR_EDGE;
@@ -200,7 +200,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
     // x1x3
     for (int m=-1; m<=1; m+=2) {
       for (int n=-1; n<=1; n+=2) {
-        for (int f1=0;f1<nf1;f1++) {
+        for (int f1=0; f1<nf1; f1++) {
           ni[b].ox1=n; ni[b].ox2=0; ni[b].ox3=m;
           ni[b].fi1=f1; ni[b].fi2=0;
           ni[b].type=NEIGHBOR_EDGE;
@@ -211,7 +211,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
     // x2x3
     for (int m=-1; m<=1; m+=2) {
       for (int n=-1; n<=1; n+=2) {
-        for (int f1=0;f1<nf1;f1++) {
+        for (int f1=0; f1<nf1; f1++) {
           ni[b].ox1=0; ni[b].ox2=n; ni[b].ox3=m;
           ni[b].fi1=f1; ni[b].fi2=0;
           ni[b].type=NEIGHBOR_EDGE;
@@ -232,7 +232,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
     }
   }
 
-  for (int n=0;n<b;n++)
+  for (int n=0; n<b; n++)
     bufid[n]=CreateBufferID(ni[n].ox1, ni[n].ox2, ni[n].ox3, ni[n].fi1, ni[n].fi2);
 
   return b;
@@ -246,7 +246,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
 int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
   int bid=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
 
-  for (int i=0;i<maxneighbor_;i++) {
+  for (int i=0; i<maxneighbor_; i++) {
     if (bid==bufid[i]) return i;
   }
   return -1;
@@ -302,8 +302,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     if (neibt->flag==false) { // neighbor at finer level
       int fface=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
       nblevel[1][1][n+1]=neibt->loc.level+1;
-      for (int f2=0;f2<nf2;f2++) {
-        for (int f1=0;f1<nf1;f1++) {
+      for (int f2=0; f2<nf2; f2++) {
+        for (int f1=0; f1<nf1; f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(fface,f1,f2);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
@@ -344,8 +344,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     if (neibt->flag==false) { // neighbor at finer level
       int fface=1-(n+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
       nblevel[1][n+1][1]=neibt->loc.level+1;
-      for (int f2=0;f2<nf2;f2++) {
-        for (int f1=0;f1<nf1;f1++) {
+      for (int f2=0; f2<nf2; f2++) {
+        for (int f1=0; f1<nf1; f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(f1,fface,f2);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
@@ -387,8 +387,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       if (neibt->flag==false) { // neighbor at finer level
         int fface=1-(n+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
         nblevel[n+1][1][1]=neibt->loc.level+1;
-        for (int f2=0;f2<nf2;f2++) {
-          for (int f1=0;f1<nf1;f1++) {
+        for (int f2=0; f2<nf2; f2++) {
+          for (int f1=0; f1<nf1; f1++) {
             MeshBlockTree* nf=neibt->GetLeaf(f1,f2,fface);
             int fid = nf->gid;
             int nlevel=nf->loc.level;
@@ -435,7 +435,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
           ff2 = 1 - ff2;
         }
         nblevel[1][m+1][n+1]=neibt->loc.level+1;
-        for (int f1=0;f1<nf2;f1++) {
+        for (int f1=0; f1<nf2; f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
@@ -519,7 +519,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int ff1=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
         int ff2=1-(m+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
         nblevel[m+1][1][n+1]=neibt->loc.level+1;
-        for (int f1=0;f1<nf1;f1++) {
+        for (int f1=0; f1<nf1; f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(ff1,f1,ff2);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
@@ -566,7 +566,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int ff1=1-(n+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
         int ff2=1-(m+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
         nblevel[m+1][n+1][1]=neibt->loc.level+1;
-        for (int f1=0;f1<nf1;f1++) {
+        for (int f1=0; f1<nf1; f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(f1,ff1,ff2);
           int fid = nf->gid;
           int nlevel=nf->loc.level;

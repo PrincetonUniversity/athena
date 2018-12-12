@@ -785,7 +785,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
 //! \fn void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 //  \brief Destroy BoundaryData structure
 void BoundaryValues::DestroyBoundaryData(BoundaryData &bd) {
-  for (int n=0;n<bd.nbmax;n++) {
+  for (int n=0; n<bd.nbmax; n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
@@ -824,8 +824,8 @@ void BoundaryValues::Initialize(void) {
   // count the number of the fine meshblocks contacting on each edge
   int eid=0;
   if (pmb->block_size.nx2 > 1) {
-    for (int ox2=-1;ox2<=1;ox2+=2) {
-      for (int ox1=-1;ox1<=1;ox1+=2) {
+    for (int ox2=-1; ox2<=1; ox2+=2) {
+      for (int ox1=-1; ox1<=1; ox1+=2) {
         int nis, nie, njs, nje;
         nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
         njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
@@ -844,8 +844,8 @@ void BoundaryValues::Initialize(void) {
     }
   }
   if (pmb->block_size.nx3 > 1) {
-    for (int ox3=-1;ox3<=1;ox3+=2) {
-      for (int ox1=-1;ox1<=1;ox1+=2) {
+    for (int ox3=-1; ox3<=1; ox3+=2) {
+      for (int ox1=-1; ox1<=1; ox1+=2) {
         int nis, nie, nks, nke;
         nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
         nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
@@ -862,8 +862,8 @@ void BoundaryValues::Initialize(void) {
         nedge_fine_[eid++]=nf;
       }
     }
-    for (int ox3=-1;ox3<=1;ox3+=2) {
-      for (int ox2=-1;ox2<=1;ox2+=2) {
+    for (int ox3=-1; ox3<=1; ox3+=2) {
+      for (int ox2=-1; ox2<=1; ox2+=2) {
         int njs, nje, nks, nke;
         njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
         nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
@@ -884,7 +884,7 @@ void BoundaryValues::Initialize(void) {
 
 #ifdef MPI_PARALLEL
   // Initialize non-polar neighbor communications to other ranks
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       if (nb.level==mylevel) { // same
@@ -1137,7 +1137,7 @@ void BoundaryValues::Initialize(void) {
 
     int count = 0;
     if (shbb_.inner) {
-      for (int i=0;i<nbtotal;i++) {
+      for (int i=0; i<nbtotal; i++) {
         if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
           shbb_.igidlist[count] = i;
@@ -1150,7 +1150,7 @@ void BoundaryValues::Initialize(void) {
     }
     count = 0;
     if (shbb_.outer) {
-      for (int i=0;i<nbtotal;i++) {
+      for (int i=0; i<nbtotal; i++) {
         if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3 &&
           loclist[i].level == pmb->loc.level) {
           shbb_.ogidlist[count] = i;
@@ -1171,7 +1171,7 @@ void BoundaryValues::Initialize(void) {
 
 void BoundaryValues::CheckBoundary(void) {
   MeshBlock *pmb=pmy_block_;
-  for (int i=0;i<nface_;i++) {
+  for (int i=0; i<nface_; i++) {
     if (block_bcs[i]==USER_BNDRY) {
       if (BoundaryFunction_[i]==nullptr) {
         std::stringstream msg;
@@ -1191,7 +1191,7 @@ void BoundaryValues::CheckBoundary(void) {
 void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
@@ -1223,7 +1223,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
@@ -1323,7 +1323,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
@@ -1356,7 +1356,7 @@ void BoundaryValues::ClearBoundaryAll(void) {
   MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
-  for (int n=0;n<nneighbor;n++) {
+  for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if (nb.type==NEIGHBOR_FACE)

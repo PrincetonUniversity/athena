@@ -137,7 +137,7 @@ void TurbulenceDriver::Generate(void) {
 
     pfb->Execute(plan);
 
-    for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++) {
+    for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
       if (pmb != nullptr) {
         dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
@@ -267,7 +267,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   // Calculate unscaled energy of perturbations
   m[0] = 0.0;
   m[1] = 0.0;
-  for (int igid=nbs, nb=0;igid<=nbe;igid++, nb++) {
+  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
       for (int k=ks; k<=ke; k++) {

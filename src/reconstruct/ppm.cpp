@@ -780,9 +780,9 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           // KGF: add the off-centered quantities first to preserve FP symmetry
-          d2qc_km1(i) = q_km2(n,i) + q    (n,i) - 2.0*q_km1(n,i) ;
-          d2qc    (i) = q_km1(n,i) + q_kp1(n,i) - 2.0*q    (n,i) ; //(CD eq 85a) (no 1/2)
-          d2qc_kp1(i) = q    (n,i) + q_kp2(n,i) - 2.0*q_kp1(n,i) ;
+          d2qc_km1(i) = q_km2(n,i) + q    (n,i) - 2.0*q_km1(n,i);
+          d2qc    (i) = q_km1(n,i) + q_kp1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
+          d2qc_kp1(i) = q    (n,i) + q_kp2(n,i) - 2.0*q_kp1(n,i);
         }
 
         // k-1/2

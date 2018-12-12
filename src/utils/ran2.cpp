@@ -51,7 +51,7 @@ double ran2(std::int64_t *idum) {
     if (-(*idum) < 1) *idum=1; // Be sure to prevent idum = 0
     else *idum = -(*idum);
     idum2=(*idum);
-    for (j=NTAB+7;j>=0;j--) { // Load the shuffle table (after 8 warm-ups)
+    for (j=NTAB+7; j>=0; j--) { // Load the shuffle table (after 8 warm-ups)
       k=(*idum)/IQ1;
       *idum=IA1*(*idum-k*IQ1)-k*IR1;
       if (*idum < 0) *idum += IMR1;

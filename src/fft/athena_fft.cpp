@@ -61,7 +61,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 
 //  f_in_->PrintIndex();
 #ifdef FFT
-  for (int i=0;i<3;i++) {
+  for (int i=0; i<3; i++) {
     Nx[f_in_->iloc[i]]=f_in_->Nx[i];
     nx[f_in_->iloc[i]]=f_in_->nx[i];
     disp[f_in_->iloc[i]]=f_in_->is[i];

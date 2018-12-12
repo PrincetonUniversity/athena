@@ -20,7 +20,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "./multigrid.hpp"
+#include "multigrid.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid,
@@ -440,9 +440,9 @@ void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck) 
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
   for (int n=0; n<nvar_; n++) {
-    for (int k=-1;k<=1;k++) {
-      for (int j=-1;j<=1;j++) {
-        for (int i=-1;i<=1;i++)
+    for (int k=-1; k<=1; k++) {
+      for (int j=-1; j<=1; j++) {
+        for (int i=-1; i<=1; i++)
           dst(n,ngh_+k,ngh_+j,ngh_+i)=src(n,ck+k+ngh_,cj+j+ngh_,ci+i+ngh_);
       }
     }

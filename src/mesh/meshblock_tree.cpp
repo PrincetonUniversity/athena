@@ -184,7 +184,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
     }
   }
 
-  for (oz=ozmin;oz<=ozmax;oz++) {
+  for (oz=ozmin; oz<=ozmax; oz++) {
     nloc.lx3=loc.lx3+oz;
     if (nloc.lx3<0) {
       if (mesh_bcs[INNER_X3]!=PERIODIC_BNDRY) continue;
@@ -194,7 +194,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
       if (mesh_bcs[OUTER_X3]!=PERIODIC_BNDRY) continue;
       else nloc.lx3=0;
     }
-    for (oy=oymin;oy<=oymax;oy++) {
+    for (oy=oymin; oy<=oymax; oy++) {
       nloc.lx2=loc.lx2+oy;
       bool polar=false;
       if (nloc.lx2<0) {
@@ -218,7 +218,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         }
       }
       if (polar) nloc.lx3=(nloc.lx3+nzmax/2)%nzmax;
-      for (ox=oxmin;ox<=oxmax;ox++) {
+      for (ox=oxmin; ox<=oxmax; ox++) {
         if (ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;
         if (nloc.lx1<0) {
@@ -421,7 +421,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   if (ll<1) return this; // single grid; return itself
 
 
-  for (int level=0;level<ll;level++) {
+  for (int level=0; level<ll; level++) {
     if (bt->flag==true) { // leaf
       if (level == ll-1) {
         return bt;

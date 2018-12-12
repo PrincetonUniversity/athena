@@ -339,12 +339,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         // note: if this is too slow, this should be replaced with bi-section search.
         std::int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
         std::int64_t lxmax=nrbx1*(1L<<ref_lev);
-        for (lx1min=0;lx1min<lxmax;lx1min++) {
+        for (lx1min=0; lx1min<lxmax; lx1min++) {
           Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
             break;
         }
-        for (lx1max=lx1min;lx1max<lxmax;lx1max++) {
+        for (lx1max=lx1min; lx1max<lxmax; lx1max++) {
           Real rx=ComputeMeshGeneratorX(lx1max+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) >= ref_size.x1max)
             break;
@@ -353,12 +353,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         if (lx1max % 2==0) lx1max++;
         if (dim>=2) { // 2D or 3D
           lxmax=nrbx2*(1L<<ref_lev);
-          for (lx2min=0;lx2min<lxmax;lx2min++) {
+          for (lx2min=0; lx2min<lxmax; lx2min++) {
             Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
               break;
           }
-          for (lx2max=lx2min;lx2max<lxmax;lx2max++) {
+          for (lx2max=lx2min; lx2max<lxmax; lx2max++) {
             Real rx=ComputeMeshGeneratorX(lx2max+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) >= ref_size.x2max)
               break;
@@ -368,12 +368,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         if (dim==3) { // 3D
           lxmax=nrbx3*(1L<<ref_lev);
-          for (lx3min=0;lx3min<lxmax;lx3min++) {
+          for (lx3min=0; lx3min<lxmax; lx3min++) {
             Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
               break;
           }
-          for (lx3max=lx3min;lx3max<lxmax;lx3max++) {
+          for (lx3max=lx3min; lx3max<lxmax; lx3max++) {
             Real rx=ComputeMeshGeneratorX(lx3max+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) >= ref_size.x3max)
               break;
@@ -458,7 +458,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
-  for (int i=0;i<nbtotal;i++) costlist[i]=1.0;
+  for (int i=0; i<nbtotal; i++) costlist[i]=1.0;
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
@@ -480,7 +480,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nblist[Globals::my_rank]-1;
   // create MeshBlock list for this process
-  for (int i=nbs;i<=nbe;i++) {
+  for (int i=nbs; i<=nbe; i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if (i==nbs) {
@@ -720,7 +720,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 #endif
 
   int os=0;
-  for (int i=0;i<nbtotal;i++) {
+  for (int i=0; i<nbtotal; i++) {
     std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
@@ -735,7 +735,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     resfile.Seek(headeroffset);
 
   // rebuild the Block Tree
-  for (int i=0;i<nbtotal;i++)
+  for (int i=0; i<nbtotal; i++)
     tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
   // check the tree structure, and assign GID
@@ -803,7 +803,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
         << std::endl;
     ATHENA_ERROR(msg);
   }
-  for (i=nbs;i<=nbe;i++) {
+  for (i=nbs; i<=nbe; i++) {
     // Match fixed-width integer precision of IOWrapperSize_t datasize
     std::uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
@@ -916,7 +916,7 @@ void Mesh::OutputMeshStructure(int dim) {
     nb_per_plevel[(loclist[i].level - root_level)]++;
     cost_per_plevel[(loclist[i].level - root_level)] += costlist[i];
   }
-  for (int i=root_level;i<=max_level;i++) {
+  for (int i=root_level; i<=max_level; i++) {
     if (nb_per_plevel[i-root_level]!=0) {
       std::cout << "  Physical level = " << i-root_level << " (logical level = " << i
                 << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = "
@@ -1584,7 +1584,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   Real targetcost=totalcost/Globals::nranks;
   Real mycost=0.0;
   // create rank list from the end: the master node should have less load
-  for (int i=nb-1;i>=0;i--) {
+  for (int i=nb-1; i>=0; i--) {
     if (targetcost==0.0) {
       msg << "### FATAL ERROR in LoadBalance" << std::endl
           << "There is at least one process which has no MeshBlock" << std::endl
@@ -1602,7 +1602,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   }
   slist[0]=0;
   j=0;
-  for (int i=1;i<nb;i++) { // make the list of nbstart and nblocks
+  for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
     if (rlist[i]!=rlist[i-1]) {
       nlist[j]=i-nslist[j];
       slist[++j]=i;
@@ -1803,9 +1803,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     for (int n=0; n<tnderef; n++) {
       if ((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
         int r=n, rr=0;
-        for (std::int64_t k=0;k<=lk;k++) {
-          for (std::int64_t j=0;j<=lj;j++) {
-            for (std::int64_t i=0;i<=1;i++) {
+        for (std::int64_t k=0; k<=lk; k++) {
+          for (std::int64_t j=0; j<=lj; j++) {
+            for (std::int64_t i=0; i<=1; i++) {
               if ((lderef[n].lx1+i)==lderef[r].lx1
               && (lderef[n].lx2+j)==lderef[r].lx2
               && (lderef[n].lx3+k)==lderef[r].lx3
@@ -1879,7 +1879,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     }
   }
   // fill the last block
-  for (;k<nbtold; k++)
+  for ( ; k<nbtold; k++)
     oldtonew[k]=ntot-1;
 
 #ifdef MPI_PARALLEL
@@ -2372,13 +2372,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 #ifdef MPI_PARALLEL
   if (nsend!=0) {
     MPI_Waitall(nsend, req_send, MPI_STATUSES_IGNORE);
-    for (int n=0;n<nsend;n++)
+    for (int n=0; n<nsend; n++)
       delete [] sendbuf[n];
     delete [] sendbuf;
     delete [] req_send;
   }
   if (nrecv!=0) {
-    for (int n=0;n<nrecv;n++)
+    for (int n=0; n<nrecv; n++)
       delete [] recvbuf[n];
     delete [] recvbuf;
     delete [] req_recv;

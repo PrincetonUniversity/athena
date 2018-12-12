@@ -69,7 +69,7 @@ void FFTGravityDriver::Solve(int stage, int mode) {
   // Load the source
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
-  for (int igid=nbs;igid<=nbe;igid++) {
+  for (int igid=nbs; igid<=nbe; igid++) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if (pmb!=nullptr) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
@@ -84,7 +84,7 @@ void FFTGravityDriver::Solve(int stage, int mode) {
   pfb->ExecuteBackward();
 
   // Return the result
-  for (int igid=nbs;igid<=nbe;igid++) {
+  for (int igid=nbs; igid<=nbe; igid++) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if (pmb!=nullptr) {
       pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
