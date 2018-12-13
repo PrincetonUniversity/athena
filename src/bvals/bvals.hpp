@@ -336,10 +336,9 @@ public:
   // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
   //   Set/LoadEMFBoundaryPolarBuffer()
   // - AverageEMFBoundary(), ClearCoarseEMFBoundary(), PolarSingleEMF()
-
-  // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
+  // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
 
 
   // Shearingbox Hydro
@@ -453,18 +452,18 @@ class FieldBoundaryFunctions {
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
 
-  // ---
+  // above, only PolarSingleCellCentered(), no PolarAxis*Average()
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 
-  // standard EMF buffer management (unrefined and SMR/AMR)
+  // EMF buffer management (unrefined and SMR/AMR)
+  // Hydro FluxCorrection only has counterparts for these
+  void SendEMFCorrection(void);
+  bool ReceiveEMFCorrection(void);
+
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-
-  void SendEMFCorrection(void);
-
-  bool ReceiveEMFCorrection(void);
 
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
