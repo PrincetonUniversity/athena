@@ -49,7 +49,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
 
   QuickCreatePlan();
 
-  gtlist_ = new GravitySolverTaskList(pin, pm);
+  gtlist_ = new FFTGravitySolverTaskList(pin, pm);
 }
 
 FFTGravityDriver::~FFTGravityDriver() {

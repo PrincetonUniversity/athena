@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //!   \file mg_task_list.hpp
-//    \brief provides functionality to control dynamic execution using tasks
+//    \brief
 
 // Athena++ headers
 #include "../athena.hpp"

@@ -18,7 +18,7 @@
 class Mesh;
 class MeshBlock;
 class TaskList;
-class GravitySolverTaskList;
+class FFTGravitySolverTaskList;
 
 // return codes for functions working on individual Tasks and TaskList
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
@@ -68,7 +68,7 @@ class TaskState {
 
 class TaskList {
 friend class TimeIntegratorTaskList;
-friend class GravitySolverTaskList;
+friend class FFTGravitySolverTaskList;
 friend class SuperTimeStepTaskList;
 public:
   explicit TaskList(Mesh *pm);

@@ -5,8 +5,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//!   \file grav_task_list.hpp
-//    \brief provides functionality to control dynamic execution using tasks
+//!   \file fft_grav_task_list.hpp
+//    \brief
 
 #include <stdint.h>
 
@@ -19,21 +19,21 @@ class Mesh;
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
-//! \class GravitySolverTaskList
-//  \brief data and function definitions for GravitySolverTaskList derived class
+//! \class FFTGravitySolverTaskList
+//  \brief data and function definitions for FFTGravitySolverTaskList derived class
 
-class GravitySolverTaskList : public TaskList {
+class FFTGravitySolverTaskList : public TaskList {
 public:
-  GravitySolverTaskList(ParameterInput *pin, Mesh *pm);
-  ~GravitySolverTaskList() {}
+  FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm);
+  ~FFTGravitySolverTaskList() {}
 
-  void AddGravitySolverTask(uint64_t id, uint64_t dep);
+  void AddFFTGravitySolverTask(uint64_t id, uint64_t dep);
 
   // functions
-  enum TaskStatus StartGravityReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus StartFFTGravityReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus SendFFTGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus ReceiveFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 };
 
@@ -41,7 +41,7 @@ public:
 //----------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID  each hydro task.
 
-namespace GravitySolverTaskNames {
+namespace FFTGravitySolverTaskNames {
   const uint64_t NONE=0;
   const uint64_t START_GRAV_RECV=1LL<<0;
   const uint64_t CLEAR_GRAV=1LL<<1;
