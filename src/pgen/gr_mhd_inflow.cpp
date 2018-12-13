@@ -127,9 +127,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
     // Initialize radial field components
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST+1; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
           Real x1 = pcoord->x1f(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3v(k);
@@ -143,9 +143,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize poloidal field components
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je+1; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2f(j);
           Real x3 = pcoord->x3v(k);
@@ -159,9 +159,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize azimuthal field components
-    for (int k = ks; k <= ke+1; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3f(k);
@@ -187,10 +187,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC,ie+NGHOST+1);
   gi.NewAthenaArray(NMETRIC,ie+NGHOST+1);
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       pcoord->CellMetric(k, j, is-NGHOST, ie+NGHOST, g, gi);
-      for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+      for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);

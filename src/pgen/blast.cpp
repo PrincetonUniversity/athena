@@ -133,9 +133,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize interface B and total energy
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is; i <= ie+1; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
           if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
             pfield->b.x1f(k,j,i) = b0 * std::cos(angle);
           } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
@@ -151,9 +151,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je+1; ++j) {
-        for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie; ++i) {
           if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
             pfield->b.x2f(k,j,i) = b0 * std::sin(angle);
           } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
@@ -171,9 +171,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    for (int k = ks; k <= ke+1; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
           if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
               || std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             pfield->b.x3f(k,j,i) = 0.0;
@@ -185,9 +185,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
           phydro->u(IEN,k,j,i) += 0.5*b0*b0;
         }
       }

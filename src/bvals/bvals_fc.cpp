@@ -881,16 +881,16 @@ void BoundaryValues::PolarAxisFieldAverage(FaceField &dst) {
   }
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
     int j = pmb->js;
-    for (int k = ks; k <= ke; ++k) {
-      for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int i=is; i<=ie; ++i) {
         dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
       }
     }
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
     int j = pmb->je + 1;
-    for (int k = ks; k <= ke; ++k) {
-      for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int i=is; i<=ie; ++i) {
         dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
       }
     }

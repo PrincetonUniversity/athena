@@ -119,14 +119,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize hydro variables
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       #if GENERAL_RELATIVITY
       {
         pcoord->CellMetric(k, j, is, ie, g, gi);
       }
       #endif  // GENERAL_RELATIVITY
-      for (int i = is; i <= ie; ++i) {
+      for (int i=is; i<=ie; ++i) {
         // Determine which variables to use
         Real rho = rho_right;
         Real pgas = pgas_right;
@@ -229,9 +229,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = ks; k <= ke+1; ++k) {
-      for (int j = js; j <= je+1; ++j) {
-        for (int i = is; i <= ie+1; ++i) {
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
           // Determine which variables to use
           Real vx = vx_right;
           Real vy = vy_right;

@@ -1288,10 +1288,10 @@ void MeshBlock::UserWorkInLoop() {
   gi.InitWithShallowCopy(ruser_meshblock_data[1]);
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       pcoord->CellMetric(k, j, is, ie, g, gi);
-      for (int i = is; i <= ie; ++i) {
+      for (int i=is; i<=ie; ++i) {
         // Calculate normal-frame Lorentz factor
         Real uu1 = phydro->w(IM1,k,j,i);
         Real uu2 = phydro->w(IM2,k,j,i);
@@ -1370,9 +1370,9 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
                     FaceField &bb, Real time, Real dt,
                     int is, int ie, int js, int je, int ks, int ke, int ngh) {
   // Set hydro variables
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is-ngh; i <= is-1; ++i) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is-ngh; i <= is-1; ++i) {
         prim(IDN,k,j,i) = prim(IDN,k,j,is);
         prim(IEN,k,j,i) = prim(IEN,k,j,is);
         prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), static_cast<Real>(0.0));
@@ -1386,27 +1386,27 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   }
 
   // Set radial magnetic field
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is-ngh; i <= is-1; ++i) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is-ngh; i <= is-1; ++i) {
         bb.x1f(k,j,i) = bb.x1f(k,j,is);
       }
     }
   }
 
   // Set polar magnetic field
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je+1; ++j) {
-      for (int i = is-ngh; i <= is-1; ++i) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je+1; ++j) {
+      for (int i=is-ngh; i <= is-1; ++i) {
         bb.x2f(k,j,i) = bb.x2f(k,j,is);
       }
     }
   }
 
   // Set azimuthal magnetic field
-  for (int k = ks; k <= ke+1; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is-ngh; i <= is-1; ++i) {
+  for (int k=ks; k<=ke+1; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is-ngh; i <= is-1; ++i) {
         bb.x3f(k,j,i) = bb.x3f(k,j,is);
       }
     }

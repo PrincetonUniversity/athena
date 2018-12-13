@@ -688,10 +688,10 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   Real gamma_adi = pmy_block->peos->GetGamma();
 
   // Go through cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-      for (int i = is; i <= ie; ++i) {
+      for (int i=is; i<=ie; ++i) {
         // Extract metric coefficients
         const Real &g_00 = metric_cell_kji_(0,I00,k,j,i);
         const Real &g_01 = metric_cell_kji_(0,I01,k,j,i);

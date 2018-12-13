@@ -826,9 +826,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Record initial conditions
   if (compute_error) {
     for (int n = 0; n < NHYDRO; ++n) {
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          for (int i = is; i <= ie; ++i) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+          for (int i=is; i<=ie; ++i) {
             initial(lid,n,k,j,i) = phydro->u(n,k,j,i);
           }
         }
@@ -837,9 +837,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (MAGNETIC_FIELDS_ENABLED) {
       pfield->CalculateCellCenteredField(pfield->b, bcc, pcoord, is, ie, js, je, ks, ke);
       for (int n = IB1; n <= IB3; ++n) {
-        for (int k = ks; k <= ke; ++k) {
-          for (int j = js; j <= je; ++j) {
-            for (int i = is; i <= ie; ++i) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
               initial(lid,NHYDRO+n,k,j,i) = bcc(n,k,j,i);
             }
           }
