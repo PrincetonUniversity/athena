@@ -132,7 +132,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // Loop over MeshBlocks and pack the meta data
   pmb=pm->pblock;
   int os=0;
-  while(pmb!=nullptr) {
+  while (pmb!=nullptr) {
     std::memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     std::memcpy(&(idlist[os]), &(pmb->cost), sizeof(Real));

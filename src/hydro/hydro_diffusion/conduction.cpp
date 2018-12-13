@@ -33,8 +33,8 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   // i-direction
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmb_->block_size.nx2 > 1) {
-      if(pmb_->block_size.nx3 == 1) // 2D
+    if (pmb_->block_size.nx2 > 1) {
+      if (pmb_->block_size.nx3 == 1) // 2D
         jl=js-1, ju=je+1, kl=ks, ku=ke;
       else // 3D
         jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
@@ -56,12 +56,12 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   // j-direction
   il=is, iu=ie, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmb_->block_size.nx3 == 1) // 2D
+    if (pmb_->block_size.nx3 == 1) // 2D
       il=is-1, iu=ie+1, kl=ks, ku=ke;
     else // 3D
       il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
   }
-  if(pmb_->block_size.nx2 > 1) { //2D or 3D
+  if (pmb_->block_size.nx2 > 1) { //2D or 3D
     for (int k=kl; k<=ku; ++k) {
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
@@ -79,12 +79,12 @@ void HydroDiffusion::ThermalFlux_iso(const AthenaArray<Real> &prim,
   // k-direction
   il=is, iu=ie, jl=js, ju=je;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmb_->block_size.nx2 > 1) // 2D or 3D
+    if (pmb_->block_size.nx2 > 1) // 2D or 3D
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
     else // 1D
       il=is-1, iu=ie+1;
   }
-  if(pmb_->block_size.nx3 > 1) { //3D
+  if (pmb_->block_size.nx3 > 1) { //3D
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd

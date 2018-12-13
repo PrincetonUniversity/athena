@@ -846,9 +846,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 // destructor
 
 Mesh::~Mesh() {
-  while(pblock->prev != nullptr) // should not be true
+  while (pblock->prev != nullptr) // should not be true
     delete pblock->prev;
-  while(pblock->next != nullptr)
+  while (pblock->next != nullptr)
     delete pblock->next;
   delete pblock;
   delete [] nslist;
@@ -1540,7 +1540,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
          << "More computing power than you expected may be required." << std::endl;
       }
     }
-  } while(iflag==false);
+  } while (iflag==false);
 
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)
@@ -1732,7 +1732,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   nref[Globals::my_rank]=0;
   nderef[Globals::my_rank]=0;
   pmb=pblock;
-  while(pmb!=nullptr) {
+  while (pmb!=nullptr) {
     if (pmb->pmr->refine_flag_== 1) nref[Globals::my_rank]++;
     if (pmb->pmr->refine_flag_==-1) nderef[Globals::my_rank]++;
     pmb=pmb->next;
@@ -1775,7 +1775,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // collect the locations and costs
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
   pmb=pblock;
-  while(pmb!=nullptr) {
+  while (pmb!=nullptr) {
     if (pmb->pmr->refine_flag_== 1)
       lref[iref++]=pmb->loc;
     if (pmb->pmr->refine_flag_==-1 && tnderef>=nlbl)
@@ -2270,7 +2270,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // discard remaining MeshBlocks
   // they could be reused, but for the moment, just throw them away for simplicity
   if (pblock!=nullptr) {
-    while(pblock->next != nullptr)
+    while (pblock->next != nullptr)
       delete pblock->next;
     delete pblock;
   }
@@ -2414,7 +2414,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // re-initialize the MeshBlocks
   pmb=pblock;
-  while(pmb!=nullptr) {
+  while (pmb!=nullptr) {
     pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
     pmb=pmb->next;
   }

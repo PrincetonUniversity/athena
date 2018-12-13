@@ -37,7 +37,7 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
   }
 
   // cycle through all MeshBlocks and perform all tasks possible
-  while(nmg_left > 0) {
+  while (nmg_left > 0) {
     pmg = pmd->pmg_;
     while (pmg != nullptr)  {
       if (DoAllAvailableTasks(pmg, pmg->ts_) == TL_COMPLETE) nmg_left--;

@@ -59,7 +59,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // temporal integration from other iterative sequences; "Step" is often used for generic
   // sequences in code, e.g. main.cpp: "Step 1: MPI"
   //
-  // main.cpp invokes the tasklist in a for() loop from stage=1 to stage=ptlist->nstages
+  // main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
 
   // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time","integrator","vl2");
@@ -670,7 +670,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage
   // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
-  if(stage <= nstages) {
+  if (stage <= nstages) {
     if (!STS_ENABLED)
       ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
@@ -688,7 +688,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage
   // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
-  if(stage <= nstages) {
+  if (stage <= nstages) {
     if (!STS_ENABLED)
       pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {

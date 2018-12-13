@@ -96,7 +96,7 @@ void MGGravityDriver::Solve(int stage) {
   AthenaArray<Real> in;
 
   // Load the source
-  while(pmggrav!=nullptr) {
+  while (pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if (pmb!=nullptr) {
       in.InitWithShallowCopy(pmb->phydro->u);
@@ -122,7 +122,7 @@ void MGGravityDriver::Solve(int stage) {
 
   // Return the result
   pmggrav=pmg_;
-  while(pmggrav!=nullptr) {
+  while (pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if (pmb!=nullptr) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);

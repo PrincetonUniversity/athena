@@ -70,7 +70,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (nuiso == 0) {
       nuiso = 0.03;
     }
-    for(int k=ks; k<=ke; ++k) {
+    for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -127,7 +127,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
     Real width = 0.1;
-    for(int k=ks; k<=ke; ++k) {
+    for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           rad=pcoord->x1v(i);

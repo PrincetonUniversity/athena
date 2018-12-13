@@ -256,7 +256,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
-  while(pot!=nullptr) {
+  while (pot!=nullptr) {
     if (pot->output_params.file_type.compare("rst")==0) {
       prst=pot;
       found=1;
@@ -276,7 +276,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         pot=pot->pnext_type;
       pot->pnext_type=prst->pnext_type; // remove it
     }
-    while(pot->pnext_type!=nullptr)
+    while (pot->pnext_type!=nullptr)
       pot=pot->pnext_type; // find the end
     prst->pnext_type=nullptr;
     pot->pnext_type=prst;
@@ -288,7 +288,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
 Outputs::~Outputs() {
   OutputType *ptype = pfirst_type_;
-  while(ptype != nullptr) {
+  while (ptype != nullptr) {
     OutputType *ptype_old = ptype;
     ptype = ptype->pnext_type;
     delete ptype_old;

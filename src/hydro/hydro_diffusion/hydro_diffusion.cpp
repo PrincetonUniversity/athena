@@ -55,7 +55,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
     divv_.NewAthenaArray(ncells3,ncells2,ncells1);
 
     nu.NewAthenaArray(2,ncells3,ncells2,ncells1);
-    if(pmb_->pmy_mesh->ViscosityCoeff_==nullptr)
+    if (pmb_->pmy_mesh->ViscosityCoeff_==nullptr)
       CalcViscCoeff_ = ConstViscosity;
     else
       CalcViscCoeff_ = pmb_->pmy_mesh->ViscosityCoeff_;
@@ -72,7 +72,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
       cndflx[X3DIR].NewAthenaArray(ncells3+1,ncells2,ncells1);
 
       kappa.NewAthenaArray(2,ncells3,ncells2,ncells1);
-      if(pmb_->pmy_mesh->ConductionCoeff_==nullptr)
+      if (pmb_->pmy_mesh->ConductionCoeff_==nullptr)
         CalcCondCoeff_ = ConstConduction;
       else
         CalcCondCoeff_ = pmb_->pmy_mesh->ConductionCoeff_;
@@ -165,14 +165,14 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
         x1flux(IEN,k,j,i) += x1diflx(k,j,i);
-        if(i==ie) x1flux(IEN,k,j,i+1) += x1diflx(k,j,i+1);
+        if (i==ie) x1flux(IEN,k,j,i+1) += x1diflx(k,j,i+1);
         if (pmb_->block_size.nx2 > 1) {
           x2flux(IEN,k,j,i) += x2diflx(k,j,i);
-          if(j==je) x2flux(IEN,k,j+1,i) += x2diflx(k,j+1,i);
+          if (j==je) x2flux(IEN,k,j+1,i) += x2diflx(k,j+1,i);
        }
         if (pmb_->block_size.nx3 > 1) {
           x3flux(IEN,k,j,i) += x3diflx(k,j,i);
-          if(k==ke) x3flux(IEN,k+1,j,i) += x3diflx(k+1,j,i);
+          if (k==ke) x3flux(IEN,k+1,j,i) += x3diflx(k+1,j,i);
         }
       }
     }

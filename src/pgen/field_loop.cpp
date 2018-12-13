@@ -160,8 +160,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
       Real y = pcoord->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
-      while(x >  0.5*lambda) x -= lambda;
-      while(x < -0.5*lambda) x += lambda;
+      while (x >  0.5*lambda) x -= lambda;
+      while (x < -0.5*lambda) x += lambda;
       if ((x*x + y*y) < rad*rad) {
         ax(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(-sin_a2);
       } else {
@@ -172,8 +172,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       x = pcoord->x1f(i)*cos_a2 + pcoord->x3v(k)*sin_a2;
       y = pcoord->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
-      while(x >  0.5*lambda) x -= lambda;
-      while(x < -0.5*lambda) x += lambda;
+      while (x >  0.5*lambda) x -= lambda;
+      while (x < -0.5*lambda) x += lambda;
       if ((x*x + y*y) < rad*rad) {
         az(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(cos_a2);
       } else {

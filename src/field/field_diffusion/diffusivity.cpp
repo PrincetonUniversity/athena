@@ -43,30 +43,30 @@ void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<R
      const AthenaArray<Real> &bmag, const int is, const int ie, const int js,
      const int je, const int ks, const int ke) {
   if (pfdif->eta_ohm > 0.0) { // Ohmic resistivity is turned on
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je; j++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
 #pragma omp simd
-        for(int i=is; i<=ie; i++)
+        for (int i=is; i<=ie; i++)
           pfdif->etaB(I_O, k,j,i) = pfdif->eta_ohm;
       }
     }
   }
 
   if (pfdif->eta_hall != 0.0) { // Hall diffusivity is turned on
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je; j++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
 #pragma omp simd
-        for(int i=is; i<=ie; i++)
+        for (int i=is; i<=ie; i++)
           pfdif->etaB(I_H, k,j,i) = pfdif->eta_hall*bmag(k,j,i)/w(IDN,k,j,i);
       }
     }
   }
 
   if (pfdif->eta_ad > 0.0) { // ambipolar diffusivity is turned on
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je; j++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
 #pragma omp simd
-        for(int i=is; i<=ie; i++)
+        for (int i=is; i<=ie; i++)
           pfdif->etaB(I_A, k,j,i) = pfdif->eta_ad*SQR(bmag(k,j,i));
       }
     }

@@ -135,7 +135,7 @@ Real Hydro::NewBlockTimeStep(void) {
     min_dt = std::min(min_dt,mindt_cnd);
   } // hydro diffusion
 
-  if(MAGNETIC_FIELDS_ENABLED &&
+  if (MAGNETIC_FIELDS_ENABLED &&
      pmb->pfield->pfdif->field_diffusion_defined) {
     Real mindt_oa, mindt_h;
     pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);

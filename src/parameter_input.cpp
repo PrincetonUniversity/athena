@@ -189,7 +189,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input) {
           << "Probably the file is broken or a wrong file is specified" << std::endl;
       ATHENA_ERROR(msg);
     }
-  } while(ret == bufsize); // till EOF (or par_end is found)
+  } while (ret == bufsize); // till EOF (or par_end is found)
 
   // Now par contains the parameter inputs + some additional including <par_end>
   // Read the stream and load the parameters

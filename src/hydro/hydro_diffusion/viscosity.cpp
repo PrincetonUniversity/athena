@@ -85,7 +85,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceYdy(k,j,is,ie,prim,fy_);
         FaceYdz(k,j,is,ie,prim,fz_);
         // store fluxes
-        for(int i=il; i<=iu; i++) {
+        for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(ISO,k,j,i)    + nu(ISO,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j-1,i)+ prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
@@ -107,7 +107,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
     FaceYdy(ks,js,is,ie,prim,fy_);
     FaceYdz(ks,js,is,ie,prim,fz_);
     // store fluxes
-    for(int i=il; i<=iu; i++) {
+    for (int i=il; i<=iu; i++) {
       nu1  = nu(ISO,ks,js,i);
       denf = prim(IDN,ks,js,i);
       flx1 = -denf*nu1*fx_(i);
@@ -121,7 +121,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
                                prim(IM2,ks,js,i)*flx2 +
                                prim(IM3,ks,js,i)*flx3;
     }
-    for(int i=il; i<=iu; i++) {
+    for (int i=il; i<=iu; i++) {
       x2flux(IM1,ks,je+1,i) = x2flux(IM1,ks,js,i);
       x2flux(IM2,ks,je+1,i) = x2flux(IM2,ks,js,i);
       x2flux(IM3,ks,je+1,i) = x2flux(IM3,ks,js,i);
@@ -146,7 +146,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceZdy(k,j,is,ie,prim,fy_);
         FaceZdz(k,j,is,ie,prim,fz_);
         // store fluxes
-        for(int i=il; i<=iu; i++) {
+        for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(ISO,k,j,i)     + nu(ISO,k-1,j,i));
           denf = 0.5*(prim(IDN,k-1,j,i) + prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
@@ -169,7 +169,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
       FaceZdy(ks,j,is,ie,prim,fy_);
       FaceZdz(ks,j,is,ie,prim,fz_);
       // store fluxes
-      for(int i=il; i<=iu; i++) {
+      for (int i=il; i<=iu; i++) {
         nu1 = nu(ISO,ks,j,i);
         denf = prim(IDN,ks,j,i);
         flx1 = -denf*nu1*fx_(i);

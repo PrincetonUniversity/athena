@@ -350,7 +350,7 @@ enum TaskStatus SuperTimeStepTaskList::HydroDiffusion_STS(MeshBlock *pmb, int st
   // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
-  if(stage <= nstages) {
+  if (stage <= nstages) {
     ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TASK_FAIL;
@@ -367,7 +367,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int st
   // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
-  if(stage <= nstages) {
+  if (stage <= nstages) {
     pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
     return TASK_FAIL;

@@ -61,7 +61,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }}}
 
   // initialize interface B
-  if(std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     if (iprob == 0) { // initialize B along y-axis
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -110,7 +110,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }}}
     }
   }
-  if(std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     if (x0 != 1.0) x0 = 1.0;
     if (iprob == 0) { // initialize B along y-axis
       for (int k=ks; k<=ke; k++) {

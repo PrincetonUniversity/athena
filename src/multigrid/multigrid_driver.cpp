@@ -109,9 +109,9 @@ MultigridDriver::~MultigridDriver() {
   rootsrc_.DeleteAthenaArray();
   delete mgtlist_;
   if (pmg_!=nullptr) {
-    while(pmg_->prev != nullptr) // should not be true
+    while (pmg_->prev != nullptr) // should not be true
       delete pmg_->prev;
-    while(pmg_->next != nullptr)
+    while (pmg_->next != nullptr)
       delete pmg_->next;
     delete pmg_;
   }
@@ -129,7 +129,7 @@ void MultigridDriver::AddMultigrid(Multigrid *nmg) {
     pmg_=nmg;
   } else {
     Multigrid *pg=pmg_;
-    while(pg->next!=nullptr) pg=pg->next;
+    while (pg->next!=nullptr) pg=pg->next;
     pg->next=nmg;
     pg->next->prev=pg;
   }
@@ -152,7 +152,7 @@ void MultigridDriver::SetupMultigrid(void) {
     SubtractAverage(0);
   if (mode_<=1) { // FMG
     pmg=pmg_;
-    while(pmg!=nullptr) {
+    while (pmg!=nullptr) {
       pmg->RestrictFMGSource();
       pmg=pmg->next;
     }
@@ -172,7 +172,7 @@ void MultigridDriver::SetupMultigrid(void) {
 
 void MultigridDriver::SubtractAverage(int type) {
   Multigrid *pmg=pmg_;
-  while(pmg!=nullptr) {
+  while (pmg!=nullptr) {
     for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->CalculateTotal(type, v);
     pmg=pmg->next;
@@ -190,7 +190,7 @@ void MultigridDriver::SubtractAverage(int type) {
       total+=rootbuf_[n*nvar_+v];
     last_ave_=total/vol;
     pmg=pmg_;
-    while(pmg!=nullptr) {
+    while (pmg!=nullptr) {
       pmg->SubtractAverage(type, v, last_ave_);
       pmg=pmg->next;
     }
@@ -206,7 +206,7 @@ void MultigridDriver::SubtractAverage(int type) {
 
 void MultigridDriver::FillRootGridSource(void) {
   Multigrid *pmg=pmg_;
-  while(pmg!=nullptr) {
+  while (pmg!=nullptr) {
     for (int v=0; v<nvar_; v++)
       rootbuf_[pmg->gid_*nvar_+v]=pmg->GetRootSource(v);
     pmg=pmg->next;
@@ -263,7 +263,7 @@ void MultigridDriver::TransferFromRootToBlocks(void) {
   if (pmy_mesh_->multilevel) {
     // *** implement later ***
   } else {
-    while(pmg!=nullptr) {
+    while (pmg!=nullptr) {
       LogicalLocation &loc=pmg->loc_;
       pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
                            static_cast<int>(loc.lx3));
@@ -336,10 +336,10 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
 
 void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
-  while(current_level_>0)
+  while (current_level_>0)
     OneStepToCoarser(npresmooth);
   SolveCoarsestGrid();
-  while(current_level_<startlevel)
+  while (current_level_<startlevel)
     OneStepToFiner(npostsmooth);
   return;
 }
@@ -357,10 +357,10 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
   else
     turnlevel=1;
   for (; turnlevel<=startlevel; turnlevel++) {
-    while(current_level_>0)
+    while (current_level_>0)
       OneStepToCoarser(npresmooth);
     SolveCoarsestGrid();
-    while(current_level_<turnlevel)
+    while (current_level_<turnlevel)
       OneStepToFiner(npostsmooth);
   }
   return;
@@ -393,7 +393,7 @@ void MultigridDriver::SolveIterative(void) {
   Real def=eps_+1e-10;
   int niter=0;
   std::cout << std::scientific;
-  while(def>eps_) {
+  while (def>eps_) {
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
@@ -472,7 +472,7 @@ void MultigridDriver::SolveCoarsestGrid(void) {
 Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
   Multigrid *pmg=pmg_;
   Real norm=0.0;
-  while(pmg!=nullptr) {
+  while (pmg!=nullptr) {
     if (nrm==0)
       norm=std::max(norm, pmg->CalculateDefectNorm(n, nrm));
     else
@@ -498,7 +498,7 @@ Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
 
 Multigrid* MultigridDriver::FindMultigrid(int tgid) {
   Multigrid *pmg=pmg_;
-  while(pmg!=nullptr) {
+  while (pmg!=nullptr) {
     if (pmg->gid_==tgid)
       break;
     pmg=pmg->next;
