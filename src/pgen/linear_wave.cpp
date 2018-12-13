@@ -55,9 +55,9 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 
 // function to compute eigenvectors of linear waves
 static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-  const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
-  Real eigenvalues[(NWAVE)],
-  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+                        const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
+                        Real eigenvalues[(NWAVE)],
+                        Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
 
 // AMR refinement condition
 int RefinementCondition(MeshBlock *pmb);
@@ -338,7 +338,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
           }
         }
-      }}
+      }
+    }
     pmb=pmb->next;
   }
   Real rms_err = 0.0, max_max_over_l1=0.0;
@@ -361,12 +362,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (Globals::my_rank == 0) {
     // normalize errors by number of cells
     Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
-             *(mesh_size.x3max-mesh_size.x3min);
+        *(mesh_size.x3max-mesh_size.x3min);
     for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
     for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-       rms_err += SQR(l1_err[i]);
-       max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
+      rms_err += SQR(l1_err[i]);
+      max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
     rms_err = std::sqrt(rms_err);
 
@@ -384,7 +385,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         ATHENA_ERROR(msg);
       }
 
-    // The file does not exist -- open the file in write mode and add headers
+      // The file does not exist -- open the file in write mode and add headers
     } else {
       if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
@@ -456,13 +457,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
             if ((pbval->nblevel[1][0][1]>level && j==js)
-             || (pbval->nblevel[1][2][1]>level && j==je+1)
-             || (pbval->nblevel[0][1][1]>level && k==ks)
-             || (pbval->nblevel[2][1][1]>level && k==ke+1)
-             || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
-             || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
-             || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
-             || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
+                || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
+                || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
+                || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
               Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
               Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
               a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
@@ -472,13 +473,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
-             || (pbval->nblevel[1][1][2]>level && i==ie+1)
-             || (pbval->nblevel[0][1][1]>level && k==ks)
-             || (pbval->nblevel[2][1][1]>level && k==ke+1)
-             || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
-             || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-             || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
-             || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
+                || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+                || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
+                || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
               Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
               Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
               a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
@@ -488,13 +489,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
-             || (pbval->nblevel[1][1][2]>level && i==ie+1)
-             || (pbval->nblevel[1][0][1]>level && j==js)
-             || (pbval->nblevel[1][2][1]>level && j==je+1)
-             || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
-             || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
-             || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
-             || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[1][0][1]>level && j==js)
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
+                || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
+                || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
+                || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
               Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
               Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
               a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
@@ -522,28 +523,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Initialize interface fields
     for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie+1; i++) {
-        pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-                               (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+              (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+        }
       }
-    }}
+    }
 
     for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je+1; j++) {
-      for (int i=is; i<=ie; i++) {
-        pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-                               (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {
+          pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+              (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+        }
       }
-    }}
+    }
 
     for (int k=ks; k<=ke+1; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-       pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-                              (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+              (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+        }
       }
-    }}
+    }
     a1.DeleteAthenaArray();
     a2.DeleteAthenaArray();
     a3.DeleteAthenaArray();
@@ -551,28 +555,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
-          pcoord->x3v(k)*sin_a2;
-      Real sn = std::sin(k_par*x);
-      phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
-      Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
-      Real my = amp*sn*rem[2][wave_flag];
-      Real mz = amp*sn*rem[3][wave_flag];
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
+            pcoord->x3v(k)*sin_a2;
+        Real sn = std::sin(k_par*x);
+        phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
+        Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
+        Real my = amp*sn*rem[2][wave_flag];
+        Real mz = amp*sn*rem[3][wave_flag];
 
-      phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+        phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+        phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+        phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
-      if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
-        if (MAGNETIC_FIELDS_ENABLED) {
-          phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+          if (MAGNETIC_FIELDS_ENABLED) {
+            phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          }
         }
       }
     }
-  }}
+  }
 
   return;
 }
@@ -621,11 +626,11 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 //  \brief computes eigenvectors of linear waves
 
 static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-  const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
-  Real eigenvalues[(NWAVE)],
-  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
+                        const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
+                        Real eigenvalues[(NWAVE)],
+                        Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
   if (MAGNETIC_FIELDS_ENABLED) {
-//--- Adiabatic MHD ---
+    //--- Adiabatic MHD ---
     if (NON_BAROTROPIC_EOS) {
       Real vsq,btsq,bt_starsq,vaxsq,hp,twid_asq,cfsq,cf,cssq,cs;
       Real bt,bt_star,bet2,bet3,bet2_star,bet3_star,bet_starsq,vbet,alpha_f,alpha_s;
@@ -846,7 +851,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[6][5] = left_eigenmatrix[0][5];
       left_eigenmatrix[6][6] = left_eigenmatrix[0][6];
 
-//--- Isothermal MHD ---
+      //--- Isothermal MHD ---
 
     } else {
       Real btsq,bt_starsq,vaxsq,twid_csq,cfsq,cf,cssq,cs;
@@ -1021,7 +1026,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[5][5] = left_eigenmatrix[0][5];
     }
   } else {
-//--- Adiabatic Hydrodynamics ---
+    //--- Adiabatic Hydrodynamics ---
     if (NON_BAROTROPIC_EOS) {
       Real vsq = v1*v1 + v2*v2 + v3*v3;
       Real asq = gm1*std::max((h-0.5*vsq), TINY_NUMBER);
@@ -1098,7 +1103,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[4][3] = left_eigenmatrix[0][3];
       left_eigenmatrix[4][4] = left_eigenmatrix[0][4];
 
-//--- Isothermal Hydrodynamics ---
+      //--- Isothermal Hydrodynamics ---
 
     } else {
       // Compute eigenvalues (eq. B6)
@@ -1168,8 +1173,8 @@ int RefinementCondition(MeshBlock *pmb) {
   }
   // refine : delta rho > 0.9*amp
   if (rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
-//  Real a=std::max(rmax-d0,d0-rmin);
-//  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
+  //  Real a=std::max(rmax-d0,d0-rmin);
+  //  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
 }

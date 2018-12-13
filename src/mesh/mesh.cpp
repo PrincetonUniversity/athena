@@ -2166,7 +2166,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst(nv, k, j, i)=src(nv, fk, fj, fi);
-          }}}
+              }
+            }
+          }
           if (MAGNETIC_FIELDS_ENABLED) {
             pmr->RestrictFieldX1(pob->pfield->b.x1f, pmr->coarse_b_.x1f,
                          pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
@@ -2180,12 +2182,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
                   dst.x1f(k, j, i)=src.x1f(fk, fj, fi);
-            }}
+              }
+            }
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x2f(k, j, i)=src.x2f(fk, fj, fi);
-            }}
+              }
+            }
             if (pmb->block_size.nx2==1) {
               int ie=is+block_size.nx1/2-1;
               for (int i=is; i<=ie; i++)
@@ -2195,7 +2199,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x3f(k, j, i)=src.x3f(fk, fj, fi);
-            }}
+              }
+            }
             if (pmb->block_size.nx3==1) {
               int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
               for (int j=js; j<=je; j++) {
@@ -2223,7 +2228,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst(nv, k, j, i)=src(nv, ck, cj, ci);
-        }}}
+            }
+          }
+        }
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
                        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -2233,17 +2240,20 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie+1; i++, ci++)
                 dst.x1f(k, j, i)=src.x1f(ck, cj, ci);
-          }}
+            }
+          }
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je+f2; j++, cj++) {
               for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x2f(k, j, i)=src.x2f(ck, cj, ci);
-          }}
+            }
+          }
           for (int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
-          }}
+            }
+          }
           pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
                          pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX2(dst.x2f, pmb->pfield->b.x2f,

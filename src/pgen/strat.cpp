@@ -353,7 +353,8 @@ void MeshBlock::UserWorkInLoop(void) {
           u_e = w_p/(gam-1.0)+ke;
         }
       }
-    }}
+    }
+  }
   return;
 }
 
@@ -374,7 +375,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real den = prim(IDN,k,j,i);
         Real x3 = pmb->pcoord->x3v(k);
-        //smoothing function
+        // smoothing function
         if (x3 >= 0) {
           sign = -1.0;
         } else {
@@ -382,7 +383,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
         }
         xi = z0/x3;
         fsmooth = SQR( std::sqrt( SQR(xi+sign) + SQR(xi*lambda) ) + xi*sign );
-        //multiply gravitational potential by smoothing function
+        // multiply gravitational potential by smoothing function
         cons(IM3,k,j,i) -= dt*den*SQR(Omega_0)*x3*fsmooth;
         if (NON_BAROTROPIC_EOS) {
           cons(IEN,k,j,i) -= dt*den*SQR(Omega_0)*prim(IVZ,k,j,i)*x3*fsmooth;
