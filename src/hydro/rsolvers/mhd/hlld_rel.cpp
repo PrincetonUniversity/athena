@@ -1000,7 +1000,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract metric
     const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),

@@ -97,7 +97,7 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   while(nmb_left > 0) {
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
 {
-    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+#pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;

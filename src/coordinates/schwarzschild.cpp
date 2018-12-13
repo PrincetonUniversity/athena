@@ -383,7 +383,7 @@ Schwarzschild::~Schwarzschild() {
 void Schwarzschild::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths) {
   // \Delta L = 1/3 \Delta(r^3) \sin\theta
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j);
   }
@@ -393,7 +393,7 @@ void Schwarzschild::Edge1Length(const int k, const int j, const int il, const in
 void Schwarzschild::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths) {
   // \Delta L = r^2 (-\Delta\cos\theta)
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len2_i1_(i) * coord_len2_j1_(j);
   }
@@ -403,7 +403,7 @@ void Schwarzschild::Edge2Length(const int k, const int j, const int il, const in
 void Schwarzschild::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths) {
   // \Delta L = r^2 \sin\theta \Delta\phi
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
   }
@@ -472,7 +472,7 @@ void Schwarzschild::CenterWidth3(const int k, const int j, const int il, const i
 void Schwarzschild::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   //  \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i)
     areas(i) = coord_area1_i1_(i) * coord_area1_j1_(j) * dx3f(k);
   return;
@@ -481,7 +481,7 @@ void Schwarzschild::Face1Area(const int k, const int j, const int il, const int 
 void Schwarzschild::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i)
     areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * dx3f(k);
   return;
@@ -490,7 +490,7 @@ void Schwarzschild::Face2Area(const int k, const int j, const int il, const int 
 void Schwarzschild::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i)
     areas(i) = coord_area3_i1_(i) * coord_area3_j1_(j);
   return;
@@ -530,7 +530,7 @@ Real Schwarzschild::GetFace3Area(const int k, const int j, const int i) {
 
 void Schwarzschild::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     volumes(i) = coord_vol_i1_(i) * coord_vol_j1_(j) * dx3f(k);
   }
@@ -582,7 +582,7 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
 
       // Go through 1D slice
-      #pragma omp simd
+#pragma omp simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
         // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
@@ -678,7 +678,7 @@ void Schwarzschild::CellMetric(const int k, const int j, const int il, const int
   const Real &sin_sq_theta = metric_cell_j1_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
@@ -723,7 +723,7 @@ void Schwarzschild::Face1Metric(const int k, const int j, const int il, const in
   const Real &sin_sq_theta = metric_face1_j1_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
@@ -768,7 +768,7 @@ void Schwarzschild::Face2Metric(const int k, const int j, const int il, const in
   const Real &sin_sq_theta = metric_face2_j1_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
@@ -876,7 +876,7 @@ void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const i
   const Real &abs_sin_theta = trans_face1_j1_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &r = x1f(i);

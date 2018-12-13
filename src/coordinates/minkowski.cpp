@@ -166,7 +166,7 @@ Minkowski::~Minkowski() {
 
 void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -191,7 +191,7 @@ void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
 
 void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -207,7 +207,7 @@ void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu
 
 void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -223,7 +223,7 @@ void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu
 
 void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -256,7 +256,7 @@ void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int i
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma omp simd
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       bbx(i) = bb1(k,j,i);
     }
@@ -268,7 +268,7 @@ void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int i
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma omp simd
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       bbx(i) = bb2(k,j,i);
     }
@@ -280,7 +280,7 @@ void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int i
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
-    #pragma omp simd
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       bbx(i) = bb3(k,j,i);
     }
@@ -305,7 +305,7 @@ void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int i
 void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     const Real &txt = flux(IEN,k,j,i);
     Real &t10 = flux(IEN,k,j,i);
@@ -317,7 +317,7 @@ void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int 
 void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     const Real &tyt = flux(IEN,k,j,i);
     Real &t20 = flux(IEN,k,j,i);
@@ -329,7 +329,7 @@ void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int 
 void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     const Real &tzt = flux(IEN,k,j,i);
     Real &t30 = flux(IEN,k,j,i);

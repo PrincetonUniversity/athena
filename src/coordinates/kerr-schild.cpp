@@ -606,7 +606,7 @@ void KerrSchild::Edge1Length(const int k, const int j, const int il, const int i
   AthenaArray<Real> &lengths) {
   // \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j)
         * (ONE_3RD * coord_len1_i2_(i) + coord_len1_j2_(j));
@@ -618,7 +618,7 @@ void KerrSchild::Edge2Length(const int k, const int j, const int il, const int i
   AthenaArray<Real> &lengths) {
   // \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + ONE_3RD * coord_len2_j2_(j));
   }
@@ -628,7 +628,7 @@ void KerrSchild::Edge2Length(const int k, const int j, const int il, const int i
 void KerrSchild::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths) {
   // \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len3_k1_(k) * coord_len3_j1_(j)
         * (coord_len3_i1_(i) + coord_len3_j2_(j));
@@ -704,7 +704,7 @@ void KerrSchild::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     areas(i) = GetFace1Area(k, j, i);
   }
@@ -715,7 +715,7 @@ void KerrSchild::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas) {
   // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
         * (ONE_3RD * coord_area2_i2_(i) + coord_area2_j2_(j));
@@ -728,7 +728,7 @@ void KerrSchild::Face3Area(const int k, const int j, const int il, const int iu,
   // \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
   //     * (r_-^2 + r_- r_+ + r_+^2
   //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     areas(i) = ONE_3RD * coord_area3_i1_(i) * coord_area3_j1_(j)
         * (coord_area3_i2_(i) + coord_area3_j2_(j));
@@ -779,7 +779,7 @@ Real KerrSchild::GetFace3Area(const int k, const int j, const int i) {
 
 void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes) {
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     volumes(i) = ONE_3RD * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
         * (coord_vol_i2_(i) + coord_vol_j2_(j));
@@ -838,7 +838,7 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
 
       // Go through 1D slice
-      #pragma omp simd
+#pragma omp simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
         // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
@@ -960,7 +960,7 @@ void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu
   const Real &cos2 = metric_cell_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_cell_i1_(i);
@@ -1007,7 +1007,7 @@ void KerrSchild::Face1Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face1_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face1_i1_(i);
@@ -1054,7 +1054,7 @@ void KerrSchild::Face2Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face2_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face2_i1_(i);
@@ -1101,7 +1101,7 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face3_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face3_i1_(i);
@@ -1158,7 +1158,7 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
     Face1Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
@@ -1300,7 +1300,7 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
     Face2Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
@@ -1441,7 +1441,7 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
     Face3Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
@@ -1578,7 +1578,7 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
   Face1Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
@@ -1679,7 +1679,7 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
   Face2Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
@@ -1778,7 +1778,7 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
   Face3Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
+#pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
