@@ -39,6 +39,11 @@ do
 
     grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
+
+    # GNU Grep Extended Regex (ERE) syntax:
+    grep -rEi '^\s+#pragma' "$file"
+    if [ $? -ne 1 ]; then echo "ERROR: Left justify any #pragma statements"; exit 1; fi
+
     # To lint each src/ file separately, use:
     # ./cpplint.py --counting=detailed "$file"
 done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print)
