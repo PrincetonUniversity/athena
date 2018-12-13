@@ -446,7 +446,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
 
   if (bflag && (block_bcs[INNER_X2]==POLAR_BNDRY
            ||  block_bcs[OUTER_X2]==POLAR_BNDRY))
-     PolarSingleCellCentered(dst, ns, ne);
+     PolarBoundarySingleAzimuthalBlockCC(dst, ns, ne);
   return bflag;
 }
 
@@ -491,18 +491,18 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
-    PolarSingleCellCentered(dst, ns, ne);
+    PolarBoundarySingleAzimuthalBlockCC(dst, ns, ne);
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst,
-//                                                   int ns, int ne)
-//
+//! \fn void BoundaryValues::PolarBoundarySingleAzimuthalBlockCC(AthenaArray<Real> &dst,
+//                                                          int ns, int ne)
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
-void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne) {
+void BoundaryValues::PolarBoundarySingleAzimuthalBlockCC(AthenaArray<Real> &dst,
+                                                    int ns, int ne) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
@@ -512,11 +512,11 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-             azimuthal_shift_(k)=dst(n,k,j,i);
+             azimuthal_shift_(k) = dst(n,k,j,i);
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=azimuthal_shift_(k_shift);
+             dst(n,k,j,i) = azimuthal_shift_(k_shift);
            }
          }
         }
@@ -529,11 +529,11 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-             azimuthal_shift_(k)=dst(n,k,j,i);
+             azimuthal_shift_(k) = dst(n,k,j,i);
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=azimuthal_shift_(k_shift);
+             dst(n,k,j,i) = azimuthal_shift_(k_shift);
            }
          }
         }

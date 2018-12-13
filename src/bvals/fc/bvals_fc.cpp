@@ -740,8 +740,8 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
 
   if (flag
       and (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY)) {
-    PolarSingleField(dst);
-    PolarAxisFieldAverage(dst);
+    PolarBoundarySingleAzimuthalBlockField(dst);
+    PolarBoundaryAverageField(dst);
   }
 
   return flag;
@@ -770,53 +770,52 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
   }
 
   if (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY) {
-    PolarSingleField(dst);
-    PolarAxisFieldAverage(dst);
+    PolarBoundarySingleAzimuthalBlockField(dst);
+    PolarBoundaryAverageField(dst);
   }
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::PolarSingleField(FaceField &dst)
-//
-//  \brief single block in the azimuthal direction for the polar boundary
+//! \fn void BoundaryValues::PolarBoundarySingleAzimuthalBlockField(FaceField &dst)
+// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
-void BoundaryValues::PolarSingleField(FaceField &dst) {
+void BoundaryValues::PolarBoundarySingleAzimuthalBlockField(FaceField &dst) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
-  && pmb->block_size.nx3 > 1) {
+      && pmb->block_size.nx3 > 1) {
     if (block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           azimuthal_shift_(k)=dst.x1f(k,j,i);
+           azimuthal_shift_(k) = dst.x1f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x1f(k,j,i)=azimuthal_shift_(k_shift);
+           dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           azimuthal_shift_(k)=dst.x2f(k,j,i);
+           azimuthal_shift_(k) = dst.x2f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x2f(k,j,i)=azimuthal_shift_(k_shift);
+           dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-           azimuthal_shift_(k)=dst.x3f(k,j,i);
+           azimuthal_shift_(k) = dst.x3f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x3f(k,j,i)=azimuthal_shift_(k_shift);
+           dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
          }
        }
       }
@@ -827,33 +826,33 @@ void BoundaryValues::PolarSingleField(FaceField &dst) {
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k)=dst.x1f(k,j,i);
+            azimuthal_shift_(k) = dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i)=azimuthal_shift_(k_shift);
+            dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k)=dst.x2f(k,j,i);
+            azimuthal_shift_(k) = dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i)=azimuthal_shift_(k_shift);
+            dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            azimuthal_shift_(k)=dst.x3f(k,j,i);
+            azimuthal_shift_(k) = dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i)=azimuthal_shift_(k_shift);
+            dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
           }
         }
       }
@@ -863,11 +862,10 @@ void BoundaryValues::PolarSingleField(FaceField &dst) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::PolarAxisFieldAverage(FaceField &dst)
-//
+//! \fn void BoundaryValues::PolarBoundaryAverageField(FaceField &dst)
 //  \brief set theta-component of field along axis
 
-void BoundaryValues::PolarAxisFieldAverage(FaceField &dst) {
+void BoundaryValues::PolarBoundaryAverageField(FaceField &dst) {
   MeshBlock *pmb = pmy_block_;
   int is = pmb->is - NGHOST;
   int ie = pmb->ie + NGHOST;

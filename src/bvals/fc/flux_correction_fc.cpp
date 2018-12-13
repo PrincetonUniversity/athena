@@ -1014,7 +1014,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::AverageEMFBoundary(void)
-//  \brief Set EMF boundary received from a block on the finer level
+// \brief Set EMF boundary received from a block on the finer level
 
 void BoundaryValues::AverageEMFBoundary(void) {
   MeshBlock *pmb=pmy_block_;
@@ -1156,35 +1156,35 @@ void BoundaryValues::AverageEMFBoundary(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::PolarSingleEMF(void)
-//  \brief single CPU in the azimuthal direction for the polar boundary
+//! \fn void BoundaryValues::PolarBoundarySingleAzimuthalBlockEMF(void)
+// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
-void BoundaryValues::PolarSingleEMF(void) {
+void BoundaryValues::PolarBoundarySingleAzimuthalBlockEMF(void) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int j;
 
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
-  && pmb->block_size.nx3 > 1) {
+      && pmb->block_size.nx3 > 1) {
     if (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
         for (int k=pmb->ks; k<=pmb->ke; k++)
-          tote1+=e1(k,j,i);
+          tote1 += e1(k,j,i);
         Real e1a=tote1/static_cast<double>(pmb->ke-pmb->ks+1);
         for (int k=pmb->ks; k<=pmb->ke+1; k++)
-          e1(k,j,i)=e1a;
+          e1(k,j,i) = e1a;
       }
       for (int i=pmb->is; i<=pmb->ie+1; i++) {
         for (int k=pmb->ks; k<=pmb->ke; k++)
-          azimuthal_shift_(k)=e3(k,j,i);
+          azimuthal_shift_(k) = e3(k,j,i);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           int k_shift = k;
           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-          e3(k,j,i)=azimuthal_shift_(k_shift);
+          e3(k,j,i) = azimuthal_shift_(k_shift);
         }
       }
     }
@@ -1195,18 +1195,18 @@ void BoundaryValues::PolarSingleEMF(void) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
         for (int k=pmb->ks; k<=pmb->ke; ++k)
-          tote1+=e1(k,j,i);
+          tote1 += e1(k,j,i);
         Real e1a=tote1/static_cast<double>(pmb->ke-pmb->ks+1);
         for (int k=pmb->ks; k<=pmb->ke+1; ++k)
-          e1(k,j,i)=e1a;
+          e1(k,j,i) = e1a;
       }
       for (int i=pmb->is; i<=pmb->ie+1; i++) {
         for (int k=pmb->ks; k<=pmb->ke; k++)
-          azimuthal_shift_(k)=e3(k,j,i);
+          azimuthal_shift_(k) = e3(k,j,i);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           int k_shift = k;
           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-          e3(k,j,i)=azimuthal_shift_(k_shift);
+          e3(k,j,i) = azimuthal_shift_(k_shift);
         }
       }
     }
@@ -1240,8 +1240,9 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
 #ifdef MPI_PARALLEL
           } else { // MPI boundary
             int test;
-            MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-            MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                       MPI_STATUS_IGNORE);
+            MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
             if (static_cast<bool>(test)==false) {
               flag=false;
               continue;
@@ -1278,8 +1279,9 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
 #ifdef MPI_PARALLEL
         } else { // MPI boundary
           int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                     MPI_STATUS_IGNORE);
+          MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test)==false) {
             flag=false;
             continue;
@@ -1352,7 +1354,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
       emf_south_flag_[n] = BNDRY_COMPLETED;
     if (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
         block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE)
-      PolarSingleEMF();
+      PolarBoundarySingleAzimuthalBlockEMF();
   }
   return flag;
 }

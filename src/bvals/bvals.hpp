@@ -327,15 +327,15 @@ public:
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
                                         Real *buf, const NeighborBlock& nb, bool *flip);
 
-  // optional? compare to PolarSingleField(), PolarSingleEMF()
-  // what about PolarAxisFieldAverage()
-  void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
+  // optional? compare to PolarBoundarySingleAzimuthalBlockField(), PolarBoundarySingleAzimuthalBlockEMF()
+  // what about PolarBoundaryAverageField()
+  void PolarBoundarySingleAzimuthalBlockCC(AthenaArray<Real> &dst, int ns, int ne);
 
   // Cell-centered flux correction functions are much simpler than Field counterpart
   // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
   // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
   //   Set/LoadEMFBoundaryPolarBuffer()
-  // - AverageEMFBoundary(), ClearCoarseEMFBoundary(), PolarSingleEMF()
+  // - AverageEMFBoundary(), ClearCoarseEMFBoundary(), PolarBoundarySingleAzimuthalBlockEMF()
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
@@ -452,9 +452,9 @@ class FieldBoundaryFunctions {
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
 
-  // above, only PolarSingleCellCentered(), no PolarAxis*Average()
-  void PolarSingleField(FaceField &dst);
-  void PolarAxisFieldAverage(FaceField &dst);
+  // above, only PolarBoundarySingleAzimuthalBlockCC(), no PolarAxis*Average()
+  void PolarBoundarySingleAzimuthalBlockField(FaceField &dst);
+  void PolarBoundaryAverageField(FaceField &dst);
 
   // EMF buffer management (unrefined and SMR/AMR)
   // Hydro FluxCorrection only has counterparts for these
@@ -471,7 +471,7 @@ class FieldBoundaryFunctions {
 
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
-  void PolarSingleEMF(void);
+  void PolarBoundarySingleAzimuthalBlockEMF(void);
 
   // Shearingbox Field
   // void LoadFieldShearing(FaceField &src, Real *buf, int nb);
