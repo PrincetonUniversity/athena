@@ -17,7 +17,7 @@
 #endif
 
 // Athena++ headers
-#include "mggravity.hpp"
+#include "mg_gravity.hpp"
 #include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"

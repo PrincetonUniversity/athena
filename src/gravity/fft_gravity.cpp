@@ -14,7 +14,7 @@
 #include <cmath>
 
 // Athena++ headers
-#include "fftgravity.hpp"
+#include "fft_gravity.hpp"
 #include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -23,8 +23,7 @@
 #include "../fft/athena_fft.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
-#include "../task_list/grav_task_list.hpp"
-
+#include "../task_list/fft_grav_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)

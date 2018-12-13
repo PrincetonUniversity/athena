@@ -14,7 +14,7 @@
 
 // Athena++ classes headers
 #include "task_list.hpp"
-#include "grav_task_list.hpp"
+#include "fft_grav_task_list.hpp"
 #include "../athena.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
