@@ -8,7 +8,7 @@
 //========================================================================================
 //! \file gravity.hpp
 //  \brief defines Gravity class which implements data and functions for gravitational
-//         potential
+//         potential. Shared by both Multigrid and FFT schemes for self-gravity.
 
 // Athena++ classes headers
 #include "../athena.hpp"

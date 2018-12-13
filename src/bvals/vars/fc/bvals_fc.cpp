@@ -790,33 +790,33 @@ void BoundaryValues::PolarSingleField(FaceField &dst) {
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           exc_(k)=dst.x1f(k,j,i);
+           azimuthal_shift_(k)=dst.x1f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x1f(k,j,i)=exc_(k_shift);
+           dst.x1f(k,j,i)=azimuthal_shift_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           exc_(k)=dst.x2f(k,j,i);
+           azimuthal_shift_(k)=dst.x2f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x2f(k,j,i)=exc_(k_shift);
+           dst.x2f(k,j,i)=azimuthal_shift_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-           exc_(k)=dst.x3f(k,j,i);
+           azimuthal_shift_(k)=dst.x3f(k,j,i);
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x3f(k,j,i)=exc_(k_shift);
+           dst.x3f(k,j,i)=azimuthal_shift_(k_shift);
          }
        }
       }
@@ -827,33 +827,33 @@ void BoundaryValues::PolarSingleField(FaceField &dst) {
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            exc_(k)=dst.x1f(k,j,i);
+            azimuthal_shift_(k)=dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i)=exc_(k_shift);
+            dst.x1f(k,j,i)=azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            exc_(k)=dst.x2f(k,j,i);
+            azimuthal_shift_(k)=dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i)=exc_(k_shift);
+            dst.x2f(k,j,i)=azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            exc_(k)=dst.x3f(k,j,i);
+            azimuthal_shift_(k)=dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i)=exc_(k_shift);
+            dst.x3f(k,j,i)=azimuthal_shift_(k_shift);
           }
         }
       }

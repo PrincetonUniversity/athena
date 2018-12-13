@@ -306,14 +306,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     }
   }
 
-  // edge-case: single CPU in the azimuthal direction with the polar boundary
-  // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)--- change from CPU to MeshBlock?
+  // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
+  // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
   if (pmb->loc.level == pmy_mesh_->root_level &&
      pmy_mesh_->nrbx3 == 1 &&
-     (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
-      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
-       exc_.NewAthenaArray(pmb->ke+NGHOST+2);
-  // end KGF: special handling of emf for spherical polar coordinates
+     (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
+      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+       azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
+  // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
 
   // KGF: BVals constructor section only containing ALL shearing box-specific stuff
@@ -581,9 +581,9 @@ BoundaryValues::~BoundaryValues() {
   // KGF: edge-case of single block across pole in MHD spherical polar coordinates
   if (pmb->loc.level == pmy_mesh_->root_level &&
      pmy_mesh_->nrbx3 == 1 &&
-     (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
-      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
-       exc_.DeleteAthenaArray();
+     (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
+      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+       azimuthal_shift_.DeleteAthenaArray();
   // end KGF: edge-case...
 
   // end KGF: destructor counterpart of special handling of emf in spherical polar

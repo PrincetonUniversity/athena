@@ -1180,11 +1180,11 @@ void BoundaryValues::PolarSingleEMF(void) {
       }
       for (int i=pmb->is; i<=pmb->ie+1; i++) {
         for (int k=pmb->ks; k<=pmb->ke; k++)
-          exc_(k)=e3(k,j,i);
+          azimuthal_shift_(k)=e3(k,j,i);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           int k_shift = k;
           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-          e3(k,j,i)=exc_(k_shift);
+          e3(k,j,i)=azimuthal_shift_(k_shift);
         }
       }
     }
@@ -1202,11 +1202,11 @@ void BoundaryValues::PolarSingleEMF(void) {
       }
       for (int i=pmb->is; i<=pmb->ie+1; i++) {
         for (int k=pmb->ks; k<=pmb->ke; k++)
-          exc_(k)=e3(k,j,i);
+          azimuthal_shift_(k)=e3(k,j,i);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           int k_shift = k;
           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-          e3(k,j,i)=exc_(k_shift);
+          e3(k,j,i)=azimuthal_shift_(k_shift);
         }
       }
     }

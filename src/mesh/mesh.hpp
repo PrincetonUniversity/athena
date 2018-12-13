@@ -209,7 +209,7 @@ private:
   int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
   LogicalLocation *loclist;
   MeshBlockTree tree;
-  int64_t nrbx1, nrbx2, nrbx3;
+  int64_t nrbx1, nrbx2, nrbx3; // number of MeshBlocks spanning each length of mesh
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;

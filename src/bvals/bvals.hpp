@@ -255,10 +255,10 @@ class BoundaryValues : public BoundaryBase, public BoundaryMemory {
   bool firsttime_;
   int num_north_polar_blocks_, num_south_polar_blocks_;
 
-  // TODO(felker): Rename this. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in bvals
-  // For MHD spherical polar coordinates edge-case: if one block wraps around pole, shift
-  // the k-axis by nx3/2 for cell- and face-centered variables, and emf
-  AthenaArray<Real> exc_;
+  // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
+  // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered
+  // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
+  AthenaArray<Real> azimuthal_shift_;
 
   BValFunc_t BoundaryFunction_[6];
 
