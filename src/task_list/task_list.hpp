@@ -272,6 +272,6 @@ namespace HydroIntegratorTaskNames {
   const std::uint64_t DIFFUSE_HYD=1LL<<53;
   const std::uint64_t DIFFUSE_FLD=1LL<<54;
   const std::uint64_t CALC_DIFFUSIVITY=1LL<<55;
-}; // namespace HydroIntegratorTaskNames
+} // namespace HydroIntegratorTaskNames
 
 #endif // TASK_LIST_TASK_LIST_HPP_
