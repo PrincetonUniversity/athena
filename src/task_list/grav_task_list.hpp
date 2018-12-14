@@ -52,6 +52,6 @@ namespace GravitySolverTaskNames {
   const std::uint64_t SEND_GRAV_BND=1LL<<2;
   const std::uint64_t RECV_GRAV_BND=1LL<<3;
   const std::uint64_t GRAV_PHYS_BND=1LL<<4;
-};
+}
 
 #endif // TASK_LIST_GRAV_TASK_LIST_HPP_

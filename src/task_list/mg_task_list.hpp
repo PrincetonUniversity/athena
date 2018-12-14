@@ -125,6 +125,6 @@ namespace MultigridTaskNames {
   const std::uint64_t MG_RESTRICT    = 1LL<<38;
   const std::uint64_t MG_PROLONG     = 1LL<<39;
   const std::uint64_t MG_FMGPROLONG  = 1LL<<40;
-}; // namespace MultigridTaskNames
+} // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_
