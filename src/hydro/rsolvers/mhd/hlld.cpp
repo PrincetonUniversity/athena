@@ -18,6 +18,8 @@
 #include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
+#include "../../../mesh/mesh.hpp"
+#include "../../../coordinates/coordinates.hpp"
 #include "../../../eos/eos.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
@@ -31,21 +33,24 @@ typedef struct Cons1D {
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx, AthenaArray<Real> &ey,
+  AthenaArray<Real> &ez, AthenaArray<Real> &wct) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Real spd[5];                    // signal speeds, left to right
 
-  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real igm1 = 1.0 / (pmy_block->peos->GetGamma() - 1.0);
+  Real dt = pmy_block->pmy_mesh->dt;
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
+  AthenaArray<Real> dxw;
+  dxw.InitWithShallowCopy(dxw_);
+  pmy_block->pcoord->CenterWidth1(k,j,il,iu,dxw);
+
+#pragma distribute_point
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
   for (int i=il; i<=iu; ++i) {
     Cons1D ul,ur;                   // L/R states, conserved variables (computed)
@@ -54,23 +59,23 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
 //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    wli[IPR]=wl(IPR,k,j,i);
-    wli[IBY]=wl(IBY,k,j,i);
-    wli[IBZ]=wl(IBZ,k,j,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IPR]=wl(IPR,i);
+    wli[IBY]=wl(IBY,i);
+    wli[IBZ]=wl(IBZ,i);
 
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    wri[IPR]=wr(IPR,k,j,i);
-    wri[IBY]=wr(IBY,k,j,i);
-    wri[IBZ]=wr(IBZ,k,j,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IPR]=wr(IPR,i);
+    wri[IBY]=wr(IBY,i);
+    wri[IBZ]=wr(IBZ,i);
 
-    Real bxi = bx(k,j,i);
+    Real bxi = bx(i);
 
     // Compute L/R states for selected conserved variables
     Real bxsq = bxi*bxi;
@@ -84,7 +89,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ul.mx = wli[IVX]*ul.d;
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
-    ul.e  = wli[IPR]/gm1 + kel + pbl;
+    ul.e  = wli[IPR]*igm1 + kel + pbl;
     ul.by = wli[IBY];
     ul.bz = wli[IBZ];
 
@@ -92,7 +97,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ur.mx = wri[IVX]*ur.d;
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
-    ur.e  = wri[IPR]/gm1 + ker + pbr;
+    ur.e  = wri[IPR]*igm1 + ker + pbr;
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
@@ -362,8 +367,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
+    // compute weights for GS07 CT algorithm
+    Real v_over_c = (1024.0)* dt * flxi[IDN] / (dxw(i) * (wli[IDN] + wri[IDN]));
+    Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+    wct(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
   }
-  }}
 
   return;
 }

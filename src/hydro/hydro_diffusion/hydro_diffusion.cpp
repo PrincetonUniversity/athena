@@ -214,21 +214,10 @@ void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src,
 //  \brief Reset diffusion flux back to zeros
 
 void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux) {
-  int size1 = flux[X1DIR].GetSize();
-  int size2 = flux[X2DIR].GetSize();
-  int size3 = flux[X3DIR].GetSize();
 
-#pragma omp simd
-  for (int i=0; i<size1; ++i)
-    flux[X1DIR](i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size2; ++i)
-    flux[X2DIR](i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size3; ++i)
-    flux[X3DIR](i) = 0.0;
+  flux[X1DIR].ZeroClear();
+  flux[X2DIR].ZeroClear();
+  flux[X3DIR].ZeroClear();
 
   return;
 }

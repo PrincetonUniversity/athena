@@ -19,40 +19,42 @@
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx, AthenaArray<Real> &ey,
+  AthenaArray<Real> &ez, AthenaArray<Real> &wct) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
+  AthenaArray<Real> dxw;
+  dxw.InitWithShallowCopy(dxw_);
+  pmy_block->pcoord->CenterWidth1(k,j,il,iu,dxw);
+
 #pragma omp simd private(wli,wri,wroe,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
 
 //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
-    wli[IBY]=wl(IBY,k,j,i);
-    wli[IBZ]=wl(IBZ,k,j,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
+    wli[IBY]=wl(IBY,i);
+    wli[IBZ]=wl(IBZ,i);
 
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
-    wri[IBY]=wr(IBY,k,j,i);
-    wri[IBZ]=wr(IBZ,k,j,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
+    wri[IBY]=wr(IBY,i);
+    wri[IBZ]=wr(IBZ,i);
 
-    Real bxi = bx(k,j,i);
+    Real bxi = bx(i);
 
 //--- Step 2.  Compute Roe-averaged state
 
@@ -170,7 +172,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
+
+    // compute weights for GS07 CT algorithm
+    Real v_over_c = (1024.0)* dt * flxi[IDN] / (dxw(i) * (wli[IDN] + wri[IDN]));
+    Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+    wct(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
   }
-  }}
   return;
 }

@@ -58,8 +58,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   dt2_.NewAthenaArray(ncells1);
   dt3_.NewAthenaArray(ncells1);
   dxw_.NewAthenaArray(ncells1);
-  wl_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  wr_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wl_.NewAthenaArray((NWAVE), ncells1);
+  wr_.NewAthenaArray((NWAVE), ncells1);
+  wlb_.NewAthenaArray((NWAVE), ncells1);
   x1face_area_.NewAthenaArray(ncells1+1);
   if (pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(ncells1);
@@ -139,6 +140,7 @@ Hydro::~Hydro() {
   dxw_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
+  wlb_.DeleteAthenaArray();
   x1face_area_.DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) {
     x2face_area_.DeleteAthenaArray();
