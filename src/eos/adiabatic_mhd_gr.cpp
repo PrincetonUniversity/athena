@@ -538,7 +538,7 @@ static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
 
   // Step 3: Check for convergence
   bool success=true;
-  if (pgas[num_iterations%3] < pgas_min or
+  if (pgas[num_iterations%3] <= pgas_min or
       std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) >= tol) {
     success = false;
   }
@@ -684,7 +684,7 @@ static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
 
   // Step 3: Check for convergence
   bool success=true;
-  if (pgas[num_iterations%3] < pgas_min or
+  if (pgas[num_iterations%3] <= pgas_min or
       std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) >= tol) {
     success = false;
   }
