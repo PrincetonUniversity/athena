@@ -215,7 +215,7 @@ cxx_choices = [
     'icpc-debug',
     'icpc-phi',
     'cray',
-    'bgxl',
+    'bgxlc++',
     'clang++',
     'clang++-simd',
     'clang++-apple',
@@ -225,6 +225,9 @@ cxx_choices = [
 def c_to_cpp(arg):
     arg = arg.replace('gcc', 'g++', 1)
     arg = arg.replace('icc', 'icpc', 1)
+    if arg == 'bgxl' or arg == 'bgxlc':
+        arg = 'bgxlc++'
+
     if arg == 'clang':
         arg = 'clang++'
     else:
@@ -463,7 +466,7 @@ if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -h aggress -h vector3 -hfp3'
     makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
     makefile_options['LIBRARY_FLAGS'] = '-lm'
-if args['cxx'] == 'bgxl':
+if args['cxx'] == 'bgxlc++':
     # suppressed messages:
     #   1500-036:  The NOSTRICT option has the potential to alter the program's semantics
     #   1540-1401: An unknown "pragma simd" is specified
@@ -525,7 +528,7 @@ if args['debug']:
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g'  # -Og
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11'
-    if args['cxx'] == 'bgxl':
+    if args['cxx'] == 'bgxlc++':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
@@ -552,7 +555,7 @@ if args['coverage']:
         makefile_options['COMPILER_FLAGS'] += (
             ' -O0 -fprofile-instr-generate -fcoverage-mapping'
             )  # use --coverage to produce GCC-compatible .gcno, .gcda output for gcov
-    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
+    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxlc++'):
         raise SystemExit(
             '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
 else:
@@ -581,7 +584,7 @@ if args['mpi']:
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
-    if args['cxx'] == 'bgxl':
+    if args['cxx'] == 'bgxlc++':
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
     # --mpiccmd=[name] argument
     if args['mpiccmd'] is not None:
@@ -604,7 +607,7 @@ if args['omp']:
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
-    if args['cxx'] == 'bgxl':
+    if args['cxx'] == 'bgxlc++':
         # use thread-safe version of compiler
         definitions['COMPILER_COMMAND'] += '_r'
         makefile_options['COMPILER_COMMAND'] += '_r'
@@ -660,7 +663,7 @@ if args['hdf5']:
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
             or args['cxx'] == 'clang++-apple'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
-    if args['cxx'] == 'bgxl':
+    if args['cxx'] == 'bgxlc++':
         makefile_options['PREPROCESSOR_FLAGS'] += (
             ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE'
             ' -I/soft/libraries/hdf5/1.10.0/cnk-xl/current/include'
