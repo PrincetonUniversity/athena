@@ -516,17 +516,19 @@ else:
 # -debug argument
 if args['debug']:
     definitions['DEBUG_OPTION'] = 'DEBUG'
+    # Completely replace the --cxx= sets of default compiler flags, disable optimization,
+    # and emit debug symbols in the compiled binaries
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
             or args['cxx'] == 'clang++-apple'):
-        makefile_options['COMPILER_FLAGS'] = '-O0 -g'
+        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g'  # -Og
     if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] = '-O0'
+        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11'
     if args['cxx'] == 'bgxl':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
     if args['cxx'] == 'icpc-phi':
-        makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
+        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
 else:
     definitions['DEBUG_OPTION'] = 'NOT_DEBUG'
 
