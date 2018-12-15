@@ -57,7 +57,8 @@ public:
   void RiemannSolver(const int k, const int j,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez, AthenaArray<Real> &wct);
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez, AthenaArray<Real> &wct,
+    AthenaArray<Real> &dxw);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);

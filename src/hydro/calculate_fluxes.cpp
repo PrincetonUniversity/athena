@@ -42,7 +42,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
-
+  
   AthenaArray<Real> b1, b2, b3, w_x1f, w_x2f, w_x3f, e2x1, e3x1, e1x2, e3x2, e1x3, e2x3;
   if (MAGNETIC_FIELDS_ENABLED) {
     b1.InitWithShallowCopy(b.x1f);
@@ -58,11 +58,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     e1x3.InitWithShallowCopy(pmb->pfield->e1_x3f);
     e2x3.InitWithShallowCopy(pmb->pfield->e2_x3f);
   }
-
-  AthenaArray<Real> wl, wr, wlb;
-  wl.InitWithShallowCopy(wl_);
-  wr.InitWithShallowCopy(wr_);
-  wlb.InitWithShallowCopy(wlb_);
 
   // fourth-order hydro quantities:
   // face-centered reconstructed primitive variables, fluxes, and their Laplacians:
@@ -92,16 +87,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int j=jl; j<=ju; ++j) {
       // reconstruct L/R states
       if (order == 1) {
-        pmb->precon->DonorCellX1(pmb, k, j, is-1, ie+1, w, bcc, wl, wr);
+        pmb->precon->DonorCellX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX1(pmb, k, j, is-1, ie+1, w, bcc, wl, wr);
+        pmb->precon->PiecewiseLinearX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX1(pmb, k, j, is-1, ie+1, w, bcc, wl, wr);
+        pmb->precon->PiecewiseParabolicX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
 
+      // compute fluxes, store directly into 3D arrays
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
-      RiemannSolver(k, j, is, ie+1, IVX, b1, wl, wr, x1flux, e3x1, e2x1, w_x1f);
+      pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+      RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1, w_x1f, dxw_);
 
     }
   }
@@ -127,29 +124,30 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int k=kl; k<=ku; ++k) {
       // reconstruct the first row
       if (order == 1) {
-        pmb->precon->DonorCellX2(pmb, k, js-1, il, iu, w, bcc, wl, wr);
+        pmb->precon->DonorCellX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX2(pmb, k, js-1, il, iu, w, bcc, wl, wr);
+        pmb->precon->PiecewiseLinearX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX2(pmb, k, js-1, il, iu, w, bcc, wl, wr);
+        pmb->precon->PiecewiseParabolicX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
       }
       for (int j=js; j<=je+1; ++j) {
         // reconstruct L/R states at j
         if (order == 1) {
-          pmb->precon->DonorCellX2(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->DonorCellX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
-          pmb->precon->PiecewiseLinearX2(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->PiecewiseLinearX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX2(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->PiecewiseParabolicX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         // compute fluxes, store directly into 3D arrays
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
         // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-        RiemannSolver(k, j, il, iu, IVY, b2, wl, wr, x2flux, e1x2, e3x2, w_x2f);
+        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+        RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, x2flux, e1x2, e3x2, w_x2f, dxw_);
 
         // swap the arrays for the next step
-        wl.SwapAthenaArray(wlb);
+        wl_.SwapAthenaArray(wlb_);
       }
     }
   }
@@ -167,29 +165,30 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
       if (order == 1) {
-        pmb->precon->DonorCellX3(pmb, ks-1, j, il, iu, w, bcc, wl, wr);
+        pmb->precon->DonorCellX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX3(pmb, ks-1, j, il, iu, w, bcc, wl, wr);
+        pmb->precon->PiecewiseLinearX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX3(pmb, ks-1, j, il, iu, w, bcc, wl, wr);
+        pmb->precon->PiecewiseParabolicX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
         if (order == 1) {
-          pmb->precon->DonorCellX3(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->DonorCellX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
-          pmb->precon->PiecewiseLinearX3(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->PiecewiseLinearX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX3(pmb, k, j, il, iu, w, bcc, wlb, wr);
+          pmb->precon->PiecewiseParabolicX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         // compute fluxes, store directly into 3D arrays
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
         // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-        RiemannSolver(k, j, il, iu, IVZ, b3, wl, wr, x3flux, e2x3, e1x3, w_x3f);
+        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+        RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, x3flux, e2x3, e1x3, w_x3f, dxw_);
 
         // swap the arrays for the next step
-        wl.SwapAthenaArray(wlb);
+        wl_.SwapAthenaArray(wlb_);
       }
     }
   }

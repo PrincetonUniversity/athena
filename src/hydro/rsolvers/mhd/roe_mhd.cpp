@@ -35,10 +35,10 @@ static Real gm1, iso_cs;
 //! \fn void Hydro::RiemannSolver
 //  \brief The Roe Riemann solver for MHD (both adiabatic and isothermal)
 
-vvoid Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx, AthenaArray<Real> &ey,
-  AthenaArray<Real> &ez, AthenaArray<Real> &wct) {
+  AthenaArray<Real> &ez, AthenaArray<Real> &wct, AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)];
@@ -48,9 +48,7 @@ vvoid Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
   Real ev[(NWAVE)],du[(NWAVE)];
 
-  AthenaArray<Real> dxw;
-  dxw.InitWithShallowCopy(dxw_);
-  pmy_block->pcoord->CenterWidth1(k,j,il,iu,dxw);
+  Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
