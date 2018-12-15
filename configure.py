@@ -404,6 +404,7 @@ else:
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
+    # GCC is C++11 feature-complete since v4.8.1 (2013-05-31)
     definitions['COMPILER_CHOICE'] = 'g++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
@@ -411,7 +412,7 @@ if args['cxx'] == 'g++':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
-    # GCC version >= 4.9, for OpenMP 4.0; version >= 6.1 for OpenMP 4.5
+    # GCC version >= 4.9, for OpenMP 4.0; version >= 6.1 for OpenMP 4.5 support
     definitions['COMPILER_CHOICE'] = 'g++-simd'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
@@ -427,6 +428,7 @@ if args['cxx'] == 'g++-simd':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icpc':
+    # ICC is C++11 feature-complete since v15.0 (2014-08-26)
     definitions['COMPILER_CHOICE'] = 'icpc'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
@@ -460,13 +462,16 @@ if args['cxx'] == 'icpc-phi':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
+    # Cray Compiling Environment 8.4 (2015-09-24) introduces C++11 feature completeness
+    # (except "alignas"). v8.6 is C++14 feature-complete
     definitions['COMPILER_CHOICE'] = 'cray'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -h aggress -h vector3 -hfp3'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -h std=c++11 -h aggress -h vector3 -hfp3'
     makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
     makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'bgxlc++':
+    # IBM XL C/C++ for BG/Q is NOT C++11 feature-complete as of v12.1.0.15 (2017-12-22)
     # suppressed messages:
     #   1500-036:  The NOSTRICT option has the potential to alter the program's semantics
     #   1540-1401: An unknown "pragma simd" is specified
@@ -479,13 +484,14 @@ if args['cxx'] == 'bgxlc++':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -qhot=level=1:vector -qinline=level=5:auto -qipa=level=1:noobject'
-      ' -qstrict=subnormals -qmaxmem=150000 -qlanglvl=extended -qsuppress=1500-036'
+      ' -qstrict=subnormals -qmaxmem=150000 -qlanglvl=extended0x -qsuppress=1500-036'
       ' -qsuppress=1540-1401 -qsuppress=1586-083 -qsuppress=1586-233'
       ' -qsuppress=1586-267'
     )
     makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'clang++':
+    # Clang is C++11 feature-complete since v3.3 (2013-06-17)
     definitions['COMPILER_CHOICE'] = 'clang++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
@@ -527,9 +533,9 @@ if args['debug']:
             or args['cxx'] == 'clang++-apple'):
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g'  # -Og
     if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11'
+        makefile_options['COMPILER_FLAGS'] = '-O0 -h std=c++11'
     if args['cxx'] == 'bgxlc++':
-        makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
+        makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended0x'
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
 else:
