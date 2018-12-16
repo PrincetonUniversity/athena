@@ -205,6 +205,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
       wr(n,i) = wc(n,i) - dxm*dwm(n,i);
     }
   }
+
   if (pmb->precon->characteristic_reconstruction) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
@@ -305,6 +306,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
       wr(n,i) = wc(n,i) - dxm*dwm(n,i);
     }
   }
+
   if (pmb->precon->characteristic_reconstruction) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {

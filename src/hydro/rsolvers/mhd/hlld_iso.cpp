@@ -67,7 +67,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
-    Real bxi = bx(i);
+    Real bxi = bx(k,j,i);
 
     // Compute L/R states for selected conserved variables
     ul.d  = wli[IDN];

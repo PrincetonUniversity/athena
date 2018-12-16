@@ -99,7 +99,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
       RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1, w_x1f, dxw_);
-
     }
   }
   //------------------------------------------------------------------------------
