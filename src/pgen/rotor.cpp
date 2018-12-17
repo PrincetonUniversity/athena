@@ -83,17 +83,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
     pfield->b.x1f(k,j,i) = bx0;
-  }}}
+  }
+}
+}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
     pfield->b.x2f(k,j,i) = 0.0;
-  }}}
+  }
+}
+}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     pfield->b.x3f(k,j,i) = 0.0;
-  }}}
+  }
+}
+}
 
   // initialize total energy
   if (NON_BAROTROPIC_EOS) {
@@ -103,7 +109,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*bx0*bx0 +
           (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}
+    }
+}
   }
 
   return;

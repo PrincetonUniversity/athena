@@ -1283,7 +1283,8 @@ void BoundaryValues::StartReceivingAll(const Real time) {
                       &rq_innerrecv_emf_[n]);
           }
         }
-    }}
+    }
+}
 
     if (shbb_.outer) { // outer boundary
       int offset=4;
@@ -1308,7 +1309,8 @@ void BoundaryValues::StartReceivingAll(const Real time) {
                       &rq_outerrecv_emf_[n]);
           }
         }
-    }}
+    }
+}
 #endif
   }
   return;

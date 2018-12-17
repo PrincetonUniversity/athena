@@ -331,7 +331,8 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x1f(k,j,(is-i)) = b.x1f(k,j,is);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
@@ -339,7 +340,8 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x2f(k,j,(is-i)) = b.x2f(k,j,is);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -347,7 +349,8 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x3f(k,j,(is-i)) = b.x3f(k,j,is);
       }
-    }}
+    }
+}
   }
 }
 
@@ -379,7 +382,8 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x1f(k,j,(ie+i+1)) = b.x1f(k,j,(ie+1));
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
@@ -387,7 +391,8 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x2f(k,j,(ie+i)) = b.x2f(k,j,ie);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -395,7 +400,8 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=1; i<=ngh; ++i) {
         b.x3f(k,j,(ie+i)) = b.x3f(k,j,ie);
       }
-    }}
+    }
+}
   }
 }
 
@@ -427,7 +433,8 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(js-j),i) = b.x1f(k,js,i);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -435,7 +442,8 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,(js-j),i) = b.x2f(k,js,i);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -443,7 +451,8 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(js-j),i) = b.x3f(k,js,i);
       }
-    }}
+    }
+}
   }
 }
 
@@ -475,7 +484,8 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,(je+j  ),i) = b.x1f(k,(je  ),i);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -483,7 +493,8 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,(je+j+1),i) = b.x2f(k,(je+1),i);
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -491,6 +502,7 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(je+j  ),i) = b.x3f(k,(je  ),i);
       }
-    }}
+    }
+}
   }
 }

@@ -163,7 +163,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i));
         }
       }
-    }}
+    }
+}
     pmb=pmb->next;
   }
 
@@ -307,7 +308,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
                              (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
     }
-  }}
+  }
+}
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
@@ -315,7 +317,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
                              (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
     }
-  }}
+  }
+}
 
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
@@ -323,7 +326,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
      pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
                             (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
     }
-  }}
+  }
+}
   a1.DeleteAthenaArray();
   a2.DeleteAthenaArray();
   a3.DeleteAthenaArray();
@@ -356,7 +360,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                      SQR(phydro->u(IM3,k,j,i)));
       }
     }
-  }}
+  }
+}
 
   return;
 }

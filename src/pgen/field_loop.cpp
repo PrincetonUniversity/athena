@@ -197,7 +197,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         az(k,j,i) = 0.0;
       }
     }
-  }}}
+  }
+}
+}
 
   // Initialize density and momenta.  If drat != 1, then density and temperature will be
   // different inside loop than background values
@@ -224,7 +226,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
        phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
        phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
      }
-  }}}
+  }
+}
+}
 
   // initialize interface B
   for (int k=ks; k<=ke; k++) {
@@ -232,19 +236,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int i=is; i<=ie+1; i++) {
     pfield->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pcoord->dx2f(j) -
                         (ay(k+1,j,i) - ay(k,j,i))/pcoord->dx3f(k);
-  }}}
+  }
+}
+}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
     pfield->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pcoord->dx3f(k) -
                         (az(k,j,i+1) - az(k,j,i))/pcoord->dx1f(i);
-  }}}
+  }
+}
+}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     pfield->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pcoord->dx1f(i) -
                         (ax(k,j+1,i) - ax(k,j,i))/pcoord->dx2f(j);
-  }}}
+  }
+}
+}
 
   // initialize total energy
   if (NON_BAROTROPIC_EOS) {
@@ -258,7 +268,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i))
            + SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}
+    }
+}
   }
 
   ax.DeleteAthenaArray();

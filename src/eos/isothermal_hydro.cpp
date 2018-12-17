@@ -65,7 +65,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_vy = u_m2*di;
       w_vz = u_m3*di;
     }
-  }}
+  }
+}
 
   return;
 }
@@ -100,7 +101,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m2 = w_vy*w_d;
       u_m3 = w_vz*w_d;
     }
-  }}
+  }
+}
 
   return;
 }

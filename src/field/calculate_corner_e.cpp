@@ -90,7 +90,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
       cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
     }
 #endif // GENERAL_RELATIVITY
-  }}
+  }
+}
 
   // integrate E3 to corner using SG07
   for (int k=ks; k<=ke; ++k) {
@@ -112,7 +113,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
       e3(k,j,i) = 0.25*(de3_l1 + de3_r1 + de3_l2 + de3_r2 + e3_x2f(k,j,i-1) +
         e3_x2f(k,j,i) + e3_x1f(k,j-1,i) + e3_x1f(k,j,i));
     }
-  }}
+  }
+}
 
   // for 2D: copy E1 and E2 to edges and return
   if (pmb->block_size.nx3 == 1) {
@@ -120,12 +122,14 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
     for (int i=is; i<=ie+1; ++i) {
       e2(ks  ,j,i) = e2_x1f(ks,j,i);
       e2(ke+1,j,i) = e2_x1f(ks,j,i);
-    }}
+    }
+}
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
       e1(ks  ,j,i) = e1_x2f(ks,j,i);
       e1(ke+1,j,i) = e1_x2f(ks,j,i);
-    }}
+    }
+}
   } else {
 //---- 3-D update:
     // integrate E1 to corners using GS07 (E3 already done above)
@@ -165,7 +169,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
       }
 #endif // GENERAL_RELATIVITY
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je+1; ++j) {
@@ -186,7 +191,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         e1(k,j,i) = 0.25*(de1_l3 + de1_r3 + de1_l2 + de1_r2 + e1_x2f(k-1,j,i) +
           e1_x2f(k,j,i) + e1_x3f(k,j-1,i) + e1_x3f(k,j,i));
       }
-    }}
+    }
+}
 
     // integrate E2 to corners using GS07 (E3 already done above)
     // E2=-(v X B)=VxBz-VzBx
@@ -225,7 +231,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
       }
 #endif // GENERAL_RELATIVITY
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -246,7 +253,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         e2(k,j,i) = 0.25*(de2_l3 + de2_r3 + de2_l1 + de2_r1 + e2_x3f(k,j,i-1) +
           e2_x3f(k,j,i) + e2_x1f(k-1,j,i) + e2_x1f(k,j,i));
       }
-    }}
+    }
+}
   }
 
   if (!STS_ENABLED) // add diffusion flux

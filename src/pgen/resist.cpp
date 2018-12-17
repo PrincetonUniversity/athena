@@ -58,7 +58,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
      phydro->u(IM1,k,j,i) = 0.0;
      phydro->u(IM2,k,j,i) = 0.0;
      phydro->u(IM3,k,j,i) = 0.0;
-  }}}
+  }
+}
+}
 
   // initialize interface B
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -67,19 +69,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         Real x1 = pcoord->x1v(i);
         pfield->b.x2f(k,j,i) = amp/std::sqrt(4.0*PI*eta*t0)
             *std::exp(-SQR(x1-x0)/(4.0*eta*t0));
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
     }
 
     if (iprob == 1) { // initialize B diagonally
@@ -93,7 +101,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
         Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = -bprim*sint;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
@@ -102,12 +112,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x1 = pcoord->x1f(i)*cost+pcoord->x2f(j)*sint;
         Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*cost;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
     }
   }
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
@@ -124,7 +138,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x3=z;
         Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x1f(k,j,i) = bprim*std::sin(phi);
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
@@ -136,12 +152,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real x3=z;
         Real bprim = amp/std::sqrt(4.0*PI*eta*t0)*std::exp(-SQR(x1-x0)/(4.0*eta*t0));
         pfield->b.x2f(k,j,i) = bprim*std::cos(phi);
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
     } else {
       std::cout << "only iprob = 0 allowed for cylindrical coord" << std::endl;
     }

@@ -122,7 +122,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,k,j,i) = 0.0;
       phydro->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*drat*(ur*ur);
     }
-  }}}
+  }
+}
+}
 
   // initialize interface B, assuming longitudinal field only B=(1,0,0)
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -141,7 +143,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         pfield->b.x1f(k,j,i) = bxr;
       }
-    }}}
+    }
+}
+}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
@@ -150,7 +154,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         pfield->b.x2f(k,j,i) = byr;
       }
-    }}}
+    }
+}
+}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
@@ -159,7 +165,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         pfield->b.x3f(k,j,i) = bzr;
       }
-    }}}
+    }
+}
+}
 
     // initialize total energy
 
@@ -171,7 +179,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         phydro->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);
       }
-    }}}
+    }
+}
+}
   }
   return;
 }
@@ -193,5 +203,6 @@ void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
       prim(IVZ,k,j,is-i) = 0.0;
       prim(IPR,k,j,is-i) = pl;
     }
-  }}
+  }
+}
 }

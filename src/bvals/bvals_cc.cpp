@@ -235,7 +235,9 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
                     *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
                       -SQR(dst(IM3,k,j,i)));
               dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
-            }}}
+            }
+}
+}
       } // inner boundary
       if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
         for (int k=sk; k<=ek; ++k) {
@@ -246,7 +248,9 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
                  *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
                  -SQR(dst(IM3,k,j,i)));
             dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
-          }}}
+          }
+}
+}
       } // outer boundary
     }
   }

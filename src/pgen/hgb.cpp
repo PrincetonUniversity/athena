@@ -355,7 +355,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } // MHD
     }
-  }}
+  }
+}
 
 
   // For random perturbations as in HGB, ensure net momentum is zero by
@@ -372,7 +373,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM2,k,j,i) -= rd*SumRvy;
         phydro->u(IM3,k,j,i) -= rd*SumRvz;
       }
-    }}
+    }
+}
   }
 
 

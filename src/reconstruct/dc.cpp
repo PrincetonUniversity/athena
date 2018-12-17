@@ -35,7 +35,8 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb,
         wl(n,k,j,i) = w(n,k,j,i-1);
         wr(n,k,j,i) = w(n,k,j,i  );
       }
-    }}
+    }
+}
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
@@ -50,7 +51,8 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb,
         wl(IBZ,k,j,i) = bcc(IB3,k,j,i-1);
         wr(IBZ,k,j,i) = bcc(IB3,k,j,i  );
       }
-    }}
+    }
+}
   }
 
   return;
@@ -73,7 +75,8 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb,
         wl(n,k,j,i) = w(n,k,j-1,i);
         wr(n,k,j,i) = w(n,k,j  ,i);
       }
-    }}
+    }
+}
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
@@ -88,7 +91,8 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb,
         wl(IBZ,k,j,i) = bcc(IB1,k,j-1,i);
         wr(IBZ,k,j,i) = bcc(IB1,k,j  ,i);
       }
-    }}
+    }
+}
   }
 
   return;
@@ -111,7 +115,8 @@ void Reconstruction::DonorCellX3(MeshBlock *pmb,
         wl(n,k,j,i) = w(n,k-1,j,i);
         wr(n,k,j,i) = w(n,k  ,j,i);
       }
-    }}
+    }
+}
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
@@ -126,7 +131,8 @@ void Reconstruction::DonorCellX3(MeshBlock *pmb,
         wl(IBZ,k,j,i) = bcc(IB2,k-1,j,i);
         wr(IBZ,k,j,i) = bcc(IB2,k  ,j,i);
       }
-    }}
+    }
+}
   }
 
   return;

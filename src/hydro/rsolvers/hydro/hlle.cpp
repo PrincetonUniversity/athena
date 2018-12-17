@@ -142,7 +142,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     flx(ivz,k,j,i) = flxi[IVZ];
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
   }
-  }}
+  }
+}
 
   return;
 }

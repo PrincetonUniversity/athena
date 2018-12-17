@@ -364,6 +364,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
   }
-  }}
+  }
+}
   return;
 }

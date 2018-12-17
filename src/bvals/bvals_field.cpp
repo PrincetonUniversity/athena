@@ -152,20 +152,23 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_inner_field_.x2f(k,j,i) = src.x2f(k,j,ii);
           shboxvar_inner_field_.x3f(k,j,i) = src.x3f(k,j,ii);
       }
-    }}
+    }
+}
     // fill the extra cells for B2i and B3i
     int kp = ku+1;
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_inner_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
-    }}
+    }
+}
     int jp = je+NGHOST+1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_inner_field_.x2f(k,jp,i) = src.x2f(k,jp,ii);
-    }}
+    }
+}
 
       // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
@@ -175,7 +178,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_inner_field_.x1f(k,j,i) -= (flx_inner_field_.x1f(j+1) -
                                                flx_inner_field_.x1f(j));
         }
-    }}
+    }
+}
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k,js,je+3,i,eps_,shboxvar_inner_field_.x2f,flx_inner_field_.x2f);
@@ -183,7 +187,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_inner_field_.x2f(k,j,i) -= (flx_inner_field_.x2f(j+1) -
                                                flx_inner_field_.x2f(j));
         }
-    }}
+    }
+}
     for (int k=kl; k<=ku+1; k++) { // bx3
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k,js,je+2,i,eps_,shboxvar_inner_field_.x3f,flx_inner_field_.x3f);
@@ -191,7 +196,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_inner_field_.x3f(k,j,i) -= (flx_inner_field_.x3f(j+1) -
                                                flx_inner_field_.x3f(j));
         }
-    }}
+    }
+}
 
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
@@ -209,7 +215,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
 #endif
        }
-    }}
+    }
+}
   } // inner boundaries
 
   if (shbb_.outer == true) {
@@ -225,20 +232,23 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_outer_field_.x2f(k,j,i) = src.x2f(k,j,ii);
           shboxvar_outer_field_.x3f(k,j,i) = src.x3f(k,j,ii);
       }
-    }}
+    }
+}
     // fill the extra cells for B2i and B3i
     int kp = ku+1;
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_outer_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
-    }}
+    }
+}
     int jp = je+NGHOST+1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_outer_field_.x2f(k,jp,i) = src.x2f(k,jp,ii);
-    }}
+    }
+}
 
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
@@ -249,7 +259,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_outer_field_.x1f(k,j,i) -= (flx_outer_field_.x1f(j+1) -
                                                flx_outer_field_.x1f(j));
         }
-    }}
+    }
+}
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k, js-1, je+2, i, -eps_, shboxvar_outer_field_.x2f,
@@ -258,7 +269,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_outer_field_.x2f(k,j,i) -= (flx_outer_field_.x2f(j+1) -
                                                flx_outer_field_.x2f(j));
         }
-    }}
+    }
+}
     for (int k=kl; k<=ku+1; k++) {  // bx3
       for (int i=0; i<NGHOST; i++) {
         RemapFluxField(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x3f,
@@ -267,7 +279,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           shboxvar_outer_field_.x3f(k,j,i) -= (flx_outer_field_.x3f(j+1) -
                                                flx_outer_field_.x3f(j));
         }
-    }}
+    }
+}
 
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     int offset = 4;
@@ -287,7 +300,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
                     send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
 #endif
         }
-    }}
+    }
+}
   } // outer boundaries
   return;
 }

@@ -82,7 +82,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (NON_BAROTROPIC_EOS) {
       phydro->u(IEN,k,j,i) = 1.0;
     }
-  }}}
+  }
+}
+}
 }
 
 

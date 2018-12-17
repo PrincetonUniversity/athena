@@ -145,7 +145,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
         src(k,j,i) = std::exp(-r2);
-      }}}
+      }
+}
+}
 
   pfft->LoadSource(src,1,NGHOST,loc,block_size);
   pfft->ExecuteForward();
@@ -159,7 +161,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int i=is; i<=ie; ++i) {
         err1 += std::abs(dst(0,k,j,i) - src(k,j,i));
         err2 += std::abs(dst(1,k,j,i));
-      }}}
+      }
+}
+}
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);

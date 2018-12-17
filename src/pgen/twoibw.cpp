@@ -67,7 +67,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i)= 0.01/(peos->GetGamma() - 1.0);
       }
     }
-  }}
+  }
+}
 
   return;
 }

@@ -76,7 +76,8 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
                                    /pmb->pcoord->dx1v(i);
           }
         }
-    }}
+    }
+}
   } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
       int ks = pmb->ks;
       for (int j=pmb->js; j<=pmb->je; ++j) {

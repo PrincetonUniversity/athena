@@ -81,7 +81,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}}
+    }
+}
+}
 
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -90,23 +92,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = b0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x2f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-        }}}
+        }
+}
+}
       }
     }
   }
@@ -132,7 +142,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}}
+    }
+}
+}
 
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -141,23 +153,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = b0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x2f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-        }}}
+        }
+}
+}
       }
     }
   }
@@ -187,7 +207,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}}
+    }
+}
+}
 
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -196,23 +218,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = b0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x2f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-        }}}
+        }
+}
+}
       }
     }
   }
@@ -239,7 +269,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = 10.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
-    }}}
+    }
+}
+}
 
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -249,23 +281,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = b0*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x2f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+      }
+}
+}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) += 0.5*SQR(pfield->b.x1f(k,j,i));
-        }}}
+        }
+}
+}
       }
     }
   }

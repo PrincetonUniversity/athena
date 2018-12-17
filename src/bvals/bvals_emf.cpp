@@ -166,7 +166,8 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
 #endif
        }
-    }}
+    }
+}
   } // inner boundaries
 
   if (shbb_.outer == true) {
@@ -202,7 +203,8 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
 #endif
         }
-    }}
+    }
+}
   } // outer boundaries
   return;
 }
@@ -421,7 +423,8 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work) {
       e3(k,j) = 0.0;
       if (k==ke+NGHOST) e2(k+1,j) = 0.0;
       if (j==je+NGHOST) e3(k,j+1) = 0.0;
-  }}
+  }
+}
 
   return;
 }

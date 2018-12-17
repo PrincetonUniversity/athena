@@ -89,7 +89,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + e_k + pb);
       w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
     }
-  }}
+  }
+}
 
   return;
 }
@@ -133,7 +134,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_e = w_p*igm1 + 0.5*(w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz))
             + (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
     }
-  }}
+  }
+}
 
   return;
 }

@@ -83,7 +83,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     phydro->u(IM1,k,j,i) = -pcoord->x1v(i)/rad;
     phydro->u(IM2,k,j,i) = -pcoord->x2v(j)/rad;
     phydro->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
-  }}}
+  }
+}
+}
 }
 
 
@@ -120,7 +122,8 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
         prim(IPR,k,j,ie+i)= 1.0e-6;
       }
     }
-  }}
+  }
+}
 }
 
 //----------------------------------------------------------------------------------------
@@ -156,7 +159,8 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
         prim(IPR,k,je+j,i)= 1.0e-6;
       }
     }
-  }}
+  }
+}
 }
 
 //----------------------------------------------------------------------------------------
@@ -181,5 +185,6 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
       prim(IVZ,ke+k,j,i) = -pco->x3v(ke+k)/rad;
       prim(IPR,ke+k,j,i) = 1.0e-6*std::pow(f_t,(1.0+gmma));
     }
-  }}
+  }
+}
 }

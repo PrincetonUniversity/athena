@@ -89,7 +89,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           data_sum[NHYDRO + 5] += vol(i)*0.5*bcc3*bcc3;
         }
       }
-    }}
+    }
+}
     for (int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
       if (pm->user_history_func_[n]!=nullptr)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);

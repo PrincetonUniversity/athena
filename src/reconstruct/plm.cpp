@@ -118,7 +118,8 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
-  }}
+  }
+}
   return;
 }
 
@@ -221,7 +222,8 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
-  }}
+  }
+}
   return;
 }
 
@@ -324,6 +326,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
         pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
-  }}
+  }
+}
   return;
 }

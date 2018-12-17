@@ -139,7 +139,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
           } // update energy
           src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
         }
-    }}
+    }
+}
   }
 
   if (shbb_.outer == true) {
@@ -160,7 +161,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
           } // update energy
           src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);// update IM2
         }
-    }}
+    }
+}
   }
   return;
 }
@@ -209,7 +211,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                       - SQR(src(IM2,k,j,ii)));
           }
         }
-    }}
+    }
+}
 
     // step 2. -- conservative remaping
     for (int n=0; n<NHYDRO; n++) {
@@ -221,7 +224,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                              -flx_inner_hydro_(j);
           }
         }
-    }}
+    }
+}
 
   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
   // MPI_Isend otherwise
@@ -241,7 +245,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                     &rq_innersend_hydro_[n]);
 #endif
         }
-      }}
+      }
+}
   } // inner boundaries
 
   if (shbb_.outer == true) {
@@ -265,7 +270,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                       -SQR(src(IM2,k,j,ii)));
           }
         }
-    }}
+    }
+}
 
     // step 2. -- conservative remaping
     for (int n=0; n<NHYDRO; n++) {
@@ -278,7 +284,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                              -flx_outer_hydro_(j);
           }
         }
-    }}
+    }
+}
 
   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
   // MPI_Isend otherwise
@@ -302,7 +309,8 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                     &rq_outersend_hydro_[n]);
 #endif
         }
-    }}
+    }
+}
   } // outer boundaries
   return;
 }

@@ -35,7 +35,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
         cons(IM1,k,j,i) += src;
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
       }
-    }}
+    }
+}
   }
 
   // acceleration in 2-direction
@@ -48,7 +49,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
           cons(IM2,k,j,i) += src;
           if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
       }
-    }}
+    }
+}
   }
 
   // acceleration in 3-direction
@@ -61,7 +63,8 @@ void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real
           cons(IM3,k,j,i) += src;
           if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
       }
-    }}
+    }
+}
   }
 
   return;

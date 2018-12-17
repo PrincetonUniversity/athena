@@ -88,7 +88,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     if (NON_BAROTROPIC_EOS) {
       phydro->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
     }
-  }}}
+  }
+}
+}
 
   // initialize interface B
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -96,23 +98,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie+1; ++i) {
       pfield->b.x1f(k,j,i) = bx_amb;
-    }}}
+    }
+}
+}
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
       pfield->b.x2f(k,j,i) = by_amb;
-    }}}
+    }
+}
+}
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       pfield->b.x3f(k,j,i) = bz_amb;
-    }}}
+    }
+}
+}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         phydro->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
-      }}}
+      }
+}
+}
     }
   }
 
@@ -145,7 +155,8 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
         prim(IPR,k,j,is-i) = prim(IPR,k,j,is);
       }
     }
-  }}
+  }
+}
 
   // set magnetic field in inlet ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -160,7 +171,8 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
           b.x1f(k,j,is-i) = b.x1f(k,j,is);
         }
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
@@ -173,7 +185,8 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
           b.x2f(k,j,is-i) = b.x2f(k,j,is);
         }
       }
-    }}
+    }
+}
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -186,6 +199,7 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
           b.x3f(k,j,is-i) = b.x3f(k,j,is);
         }
       }
-    }}
+    }
+}
   }
 }

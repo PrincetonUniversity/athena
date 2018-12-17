@@ -346,7 +346,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb,
       pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
       pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
-  }}
+  }
+}
   return;
 }
 
@@ -656,7 +657,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb,
       pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
       pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
-  }}
+  }
+}
   return;
 }
 
@@ -969,6 +971,7 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb,
       pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
       pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
-  }}
+  }
+}
   return;
 }

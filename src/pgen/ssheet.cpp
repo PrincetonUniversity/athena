@@ -162,7 +162,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                ) / phydro->u(IDN,k,j,i);
         }
       }
-    }}
+    }
+}
 
 
   return;

@@ -68,7 +68,8 @@ void Field::CT(const Real wght, FaceField &b_out) {
         }
       }
     }
-  }}
+  }
+}
 
 //---- update B2 (curl terms in 1D and 3D problems)
 
@@ -119,7 +120,8 @@ void Field::CT(const Real wght, FaceField &b_out) {
            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
       }
     }
-  }}
+  }
+}
 
   return;
 }
@@ -147,7 +149,8 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
           b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i)
               + wght[2]*b_in2.x1f(k,j,i);
         }
-      }}
+      }
+}
 
 //---- B2
 
@@ -177,7 +180,8 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
           b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i)
               + wght[2]*b_in2.x3f(k,j,i);
         }
-      }}
+      }
+}
   } else { // do not derefernce b_in2
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -185,7 +189,8 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
         for (int i=is; i<=ie+1; ++i) {
           b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i);
         }
-      }}
+      }
+}
 
 //---- B2
 
@@ -213,7 +218,8 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
         for (int i=is; i<=ie; ++i) {
           b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i);
         }
-      }}
+      }
+}
   }
   return;
 }
