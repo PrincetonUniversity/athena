@@ -136,7 +136,7 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 //           int k, int j, int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
-  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_d  = prim(IDN,i);
 
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
