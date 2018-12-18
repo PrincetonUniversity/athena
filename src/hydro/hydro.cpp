@@ -98,13 +98,15 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     if (pmy_block->block_size.nx3 > 1)
       gflx_old[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
   }
+
   // fourth-order hydro
   // 4D scratch arrays
-  wl_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  wr_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  flux_fc_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wl3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wr3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
   scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   scr2_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+  laplacian_l_fc_.NewAthenaArray(ncells1);
+  laplacian_r_fc_.NewAthenaArray(ncells1);
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 
@@ -173,13 +175,15 @@ Hydro::~Hydro() {
     if (pmy_block->block_size.nx2 > 1) gflx_old[X2DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx3 > 1) gflx_old[X3DIR].DeleteAthenaArray();
   }
+
   // fourth-order hydro
   // 4D scratch arrays
-  wl_fc_.DeleteAthenaArray();
-  wr_fc_.DeleteAthenaArray();
-  flux_fc_.DeleteAthenaArray();
+  wl3d_.DeleteAthenaArray();
+  wr3d_.DeleteAthenaArray();
   scr1_nkji_.DeleteAthenaArray();
   scr2_nkji_.DeleteAthenaArray();
+  laplacian_l_fc_.DeleteAthenaArray();
+  laplacian_r_fc_.DeleteAthenaArray();
 
   delete psrc;
   delete phdif;

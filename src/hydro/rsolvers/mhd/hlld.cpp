@@ -34,16 +34,15 @@ typedef struct Cons1D {
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx, AthenaArray<Real> &ey,
-  AthenaArray<Real> &ez, AthenaArray<Real> &wct, AthenaArray<Real> &dxw) {
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Real spd[5];                    // signal speeds, left to right
 
-//  Real igm1 = 1.0 / (pmy_block->peos->GetGamma() - 1.0);
-  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real igm1 = 1.0 / (pmy_block->peos->GetGamma() - 1.0);
   Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
@@ -84,7 +83,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ul.mx = wli[IVX]*ul.d;
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
-    ul.e  = wli[IPR]/gm1 + kel + pbl;
+    ul.e  = wli[IPR]*igm1 + kel + pbl;
     ul.by = wli[IBY];
     ul.bz = wli[IBZ];
 
@@ -92,7 +91,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ur.mx = wri[IVX]*ur.d;
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
-    ur.e  = wri[IPR]/gm1 + ker + pbr;
+    ur.e  = wri[IPR]*igm1 + ker + pbr;
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
@@ -362,10 +361,6 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-    // compute weights for GS07 CT algorithm
-    Real v_over_c = (1024.0)* dt * flxi[IDN] / (dxw(i) * (wli[IDN] + wri[IDN]));
-    Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-    wct(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
   }
 
   return;

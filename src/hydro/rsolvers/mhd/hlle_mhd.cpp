@@ -21,15 +21,13 @@
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx, AthenaArray<Real> &ey,
-  AthenaArray<Real> &ez, AthenaArray<Real> &wct, AthenaArray<Real> &dxw) {
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
-
-  Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd private(wli,wri,wroe,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
@@ -163,18 +161,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flxi[IBY] = 0.5*(fl[IBY]+fr[IBY]) + (fl[IBY]-fr[IBY])*tmp;
     flxi[IBZ] = 0.5*(fl[IBZ]+fr[IBZ]) + (fl[IBZ]-fr[IBZ])*tmp;
 
-    flx(IDN,k,j,i) = flxi[IDN];
-    flx(ivx,k,j,i) = flxi[IVX];
-    flx(ivy,k,j,i) = flxi[IVY];
-    flx(ivz,k,j,i) = flxi[IVZ];
-    if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
+    flx(IDN,i) = flxi[IDN];
+    flx(ivx,i) = flxi[IVX];
+    flx(ivy,i) = flxi[IVY];
+    flx(ivz,i) = flxi[IVZ];
+    if (NON_BAROTROPIC_EOS) flx(IEN,i) = flxi[IEN];
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
-    // compute weights for GS07 CT algorithm
-    Real v_over_c = (1024.0)* dt * flxi[IDN] / (dxw(i) * (wli[IDN] + wri[IDN]));
-    Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-    wct(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
   }
   return;
 }

@@ -36,12 +36,14 @@
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                             AthenaArray<Real> &bcc, const int order) {
   MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1flux=flux[X1DIR];
-  AthenaArray<Real> &x2flux=flux[X2DIR];
-  AthenaArray<Real> &x3flux=flux[X3DIR];
+  AthenaArray<Real> &x1flux = flux[X1DIR];
+  AthenaArray<Real> &x2flux = flux[X2DIR];
+  AthenaArray<Real> &x3flux = flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
+
+  Real dt = pmb->pmy_mesh->dt;
 
   AthenaArray<Real> b1, b2, b3, w_x1f, w_x2f, w_x3f, e2x1, e3x1, e1x2, e3x2, e1x3, e2x3;
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -58,15 +60,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     e1x3.InitWithShallowCopy(pmb->pfield->e1_x3f);
     e2x3.InitWithShallowCopy(pmb->pfield->e2_x3f);
   }
-
-  // fourth-order hydro quantities:
-  // face-centered reconstructed primitive variables, fluxes, and their Laplacians:
-  AthenaArray<Real> wl_fc, wr_fc, flux_fc, laplacian_l_fc, laplacian_r_fc;
-  wl_fc.InitWithShallowCopy(wl_fc_);
-  wr_fc.InitWithShallowCopy(wr_fc_);
-  flux_fc.InitWithShallowCopy(flux_fc_);
-  laplacian_l_fc.InitWithShallowCopy(scr1_nkji_);
-  laplacian_r_fc.InitWithShallowCopy(scr2_nkji_);
+  AthenaArray<Real> &flux_fc = scr1_nkji_;
+  AthenaArray<Real> &laplacian_all_fc = scr2_nkji_;
 
 //----------------------------------------------------------------------------------------
 // i-direction
@@ -94,13 +89,73 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->precon->PiecewiseParabolicX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
 
-      // compute fluxes, store directly into 3D arrays
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
-      pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
-      RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1, w_x1f, dxw_);
+      RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1);
+
+      if (order < 4 && MAGNETIC_FIELDS_ENABLED) {
+        pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+        for (int i=is; i<=ie+1; i++) {
+          // compute weights for GS07 CT algorithm
+          Real v_over_c = (1024.0)* dt * x1flux(IDN,k,j,i) / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+          w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+        }
+      }
     }
   }
+
+  if (order == 4) {
+    // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
+    // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
+    Real h = pmb->pcoord->dx1f(is);  // pco->dx1f(i); inside loop
+    Real C = (h*h)/24.0;
+
+    // construct Laplacian from x1flux
+    pmb->pcoord->LaplacianX1All(x1flux, laplacian_all_fc, 0, NHYDRO-1,
+                                kl, ku, jl, ju, is, ie+1);
+
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        // Compute Laplacian of primitive Riemann states on x1 faces
+        for (int n=0; n<NWAVE; ++n) {
+#pragma ivdep
+          for (int i=is; i<=ie+1; ++i) {
+            wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX1(wl3d_, n, k, j, i);
+            wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX1(wr3d_, n, k, j, i);;
+          }
+        }
+#pragma ivdep
+        for (int i=is; i<=ie+1; ++i) {
+          pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
+          pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+        }
+
+        // Compute x1 interface fluxes from face-centered primitive variables
+        // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
+        RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, flux_fc, e3x1, e2x1);
+
+        // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
+        for (int n=0; n<NHYDRO; ++n) {
+#pragma ivdep
+          for (int i=is; i<=ie+1; i++)
+            x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+        }
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+          pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+          for (int i=is; i<=ie+1; ++i) {
+            // compute weights for GS07 CT algorithm
+            Real v_over_c = (1024.0)* dt * x1flux(IDN,k,j,i)
+                          / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+            w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
+        }
+      }
+    }
+  } // end if (order == 4)
+
   //------------------------------------------------------------------------------
   // end x1 fourth-order hydro
 
@@ -139,16 +194,75 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        // compute fluxes, store directly into 3D arrays
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
         // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
-        RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, x2flux, e1x2, e3x2, w_x2f, dxw_);
+        RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, x2flux, e1x2, e3x2);
+
+        if (order < 4 && MAGNETIC_FIELDS_ENABLED) {
+          pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+          for (int i=il; i<=iu; i++) {
+            // compute weights for GS07 CT algorithm
+            Real v_over_c = (1024.0)* dt * x2flux(IDN,k,j,i) / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+            w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
+        }
 
         // swap the arrays for the next step
         wl_.SwapAthenaArray(wlb_);
       }
     }
+    if (order == 4) {
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
+      // TODO(felker): also, this may need to be dx2v, since Laplacian is cell-centered
+      Real h = pmb->pcoord->dx2f(js);  // pco->dx2f(j); inside loop
+      Real C = (h*h)/24.0;
+
+      // construct Laplacian from x2flux
+      pmb->pcoord->LaplacianX2All(x2flux, laplacian_all_fc, 0, NHYDRO-1,
+                                  kl, ku, js, je+1, il, iu);
+
+      // Approximate x2 face-centered primitive Riemann states
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=js; j<=je+1; ++j) {
+          // Compute Laplacian of primitive Riemann states on x2 faces
+          for (int n=0; n<NWAVE; ++n) {
+#pragma ivdep
+            for (int i=il; i<=iu; ++i) {
+              wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX2(wl3d_, n, k, j, i);
+              wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX2(wr3d_, n, k, j, i);;
+            }
+          }
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+          }
+
+          // Compute x2 interface fluxes from face-centered primitive variables
+          // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
+          RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, flux_fc, e1x2, e3x2);
+
+          // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
+          for (int n=0; n<NHYDRO; ++n) {
+#pragma ivdep
+            for (int i=il; i<=iu; i++)
+              x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+          }
+
+          if (MAGNETIC_FIELDS_ENABLED) {
+            pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+            for (int i=il; i<=iu; ++i) {
+              // compute weights for GS07 CT algorithm
+              Real v_over_c = (1024.0)* dt * x2flux(IDN,k,j,i)
+                            / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+              Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+              w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+            }
+          }
+        }
+      }
+    } // end if (order == 4)
   }
 
 //----------------------------------------------------------------------------------------
@@ -180,16 +294,75 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        // compute fluxes, store directly into 3D arrays
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
         // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
-        RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, x3flux, e2x3, e1x3, w_x3f, dxw_);
+        RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, x3flux, e2x3, e1x3);
+
+        if (order < 4 && MAGNETIC_FIELDS_ENABLED) {
+          pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+          for (int i=il; i<=iu; i++) {
+            // compute weights for GS07 CT algorithm
+            Real v_over_c = (1024.0)* dt * x3flux(IDN,k,j,i) / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+            w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
+        }
 
         // swap the arrays for the next step
         wl_.SwapAthenaArray(wlb_);
       }
     }
+    if (order == 4) {
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
+      // TODO(felker): also, this may need to be dx3v, since Laplacian is cell-centered
+      Real h = pmb->pcoord->dx3f(ks);  // pco->dx3f(j); inside loop
+      Real C = (h*h)/24.0;
+
+      // construct Laplacian from x3flux
+      pmb->pcoord->LaplacianX3All(x3flux, laplacian_all_fc, 0, NHYDRO-1,
+                                  ks, ke+1, jl, ju, il, iu);
+
+      // Approximate x3 face-centered primitive Riemann states
+      for (int k=ks; k<=ke+1; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          // Compute Laplacian of primitive Riemann states on x3 faces
+          for (int n=0; n<NWAVE; ++n) {
+#pragma ivdep
+            for (int i=il; i<=iu; ++i) {
+              wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX3(wl3d_, n, k, j, i);
+              wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX3(wr3d_, n, k, j, i);;
+            }
+          }
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+          }
+
+          // Compute x3 interface fluxes from face-centered primitive variables
+          // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
+          RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, flux_fc, e2x3, e1x3);
+
+          // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
+          for (int n=0; n<NHYDRO; ++n) {
+#pragma ivdep
+            for (int i=il; i<=iu; i++)
+              x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+          }
+
+          if (MAGNETIC_FIELDS_ENABLED) {
+            pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+            for (int i=il; i<=iu; ++i) {
+               // compute weights for GS07 CT algorithm
+              Real v_over_c = (1024.0)* dt * x3flux(IDN,k,j,i)
+                            / (dxw_(i) * (wl_(IDN,i) + wr_(IDN,i)));
+              Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+              w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+            }
+          }
+        }
+      }
+    } // end if (order == 4)
   }
 
 

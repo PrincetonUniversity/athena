@@ -54,11 +54,10 @@ public:
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
-  void RiemannSolver(const int k, const int j,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+  void RiemannSolver(const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez, AthenaArray<Real> &wct,
-    AthenaArray<Real> &dxw);
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);
@@ -87,8 +86,9 @@ private:
 
   // fourth-order hydro
   // 4D scratch arrays
-  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   TimeStepFunc_t UserTimeStep_;
 };
