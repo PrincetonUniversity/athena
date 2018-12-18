@@ -76,7 +76,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-  }}
+  }
+}
 
   // initialize interface B
   for (int k=ks; k<=ke; k++) {

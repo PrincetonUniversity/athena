@@ -774,7 +774,8 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         for (int i=out_is; i<=out_ie; ++i) {
           pnew->data(n,0,j,i) = pdata->data(n,kslice,j,i);
         }
-      }}
+      }
+}
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n) {
@@ -782,7 +783,8 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         for (int i=out_is; i<=out_ie; ++i) {
           pnew->data(n,k,0,i) = pdata->data(n,k,jslice,i);
         }
-      }}
+      }
+}
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n) {
@@ -790,7 +792,8 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         for (int j=out_js; j<=out_je; ++j) {
           pnew->data(n,k,j,0) = pdata->data(n,k,j,islice);
         }
-      }}
+      }
+}
     }
 
     ReplaceOutputDataNode(pdata,pnew);
