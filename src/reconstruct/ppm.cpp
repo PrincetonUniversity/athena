@@ -333,8 +333,8 @@ void Reconstruction::PiecewiseParabolicX1(MeshBlock *pmb, const int k, const int
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
     // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
-    pmb->peos->ApplyPrimitiveFloors(wl, 0, 0, i+1);
-    pmb->peos->ApplyPrimitiveFloors(wr, 0, 0, i);
+    pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+    pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }
@@ -634,8 +634,8 @@ void Reconstruction::PiecewiseParabolicX2(MeshBlock *pmb, const int k, const int
 #pragma ivdep
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
-    pmb->peos->ApplyPrimitiveFloors(wl, 0, 0, i);
-    pmb->peos->ApplyPrimitiveFloors(wr, 0, 0, i);
+    pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);
+    pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }
@@ -938,8 +938,8 @@ void Reconstruction::PiecewiseParabolicX3(MeshBlock *pmb, const int k, const int
 #pragma ivdep
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
-    pmb->peos->ApplyPrimitiveFloors(wl, 0, 0, i);
-    pmb->peos->ApplyPrimitiveFloors(wr, 0, 0, i);
+    pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);
+    pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }
