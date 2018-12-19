@@ -44,20 +44,20 @@ do
     # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
     # Note, currently all such chained grep calls will miss violations if a comment is at the end of line, e.g.:
     #     }}  // this is a comment after a style error
-    grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
+    grep -nri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit 1; fi
 
-    grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
+    grep -nri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
 
     # TYPE 3: purely stylistic inconsistencies.
     # These errors would not cause any changes to code behavior if they were ignored, but they may affect readability.
     # --------------------------
-    grep -ri "}}" "$file" | grep -v "//"
+    grep -nri "}}" "$file" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use single closing brace '}}' per line"; exit 1; fi
 
     # GNU Grep Extended Regex (ERE) syntax:
-    grep -rEi '^\s+#pragma' "$file"
+    grep -nrEi '^\s+#pragma' "$file"
     if [ $? -ne 1 ]; then echo "ERROR: Left justify any #pragma statements"; exit 1; fi
 
     # To lint each src/ file separately, use:
