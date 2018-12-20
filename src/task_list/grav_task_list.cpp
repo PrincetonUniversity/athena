@@ -55,31 +55,31 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
   task_list_[ntasks].dependency=dep;
 
   using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
-  switch((id)) {
+  switch (id) {
     case (START_GRAV_RECV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::StartGravityReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::StartGravityReceive);
       break;
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::ClearGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::ClearGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::SendGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::SendGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::ReceiveGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::ReceiveGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::PhysicalBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::PhysicalBoundary);
       break;
     default:
       std::stringstream msg;

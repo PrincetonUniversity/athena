@@ -45,13 +45,13 @@ class GravitySolverTaskList : public TaskList {
 // 64-bit integers with "1" in different bit positions used to ID  each hydro task.
 
 namespace GravitySolverTaskNames {
-  const std::uint64_t NONE=0;
-  const std::uint64_t START_GRAV_RECV=1LL<<0;
-  const std::uint64_t CLEAR_GRAV=1LL<<1;
+const std::uint64_t NONE = 0ULL;
+const std::uint64_t START_GRAV_RECV = 1ULL<<0;
+const std::uint64_t CLEAR_GRAV = 1ULL<<1;
 
-  const std::uint64_t SEND_GRAV_BND=1LL<<2;
-  const std::uint64_t RECV_GRAV_BND=1LL<<3;
-  const std::uint64_t GRAV_PHYS_BND=1LL<<4;
+const std::uint64_t SEND_GRAV_BND = 1ULL<<2;
+const std::uint64_t RECV_GRAV_BND = 1ULL<<3;
+const std::uint64_t GRAV_PHYS_BND = 1ULL<<4;
 }
 
 #endif // TASK_LIST_GRAV_TASK_LIST_HPP_

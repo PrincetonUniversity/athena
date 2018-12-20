@@ -47,7 +47,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
@@ -96,14 +96,13 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   // cycle through all MeshBlocks and perform all tasks possible
   while (nmb_left > 0) {
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
-{
+    {
 #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-    for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
-        nmb_left--;
+      for (int i=0; i<nmb; ++i) {
+        if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE)
+          nmb_left--;
       }
     }
-}
   }
   return;
 }

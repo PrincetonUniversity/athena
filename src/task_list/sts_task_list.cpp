@@ -38,11 +38,11 @@
 //  SuperTimeStepTaskList constructor
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm) {
+    : TaskList(pm) {
   // STS Incompatiblities
-  if ((MAGNETIC_FIELDS_ENABLED &&
-        (!pm->pblock->pfield->pfdif->field_diffusion_defined)) &&
-      (!pm->pblock->phydro->phdif->hydro_diffusion_defined)) {
+  if (MAGNETIC_FIELDS_ENABLED &&
+      !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&
+      !(pm->pblock->phydro->phdif->hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -136,97 +136,90 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
   switch((id)) {
     case (START_ALLRECV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::StartAllReceive_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::StartAllReceive_STS);
       break;
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::ClearAllBoundary_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::ClearAllBoundary_STS);
       break;
-
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::CalculateFluxes_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::CalculateFluxes_STS);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::CalculateEMF_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::CalculateEMF_STS);
       break;
-
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::EMFCorrectSend_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::EMFCorrectSend_STS);
       break;
 
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::EMFCorrectReceive_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::EMFCorrectReceive_STS);
       break;
-
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::HydroIntegrate_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroIntegrate_STS);
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::FieldIntegrate_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldIntegrate_STS);
       break;
-
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::HydroSend_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroSend_STS);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::FieldSend_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldSend_STS);
       break;
-
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::HydroReceive_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroReceive_STS);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::FieldReceive_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldReceive_STS);
       break;
-
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::Primitives_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::Primitives_STS);
       break;
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::PhysicalBoundary_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::PhysicalBoundary_STS);
       break;
     case (STARTUP_INT):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::StartupIntegrator_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::StartupIntegrator_STS);
       break;
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::HydroDiffusion_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroDiffusion_STS);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::FieldDiffusion_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldDiffusion_STS);
       break;
-
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddSuperTimeStepTask" << std::endl
@@ -489,7 +482,7 @@ enum TaskStatus SuperTimeStepTaskList::StartupIntegrator_STS(MeshBlock *pmb, int
     // Clear flux arrays from previous stage
     pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-     pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+      pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
     }
   } else {
     return TASK_FAIL;

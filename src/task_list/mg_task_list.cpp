@@ -64,7 +64,7 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     MGTask &taski=task_list_[i];
 
-    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmg);
@@ -96,7 +96,7 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  switch(id) {
+  switch (id) {
     case (MG_STARTRECV0):
     case (MG_STARTRECVL):
       task_list_[ntasks].TaskFunc=
@@ -230,7 +230,7 @@ enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg) {
 enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
-     SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
+      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
@@ -238,7 +238,7 @@ enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
 enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
-     SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
+      SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
@@ -246,7 +246,7 @@ enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg) {
 enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
-     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
+      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
     return TASK_FAIL;
   return TASK_NEXT;
 }
@@ -254,7 +254,7 @@ enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
 enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg) {
   int nc=pmg->GetCurrentNumberOfCells();
   if (pmg->pmgbval->
-     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
+      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
     return TASK_FAIL;
   return TASK_NEXT;
 }
