@@ -171,11 +171,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
-  if ((COORDINATE_SYSTEM == "cylindrical") || (COORDINATE_SYSTEM == "spherical_polar")) {
-    // curvilinear: all directions, regardless of non/uniformity
+  if (COORDINATE_SYSTEM == "cylindrical") {
+    // cylindrical: r should be non uniform; the others depend on the mesh spacing
+    uniform_limiter[0]=false;
+  }
+  if (COORDINATE_SYSTEM == "spherical_polar") {
+    // spherical_polar: r and theta should be non uniform, phi can be uniform
     uniform_limiter[0]=false;
     uniform_limiter[1]=false;
-    uniform_limiter[2]=false;
   }
   // nonuniform geometric spacing or user-defined MeshGenerator, for all coordinate
   // systems, use nonuniform limiter (non-curvilinear will default to Cartesian factors)
