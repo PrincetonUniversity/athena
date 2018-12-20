@@ -34,7 +34,8 @@ typedef struct Cons1D {
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
@@ -43,6 +44,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());
+  Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd private(flxi,wli,wri,spd)
   for (int i=il; i<=iu; ++i) {
@@ -241,6 +243,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
+    wct(k,j,i)=GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
   }
 
   return;

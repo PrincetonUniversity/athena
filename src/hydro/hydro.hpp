@@ -57,7 +57,8 @@ public:
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+    AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);
@@ -91,5 +92,7 @@ private:
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   TimeStepFunc_t UserTimeStep_;
+
+  Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };
 #endif // HYDRO_HYDRO_HPP_

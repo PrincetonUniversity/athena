@@ -38,13 +38,16 @@ static Real gm1, iso_cs;
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)];
   Real flxi[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)];
+
   gm1 = pmy_block->peos->GetGamma() - 1.0;
   iso_cs = pmy_block->peos->GetIsoSoundSpeed();
+  Real dt = pmy_block->pmy_mesh->dt;
 
   Real ev[(NWAVE)],du[(NWAVE)];
 
@@ -203,6 +206,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
+    wct(k,j,i)=GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
   }
 
   return;

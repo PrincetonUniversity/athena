@@ -53,10 +53,11 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 //   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
 //       Harm
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bb,
-    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {

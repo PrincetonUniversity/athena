@@ -188,3 +188,16 @@ Hydro::~Hydro() {
   delete psrc;
   delete phdif;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt)
+//  \brief Calculate the weighting factor for the constrained transport method
+
+Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt) {
+  Real v_over_c = (1024.0)* dt * dflx / (dx * (rhol + rhor));
+  Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+  return 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+}
+
+
