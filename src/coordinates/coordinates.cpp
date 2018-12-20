@@ -552,18 +552,21 @@ void Coordinates::Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta
 
 //-------------------------------------------------------------------------------------
 // LaplacianX* functions: calculate Laplacian in subspaces orthogonal to X-dir
-// Now this takes 3D array as input and returns 1D array as output
 
-Real Coordinates::LaplacianX1(const AthenaArray<Real> &s, const int n,
-                              const int k, const int j, const int i) {
-  Real delta = 0.0;
+void Coordinates::LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                  const int n, const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
-    delta = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j))
-          + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j))
+                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    }
   } else if (pmy_block->block_size.nx2 > 1) {
-    delta = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    }
+  } else {
+    delta_s.ZeroClear();
   }
-  return delta;
 }
 
 
@@ -601,16 +604,18 @@ void Coordinates::LaplacianX1All(const AthenaArray<Real> &s, AthenaArray<Real> &
 }
 
 
-Real Coordinates::LaplacianX2(const AthenaArray<Real> &s, const int n,
-                              const int k, const int j, const int i) {
-  Real delta;
+void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                  const int n, const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
-    delta = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
-          + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
+                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    }
   } else {
-    delta = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    }
   }
-  return delta;
 }
 
 void Coordinates::LaplacianX2All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
@@ -644,16 +649,18 @@ void Coordinates::LaplacianX2All(const AthenaArray<Real> &s, AthenaArray<Real> &
   return;
 }
 
-Real Coordinates::LaplacianX3(const AthenaArray<Real> &s, const int n,
-                              const int k, const int j, const int i) {
-  Real delta;
+void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                  const int n, const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx2 > 1) {
-    delta = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
-          + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
+                 + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    }
   } else {
-    delta = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    }
   }
-  return delta;
 }
 
 void Coordinates::LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,

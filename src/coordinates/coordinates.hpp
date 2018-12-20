@@ -91,18 +91,18 @@ public:
   virtual void Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
     const int il, const int iu, const int jl, const int ju, const int kl, const int ku,
     const int nl, const int nu);
-  virtual Real LaplacianX1(const AthenaArray<Real> &s, const int n,
-    const int k, const int j, const int i);
+  virtual void LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int n, const int k, const int j, const int il, const int iu);
   virtual void LaplacianX1All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
     const int nl, const int nu, const int kl, const int ku,
     const int jl, const int ju, const int il, const int iu);
-  virtual Real LaplacianX2(const AthenaArray<Real> &s, const int n,
-    const int k, const int j, const int i);
+  virtual void LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int n, const int k, const int j, const int il, const int iu);
   virtual void LaplacianX2All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
     const int nl, const int nu, const int kl, const int ku,
     const int jl, const int ju, const int il, const int iu);
-  virtual Real LaplacianX3(const AthenaArray<Real> &s, const int n,
-    const int k, const int j, const int i);
+  virtual void LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+    const int n, const int k, const int j, const int il, const int iu);
   virtual void LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
     const int nl, const int nu, const int kl, const int ku,
     const int jl, const int ju, const int il, const int iu);

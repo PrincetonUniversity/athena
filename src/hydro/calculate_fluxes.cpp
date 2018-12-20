@@ -129,13 +129,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       for (int j=jl; j<=ju; ++j) {
         // Compute Laplacian of primitive Riemann states on x1 faces
         for (int n=0; n<NWAVE; ++n) {
-#pragma pragma omp simd
+          pmb->pcoord->LaplacianX1(wl3d_, laplacian_l_fc_, n, k, j, is, ie+1);
+          pmb->pcoord->LaplacianX1(wr3d_, laplacian_r_fc_, n, k, j, is, ie+1);
+#pragma omp simd
           for (int i=is; i<=ie+1; ++i) {
-            wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX1(wl3d_, n, k, j, i);
-            wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX1(wr3d_, n, k, j, i);;
+            wl_(n,i) = wl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
+            wr_(n,i) = wr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
           }
         }
-#pragma pragma omp simd
+#pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
           pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
@@ -147,7 +149,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
         for (int n=0; n<NHYDRO; ++n) {
-#pragma pragma omp simd
+#pragma omp simd
           for (int i=is; i<=ie+1; i++)
             x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
         }
@@ -247,13 +249,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         for (int j=js; j<=je+1; ++j) {
           // Compute Laplacian of primitive Riemann states on x2 faces
           for (int n=0; n<NWAVE; ++n) {
-#pragma pragma omp simd
+            pmb->pcoord->LaplacianX2(wl3d_, laplacian_l_fc_, n, k, j, il, iu);
+            pmb->pcoord->LaplacianX2(wr3d_, laplacian_r_fc_, n, k, j, il, iu);
+#pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX2(wl3d_, n, k, j, i);
-              wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX2(wr3d_, n, k, j, i);;
+              wl_(n,i) = wl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
+              wr_(n,i) = wr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
             }
           }
-#pragma pragma omp simd
+#pragma omp simd
           for (int i=il; i<=iu; ++i) {
             pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
             pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
@@ -265,7 +269,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
           for (int n=0; n<NHYDRO; ++n) {
-#pragma pragma omp simd
+#pragma omp simd
             for (int i=il; i<=iu; i++)
               x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
           }
@@ -357,13 +361,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         for (int j=jl; j<=ju; ++j) {
           // Compute Laplacian of primitive Riemann states on x3 faces
           for (int n=0; n<NWAVE; ++n) {
-#pragma pragma omp simd
+            pmb->pcoord->LaplacianX3(wl3d_, laplacian_l_fc_, n, k, j, il, iu);
+            pmb->pcoord->LaplacianX3(wr3d_, laplacian_r_fc_, n, k, j, il, iu);
+#pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              wl_(n,i) = wl3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX3(wl3d_, n, k, j, i);
-              wr_(n,i) = wr3d_(n,k,j,i) - C*pmb->pcoord->LaplacianX3(wr3d_, n, k, j, i);;
+              wl_(n,i) = wl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
+              wr_(n,i) = wr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
             }
           }
-#pragma pragma omp simd
+#pragma omp simd
           for (int i=il; i<=iu; ++i) {
             pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
             pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
@@ -375,7 +381,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
           for (int n=0; n<NHYDRO; ++n) {
-#pragma pragma omp simd
+#pragma omp simd
             for (int i=il; i<=iu; i++)
               x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
           }
