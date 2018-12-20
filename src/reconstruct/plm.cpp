@@ -105,7 +105,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
   }
 
   if (pmb->precon->characteristic_reconstruction) {
-#pragma ivdep
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
       // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
@@ -207,7 +207,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
   }
 
   if (pmb->precon->characteristic_reconstruction) {
-#pragma ivdep
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
       pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);
@@ -308,7 +308,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
   }
 
   if (pmb->precon->characteristic_reconstruction) {
-#pragma ivdep
+#pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
       pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);

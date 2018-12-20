@@ -43,7 +43,6 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real spd[5];                    // signal speeds, left to right
 
   Real igm1 = 1.0 / (pmy_block->peos->GetGamma() - 1.0);
-  Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
   for (int i=il; i<=iu; ++i) {
