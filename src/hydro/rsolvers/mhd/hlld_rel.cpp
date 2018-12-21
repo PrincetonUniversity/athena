@@ -72,7 +72,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
         lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_,
         flux, ey, ez);
   }
-  for(int i=il; i<=iu: ++i) {
+  for(int i=il; i<=iu; ++i) {
     wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
   }
   return;
