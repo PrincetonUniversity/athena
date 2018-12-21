@@ -871,9 +871,9 @@ void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
 // Inputs:
 //   k,j: x3- and x2-indices
 //   il,iu: x1-index bounds
-//   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_l: 3D array of left primitives, using global coordinates
-//   prim_r: 3D array of right primitives, using global coordinates
+//   bb1: 1D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -910,12 +910,12 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const Real &mz_3 = trans_face1_kji_(1,T33,k,j,i);
 
     // Extract global projected 4-velocities
-    Real uu1_l = prim_l(IVX,k,j,i);
-    Real uu2_l = prim_l(IVY,k,j,i);
-    Real uu3_l = prim_l(IVZ,k,j,i);
-    Real uu1_r = prim_r(IVX,k,j,i);
-    Real uu2_r = prim_r(IVY,k,j,i);
-    Real uu3_r = prim_r(IVZ,k,j,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
     // Transform projected 4-velocities
     Real ux_l = mx_1*uu1_l + mx_2*uu2_l + mx_3*uu3_l;
@@ -926,12 +926,12 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
     Real uz_r = mz_1*uu1_r + mz_2*uu2_r + mz_3*uu3_r;
 
     // Set local projected 4-velocities
-    prim_l(IVX,k,j,i) = ux_l;
-    prim_l(IVY,k,j,i) = uy_l;
-    prim_l(IVZ,k,j,i) = uz_l;
-    prim_r(IVX,k,j,i) = ux_r;
-    prim_r(IVY,k,j,i) = uy_r;
-    prim_r(IVZ,k,j,i) = uz_r;
+    prim_l(IVX,i) = ux_l;
+    prim_l(IVY,i) = uy_l;
+    prim_l(IVZ,i) = uz_l;
+    prim_r(IVX,i) = ux_r;
+    prim_r(IVY,i) = uy_r;
+    prim_r(IVZ,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -990,12 +990,12 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
       Real u3_r = uu3_r - alpha * gamma_r * g03;
 
       // Extract global magnetic fields
-      const Real &bb1_l = bb1(k,j,i);
-      const Real &bb1_r = bb1(k,j,i);
-      Real &bb2_l = prim_l(IBY,k,j,i);
-      Real &bb3_l = prim_l(IBZ,k,j,i);
-      Real &bb2_r = prim_r(IBY,k,j,i);
-      Real &bb3_r = prim_r(IBZ,k,j,i);
+      const Real &bb1_l = bb1(i);
+      const Real &bb1_r = bb1(i);
+      Real &bb2_l = prim_l(IBY,i);
+      Real &bb3_l = prim_l(IBZ,i);
+      Real &bb2_r = prim_r(IBY,i);
+      Real &bb3_r = prim_r(IBZ,i);
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
@@ -1043,9 +1043,9 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 // Inputs:
 //   k,j: x3- and x2-indices
 //   il,iu: x1-index bounds
-//   bb2: 3D array of normal components B^2 of magnetic field, in global coordinates
-//   prim_l: 3D array of left primitives, using global coordinates
-//   prim_r: 3D array of right primitives, using global coordinates
+//   bb2: 1D array of normal components B^2 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -1082,12 +1082,12 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const Real &mz_3 = trans_face2_kji_(1,T32,k,j,i);
 
     // Extract global projected 4-velocities
-    Real uu1_l = prim_l(IVX,k,j,i);
-    Real uu2_l = prim_l(IVY,k,j,i);
-    Real uu3_l = prim_l(IVZ,k,j,i);
-    Real uu1_r = prim_r(IVX,k,j,i);
-    Real uu2_r = prim_r(IVY,k,j,i);
-    Real uu3_r = prim_r(IVZ,k,j,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
     // Transform projected 4-velocities
     Real ux_l = mx_1*uu1_l + mx_2*uu2_l + mx_3*uu3_l;
@@ -1098,12 +1098,12 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
     Real uz_r = mz_1*uu1_r + mz_2*uu2_r + mz_3*uu3_r;
 
     // Set local projected 4-velocities
-    prim_l(IVY,k,j,i) = ux_l;
-    prim_l(IVZ,k,j,i) = uy_l;
-    prim_l(IVX,k,j,i) = uz_l;
-    prim_r(IVY,k,j,i) = ux_r;
-    prim_r(IVZ,k,j,i) = uy_r;
-    prim_r(IVX,k,j,i) = uz_r;
+    prim_l(IVY,i) = ux_l;
+    prim_l(IVZ,i) = uy_l;
+    prim_l(IVX,i) = uz_l;
+    prim_r(IVY,i) = ux_r;
+    prim_r(IVZ,i) = uy_r;
+    prim_r(IVX,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1162,12 +1162,12 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
       Real u3_r = uu3_r - alpha * gamma_r * g03;
 
       // Extract global magnetic fields
-      const Real &bb2_l = bb2(k,j,i);
-      const Real &bb2_r = bb2(k,j,i);
-      Real &bb3_l = prim_l(IBY,k,j,i);
-      Real &bb1_l = prim_l(IBZ,k,j,i);
-      Real &bb3_r = prim_r(IBY,k,j,i);
-      Real &bb1_r = prim_r(IBZ,k,j,i);
+      const Real &bb2_l = bb2(i);
+      const Real &bb2_r = bb2(i);
+      Real &bb3_l = prim_l(IBY,i);
+      Real &bb1_l = prim_l(IBZ,i);
+      Real &bb3_r = prim_r(IBY,i);
+      Real &bb1_r = prim_r(IBZ,i);
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
@@ -1215,9 +1215,9 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 // Inputs:
 //   k,j: x3- and x2-indices
 //   il,iu: x1-index bounds
-//   bb3: 3D array of normal components B^3 of magnetic field, in global coordinates
-//   prim_l: 3D array of left primitives, using global coordinates
-//   prim_r: 3D array of right primitives, using global coordinates
+//   bb3: 1D array of normal components B^3 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -1254,12 +1254,12 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const Real &mz_3 = trans_face3_kji_(1,T31,k,j,i);
 
     // Extract global projected 4-velocities
-    Real uu1_l = prim_l(IVX,k,j,i);
-    Real uu2_l = prim_l(IVY,k,j,i);
-    Real uu3_l = prim_l(IVZ,k,j,i);
-    Real uu1_r = prim_r(IVX,k,j,i);
-    Real uu2_r = prim_r(IVY,k,j,i);
-    Real uu3_r = prim_r(IVZ,k,j,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
     // Transform projected 4-velocities
     Real ux_l = mx_1*uu1_l + mx_2*uu2_l + mx_3*uu3_l;
@@ -1270,12 +1270,12 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
     Real uz_r = mz_1*uu1_r + mz_2*uu2_r + mz_3*uu3_r;
 
     // Set local projected 4-velocities
-    prim_l(IVZ,k,j,i) = ux_l;
-    prim_l(IVX,k,j,i) = uy_l;
-    prim_l(IVY,k,j,i) = uz_l;
-    prim_r(IVZ,k,j,i) = ux_r;
-    prim_r(IVX,k,j,i) = uy_r;
-    prim_r(IVY,k,j,i) = uz_r;
+    prim_l(IVZ,i) = ux_l;
+    prim_l(IVX,i) = uy_l;
+    prim_l(IVY,i) = uz_l;
+    prim_r(IVZ,i) = ux_r;
+    prim_r(IVX,i) = uy_r;
+    prim_r(IVY,i) = uz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1334,12 +1334,12 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
       Real u3_r = uu3_r - alpha * gamma_r * g03;
 
       // Extract global magnetic fields
-      const Real &bb3_l = bb3(k,j,i);
-      const Real &bb3_r = bb3(k,j,i);
-      Real &bb1_l = prim_l(IBY,k,j,i);
-      Real &bb2_l = prim_l(IBZ,k,j,i);
-      Real &bb1_r = prim_r(IBY,k,j,i);
-      Real &bb2_r = prim_r(IBZ,k,j,i);
+      const Real &bb3_l = bb3(i);
+      const Real &bb3_r = bb3(i);
+      Real &bb1_l = prim_l(IBY,i);
+      Real &bb2_l = prim_l(IBZ,i);
+      Real &bb1_r = prim_r(IBY,i);
+      Real &bb2_r = prim_r(IBZ,i);
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
