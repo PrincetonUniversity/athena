@@ -8,6 +8,7 @@
 
 // C/C++ headers
 #include <string>
+#include <algorithm>
 
 // Athena++ headers
 #include "hydro.hpp"

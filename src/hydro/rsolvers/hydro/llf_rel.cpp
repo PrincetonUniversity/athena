@@ -255,8 +255,7 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
 
 static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
-{
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
