@@ -255,7 +255,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
-//   prim: 3D array of primitive states
+//   prim: 1D array of primitive states
 //   bbx_vals: 1D array of B^x
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
@@ -289,14 +289,14 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   for (int i=il; i<=iu; ++i) {
 
     // Extract primitives
-    Real rho = prim(IDN,k,j,i);
-    Real pgas = prim(IPR,k,j,i);
-    Real vx = prim(ivx,k,j,i);
-    Real vy = prim(ivy,k,j,i);
-    Real vz = prim(ivz,k,j,i);
+    Real rho = prim(IDN,i);
+    Real pgas = prim(IPR,i);
+    Real vx = prim(ivx,i);
+    Real vy = prim(ivy,i);
+    Real vz = prim(ivz,i);
     Real bbx = bbx_vals(i);
-    Real bby = prim(IBY,k,j,i);
-    Real bbz = prim(IBZ,k,j,i);
+    Real bby = prim(IBY,i);
+    Real bbz = prim(IBZ,i);
 
     // Calculate velocity
     Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
