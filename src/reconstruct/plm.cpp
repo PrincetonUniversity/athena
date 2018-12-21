@@ -59,8 +59,8 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
   if (pmb->precon->characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwr);
+    LeftEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwl);
+    LeftEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwr);
   }
 
   // Apply van Leer limiter for uniform grid
@@ -87,13 +87,12 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
         if (dw2 <= 0.0) dwm(n,i) = 0.0;
       }
     }
+  }
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      RightEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwm);
+      RightEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwm);
     }
-
-  }
 
   // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
   for (int n=0; n<(NWAVE); ++n) {
