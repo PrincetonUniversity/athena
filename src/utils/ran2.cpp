@@ -21,7 +21,7 @@
 // shuffle and added safeguards.  Returns a uniform random deviate between 0.0 and 1.0
 // (exclusive of the endpoint values).  Call with idum = a negative integer to
 // initialize; thereafter, do not alter idum between successive deviates in a sequence.
-// RNMX should appriximate the largest floating point value that is less than 1.
+// RNMX should appriximate the largest floating-point value that is less than 1.
 
 #define IMR1 2147483563
 #define IMR2 2147483399

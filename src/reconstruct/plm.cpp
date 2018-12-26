@@ -104,16 +104,18 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int i=il-1; i<=iu; ++i) {
         wl(n,k,j,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
         wr(n,k,j,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
-        if (pmb->precon->characteristic_reconstruction) {
-          // Reapply EOS floors to both L/R reconstructed primitive states
-          pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
-          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
-        }
       }
     }
-
+    if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
+      for (int i=il-1; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+      }
+    }
   }}
-
   return;
 }
 
@@ -206,15 +208,17 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i) {
         wl(n,k,j+1,i) = wc(n,i) + ((pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j))*dwm(n,i);
         wr(n,k,j  ,i) = wc(n,i) - ((pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j))*dwm(n,i);
-        if (pmb->precon->characteristic_reconstruction) {
-          // Reapply EOS floors to both L/R reconstructed primitive states
-          pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
-          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
-        }
+      }
+    }
+    if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k, j+1, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
   }}
-
   return;
 }
 
@@ -307,14 +311,16 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i) {
         wl(n,k+1,j,i) = wc(n,i) + ((pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k))*dwm(n,i);
         wr(n,k  ,j,i) = wc(n,i) - ((pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k))*dwm(n,i);
-        if (pmb->precon->characteristic_reconstruction) {
-          // Reapply EOS floors to both L/R reconstructed primitive states
-          pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
-          pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
-        }
+      }
+    }
+    if (pmb->precon->characteristic_reconstruction) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        // Reapply EOS floors to both L/R reconstructed primitive states
+        pmb->peos->ApplyPrimitiveFloors(wl, k+1, j, i);
+        pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
       }
     }
   }}
-
   return;
 }

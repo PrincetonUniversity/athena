@@ -81,15 +81,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
     // check that coordinate spacing is reasonable
-    Real rmax=1.0, rmin=1.0;
-    for (int i=is; i<=ie; i++) {
-      rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
-      rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
-    }
-    if (rmax > 1.1 || rmin  < 1.0/1.1) {
-       std::cout << "### Warning in Coordinates constructor" << std::endl
-         << "Neighboring cell sizes differ by more than 10% in the x1 direction."
-         << std::endl;
+    if (not coarse_flag) {
+      Real rmax=1.0, rmin=1.0;
+      for (int i=is; i<=ie-1; i++) {
+        rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
+        rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
+      }
+      if (rmax > 1.1 || rmin  < 1.0/1.1) {
+         std::cout << "### Warning in Coordinates constructor" << std::endl
+           << "Neighboring cell sizes differ by more than 10% in the x1 direction."
+           << std::endl;
+      }
     }
 
   } else {
@@ -151,15 +153,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      Real rmax=1.0, rmin=1.0;
-      for (int j=pmy_block->js; j<=pmy_block->je; j++) {
-        rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
-        rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
-      }
-      if (rmax > 1.1 || rmin  < 1.0/1.1) {
-         std::cout << "### Warning in Coordinates constructor" << std::endl
-           << "Neighboring cell sizes differ by more than 10% in the x2 direction."
-           << std::endl;
+      if (not coarse_flag) {
+        Real rmax=1.0, rmin=1.0;
+        for (int j=js; j<=je-1; j++) {
+          rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
+          rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
+        }
+        if (rmax > 1.1 || rmin  < 1.0/1.1) {
+           std::cout << "### Warning in Coordinates constructor" << std::endl
+             << "Neighboring cell sizes differ by more than 10% in the x2 direction."
+             << std::endl;
+        }
       }
 
     } else {
@@ -229,15 +233,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      Real rmax=1.0, rmin=1.0;
-      for (int k=pmy_block->ks; k<=pmy_block->ke; k++) {
-        rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
-        rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
-      }
-      if (rmax > 1.1 || rmin  < 1.0/1.1) {
-         std::cout << "### Warning in Coordinates constructor" << std::endl
-           << "Neighboring cell sizes differ by more than 10% in the x3 direction."
-           << std::endl;
+      if (not coarse_flag) {
+        Real rmax=1.0, rmin=1.0;
+        for (int k=ks; k<=ke-1; k++) {
+          rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
+          rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
+        }
+        if (rmax > 1.1 || rmin  < 1.0/1.1) {
+           std::cout << "### Warning in Coordinates constructor" << std::endl
+             << "Neighboring cell sizes differ by more than 10% in the x3 direction."
+             << std::endl;
+        }
       }
 
     } else {

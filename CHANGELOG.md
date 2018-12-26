@@ -55,7 +55,7 @@ Feature branches to merge to `master`:
 - Improved readability of `TimeIntegratorTaskList`
 - Fixed spherical coordinates terms for non-ideal MHD
 - Fixed reflective symmetry preservation for hydrodynamic viscosity calculations
-- Eliminated small floating point errors when analyzing uniform grid results using included Python HDF5 reader
+- Eliminated small floating-point errors when analyzing uniform grid results using included Python HDF5 reader
 - Changed turbulence driving switches to avoid possible bug during initial cycle
 - Plugged MPI resource leaks in Multigrid
 
@@ -67,10 +67,10 @@ Feature branches to merge to `master`:
 - Viscosity terms break Rayleigh-Taylor symmetry [\#144](https://github.com/PrincetonUniversity/athena/issues/144)
 - SIMD vectorization disabled for Roe-type Riemann solvers [\#126](https://github.com/PrincetonUniversity/athena/issues/126)
 - Memory leak in jeans\_3d.py test MPI run [\#115](https://github.com/PrincetonUniversity/athena/issues/115)
-- athena\_read.py athdf\(\) results in small floating point errors [\#111](https://github.com/PrincetonUniversity/athena/issues/111)
+- athena\_read.py athdf\(\) results in small floating-point errors [\#111](https://github.com/PrincetonUniversity/athena/issues/111)
 - Remove unused GravityBoundaryFunction\_\[\] array from Mesh class [\#149](https://github.com/PrincetonUniversity/athena/pull/149) ([felker](https://github.com/felker))
 - Cleanup minor issues before v1.1.1 release; fix viscosity asymmetry  [\#147](https://github.com/PrincetonUniversity/athena/pull/147) ([felker](https://github.com/felker))
-- Return exact floating point values when reading HDF5 coordinates [\#145](https://github.com/PrincetonUniversity/athena/pull/145) ([c-white](https://github.com/c-white))
+- Return exact floating-point values when reading HDF5 coordinates [\#145](https://github.com/PrincetonUniversity/athena/pull/145) ([c-white](https://github.com/c-white))
 - Fixed spherical coordinates for non-ideal MHD [\#142](https://github.com/PrincetonUniversity/athena/pull/142) ([tomidakn](https://github.com/tomidakn))
 - Added interactive spherical plotting: [\#139](https://github.com/PrincetonUniversity/athena/pull/139) ([c-white](https://github.com/c-white))
 - Use \#pragma omp declare simd for functions called in SIMD loops [\#138](https://github.com/PrincetonUniversity/athena/pull/138) ([felker](https://github.com/felker))
@@ -117,7 +117,7 @@ Feature branches to merge to `master`:
 - Characteristic variable reconstruction (PLM and PPM)  with `time/xorder=2c` or `3c` runtime option
 - Redesign of time-integrator to support high-order schemes
 - Turbulence driving
-- Double precision floating point HDF5 output
+- Double precision floating-point HDF5 output
 - Software development tools (mostly) exclusive to private repository:
   - Continuous integration (Jenkins and Travis CI)
   - C++ style checker
@@ -142,9 +142,9 @@ Feature branches to merge to `master`:
 - Conflicting restart and input parameters for writing output [\#62](https://github.com/PrincetonUniversity/athena/issues/62)
 - Add double precision option for HDF5 output [\#28](https://github.com/PrincetonUniversity/athena/issues/28)
 - Improve vectorization for loops in PPM [\#121](https://github.com/PrincetonUniversity/athena/pull/121) ([beiwang2003](https://github.com/beiwang2003))
-- Improve symmetry-preservation of HLLD floating point operations [\#120](https://github.com/PrincetonUniversity/athena/pull/120) ([felker](https://github.com/felker))
+- Improve symmetry-preservation of HLLD floating-point operations [\#120](https://github.com/PrincetonUniversity/athena/pull/120) ([felker](https://github.com/felker))
 - Fix restarted simulation calculation of next\_time for writing outputs [\#116](https://github.com/PrincetonUniversity/athena/pull/116) ([felker](https://github.com/felker))
-- Support double precision floating point HDF5 output [\#108](https://github.com/PrincetonUniversity/athena/pull/108) ([felker](https://github.com/felker))
+- Support double precision floating-point HDF5 output [\#108](https://github.com/PrincetonUniversity/athena/pull/108) ([felker](https://github.com/felker))
 - Add templates for Issue and PR; creating draft of CONTRIBUTING.md [\#93](https://github.com/PrincetonUniversity/athena/pull/93) ([felker](https://github.com/felker))
 - Make athdf a class which will delay reading until data is requested [\#84](https://github.com/PrincetonUniversity/athena/pull/84) ([msbc](https://github.com/msbc))
 - Improve TimeIntegratorTaskList performance [\#80](https://github.com/PrincetonUniversity/athena/pull/80) ([felker](https://github.com/felker))
@@ -210,7 +210,7 @@ Feature branches to merge to `master`:
 - Add Bash wrapper to join\_vtk++ for many MeshBlocks, output steps [\#91](https://github.com/PrincetonUniversity/athena/pull/91) ([felker](https://github.com/felker))
 - Add CODEOWNERS file to new .github/ root dir [\#90](https://github.com/PrincetonUniversity/athena/pull/90) ([felker](https://github.com/felker))
 - Add ShearingBox component   [\#89](https://github.com/PrincetonUniversity/athena/pull/89) ([jmshi](https://github.com/jmshi))
-- Improve floating point precision consistency throughout code [\#82](https://github.com/PrincetonUniversity/athena/pull/82) ([felker](https://github.com/felker))
+- Improve floating-point precision consistency throughout code [\#82](https://github.com/PrincetonUniversity/athena/pull/82) ([felker](https://github.com/felker))
 - Add primitive variable flooring functions to the EquationOfState class  [\#81](https://github.com/PrincetonUniversity/athena/pull/81) ([felker](https://github.com/felker))
 - Add MG and FFT convergence regression tests based on 3D linear Jeans instability [\#75](https://github.com/PrincetonUniversity/athena/pull/75) ([alwinm](https://github.com/alwinm))
 - Add cylindrical and spherical polar coordinates limiter terms to PPM [\#69](https://github.com/PrincetonUniversity/athena/pull/69) ([felker](https://github.com/felker))

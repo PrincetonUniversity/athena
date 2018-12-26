@@ -34,25 +34,32 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm) {
   // First, define each time-integrator by setting weights for each step of the algorithm
   // and the CFL number stability limit when coupled to the single-stage spatial operator.
-  // Currently, the time-integrators must be expressed as 2S-type algorithms as in
-  // Ketchenson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
-  // popular 2-register low-storage RK methods. The 2S-type integrators depend on a
-  // bidiagonally sparse Shu-Osher representation; at each stage l:
+  // Currently, the explicit, multistage time-integrators must be expressed as 2S-type
+  // algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
+  // (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
+  // depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
   //
   //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
   //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
   //
   // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
-  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator
+  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and
+  // integrator. Previous timestep U^{0} = U^n is given, and the integrator solves
+  // for U^{l} for 1 <= l <= nstages.
   //
   // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
   // another weighted average / caching of these terms each stage. The API and framework
-  // is extensible to three register 3S* methods.
+  // is extensible to three register 3S* methods, although none are currently implemented.
 
   // Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
-  // (sometimes "step"), to refer to intermediate values between "timesteps" = "cycles"
-  // "Step" is often used for generic sequences in code, e.g. main.cpp: "Step 1: MPI"
+  // (infrequently "step"), to refer to the intermediate values of U^{l} between each
+  // "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
+  // temporal integration from other iterative sequences; "Step" is often used for generic
+  // sequences in code, e.g. main.cpp: "Step 1: MPI"
+  //
+  // main.cpp invokes the tasklist in a for() loop from stage=1 to stage=ptlist->nstages
 
+  // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time","integrator","vl2");
   int dim = 1;
   if (pm->mesh_size.nx2 > 1) dim = 2;
@@ -120,7 +127,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     //} else if (integrator == "ssprk5_3") {
     //} else if (integrator == "ssprk10_4") {
   } else if (integrator == "rk4") {
-    // RK4()4[2S] from Table 2 of Ketchenson (2010)
+    // RK4()4[2S] from Table 2 of Ketcheson (2010)
     // Non-SSP, explicit four-stage, fourth-order RK
     nstages = 4;
     // Stability properties are similar to classical RK4
@@ -151,41 +158,46 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     stage_wghts[3].gamma_3 = 0.0;
     stage_wghts[3].beta = 0.310665766509336;
   } else if (integrator == "ssprk5_4") {
-    // SSPRK (5,4): Gottlieb (2009) section 3.1
+    // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
     // 3N method, but there is no 3S* formulation due to irregular sparsity
     // of Shu-Osher form matrix, alpha
     nstages = 5;
     cfl_limit = 1.3925;
-    stage_wghts[0].delta = 1.0;
+    // u^(1)
+    stage_wghts[0].delta = 1.0; // u1 = u^n
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
     stage_wghts[0].gamma_3 = 0.0;
     stage_wghts[0].beta = 0.391752226571890;
 
+    // u^(2)
     stage_wghts[1].delta = 0.0; // u1 = u^n
     stage_wghts[1].gamma_1 = 0.555629506348765;
     stage_wghts[1].gamma_2 = 0.444370493651235;
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 0.368410593050371;
 
-    stage_wghts[2].delta = 0.0;
+    // u^(3)
+    stage_wghts[2].delta = 0.517231671970585; // u1 <- (u^n + d*u^(2))
     stage_wghts[2].gamma_1 = 0.379898148511597;
     stage_wghts[2].gamma_2 = 0.0;
-    stage_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
+    stage_wghts[2].gamma_3 = 0.620101851488403; // u^(n) coeff =  u2
     stage_wghts[2].beta = 0.251891774271694;
 
-    stage_wghts[3].delta = 0.0;
-    stage_wghts[3].gamma_1 = TWO_3RD;
-    stage_wghts[3].gamma_2 = ONE_3RD;
-    stage_wghts[3].gamma_3 = 0.178079954393132; // u2 = u^n
+    // u^(4)
+    stage_wghts[3].delta = 0.096059710526147; // u1 <- (u^n + d*u^(2) + d'*u^(3))
+    stage_wghts[3].gamma_1 = 0.821920045606868;
+    stage_wghts[3].gamma_2 = 0.0;
+    stage_wghts[3].gamma_3 = 0.178079954393132; // u^(n) coeff =  u2
     stage_wghts[3].beta = 0.544974750228521;
 
+    // u^(n+1) partial expression
     stage_wghts[4].delta = 0.0;
-    stage_wghts[4].gamma_1 = 0.386708617503268; // from Gottlieb (2009), u^(4) coeff.
-    stage_wghts[4].gamma_2 = ONE_3RD;
-    stage_wghts[4].gamma_3 = 0.0;
-    stage_wghts[4].beta = 0.226007483236906; // from Gottlieb (2009), F(u^(4)) coeff.
+    stage_wghts[4].gamma_1 = 0.386708617503268; // 1 ulp lower than Gottlieb u^(4) coeff
+    stage_wghts[4].gamma_2 = 1.0; // u1 <- (u^n + d*u^(2) + d'*u^(3))
+    stage_wghts[4].gamma_3 = 1.0; // partial sum from hardcoded extra stage=4
+    stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
@@ -575,14 +587,27 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    ph->WeightedAveU(ph->u1,ph->u,ph->u2,ave_wghts);
+    ph->WeightedAveU(ph->u1, ph->u, ph->u2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    ph->WeightedAveU(ph->u,ph->u1,ph->u2,ave_wghts);
-    ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,stage_wghts[stage-1].beta,ph->u);
+    ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, stage_wghts[stage-1].beta, ph->u);
 
+    // Hardcode an additional flux divergence weighted average for the penultimate
+    // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+    if (stage==4 && integrator == "ssprk5_4") {
+      // From Gottlieb (2009), u^(n+1) partial calculation
+      ave_wghts[0] = -1.0; // -u^(n) coeff.
+      ave_wghts[1] = 0.0;
+      ave_wghts[2] = 0.0;
+      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      // writing out to u2 register
+      ph->WeightedAveU(ph->u2, ph->u1, ph->u2, ave_wghts);
+
+      ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, beta, ph->u2);
+    }
     return TASK_NEXT;
   }
 
@@ -627,9 +652,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int sta
     Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    // Evaluate the time-dependent source terms at the time at the beginning of the stage
     ph->psrc->AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
   } else {
-    // Evaluate the source terms at the beginning of the
     return TASK_FAIL;
   }
   return TASK_NEXT;
@@ -641,12 +666,12 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int sta
 enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
 
-// return if there are no diffusion to be added
+  // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
-    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    if (!STS_ENABLED)
+      ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TASK_FAIL;
   }
@@ -659,12 +684,12 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage
 enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
-// return if there are no diffusion to be added
+  // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
-  // *** this must be changed for the RK3 integrator
   if(stage <= nstages) {
-    pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+    if (!STS_ENABLED)
+      pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
     return TASK_FAIL;
   }
@@ -828,6 +853,21 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
+    // fourth-order EOS:
+    if (pmb->precon->xorder == 4) {
+      // for hydro, shrink buffer by 1 on all sides
+      if (pbval->nblevel[1][1][0] != -1) il+=1;
+      if (pbval->nblevel[1][1][2] != -1) iu-=1;
+      if (pbval->nblevel[1][0][1] != -1) jl+=1;
+      if (pbval->nblevel[1][2][1] != -1) ju-=1;
+      if (pbval->nblevel[0][1][1] != -1) kl+=1;
+      if (pbval->nblevel[2][1][1] != -1) ku-=1;
+      // for MHD, shrink buffer by 3
+      // TODO(kfelker): add MHD loop limit calculation for 4th order W(U)
+      pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
+                                                 phydro->w1, pfield->bcc, pmb->pcoord,
+                                                 il, iu, jl, ju, kl, ku);
+    }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
   } else {
@@ -915,8 +955,9 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     // Initialize storage registers
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
-    // (if using a 3S* time-integrator)
-    // ph->u2 = ph->u;
+    // (if using a 3S* or 3N time-integrator)
+    if (integrator == "ssprk5_4")
+      ph->u2 = ph->u;
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;

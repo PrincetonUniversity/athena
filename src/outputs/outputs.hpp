@@ -44,7 +44,7 @@ typedef struct OutputParameters {
   bool include_ghost_zones, cartesian_vector;
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
-
+  // TODO(felker): some of the parameters in this class are not initialized in constructor
   OutputParameters() : output_slicex1(false),output_slicex2(false),output_slicex3(false),
                        output_sumx1(false), output_sumx2(false), output_sumx3(false),
                        include_ghost_zones(false) {}
@@ -104,7 +104,7 @@ class HistoryOutput : public OutputType {
 public:
   explicit HistoryOutput(OutputParameters oparams);
   ~HistoryOutput() {}
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
 //----------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class FormattedTableOutput : public OutputType {
 public:
   explicit FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {}
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
 //----------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ class VTKOutput : public OutputType {
 public:
   explicit VTKOutput(OutputParameters oparams);
   ~VTKOutput() {}
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
 //----------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ class RestartOutput : public OutputType {
 public:
   explicit RestartOutput(OutputParameters oparams);
   ~RestartOutput() {}
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
 #ifdef HDF5OUTPUT
@@ -150,7 +150,7 @@ public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams);
   ~ATHDF5Output() {}
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
 private:

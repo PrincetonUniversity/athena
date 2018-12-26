@@ -20,6 +20,7 @@
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -coverage         enable compiler-dependent code coverage flags
 #   -float            enable single precision (default is double)
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
@@ -29,7 +30,9 @@
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --cxx=xxx         use xxx as the C++ compiler
-#   --ccmd=name       use name as the command to call the C++ compiler
+#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name    use name as the command to call the gcov utility
 #   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
@@ -47,7 +50,14 @@ defsfile_input = 'src/defs.hpp.in'
 defsfile_output = 'src/defs.hpp'
 
 # --- Step 1. Prepare parser, add each of the arguments ------------------
-parser = argparse.ArgumentParser()
+athena_description = (
+    "Prepare custom Makefile and defs.hpp for compiling Athena++ solver"
+)
+athena_epilog = (
+    "Full documentation of options available at "
+    "https://github.com/PrincetonUniversity/athena-public-version/wiki/Configuring"
+)
+parser = argparse.ArgumentParser(description=athena_description, epilog=athena_epilog)
 
 # --prob=[name] argument
 pgen_directory = 'src/pgen/'
@@ -99,6 +109,12 @@ parser.add_argument('-b',
                     default=False,
                     help='enable magnetic field')
 
+# -sts argument
+parser.add_argument('-sts',
+                    action='store_true',
+                    default=False,
+                    help='enable super-time-stepping')
+
 # -s argument
 parser.add_argument('-s',
                     action='store_true',
@@ -128,6 +144,12 @@ parser.add_argument('-debug',
                     action='store_true',
                     default=False,
                     help='enable debug flags; override other compiler options')
+
+# -coverage argument
+parser.add_argument('-coverage',
+                    action='store_true',
+                    default=False,
+                    help='enable compiler-dependent code coverage flag')
 
 # -float argument
 parser.add_argument('-float',
@@ -161,7 +183,6 @@ parser.add_argument('-fft',
 
 # --fftw_path argument
 parser.add_argument('--fftw_path',
-                    type=str,
                     default='',
                     help='path to FFTW libraries')
 
@@ -182,27 +203,58 @@ parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
 
+# The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
+# major family/suite/group of compilers and "suffix" may represent variants of the
+# compiler version and/or predefined sets of compiler options. The C++ compiler front ends
+# are the main supported/documented options and are invoked on the command line, but the C
+# front ends are also acceptable selections and are mapped to the matching C++ front end:
+# gcc -> g++, clang -> clang++, icc-> icpc
+cxx_choices = [
+    'g++',
+    'g++-simd',
+    'icpc',
+    'icpc-debug',
+    'icpc-phi',
+    'cray',
+    'bgxl',
+    'clang++',
+    'clang++-simd',
+    'clang++-apple',
+]
+
+
+def c_to_cpp(arg):
+    arg = arg.replace('gcc', 'g++', 1)
+    arg = arg.replace('icc', 'icpc', 1)
+    if arg == 'clang':
+        arg = 'clang++'
+    else:
+        arg = arg.replace('clang-', 'clang++-', 1)
+    return arg
+
+
 # --cxx=[name] argument
 parser.add_argument(
     '--cxx',
     default='g++',
-    choices=[
-        'g++',
-        'g++-simd',
-        'icc',
-        'icc-debug',
-        'cray',
-        'bgxl',
-        'icc-phi',
-        'clang++',
-        'clang++-simd',
-    ],
-    help='select C++ compiler')
+    type=c_to_cpp,
+    choices=cxx_choices,
+    help='select C++ compiler and default set of flags')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
                     default=None,
-                    help='override for command to use to call C++ compiler')
+                    help='override for command to use to call (non-MPI) C++ compiler')
+
+# --mpiccmd=[name] argument
+parser.add_argument('--mpiccmd',
+                    default=None,
+                    help='override for command to use to call MPI C++ compiler')
+
+# --gcovcmd=[name] argument
+parser.add_argument('--gcovcmd',
+                    default=None,
+                    help='override for command to use to call Gcov utility in Makefile')
 
 # --cflag=[string] argument
 parser.add_argument('--cflag',
@@ -330,6 +382,12 @@ else:
     else:
         definitions['NWAVE_VALUE'] = '5'
 
+# -sts argument
+if args['sts']:
+    definitions['STS_ENABLED'] = '1'
+else:
+    definitions['STS_ENABLED'] = '0'
+
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
@@ -373,26 +431,36 @@ if args['cxx'] == 'g++-simd':
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-if args['cxx'] == 'icc':
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+if args['cxx'] == 'icpc':
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -inline-forceinline -qopenmp-simd -qopt-prefetch=4'
     )
-    # -qopt-zmm-usage=high'
+    # -qopt-zmm-usage=high'  # typically harms multi-core performance on Skylake Xeon
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-
-if args['cxx'] == 'icc-debug':
+if args['cxx'] == 'icpc-debug':
     # Disable IPO, forced inlining, and fast math. Enable vectorization reporting.
     # Useful for testing symmetry, SIMD-enabled functions and loops with OpenMP 4.5
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
         '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
         '-qopt-report=5 -qopt-report-phase=openmp,vec -g'
+    )
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'icpc-phi':
+    # Cross-compile for Intel Xeon Phi x200 KNL series (unique AVX-512ER and AVX-512FP)
+    # -xMIC-AVX512: generate AVX-512F, AVX-512CD, AVX-512ER and AVX-512FP
+    definitions['COMPILER_CHOICE'] = 'icpc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpc'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = (
+      '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
@@ -422,17 +490,6 @@ if args['cxx'] == 'bgxl':
     )
     makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
     makefile_options['LIBRARY_FLAGS'] = ''
-
-if args['cxx'] == 'icc-phi':
-    definitions['COMPILER_CHOICE'] = 'icc'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
-    makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -std=c++11 -ipo -xMIC-AVX512 -inline-forceinline -qopenmp-simd'
-    )
-    makefile_options['LINKER_FLAGS'] = ''
-    makefile_options['LIBRARY_FLAGS'] = ''
-
 if args['cxx'] == 'clang++':
     definitions['COMPILER_CHOICE'] = 'clang++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
@@ -440,14 +497,21 @@ if args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
-
 if args['cxx'] == 'clang++-simd':
-    # LLVM/clang version >= 3.9 for most of OpenMP 4.0, 4.5 (still incomplete; no
+    # LLVM/Clang version >= 3.9 for most of OpenMP 4.0 and 4.5 (still incomplete; no
     # offloading, target/declare simd directives). OpenMP 3.1 fully supported in LLVM 3.7
     definitions['COMPILER_CHOICE'] = 'clang++-simd'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -fopenmp-simd'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'clang++-apple':
+    # Apple LLVM/Clang: forked version of the open-source LLVM project bundled in macOS
+    definitions['COMPILER_CHOICE'] = 'clang++-apple'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -457,34 +521,71 @@ if args['float']:
 else:
     definitions['SINGLE_PRECISION_ENABLED'] = '0'
 
-
 # -debug argument
 if args['debug']:
     definitions['DEBUG'] = 'DEBUG'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -g'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0'
     if args['cxx'] == 'bgxl':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
-    if args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
 else:
     definitions['DEBUG'] = 'NOT_DEBUG'
 
+# -coverage argument
+if args['coverage']:
+    definitions['COVERAGE'] = 'COVERAGE'
+    # For now, append new compiler flags and don't override --cxx set, but set code to be
+    # unoptimized (-O0 instead of -O3) to get useful annotations. (add -g -fopenmp-simd?)
+    # And don't combine lines when writing source code!
+    if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'):
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -fprofile-arcs -ftest-coverage'
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi'):
+        makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
+    if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
+        # Clang's "source-based" code coverage feature to produces .profraw output
+        makefile_options['COMPILER_FLAGS'] += (
+            ' -O0 -fprofile-instr-generate -fcoverage-mapping'
+            )  # use --coverage for GCC-compatible .gcno, .gcda output for gcov
+    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxl'):
+        raise SystemExit(
+            '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
+else:
+    definitions['COVERAGE'] = 'NOT_COVERAGE'
+
+# --ccmd=[name] argument
+if args['ccmd'] is not None:
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
+# --gcovcmd=[name] argument (only modifies Makefile target)
+if args['gcovcmd'] is not None:
+    makefile_options['GCOV_COMMAND'] = args['gcovcmd']
+else:
+    makefile_options['GCOV_COMMAND'] = 'gcov'
+
 # -mpi argument
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-debug'
-            or args['cxx'] == 'icc-phi' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+    if (args['cxx'] == 'g++' or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi' or args['cxx'] == 'g++-simd'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
     if args['cxx'] == 'bgxl':
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx' # noqa
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
+    # --mpiccmd=[name] argument
+    if args['mpiccmd'] is not None:
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd']  # noqa
 else:
     definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 
@@ -494,7 +595,12 @@ if args['omp']:
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
             or args['cxx'] == 'clang++-simd'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
+    if (args['cxx'] == 'clang++-apple'):
+        # Apple Clang disables the front end OpenMP driver interface; enable it via the
+        # preprocessor. Must install LLVM's OpenMP runtime library libomp beforehand
+        makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp'
+        makefile_options['LIBRARY_FLAGS'] += ' -lomp'
+    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -507,7 +613,7 @@ else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-    if args['cxx'] == 'icc' or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi':
+    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi':
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
@@ -527,10 +633,8 @@ else:
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
-definitions['FFT_ENABLED'] = '0'
 definitions['FFT_DEFINE'] = 'NO_FFT'
 if args['fft']:
-    definitions['FFT_ENABLED'] = '1'
     definitions['FFT_DEFINE'] = 'FFT'
     if args['fftw_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
@@ -551,9 +655,10 @@ if args['hdf5']:
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'cray' or args['cxx'] == 'icc'
-            or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'cray' or args['cxx'] == 'icpc'
+            or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'clang++-apple'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
     if args['cxx'] == 'bgxl':
         makefile_options['PREPROCESSOR_FLAGS'] += (
@@ -572,10 +677,6 @@ if args['h5double']:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '1'
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
-
-# --ccmd=[name] argument
-if args['ccmd'] is not None:
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # --cflag=[string] argument
 if args['cflag'] is not None:
@@ -628,11 +729,13 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  ShearingBox:             ' + ('ON' if args['shear'] else 'OFF'))
+print('  Shearing Box:            ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
+print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' '
       + makefile_options['LIBRARY_FLAGS'])
 print('  Precision:               ' + ('single' if args['float'] else 'double'))

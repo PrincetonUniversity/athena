@@ -17,6 +17,7 @@ CPPFLAGS := @PREPROCESSOR_FLAGS@
 CXXFLAGS := @COMPILER_FLAGS@
 LDFLAGS := @LINKER_FLAGS@
 LDLIBS := @LIBRARY_FLAGS@
+GCOV_CMD := @GCOV_COMMAND@
 
 # Preliminary definitions
 
@@ -27,27 +28,32 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/general_hydro.cpp \
 	     src/eos/$(EOS_FILE) \
+	     src/eos/eos_high_order.cpp \
+	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
+	     $(wildcard src/field/field_diffusion/*.cpp) \
+	     $(wildcard src/gravity/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
-	     $(wildcard src/field/field_diffusion/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
+	     $(wildcard src/inputs/*.cpp) \
 	     $(wildcard src/mesh/*.cpp) \
+	     $(wildcard src/multigrid/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
+	     src/pgen/default_pgen.cpp \
+	     src/pgen/$(PROBLEM_FILE) \
 	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
-	     $(wildcard src/fft/*.cpp) \
-	     $(wildcard src/multigrid/*.cpp) \
-	     $(wildcard src/gravity/*.cpp) \
-	     $(MPIFFT_FILE) \
-	     src/pgen/$(PROBLEM_FILE) \
-	     src/pgen/default_pgen.cpp
+	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
-SRC_DIR := $(dir $(SRC_FILES) $(PROB_FILES))
-VPATH := $(SRC_DIR)
+GCOV_FILES := $(notdir $(addsuffix .gcov,$(SRC_FILES)))
+GCDA_FILES := $(wildcard $(OBJ_DIR)/*.gcda)
+SRC_PREFIX := src/
+SRC_DIRS := $(dir $(SRC_FILES))
+VPATH := $(SRC_DIRS)
 
 # Generally useful targets
 
@@ -58,6 +64,14 @@ all : dirs $(EXECUTABLE)
 objs : dirs $(OBJ_FILES)
 
 dirs : $(EXE_DIR) $(OBJ_DIR)
+
+# Placing gcov target in the Makefile in order to easily collect all SRC_FILES w/ correct paths
+
+gcov : dirs $(GCOV_FILES)
+
+# For debugging variables in Makefile, e.g. by "make print-GCOV_FILES"
+
+print-%  : ; @echo $* = $($*)
 
 $(EXE_DIR):
 	mkdir -p $(EXE_DIR)
@@ -75,8 +89,14 @@ $(EXECUTABLE) : $(OBJ_FILES)
 $(OBJ_DIR)%.o : %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
+# Process .gcno and .gcda files from obj/ into .cpp.gcov files (and .hpp.gcov, .h.gcov) in root directory
+# Rerun Gcov on all files if a single .gcda changes. Other options to consider: --preserve-paths -abcu
+./%.cpp.gcov : %.cpp $(OBJ_DIR)/%.gcno $(GCDA_FILES)
+	$(GCOV_CMD)  --relative-only --source-prefix=$(SRC_PREFIX) --object-directory=$(OBJ_DIR) $<
+
 # Cleanup
 
 clean :
 	rm -rf $(OBJ_DIR)*
 	rm -rf $(EXECUTABLE)
+	rm -rf *.gcov

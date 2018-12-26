@@ -12,7 +12,6 @@ set_warning_cflag () {
 		     "-Wno-maybe-uninitialized"
 		     "-Wno-address"
 		     "-Wno-unused-but-set-variable"
-		     "-Wno-comment"
 		     "-Wno-unused-variable"
 		     "-Wno-unused-parameter"
 		     "-Wno-unknown-pragmas"
