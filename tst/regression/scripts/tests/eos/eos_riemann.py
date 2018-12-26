@@ -73,6 +73,7 @@ def analyze():
   (test fails).
   """
 
+  analyze_status = True
   for n, state in enumerate(_states):
     t = 1
     x_ref,_,_,data_ref = athena_read.vtk('bin/eos_riemann_{0:02d}.block0.out1.{1:05d}.vtk'.format(n, t))
@@ -84,6 +85,6 @@ def analyze():
           data = data_ref[var][0,0,:,0]
       diff = comparison.l1_norm(x_ref, data - exact[var])
       if diff > _thresh[n][var]:
-        print('FAIL', n, var, diff, _thresh[n][var])
-        return False
-  return True
+        print(' '.join(map(str, ['EOS Riemann fail. Test#, var, diff, thresh =', n, var, diff, _thresh[n][var]])))
+        analyze_status = False
+  return analyze_status
