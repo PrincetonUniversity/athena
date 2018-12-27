@@ -153,8 +153,8 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       }
     } else if (wght[1] == 1.0) {
-      // swap the arrays instead of deep copying to save the cost
-      u_out.SwapAthenaArray(u_in1);
+      // just deep copy
+      u_out = u_in1;
     } else {
       for (int n=0; n<NHYDRO; ++n) {
         for (int k=ks; k<=ke; ++k) {

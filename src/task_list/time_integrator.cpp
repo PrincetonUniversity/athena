@@ -592,7 +592,13 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
+      // Use swap instead of deep copy. Note that u1 will be destroyed.
+      // If u1 needs to be kept, use WeightedAve although it costs more.
+      ph->u.SwapAthenaArray(ph->u1);
+    } else {
+      ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    }
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, stage_wghts[stage-1].beta, ph->u);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
@@ -628,7 +634,15 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
+      // Use swap instead of deep copy. Note that b1 will be destroyed.
+      // If b1 needs to be kept, use WeightedAve although it costs more.
+      pf->b.x1f.SwapAthenaArray(pf->b1.x1f);
+      pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
+      pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
+    } else {
+      pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+    }
     pf->CT(stage_wghts[stage-1].beta, pf->b);
 
     return TASK_NEXT;

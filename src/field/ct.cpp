@@ -229,10 +229,10 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
         }
       }
     } else if (wght[1] == 1.0) {
-      // swap the arrays instead of deep copying to save the cost
-      b_out.x1f.SwapAthenaArray(b_in1.x1f);
-      b_out.x2f.SwapAthenaArray(b_in1.x2f);
-      b_out.x3f.SwapAthenaArray(b_in1.x3f);
+      // just deep copy
+      b_out.x1f = b_in1.x1f;
+      b_out.x2f = b_in1.x2f;
+      b_out.x3f = b_in1.x3f;
     } else {
       //---- B1
       for (int k=ks; k<=ke; ++k) {
