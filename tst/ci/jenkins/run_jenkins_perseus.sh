@@ -39,7 +39,8 @@ module purge
 # (vs. /usr/bin/gcc v4.8.5 (released 2015-06-23)
 module load rh/devtoolset/7  # GCC 7.3.1 (v7.3 released on 2018-01-25)
 #module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
-module load openmpi/gcc/3.0.0/64
+module load openmpi/gcc/3.0.3/64
+# OpenMPI v3.0.3 was released on 2018-10-29
 # OpenMPI v3.0.0 was released on 2017-09-12. Originally, was only installed on Perseus
 # without development files (mpicc, etc.) as a VisIt 2.13.1 dependency
 
