@@ -51,7 +51,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
   }
 
   if (pmb->block_size.nx3 == 1) {
-  //---- 2-D update:
+  //---- 2-D update - cc_e_ is 3D array
     for (int k=ks; k<=ke; ++k) {
       for (int j=js-1; j<=je+1; ++j) {
          // E3=-(v X B)=VyBx-VxBy
@@ -121,7 +121,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
       }
     }
   } else {
-    // 3-D updates
+    // 3-D updates - cc_e_ is 4D array
     for (int k=ks-1; k<=ke+1; ++k) {
       for (int j=js-1; j<=je+1; ++j) {
         // E1=-(v X B)=VzBy-VyBz

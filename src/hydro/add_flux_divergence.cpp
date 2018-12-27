@@ -198,7 +198,7 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
             for (int j=js; j<=je; ++j) {
 #pragma omp simd
               for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i);
+                u_out(n,k,j,i) *= wght[0];
               }
             }
           }
