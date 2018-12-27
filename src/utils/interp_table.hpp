@@ -28,13 +28,17 @@ public:
   AthenaArray<Real> data;
   void SetX1lim(Real x1min, Real x1max);
   void SetX2lim(Real x2min, Real x2max);
+  void GetX1lim(Real &x1min, Real &x1max);
+  void GetX2lim(Real &x2min, Real &x2max);
 private:
   int nvar_;
   int nx1_;
   int nx2_;
   Real x1min_;
-  Real x2min_;
+  Real x1max_;
   Real x1norm_;
+  Real x2min_;
+  Real x2max_;
   Real x2norm_;
 };
 
