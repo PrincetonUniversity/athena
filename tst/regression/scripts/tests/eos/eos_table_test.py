@@ -109,7 +109,7 @@ def run(**kwargs):
   dst = os.path.join('bin', 'athena')
   move(src, dst)
   arguments0[1] = 'job/problem_id=Sod_eos_hllc_{1:}'
-  arguments0.append('hydro/EosFn=gamma_is_{0:.3f}.data')
+  arguments0.extend(['hydro/EOS_file_name=gamma_is_{0:.3f}.data','hydro/EOS_file_type=binary'])
   for i, g in enumerate(_gammas):
       arguments = [j.format(g, i) for j in arguments0]
       athena.run('hydro/athinput.sod', arguments)

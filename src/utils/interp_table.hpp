@@ -30,6 +30,7 @@ public:
   void SetX2lim(Real x2min, Real x2max);
   void GetX1lim(Real &x1min, Real &x1max);
   void GetX2lim(Real &x2min, Real &x2max);
+  void GetSize(int &nvar, int &nx2, int &nx1);
 private:
   int nvar_;
   int nx1_;

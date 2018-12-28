@@ -64,6 +64,12 @@ void InterpTable2D::GetX2lim(Real &x2min, Real &x2max) {
   x2max = x2max_;
 }
 
+void InterpTable2D::GetSize(int &nvar, int &nx2, int &nx1) {
+  nvar = nvar_;
+  nx2 = nx2_;
+  nx1 = nx1_;
+}
+
 // Bilinear interpolation
 Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   Real x, y, xrl, yrl, out;
