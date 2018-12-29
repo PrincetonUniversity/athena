@@ -239,10 +239,13 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
         // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
         coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
-        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
         // sin theta at the volume center for non-ideal MHD
         coord_area2vc_j_(j)= fabs(sin(x2v(j)));
+      }
+#pragma omp simd
+      for (int j=jl-ng; j<=ju+ng-1; ++j) {
+        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
+        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
       }
       coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
