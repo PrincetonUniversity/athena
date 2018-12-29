@@ -26,17 +26,16 @@
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
+//   dxw: 1D array of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
-//   wct: 3D arrays of weighting factors for CT (not used)
+//   wct: 3D array of weighting factors for CT
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bb,
-  AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
+    AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -279,8 +278,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ez(k,j,i) =
         0.5 * (flux_l[IBZ] + flux_r[IBZ] - lambda * (cons_r[IBZ] - cons_l[IBZ]));
 
-    wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i),
-                              prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
+    wct(k,j,i) =
+        GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
   }
 
   return;

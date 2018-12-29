@@ -44,11 +44,11 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
+//   dxw: 1D array of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
-//   wct: 3D arrays of weighting factors for CT (not used)
+//   wct: 3D array of weighting factors for CT
 // Notes:
 //   prim_l, prim_r overwritten
 //   tries to implement HLLD algorithm from Mignone, Ugliano, & Bodo 2009, MNRAS 393
@@ -57,23 +57,23 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 //       Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bb,
-  AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
+    AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
 
   Real dt = pmy_block->pmy_mesh->dt;
 
   if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
-    HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux,
-        ey, ez);
+    HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux, ey,
+        ez);
   } else {
     HLLDTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, lambdas_p_l_,
-        lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_,
-        flux, ey, ez);
+        lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_, flux,
+        ey, ez);
   }
   for(int i=il; i<=iu; ++i) {
-    wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
+    wct(k,j,i) = GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i),
+        dt);
   }
   return;
 }
