@@ -14,7 +14,14 @@ import athena_read                             # utilities for reading Athena++ 
 
 _gammas = [1.1, 1.4, 5./3.]
 
-def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5, ftype='float64', sdim=0):
+def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5,
+                  ftype='float64', sdim=0, ascii=False, opt=None):
+  if ascii:
+    if opt is None:
+      opt = {'sep': ', ', 'format': '%.4'}
+  if opt is None:
+    opt = {'sep': ''}
+  iopt = {'sep': opt.get('sep', '')}
   if fn is None:
     fn = 'eos_tables.data'
   dlim = np.atleast_1d(dlim)#.astype(ftype)
@@ -23,18 +30,18 @@ def write_varlist(dlim, elim, varlist, fn=None, log=True, eOp=1.5, ftype='float6
   ne = np.array(varlist[0].shape[1], 'int32')
   eOp = np.array(eOp)#, ftype)
   with open(fn, 'wb') as f:
-    nd.tofile(f)
-    dlim.tofile(f)
-    ne.tofile(f)
-    elim.tofile(f)
-    eOp.tofile(f)
-    np.array(len(varlist), 'int32').tofile(f)
+    nd.tofile(f, **iopt)
+    dlim.tofile(f, **opt)
+    ne.tofile(f, **iopt)
+    elim.tofile(f, **opt)
+    eOp.tofile(f, **opt)
+    np.array(len(varlist), 'int32').tofile(f, **iopt)
 
     out = np.stack(varlist, axis=sdim).astype(ftype)
     if log:
-      (np.log10(out)).tofile(f)
+      (np.log10(out)).tofile(f, **opt)
     else:
-      out.tofile(f)
+      out.tofile(f, **opt)
 
     f.close()
   return
