@@ -170,4 +170,28 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 
   return;
 }
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
+
+  Real& w_d  = prim(IDN,k,j,i);
+  Real& w_p  = prim(IPR,k,j,i);
+
+  Real& u_d  = cons(IDN,k,j,i);
+  Real& u_e  = cons(IEN,k,j,i);
+  // apply (prim) density floor, without changing momentum or energy
+  w_d = (w_d > density_floor_) ?  w_d : density_floor_;
+  // ensure cons density matches
+  u_d = w_d;
+
+  // apply pressure floor, correct total energy
+  u_e = (w_p > energy_floor_) ? u_e : energy_floor_;
+  w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
+
+  return;
+}
 #endif //GENERAL_EOS

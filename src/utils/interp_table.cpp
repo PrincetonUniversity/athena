@@ -42,13 +42,32 @@ void InterpTable2D::SetSize(const int nvar, const int nx2, const int nx1) {
 // Set the corrdinate limits for x1
 void InterpTable2D::SetX1lim(Real x1min, Real x1max) {
   x1min_ = x1min;
+  x1max_ = x1max;
   x1norm_ = (nx1_ - 1) / (x1max - x1min);
 }
 
 // Set the corrdinate limits for x2
 void InterpTable2D::SetX2lim(Real x2min, Real x2max) {
   x2min_ = x2min;
+  x2max_ = x2max;
   x2norm_ = (nx2_ - 1) / (x2max - x2min);
+}
+
+void InterpTable2D::GetX1lim(Real &x1min, Real &x1max) {
+  x1min = x1min_;
+  x1max = x1max_;
+}
+
+
+void InterpTable2D::GetX2lim(Real &x2min, Real &x2max) {
+  x2min = x2min_;
+  x2max = x2max_;
+}
+
+void InterpTable2D::GetSize(int &nvar, int &nx2, int &nx1) {
+  nvar = nvar_;
+  nx2 = nx2_;
+  nx1 = nx1_;
 }
 
 // Bilinear interpolation

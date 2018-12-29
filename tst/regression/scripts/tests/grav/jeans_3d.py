@@ -16,12 +16,14 @@ def prepare(**kwargs):
                      grav='fft', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_mpi_fft')
+    os.system('mv obj obj_mpi_fft')
 
     athena.configure('mpi',
                      prob='jeans',
                      grav='mg', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_mpi_mg')
+    os.system('mv obj obj_mpi_mg')
 
     athena.configure('fft',
                      prob='jeans',
@@ -29,6 +31,7 @@ def prepare(**kwargs):
                      **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_fft')
+    os.system('mv obj obj_fft')
 
     athena.configure(prob='jeans',
                      grav='mg',
@@ -44,26 +47,35 @@ def run(**kwargs):
                  'meshblock/nx2=16',
                  'meshblock/nx3=16',
                  'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
-    athena.run('hydro/athinput.jeans_3d', arguments)
+    athena.run('hydro/athinput.jeans_3d', arguments, lcov_test_suffix='mg')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_fft obj')
     os.system('mv bin/athena_fft bin/athena')
-    athena.run('hydro/athinput.jeans_3d', arguments)
+    athena.run('hydro/athinput.jeans_3d', arguments, lcov_test_suffix='fft')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_mpi_mg obj')
     os.system('mv bin/athena_mpi_mg bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   1, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   2, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
-                  4, 'hydro/athinput.jeans_3d', arguments)
+                  4, 'hydro/athinput.jeans_3d', arguments,
+                  lcov_test_suffix='mpi_mg')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_mpi_fft obj')
     os.system('mv bin/athena_mpi_fft bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   1, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   2, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
-                  4, 'hydro/athinput.jeans_3d', arguments)
+                  4, 'hydro/athinput.jeans_3d', arguments,
+                  lcov_test_suffix='mpi_fft')
+    return 'skip_lcov'
 
 
 # Analyze outputs

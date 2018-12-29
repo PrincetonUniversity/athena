@@ -8,11 +8,11 @@ lines long.
 
 There are three functions defined here:
     prepare(**kwargs)
-    run()
+    run(**kwargs)
     analyze()
-All three must be defined with the same names and no inputs in order to make a working
-script. They are called in sequence from the main test script run_tests.py. Additional
-support functions can be defined here, to be called by the three primary functions.
+All three must be defined with the same names and no required inputs in order to make a
+working script. They are called in sequence from the main test script run_tests.py.
+Additional support functions can be defined here, to be called by the three primary fns.
 
 Heavy use is made of support utilities defined in scripts/utils/athena.py. These are
 general-purpose Python scripts that interact with Athena++. They should be used whenever
@@ -84,6 +84,11 @@ def run(**kwargs):
     # from the bin/ directory. Note we omit the leading '../inputs/' below when specifying
     # the athinput file.)
     athena.run('hydro_sr/athinput.mb_1', arguments)
+    # No return statement/value is ever required from run(), but returning anything other
+    # than default None will cause run_tests.py to skip executing the optional Lcov cmd
+    # immediately after this module.run() finishes, e.g. if Lcov was already invoked by:
+    # athena.run('hydro_sr/athinput.mb_1', arguments, lcov_test_suffix='mb_1')
+    return 'skip_lcov'
 
 
 def analyze():

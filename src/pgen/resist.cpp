@@ -40,7 +40,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 
   // Read initial conditions, diffusion coefficients (if needed)
-  Real etaO = pin->GetOrAddReal("problem","eta_O",0.03);
+  Real etaO = pin->GetOrAddReal("problem","eta_ohm",0.03);
   Real amp = pin->GetOrAddReal("problem","amp",1e-3);
   t0 = pin->GetOrAddReal("problem","t0",0.5);
   x0 = pin->GetOrAddReal("problem","x0",0.0);
@@ -68,7 +68,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        Real x1 = pcoord->x1f(i);
+        Real x1 = pcoord->x1v(i);
         pfield->b.x2f(k,j,i) = amp/std::sqrt(4.0*PI*eta*t0)*exp(-SQR(x1-x0)/(4.0*eta*t0));
       }}}
       for (int k=ks; k<=ke+1; k++) {

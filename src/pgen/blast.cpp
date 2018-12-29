@@ -70,7 +70,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // Only check legality of COORDINATE_SYSTEM once in this function
     std::stringstream msg;
     msg << "### FATAL ERROR in blast.cpp ProblemGenerator" << std::endl
-        << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl;
+        << "Unrecognized COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 

@@ -55,6 +55,8 @@ Real Hydro::NewBlockTimeStep(void) {
   Real wi[(NWAVE)];
 
   Real min_dt = (FLT_MAX);
+  Real min_dt_hyperbolic = (FLT_MAX);
+  Real min_dt_parabolic  = (FLT_MAX);
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -126,6 +128,8 @@ Real Hydro::NewBlockTimeStep(void) {
     }
   }
 
+  min_dt_hyperbolic = min_dt*pmb->pmy_mesh->cfl_number;
+
 // calculate the timestep limited by the diffusion process
   if (phdif->hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
@@ -142,6 +146,11 @@ Real Hydro::NewBlockTimeStep(void) {
     min_dt = std::min(min_dt,mindt_h);
   } // field diffusion
 
+  if ((phdif->hydro_diffusion_defined) ||
+      (MAGNETIC_FIELDS_ENABLED &&
+       pmb->pfield->pfdif->field_diffusion_defined))
+    min_dt_parabolic  = min_dt*pmb->pmy_mesh->cfl_number;
+
   min_dt *= pmb->pmy_mesh->cfl_number;
 
   if (UserTimeStep_!=NULL) {
@@ -149,5 +158,7 @@ Real Hydro::NewBlockTimeStep(void) {
   }
 
   pmb->new_block_dt=min_dt;
+  pmb->new_block_dt_hyperbolic=min_dt_hyperbolic;
+  pmb->new_block_dt_parabolic =min_dt_parabolic;
   return min_dt;
 }

@@ -6,7 +6,7 @@ import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
-import athena_read # noqa
+import athena_read  # noqa
 
 
 # Prepare Athena++

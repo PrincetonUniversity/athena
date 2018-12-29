@@ -116,7 +116,7 @@ def run(**kwargs):
   dst = os.path.join('bin', 'athena')
   move(src, dst)
   arguments0[1] = 'job/problem_id=Sod_eos_hllc_{1:}'
-  arguments0.append('hydro/EosFn=gamma_is_{0:.3f}.data')
+  arguments0.extend(['hydro/EOS_file_name=gamma_is_{0:.3f}.data','hydro/EOS_file_type=binary'])
   for i, g in enumerate(_gammas):
       arguments = [j.format(g, i) for j in arguments0]
       athena.run('hydro/athinput.sod', arguments)
@@ -131,6 +131,7 @@ def analyze():
   (test fails).
   """
 
+  analyze_status = True
   for i, g in enumerate(_gammas):
     for t in [10,26]:
         x_ref,_,_,data_ref = athena_read.vtk('bin/Sod_ideal_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
@@ -140,7 +141,7 @@ def analyze():
             diff = comparison.l1_diff(x_ref, data_ref[var][loc], x_new, data_new[var][loc])
             diff /= comparison.l1_norm(x_ref, data_ref[var][loc])
             if diff > 1e-3 or np.isnan(diff):
-              print('Fail', var, diff, g)
-              return False
+              print(' '.join(map(str, ['Eos table test fail. var, diff, gamma =', var, diff, g])))
+              analyze_status = False
 
-  return True
+  return analyze_status

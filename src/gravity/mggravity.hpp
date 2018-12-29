@@ -30,8 +30,8 @@ public:
    : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
   ~MGGravity() {}
-  void Smooth(int color);
-  void CalculateDefect(void);
+  void Smooth(int color) final;
+  void CalculateDefect(void) final;
 
 private:
   const Real omega_;
@@ -45,8 +45,8 @@ class MGGravityDriver : public MultigridDriver{
 public:
   MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
   ~MGGravityDriver() {}
-  void Solve(int stage);
-
+  void Solve(int stage) final;
+  // void SolveCoarsestGrid(void) final;
 private:
   Real four_pi_G_;
 };

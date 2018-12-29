@@ -12,6 +12,7 @@
 #include <cfloat>  // FLT_MIN
 #include <iostream> // ifstream
 #include <fstream>
+#include <sstream>
 #include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
@@ -20,6 +21,8 @@
 #include "../parameter_input.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../inputs/hdf5_reader.hpp"
+#include "../inputs/ascii_table_reader.hpp"
 
 // this class header
 #include "eos.hpp"
@@ -27,6 +30,10 @@
 #if EOS_TABLE_ENABLED
 //#define EOSDEBUG0
 //#define EOSDEBUG1
+
+const char *var_names[] = {"e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)", "T*rho/p(p/rho,rho)",
+                           "p/e(e/rho,rho)", "asq*rho/e(e/rho,rho)", "T*rho/e(e/rho,rho)",
+                           "e/h(h/rho,rho)", "asq*rho/h(h/rho,rho)", "T*rho/h(h/rho,rho)"};
 
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   return GetEosData(rho, egas, ts.axisEgas, ts.iPres) * egas;
@@ -44,10 +51,8 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   return GetEosData(rho, hint, ts.axisHint, ts.iASq) * hint;
 }
 
-void EquationOfState::PrepEOS(ParameterInput *pin) {
-  std::string EosFn;
-  EosFn = pin->GetString("hydro", "EosFn");
-  std::ifstream eos_table(EosFn.c_str(), std::ios::binary);
+void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
+  std::ifstream eos_table(fn.c_str(), std::ios::binary);
   if (eos_table.is_open())
   {
     eos_table.seekg(0, std::ios::beg);
@@ -59,18 +64,31 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
     eos_table.read((char*)&ts.logEgasMax, sizeof(ts.logEgasMax));
     eos_table.read((char*)&ts.egasOverPres, sizeof(ts.egasOverPres));
     eos_table.read((char*)&ts.nVar, sizeof(ts.nVar));
-    std::cout << "prepEOS: " << EosFn << ", " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
-    ptable_ = new InterpTable2D(ts.nVar, ts.nEgas, ts.nRho);
-    ptable_->SetX1lim(ts.logRhoMin, ts.logRhoMax);
-    ptable_->SetX2lim(ts.logEgasMin, ts.logEgasMax);
-    eos_table.read((char*)ptable_->data.data(), ts.nVar * ts.nRho * ts.nEgas * sizeof(ts.logRhoMin));
+    ptable->SetSize(ts.nVar, ts.nEgas, ts.nRho);
+    ptable->SetX1lim(ts.logRhoMin, ts.logRhoMax);
+    ptable->SetX2lim(ts.logEgasMin, ts.logEgasMax);
+    eos_table.read((char*)ptable->data.data(), ts.nVar * ts.nRho * ts.nEgas * sizeof(ts.logRhoMin));
     eos_table.close();
   }
-  else throw std::invalid_argument("Unable to open eos table: " + EosFn);
+  else throw std::invalid_argument("Unable to open eos table: " + fn);
 
-  ts.rhoNorm = (ts.nRho - 1.) / (ts.logRhoMax - ts.logRhoMin);
-  ts.eNorm = (ts.nEgas - 1.) / (ts.logEgasMax - ts.logEgasMin);
+  ts.EosRatios[0] = 1;
+  ts.EosRatios[1] = ts.egasOverPres;
+  ts.EosRatios[2] = ts.egasOverPres / (1. + ts.egasOverPres);
+}
 
+void EquationOfState::PrepEOS(ParameterInput *pin) {
+  std::string EOS_fn, EOS_file_type, dens_lim_field, espec_lim_field;
+  EOS_fn = pin->GetString("hydro", "EOS_file_name");
+  EOS_file_type = pin->GetString("hydro", "EOS_file_type");
+  bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
+  dens_lim_field = pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
+  espec_lim_field = pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
+  ptable_ = new InterpTable2D();
+  ts.egasOverPres = 1;
+  ts.EosRatios[0] = 1;
+  ts.EosRatios[1] = 1;
+  ts.EosRatios[2] = 1;
   ts.iPres = 0;
   ts.iASq = 1;
   ts.iTemp = 2;
@@ -78,10 +96,56 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   ts.axisEgas = 0;
   ts.axisPres = 1;
   ts.axisHint = 2;
-  ts.EosRatios[0] = 1;
-  ts.EosRatios[1] = ts.egasOverPres;
-  ts.EosRatios[2] = ts.egasOverPres / (1. + ts.egasOverPres);
 
+  if (EOS_file_type.compare("binary") == 0) {
+    ReadBinaryTable(EOS_fn, ptable_, ts);
+  } else if (EOS_file_type.compare("hdf5") == 0) {
+#ifndef HDF5OUTPUT
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
+        << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+#endif
+    HDF5TableLoader(EOS_fn.c_str(), ptable_, 9, var_names, dens_lim_field.c_str(), espec_lim_field.c_str());
+    ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
+    ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
+    ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
+    if (read_ratios) {
+      AthenaArray<Real> ratio_array;
+      ratio_array.NewAthenaArray(3);
+      std::string ratio_field = pin->GetOrAddString("hydro", "EOS_ratio_field", "ratios");
+      int zero[] = {0};
+      const int one = 1;
+      int three[] = {3};
+      HDF5ReadRealArray(EOS_fn.c_str(), ratio_field.c_str(), one, zero, three, one, zero, three, ratio_array);
+      ts.EosRatios[0] = ratio_array(0);
+      ts.EosRatios[1] = ratio_array(1);
+      ts.EosRatios[2] = ratio_array(2);
+      ts.egasOverPres = ts.EosRatios[1];
+      ratio_array.DeleteAthenaArray();
+    }
+  } else if (EOS_file_type.compare("ascii") == 0) {
+    AthenaArray<Real> *pratios = NULL;
+    if (read_ratios) pratios = new AthenaArray<Real>;
+    ASCIITableLoader(EOS_fn.c_str(), ptable_, pratios);
+    if (read_ratios) {
+      ts.EosRatios[0] = (*pratios)(0);
+      ts.EosRatios[1] = (*pratios)(1);
+      ts.EosRatios[2] = (*pratios)(2);
+      ts.egasOverPres = ts.EosRatios[1];
+      pratios->DeleteAthenaArray();
+      delete pratios;
+    }
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
+        << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
+        << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  ts.rhoNorm = (ts.nRho - 1.) / (ts.logRhoMax - ts.logRhoMin);
+  ts.eNorm = (ts.nEgas - 1.) / (ts.logEgasMax - ts.logEgasMin);
   ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.);
   ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.);
 
@@ -91,7 +155,7 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
     std::cout << "var = " << i << "\n";
     for (int j=0;j<ts.nRho;j++){
       for (int k=0;k<ts.nEgas;k++){
-        std::cout << std::pow((Real) 10, ptable_->data.data()(i,j,k)) << " ";
+        std::cout << std::pow((Real) 10, ptable_->data(i,j,k)) << " ";
       }
       std::cout << "\n";
     }
@@ -100,6 +164,7 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 #endif
 
 #ifdef EOSDEBUG0
+  std::cout << "prepEOS: " << EOS_fn << ", " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
   EosTestLoop();
 #endif
 }
