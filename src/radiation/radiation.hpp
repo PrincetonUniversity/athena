@@ -29,12 +29,17 @@ public:
   Radiation(MeshBlock *pmb, ParameterInput *pin);
   ~Radiation();
 
-  // Pointers to objects
+  // Object pointers
   MeshBlock* pmy_block;  // pointer to containing MeshBlock
 
-  // Variables
-  int nzeta;  // number of polar radiation angles
-  int npsi;   // number of azimuthal radiation angles
+  // Parameters
+  int nzeta;   // number of polar radiation angles
+  int npsi;    // number of azimuthal radiation angles
+  int zs, ze;  // start and end zeta-indices
+  int ps, pe;  // start and end psi-indices
+  int is, ie;  // start and end x1-indices
+  int js, je;  // start and end x2-indices
+  int ks, ke;  // start and end x3-indices
 
   // Data arrays
   AthenaArray<Real> zetaf;   // face-centered polar radiation angles
