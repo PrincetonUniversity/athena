@@ -54,7 +54,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
 //----------------------------------------------------------------------------------------
 // Radiation destructor
 
-Hydro::~Hydro() {
+Radiation::~Radiation() {
   zetaf.DeleteAthenaArray();
   zetav.DeleteAthenaArray();
   psif.DeleteAthenaArray();
