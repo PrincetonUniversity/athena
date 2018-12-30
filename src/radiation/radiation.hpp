@@ -9,8 +9,8 @@
 //  \brief definitions for Radiation class
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
 
 // Forward declarations
 class MeshBlock;
@@ -31,6 +31,8 @@ public:
 
   // Data
   MeshBlock* pmy_block;            // pointer to containing MeshBlock
+  int nzeta;                       // number of polar radiation angles
+  int npsi;                        // number of azimuthal radiation angles
   AthenaArray<Real> zetaf, zetav;  // face- and volume-centered polar radiation angles
   AthenaArray<Real> psif, psiv;    // face- and volume-centered azimuthal radiation angles
 };

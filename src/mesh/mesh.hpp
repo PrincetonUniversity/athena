@@ -40,6 +40,7 @@ class Field;
 class Gravity;
 class MGGravityDriver;
 class EquationOfState;
+class Radiation;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
@@ -103,6 +104,7 @@ public:
   Field *pfield;
   Gravity *pgrav;
   EquationOfState *peos;
+  Radiation *prad;
 
   MeshBlock *prev, *next;
 

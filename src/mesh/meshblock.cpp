@@ -31,8 +31,9 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
-#include "../utils/buffer_utils.hpp"
+#include "../radiation/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../utils/buffer_utils.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
@@ -132,6 +133,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
+  if (RADIATION_ENABLED) {
+    prad = new Radiation(this, pin);
+  }
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -229,6 +233,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
+  if (RADIATION_ENABLED) {
+    prad = new Radiation(this, pin);
+  }
   InitUserMeshBlockData(pin);
 
   int os=0;
