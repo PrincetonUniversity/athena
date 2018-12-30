@@ -26,20 +26,19 @@
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
+//   dxw: 1D array of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
-//   wct: 3D arrays of weighting factors for CT (not used)
+//   wct: 3D array of weighting factors for CT
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   cf. HLLENonTransforming() in hlle_mhd_rel.cpp and hlld_rel.cpp
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bb,
-  AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
+    AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -295,8 +294,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ey(k,j,i) = -flux_interface[IBY];
     ez(k,j,i) = flux_interface[IBZ];
 
-    wct(k,j,i)=GetWeightForCT(flux_interface[IDN],
-                              prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
+    wct(k,j,i) =
+        GetWeightForCT(flux_interface[IDN], prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
   }
   return;
 }
