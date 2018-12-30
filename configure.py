@@ -17,6 +17,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
+#   -r                enable radiative transfer
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -coverage         enable compiler-dependent code coverage flags
@@ -131,6 +132,12 @@ parser.add_argument('-t',
                     action='store_true',
                     default=False,
                     help='enable interface frame transformations for GR')
+
+# -r argument
+parser.add_argument('-r',
+                    action='store_true',
+                    default=False,
+                    help='enable radiative transfer')
 
 # -shear argument
 parser.add_argument('-shear',
@@ -392,6 +399,9 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+# -r argument
+definitions['RADIATION_ENABLED'] = '1' if args['r'] else '0'
 
 # -shear argument
 if args['shear']:
@@ -725,6 +735,7 @@ print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  Radiation:               ' + ('ON' if args['r'] else 'OFF'))
 print('  Shearing Box:            ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))

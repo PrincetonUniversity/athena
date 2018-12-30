@@ -38,7 +38,7 @@
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
 // include radiative transfer? default=0 (false)
-#define RADIATION_ENABLED 0
+#define RADIATION_ENABLED @RADIATION_ENABLED@
 
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
