@@ -33,7 +33,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     int ngh);
 
 // Global variables
-static Real m, a;                 // black hole parameters
+static Real mass, spin;           // black hole parameters
 static Real pos_1, pos_2, pos_3;  // coordinates of beam origin
 static Real width;                // full proper diameter of beam
 static Real dir_1, dir_2, dir_3;  // relative direction of beam center
@@ -48,8 +48,8 @@ static Real spread;               // full spread of beam in direction
 void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Read parameters from input file
-  m = pin->GetReal("coord", "m");
-  a = pin->GetReal("coord", "a");
+  mass = pin->GetReal("coord", "m");
+  spin = pin->GetReal("coord", "a");
   pos_1 = pin->GetReal("problem", "pos_1");
   pos_2 = pin->GetReal("problem", "pos_2");
   pos_3 = pin->GetReal("problem", "pos_3");
