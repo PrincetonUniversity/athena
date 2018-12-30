@@ -40,7 +40,7 @@ class SimpleHydrogen(EOS):
         return np.exp(1. / T - 1.5 * np.log(T))
 
     def _x(self, rho, T):
-        return 2. /(1 + np.sqrt(1 + 4. * np.exp(1. / T - 1.5 * np.log(T) + np.log(rho))))
+        return 2. / (1 + np.sqrt(1 + 4. * np.exp(1. / T - 1.5 * np.log(T) + np.log(rho))))
 
     def _x_T(self, rho, T):
         x = self._x(rho, T)
@@ -61,7 +61,7 @@ class SimpleHydrogen(EOS):
     def gamma1(self, rho, T):
         x = self._x(rho, T)
         b = self._b(rho, T)
-        return (b * (4. + 20. * T + 15. * T**2) + 10. * (2. + x - x**2))/\
+        return (b * (4. + 20. * T + 15. * T**2) + 10. * (2. + x - x**2)) /\
                (b * (2. + 3. * T)**2 + 6.*(2. + x - x**2))
 
     def asq_of_rho_T(self, rho, T):
@@ -71,7 +71,7 @@ class SimpleHydrogen(EOS):
         return p * self.gamma1(rho, self.T_of_rho_p(rho, p)) / rho
 
     def T_of_rho_p(self, rho, p):
-        t1 = p / rho* (1. + sys.float_info.epsilon)
+        t1 = p / rho * (1. + sys.float_info.epsilon)
 
         def f(y):
             return self.p_of_rho_T(rho, y) / p - 1.
@@ -133,10 +133,12 @@ class Ideal(EOS):
 
 class TestIdeal(Ideal):
     """Class to test if Riemann solver gives same answer as Ideal."""
+
     def __init__(self, gamma, R=1):
         super(TestIdeal, self).__init__(gamma, R=R)
         self.ideal = False
         self.indep = 'p'
+
 
 def parse_eos(eos):
     if hasattr(eos, 'asq_of_rho_p'):

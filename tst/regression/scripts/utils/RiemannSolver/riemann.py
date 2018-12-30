@@ -5,8 +5,10 @@ from scipy.interpolate import interp1d
 from .eos import parse_eos
 from . import brent_opt, ode_opt
 
+
 class StateVector(object):
     """Fluid state vector."""
+
     def __init__(self, p=None, rho=None, d=None, T=None, ei=None, u=None, eos=None):
         if d is not None:
             if rho is not None:
@@ -108,7 +110,8 @@ class StateVector(object):
 
     def show(self):
         """Print state variables."""
-        msg = 'rho: {0:.3g}, pres: {1:,.3g}, vel: {2:.3g}'.format(float(self.rho), self.p, self.u)
+        msg = 'rho: {0:.3g}, pres: {1:,.3g}, vel: {2:.3g}'.format(
+            float(self.rho), self.p, self.u)
         if self.T is not None:
             msg += ', temp: {0:.3g}'.format(self.T)
         print(msg)
@@ -121,6 +124,7 @@ class StateVector(object):
 
 class RiemannSol(object):
     """Specify a Riemann problem and solve it."""
+
     def __init__(self, left, right, eos):
         left.complete()
         right.complete()
@@ -137,7 +141,8 @@ class RiemannSol(object):
             self._pl = min(left.p_min(), right.p_min())
         else:
             self._pl = .5 * min(left.p, right.p)
-        self._pu = max(self.left.ram(), self.right.ram()) * 2  # upper bound for middle pressure
+        self._pu = max(self.left.ram(), self.right.ram()) * \
+            2  # upper bound for middle pressure
         self._rare_int_left = RareInt(self, left)    # left rarefaction ODE integrator
         self._rare_int_right = RareInt(self, right)  # right rarefaction ODE integrator
         self.lmid = None
@@ -305,17 +310,20 @@ class RiemannSol(object):
             if self.waves[0]['speed'][0] == xi:
                 if self.waves[0]['kind'] == 'simple':
                     return self.left
-                tmp = {i:(self.left[i] if self.left[i] == self.lmid[i] else np.nan) for i in args}
+                tmp = {i: (self.left[i] if self.left[i]
+                           == self.lmid[i] else np.nan) for i in args}
                 return StateVector(eos=self.eos, **tmp)
             if self.waves[0]['speed'][1] == xi:
                 return self.lmid
             if self.waves[1]['speed'][0] == xi:
-                tmp = {i:(self.lmid[i] if self.lmid[i] == self.rmid[i] else np.nan) for i in args}
+                tmp = {i: (self.lmid[i] if self.lmid[i]
+                           == self.rmid[i] else np.nan) for i in args}
                 return StateVector(eos=self.eos, **tmp)
             if self.waves[2]['speed'][0] == xi:
                 if self.waves[2]['kind'] == 'simple':
                     return self.rmid
-                tmp = {i:(self.right[i] if self.rmid[i] == self.right[i] else np.nan) for i in args}
+                tmp = {i: (self.right[i] if self.rmid[i]
+                           == self.right[i] else np.nan) for i in args}
                 return StateVector(eos=self.eos, **tmp)
             if self.waves[2]['speed'][1] == xi:
                 return self.right
@@ -371,7 +379,8 @@ class RiemannSol(object):
                 axs = [plt.subplot(n, 1, i + 1) for i in range(n)]
             for i, v in enumerate(var):
                 ax = axs[i]
-                self.plot_sol(v, xi_min=xi_min, xi_max=xi_max, nsimp=nsimp, speeds=speeds, ax=ax, popt=popt)
+                self.plot_sol(v, xi_min=xi_min, xi_max=xi_max,
+                              nsimp=nsimp, speeds=speeds, ax=ax, popt=popt)
             return axs
         else:
             var = var[0]
@@ -443,8 +452,8 @@ class RiemannSol(object):
             fig = plt.figure()
         for w in ws:
             if w['kind'] == 'simple':
-                plt.fill_betweenx(y, y * w['speed'][0], y * w['speed'][1], edgecolor = 'k',
-                                 facecolor='.7', linestyle='-.')
+                plt.fill_betweenx(y, y * w['speed'][0], y * w['speed'][1], edgecolor='k',
+                                  facecolor='.7', linestyle='-.')
             else:
                 plt.plot(y * w['speed'][0], y, 'k-', lw=lws[w['kind']])
         plt.xlim(*xlim)
@@ -457,15 +466,17 @@ class RiemannSol(object):
         r = ylim.min() + .8 * dy
         th = .5 * np.pi + .5 * np.arctan2(1, ws[0]['speed'][0])
         plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{L}$', **opt)
-        th = .5 * np.arctan2(1, ws[0]['speed'][1]) + .5 * np.arctan(1. / ws[1]['speed'][0])
+        th = .5 * np.arctan2(1, ws[0]['speed'][1]) + .5 * \
+            np.arctan(1. / ws[1]['speed'][0])
         plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{L*}$', **opt)
-        th = .5 * np.arctan2(1, ws[1]['speed'][1]) + .5 * np.arctan(1. / ws[2]['speed'][0])
+        th = .5 * np.arctan2(1, ws[1]['speed'][1]) + .5 * \
+            np.arctan(1. / ws[2]['speed'][0])
         plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{R*}$', **opt)
         th = .5 * np.arctan2(1, ws[2]['speed'][1])
         plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{R}$', **opt)
         opt.pop('ha')
         opt.pop('va')
-        aopt = dict(xycoords='data',textcoords='data',
+        aopt = dict(xycoords='data', textcoords='data',
                     arrowprops=dict(arrowstyle="<-", lw=2, color='.3'))
         plt.annotate("", xy=(xlim.min(), 0), xytext=(xlim.max(), 0), **aopt)
         plt.annotate("", xy=(0, ylim.min()), xytext=(0, ylim.max()), **aopt)
@@ -482,16 +493,18 @@ class RiemannSol(object):
     def print_waves(self):
         """Print the wave information."""
         for w in self.waves:
-                print(w['kind'], w['flux'], w['speed'])
+            print(w['kind'], w['flux'], w['speed'])
 
     @property
     def states(self):
         return [self.left, self.lmid, self.rmid, self.right]
 
+
 class RareInt(object):
     """Rarefaction ODE integrator."""
+
     def __init__(self, owner, edge, sign=None, slow=False):
-        self.owner = owner # RiemannSol
+        self.owner = owner  # RiemannSol
         self.edge = edge
         self.eos = owner.eos
         try:
@@ -587,7 +600,8 @@ class RareInt(object):
         if self.slow:
             def f(p):
                 idx = (np.abs(self._pa - p)).argmin()
-                out = odeint(self._rare_ode, self._data[idx], np.array([self._pa[idx], p]), **ode_opt)[-1]
+                out = odeint(self._rare_ode, self._data[idx], np.array(
+                    [self._pa[idx], p]), **ode_opt)[-1]
                 #print(out.shape, out)
                 return out
             self._call = f

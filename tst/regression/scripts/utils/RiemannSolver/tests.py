@@ -36,7 +36,8 @@ def eos_test(plot=True):
     l = dict(rho=r0, p=p0, u=0.)
     r = dict(rho=.125 * r0, p=1e-9, u=0.)
     eoss = [SimpleHydrogen()]
-    sols = [RiemannSol(StateVector(eos=eoss[-1], **l), StateVector(eos=eoss[-1], **r), eoss[-1])]
+    sols = [RiemannSol(StateVector(eos=eoss[-1], **l),
+                       StateVector(eos=eoss[-1], **r), eoss[-1])]
     sols[0].gen_sol()
 
     l['T'] = None
@@ -46,9 +47,11 @@ def eos_test(plot=True):
 
     gs = np.array([eoss[0]._gamma1(w.rho, w.T) for w in sols[0].states])
     eoss.append(Ideal(gs.max()))
-    sols.append(RiemannSol(StateVector(eos=eoss[-1], **l), StateVector(eos=eoss[-1], **r), eoss[-1]))
+    sols.append(RiemannSol(StateVector(
+        eos=eoss[-1], **l), StateVector(eos=eoss[-1], **r), eoss[-1]))
     eoss.append(Ideal(gs.min()))
-    sols.append(RiemannSol(StateVector(eos=eoss[-1], **l), StateVector(eos=eoss[-1], **r), eoss[-1]))
+    sols.append(RiemannSol(StateVector(
+        eos=eoss[-1], **l), StateVector(eos=eoss[-1], **r), eoss[-1]))
     sols[1].gen_sol()
     sols[2].gen_sol()
 
