@@ -230,9 +230,32 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
       }
     } else if (wght[1] == 1.0) {
       // just deep copy
-      b_out.x1f = b_in1.x1f;
-      b_out.x2f = b_in1.x2f;
-      b_out.x3f = b_in1.x3f;
+      //---- B1
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie+1; ++i) {
+            b_out.x1f(k,j,i) = b_in1.x1f(k,j,i);
+          }
+        }}
+      //---- B2
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie; ++i) {
+            b_out.x2f(k,j,i) = b_in1.x2f(k,j,i);
+          }
+        }
+      }
+      //---- B3
+      for (int k=ks; k<=ke+1; ++k) {
+        for (int j=js; j<=je; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie; ++i) {
+            b_out.x3f(k,j,i) = b_in1.x3f(k,j,i);
+          }
+        }
+      }
     } else {
       //---- B1
       for (int k=ks; k<=ke; ++k) {

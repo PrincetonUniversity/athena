@@ -154,7 +154,16 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
       }
     } else if (wght[1] == 1.0) {
       // just deep copy
-      u_out = u_in1;
+      for (int n=0; n<NHYDRO; ++n) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+#pragma omp simd
+            for (int i=is; i<=ie; ++i) {
+              u_out(n,k,j,i) = u_in1(n,k,j,i);
+            }
+          }
+        }
+      }
     } else {
       for (int n=0; n<NHYDRO; ++n) {
         for (int k=ks; k<=ke; ++k) {
