@@ -33,7 +33,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
 
   // Verify numbers of angles
   std::stringstream msg;
-  if (nzeta < 2) {
+  if (nzeta < 4) {
     msg << "### FATAL ERROR in Radiation constructor\n";
     msg << "too few polar angles\n";
     throw std::runtime_error(msg.str().c_str());
