@@ -29,12 +29,20 @@ public:
   Radiation(MeshBlock *pmb, ParameterInput *pin);
   ~Radiation();
 
-  // Data
-  MeshBlock* pmy_block;            // pointer to containing MeshBlock
-  int nzeta;                       // number of polar radiation angles
-  int npsi;                        // number of azimuthal radiation angles
-  AthenaArray<Real> zetaf, zetav;  // face- and volume-centered polar radiation angles
-  AthenaArray<Real> psif, psiv;    // face- and volume-centered azimuthal radiation angles
+  // Pointers to objects
+  MeshBlock* pmy_block;  // pointer to containing MeshBlock
+
+  // Variables
+  int nzeta;  // number of polar radiation angles
+  int npsi;   // number of azimuthal radiation angles
+
+  // Data arrays
+  AthenaArray<Real> zetaf;   // face-centered polar radiation angles
+  AthenaArray<Real> zetav;   // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf   // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;    // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;    // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif    // face-to-face azimuthal radiation angle differences
 };
 
 #endif // RADIATION_RADIATION_HPP_
