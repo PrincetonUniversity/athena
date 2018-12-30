@@ -26,15 +26,13 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable, AthenaArray<R
   std::ifstream file(filename, std::ios::in);
   std::string line;
 
-  while (std::getline(file, line) && (line[0] == '#')) std::cout << "C: " << line << '\n';
+  while (std::getline(file, line) && (line[0] == '#'));
   int nvar, nx2, nx1;
   std::stringstream stream;
   stream.str(line);
-  std::cout << "A: " << line << '\n';
   stream >> nvar;
   stream >> nx2;
   stream >> nx1;
-  std::cout << "N: " << nvar << ", " << nx2 << ", " << nx1 << '\n';
   if (nvar<1 || nx2<2 || nx1<2) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
@@ -44,13 +42,11 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable, AthenaArray<R
   ptable->SetSize(nvar, nx2, nx1);
 
   Real min_, max_;
-  while (std::getline(file, line) && (line[0] == '#')) std::cout << "C: " << line << '\n';
-  std::cout << "A: " << line << '\n';
+  while (std::getline(file, line) && (line[0] == '#'));
   stream.str(line);
   stream.clear();
   stream >> min_;
   stream >> max_;
-  std::cout << "L: " << min_ << ", " << max_ << '\n';
   if (min_>=max_) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
@@ -59,13 +55,11 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable, AthenaArray<R
   }
   ptable->SetX2lim(min_, max_);
 
-  while (std::getline(file, line) && (line[0] == '#')) std::cout << "C: " << line << '\n';
-  std::cout << "A: " << line << '\n';
+  while (std::getline(file, line) && (line[0] == '#'));
   stream.str(line);
   stream.clear();
   stream >> min_;
   stream >> max_;
-  std::cout << "L: " << min_ << ", " << max_ << '\n';
   if (min_>=max_) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
@@ -75,8 +69,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable, AthenaArray<R
   ptable->SetX1lim(min_, max_);
 
   if (pratios) {
-    while (std::getline(file, line) && (line[0] == '#')) std::cout << "C: " << line << '\n';
-    std::cout << "A: " << line << '\n';
+    while (std::getline(file, line) && (line[0] == '#'));
     stream.str(line);
     stream.clear();
     pratios->NewAthenaArray(nvar);
@@ -86,8 +79,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable, AthenaArray<R
   }
 
   for (int row = 0; row < nx2 * nvar; ++row) {
-    while (std::getline(file, line) && (line[0] == '#')) std::cout << "C: " << line << '\n';
-    std::cout << "A: " << line << '\n';
+    while (std::getline(file, line) && (line[0] == '#'));
     std::stringstream stream(line);
     for (int col = 0; col < nx1; ++col) {
       stream >> ptable->data(row, col);

@@ -29,7 +29,7 @@
 
 #if EOS_TABLE_ENABLED
 //#define EOSDEBUG0
-#define EOSDEBUG1
+//#define EOSDEBUG1
 
 const char *var_names[] = {"e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)", "T*rho/p(p/rho,rho)",
                            "p/e(e/rho,rho)", "asq*rho/e(e/rho,rho)", "T*rho/e(e/rho,rho)",
