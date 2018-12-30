@@ -103,6 +103,21 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
     psiv(m) = 0.5 * (psif(m) + psif(m+1));
     dpsif(m) = psif(m+1) - psif(m);
   }
+
+  // Allocate memory for intensities
+  int num_cells_1 = ie + NGHOST;
+  int num_cells_2 = 1;
+  if (js != je) {
+    num_cells_2 = je + NGHOST;
+  }
+  int num_cells_3 = 1;
+  if (ks != ke) {
+    num_cells_3 = ke + NGHOST;
+  }
+  prim.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
+  prim1.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
+  cons.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
+  cons1.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
 }
 
 //----------------------------------------------------------------------------------------
