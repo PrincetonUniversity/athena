@@ -143,24 +143,30 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
                      const char **var_names, const char *x2lim_name, const char *x1lim_name) {
   int ndims;
   hsize_t dims[2];
+  int tmp[2];
   int count_file[2];
-  hid_t dataset;
+  hid_t dataset, dspace;
   hid_t property_list_file = H5Pcreate(H5P_FILE_ACCESS);
   hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, property_list_file);
   for (int i = 0; i < nvar; ++i) {
     dataset = H5Dopen(file, var_names[i], H5P_DEFAULT);
-    ndims = H5Sget_simple_extent_dims(dataset, NULL, NULL);
+    dspace = H5Dget_space(dataset);
+    ndims = H5Sget_simple_extent_ndims(dspace);
     if (ndims != 2) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
-          << "Rank of data field ''" << var_names[i] << "'' in file '" << filename << "' must be 2." << std::endl;
+          << "Rank of data field ''" << var_names[i] << "' in file '" << filename
+          << "' must be 2. Rank is " << ndims << "." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    H5Sget_simple_extent_dims(dataset, dims, NULL);
+    H5Sget_simple_extent_dims(dspace, dims, NULL);
+    tmp[0] = static_cast<int>(dims[0]);
+    tmp[1] = static_cast<int>(dims[1]);
+    //std::cout << "Shape: " << tmp[0] << ", " << tmp[1] << '\n';
     if (i == 0) {
-      count_file[0] = dims[0];
-      count_file[1] = dims[1];
-    } else if (count_file[0]!=dims[0] && count_file[1]!=dims[1]) {
+      count_file[0] = tmp[0];
+      count_file[1] = tmp[1];
+    } else if (count_file[0]!=tmp[0] || count_file[1]!=tmp[1]) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
           << "Inconsistent data field shape in file '" << filename << "'." << std::endl;

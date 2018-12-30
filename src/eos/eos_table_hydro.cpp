@@ -29,7 +29,7 @@
 
 #if EOS_TABLE_ENABLED
 //#define EOSDEBUG0
-//#define EOSDEBUG1
+#define EOSDEBUG1
 
 const char *var_names[] = {"e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)", "T*rho/p(p/rho,rho)",
                            "p/e(e/rho,rho)", "asq*rho/e(e/rho,rho)", "T*rho/e(e/rho,rho)",
@@ -122,6 +122,7 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
       ts.EosRatios[1] = ratio_array(1);
       ts.EosRatios[2] = ratio_array(2);
       ts.egasOverPres = ts.EosRatios[1];
+      //std::cout << "Ratios: " << ratio_array(0) << ", " << ratio_array(1) << ", " << ratio_array(2) << '\n';
       ratio_array.DeleteAthenaArray();
     }
   } else if (EOS_file_type.compare("ascii") == 0) {
@@ -136,6 +137,9 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
       pratios->DeleteAthenaArray();
       delete pratios;
     }
+    ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
+    ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
+    ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
@@ -150,7 +154,9 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.);
 
 #ifdef EOSDEBUG1
-  std::cout << "Eos table:\n";
+  std::cout << "Eos table: " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
+  std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
+  std::cout << "logEgasMin, logEgasMax: " << ts.logEgasMin << ", " << ts.logEgasMax << "\n";
   for (int i=0;i<ts.nVar;i++){
     std::cout << "var = " << i << "\n";
     for (int j=0;j<ts.nRho;j++){
