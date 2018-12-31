@@ -1566,3 +1566,123 @@ void Schwarzschild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, i
   *pa_3 = g_33 * a3;
   return;
 }
+
+//----------------------------------------------------------------------------------------
+// Function for calculating orthonormal tetrad
+// Inputs:
+//   x1, x2, x3: spatial position
+// Outputs:
+//   e: 2D array for e_{(\hat{\mu})}^\nu:
+//     index 0: covariant orthonormal index
+//     index 1: contravariant coordinate index
+//   omega: 3D array for \omega^{\hat{\gamma}}_{\hat{\alpha}\hat{\beta}}:
+//     index 0: upper index
+//     index 1: first lower index
+//     index 2: second lower index
+// Notes:
+//   implements "r-aligned" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
+
+void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+    AthenaArray<Real> &omega) {
+
+  // Calculate useful quantities
+  Real m = bh_mass_;
+  Real r = x1;
+  Real th = x2;
+  Real sth = std::sin(th);
+  Real cth = std::cos(th);
+  Real f0 = 1.0 - 2.0 * m / r;
+  Real f0_sqrt = std::sqrt(f0);
+
+  // Allocate intermediate arrays
+  Real eta[4][4] = {};
+  Real g[4][4] = {};
+  Real gi[4][4] = {};
+  Real dg[4][4][4] = {};
+  Real ei[4][4] = {};
+  Real de[4][4][4] = {};
+  Real gamma[4][4][4] = {};
+
+  // Set Minkowski metric
+  eta[0][0] = -1.0;
+  eta[1][1] = 1.0;
+  eta[2][2] = 1.0;
+  eta[3][3] = 1.0;
+
+  // Set covariant metric
+  g[0][0] = -f0;
+  g[1][1] = 1.0 / f0;
+  g[2][2] = SQR(r);
+  g[3][3] = SQR(r * sth);
+
+  // Set contravariant metric
+  gi[0][0] = -1.0 / f0;
+  gi[1][1] = f0;
+  gi[2][2] = 1.0 / SQR(r);
+  gi[3][3] = 1.0 / SQR(r * sth);
+
+  // Set derivatives of covariant metric
+  dg[1][0][0] = -2.0 * m / SQR(r);
+  dg[1][1][1] = -2.0 * m / SQR(f0 * r);
+  dg[1][2][2] = 2.0 * r;
+  dg[1][3][3] = 2.0 * r * SQR(sth);
+  dg[2][3][3] = 2.0 * SQR(r) * sth * cth;
+
+  // Set tetrad
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      e(i,j) = 0.0;
+    }
+  }
+  e(0,0) = 1.0 / f0_sqrt;
+  e(1,1) = f0_sqrt;
+  e(2,2) = 1.0 / r;
+  e(3,3) = 1.0 / (r * sth);
+
+  // Calculate inverse of tetrad
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        for (int l = 0; l < 4; ++l) {
+          ei[i][j] += eta[i][k] * g[j][l] * e(k,l);
+        }
+      }
+    }
+  }
+
+  // Set derivatives of tetrad
+  de[1][0][0] = -1.0 / (f0 * f0_sqrt) * m / SQR(r);
+  de[1][1][1] = 1.0 / f0_sqrt * m / SQR(r);
+  de[1][2][2] = -1.0 / SQR(r);
+  de[1][3][3] = -1.0 / (SQR(r) * sth);
+  de[2][3][3] = -1.0 / (r * SQR(sth)) * cth;
+
+  // Calculate Christoffel connection coefficients
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        for (int l = 0; l < 4; ++l) {
+          gamma[i][j][k] += 0.5 * gi[i][l] * (dg[j][k][l] + dg[k][j][l] - dg[l][j][k]);
+        }
+      }
+    }
+  }
+
+  // Calculate Ricci rotation coefficients
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        omega(i,j,k) = 0.0;
+        for (int l = 0; l < 4; ++l) {
+          for (int m = 0; m < 4; ++m) {
+            omega(i,j,k) += ei[i][l] * e(k,m) * de[m][j][l];
+            for (int n = 0; n < 4; ++n) {
+              omega(i,j,k) += ei[i][l] * e(k,m) * gamma[l][m][n] * e(j,n);
+            }
+          }
+        }
+      }
+    }
+  }
+  return;
+}

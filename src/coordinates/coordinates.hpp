@@ -161,6 +161,10 @@ public:
   virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
       Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {}
 
+  // ...to calculate orthonormal tetrad
+  virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+      AthenaArray<Real> &omega) {}
+
 protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
 
@@ -418,7 +422,7 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) final;
 
-  // for raising (lowering) covariant (contravariant) components of a vector
+  // ...to raise (lower) covariant (contravariant) components of a vector
   void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3) final;
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
@@ -511,11 +515,15 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) final;
 
-  // for raising (lowering) covariant (contravariant) components of a vector
+  // ...to raise (lower) covariant (contravariant) components of a vector
   void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3) final;
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) final;
+
+  // ...to calculate orthonormal tetrad
+  virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+      AthenaArray<Real> &omega) final;
 };
 
 //----------------------------------------------------------------------------------------
@@ -604,7 +612,7 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) final;
 
-  // for raising (lowering) covariant (contravariant) components of a vector
+  // ...to raise (lower) covariant (contravariant) components of a vector
   void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3) final;
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
@@ -697,7 +705,7 @@ public:
       const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
       AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez) final;
 
-  // ...for raising (lowering) covariant (contravariant) components of a vector
+  // ...to raise (lower) covariant (contravariant) components of a vector
   void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
       Real *pa0, Real *pa1, Real *pa2, Real *pa3) final;
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,

@@ -116,12 +116,13 @@ enum {IVX=1, IVY=2, IVZ=3, IPR=4, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
 // array indices for face-centered electric fields returned by Riemann solver
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 
-// array indices for metric and triangular matrices in GR
+// array indices for matrices in GR
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 
 // needed for arrays dimensioned over grid directions
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
+enum AngleDirection {ZETADIR, PSIDIR};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
