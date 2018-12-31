@@ -235,6 +235,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     num_south_polar_blocks_ = 0;
   }
 
+  // Determine number of radiation angles
+  if (RADIATION_ENABLED) {
+    int nzeta = pin->GetInteger("radiation", "n_polar");
+    int npsi = pin->GetInteger("radiation", "n_azimuthal");
+    rad_nang_ = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST);
+  }
+
   InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
@@ -688,7 +695,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         if (type == BNDRY_HYDRO) {
           size *= NHYDRO;
         } else if (type == BNDRY_RAD) {
-          size *= pmy_block_->prad->nang;
+          size *= rad_nang_;
         }
       }
       break;
@@ -755,7 +762,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         if (type == BNDRY_FLCOR) {
           size *= NHYDRO;
         } else if (type == BNDRY_RAD_FLCOR) {
-          size *= pmy_block_->prad->nang;
+          size *= rad_nang_;
         }
       }
       break;
@@ -950,13 +957,13 @@ void BoundaryValues::Initialize(void) {
         if (bd_rad_.req_send[nb.bufid] != MPI_REQUEST_NULL) {
           MPI_Request_free(&bd_rad_.req_send[nb.bufid]);
         }
-        MPI_Send_init(bd_rad_.send[nb.bufid], ssize * pmy_block_->prad->nang,
+        MPI_Send_init(bd_rad_.send[nb.bufid], ssize * rad_nang_,
             MPI_ATHENA_REAL, nb.rank, tag, MPI_COMM_WORLD, &(bd_rad_.req_send[nb.bufid]));
         tag = CreateBvalsMPITag(pmb->lid, TAG_RAD, nb.bufid);
         if (bd_rad_.req_recv[nb.bufid] != MPI_REQUEST_NULL) {
           MPI_Request_free(&bd_rad_.req_recv[nb.bufid]);
         }
-        MPI_Recv_init(bd_rad_.recv[nb.bufid], rsize * pmy_block_->prad->nang,
+        MPI_Recv_init(bd_rad_.recv[nb.bufid], rsize * rad_nang_,
             MPI_ATHENA_REAL, nb.rank, tag, MPI_COMM_WORLD, &(bd_rad_.req_recv[nb.bufid]));
       }
 
@@ -995,7 +1002,7 @@ void BoundaryValues::Initialize(void) {
         } else {  // (nb.fid==4 || nb.fid==5)
           size = ((pmb->block_size.nx1+1) / 2) * ((pmb->block_size.nx2+1) / 2);
         }
-        size *= pmy_block_->prad->nang;
+        size *= rad_nang_;
         if (nb.level < mylevel) {  // send to coarser
           tag = CreateBvalsMPITag(nb.lid, TAG_RADFLX, nb.targetid);
           if (bd_rad_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL) {
@@ -1788,7 +1795,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
           }
           if (RADIATION_ENABLED) {
             pmb->pmr->RestrictCellCenteredValues(radcdst, pmr->coarse_rad_cons_, 0,
-                pmb->prad->nang - 1, ris, rie, rjs, rje, rks, rke);
+                rad_nang_ - 1, ris, rie, rjs, rje, rks, rke);
           }
         }
       }
@@ -1943,7 +1950,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     // prolongate radiation variables using primitives
     if (RADIATION_ENABLED) {
       pmr->ProlongateCellCenteredValues(pmr->coarse_rad_prim_, radpdst, 0,
-          pmb->prad->nang - 1, si, ei, sj, ej, sk, ek);
+          rad_nang_ - 1, si, ei, sj, ej, sk, ek);
     }
 
     // calculate conservative variables

@@ -383,6 +383,9 @@ private:
   MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 #endif
 
+  // Radiation
+  int rad_nang_;
+
   // temporary
   friend class Mesh;
 };

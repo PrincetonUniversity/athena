@@ -72,6 +72,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Outputs: (none)
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+  AllocateUserOutputVariables(1);
+  SetUserOutputVariableName(0, "E");
   return;
 }
 
