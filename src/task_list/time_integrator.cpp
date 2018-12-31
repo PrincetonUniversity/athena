@@ -25,6 +25,7 @@
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "task_list.hpp"
 //----------------------------------------------------------------------------------------
@@ -815,6 +816,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage)
 enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval=pmb->pbval;
 
   if (stage <= nstages) {
@@ -823,7 +825,7 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                t_end_stage, dt);
+                                prad->prim, prad->cons, t_end_stage, dt);
   } else {
     return TASK_FAIL;
   }
@@ -834,6 +836,7 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) 
 enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval=pmb->pbval;
   int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
   if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
@@ -853,6 +856,10 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
+    if (RADIATION_ENABLED) {
+      pmb->prad->ConservedToPrimitive(prad->cons, prad->prim1, pmb->pcoord, il, iu, jl,
+          ju, kl, ku);
+    }
     // fourth-order EOS:
     if (pmb->precon->xorder == 4) {
       // for hydro, shrink buffer by 1 on all sides
@@ -870,6 +877,9 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
+    if (RADIATION_ENABLED) {
+      prad->prim.SwapAthenaArray(prad->prim1);
+    }
   } else {
     return TASK_FAIL;
   }
@@ -880,6 +890,7 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
 enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval=pmb->pbval;
 
   if (stage <= nstages) {
@@ -888,7 +899,7 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int sta
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                   t_end_stage, dt);
+                                   prad->prim, prad->cons, t_end_stage, dt);
   } else {
     return TASK_FAIL;
   }

@@ -21,13 +21,14 @@
 #endif
 
 // forward declarations
+class Coordinates;
+class Field;
+class Hydro;
 class Mesh;
 class MeshBlock;
 class MeshBlockTree;
-class Hydro;
-class Field;
 class ParameterInput;
-class Coordinates;
+class Radiation;
 struct RegionSize;
 struct FaceField;
 
@@ -214,9 +215,11 @@ public:
   void ClearBoundaryForInit(bool cons_and_field);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+       FaceField &bfdst, AthenaArray<Real> &bcdst, AthenaArray<Real> &radpdst,
+       AthenaArray<Real> &radcdst, const Real time, const Real dt);
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+       FaceField &bfdst, AthenaArray<Real> &bcdst, AthenaArray<Real> &radpdst,
+       AthenaArray<Real> &radcdst, const Real time, const Real dt);
 
   int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
                       int ns, int ne, Real *buf, const NeighborBlock& nb);
@@ -307,7 +310,9 @@ private:
   int nedge_fine_[12];
   bool firsttime_;
 
-  BoundaryData bd_hydro_, bd_field_, bd_flcor_, bd_emfcor_;
+  BoundaryData bd_hydro_, bd_flcor_;
+  BoundaryData bd_field_, bd_emfcor_;
+  BoundaryData bd_rad_, bd_rad_flcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;

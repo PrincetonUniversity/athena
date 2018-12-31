@@ -21,12 +21,13 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../utils/buffer_utils.hpp"
 
 // MPI header
@@ -154,6 +155,18 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
     }
   }
 
+  if (type == RAD_CONS || type == RAD_PRIM) {
+    pbd = &bd_rad_;
+    ns = 0;
+    ne = pmb->prad->nang - 1;
+    if (pmb->pmy_mesh->multilevel) {
+      if (type == RAD_CONS)
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_cons_);
+      if (type == RAD_PRIM)
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_prim_);
+    }
+  }
+
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank == Globals::my_rank) // on the same process
@@ -167,8 +180,12 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
     else
       ssize=LoadCellCenteredBoundaryBufferToFiner(src, ns, ne, pbd->send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {
-      if (type==HYDRO_CONS || type==HYDRO_PRIM)
+      if (type==HYDRO_CONS || type==HYDRO_PRIM) {
         ptarget=&(pbl->pbval->bd_hydro_);
+      }
+      if (type == RAD_CONS || type == RAD_PRIM) {
+        ptarget = &(pbl->pbval->bd_rad_);
+      }
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
     }
@@ -413,6 +430,20 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     }
   }
 
+  if (type == RAD_CONS || type == RAD_PRIM) {
+    pbd = &bd_rad_;
+    ns = 0;
+    ne = pmb->prad->nang - 1;
+    if (pmb->pmy_mesh->multilevel) {
+      if (type == RAD_CONS) {
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_cons_);
+      }
+      if (type == RAD_PRIM) {
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_prim_);
+      }
+    }
+  }
+
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
@@ -473,6 +504,20 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
         cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
       if (type==HYDRO_PRIM)
         cbuf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
+    }
+  }
+
+  if (type == RAD_CONS || type == RAD_PRIM) {
+    pbd = &bd_rad_;
+    ns = 0;
+    ne = pmb->prad->nang - 1;
+    if (pmb->pmy_mesh->multilevel) {
+      if (type == RAD_CONS) {
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_cons_);
+      }
+      if (type == RAD_PRIM) {
+        cbuf.InitWithShallowCopy(pmb->pmr->coarse_rad_prim_);
+      }
     }
   }
 

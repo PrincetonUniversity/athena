@@ -47,6 +47,7 @@
 class MeshBlock;
 class Coordinates;
 class ParameterInput;
+class Radiation;
 struct RegionSize;
 class HydroDiffusion;
 class FieldDiffusion;
@@ -129,8 +130,8 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
 
 enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
                    BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};
-enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
-enum FluxCorrectionType {FLUX_HYDRO=0};
+enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1, RAD_CONS=2, RAD_PRIM=3};
+enum FluxCorrectionType {FLUX_HYDRO=0, FLUX_RAD=1};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

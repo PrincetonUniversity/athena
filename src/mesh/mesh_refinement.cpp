@@ -18,6 +18,7 @@
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 
@@ -59,6 +60,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   if (pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*pmb->cnghost;
   coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
   coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+  if (RADIATION_ENABLED) {
+    coarse_rad_cons_.NewAthenaArray(pmb->prad->nang, ncc3, ncc2, ncc1);
+    coarse_rad_prim_.NewAthenaArray(pmb->prad->nang, ncc3, ncc2, ncc1);
+  }
 
   int nc1=pmb->block_size.nx1+2*NGHOST;
   fvol_[0][0].NewAthenaArray(nc1);
@@ -98,6 +103,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 MeshRefinement::~MeshRefinement() {
   coarse_cons_.DeleteAthenaArray();
   coarse_prim_.DeleteAthenaArray();
+  if (RADIATION_ENABLED) {
+    coarse_rad_cons_.DeleteAthenaArray();
+    coarse_rad_prim_.DeleteAthenaArray();
+  }
   fvol_[0][0].DeleteAthenaArray();
   fvol_[0][1].DeleteAthenaArray();
   fvol_[1][0].DeleteAthenaArray();

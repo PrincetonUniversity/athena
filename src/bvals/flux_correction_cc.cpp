@@ -27,6 +27,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../utils/buffer_utils.hpp"
 
 // MPI header
@@ -51,6 +52,15 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
     x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
     x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
     pbd=&bd_flcor_;
+  }
+
+  if (type == FLUX_RAD) {
+    ns = 0;
+    ne = pmb->prad->nang - 1;
+    x1flux.InitWithShallowCopy(pmb->prad->flux[X1DIR]);
+    x2flux.InitWithShallowCopy(pmb->prad->flux[X2DIR]);
+    x3flux.InitWithShallowCopy(pmb->prad->flux[X3DIR]);
+    pbd = &bd_rad_flcor_;
   }
 
   for (int n=0; n<nneighbor; n++) {
@@ -141,8 +151,12 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
       }
       if (nb.rank==Globals::my_rank) { // on the same node
         pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-        if (type==FLUX_HYDRO)
+        if (type==FLUX_HYDRO) {
           ptarget=&(pbl->pbval->bd_flcor_);
+        }
+        if (type == FLUX_RAD) {
+          ptarget = &(pbl->pbval->bd_rad_flcor_);
+        }
         std::memcpy(ptarget->recv[nb.targetid], sbuf, p*sizeof(Real));
         ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
       }
@@ -173,6 +187,15 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
     x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
     x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
     x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
+  }
+
+  if (type == FLUX_RAD) {
+    pbd = &bd_rad_flcor_;
+    ns = 0;
+    ne = pmb->prad->nang - 1;
+    x1flux.InitWithShallowCopy(pmb->prad->flux[X1DIR]);
+    x2flux.InitWithShallowCopy(pmb->prad->flux[X2DIR]);
+    x3flux.InitWithShallowCopy(pmb->prad->flux[X3DIR]);
   }
 
   for (int n=0; n<nneighbor; n++) {

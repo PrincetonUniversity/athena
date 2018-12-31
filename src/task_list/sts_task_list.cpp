@@ -28,6 +28,7 @@
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "task_list.hpp"
 //----------------------------------------------------------------------------------------
@@ -437,6 +438,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stag
 enum TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval=pmb->pbval;
   int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
   if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
@@ -452,8 +454,15 @@ enum TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage)
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
                                     phydro->w1, pfield->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
+    if (RADIATION_ENABLED) {
+      pmb->prad->ConservedToPrimitive(prad->cons, prad->prim1, pmb->pcoord, il, iu, jl,
+          ju, kl, ku);
+    }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     phydro->w.SwapAthenaArray(phydro->w1);
+    if (RADIATION_ENABLED) {
+      prad->prim.SwapAthenaArray(prad->prim1);
+    }
 
   } else {
     return TASK_FAIL;
@@ -465,6 +474,7 @@ enum TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage)
 enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval=pmb->pbval;
 
   if (stage <= nstages) {
@@ -473,7 +483,8 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                   pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+                                   prad->prim, prad->cons, pmb->pmy_mesh->time,
+                                   pmb->pmy_mesh->dt);
   } else {
     return TASK_FAIL;
   }

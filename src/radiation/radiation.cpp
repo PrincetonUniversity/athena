@@ -32,6 +32,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   // Set parameters
   nzeta = pin->GetInteger("radiation", "n_polar");
   npsi = pin->GetInteger("radiation", "n_azimuthal");
+  nang = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST);
   zs = NGHOST;
   ze = nzeta + NGHOST - 1;
   ps = NGHOST;
@@ -114,10 +115,19 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   if (ks != ke) {
     num_cells_3 = ke + NGHOST;
   }
-  prim.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
-  prim1.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
-  cons.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
-  cons1.NewAthenaArray(num_cells_3, num_cells_2, num_cells_1, ze + NGHOST, pe + NGHOST);
+  prim.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
+  prim1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
+  cons.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
+  cons1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
+
+  // Allocate memory for fluxes
+  flux[X1DIR].NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1 + 1);
+  if (js != je) {
+    flux[X2DIR].NewAthenaArray(nang, num_cells_3, num_cells_2 + 1, num_cells_1);
+  }
+  if (ks != ke) {
+    flux[X3DIR].NewAthenaArray(nang, num_cells_3 + 1, num_cells_2, num_cells_1);
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -130,4 +140,19 @@ Radiation::~Radiation() {
   psif.DeleteAthenaArray();
   psiv.DeleteAthenaArray();
   dpsif.DeleteAthenaArray();
+  flux[X1DIR].DeleteAthenaArray();
+  flux[X2DIR].DeleteAthenaArray();
+  flux[X3DIR].DeleteAthenaArray();
+}
+
+//----------------------------------------------------------------------------------------
+// Indexing function for intensities
+// Inputs:
+//   l: zeta-index
+//   m: psi-index
+// Outputs:
+//   returned value: 1D index for both zeta and psi
+
+int Radiation::IntInd(int l, int m) {
+  return l * (pe + NGHOST + 1) + m;
 }

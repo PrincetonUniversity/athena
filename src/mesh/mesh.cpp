@@ -40,6 +40,7 @@
 #include "../multigrid/multigrid.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh_refinement.hpp"
@@ -1291,6 +1292,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     MeshBlock *pmb;
     Hydro *phydro;
     Field *pfield;
+    Radiation *prad;
     BoundaryValues *pbval;
 
     // prepare to receive conserved variables
@@ -1306,8 +1308,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     for (int i=0; i<nmb; ++i) {
       pmb=pmb_array[i]; pbval=pmb->pbval;
       pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
+      if (MAGNETIC_FIELDS_ENABLED) {
         pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
+      }
+      if (RADIATION_ENABLED) {
+        pbval->SendCellCenteredBoundaryBuffers(pmb->prad->cons, RAD_CONS);
+      }
     }
 
     // wait to receive conserved variables
@@ -1315,11 +1321,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     for (int i=0; i<nmb; ++i) {
       pmb=pmb_array[i]; pbval=pmb->pbval;
       pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
+      if (MAGNETIC_FIELDS_ENABLED) {
         pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+      }
+      if (RADIATION_ENABLED) {
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->prad->cons, RAD_CONS);
+      }
       // send and receive shearingbox boundary conditions
-      if (SHEARING_BOX)
+      if (SHEARING_BOX) {
         pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+      }
       pbval->ClearBoundaryForInit(true);
     }
 
@@ -1359,6 +1370,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb=pmb_array[i];
         phydro=pmb->phydro;
         pfield=pmb->pfield;
+        prad = pmb->prad;
         pbval=pmb->pbval;
 
         // Assume cell-centered analytic value is computed at all real cells, and ghost
@@ -1442,7 +1454,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
       if (multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                    time, 0.0);
+                                    prad->prim, prad->cons, time, 0.0);
 
       int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
       if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
@@ -1458,6 +1470,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       il, iu, jl, ju, kl, ku);
+      if (RADIATION_ENABLED) {
+        pmb->prad->ConservedToPrimitive(prad->cons, prad->prim, pmb->pcoord, il, iu, jl,
+            ju, kl, ku);
+      }
       // --------------------------
       int order = pmb->precon->xorder;
       if (order == 4) {
@@ -1478,7 +1494,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // --------------------------
       // end fourth-order EOS
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                     time, 0.0);
+                                     prad->prim, prad->cons, time, 0.0);
     }
 
     // Calc initial diffusion coefficients
@@ -2220,6 +2236,22 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           pmr->ProlongateInternalField(pmb->pfield->b, pob->cis, pob->cie,
                                        pob->cjs, pob->cje, pob->cks, pob->cke);
         }
+        if (RADIATION_ENABLED) {
+          AthenaArray<Real> &radsrc = pob->prad->cons;
+          AthenaArray<Real> &raddst = pmr->coarse_rad_cons_;
+          for (int nv = 0; nv < pmb->prad->nang; nv++) {
+            for (int k = ks, ck = cks; k <= ke; k++, ck++) {
+              for (int j = js, cj = cjs; j <= je; j++, cj++) {
+                for (int i = is, ci = cis; i <= ie; i++, ci++) {
+                  raddst(nv,k,j,i) = radsrc(nv,ck,cj,ci);
+                }
+              }
+            }
+          }
+          pmr->ProlongateCellCenteredValues(raddst, pmb->prad->cons, 0,
+              pmb->prad->nang - 1, pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks,
+              pob->cke);
+        }
       }
     }
   }
@@ -2335,6 +2367,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
           pmr->ProlongateInternalField(pb->pfield->b, pb->cis, pb->cie,
                                        pb->cjs, pb->cje, pb->cks, pb->cke);
+        }
+        if (RADIATION_ENABLED) {
+          BufferUtility::Unpack4DData(recvbuf[k], pmr->coarse_rad_cons_, 0,
+              pmb->prad->nang - 1, is, ie, js, je, ks, ke, p);
+          pmr->ProlongateCellCenteredValues(pmr->coarse_rad_cons_, pb->prad->cons, 0,
+              pmb->prad->nang - 1, pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         }
         k++;
       }

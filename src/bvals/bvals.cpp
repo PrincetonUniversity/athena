@@ -31,6 +31,7 @@
 #include "../mesh/mesh_refinement.hpp"
 #include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../utils/buffer_utils.hpp"
 
 
@@ -240,6 +241,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (MAGNETIC_FIELDS_ENABLED) {
     InitBoundaryData(bd_field_, BNDRY_FIELD);
     InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
+  }
+  if (RADIATION_ENABLED) {
+    InitBoundaryData(bd_rad_, BNDRY_RAD);
+    if (pmy_mesh_->multilevel) {
+      InitBoundaryData(bd_rad_flcor_, BNDRY_RAD_FLCOR);
+    }
   }
 
   if (num_north_polar_blocks_ > 0) {
@@ -517,6 +524,12 @@ BoundaryValues::~BoundaryValues() {
     DestroyBoundaryData(bd_field_);
     DestroyBoundaryData(bd_emfcor_);
   }
+  if (RADIATION_ENABLED) {
+    DestroyBoundaryData(bd_rad_);
+    if (pmy_mesh_->multilevel) {
+      DestroyBoundaryData(bd_rad_flcor_);
+    }
+  }
 
   if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
@@ -638,7 +651,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
   cng3=cng*f3d;
   int size;
   bd.nbmax=maxneighbor_;
-  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
+  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR || type==BNDRY_RAD_FLCOR) {
     for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);
   }
   if (type==BNDRY_EMFCOR) {
@@ -657,7 +670,8 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
     // Allocate buffers
     // calculate the buffer size
     switch(type) {
-      case BNDRY_HYDRO: {
+      case BNDRY_HYDRO:
+      case BNDRY_RAD: {
         size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
             *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
@@ -671,7 +685,11 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
           size=std::max(size,c2f);
           size=std::max(size,f2c);
         }
-        size*=NHYDRO;
+        if (type == BNDRY_HYDRO) {
+          size *= NHYDRO;
+        } else if (type == BNDRY_RAD) {
+          size *= pmy_block_->prad->nang;
+        }
       }
       break;
       case BNDRY_FIELD: {
@@ -726,13 +744,19 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         }
       }
       break;
-      case BNDRY_FLCOR: {
+      case BNDRY_FLCOR:
+      case BNDRY_RAD_FLCOR: {
         if (BoundaryValues::ni[n].ox1!=0)
-          size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
+          size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2;
         if (BoundaryValues::ni[n].ox2!=0)
-          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
+          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2;
         if (BoundaryValues::ni[n].ox3!=0)
-          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
+          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2;
+        if (type == BNDRY_FLCOR) {
+          size *= NHYDRO;
+        } else if (type == BNDRY_RAD_FLCOR) {
+          size *= pmy_block_->prad->nang;
+        }
       }
       break;
       case BNDRY_EMFCOR: {
@@ -886,6 +910,8 @@ void BoundaryValues::Initialize(void) {
   for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank!=Globals::my_rank) {
+
+      // specify the offsets in the view point of the target block: flip ox? signs
       if (nb.level==mylevel) { // same
         ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
                    *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
@@ -905,20 +931,36 @@ void BoundaryValues::Initialize(void) {
              *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
              *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
       }
-      ssize*=NHYDRO; rsize*=NHYDRO;
-      // specify the offsets in the view point of the target block: flip ox? signs
+
+      // hydro
       tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
       if (bd_hydro_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_hydro_.req_send[nb.bufid]);
-      MPI_Send_init(bd_hydro_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
+      MPI_Send_init(bd_hydro_.send[nb.bufid],ssize*NHYDRO,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send[nb.bufid]));
       tag=CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
       if (bd_hydro_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_hydro_.req_recv[nb.bufid]);
-      MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
+      MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize*NHYDRO,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
 
-      // flux correction
+      // radiation
+      if (RADIATION_ENABLED) {
+        tag = CreateBvalsMPITag(nb.lid, TAG_RAD, nb.targetid);
+        if (bd_rad_.req_send[nb.bufid] != MPI_REQUEST_NULL) {
+          MPI_Request_free(&bd_rad_.req_send[nb.bufid]);
+        }
+        MPI_Send_init(bd_rad_.send[nb.bufid], ssize * pmy_block_->prad->nang,
+            MPI_ATHENA_REAL, nb.rank, tag, MPI_COMM_WORLD, &(bd_rad_.req_send[nb.bufid]));
+        tag = CreateBvalsMPITag(pmb->lid, TAG_RAD, nb.bufid);
+        if (bd_rad_.req_recv[nb.bufid] != MPI_REQUEST_NULL) {
+          MPI_Request_free(&bd_rad_.req_recv[nb.bufid]);
+        }
+        MPI_Recv_init(bd_rad_.recv[nb.bufid], rsize * pmy_block_->prad->nang,
+            MPI_ATHENA_REAL, nb.rank, tag, MPI_COMM_WORLD, &(bd_rad_.req_recv[nb.bufid]));
+      }
+
+      // hydro flux correction
       if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
         if (nb.fid==0 || nb.fid==1)
@@ -940,6 +982,34 @@ void BoundaryValues::Initialize(void) {
             MPI_Request_free(&bd_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
               nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_recv[nb.bufid]));
+        }
+      }
+
+      // radiation flux correction
+      if (RADIATION_ENABLED && pmy_mesh_->multilevel && nb.type == NEIGHBOR_FACE) {
+        int size;
+        if (nb.fid == 0 || nb.fid == 1) {
+          size = ((pmb->block_size.nx2+1) / 2) * ((pmb->block_size.nx3+1) / 2);
+        } else if (nb.fid == 2 || nb.fid == 3) {
+          size = ((pmb->block_size.nx1+1) / 2) * ((pmb->block_size.nx3+1) / 2);
+        } else {  // (nb.fid==4 || nb.fid==5)
+          size = ((pmb->block_size.nx1+1) / 2) * ((pmb->block_size.nx2+1) / 2);
+        }
+        size *= pmy_block_->prad->nang;
+        if (nb.level < mylevel) {  // send to coarser
+          tag = CreateBvalsMPITag(nb.lid, TAG_RADFLX, nb.targetid);
+          if (bd_rad_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL) {
+            MPI_Request_free(&bd_rad_flcor_.req_send[nb.bufid]);
+          }
+          MPI_Send_init(bd_rad_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
+              MPI_COMM_WORLD, &(bd_rad_flcor_.req_send[nb.bufid]));
+        } else if (nb.level > mylevel) {  // receive from finer
+          tag = CreateBvalsMPITag(pmb->lid, TAG_RADFLX, nb.bufid);
+          if (bd_rad_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL) {
+            MPI_Request_free(&bd_rad_flcor_.req_recv[nb.bufid]);
+          }
+          MPI_Recv_init(bd_rad_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
+              MPI_COMM_WORLD, &(bd_rad_flcor_.req_recv[nb.bufid]));
         }
       }
 
@@ -1195,10 +1265,17 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-        if (MAGNETIC_FIELDS_ENABLED)
+        if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Start(&(bd_field_.req_recv[nb.bufid]));
+        }
+        if (RADIATION_ENABLED) {
+          MPI_Start(&(bd_rad_.req_recv[nb.bufid]));
+        }
       } else { // must be primitive initialization
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
+        if (RADIATION_ENABLED) {
+          MPI_Start(&(bd_rad_.req_recv[nb.bufid]));
+        }
       }
     }
   }
@@ -1235,6 +1312,11 @@ void BoundaryValues::StartReceivingAll(const Real time) {
           || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true)))))
            MPI_Start(&(bd_emfcor_.req_recv[nb.bufid]));
         }
+      }
+      if (RADIATION_ENABLED) {
+        MPI_Start(&(bd_rad_.req_recv[nb.bufid]));
+        if (nb.type == NEIGHBOR_FACE && nb.level > mylevel)
+          MPI_Start(&(bd_rad_flcor_.req_recv[nb.bufid]));
       }
     }
   }
@@ -1320,25 +1402,36 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   MeshBlock *pmb=pmy_block_;
 
-  // Note step==0 corresponds to initial exchange of conserved variables, while step==1
-  // corresponds to primitives sent only in the case of GR with refinement
+  // Note cons_and_field==true corresponds to initial exchange of conserved variables,
+  // while cons_and_field==false corresponds to primitives sent only in the case of GR
+  // with refinement
   for (int n=0;n<nneighbor;n++) {
     NeighborBlock& nb = neighbor[n];
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
       bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-    if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
-      bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
+    }
+    if (RADIATION_ENABLED) {
+      bd_rad_.flag[nb.bufid] = BNDRY_WAITING;
+    }
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
         // Wait for Isend
         MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        if (MAGNETIC_FIELDS_ENABLED)
+        if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+        }
+        if (RADIATION_ENABLED) {
+          MPI_Wait(&(bd_rad_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+        }
       } else {  // must be primitive initialization
-        if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
+        if (GENERAL_RELATIVITY and pmy_mesh_->multilevel) {
           MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+          if (RADIATION_ENABLED) {
+            MPI_Wait(&(bd_rad_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+          }
+        }
       }
     }
 #endif
@@ -1365,6 +1458,11 @@ void BoundaryValues::ClearBoundaryAll(void) {
       if ((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
         bd_emfcor_.flag[nb.bufid] = BNDRY_WAITING;
     }
+    if (RADIATION_ENABLED) {
+      bd_rad_.flag[nb.bufid] = BNDRY_WAITING;
+      if (nb.type == NEIGHBOR_FACE)
+        bd_rad_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+    }
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
@@ -1380,6 +1478,11 @@ void BoundaryValues::ClearBoundaryAll(void) {
               || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
+      }
+      if (RADIATION_ENABLED) {
+        MPI_Wait(&(bd_rad_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+        if (nb.type == NEIGHBOR_FACE && nb.level < pmb->loc.level)
+          MPI_Wait(&(bd_rad_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
       }
     }
 #endif
@@ -1404,7 +1507,8 @@ void BoundaryValues::ClearBoundaryAll(void) {
 #endif
     }
   }
-// clear shearingbox boundary communications
+
+  // clear shearingbox boundary communications
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
       for (int n=0; n<4; n++) {
@@ -1453,11 +1557,14 @@ void BoundaryValues::ClearBoundaryAll(void) {
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 //           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-//           const Real time, const Real dt)
+//           AthenaArray<Real> &radpdst, AthenaArray<Real> &radpdst, const Real time,
+//           const Real dt)
 //  \brief Apply all the physical boundary conditions for both hydro and field
+//  TODO(c-white): add radiation to physical boundary calls
 
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
+                     AthenaArray<Real> &radpdst, AthenaArray<Real> &radpdst,
                      const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
@@ -1553,12 +1660,14 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 //           AthenaArray<Real> &cdst, FaceField &bdst, AthenaArray<Real> &bcdst,
-//           const Real time, const Real dt)
+//           AthenaArray<Real> &radpdst, AthenaArray<Real> &radcdst, const Real time,
+//           const Real dt)
 //  \brief Prolongate the level boundary using the coarse data
 
 void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
-     AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-     const Real time, const Real dt) {
+    AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
+    AthenaArray<Real> &radpdst, AthenaArray<Real> &radcdst, const Real time,
+    const Real dt) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int64_t &lx1=pmb->loc.lx1;
@@ -1616,9 +1725,10 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
           pmb->pmr->RestrictCellCenteredValues(cdst, pmr->coarse_cons_, 0, NHYDRO-1,
                                                ris, rie, rjs, rje, rks, rke);
-          if (GENERAL_RELATIVITY)
+          if (GENERAL_RELATIVITY) {
             pmb->pmr->RestrictCellCenteredValues(pdst, pmr->coarse_prim_, 0, NHYDRO-1,
                                                  ris, rie, rjs, rje, rks, rke);
+          }
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
             if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
@@ -1651,6 +1761,10 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                   pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
               }
             }
+          }
+          if (RADIATION_ENABLED) {
+            pmb->pmr->RestrictCellCenteredValues(radcdst, pmr->coarse_rad_cons_, 0,
+                pmb->prad->nang - 1, ris, rie, rjs, rje, rks, rke);
           }
         }
       }
@@ -1711,9 +1825,14 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       }
     }
 
+    // Convert conserved variables to primitives
     pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
                  pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmr->pcoarsec,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+    if (RADIATION_ENABLED) {
+      pmb->prad->ConservedToPrimitive(pmr->coarse_rad_cons_, pmr->coarse_rad_prim_,
+          pmr->coarsec, si - f1m, ei + f1p, sj - f2m, ej + f2p, sk - f3m, ek + f3p);
+    }
 
     // Apply physical boundaries
     if (nb.ox1==0) {
@@ -1757,9 +1876,10 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       fsk=(sk-pmb->cks)*2+pmb->ks, fek=(ek-pmb->cks)*2+pmb->ks+1;
     else fsk=pmb->ks, fek=pmb->ke;
 
-    // prolongate hydro variables using primitive
+    // prolongate hydro variables using primitives
     pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, pdst, 0, NHYDRO-1,
                                       si, ei, sj, ej, sk, ek);
+
     // prolongate magnetic fields
     if (MAGNETIC_FIELDS_ENABLED) {
       int il, iu, jl, ju, kl, ku;
@@ -1795,6 +1915,13 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pmb->pcoord,
                                               fsi, fei, fsj, fej, fsk, fek);
     }
+
+    // prolongate radiation variables using primitives
+    if (RADIATION_ENABLED) {
+      pmr->ProlongateCellCenteredValues(pmr->coarse_rad_prim_, radpdst, 0,
+          pmb->prad->nang - 1, si, ei, sj, ej, sk, ek);
+    }
+
     // calculate conservative variables
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
                                     fsi, fei, fsj, fej, fsk, fek);

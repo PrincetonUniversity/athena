@@ -33,8 +33,9 @@ public:
   MeshBlock* pmy_block;  // pointer to containing MeshBlock
 
   // Parameters
-  int nzeta;   // number of polar radiation angles
-  int npsi;    // number of azimuthal radiation angles
+  int nzeta;   // number of polar radiation angles in active zone
+  int npsi;    // number of azimuthal radiation angles in active zone
+  int nang;    // total number of radiation angles, including ghost zones
   int zs, ze;  // start and end zeta-indices
   int ps, pe;  // start and end psi-indices
   int is, ie;  // start and end x1-indices
@@ -42,16 +43,20 @@ public:
   int ks, ke;  // start and end x3-indices
 
   // Data arrays
-  AthenaArray<Real> zetaf;   // face-centered polar radiation angles
-  AthenaArray<Real> zetav;   // volume-centered polar radiation angles
-  AthenaArray<Real> dzetaf;  // face-to-face polar radiation angle differences
-  AthenaArray<Real> psif;    // face-centered azimuthal radiation angles
-  AthenaArray<Real> psiv;    // volume-centered azimuthal radiation angles
-  AthenaArray<Real> dpsif;   // face-to-face azimuthal radiation angle differences
-  AthenaArray<Real> prim;    // primitive intensity I
-  AthenaArray<Real> prim1;   // primitive intensity I, for substeps
-  AthenaArray<Real> cons;    // conserved intensity n^0 I
-  AthenaArray<Real> cons1;   // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> zetaf;    // face-centered polar radiation angles
+  AthenaArray<Real> zetav;    // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf;   // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;     // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;     // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif;    // face-to-face azimuthal radiation angle differences
+  AthenaArray<Real> prim;     // primitive intensity I
+  AthenaArray<Real> prim1;    // primitive intensity I, for substeps
+  AthenaArray<Real> cons;     // conserved intensity n^0 I
+  AthenaArray<Real> cons1;    // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> flux[3];  // intensity fluxes n^i I
+
+  // Functions
+  int IntInd(int l, int m);
 };
 
 #endif // RADIATION_RADIATION_HPP_
