@@ -7,10 +7,10 @@
 //  \brief implementation of functions in class Radiation
 
 // C++ headers
-#include <cmath>      // acos(), cos(), sin()
+#include <cmath>      // acos, cos, sin, sqrt
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <string>     // c_str(), string
+#include <string>     // c_str, string
 
 // Athena++ headers
 #include "radiation.hpp"
@@ -522,7 +522,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   // Calculate x1-fluxes
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
 
@@ -552,7 +552,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   if (js != je) {
     for (int l = zs; l <= ze; ++l) {
       for (int m = ps; m <= pe; ++m) {
-        int lm = AngleInd_(l, m);
+        int lm = AngleInd(l, m);
         for (int k = ks; k <= ke; ++k) {
           for (int j = js; j <= je+1; ++j) {
 
@@ -583,7 +583,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   if (ks != ke) {
     for (int l = zs; l <= ze; ++l) {
       for (int m = ps; m <= pe; ++m) {
-        int lm = AngleInd_(l, m);
+        int lm = AngleInd(l, m);
         for (int k = ks; k <= ke+1; ++k) {
           for (int j = js; j <= je; ++j) {
 
@@ -613,9 +613,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   // Calculate zeta-fluxes
   for (int l = zs; l <= ze+1; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m, true, false);
-      int lm_l = AngleInd_(l - 1, m, true, false);
-      int lm_r = AngleInd_(l, m, true, false);
+      int lm = AngleInd(l, m, true, false);
+      int lm_l = AngleInd(l - 1, m, true, false);
+      int lm_r = AngleInd(l, m, true, false);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
 
@@ -644,9 +644,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   // Calculate psi-fluxes
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe+1; ++m) {
-      int lm = AngleInd_(l, m, false, true);
-      int lm_l = AngleInd_(l, m - 1, false, true);
-      int lm_r = AngleInd_(l, m, false, true);
+      int lm = AngleInd(l, m, false, true);
+      int lm_l = AngleInd(l, m - 1, false, true);
+      int lm_r = AngleInd(l, m, false, true);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
 
@@ -690,8 +690,8 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
   Real dt = pmy_block->pmy_mesh->dt;
 
   // Calculate angle index range (including some but not all unnecessary ghost zones)
-  int lms = AngleInd_(zs, ps);
-  int lme = AngleInd_(ze, pe);
+  int lms = AngleInd(zs, ps);
+  int lme = AngleInd(ze, pe);
 
   // Go through all cells
   for (int k = ks; k <= ke; ++k) {
@@ -745,7 +745,7 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
     for (int m = ps; m <= pe; ++m) {
 
       // Calculate angle lengths and solid angles
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       Real zeta_length_m = zeta_length(l,m);
       Real zeta_length_p = zeta_length(l,m+1);
       Real psi_length_m = psi_length(l,m);
@@ -776,7 +776,7 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
   // Add coordinate source term
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
@@ -803,7 +803,7 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
     int kl, int ku) {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -834,7 +834,7 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
   // Calculate primitive intensities
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -849,8 +849,8 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps-NGHOST; m <= ps-1; ++m) {
       int m_src = pe - ps + 1 + m;
-      int lm = AngleInd_(l, m);
-      int lm_src = AngleInd_(l, m_src);
+      int lm = AngleInd(l, m);
+      int lm_src = AngleInd(l, m_src);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -861,8 +861,8 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
     }
     for (int m = pe+1; m <= pe+NGHOST; ++m) {
       int m_src = ps - pe - 1 + m;
-      int lm = AngleInd_(l, m);
-      int lm_src = AngleInd_(l, m_src);
+      int lm = AngleInd(l, m);
+      int lm_src = AngleInd(l, m_src);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -878,8 +878,8 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
     for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
       int l_src = 2*zs - 1 - l;
       int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
-      int lm = AngleInd_(l, m);
-      int lm_src = AngleInd_(l_src, m_src);
+      int lm = AngleInd(l, m);
+      int lm_src = AngleInd(l_src, m_src);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -893,8 +893,8 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
     for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
       int l_src = 2*ze + 1 - l;
       int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
-      int lm = AngleInd_(l, m);
-      int lm_src = AngleInd_(l_src, m_src);
+      int lm = AngleInd(l, m);
+      int lm_src = AngleInd(l_src, m_src);
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
@@ -925,6 +925,144 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 }
 
 //----------------------------------------------------------------------------------------
+// Indexing function for angles
+// Inputs:
+//   l: zeta-index
+//   m: psi-index
+//   zeta_face: flag indicating zeta-index is on faces
+//   psi_face: flag indicating psi-index is on faces
+// Outputs:
+//   returned value: 1D index for both zeta and psi
+
+int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
+  if (psi_face) {
+    return l * (npsi + 2*NGHOST + 1) + m;
+  }
+  return l * (npsi + 2*NGHOST) + m;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating conserved intensity corresponding to beam source
+// Inputs:
+//   pos_1, pos_2, pos_3: coordinates of beam origin
+//   width: full proper diameter of beam
+//   dir_1, dir_2, dir_3: relative directions of beam center
+//   spread: full spread of beam in direction, in degrees
+// Outputs:
+//   intensity: conserved values set
+// Notes:
+//   intensity should be 4D array, with first index holding both zeta and psi
+
+void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width,
+    Real dir_1, Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &intensity) {
+
+  // Allocate scratch arrays
+  AthenaArray<Real> g, gi, e, omega, nh;
+  g.NewAthenaArray(NMETRIC, ie + 1);
+  gi.NewAthenaArray(NMETRIC, ie + 1);
+  e.NewAthenaArray(4, 4);
+  omega.NewAthenaArray(4, 4, 4);
+  nh.NewAthenaArray(ze + 1, pe + 1, 4);
+
+  // Calculate unit normal components in orthonormal frame
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      nh(l,m,0) = 1.0;
+      nh(l,m,1) = std::sin(zetav(l)) * std::cos(psiv(m));
+      nh(l,m,2) = std::sin(zetav(l)) * std::sin(psiv(m));
+      nh(l,m,3) = std::cos(zetav(l));
+    }
+  }
+
+  // Calculate minimum angle between directions
+  Real mu_min = std::cos(spread/2.0 * PI/180.0);
+
+  // Go through cells
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
+      for (int i = is; i <= ie; ++i) {
+
+        // Calculate proper distance to beam origin
+        Real x1 = pmy_block->pcoord->x1v(i);
+        Real x2 = pmy_block->pcoord->x2v(j);
+        Real x3 = pmy_block->pcoord->x3v(k);
+        Real dx1 = x1 - pos_1;
+        Real dx2 = x2 - pos_2;
+        Real dx3 = x3 - pos_3;
+        Real dx_sq = g(I11,i) * SQR(dx1) + 2.0 * g(I12,i) * dx1 * dx2
+            + 2.0 * g(I13,i) * dx1 * dx3 + g(I22,i) * SQR(dx2)
+            + 2.0 * g(I23,i) * dx2 * dx3 + g(I33,i) * SQR(dx3);
+
+        // Set to 0 if too far from beam in space
+        if (dx_sq >= SQR(width/2.0)) {
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              intensity(lm,k,j,i) = 0.0;
+            }
+          }
+          continue;
+        }
+
+        // Normalize direction
+        Real dir_mag_sq = g(I11,i) * SQR(dir_1) + 2.0 * g(I12,i) * dir_1 * dir_2
+            + 2.0 * g(I13,i) * dir_1 * dir_3 + g(I22,i) * SQR(dir_2)
+            + 2.0 * g(I23,i) * dir_2 * dir_3 + g(I33,i) * SQR(dir_3);
+        Real dir_norm = 1.0 / std::sqrt(dir_mag_sq);
+        Real v1 = dir_1 * dir_norm;
+        Real v2 = dir_2 * dir_norm;
+        Real v3 = dir_3 * dir_norm;
+
+        // Calculate tetrad
+        pmy_block->pcoord->Tetrad(x1, x2, x3, e, omega);
+
+        // Go through angles
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+
+            // Calculate combined angle index
+            int lm = AngleInd(l, m);
+
+            // Calculate unit normal components in coordinate frame
+            Real n1 = 0.0;
+            Real n2 = 0.0;
+            Real n3 = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n1 += e(n,1) * nh(l,m,n);
+              n2 += e(n,2) * nh(l,m,n);
+              n3 += e(n,3) * nh(l,m,n);
+            }
+
+            // Calculate angle to beam direction
+            Real mu = g(I11,i) * v1 * n1 + g(I12,i) * (v1 * n2 + v2 * n1)
+                + g(I13,i) * (v1 * n3 + v3 * n1) + g(I22,i) * v2 * n2
+                + g(I23,i) * (v2 * n3 + v3 * n2) + g(I33,i) * v3 * n3;
+
+            // Set to 0 if too far from beam in angle
+            if (mu <= mu_min) {
+              intensity(lm,k,j,i) = 0.0;
+              continue;
+            }
+
+            // Set to n^0 (so primitive I = 1)
+            intensity(lm,k,j,i) = n0_(l,m,k,j,i);
+          }
+        }
+      }
+    }
+  }
+
+  // Deallocate scratch arrays
+  g.DeleteAthenaArray();
+  gi.DeleteAthenaArray();
+  e.DeleteAthenaArray();
+  omega.DeleteAthenaArray();
+  nh.DeleteAthenaArray();
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Function for calculating moments of radiation field
 // Inputs: (none)
 // Outputs:
@@ -947,7 +1085,7 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
   }
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd_(l, m);
+      int lm = AngleInd(l, m);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
@@ -958,21 +1096,4 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
     }
   }
   return;
-}
-
-//----------------------------------------------------------------------------------------
-// Indexing function for angles
-// Inputs:
-//   l: zeta-index
-//   m: psi-index
-//   zeta_face: flag indicating zeta-index is on faces
-//   psi_face: flag indicating psi-index is on faces
-// Outputs:
-//   returned value: 1D index for both zeta and psi
-
-int Radiation::AngleInd_(int l, int m, bool zeta_face, bool psi_face) {
-  if (psi_face) {
-    return l * (npsi + 2*NGHOST + 1) + m;
-  }
-  return l * (npsi + 2*NGHOST) + m;
 }

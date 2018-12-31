@@ -82,6 +82,9 @@ public:
       AthenaArray<Real> &cons_out);
 
   // Other functions
+  int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
+  void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
+      Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &intensity);
   void SetMoments(AthenaArray<Real> &moments);
 
 private:
@@ -100,9 +103,6 @@ private:
   AthenaArray<Real> area_r_;    // right face areas
   AthenaArray<Real> vol_;       // cell volumes
   AthenaArray<Real> flux_div_;  // flux divergences in spatial coordinates
-
-  // Functions
-  int AngleInd_(int l, int m, bool zeta_face = false, bool psi_face = false);
 };
 
 #endif // RADIATION_RADIATION_HPP_

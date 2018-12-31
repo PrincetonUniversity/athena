@@ -9,7 +9,7 @@
 // C++ headers
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <string>     // c_str(), string
+#include <string>     // c_str, string
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -36,11 +36,12 @@ void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
     AthenaArray<Real> &cons);
 
 // Global variables
-static Real mass, spin;           // black hole parameters
 static Real pos_1, pos_2, pos_3;  // coordinates of beam origin
 static Real width;                // full proper diameter of beam
 static Real dir_1, dir_2, dir_3;  // relative direction of beam center
 static Real spread;               // full spread of beam in direction
+static Real zs, ze;               // index bounds on zeta
+static Real ps, pe;               // index bounds on psi
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -51,8 +52,6 @@ static Real spread;               // full spread of beam in direction
 void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Read parameters from input file
-  mass = pin->GetReal("coord", "m");
-  spin = pin->GetReal("coord", "a");
   pos_1 = pin->GetReal("problem", "pos_1");
   pos_2 = pin->GetReal("problem", "pos_2");
   pos_3 = pin->GetReal("problem", "pos_3");
@@ -61,6 +60,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   dir_2 = pin->GetReal("problem", "dir_2");
   dir_3 = pin->GetReal("problem", "dir_3");
   spread = pin->GetReal("problem", "spread");
+  zs = NGHOST;
+  ze = zs + pin->GetInteger("radiation", "n_polar");
+  ps = NGHOST;
+  pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
@@ -78,6 +81,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Outputs: (none)
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+
+  // Allocate persistent arrays
+  AllocateRealUserMeshBlockDataField(1);
+  ruser_meshblock_data[0].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
+
+  // Prepare output variables
   AllocateUserOutputVariables(1);
   SetUserOutputVariableName(0, "E");
   return;
@@ -90,6 +99,24 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 // Outputs: (none)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+
+  // Calculate beam pattern
+  prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
+      ruser_meshblock_data[0]);
+
+  // Set conserved values
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = prad->AngleInd(l, m);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+            prad->cons(lm,k,j,i) = ruser_meshblock_data[0](lm,k,j,i);
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
