@@ -42,16 +42,16 @@ public:
   int ks, ke;  // start and end x3-indices
 
   // Data arrays
-  AthenaArray<Real> zetaf;  // face-centered polar radiation angles
-  AthenaArray<Real> zetav;  // volume-centered polar radiation angles
-  AthenaArray<Real> dzetaf  // face-to-face polar radiation angle differences
-  AthenaArray<Real> psif;   // face-centered azimuthal radiation angles
-  AthenaArray<Real> psiv;   // volume-centered azimuthal radiation angles
-  AthenaArray<Real> dpsif   // face-to-face azimuthal radiation angle differences
-  AthenaArray<Real> prim;   // primitive intensity I
-  AthenaArray<Real> prim1;  // primitive intensity I, for substeps
-  AthenaArray<Real> cons;   // conserved intensity n^0 I
-  AthenaArray<Real> cons1;  // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> zetaf;   // face-centered polar radiation angles
+  AthenaArray<Real> zetav;   // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf;  // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;    // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;    // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif;   // face-to-face azimuthal radiation angle differences
+  AthenaArray<Real> prim;    // primitive intensity I
+  AthenaArray<Real> prim1;   // primitive intensity I, for substeps
+  AthenaArray<Real> cons;    // conserved intensity n^0 I
+  AthenaArray<Real> cons1;   // conserved intensity n^0 I, for substeps
 };
 
 #endif // RADIATION_RADIATION_HPP_
