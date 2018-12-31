@@ -239,7 +239,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
-    AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
+    AddTimeIntegratorTask(RECV_HYD,INT_HYD);
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
       AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
       AddTimeIntegratorTask(RECV_HYDSH,RECV_HYD);
@@ -260,7 +260,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       }
 
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
-      AddTimeIntegratorTask(RECV_FLD,START_ALLRECV|INT_FLD);
+      AddTimeIntegratorTask(RECV_FLD,INT_FLD);
       if (SHEARING_BOX) { // Shearingbox BC for Bfield
         AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
         AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
