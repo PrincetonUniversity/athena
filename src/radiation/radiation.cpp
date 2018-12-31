@@ -46,6 +46,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   nang = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST);
   nang_zf = (nzeta + 2*NGHOST + 1) * (npsi + 2*NGHOST);
   nang_pf = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST + 1);
+  nang_zpf = (nzeta + 2*NGHOST + 1) * (npsi + 2*NGHOST + 1);
   zs = NGHOST;
   ze = nzeta + NGHOST - 1;
   ps = NGHOST;
@@ -389,8 +390,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   nh_cf.DeleteAthenaArray();
 
   // Allocate memory for left and right reconstructed states
-  prim_l_.NewAthenaArray(nang, num_cells_1 + 1);
-  prim_r_.NewAthenaArray(nang, num_cells_1 + 1);
+  prim_l_.NewAthenaArray(nang_zpf, num_cells_1 + 1);
+  prim_r_.NewAthenaArray(nang_zpf, num_cells_1 + 1);
 
   // Allocate memory for flux divergence calculation
   area_l_.NewAthenaArray(num_cells_1 + 1);
@@ -512,10 +513,10 @@ void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &
 void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
 
   // Check order
-  if (order != 1) {
+  if (order != 1 and order != 2) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Radiation\n";
-    msg << "only first order supported\n";
+    msg << "only first and second order reconstruction supported\n";
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -531,6 +532,27 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             for (int i = is; i <= ie+1; ++i) {
               prim_l_(lm,i) = prim_in(lm,k,j,i-1);
               prim_r_(lm,i) = prim_in(lm,k,j,i);
+            }
+          } else {
+            for (int i = is; i <= ie+1; ++i) {
+              Real x_l = pmy_block->pcoord->x1v(i-1);
+              Real x_c = pmy_block->pcoord->x1f(i);
+              Real x_r = pmy_block->pcoord->x1v(i);
+              Real dx_l = x_c - x_l;
+              Real dx_r = x_r - x_c;
+              Real q_ll = prim_in(lm,k,j,i-2);
+              Real q_l = prim_in(lm,k,j,i-1);
+              Real q_r = prim_in(lm,k,j,i);
+              Real q_rr = prim_in(lm,k,j,i+1);
+              Real dq_l = q_l - q_ll;
+              Real dq_c = q_r - q_l;
+              Real dq_r = q_rr - q_r;
+              Real dq_2_l = dq_l * dq_c;
+              Real dq_2_r = dq_c * dq_r;
+              Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
+              Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
+              prim_l_(lm,i) = q_l + dx_l * dq_m_l;
+              prim_r_(lm,i) = q_r - dx_r * dq_m_r;
             }
           }
 
@@ -561,6 +583,27 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               for (int i = is; i <= ie; ++i) {
                 prim_l_(lm,i) = prim_in(lm,k,j-1,i);
                 prim_r_(lm,i) = prim_in(lm,k,j,i);
+              }
+            } else {
+              Real x_l = pmy_block->pcoord->x2v(j-1);
+              Real x_c = pmy_block->pcoord->x2f(j);
+              Real x_r = pmy_block->pcoord->x2v(j);
+              Real dx_l = x_c - x_l;
+              Real dx_r = x_r - x_c;
+              for (int i = is; i <= ie; ++i) {
+                Real q_ll = prim_in(lm,k,j-2,i);
+                Real q_l = prim_in(lm,k,j-1,i);
+                Real q_r = prim_in(lm,k,j,i);
+                Real q_rr = prim_in(lm,k,j+1,i);
+                Real dq_l = q_l - q_ll;
+                Real dq_c = q_r - q_l;
+                Real dq_r = q_rr - q_r;
+                Real dq_2_l = dq_l * dq_c;
+                Real dq_2_r = dq_c * dq_r;
+                Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
+                Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
+                prim_l_(lm,i) = q_l + dx_l * dq_m_l;
+                prim_r_(lm,i) = q_r - dx_r * dq_m_r;
               }
             }
 
@@ -593,6 +636,27 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
                 prim_l_(lm,i) = prim_in(lm,k-1,j,i);
                 prim_r_(lm,i) = prim_in(lm,k,j,i);
               }
+            } else {
+              Real x_l = pmy_block->pcoord->x3v(k-1);
+              Real x_c = pmy_block->pcoord->x3f(k);
+              Real x_r = pmy_block->pcoord->x3v(k);
+              Real dx_l = x_c - x_l;
+              Real dx_r = x_r - x_c;
+              for (int i = is; i <= ie; ++i) {
+                Real q_ll = prim_in(lm,k-2,j,i);
+                Real q_l = prim_in(lm,k-1,j,i);
+                Real q_r = prim_in(lm,k,j,i);
+                Real q_rr = prim_in(lm,k+1,j,i);
+                Real dq_l = q_l - q_ll;
+                Real dq_c = q_r - q_l;
+                Real dq_r = q_rr - q_r;
+                Real dq_2_l = dq_l * dq_c;
+                Real dq_2_r = dq_c * dq_r;
+                Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
+                Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
+                prim_l_(lm,i) = q_l + dx_l * dq_m_l;
+                prim_r_(lm,i) = q_r - dx_r * dq_m_r;
+              }
             }
 
             // Upwind flux calculation
@@ -613,17 +677,40 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   // Calculate zeta-fluxes
   for (int l = zs; l <= ze+1; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd(l, m, true, false);
-      int lm_l = AngleInd(l - 1, m, true, false);
-      int lm_r = AngleInd(l, m, true, false);
+      int lm_ll = AngleInd(l - 2, m, false, false);
+      int lm_l = AngleInd(l - 1, m, false, false);
+      int lm_c = AngleInd(l, m, true, false);
+      int lm_r = AngleInd(l, m, false, false);
+      int lm_rr = AngleInd(l + 1, m, false, false);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
 
           // Reconstruction
           if (order == 1) {
             for (int i = is; i <= ie; ++i) {
-              prim_l_(lm,i) = prim_in(lm_l,k,j,i);
-              prim_r_(lm,i) = prim_in(lm_r,k,j,i);
+              prim_l_(lm_c,i) = prim_in(lm_l,k,j,i);
+              prim_r_(lm_c,i) = prim_in(lm_r,k,j,i);
+            }
+          } else {
+            Real x_l = zetav(l-1);
+            Real x_c = zetaf(l);
+            Real x_r = zetav(l);
+            Real dx_l = x_c - x_l;
+            Real dx_r = x_r - x_c;
+            for (int i = is; i <= ie; ++i) {
+              Real q_ll = prim_in(lm_ll,k,j,i);
+              Real q_l = prim_in(lm_l,k,j,i);
+              Real q_r = prim_in(lm_r,k,j,i);
+              Real q_rr = prim_in(lm_rr,k,j,i);
+              Real dq_l = q_l - q_ll;
+              Real dq_c = q_r - q_l;
+              Real dq_r = q_rr - q_r;
+              Real dq_2_l = dq_l * dq_c;
+              Real dq_2_r = dq_c * dq_r;
+              Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
+              Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
+              prim_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+              prim_r_(lm_c,i) = q_r - dx_r * dq_m_r;
             }
           }
 
@@ -631,9 +718,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           for (int i = is; i <= ie; ++i) {
             Real na1 = na1_(l,m,k,j,i);
             if (na1 > 0.0) {
-              flux_a[ZETADIR](lm,k,j,i) = na1 * prim_l_(lm,i);
+              flux_a[ZETADIR](lm_c,k,j,i) = na1 * prim_l_(lm_c,i);
             } else {
-              flux_a[ZETADIR](lm,k,j,i) = na1 * prim_r_(lm,i);
+              flux_a[ZETADIR](lm_c,k,j,i) = na1 * prim_r_(lm_c,i);
             }
           }
         }
@@ -644,17 +731,40 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   // Calculate psi-fluxes
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe+1; ++m) {
-      int lm = AngleInd(l, m, false, true);
-      int lm_l = AngleInd(l, m - 1, false, true);
-      int lm_r = AngleInd(l, m, false, true);
+      int lm_ll = AngleInd(l, m - 2, false, false);
+      int lm_l = AngleInd(l, m - 1, false, false);
+      int lm_c = AngleInd(l, m, false, true);
+      int lm_r = AngleInd(l, m, false, false);
+      int lm_rr = AngleInd(l, m + 1, false, false);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
 
           // Reconstruction
           if (order == 1) {
             for (int i = is; i <= ie; ++i) {
-              prim_l_(lm,i) = prim_in(lm_l,k,j,i);
-              prim_r_(lm,i) = prim_in(lm_r,k,j,i);
+              prim_l_(lm_c,i) = prim_in(lm_l,k,j,i);
+              prim_r_(lm_c,i) = prim_in(lm_r,k,j,i);
+            }
+          } else {
+            Real x_l = psiv(m-1);
+            Real x_c = psif(m);
+            Real x_r = psiv(m);
+            Real dx_l = x_c - x_l;
+            Real dx_r = x_r - x_c;
+            for (int i = is; i <= ie; ++i) {
+              Real q_ll = prim_in(lm_ll,k,j,i);
+              Real q_l = prim_in(lm_l,k,j,i);
+              Real q_r = prim_in(lm_r,k,j,i);
+              Real q_rr = prim_in(lm_rr,k,j,i);
+              Real dq_l = q_l - q_ll;
+              Real dq_c = q_r - q_l;
+              Real dq_r = q_rr - q_r;
+              Real dq_2_l = dq_l * dq_c;
+              Real dq_2_r = dq_c * dq_r;
+              Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
+              Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
+              prim_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+              prim_r_(lm_c,i) = q_r - dx_r * dq_m_r;
             }
           }
 
@@ -662,9 +772,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           for (int i = is; i <= ie; ++i) {
             Real na2 = na2_(l,m,k,j,i);
             if (na2 > 0.0) {
-              flux_a[PSIDIR](lm,k,j,i) = na2 * prim_l_(lm,i);
+              flux_a[PSIDIR](lm_c,k,j,i) = na2 * prim_l_(lm_c,i);
             } else {
-              flux_a[PSIDIR](lm,k,j,i) = na2 * prim_r_(lm,i);
+              flux_a[PSIDIR](lm_c,k,j,i) = na2 * prim_r_(lm_c,i);
             }
           }
         }
@@ -746,6 +856,10 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
 
       // Calculate angle lengths and solid angles
       int lm = AngleInd(l, m);
+      int lm_lc = AngleInd(l, m, true, false);
+      int lm_rc = AngleInd(l + 1, m, true, false);
+      int lm_cl = AngleInd(l, m, false, true);
+      int lm_cr = AngleInd(l, m + 1, false, true);
       Real zeta_length_m = zeta_length(l,m);
       Real zeta_length_p = zeta_length(l,m+1);
       Real psi_length_m = psi_length(l,m);
@@ -758,12 +872,12 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
           for (int i = is; i <= ie; ++i) {
 
             // Calculate zeta-divergence
-            Real flux_div = psi_length_p * flux_a[ZETADIR](l+1,k,j,i)
-                - psi_length_m * flux_a[ZETADIR](l,k,j,i);
+            Real flux_div = psi_length_p * flux_a[ZETADIR](lm_rc,k,j,i)
+                - psi_length_m * flux_a[ZETADIR](lm_lc,k,j,i);
 
             // Add psi-divergence
-            flux_div += zeta_length_p * flux_a[PSIDIR](m+1,k,j,i)
-                - zeta_length_m * flux_a[PSIDIR](m,k,j,i);
+            flux_div += zeta_length_p * flux_a[PSIDIR](lm_cr,k,j,i)
+                - zeta_length_m * flux_a[PSIDIR](lm_cl,k,j,i);
 
             // Update conserved variables
             cons_out(lm,k,j,i) -= weight * dt * flux_div / omega;

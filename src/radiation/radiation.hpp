@@ -36,16 +36,17 @@ public:
   bool source_terms_defined;
 
   // Parameters
-  int nzeta;    // number of polar radiation angles in active zone
-  int npsi;     // number of azimuthal radiation angles in active zone
-  int nang;     // total number of radiation angles, including ghost zones
-  int nang_zf;  // total number of radiation angles when zeta is on faces
-  int nang_pf;  // total number of radiation angles when psi is on faces
-  int zs, ze;   // start and end zeta-indices
-  int ps, pe;   // start and end psi-indices
-  int is, ie;   // start and end x1-indices
-  int js, je;   // start and end x2-indices
-  int ks, ke;   // start and end x3-indices
+  int nzeta;     // number of polar radiation angles in active zone
+  int npsi;      // number of azimuthal radiation angles in active zone
+  int nang;      // total number of radiation angles, including ghost zones
+  int nang_zf;   // total number of radiation angles when zeta is on faces
+  int nang_pf;   // total number of radiation angles when psi is on faces
+  int nang_zpf;  // total number of radiation angles when zeta and psi are on faces
+  int zs, ze;    // start and end zeta-indices
+  int ps, pe;    // start and end psi-indices
+  int is, ie;    // start and end x1-indices
+  int js, je;    // start and end x2-indices
+  int ks, ke;    // start and end x3-indices
 
   // Data arrays
   AthenaArray<Real> zetaf;        // face-centered polar radiation angles
