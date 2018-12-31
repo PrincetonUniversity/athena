@@ -18,7 +18,7 @@ file_type = hdf5  # output format
 variable  = uov   # choice of variables to output
 id        = user  # name of output files
 dt        = 1.0   # output cadence
-xdmf      = true  # whether to include auxiliary metadata file
+xdmf      = 0     # whether to include auxiliary metadata file
 
 <output2>
 file_type = rst    # output format

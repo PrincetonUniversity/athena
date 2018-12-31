@@ -925,6 +925,42 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 }
 
 //----------------------------------------------------------------------------------------
+// Function for calculating moments of radiation field
+// Inputs: (none)
+// Outputs:
+//   moments: 4D array:
+//     index 0:
+//       0: energy density (\int I n^0 n^0 d\Omega)
+//     index 1: k
+//     index 2: j
+//     index 3: i
+// Notes:
+//   intensity defined by prim values when function is called
+
+void Radiation::SetMoments(AthenaArray<Real> &moments) {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        moments(0,k,j,i) = 0.0;
+      }
+    }
+  }
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+            moments(0,k,j,i) += prim(lm,k,j,i) * SQR(n0_(l,m,k,j,i)) * solid_angle(l,m);
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Indexing function for angles
 // Inputs:
 //   l: zeta-index

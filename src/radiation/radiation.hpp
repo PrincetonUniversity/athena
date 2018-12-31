@@ -65,7 +65,10 @@ public:
   AthenaArray<Real> flux_x[3];    // spatial fluxes of intensity n^i I
   AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
 
-  // Functions
+  // Function pointers
+  RadSrcTermFunc_t UserSourceTerm;
+
+  // Task list functions
   void WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
   void CalculateFluxes(AthenaArray<Real> &prim_in, int order);
@@ -77,7 +80,9 @@ public:
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_in,
       AthenaArray<Real> &cons_out);
-  RadSrcTermFunc_t UserSourceTerm;
+
+  // Other functions
+  void SetMoments(AthenaArray<Real> &moments);
 
 private:
 

@@ -18,6 +18,7 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../radiation/radiation.hpp"      // Radiation
 
 // Configuration checking
 #if not RADIATION_ENABLED
@@ -89,6 +90,19 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 // Outputs: (none)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for preparing output
+// Inputs:
+//   pin: parameters
+// Outputs: (none)
+// Notes:
+//   sets user_out_var array
+
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
+  prad->SetMoments(user_out_var);
   return;
 }
 
