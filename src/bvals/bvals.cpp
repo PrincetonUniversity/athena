@@ -1584,6 +1584,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     }
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
       pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+    if (RADIATION_ENABLED) {
+      pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, pmb->is - NGHOST,
+          pmb->is - 1, bjs, bje, bks, bke);
+    }
   }
 
   // Apply boundary function on outer-x1
@@ -1596,6 +1600,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     }
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
       pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+    if (RADIATION_ENABLED) {
+      pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, pmb->ie + 1,
+          pmb->ie + NGHOST, bjs, bje, bks, bke);
+    }
   }
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
@@ -1610,6 +1618,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       }
       pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      if (RADIATION_ENABLED) {
+        pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, bis, bie, pmb->js - NGHOST,
+            pmb->js - 1, bks, bke);
+      }
     }
 
     // Apply boundary function on outer-x2
@@ -1622,6 +1634,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       }
       pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+      if (RADIATION_ENABLED) {
+        pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, bis, bie, pmb->je + 1,
+            pmb->je + NGHOST, bks, bke);
+      }
     }
   }
 
@@ -1639,6 +1655,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       }
       pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+      if (RADIATION_ENABLED) {
+        pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, bis, bie, bjs, bje,
+            pmb->ks - NGHOST, pmb->ks - 1);
+      }
     }
 
     // Apply boundary function on outer-x3
@@ -1651,6 +1671,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       }
       pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+      if (RADIATION_ENABLED) {
+        pmb->prad->PrimitiveToConserved(radpdst, radcdst, pco, bis, bie, bjs, bje,
+            pmb->ke + 1, pmb->ke + NGHOST);
+      }
     }
   }
 
@@ -1925,5 +1949,9 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     // calculate conservative variables
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
                                     fsi, fei, fsj, fej, fsk, fek);
+    if (RADIATION_ENABLED) {
+      pmb->prad->PrimitiveToConserved(radpdst, radcdst, pmb->pcoord, fsi, fei, fsj, fej,
+          fsk, fek);
+    }
   }
 }

@@ -57,6 +57,8 @@ public:
 
   // Functions
   int IntInd(int l, int m);
+  void PrimitiveToConserved(AthenaArray<Real> &prim_vals, AthenaArray<Real> &cons_vals,
+      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitive(AthenaArray<Real> &cons_vals, AthenaArray<Real> &prim_vals,
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
 };
