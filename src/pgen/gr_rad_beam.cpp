@@ -162,11 +162,45 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   pmb: pointer to MeshBlock (not used)
 //   time: time of simulation
 //   dt: simulation timestep
-//   ii: primitive intensity
+//   prim_in: primitive intensity
 // Outputs:
-//   n0_ii: conserved intensity
+//   cons_out: conserved intensity
+// Notes:
+//   applies pre-computed conserved intensity field
+//   source is opaque; intensities are replaced, not added to
 
-void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
-    AthenaArray<Real> &cons) {
+void Source(MeshBlock *pmb, const Real time, const Real dt,
+    const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
+
+  // Extract information from block
+  Radiation *prad = pmb->prad;
+  AthenaArray<Real> cons;
+  cons.InitWithShallowCopy(pmb->ruser_meshblock_data[1]);
+  int is = pmb->is;
+  int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
+
+  // Overwrite conserved intensity with stored initial values
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = prad->AngleInd(l, m);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+            Real val = cons(lm,k,j,i);
+            if (val != 0.0) {
+              cons_out(lm,k,j,i) = val;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Delete array copy
+  cons.DeleteAthenaArray();
   return;
 }
