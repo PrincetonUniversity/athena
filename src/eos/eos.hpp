@@ -30,13 +30,11 @@ struct FaceField;
 //  \brief extent and number of cells in an EOS table
 
 typedef struct TableSize {
-  int iPres, iASq, iTemp, iOffset, axisEgas, axisPres, axisHint;
-  Real logRhoMin, logRhoMax, rhoNorm;
-  Real logEgasMin, logEgasMax, eNorm;
-  Real rhoUnit, eUnit;
+  Real logRhoMin, logRhoMax;
+  Real logEgasMin, logEgasMax;
+  Real rhoUnit, eUnit, hUnit;
   int nRho, nEgas, nVar;
-  Real egasOverPres;
-  Real EosRatios[3];
+  AthenaArray<Real> EosRatios;
 } TableSize;
 
 //! \class EquationOfState
@@ -149,7 +147,7 @@ class EquationOfState {
 #if EOS_TABLE_ENABLED
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
-  Real GetEosData(Real rho, Real var, int axis, int kOut);
+  Real GetEosData(int kOut, Real var, Real rho);
   //Real GetGamma1FromRhoEgas(Real rho, Real egas);
   void EosTestLoop();
   void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);

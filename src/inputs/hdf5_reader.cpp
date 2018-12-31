@@ -155,7 +155,7 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
     if (ndims != 2) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
-          << "Rank of data field ''" << var_names[i] << "' in file '" << filename
+          << "Rank of data field '" << var_names[i] << "' in file '" << filename
           << "' must be 2. Rank is " << ndims << "." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
