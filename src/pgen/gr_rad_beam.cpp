@@ -83,8 +83,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 
   // Allocate persistent arrays
-  AllocateRealUserMeshBlockDataField(1);
+  AllocateRealUserMeshBlockDataField(2);
   ruser_meshblock_data[0].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
+  ruser_meshblock_data[1].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
 
   // Prepare output variables
   AllocateUserOutputVariables(1);
@@ -102,16 +103,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Calculate beam pattern
   prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
-      ruser_meshblock_data[0]);
+      ruser_meshblock_data[0], ruser_meshblock_data[1], true);
 
-  // Set conserved values
+  // Set primitive and conserved values
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = prad->AngleInd(l, m);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
-            prad->cons(lm,k,j,i) = ruser_meshblock_data[0](lm,k,j,i);
+            prad->prim(lm,k,j,i) = ruser_meshblock_data[0](lm,k,j,i);
+            prad->cons(lm,k,j,i) = ruser_meshblock_data[1](lm,k,j,i);
           }
         }
       }

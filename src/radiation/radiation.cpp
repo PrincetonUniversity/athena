@@ -948,13 +948,36 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 //   width: full proper diameter of beam
 //   dir_1, dir_2, dir_3: relative directions of beam center
 //   spread: full spread of beam in direction, in degrees
+//   spherical: flag indicating coordinates are spherical
 // Outputs:
-//   intensity: conserved values set
+//   prim_vals: primitive values (I) set
+//   cons_vals: conserved values (n^0 I) set
 // Notes:
-//   intensity should be 4D array, with first index holding both zeta and psi
+//   arrays should be 4D, with first index holding both zeta and psi
+//   spherical coordinates:
+//     theta (x2) will be mapped to [0, pi], adjusting phi (x3) as necessary
+//     phi (x3) will be mapped to [-pi, pi]:
+//       beams near phi = 0 should work fine
+//       beams near phi = pi will likely not be initialized correctly
 
 void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width,
-    Real dir_1, Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &intensity) {
+    Real dir_1, Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &prim_vals,
+    AthenaArray<Real> &cons_vals, bool spherical) {
+
+  // Account for spherical coordinates in beam origin
+  if (spherical) {
+    if (pos_2 < 0.0) {
+      pos_2 = -pos_2;
+      pos_3 -= PI;
+    }
+    if (pos_2 > PI) {
+      pos_2 = 2.0*PI - pos_2;
+      pos_3 -= PI;
+    }
+    if (pos_3 > PI) {
+      pos_3 -= 2.0*PI;
+    }
+  }
 
   // Allocate scratch arrays
   AthenaArray<Real> g, gi, e, omega, nh;
@@ -983,10 +1006,25 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
 
-        // Calculate proper distance to beam origin
+        // Extract position, accounting for spherical coordinates
         Real x1 = pmy_block->pcoord->x1v(i);
         Real x2 = pmy_block->pcoord->x2v(j);
         Real x3 = pmy_block->pcoord->x3v(k);
+        if (spherical) {
+          if (x2 < 0.0) {
+            x2 = -x2;
+            x3 -= PI;
+          }
+          if (x2 > PI) {
+            x2 = 2.0*PI - x2;
+            x3 -= PI;
+          }
+          if (x3 > PI) {
+            x3 -= 2.0*PI;
+          }
+        }
+
+        // Calculate proper distance to beam origin
         Real dx1 = x1 - pos_1;
         Real dx2 = x2 - pos_2;
         Real dx3 = x3 - pos_3;
@@ -999,7 +1037,8 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
-              intensity(lm,k,j,i) = 0.0;
+              prim_vals(lm,k,j,i) = 0.0;
+              cons_vals(lm,k,j,i) = 0.0;
             }
           }
           continue;
@@ -1041,12 +1080,14 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
 
             // Set to 0 if too far from beam in angle
             if (mu <= mu_min) {
-              intensity(lm,k,j,i) = 0.0;
+              prim_vals(lm,k,j,i) = 0.0;
+              cons_vals(lm,k,j,i) = 0.0;
               continue;
             }
 
-            // Set to n^0 (so primitive I = 1)
-            intensity(lm,k,j,i) = n0_(l,m,k,j,i);
+            // Set to nonzero value
+            prim_vals(lm,k,j,i) = 1.0;
+            cons_vals(lm,k,j,i) = n0_(l,m,k,j,i);
           }
         }
       }
