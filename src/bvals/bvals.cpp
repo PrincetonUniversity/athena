@@ -1557,14 +1557,14 @@ void BoundaryValues::ClearBoundaryAll(void) {
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 //           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-//           AthenaArray<Real> &radpdst, AthenaArray<Real> &radpdst, const Real time,
+//           AthenaArray<Real> &radpdst, AthenaArray<Real> &radcdst, const Real time,
 //           const Real dt)
 //  \brief Apply all the physical boundary conditions for both hydro and field
 //  TODO(c-white): add radiation to physical boundary calls
 
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-                     AthenaArray<Real> &radpdst, AthenaArray<Real> &radpdst,
+                     AthenaArray<Real> &radpdst, AthenaArray<Real> &radcdst,
                      const Real time, const Real dt) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
@@ -1831,7 +1831,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
     if (RADIATION_ENABLED) {
       pmb->prad->ConservedToPrimitive(pmr->coarse_rad_cons_, pmr->coarse_rad_prim_,
-          pmr->coarsec, si - f1m, ei + f1p, sj - f2m, ej + f2p, sk - f3m, ek + f3p);
+          pmr->pcoarsec, si - f1m, ei + f1p, sj - f2m, ej + f2p, sk - f3m, ek + f3p);
     }
 
     // Apply physical boundaries

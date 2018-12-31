@@ -156,3 +156,18 @@ Radiation::~Radiation() {
 int Radiation::IntInd(int l, int m) {
   return l * (pe + NGHOST + 1) + m;
 }
+
+//----------------------------------------------------------------------------------------
+// Radiation conversion from conserved to primitive variables
+// Inputs:
+//   cons_vals: conserved quantities
+//   pcoord: pointer to Coordinates
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
+// Outputs:
+//   prim_vals: primitives
+
+void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_vals,
+    AthenaArray<Real> &prim_vals, Coordinates *pcoord, int il, int iu, int jl, int ju,
+    int kl, int ku) {
+  return;
+}

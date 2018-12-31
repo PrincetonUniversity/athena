@@ -57,6 +57,8 @@ public:
 
   // Functions
   int IntInd(int l, int m);
+  void ConservedToPrimitive(AthenaArray<Real> &cons_vals, AthenaArray<Real> &prim_vals,
+      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
 };
 
 #endif // RADIATION_RADIATION_HPP_
