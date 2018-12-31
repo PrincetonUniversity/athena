@@ -36,6 +36,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   nzeta = pin->GetInteger("radiation", "n_polar");
   npsi = pin->GetInteger("radiation", "n_azimuthal");
   nang = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST);
+  nang_zf = (nzeta + 2*NGHOST + 1) * (npsi + 2*NGHOST);
+  nang_pf = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST + 1);
   zs = NGHOST;
   ze = nzeta + NGHOST - 1;
   ps = NGHOST;
@@ -125,13 +127,15 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   cons2.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
 
   // Allocate memory for fluxes
-  flux[X1DIR].NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1 + 1);
+  flux_x[X1DIR].NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1 + 1);
   if (js != je) {
-    flux[X2DIR].NewAthenaArray(nang, num_cells_3, num_cells_2 + 1, num_cells_1);
+    flux_x[X2DIR].NewAthenaArray(nang, num_cells_3, num_cells_2 + 1, num_cells_1);
   }
   if (ks != ke) {
-    flux[X3DIR].NewAthenaArray(nang, num_cells_3 + 1, num_cells_2, num_cells_1);
+    flux_x[X3DIR].NewAthenaArray(nang, num_cells_3 + 1, num_cells_2, num_cells_1);
   }
+  flux_a[ZETADIR].NewAthenaArray(nang_zf, num_cells_3, num_cells_2, num_cells_1);
+  flux_a[PSIDIR].NewAthenaArray(nang_pf, num_cells_3, num_cells_2, num_cells_1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -149,9 +153,11 @@ Radiation::~Radiation() {
   cons.DeleteAthenaArray();
   cons1.DeleteAthenaArray();
   cons2.DeleteAthenaArray();
-  flux[X1DIR].DeleteAthenaArray();
-  flux[X2DIR].DeleteAthenaArray();
-  flux[X3DIR].DeleteAthenaArray();
+  flux_x[X1DIR].DeleteAthenaArray();
+  flux_x[X2DIR].DeleteAthenaArray();
+  flux_x[X3DIR].DeleteAthenaArray();
+  flux_a[ZETADIR].DeleteAthenaArray();
+  flux_a[PSIDIR].DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
@@ -159,11 +165,16 @@ Radiation::~Radiation() {
 // Inputs:
 //   l: zeta-index
 //   m: psi-index
+//   zeta_face: flag indicating zeta-index is on faces
+//   psi_face: flag indicating psi-index is on faces
 // Outputs:
 //   returned value: 1D index for both zeta and psi
 
-int Radiation::IntInd(int l, int m) {
-  return l * (pe + NGHOST + 1) + m;
+int Radiation::IntInd(int l, int m, bool zeta_face, bool psi_face) {
+  if (psi_face) {
+    return l * (npsi + 2*NGHOST + 1) + m;
+  }
+  return l * (npsi + 2*NGHOST) + m;
 }
 
 //----------------------------------------------------------------------------------------
@@ -244,7 +255,7 @@ void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &
 //   prim_in: primitive intensity
 //   order: reconstruction order
 // Outputs:
-//   TODO
+//   this->flux_x, this->flux_a: fluxes set
 
 void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
   return;

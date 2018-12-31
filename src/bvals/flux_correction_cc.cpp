@@ -57,9 +57,9 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
   if (type == FLUX_RAD) {
     ns = 0;
     ne = pmb->prad->nang - 1;
-    x1flux.InitWithShallowCopy(pmb->prad->flux[X1DIR]);
-    x2flux.InitWithShallowCopy(pmb->prad->flux[X2DIR]);
-    x3flux.InitWithShallowCopy(pmb->prad->flux[X3DIR]);
+    x1flux.InitWithShallowCopy(pmb->prad->flux_x[X1DIR]);
+    x2flux.InitWithShallowCopy(pmb->prad->flux_x[X2DIR]);
+    x3flux.InitWithShallowCopy(pmb->prad->flux_x[X3DIR]);
     pbd = &bd_rad_flcor_;
   }
 
@@ -193,9 +193,9 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
     pbd = &bd_rad_flcor_;
     ns = 0;
     ne = pmb->prad->nang - 1;
-    x1flux.InitWithShallowCopy(pmb->prad->flux[X1DIR]);
-    x2flux.InitWithShallowCopy(pmb->prad->flux[X2DIR]);
-    x3flux.InitWithShallowCopy(pmb->prad->flux[X3DIR]);
+    x1flux.InitWithShallowCopy(pmb->prad->flux_x[X1DIR]);
+    x2flux.InitWithShallowCopy(pmb->prad->flux_x[X2DIR]);
+    x3flux.InitWithShallowCopy(pmb->prad->flux_x[X3DIR]);
   }
 
   for (int n=0; n<nneighbor; n++) {

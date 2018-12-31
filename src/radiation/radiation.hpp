@@ -36,31 +36,34 @@ public:
   bool source_terms_defined;
 
   // Parameters
-  int nzeta;   // number of polar radiation angles in active zone
-  int npsi;    // number of azimuthal radiation angles in active zone
-  int nang;    // total number of radiation angles, including ghost zones
-  int zs, ze;  // start and end zeta-indices
-  int ps, pe;  // start and end psi-indices
-  int is, ie;  // start and end x1-indices
-  int js, je;  // start and end x2-indices
-  int ks, ke;  // start and end x3-indices
+  int nzeta;    // number of polar radiation angles in active zone
+  int npsi;     // number of azimuthal radiation angles in active zone
+  int nang;     // total number of radiation angles, including ghost zones
+  int nang_zf;  // total number of radiation angles when zeta is on faces
+  int nang_pf;  // total number of radiation angles when psi is on faces
+  int zs, ze;   // start and end zeta-indices
+  int ps, pe;   // start and end psi-indices
+  int is, ie;   // start and end x1-indices
+  int js, je;   // start and end x2-indices
+  int ks, ke;   // start and end x3-indices
 
   // Data arrays
-  AthenaArray<Real> zetaf;    // face-centered polar radiation angles
-  AthenaArray<Real> zetav;    // volume-centered polar radiation angles
-  AthenaArray<Real> dzetaf;   // face-to-face polar radiation angle differences
-  AthenaArray<Real> psif;     // face-centered azimuthal radiation angles
-  AthenaArray<Real> psiv;     // volume-centered azimuthal radiation angles
-  AthenaArray<Real> dpsif;    // face-to-face azimuthal radiation angle differences
-  AthenaArray<Real> prim;     // primitive intensity I
-  AthenaArray<Real> prim1;    // primitive intensity I, for substeps
-  AthenaArray<Real> cons;     // conserved intensity n^0 I
-  AthenaArray<Real> cons1;    // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> cons2;    // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> flux[3];  // intensity fluxes n^i I
+  AthenaArray<Real> zetaf;      // face-centered polar radiation angles
+  AthenaArray<Real> zetav;      // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf;     // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;       // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;       // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif;      // face-to-face azimuthal radiation angle differences
+  AthenaArray<Real> prim;       // primitive intensity I
+  AthenaArray<Real> prim1;      // primitive intensity I, for substeps
+  AthenaArray<Real> cons;       // conserved intensity n^0 I
+  AthenaArray<Real> cons1;      // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> cons2;      // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> flux_x[3];  // spatial fluxes of intensity n^i I
+  AthenaArray<Real> flux_a[2];  // angular fluxes of intensity n^a I
 
   // Functions
-  int IntInd(int l, int m);
+  int IntInd(int l, int m, bool zeta_face = false, bool psi_face = false);
   void WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
   void CalculateFluxes(AthenaArray<Real> &prim_in, int order);
