@@ -75,6 +75,17 @@ public:
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_in,
       AthenaArray<Real> &cons_out);
+
+private:
+
+  // Data arrays
+  AthenaArray<Real> n0_;   // n^0 at cell and angle centers
+  AthenaArray<Real> n1_;   // n^1 at x^1-faces and angle centers
+  AthenaArray<Real> n2_;   // n^2 at x^2-faces and angle centers
+  AthenaArray<Real> n3_;   // n^3 at x^3-faces and angle centers
+  AthenaArray<Real> na0_;  // -n^ah n^bh omega^0h_{ah,bh} at cell and angle centers
+  AthenaArray<Real> na1_;  // n^zeta at cell centers and zeta-faces
+  AthenaArray<Real> na2_;  // n^psi at cell centers and psi-faces
 };
 
 #endif // RADIATION_RADIATION_HPP_

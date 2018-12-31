@@ -14,9 +14,10 @@
 
 // Athena++ headers
 #include "radiation.hpp"
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../mesh/mesh.hpp"        // MeshBlock
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../parameter_input.hpp"          // ParameterInput
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../mesh/mesh.hpp"                // MeshBlock
 
 //----------------------------------------------------------------------------------------
 // Radiation constructor
@@ -136,6 +137,224 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   }
   flux_a[ZETADIR].NewAthenaArray(nang_zf, num_cells_3, num_cells_2, num_cells_1);
   flux_a[PSIDIR].NewAthenaArray(nang_pf, num_cells_3, num_cells_2, num_cells_1);
+
+  // Allocate memory for unit normal components in orthonormal frame
+  int num_cells_zeta = ze + NGHOST;
+  int num_cells_psi = pe + NGHOST;
+  AthenaArray<Real> nh_cc, nh_fc, nh_cf;
+  nh_cc.NewAthenaArray(4, num_cells_zeta, num_cells_psi);
+  nh_fc.NewAthenaArray(4, num_cells_zeta + 1, num_cells_psi);
+  nh_cf.NewAthenaArray(4, num_cells_zeta, num_cells_psi + 1);
+
+  // Calculate unit normal components in orthonormal frame at angle centers
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      nh_cc(0,l,m) = 1.0;
+      nh_cc(1,l,m) = std::sin(zetav(l)) * std::cos(psiv(m));
+      nh_cc(2,l,m) = std::sin(zetav(l)) * std::sin(psiv(m));
+      nh_cc(3,l,m) = std::cos(zetav(l));
+    }
+  }
+
+  // Calculate unit normal components in orthonormal frame at zeta-faces
+  for (int l = zs; l <= ze+1; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      nh_fc(0,l,m) = 1.0;
+      nh_fc(1,l,m) = std::sin(zetaf(l)) * std::cos(psiv(m));
+      nh_fc(2,l,m) = std::sin(zetaf(l)) * std::sin(psiv(m));
+      nh_fc(3,l,m) = std::cos(zetaf(l));
+    }
+  }
+
+  // Calculate unit normal components in orthonormal frame at psi-faces
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe+1; ++m) {
+      nh_cf(0,l,m) = 1.0;
+      nh_cf(1,l,m) = std::sin(zetav(l)) * std::cos(psif(m));
+      nh_cf(2,l,m) = std::sin(zetav(l)) * std::sin(psif(m));
+      nh_cf(3,l,m) = std::cos(zetav(l));
+    }
+  }
+
+  // Allocate memory for unit normal and related components in coordinate frame
+  n0_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
+      num_cells_1);
+  n1_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
+      num_cells_1 + 1);
+  n2_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2 + 1,
+      num_cells_1);
+  n3_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3 + 1, num_cells_2,
+      num_cells_1);
+  na0_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
+      num_cells_1);
+  na1_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, num_cells_3, num_cells_2,
+      num_cells_1);
+  na2_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, num_cells_3, num_cells_2,
+      num_cells_1);
+
+  // Allocate memory for tetrad and rotation coefficients
+  AthenaArray<Real> e, omega;
+  e.NewAthenaArray(4, 4);
+  omega.NewAthenaArray(4, 4, 4);
+
+  // Calculate n^0
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            n0_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n0_(l,m,k,j,i) += e(n,0) * nh_cc(n,l,m);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^1
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie+1; ++i) {
+        Real x1 = pmb->pcoord->x1f(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            n1_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n1_(l,m,k,j,i) += e(n,1) * nh_cc(n,l,m);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^2
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je+1; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2f(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            n2_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n2_(l,m,k,j,i) += e(n,2) * nh_cc(n,l,m);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^3
+  for (int k = ks; k <= ke+1; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3f(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            n3_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n3_(l,m,k,j,i) += e(n,3) * nh_cc(n,l,m);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate -n^ah n^bh omega^0h_{ah,bh}
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            na0_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              for (int p = 0; p < 4; ++p) {
+                na0_(l,m,k,j,i) += -nh_cc(n,l,m) * nh_cc(p,l,m) * omega(0,n,p);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^zeta
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            na1_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              for (int p = 0; p < 4; ++p) {
+                na1_(l,m,k,j,i) += 1.0 / std::sin(zetaf(l)) * nh_fc(n,l,m)
+                    * nh_fc(p,l,m) * (nh_fc(0,l,m) * omega(3,n,p) - nh_fc(3,l,m)
+                    * omega(0,n,p));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^psi
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe+1; ++m) {
+            na2_(l,m,k,j,i) = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              for (int p = 0; p < 4; ++p) {
+                na2_(l,m,k,j,i) += 1.0 / SQR(std::sin(zetaf(l))) * nh_cf(n,l,m)
+                    * nh_cf(p,l,m) * (nh_cf(2,l,m) * omega(1,n,p) - nh_cf(1,l,m)
+                    * omega(2,n,p));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Deallocate memory for tetrad and rotation coefficients
+  e.DeleteAthenaArray();
+  omega.DeleteAthenaArray();
+
+  // Deallocate unit normal components in orthonormal frame
+  nh_cc.DeleteAthenaArray();
+  nh_fc.DeleteAthenaArray();
+  nh_cf.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
@@ -158,6 +377,13 @@ Radiation::~Radiation() {
   flux_x[X3DIR].DeleteAthenaArray();
   flux_a[ZETADIR].DeleteAthenaArray();
   flux_a[PSIDIR].DeleteAthenaArray();
+  n0_.DeleteAthenaArray();
+  n1_.DeleteAthenaArray();
+  n2_.DeleteAthenaArray();
+  n3_.DeleteAthenaArray();
+  na0_.DeleteAthenaArray();
+  na1_.DeleteAthenaArray();
+  na2_.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
