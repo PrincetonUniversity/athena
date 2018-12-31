@@ -220,17 +220,23 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
   // Now assemble list of tasks for each stage of time integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
+
+    // initialize
     AddTimeIntegratorTask(STARTUP_INT,NONE);
     AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
+
     // calculate hydro/field diffusive fluxes
     AddTimeIntegratorTask(DIFFUSE_HYD,START_ALLRECV);
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
       AddTimeIntegratorTask(DIFFUSE_FLD,START_ALLRECV);
+    }
+
     // compute hydro fluxes, integrate hydro variables
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
       AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD|DIFFUSE_FLD));
-    else
+    } else {
       AddTimeIntegratorTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD));
+    }
     if (pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -268,28 +274,65 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       }
     }
 
+    // compute radiation fluxes, integrate radiation variables
+    if (RADIATION_ENABLED) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        AddTimeIntegratorTask(CALC_RADFLX, START_ALLRECV | DIFFUSE_HYD | DIFFUSE_FLD);
+      } else {
+        AddTimeIntegratorTask(CALC_RADFLX, START_ALLRECV | DIFFUSE_HYD);
+      }
+      if (pm->multilevel==true) { // SMR or AMR
+        AddTimeIntegratorTask(SEND_RADFLX, CALC_RADFLX);
+        AddTimeIntegratorTask(RECV_RADFLX, CALC_RADFLX);
+        AddTimeIntegratorTask(INT_RAD, RECV_RADFLX);
+      } else {
+        AddTimeIntegratorTask(INT_RAD, CALC_RADFLX);
+      }
+      AddTimeIntegratorTask(SRCTERM_RAD, INT_RAD);
+      AddTimeIntegratorTask(SEND_RAD, SRCTERM_RAD);
+      AddTimeIntegratorTask(RECV_RAD, START_ALLRECV);
+    }
+
     // prolongate, compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       if (pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+        if (RADIATION_ENABLED) {
+          AddTimeIntegratorTask(PROLONG,
+              SEND_HYD | RECV_HYD | SEND_FLD | RECV_FLD | SEND_RAD | RECV_RAD);
+        } else {
+          AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+        }
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|
                                          RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
         } else {
-          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+          if (RADIATION_ENABLED) {
+            AddTimeIntegratorTask(CON2PRIM,
+                INT_HYD | RECV_HYD | INT_FLD | RECV_FLD | INT_RAD | RECV_RAD);
+          } else {
+            AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+          }
         }
       }
     } else {  // HYDRO
       if (pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
+        if (RADIATION_ENABLED) {
+          AddTimeIntegratorTask(PROLONG, SEND_HYD | RECV_HYD | SEND_RAD | RECV_RAD);
+        } else {
+          AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
+        }
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|RECV_HYDSH));
         } else {
-          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+          if (RADIATION_ENABLED) {
+            AddTimeIntegratorTask(CON2PRIM, INT_HYD | RECV_HYD | INT_RAD | RECV_RAD);
+          } else {
+            AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+          }
         }
       }
     }
@@ -344,6 +387,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateEMF);
       break;
+    case (CALC_RADFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalculateRadFluxes);
+      break;
 
     case (SEND_HYDFLX):
       task_list_[ntasks].TaskFunc=
@@ -354,6 +402,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFCorrectSend);
+      break;
+    case (SEND_RADFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::RadFluxCorrectSend);
       break;
 
     case (RECV_HYDFLX):
@@ -366,6 +419,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
+    case (RECV_RADFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::RadFluxCorrectReceive);
+      break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
@@ -377,11 +435,21 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldIntegrate);
       break;
+    case (INT_RAD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::RadIntegrate);
+      break;
 
     case (SRCTERM_HYD):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::HydroSourceTerms);
+      break;
+    case (SRCTERM_RAD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::RadSourceTerms);
       break;
 
     case (SEND_HYD):
@@ -394,6 +462,26 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldSend);
       break;
+    case (SEND_RAD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::RadSend);
+      break;
+    case (SEND_HYDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroShearSend);
+      break;
+    case (SEND_FLDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldShearSend);
+      break;
+    case (SEND_EMFSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFShearSend);
+      break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
@@ -405,36 +493,27 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldReceive);
       break;
-    case (SEND_HYDSH):
+    case (RECV_RAD):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroShearSend);
+        (&TimeIntegratorTaskList::RadReceive);
       break;
     case (RECV_HYDSH):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::HydroShearReceive);
       break;
-    case (SEND_FLDSH):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldShearSend);
-      break;
     case (RECV_FLDSH):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldShearReceive);
-      break;
-    case (SEND_EMFSH):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFShearSend);
       break;
     case (RECV_EMFSH):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFShearReceive);
       break;
+
     case (RMAP_EMFSH):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -544,6 +623,19 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) 
   return TASK_FAIL;
 }
 
+enum TaskStatus TimeIntegratorTaskList::CalculateRadFluxes(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if ((stage == 1) && (integrator == "vl2")) {
+      pmb->prad->CalculateFluxes(pmb->prad->prim, 1);
+      return TASK_NEXT;
+    } else {
+      pmb->prad->CalculateFluxes(pmb->prad->prim, pmb->precon->xorder);
+      return TASK_NEXT;
+    }
+  }
+  return TASK_FAIL;
+}
+
 //----------------------------------------------------------------------------------------
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
@@ -554,6 +646,11 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int stag
 
 enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage) {
   pmb->pbval->SendEMFCorrection();
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus TimeIntegratorTaskList::RadFluxCorrectSend(MeshBlock *pmb, int stage) {
+  pmb->pbval->SendFluxCorrection(FLUX_RAD);
   return TASK_SUCCESS;
 }
 
@@ -576,6 +673,14 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int st
   }
 }
 
+enum TaskStatus TimeIntegratorTaskList::RadFluxCorrectReceive(MeshBlock *pmb, int stage) {
+  if (pmb->pbval->ReceiveFluxCorrection(FLUX_RAD)) {
+    return TASK_NEXT;
+  } else {
+    return TASK_FAIL;
+  }
+}
+
 //----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
@@ -583,7 +688,8 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage
   Hydro *ph=pmb->phydro;
   Field *pf=pmb->pfield;
   if (stage <= nstages) {
-    // This time-integrator-specific averaging operation logic is identical to FieldInt
+    // This time-integrator-specific averaging operation logic is identical to
+    // FieldIntegrate and RadIntegrate
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
@@ -619,7 +725,8 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage
   Field *pf=pmb->pfield;
 
   if (stage <= nstages) {
-    // This time-integrator-specific averaging operation logic is identical to HydroInt
+    // This time-integrator-specific averaging operation logic is identical to
+    // HydroIntegrate and RadIntegrate
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
@@ -635,6 +742,41 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage
     return TASK_NEXT;
   }
 
+  return TASK_FAIL;
+}
+
+enum TaskStatus TimeIntegratorTaskList::RadIntegrate(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    // This time-integrator-specific averaging operation logic is identical to
+    // HydroIntegrate and FieldIntegrate
+    Real ave_wghts[3];
+    ave_wghts[0] = 1.0;
+    ave_wghts[1] = stage_wghts[stage-1].delta;
+    ave_wghts[2] = 0.0;
+    pmb->prad->WeightedAveCons(pmb->prad->cons1, pmb->prad->cons, pmb->prad->cons2,
+        ave_wghts);
+    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
+    pmb->prad->WeightedAveCons(pmb->prad->cons, pmb->prad->cons1, pmb->prad->cons2,
+        ave_wghts);
+    pmb->prad->AddFluxDivergenceToAverage(pmb->prad->prim, stage_wghts[stage-1].beta,
+        pmb->prad->cons);
+    // Hardcode an additional flux divergence weighted average for the penultimate
+    // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+    if (stage == 4 && integrator == "ssprk5_4") {
+      // From Gottlieb (2009), u^(n+1) partial calculation
+      ave_wghts[0] = -1.0; // -u^(n) coeff.
+      ave_wghts[1] = 0.0;
+      ave_wghts[2] = 0.0;
+      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      // writing out to u2 register
+      pmb->prad->WeightedAveCons(pmb->prad->cons2, pmb->prad->cons1, pmb->prad->cons2,
+          ave_wghts);
+      pmb->prad->AddFluxDivergenceToAverage(pmb->prad->prim, beta, pmb->prad->cons2);
+    }
+    return TASK_NEXT;
+  }
   return TASK_FAIL;
 }
 
@@ -655,6 +797,22 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int sta
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
     ph->psrc->AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_NEXT;
+}
+
+enum TaskStatus TimeIntegratorTaskList::RadSourceTerms(MeshBlock *pmb, int stage) {
+  // return if there are no source terms to be added
+  if (pmb->prad->source_terms_defined == false) return TASK_NEXT;
+  if (stage <= nstages) {
+    // Time at beginning of stage for u()
+    Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
+    // Scaled coefficient for RHS update
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    // Evaluate the time-dependent source terms at the time at the beginning of the stage
+    pmb->prad->AddSourceTerms(t_start_stage, dt, pmb->prad->prim, pmb->prad->cons);
   } else {
     return TASK_FAIL;
   }
@@ -718,6 +876,15 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int stage) {
   return TASK_SUCCESS;
 }
 
+enum TaskStatus TimeIntegratorTaskList::RadSend(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->prad->cons, RAD_CONS);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_SUCCESS;
+}
+
 //----------------------------------------------------------------------------------------
 // Functions to receive conserved variables between MeshBlocks
 
@@ -745,6 +912,20 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) 
   }
 
   if (ret==true) {
+    return TASK_SUCCESS;
+  } else {
+    return TASK_FAIL;
+  }
+}
+
+enum TaskStatus TimeIntegratorTaskList::RadReceive(MeshBlock *pmb, int stage) {
+  bool ret;
+  if (stage <= nstages) {
+    ret = pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->prad->cons, RAD_CONS);
+  } else {
+    return TASK_FAIL;
+  }
+  if (ret) {
     return TASK_SUCCESS;
   } else {
     return TASK_FAIL;
@@ -965,10 +1146,15 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 
     // Initialize storage registers
     Hydro *ph=pmb->phydro;
+    Radiation *prad = pmb->prad;
     // Cache U^n in third memory register, u2, via deep copy
     // (if using a 3S* or 3N time-integrator)
-    if (integrator == "ssprk5_4")
+    if (integrator == "ssprk5_4") {
       ph->u2 = ph->u;
+      if (RADIATION_ENABLED) {
+        prad->cons2 = prad->cons;
+      }
+    }
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;
@@ -991,6 +1177,9 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     ave_wghts[1] = 0.0;
     ave_wghts[2] = 0.0;
     ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
+    if (RADIATION_ENABLED) {
+      prad->WeightedAveCons(prad->cons1, prad->cons, prad->cons, ave_wghts);
+    }
     return TASK_SUCCESS;
   }
 }

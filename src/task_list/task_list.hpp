@@ -109,17 +109,22 @@ public:
 
   enum TaskStatus CalculateFluxes(MeshBlock *pmb, int stage);
   enum TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
+  enum TaskStatus CalculateRadFluxes(MeshBlock *pmb, int stage);
 
   enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
   enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
+  enum TaskStatus RadFluxCorrectSend(MeshBlock *pmb, int stage);
 
   enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int stage);
   enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus RadFluxCorrectReceive(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
   enum TaskStatus FieldIntegrate(MeshBlock *pmb, int stage);
+  enum TaskStatus RadIntegrate(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int stage);
+  enum TaskStatus RadSourceTerms(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
   enum TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
@@ -127,9 +132,11 @@ public:
 
   enum TaskStatus HydroSend(MeshBlock *pmb, int stage);
   enum TaskStatus FieldSend(MeshBlock *pmb, int stage);
+  enum TaskStatus RadSend(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroReceive(MeshBlock *pmb, int stage);
   enum TaskStatus FieldReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus RadReceive(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroShearSend(MeshBlock *pmb, int stage);
   enum TaskStatus HydroShearReceive(MeshBlock *pmb, int stage);

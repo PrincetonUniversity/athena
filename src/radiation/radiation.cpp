@@ -29,6 +29,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   // Set object pointers
   pmy_block = pmb;
 
+  // Set flags
+  source_terms_defined = false;
+
   // Set parameters
   nzeta = pin->GetInteger("radiation", "n_polar");
   npsi = pin->GetInteger("radiation", "n_azimuthal");
@@ -119,6 +122,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   prim1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
   cons.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
   cons1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
+  cons2.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
 
   // Allocate memory for fluxes
   flux[X1DIR].NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1 + 1);
@@ -140,6 +144,11 @@ Radiation::~Radiation() {
   psif.DeleteAthenaArray();
   psiv.DeleteAthenaArray();
   dpsif.DeleteAthenaArray();
+  prim.DeleteAthenaArray();
+  prim1.DeleteAthenaArray();
+  cons.DeleteAthenaArray();
+  cons1.DeleteAthenaArray();
+  cons2.DeleteAthenaArray();
   flux[X1DIR].DeleteAthenaArray();
   flux[X2DIR].DeleteAthenaArray();
   flux[X3DIR].DeleteAthenaArray();
@@ -158,16 +167,113 @@ int Radiation::IntInd(int l, int m) {
 }
 
 //----------------------------------------------------------------------------------------
+// Function for averaging intensities according to integrator weights
+// Inputs:
+//   cons_out, cons_in_1, cons_in_2: conserved intensity arrays, possibly uninitialized
+//   weights: integrator weights
+// Outputs:
+//   cons_out: weighted intensity
+// Notes:
+//   same procedure as in Hydro::WeightedAveU()
+
+void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
+    AthenaArray<Real> &cons_in_2, const Real weights[3]) {
+
+  // Prepare index bounds
+  int is = pmy_block->is;
+  int ie = pmy_block->ie;
+  int js = pmy_block->js;
+  int je = pmy_block->je;
+  int ks = pmy_block->ks;
+  int ke = pmy_block->ke;
+
+  // Apply averaging based on which weights are 0
+  if (weights[2] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = weights[0] * cons_out(n,k,j,i)
+                + weights[1] * cons_in_1(n,k,j,i) + weights[2] * cons_in_2(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else if (weights[1] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) =
+                weights[0] * cons_out(n,k,j,i) + weights[1] * cons_in_1(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else if (weights[0] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = weights[0] * cons_out(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = 0.0;
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating spatial and angular fluxes
+// Inputs:
+//   prim_in: primitive intensity
+//   order: reconstruction order
+// Outputs:
+//   TODO
+
+void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for updating conserved quantities
+// Inputs:
+//   prim_in: primitive intensity
+//   weight: fraction of full timestep
+// Outputs:
+//   cons_out: conserved values updated
+
+void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
+    AthenaArray<Real> &cons_out) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Radiation conversion from primitive to conserved variables
 // Inputs:
-//   prim_vals: primitives
+//   prim_in: primitives
 //   pcoord: pointer to Coordinates
 //   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
-//   cons_vals: conserved quantities
+//   cons_out: conserved quantities
 
-void Radiation::PrimitiveToConserved(AthenaArray<Real> &prim_vals,
-    AthenaArray<Real> &cons_vals, Coordinates *pcoord, int il, int iu, int jl, int ju,
+void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
+    AthenaArray<Real> &cons_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
     int kl, int ku) {
   return;
 }
@@ -175,14 +281,28 @@ void Radiation::PrimitiveToConserved(AthenaArray<Real> &prim_vals,
 //----------------------------------------------------------------------------------------
 // Radiation inversion from conserved to primitive variables
 // Inputs:
-//   cons_vals: conserved quantities
+//   cons_in: conserved quantities
 //   pcoord: pointer to Coordinates
 //   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
-//   prim_vals: primitives
+//   prim_out: primitives
 
-void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_vals,
-    AthenaArray<Real> &prim_vals, Coordinates *pcoord, int il, int iu, int jl, int ju,
+void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
+    AthenaArray<Real> &prim_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
     int kl, int ku) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for adding all source terms beyond those induced by coordinates
+// Inputs:
+//   time: time of simulation
+//   dt: simulation timestep
+//   prim_in: primitive intensity
+//   cons_out: conserved intensity
+// Outputs:
+//   cons_out: conserved intensity set
+void Radiation::AddSourceTerms(const Real time, const Real dt,
+    const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
   return;
 }
