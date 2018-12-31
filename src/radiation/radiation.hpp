@@ -48,22 +48,24 @@ public:
   int ks, ke;   // start and end x3-indices
 
   // Data arrays
-  AthenaArray<Real> zetaf;      // face-centered polar radiation angles
-  AthenaArray<Real> zetav;      // volume-centered polar radiation angles
-  AthenaArray<Real> dzetaf;     // face-to-face polar radiation angle differences
-  AthenaArray<Real> psif;       // face-centered azimuthal radiation angles
-  AthenaArray<Real> psiv;       // volume-centered azimuthal radiation angles
-  AthenaArray<Real> dpsif;      // face-to-face azimuthal radiation angle differences
-  AthenaArray<Real> prim;       // primitive intensity I
-  AthenaArray<Real> prim1;      // primitive intensity I, for substeps
-  AthenaArray<Real> cons;       // conserved intensity n^0 I
-  AthenaArray<Real> cons1;      // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> cons2;      // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> flux_x[3];  // spatial fluxes of intensity n^i I
-  AthenaArray<Real> flux_a[2];  // angular fluxes of intensity n^a I
+  AthenaArray<Real> zetaf;        // face-centered polar radiation angles
+  AthenaArray<Real> zetav;        // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf;       // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;         // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;         // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif;        // face-to-face azimuthal radiation angle differences
+  AthenaArray<Real> zeta_length;  // angular length at constant psi
+  AthenaArray<Real> psi_length;   // angular length at constant zeta
+  AthenaArray<Real> solid_angle;  // angular area of cell
+  AthenaArray<Real> prim;         // primitive intensity I
+  AthenaArray<Real> prim1;        // primitive intensity I, for substeps
+  AthenaArray<Real> cons;         // conserved intensity n^0 I
+  AthenaArray<Real> cons1;        // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> cons2;        // conserved intensity n^0 I, for substeps
+  AthenaArray<Real> flux_x[3];    // spatial fluxes of intensity n^i I
+  AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
 
   // Functions
-  int IntInd(int l, int m, bool zeta_face = false, bool psi_face = false);
   void WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
   void CalculateFluxes(AthenaArray<Real> &prim_in, int order);
@@ -79,13 +81,22 @@ public:
 private:
 
   // Data arrays
-  AthenaArray<Real> n0_;   // n^0 at cell and angle centers
-  AthenaArray<Real> n1_;   // n^1 at x^1-faces and angle centers
-  AthenaArray<Real> n2_;   // n^2 at x^2-faces and angle centers
-  AthenaArray<Real> n3_;   // n^3 at x^3-faces and angle centers
-  AthenaArray<Real> na0_;  // -n^ah n^bh omega^0h_{ah,bh} at cell and angle centers
-  AthenaArray<Real> na1_;  // n^zeta at cell centers and zeta-faces
-  AthenaArray<Real> na2_;  // n^psi at cell centers and psi-faces
+  AthenaArray<Real> n0_;        // n^0 at cell and angle centers
+  AthenaArray<Real> n1_;        // n^1 at x^1-faces and angle centers
+  AthenaArray<Real> n2_;        // n^2 at x^2-faces and angle centers
+  AthenaArray<Real> n3_;        // n^3 at x^3-faces and angle centers
+  AthenaArray<Real> na0_;       // -n^ah n^bh omega^0h_{ah,bh} at cell and angle centers
+  AthenaArray<Real> na1_;       // n^zeta at cell centers and zeta-faces
+  AthenaArray<Real> na2_;       // n^psi at cell centers and psi-faces
+  AthenaArray<Real> prim_l_;    // left reconstructed state
+  AthenaArray<Real> prim_r_;    // right reconstructed state
+  AthenaArray<Real> area_l_;    // left face areas
+  AthenaArray<Real> area_r_;    // right face areas
+  AthenaArray<Real> vol_;       // cell volumes
+  AthenaArray<Real> flux_div_;  // flux divergences in spatial coordinates
+
+  // Functions
+  int AngleInd_(int l, int m, bool zeta_face = false, bool psi_face = false);
 };
 
 #endif // RADIATION_RADIATION_HPP_

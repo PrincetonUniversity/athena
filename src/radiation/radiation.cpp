@@ -70,6 +70,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   psif.NewAthenaArray(npsi + 2*NGHOST + 1);
   psiv.NewAthenaArray(npsi + 2*NGHOST);
   dpsif.NewAthenaArray(npsi + 2*NGHOST);
+  zeta_length.NewAthenaArray(nzeta + 2*NGHOST, npsi + 2*NGHOST + 1);
+  psi_length.NewAthenaArray(nzeta + 2*NGHOST + 1, npsi + 2*NGHOST);
+  solid_angle.NewAthenaArray(nzeta + 2*NGHOST, npsi + 2*NGHOST);
 
   // Construct polar angles, equally spaced in cosine
   Real dczeta = -2.0 / nzeta;
@@ -109,6 +112,23 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
     psiv(m) = 0.5 * (psif(m) + psif(m+1));
     dpsif(m) = psif(m+1) - psif(m);
+  }
+
+  // Calculate angular lengths and areas
+  for (int l = zs-NGHOST; l <= ze+NGHOST; ++l) {
+    for (int m = ps-NGHOST; m <= pe+NGHOST+1; ++m) {
+      zeta_length(l,m) = std::cos(zetaf(l)) - std::cos(zetaf(l+1));
+    }
+  }
+  for (int l = zs-NGHOST; l <= ze+NGHOST+1; ++l) {
+    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+      psi_length(l,m) = std::sin(zetaf(l)) * dpsif(m);
+    }
+  }
+  for (int l = zs-NGHOST; l <= ze+NGHOST; ++l) {
+    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+      solid_angle(l,m) = (std::cos(zetaf(l)) - std::cos(zetaf(l+1))) * dpsif(m);
+    }
   }
 
   // Allocate memory for intensities
@@ -355,6 +375,16 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   nh_cc.DeleteAthenaArray();
   nh_fc.DeleteAthenaArray();
   nh_cf.DeleteAthenaArray();
+
+  // Allocate memory for left and right reconstructed states
+  prim_l_.NewAthenaArray(nang, num_cells_1 + 1);
+  prim_r_.NewAthenaArray(nang, num_cells_1 + 1);
+
+  // Allocate memory for flux divergence calculation
+  area_l_.NewAthenaArray(num_cells_1 + 1);
+  area_r_.NewAthenaArray(num_cells_1 + 1);
+  vol_.NewAthenaArray(num_cells_1 + 1);
+  flux_div_.NewAthenaArray(nang, num_cells_1 + 1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -367,6 +397,9 @@ Radiation::~Radiation() {
   psif.DeleteAthenaArray();
   psiv.DeleteAthenaArray();
   dpsif.DeleteAthenaArray();
+  zeta_length.DeleteAthenaArray();
+  psi_length.DeleteAthenaArray();
+  solid_angle.DeleteAthenaArray();
   prim.DeleteAthenaArray();
   prim1.DeleteAthenaArray();
   cons.DeleteAthenaArray();
@@ -384,23 +417,12 @@ Radiation::~Radiation() {
   na0_.DeleteAthenaArray();
   na1_.DeleteAthenaArray();
   na2_.DeleteAthenaArray();
-}
-
-//----------------------------------------------------------------------------------------
-// Indexing function for intensities
-// Inputs:
-//   l: zeta-index
-//   m: psi-index
-//   zeta_face: flag indicating zeta-index is on faces
-//   psi_face: flag indicating psi-index is on faces
-// Outputs:
-//   returned value: 1D index for both zeta and psi
-
-int Radiation::IntInd(int l, int m, bool zeta_face, bool psi_face) {
-  if (psi_face) {
-    return l * (npsi + 2*NGHOST + 1) + m;
-  }
-  return l * (npsi + 2*NGHOST) + m;
+  prim_l_.DeleteAthenaArray();
+  prim_r_.DeleteAthenaArray();
+  area_l_.DeleteAthenaArray();
+  area_r_.DeleteAthenaArray();
+  vol_.DeleteAthenaArray();
+  flux_div_.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
@@ -484,6 +506,167 @@ void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &
 //   this->flux_x, this->flux_a: fluxes set
 
 void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
+
+  // Check order
+  if (order != 1) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Radiation\n";
+    msg << "only first order supported\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  // Calculate x1-fluxes
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+
+          // Reconstruction
+          if (order == 1) {
+            for (int i = is; i <= ie+1; ++i) {
+              prim_l_(lm,i) = prim_in(lm,k,j,i-1);
+              prim_r_(lm,i) = prim_in(lm,k,j,i);
+            }
+          }
+
+          // Upwind flux calculation
+          for (int i = is; i <= ie+1; ++i) {
+            Real n1 = n1_(l,m,k,j,i);
+            if (n1 > 0.0) {
+              flux_x[X1DIR](lm,k,j,i) = n1 * prim_l_(lm,i);
+            } else {
+              flux_x[X1DIR](lm,k,j,i) = n1 * prim_r_(lm,i);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate x2-fluxes
+  if (js != je) {
+    for (int l = zs; l <= ze; ++l) {
+      for (int m = ps; m <= pe; ++m) {
+        int lm = AngleInd_(l, m);
+        for (int k = ks; k <= ke; ++k) {
+          for (int j = js; j <= je+1; ++j) {
+
+            // Reconstruction
+            if (order == 1) {
+              for (int i = is; i <= ie; ++i) {
+                prim_l_(lm,i) = prim_in(lm,k,j-1,i);
+                prim_r_(lm,i) = prim_in(lm,k,j,i);
+              }
+            }
+
+            // Upwind flux calculation
+            for (int i = is; i <= ie; ++i) {
+              Real n2 = n2_(l,m,k,j,i);
+              if (n2 > 0.0) {
+                flux_x[X2DIR](lm,k,j,i) = n2 * prim_l_(lm,i);
+              } else {
+                flux_x[X2DIR](lm,k,j,i) = n2 * prim_r_(lm,i);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate x3-fluxes
+  if (ks != ke) {
+    for (int l = zs; l <= ze; ++l) {
+      for (int m = ps; m <= pe; ++m) {
+        int lm = AngleInd_(l, m);
+        for (int k = ks; k <= ke+1; ++k) {
+          for (int j = js; j <= je; ++j) {
+
+            // Reconstruction
+            if (order == 1) {
+              for (int i = is; i <= ie; ++i) {
+                prim_l_(lm,i) = prim_in(lm,k-1,j,i);
+                prim_r_(lm,i) = prim_in(lm,k,j,i);
+              }
+            }
+
+            // Upwind flux calculation
+            for (int i = is; i <= ie; ++i) {
+              Real n3 = n3_(l,m,k,j,i);
+              if (n3 > 0.0) {
+                flux_x[X3DIR](lm,k,j,i) = n3 * prim_l_(lm,i);
+              } else {
+                flux_x[X3DIR](lm,k,j,i) = n3 * prim_r_(lm,i);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate zeta-fluxes
+  for (int l = zs; l <= ze+1; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m, true, false);
+      int lm_l = AngleInd_(l - 1, m, true, false);
+      int lm_r = AngleInd_(l, m, true, false);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+
+          // Reconstruction
+          if (order == 1) {
+            for (int i = is; i <= ie; ++i) {
+              prim_l_(lm,i) = prim_in(lm_l,k,j,i);
+              prim_r_(lm,i) = prim_in(lm_r,k,j,i);
+            }
+          }
+
+          // Upwind flux calculation
+          for (int i = is; i <= ie; ++i) {
+            Real na1 = na1_(l,m,k,j,i);
+            if (na1 > 0.0) {
+              flux_a[ZETADIR](lm,k,j,i) = na1 * prim_l_(lm,i);
+            } else {
+              flux_a[ZETADIR](lm,k,j,i) = na1 * prim_r_(lm,i);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate psi-fluxes
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe+1; ++m) {
+      int lm = AngleInd_(l, m, false, true);
+      int lm_l = AngleInd_(l, m - 1, false, true);
+      int lm_r = AngleInd_(l, m, false, true);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+
+          // Reconstruction
+          if (order == 1) {
+            for (int i = is; i <= ie; ++i) {
+              prim_l_(lm,i) = prim_in(lm_l,k,j,i);
+              prim_r_(lm,i) = prim_in(lm_r,k,j,i);
+            }
+          }
+
+          // Upwind flux calculation
+          for (int i = is; i <= ie; ++i) {
+            Real na2 = na2_(l,m,k,j,i);
+            if (na2 > 0.0) {
+              flux_a[PSIDIR](lm,k,j,i) = na2 * prim_l_(lm,i);
+            } else {
+              flux_a[PSIDIR](lm,k,j,i) = na2 * prim_r_(lm,i);
+            }
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -497,6 +680,108 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
 
 void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
     AthenaArray<Real> &cons_out) {
+
+  // Extract Coordinates and timestep
+  Coordinates *pcoord = pmy_block->pcoord;
+  Real dt = pmy_block->pmy_mesh->dt;
+
+  // Calculate angle index range (including some but not all unnecessary ghost zones)
+  int lms = AngleInd_(zs, ps);
+  int lme = AngleInd_(ze, pe);
+
+  // Go through all cells
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+
+      // Calculate x1-divergence
+      pcoord->Face1Area(k, j, is, ie+1, area_l_);
+      for (int lm = lms; lm <= lme; ++lm) {
+        for (int i = is; i <= ie; ++i) {
+          flux_div_(lm,i) = area_l_(i+1) * flux_x[X1DIR](lm,k,j,i+1)
+              - area_l_(i) * flux_x[X1DIR](lm,k,j,i);
+        }
+      }
+
+      // Add x2-divergence
+      if (js != je) {
+        pcoord->Face2Area(k, j, is, ie, area_l_);
+        pcoord->Face2Area(k, j+1, is, ie, area_r_);
+        for (int lm = lms; lm <= lme; ++lm) {
+          for (int i = is; i <= ie; ++i) {
+            flux_div_(lm,i) += area_r_(i) * flux_x[X2DIR](lm,k,j+1,i)
+                - area_l_(i) * flux_x[X2DIR](lm,k,j,i);
+          }
+        }
+      }
+
+      // Add x3-divergence
+      if (ks != ke) {
+        pcoord->Face3Area(k, j, is, ie, area_l_);
+        pcoord->Face3Area(k+1, j, is, ie, area_r_);
+        for (int lm = lms; lm <= lme; ++lm) {
+          for (int i = is; i <= ie; ++i) {
+            flux_div_(lm,i) += area_r_(i) * flux_x[X3DIR](lm,k+1,j,i)
+                - area_l_(i) * flux_x[X3DIR](lm,k,j,i);
+          }
+        }
+      }
+
+      // Update conserved variables
+      pcoord->CellVolume(k, j, is, ie, vol_);
+      for (int lm = lms; lm <= lme; ++lm) {
+        for (int i = is; i <= ie; ++i) {
+          cons_out(lm,k,j,i) -= weight * dt * flux_div_(lm,i) / vol_(i);
+        }
+      }
+    }
+  }
+
+  // Go through all angles
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+
+      // Calculate angle lengths and solid angles
+      int lm = AngleInd_(l, m);
+      Real zeta_length_m = zeta_length(l,m);
+      Real zeta_length_p = zeta_length(l,m+1);
+      Real psi_length_m = psi_length(l,m);
+      Real psi_length_p = psi_length(l+1,m);
+      Real omega = solid_angle(l,m);
+
+      // Go through all cells
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+
+            // Calculate zeta-divergence
+            Real flux_div = psi_length_p * flux_a[ZETADIR](l+1,k,j,i)
+                - psi_length_m * flux_a[ZETADIR](l,k,j,i);
+
+            // Add psi-divergence
+            flux_div += zeta_length_p * flux_a[PSIDIR](m+1,k,j,i)
+                - zeta_length_m * flux_a[PSIDIR](m,k,j,i);
+
+            // Update conserved variables
+            cons_out(lm,k,j,i) -= weight * dt * flux_div / omega;
+          }
+        }
+      }
+    }
+  }
+
+  // Add coordinate source term
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m);
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+            cons_out(lm,k,j,i) += weight * dt * na0_(l,m,k,j,i) * prim_in(lm,k,j,i);
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -542,4 +827,21 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
 void Radiation::AddSourceTerms(const Real time, const Real dt,
     const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Indexing function for angles
+// Inputs:
+//   l: zeta-index
+//   m: psi-index
+//   zeta_face: flag indicating zeta-index is on faces
+//   psi_face: flag indicating psi-index is on faces
+// Outputs:
+//   returned value: 1D index for both zeta and psi
+
+int Radiation::AngleInd_(int l, int m, bool zeta_face, bool psi_face) {
+  if (psi_face) {
+    return l * (npsi + 2*NGHOST + 1) + m;
+  }
+  return l * (npsi + 2*NGHOST) + m;
 }
