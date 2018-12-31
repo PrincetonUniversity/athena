@@ -62,6 +62,11 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
     msg << "too few azimuthal angles\n";
     throw std::runtime_error(msg.str().c_str());
   }
+  if (npsi%2 != 0) {
+    msg << "### FATAL ERROR in Radiation constructor\n";
+    msg << "must have even number of azimuthal angles\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   // Allocate memory for angles
   zetaf.NewAthenaArray(nzeta + 2*NGHOST + 1);
@@ -797,6 +802,18 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
 void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
     AthenaArray<Real> &cons_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
     int kl, int ku) {
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            cons_out(lm,k,j,i) = n0_(l,m,k,j,i) * prim_in(lm,k,j,i);
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -808,10 +825,86 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
 //   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim_out: primitives
+// Notes:
+//   This should be the only place where angular ghost zones need to be set.
 
 void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
     AthenaArray<Real> &prim_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
     int kl, int ku) {
+
+  // Calculate primitive intensities
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd_(l, m);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            prim_out(lm,k,j,i) = cons_in(lm,k,j,i) / n0_(l,m,k,j,i);
+          }
+        }
+      }
+    }
+  }
+
+  // Populate angular ghost zones in azimuthal angle
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps-NGHOST; m <= ps-1; ++m) {
+      int m_src = pe - ps + 1 + m;
+      int lm = AngleInd_(l, m);
+      int lm_src = AngleInd_(l, m_src);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            prim_out(lm,k,j,i) = prim_out(lm_src,k,j,i);
+          }
+        }
+      }
+    }
+    for (int m = pe+1; m <= pe+NGHOST; ++m) {
+      int m_src = ps - pe - 1 + m;
+      int lm = AngleInd_(l, m);
+      int lm_src = AngleInd_(l, m_src);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            prim_out(lm,k,j,i) = prim_out(lm_src,k,j,i);
+          }
+        }
+      }
+    }
+  }
+
+  // Populate angular ghost zones in polar angle
+  for (int l = zs-NGHOST; l <= zs-1; ++l) {
+    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+      int l_src = 2*zs - 1 - l;
+      int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
+      int lm = AngleInd_(l, m);
+      int lm_src = AngleInd_(l_src, m_src);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            prim_out(lm,k,j,i) = prim_out(lm_src,k,j,i);
+          }
+        }
+      }
+    }
+  }
+  for (int l = ze+1; l <= ze+NGHOST; ++l) {
+    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+      int l_src = 2*ze + 1 - l;
+      int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
+      int lm = AngleInd_(l, m);
+      int lm_src = AngleInd_(l_src, m_src);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il; i <= iu; ++i) {
+            prim_out(lm,k,j,i) = prim_out(lm_src,k,j,i);
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
