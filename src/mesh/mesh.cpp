@@ -1116,6 +1116,15 @@ void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func) {
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserExplicitRadSourceFunction(RadSrcTermFunc_t my_func)
+//  \brief Enroll a user-defined radiation source function
+
+void Mesh::EnrollUserExplicitRadSourceFunction(RadSrcTermFunc_t my_func) {
+  UserRadSourceTerm_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
 //  \brief Enroll a user-defined time step function
 

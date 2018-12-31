@@ -30,8 +30,15 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   // Set object pointers
   pmy_block = pmb;
 
+  // Set user source term
+  UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
+
   // Set flags
-  source_terms_defined = false;
+  if (UserSourceTerm == NULL) {
+    source_terms_defined = false;
+  } else {
+    source_terms_defined = true;
+  }
 
   // Set parameters
   nzeta = pin->GetInteger("radiation", "n_polar");
@@ -919,6 +926,9 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
 //   cons_out: conserved intensity set
 void Radiation::AddSourceTerms(const Real time, const Real dt,
     const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
+  if (UserSourceTerm != NULL) {
+    UserSourceTerm(pmy_block, time, dt, prim_in, cons_out);
+  }
   return;
 }
 

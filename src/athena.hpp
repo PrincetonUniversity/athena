@@ -144,7 +144,9 @@ typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
+typedef void (*RadSrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
 typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
 typedef void (*MetricFunc_t)(Real x1, Real x2, Real x3, ParameterInput *pin,

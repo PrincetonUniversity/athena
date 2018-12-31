@@ -31,6 +31,8 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke,
     int ngh);
+void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons);
 
 // Global variables
 static Real mass, spin;           // black hole parameters
@@ -62,6 +64,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
   EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+
+  // Enroll source function
+  EnrollUserExplicitRadSourceFunction(Source);
   return;
 }
 
@@ -92,6 +97,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Inputs:
 //   pmb: pointer to MeshBlock (not used)
 //   pcoord: pointer to Coordinates (not used)
+//   time: time of simulation
+//   dt: simulation timestep
 //   is,ie,js,je,ks,ke: indices demarkating active region (not used)
 // Outputs:
 //   prim: primitives set in ghost zones (not used)
@@ -103,5 +110,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke,
     int ngh) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Source function
+// Inputs:
+//   pmb: pointer to MeshBlock (not used)
+//   time: time of simulation
+//   dt: simulation timestep
+//   ii: primitive intensity
+// Outputs:
+//   n0_ii: conserved intensity
+
+void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons) {
   return;
 }

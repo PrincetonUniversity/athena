@@ -157,6 +157,7 @@ class Mesh {
   friend class Gravity;
   friend class HydroDiffusion;
   friend class FieldDiffusion;
+  friend class Radiation;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -226,6 +227,7 @@ private:
   // functions
   MeshGenFunc_t MeshGenerator_[3];
   SrcTermFunc_t UserSourceTerm_;
+  RadSrcTermFunc_t UserRadSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
   AMRFlagFunc_t AMRFlag_;
   TimeStepFunc_t UserTimeStep_;
@@ -247,6 +249,7 @@ private:
   void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
   void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
   void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
+  void EnrollUserExplicitRadSourceFunction(RadSrcTermFunc_t my_func);
   void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);

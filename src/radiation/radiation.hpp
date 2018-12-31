@@ -77,6 +77,7 @@ public:
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_in,
       AthenaArray<Real> &cons_out);
+  RadSrcTermFunc_t UserSourceTerm;
 
 private:
 
