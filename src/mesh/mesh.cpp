@@ -1374,13 +1374,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     // correct IC on all MeshBlocks or none; switch cannot be toggled independently
     bool correct_ic = pmb_array[0]->precon->correct_ic;
     if (correct_ic == true) {
-#pragma omp for private(pmb, phydro, pfield, pbval)
+#pragma omp for private(pmb, phydro, pfield, prad, pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i];
-        phydro=pmb->phydro;
-        pfield=pmb->pfield;
+        pmb = pmb_array[i];
+        phydro = pmb->phydro;
+        pfield = pmb->pfield;
         prad = pmb->prad;
-        pbval=pmb->pbval;
+        pbval = pmb->pbval;
 
         // Assume cell-centered analytic value is computed at all real cells, and ghost
         // cells with the cell-centered U have been exchanged
@@ -1458,9 +1458,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     // end fourth-order correction of midpoint initial condition
 
     // Now do prolongation, compute primitives, apply BCs
-#pragma omp for private(pmb,pbval,phydro,pfield)
+#pragma omp for private(pmb, pbval, phydro, pfield, prad)
       for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
+      pmb = pmb_array[i];
+      pbval = pmb->pbval;
+      phydro = pmb->phydro;
+      pfield = pmb->pfield;
+      prad = pmb->prad;
       if (multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                     prad->prim, prad->cons, time, 0.0);

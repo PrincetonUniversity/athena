@@ -144,14 +144,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   }
 
   // Allocate memory for intensities
-  int num_cells_1 = ie + NGHOST;
+  int num_cells_1 = ie + NGHOST + 1;
   int num_cells_2 = 1;
   if (js != je) {
-    num_cells_2 = je + NGHOST;
+    num_cells_2 = je + NGHOST + 1;
   }
   int num_cells_3 = 1;
   if (ks != ke) {
-    num_cells_3 = ke + NGHOST;
+    num_cells_3 = ke + NGHOST + 1;
   }
   prim.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
   prim1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
@@ -449,14 +449,6 @@ Radiation::~Radiation() {
 
 void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
     AthenaArray<Real> &cons_in_2, const Real weights[3]) {
-
-  // Prepare index bounds
-  int is = pmy_block->is;
-  int ie = pmy_block->ie;
-  int js = pmy_block->js;
-  int je = pmy_block->je;
-  int ks = pmy_block->ks;
-  int ke = pmy_block->ke;
 
   // Apply averaging based on which weights are 0
   if (weights[2] != 0.0) {
