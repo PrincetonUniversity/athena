@@ -1,6 +1,6 @@
 <comment>
 problem   = beam of radiation in GR
-configure = -gr --prob=beam --coord schwarzschild
+configure = -g -r --prob beam --coord schwarzschild -hdf5
 
 <job>
 problem_id = beam  # name of run
@@ -8,7 +8,7 @@ problem_id = beam  # name of run
 <time>
 cfl_number = 0.3  # fraction of Courant condition
 nlim       = -1   # maximum number of timesteps
-tlim       = 1.0  # maximum time to run
+tlim       = 5.0  # maximum time to run
 integrator = vl2  # time integration algorithm
 xorder     = 2    # order of spatial reconstruction
 ncycle_out = 1    # interval for stdout summary info
@@ -32,7 +32,7 @@ x1rat  = 1.0914260861594995  # ratio of adjacent r-widths
 ix1_bc = user                # inner boundary
 ox1_bc = user                # outer boundary
 
-nx2    = 32                 # number of cells in theta-direction
+nx2    = 30                 # number of cells in theta-direction
 x2min  = 0.0                # minimum theta
 x2max  = 3.141592653589793  # maximum theta (pi)
 ix2_bc = polar              # upper boundary
@@ -44,10 +44,21 @@ x3max  = 6.283185307179586  # maximum phi (2*pi)
 ix3_bc = periodic           # clockwise boundary
 ox3_bc = periodic           # counterclockwise boundary
 
+refinement = none  # whether to use mesh refinement
+
 <meshblock>
 nx1 = 12  # block size in r-direction
-nx2 = 32  # block size in theta-direction
-nx3 = 64  # block size in phi-direction
+nx2 = 10  # block size in theta-direction
+nx3 = 32  # block size in phi-direction
+
+<refinement1>
+level = 1                   # refinement level
+x1min = 2.1                 # minimum r
+x1max = 6.0                 # maximum r
+x2min = 1.3089969389957472  # minimum theta (5/12*pi)
+x2max = 1.8325957145940461  # maximum theta (7/12*pi)
+x3min = 0.0                 # minimum phi
+x3max = 6.283185307179586   # maximum phi (2*pi)
 
 <coord>
 m = 1.0  # black hole mass M
