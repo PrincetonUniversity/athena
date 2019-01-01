@@ -231,9 +231,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   omega.NewAthenaArray(4, 4, 4);
 
   // Calculate n^0
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
+      for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
@@ -369,7 +369,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
             na2_(l,m,k,j,i) = 0.0;
             for (int n = 0; n < 4; ++n) {
               for (int p = 0; p < 4; ++p) {
-                na2_(l,m,k,j,i) += 1.0 / SQR(std::sin(zetaf(l))) * nh_cf(n,l,m)
+                na2_(l,m,k,j,i) += 1.0 / SQR(std::sin(zetav(l))) * nh_cf(n,l,m)
                     * nh_cf(p,l,m) * (nh_cf(2,l,m) * omega(1,n,p) - nh_cf(1,l,m)
                     * omega(2,n,p));
               }
@@ -807,6 +807,10 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
 
+      // Determine poles
+      bool left_pole = pcoord->IsPole(j);
+      bool right_pole = pcoord->IsPole(j+1);
+
       // Calculate x1-divergence
       pcoord->Face1Area(k, j, is, ie+1, area_l_);
       for (int lm = lms; lm <= lme; ++lm) {
@@ -822,8 +826,9 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
         pcoord->Face2Area(k, j+1, is, ie, area_r_);
         for (int lm = lms; lm <= lme; ++lm) {
           for (int i = is; i <= ie; ++i) {
-            flux_div_(lm,i) += area_r_(i) * flux_x[X2DIR](lm,k,j+1,i)
-                - area_l_(i) * flux_x[X2DIR](lm,k,j,i);
+            Real left_flux = left_pole ? 0.0 : -area_l_(i) * flux_x[X2DIR](lm,k,j,i);
+            Real right_flux = right_pole ? 0.0 : area_r_(i) * flux_x[X2DIR](lm,k,j+1,i);
+            flux_div_(lm,i) += left_flux + right_flux;
           }
         }
       }
@@ -854,6 +859,10 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
 
+      // Determine poles
+      bool left_pole = l == zs;
+      bool right_pole = l == ze;
+
       // Calculate angle lengths and solid angles
       int lm = AngleInd(l, m);
       int lm_lc = AngleInd(l, m, true, false);
@@ -872,8 +881,11 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
           for (int i = is; i <= ie; ++i) {
 
             // Calculate zeta-divergence
-            Real flux_div = psi_length_p * flux_a[ZETADIR](lm_rc,k,j,i)
-                - psi_length_m * flux_a[ZETADIR](lm_lc,k,j,i);
+            Real left_flux =
+                left_pole ? 0.0 : -psi_length_m * flux_a[ZETADIR](lm_lc,k,j,i);
+            Real right_flux =
+                right_pole ? 0.0 : psi_length_p * flux_a[ZETADIR](lm_rc,k,j,i);
+            Real flux_div = left_flux + right_flux;
 
             // Add psi-divergence
             flux_div += zeta_length_p * flux_a[PSIDIR](lm_cr,k,j,i)
