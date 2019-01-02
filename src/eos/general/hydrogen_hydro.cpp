@@ -13,6 +13,7 @@
 #include <iostream> // ifstream
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 #include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
@@ -31,7 +32,7 @@ const Real my_1pe = 1. + FLT_EPSILON;
 //! \fn Real x_(Real rho, Real T) {
 //  \brief compute ionization fraction
 Real x_(Real rho, Real T) {
-  return 2. /(1. + std::sqrt(1. + 4. * std::exp(1. / T - 1.5 * std::log(T) + std::log(rho))));
+  return 2./(1.+std::sqrt(1.+4.*std::exp(1./T-1.5*std::log(T)+std::log(rho))));
 }
 
 //----------------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ Real e_of_rho_T(Real rho, Real T) {
 //----------------------------------------------------------------------------------------
 //! \fn Real h_of_rho_T(Real rho, Real T) {
 //  \brief compute specific enthalpy
-Real h_of_rho_T(Real rho, Real T){
+Real h_of_rho_T(Real rho, Real T) {
   Real x = x_(rho, T);
   return x + 2.5 * T * (1. + x);
 }
@@ -68,7 +69,7 @@ Real asq_(Real rho, Real T) {
   c = (std::sqrt(c) + std::sqrt(c + 4. * rho));
   b /= c*c*c;
   c = 2. + x - SQR(x);
-  return (1.+x)*T*(b * (4. + 20. * T + 15. * SQR(T)) + 10. * c)/(b * SQR(2. + 3. * T) + 6. * c);
+  return (1.+x)*T*(b*(4.+20.*T+15.*SQR(T))+10.*c)/(b*SQR(2.+3.*T)+6.*c);
 }
 
 //----------------------------------------------------------------------------------------
@@ -108,7 +109,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
     throw std::runtime_error(msg.str().c_str());
   }
 
-  while ( (std::fabs(Ta - Tb) >= prec) and (fb - fa >= prec) ){
+  while ( (std::fabs(Ta - Tb) >= prec) and (fb - fa >= prec) ) {
     T0 = .5 * Ta + .5 * Tb;
     f0 = f(rho, T0) / sol - 1.;
     if ( f0 < 0 ) {
@@ -128,7 +129,8 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
 //! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
 //  \brief Return adiabatic sound speed squared for use in Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint), my_1pe * .4 * hint);
+  Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint),
+                  my_1pe * .4 * hint);
   return asq_(rho, T);
 }
 
@@ -137,7 +139,7 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
 //  \brief Return gas pressure
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   Real es = egas / rho;
-  Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1., .1 * es)/3., my_1pe * 2. * es / 3.);
+  Real T = invert(*e_of_rho_T, rho, egas, std::max(es-1.,.1*es)/3.,my_1pe*2.*es/3.);
   return P_of_rho_T(rho, T);
 }
 

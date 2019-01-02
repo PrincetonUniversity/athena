@@ -140,7 +140,8 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
 //  \brief Reads datasets from an HDF5 file into a InterpTable2D.
 
 void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar,
-                     const char **var_names, const char *x2lim_name, const char *x1lim_name) {
+                     const char **var_names, const char *x2lim_name,
+                     const char *x1lim_name) {
   int ndims;
   hsize_t dims[2];
   int tmp[2];

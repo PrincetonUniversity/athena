@@ -1,5 +1,5 @@
-#ifndef INPUTS_ASCII_READER_HPP_
-#define INPUTS_ASCII_READER_HPP_
+#ifndef INPUTS_ASCII_TABLE_READER_HPP_
+#define INPUTS_ASCII_TABLE_READER_HPP_
 
 //========================================================================================
 // Athena++ astrophysical MHD code
@@ -98,4 +98,4 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
   return;
 }
 
-#endif
+#endif // INPUTS_ASCII_TABLE_READER_HPP_

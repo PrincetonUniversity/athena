@@ -140,7 +140,9 @@ class EquationOfState {
   Real SimplePres(Real rho, Real egas);
   Real SimpleEgas(Real rho, Real pres);
   Real SimpleAsq(Real rho, Real pres);
-  Real GetGamma() const {throw std::invalid_argument("GetGamma is not defined for general EOS.");}
+  Real GetGamma() const {
+    throw std::invalid_argument("GetGamma is not defined for general EOS.");
+  }
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
 #endif

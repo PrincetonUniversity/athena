@@ -33,12 +33,11 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
-  if (pin->DoesParameterExist("hydro","efloor")){
+  if (pin->DoesParameterExist("hydro","efloor")) {
     energy_floor_ = pin->GetReal("hydro","efloor");
     pressure_floor_ = energy_floor_ * (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", pressure_floor_);
-  }
-  else{
+  } else {
     pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
     energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pin->SetReal("hydro","efloor", energy_floor_);

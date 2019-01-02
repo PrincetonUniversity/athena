@@ -82,16 +82,14 @@ Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   //if off table do linear extrapolation
   if (xil < 0) { // below xmin
     xil = 0;
-  }
-  else if (xil >= nx - 1) { // above xmax
+  } else if (xil >= nx - 1) { // above xmax
     xil = nx - 2;
   }
   xrl = 1 + xil - x;  // x residual
 
   if (yil < 0) { // below ymin
     yil = 0;
-  }
-  else if (yil >= ny - 1) { // above ymax
+  } else if (yil >= ny - 1) { // above ymax
     yil = ny - 2;
   }
   yrl = 1 + yil - y;  // y residual
