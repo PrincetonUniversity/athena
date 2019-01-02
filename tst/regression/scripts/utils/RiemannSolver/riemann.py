@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import brentq, bisect
+from scipy.optimize import brentq
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
 from .eos import parse_eos
@@ -150,7 +150,8 @@ class RiemannSol(object):
         self.waves = [{}, {}, {}]  # used to keep info on the waves in the problem
 
     def _shock_jump(self, edge, mid):
-        """Find the middle state on the opposite side of a shock from a specified edge state and mid.p."""
+        """Find the middle state on the opposite side of a shock from a specified
+        edge state and mid.p."""
         dp = mid.p - edge.p
         psum = mid.p + edge.p
         if self.eos.ideal:
@@ -215,7 +216,8 @@ class RiemannSol(object):
         return lmid, rmid, lf, rf
 
     def _du(self, pmult):
-        """Returns difference in middle state speeds as a function of normalized middle pressure."""
+        """Returns difference in middle state speeds as a function of normalized
+        middle pressure."""
         lmid, rmid, _, _ = self._get_mids(pmult * self._norm['p'])
         return (lmid.u - rmid.u) * self._norm['speed']
 
@@ -240,8 +242,6 @@ class RiemannSol(object):
         p = self.lmid.p
         # save wave and mass flux info
         if p > self.left.p:
-            dp = self.lmid.p - self.left.p
-            psum = self.lmid.p + self.left.p
             tmp = {}
             tmp['kind'] = 'shock'
             tmp['flux'] = lf
@@ -259,8 +259,6 @@ class RiemannSol(object):
             tmp['right'] = self.lmid
             self.waves[0].update(tmp)
         if p > self.right.p:
-            dp = self.rmid.p - self.right.p
-            psum = self.rmid.p + self.right.p
             tmp = {}
             tmp['kind'] = 'shock'
             tmp['flux'] = rf
@@ -331,7 +329,8 @@ class RiemannSol(object):
             return None
 
     def data_array(self, xi):
-        """Returns an array of state data corresponding to the specified array of characteristics."""
+        """Returns an array of state data corresponding to the specified array of
+        characteristics."""
         xi = np.atleast_1d(xi)
         states = self.get_state(xi)
         names = ['xi', 'dens', 'press', 'vel1']
@@ -343,8 +342,8 @@ class RiemannSol(object):
         out['vel'] = out['vel1']
         return out
 
-    def plot_sol(self, var=None, xi_min=None, xi_max=None, nsimp=100, speeds=True, fig=True, ax=None, popt=None,
-                 discont=True, lbls=True, t=1):
+    def plot_sol(self, var=None, xi_min=None, xi_max=None, nsimp=100, speeds=True,
+                 fig=True, ax=None, popt=None, discont=True, lbls=True, t=1):
         """Plot solution to Riemann problem.
 
         Keyword arguments:
@@ -443,7 +442,6 @@ class RiemannSol(object):
         ylim = np.atleast_1d(ylim)
         dx = np.diff(xlim)[0]
         dy = np.diff(ylim)[0]
-        x = np.array([xlim.min() - dx, xlim.max() + dx])
         y = np.array([0, ylim.max() + dy])
         ws = self.waves
 
@@ -461,8 +459,6 @@ class RiemannSol(object):
         plt.axis('off')
         plt.axes().set_aspect('equal')
         opt = dict(fontsize=12, ha='center', va='center')
-        yl = ylim.min() + dy / 3.
-        yh = ylim.min() + 2. * dy / 3.
         r = ylim.min() + .8 * dy
         th = .5 * np.pi + .5 * np.arctan2(1, ws[0]['speed'][0])
         plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{L}$', **opt)
@@ -559,7 +555,8 @@ class RareInt(object):
         def f(p):
             rho = self._rho(p)
             u = self.sign * self._u(p)
-            return (self.edge.u + u + self.sign * np.sqrt(self.eos.asq_of_rho_p(rho, p))) / xi - 1.
+            top = self.edge.u + u + self.sign * np.sqrt(self.eos.asq_of_rho_p(rho, p))
+            return top / xi - 1.
 
         p, r = brentq(f, self._pmin, self._pmax, **brent_opt)  # root find
         if not r.converged:
@@ -602,7 +599,6 @@ class RareInt(object):
                 idx = (np.abs(self._pa - p)).argmin()
                 out = odeint(self._rare_ode, self._data[idx], np.array(
                     [self._pa[idx], p]), **ode_opt)[-1]
-                #print(out.shape, out)
                 return out
             self._call = f
             self._rho = lambda p: self._call(p)[0]

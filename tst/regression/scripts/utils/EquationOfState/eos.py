@@ -14,21 +14,21 @@ class EOS(object):
         try:
             self.asq_of_rho_p(1, 1)
             self.ei_of_rho_p(1, 1)
-        except NotImplemented:
+        except NotImplementedError:
             return False
         return True
 
     def asq_of_rho_p(self, rho, p):
-        raise NotImplemented
+        raise NotImplementedError
 
     def ei_of_rho_p(self, rho, p):
-        raise NotImplemented
+        raise NotImplementedError
 
     def es_of_rho_p(self, rho, p):
         return self.ei_of_rho_p(rho, p) / rho
 
     def p_of_rho_es(self, rho, p):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class SimpleHydrogen(EOS):

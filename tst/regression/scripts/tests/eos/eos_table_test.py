@@ -9,11 +9,12 @@ import os
 from shutil import move                        # moves/renames files
 import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
+from scripts.utils.EquationOfState.writeEOS import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 import athena_read                             # utilities for reading Athena++ data
-from scripts.utils.EquationOfState.writeEOS import mk_ideal, write_H
 
 _gammas = [1.1, 1.4, 5./3.]
+
 
 def prepare(**kwargs):
     """
@@ -67,8 +68,8 @@ def run(**kwargs):
     such a way as to produce testable output. It takes no inputs and produces no outputs.
     """
 
-    arguments0 = ['hydro/gamma={0:}', 'job/problem_id=Sod_ideal_{1:}', 'time/ncycle_out=0',
-                  'output1/file_type=vtk']
+    arguments0 = ['hydro/gamma={0:}', 'job/problem_id=Sod_ideal_{1:}',
+                  'time/ncycle_out=0', 'output1/file_type=vtk']
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
         athena.run('hydro/athinput.sod', arguments)
@@ -110,6 +111,7 @@ def run(**kwargs):
     arguments0[1] = 'job/problem_id=Sod_eos_H'
     athena.run('hydro/athinput.sod', ic + arguments0[:-2])
 
+
 def analyze():
     """
     Analyze the output and determine if the test passes.
@@ -135,14 +137,16 @@ def analyze():
                 diff = comparison.l1_diff(
                     x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
                 if diff > 0.0 or np.isnan(diff):
-                    print(
-                        ' '.join(map(str, ['Eos ideal table test fail (binary). var, err, gamma =', var, diff, g])))
+                    line = ['Eos ideal table test fail (binary). var, err, gamma =',
+                            var, diff, g]
+                    print(' '.join(map(str, line)))
                     analyze_status = False
                 diff = comparison.l1_diff(
                     x_ref, data_ref[var][loc], x_ascii, data_ascii[var][loc]) / norm
                 if diff > 1e-3 or np.isnan(diff):
-                    print(
-                        ' '.join(map(str, ['Eos ideal table test fail (ascii). var, err, gamma =', var, diff, g])))
+                    line = ['Eos ideal table test fail (ascii). var, err, gamma =',
+                            var, diff, g]
+                    print(' '.join(map(str, line)))
                     analyze_status = False
     tol = .004
     for t in [10, 26]:
@@ -158,14 +162,14 @@ def analyze():
             diff = comparison.l1_diff(
                 x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
             if diff > tol or np.isnan(diff):
-                print(
-                    ' '.join(map(str, ['Eos H table test fail (binary). var, err =', var, diff])))
+                line = ['Eos H table test fail (binary). var, err =', var, diff]
+                print(' '.join(map(str, line)))
                 analyze_status = False
             diff = comparison.l1_diff(
                 x_ref, data_ref[var][loc], x_ascii, data_ascii[var][loc]) / norm
             if diff > tol or np.isnan(diff):
-                print(
-                    ' '.join(map(str, ['Eos H table test fail (ascii). var, err =', var, diff])))
+                line = ['Eos H table test fail (ascii). var, err =', var, diff]
+                print(' '.join(map(str, line)))
                 analyze_status = False
 
     return analyze_status

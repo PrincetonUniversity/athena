@@ -9,8 +9,8 @@ import os
 from shutil import move                        # moves/renames files
 import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
-sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 from .eos_table_test import mk_ideal, write_H
+sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 import athena_read                             # utilities for reading Athena++ data
 
 _gammas = [1.1, 1.4, 5./3.]
@@ -67,8 +67,8 @@ def run(**kwargs):
     such a way as to produce testable output. It takes no inputs and produces no outputs.
     """
 
-    arguments0 = ['hydro/gamma={0:}', 'job/problem_id=Sod_ideal_{1:}', 'time/ncycle_out=0',
-                  'output1/file_type=vtk']
+    arguments0 = ['hydro/gamma={0:}', 'job/problem_id=Sod_ideal_{1:}',
+                  'time/ncycle_out=0', 'output1/file_type=vtk']
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
         athena.run('hydro/athinput.sod', arguments)
@@ -98,6 +98,7 @@ def run(**kwargs):
     arguments0[1] = 'job/problem_id=Sod_eos_H'
     athena.run('hydro/athinput.sod', ic + arguments0[:-2])
 
+
 def analyze():
     """
     Analyze the output and determine if the test passes.
@@ -122,11 +123,12 @@ def analyze():
                 diff /= comparison.l1_norm(x_ref, data_ref[var][loc])
                 if diff > 1e-3 or np.isnan(diff):
                     print(
-                        ' '.join(map(str, ['Eos hdf5 table fail. var, diff, gamma =', var, diff, g])))
+                        ' '.join(map(str, ['Eos hdf5 table fail. var, diff, gamma =',
+                                           var, diff, g])))
                     analyze_status = False
 
     tol = [3e-3, 6e-4]
-    for i,t in enumerate([10, 26]):
+    for i, t in enumerate([10, 26]):
         x_ref, _, _, data_ref = athena_read.vtk(
             'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
         x_new, _, _, data_new = athena_read.vtk(

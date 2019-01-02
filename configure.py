@@ -89,7 +89,8 @@ parser.add_argument(
 # --eos=[name] argument
 parser.add_argument('--eos',
                     default='adiabatic',
-                    choices=['adiabatic','isothermal', 'general/eos_table', 'general/hydrogen'],
+                    choices=['adiabatic', 'isothermal', 'general/eos_table',
+                             'general/hydrogen'],
                     help='select equation of state')
 
 # --flux=[name] argument

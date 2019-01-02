@@ -3,10 +3,7 @@ Regression test for general EOS 1D Riemann problems.
 """
 
 # Modules
-import numpy as np                             # standard Python module for numerics
 import sys                                     # standard Python module to change path
-import os
-from shutil import move                        # moves/renames files
 import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 from scripts.utils.RiemannSolver.riemann import riemann_problem
@@ -90,6 +87,7 @@ def analyze():
             diff = comparison.l1_norm(x_ref, data - exact[var])
             if diff > _thresh[n][var]:
                 print(' '.join(
-                    map(str, ['EOS Riemann fail. Test#, var, diff, thresh =', n, var, diff, _thresh[n][var]])))
+                    map(str, ['EOS Riemann fail. Test#, var, diff, thresh =', n,
+                        var, diff, _thresh[n][var]])))
                 analyze_status = False
     return analyze_status

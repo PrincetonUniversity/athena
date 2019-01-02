@@ -1,10 +1,10 @@
 # Modules
 import numpy as np                             # standard Python module for numerics
-import sys                                     # standard Python module to change path
-import os
 from . import eos
 
-_names = ['p/e(e/rho,rho)','e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)', 'asq*rho/h(h/rho,rho)']
+_names = ['p/e(e/rho,rho)', 'e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)',
+          'asq*rho/h(h/rho,rho)']
+
 
 def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
                   ratios=None, ftype=None, sdim=0, opt=None):
@@ -34,7 +34,8 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
     eOp = np.array(eOp)  # , ftype)
     if ratios is None:
         ratios = [1., eOp, eOp, eOp / (1. + eOp)]
-        if nvar > 4: ratios += [1] * (nvar - 4)
+        if nvar > 4:
+            ratios += [1] * (nvar - 4)
         ratios = np.array(ratios, dtype=ftype)
     if out_type == 'hdf5':
         import h5py
@@ -59,7 +60,7 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
             for i, d in enumerate(varlist):
                 f.write('# ' + _names[i] + '\n')
                 np.savetxt(f, np.log10(d), opt['format'], delimiter=opt['sep'])
-    else: #if binary:
+    else:  # if binary:
         with open(fn, 'wb') as f:
             np.array([nvar, ne, nd], dtype='int32').tofile(f, **iopt)
             elim.tofile(f, **opt)
@@ -75,7 +76,6 @@ def mk_ideal(gamma=5./3., n=2, fn=None, out_type=None):
     elim = np.linspace(-10., 20., n)
 
     e, d = np.meshgrid(1e1**elim, 1e1**dlim)
-    #eint = e * d
     g = gamma
     gm1 = g - 1.
 
@@ -96,6 +96,7 @@ def mk_ideal(gamma=5./3., n=2, fn=None, out_type=None):
     write_varlist(dlim[[0, -1]], elim[[0, -1]], varlist, **opt)
     return
 
+
 def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
             binary=True, ascii=True, hdf5=False, ret=False):
     fn = 'bin/SimpleHydrogen'
@@ -115,7 +116,6 @@ def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
     a2h = np.empty_like(one)
     for i in range(nEspec):
         for j in range(nRho):
-            #print((i,j,rho[j], es[i]))
             p[i, j] = Heos.p_of_rho_es(rho[j], es[i]) / (es[i] * rho[j])
             p0 = rho[j] * es[i] / eOp
             temp = Heos.T_of_rho_p(rho[j], p0)
@@ -124,8 +124,11 @@ def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
             h = es[i] * (1. + eOp) / eOp
             a2h[i, j] = Heos.asq_of_rho_h(rho[j], h) / h
     args = logRhoLim, logEspecLim, [p, e, a2p, a2h]
-    kwargs = dict(eOp=eOp)#ratios=np.ones((4)))
-    if binary: write_varlist(*args, fn=fn + '.data', **kwargs)
-    if ascii: write_varlist(*args, fn=fn + '.tab', **kwargs)
-    if hdf5: write_varlist(*args, fn=fn + '.hdf5', **kwargs)
+    kwargs = dict(eOp=eOp)
+    if binary:
+        write_varlist(*args, fn=fn + '.data', **kwargs)
+    if ascii:
+        write_varlist(*args, fn=fn + '.tab', **kwargs)
+    if hdf5:
+        write_varlist(*args, fn=fn + '.hdf5', **kwargs)
     return
