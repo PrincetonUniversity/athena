@@ -119,14 +119,14 @@ def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
         for j in range(nRho):
             #print((i,j,rho[j], es[i]))
             p[i, j] = Heos.p_of_rho_es(rho[j], es[i]) / (es[i] * rho[j])
-            p0 = rho[j] * es[i]# / eOp
+            p0 = rho[j] * es[i] / eOp
             temp = Heos.T_of_rho_p(rho[j], p0)
             e[i, j] = Heos.ei_of_rho_T(rho[j], temp) / p0
             a2p[i, j] = Heos.gamma1(rho[j], temp)
-            h = es[i]# * (1. + eOp) / eOp
+            h = es[i] * (1. + eOp) / eOp
             a2h[i, j] = Heos.asq_of_rho_h(rho[j], h) / h
     args = logRhoLim, logEspecLim, [p, e, a2p, a2h]
-    kwargs = dict(ratios=np.ones((4)))
+    kwargs = dict(eOp=eOp)#ratios=np.ones((4)))
     if binary: write_varlist(*args, fn=fn + '.data', **kwargs)
     if ascii: write_varlist(*args, fn=fn + '.tab', **kwargs)
     if hdf5: write_varlist(*args, fn=fn + '.hdf5', **kwargs)
