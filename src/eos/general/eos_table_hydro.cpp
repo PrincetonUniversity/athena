@@ -31,30 +31,52 @@
 //#define EOSDEBUG0
 //#define EOSDEBUG1
 
+// Order of datafields for HDF5 EOS tables
 const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)", "asq*rho/h(h/rho,rho)"};
 
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::GetEosData(int kOut, Real var, Real rho)
+//  \brief Gets interpolated data from EOS table assuming 'var' has dimensions
+//         of energy per volume.
 Real EquationOfState::GetEosData(int kOut, Real var, Real rho) {
   Real x1 = std::log10(rho * ts.rhoUnit);
   Real x2 = std::log10(var * ts.EosRatios(kOut) * ts.eUnit) - x1;
   return std::pow((Real)10, ptable_->interpolate(kOut, x2, x1));
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
+//  \brief Return interpolated gas pressure
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   return GetEosData(0, egas, rho) * egas;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
+//  \brief Return interpolated internal energy density
 Real EquationOfState::SimpleEgas(Real rho, Real pres) {
   return GetEosData(1, pres, rho) * pres;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
+//  \brief Return interpolated adiabatic sound speed squared
 Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   return GetEosData(2, pres, rho) * pres / rho;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
+//  \brief Return interpolated adiabatic sound speed squared for use in
+//         Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   return std::pow((Real)10, ptable_->interpolate(3, std::log10(hint*ts.hUnit), std::log10(rho*ts.rhoUnit))) * hint;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts)
+//  \brief Read data from binary EOS table and initialize interpolated table.
 void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
   std::ifstream eos_table(fn.c_str(), std::ios::binary);
   Real egasOverPres;
@@ -69,7 +91,6 @@ void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
     eos_table.read((char*)&ts.logRhoMin, sizeof(ts.logRhoMin));
     eos_table.read((char*)&ts.logRhoMax, sizeof(ts.logRhoMax));
     ts.EosRatios.NewAthenaArray(ts.nVar);
-    //eos_table.read((char*)&egasOverPres, sizeof(egasOverPres));
     eos_table.read((char*)ts.EosRatios.data(), ts.nVar * sizeof(ts.logRhoMin));
     ptable->SetSize(ts.nVar, ts.nEgas, ts.nRho);
     ptable->SetX1lim(ts.logRhoMin, ts.logRhoMax);
@@ -80,6 +101,9 @@ void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
   else throw std::invalid_argument("Unable to open eos table: " + fn);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
+//  \brief Read data and initialize interpolated table.
 void EquationOfState::PrepEOS(ParameterInput *pin) {
   std::string EOS_fn, EOS_file_type, dens_lim_field, espec_lim_field;
   EOS_fn = pin->GetString("hydro", "EOS_file_name");
@@ -89,9 +113,10 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   espec_lim_field = pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
   ptable_ = new InterpTable2D();
 
-  if (EOS_file_type.compare("binary") == 0) {
+  // Determine data type for table file
+  if (EOS_file_type.compare("binary") == 0) { //Raw binary
     ReadBinaryTable(EOS_fn, ptable_, ts);
-  } else if (EOS_file_type.compare("hdf5") == 0) {
+  } else if (EOS_file_type.compare("hdf5") == 0) { // HDF5 table
 #ifndef HDF5OUTPUT
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
@@ -114,11 +139,10 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
             << "Invalid ratio. " << EOS_fn.c_str() << ", " << ratio_field << ", " << ts.EosRatios(0) << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
-      //std::cout << "Ratios: " << ratio_array(0) << ", " << ratio_array(1) << ", " << ratio_array(2) << '\n';
     } else {
       for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
     }
-  } else if (EOS_file_type.compare("ascii") == 0) {
+  } else if (EOS_file_type.compare("ascii") == 0) { // ASCII/text table
     AthenaArray<Real> *pratios = NULL;
     if (read_ratios) pratios = &ts.EosRatios;
     ASCIITableLoader(EOS_fn.c_str(), ptable_, pratios);
@@ -139,6 +163,7 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
   ts.hUnit = ts.eUnit/ts.rhoUnit;
 
+//Debugging/testing code
 #ifdef EOSDEBUG1
   std::cout << "Eos table: " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
   std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
@@ -158,29 +183,39 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   }
 #endif
 
+//Debugging/testing code
 #ifdef EOSDEBUG0
   std::cout << "prepEOS: " << EOS_fn << ", " << ts.nVar << ", " << ts.nEgas <<  ", " << ts.nRho << "\n";
   EosTestLoop();
 #endif
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void EquationOfState::CleanEOS()
+//  \brief Clear memory/objects used to store EOS data
 void EquationOfState::CleanEOS()
 {
   ts.EosRatios.DeleteAthenaArray();
   ptable_->~InterpTable2D();
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void EquationOfState::EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data)
+//  \brief Debugging/testing function
 void EquationOfState::EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data)
 {
   Real idn = 1./rho;
   Real ien = 1./egas;
-  data(0) = GetEosData(0, egas, rho) * egas;
-  data(1) = (data(0) + egas) * idn;
-  data(2) = GetEosData(2, data(0), rho) * data(0) * idn;
-  data(3) = (egas -  GetEosData(1, data(0), rho) * data(0)) * ien;
-  data(4) = 1.0 - RiemannAsq(rho, data(1)) / data(2);
+  data(0) = GetEosData(0, egas, rho) * egas; // pressure
+  data(1) = (data(0) + egas) * idn; // specific enthalpy
+  data(2) = GetEosData(2, data(0), rho) * data(0) * idn; // Asq
+  data(3) = (egas -  GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
+  data(4) = 1.0 - RiemannAsq(rho, data(1)) / data(2); // Asq error
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void EquationOfState::EosTestLoop()
+//  \brief Debugging/testing function
 void EquationOfState::EosTestLoop()
 {
   Real rho = 0;

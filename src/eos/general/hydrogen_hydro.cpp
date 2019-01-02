@@ -27,33 +27,39 @@
 
 const Real my_1pe = 1. + FLT_EPSILON;
 
-//Real phi_(Real T) {
-//  return std::exp(1. / T) * std::pow(T, -1.5);
-//}
-
+//----------------------------------------------------------------------------------------
+//! \fn Real x_(Real rho, Real T) {
+//  \brief compute ionization fraction
 Real x_(Real rho, Real T) {
   return 2. /(1. + std::sqrt(1. + 4. * std::exp(1. / T - 1.5 * std::log(T) + std::log(rho))));
 }
 
-//Real x_T_(Real rho, Real T){
-//  Real x = x_(rho, T);
-//  return std::pow(T, 3) / (2. + x) * std::exp(1. / T) * std::pow(T, -3.5) * (1. + 1.5 * T) * rho;
-//}
-
+//----------------------------------------------------------------------------------------
+//! \fn Real P_of_rho_T(Real rho, Real T) {
+//  \brief compute gas pressure
 Real P_of_rho_T(Real rho, Real T) {
   return rho * T * (1. + x_(rho, T));
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real e_of_rho_T(Real rho, Real T) {
+//  \brief compute internal energy density
 Real e_of_rho_T(Real rho, Real T) {
   Real x = x_(rho, T);
   return x * rho + 1.5 * rho * T * (1. + x);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real h_of_rho_T(Real rho, Real T) {
+//  \brief compute specific enthalpy
 Real h_of_rho_T(Real rho, Real T){
   Real x = x_(rho, T);
   return x + 2.5 * T * (1. + x);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real asq_(Real rho, Real T) {
+//  \brief compute adiabatic sound speed squared
 Real asq_(Real rho, Real T) {
   Real x = x_(rho, T);
   Real lt = std::log(T);
@@ -65,6 +71,10 @@ Real asq_(Real rho, Real T) {
   return (1.+x)*T*(b * (4. + 20. * T + 15. * SQR(T)) + 10. * c)/(b * SQR(2. + 3. * T) + 6. * c);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1)
+//  \brief Invert an EOS function at a given density and return temperature.
+//         Uses simple bisection for inversion.
 Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   Real f0, f1, fa, fb;
   Real Ta=-1;
@@ -114,23 +124,35 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   return T0;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
+//  \brief Return adiabatic sound speed squared for use in Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint), my_1pe * .4 * hint);
   return asq_(rho, T);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
+//  \brief Return gas pressure
 Real EquationOfState::SimplePres(Real rho, Real egas) {
   Real es = egas / rho;
   Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1., .1 * es)/3., my_1pe * 2. * es / 3.);
   return P_of_rho_T(rho, T);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
+//  \brief Return internal energy density
 Real EquationOfState::SimpleEgas(Real rho, Real pres) {
   Real ps = pres / rho;
   Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return e_of_rho_T(rho, T);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
+//  \brief Return adiabatic sound speed squared
 Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   Real ps = pres / rho;
   Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
