@@ -61,11 +61,9 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
                 np.savetxt(f, np.log10(d), opt['format'], delimiter=opt['sep'])
     else: #if binary:
         with open(fn, 'wb') as f:
-            ne.tofile(f, **iopt)
+            np.array([nvar, ne, nd], dtype='int32').tofile(f, **iopt)
             elim.tofile(f, **opt)
-            nd.tofile(f, **iopt)
             dlim.tofile(f, **opt)
-            np.array(nvar, 'int32').tofile(f, **iopt)
             ratios.tofile(f, **opt)
             out = np.stack(varlist, axis=sdim).astype(ftype)
             np.log10(out).tofile(f, **opt)

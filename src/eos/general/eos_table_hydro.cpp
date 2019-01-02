@@ -61,13 +61,13 @@ void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
   if (eos_table.is_open())
   {
     eos_table.seekg(0, std::ios::beg);
+    eos_table.read((char*)&ts.nVar, sizeof(ts.nVar));
     eos_table.read((char*)&ts.nEgas, sizeof(ts.nEgas));
+    eos_table.read((char*)&ts.nRho, sizeof(ts.nRho));
     eos_table.read((char*)&ts.logEgasMin, sizeof(ts.logEgasMin));
     eos_table.read((char*)&ts.logEgasMax, sizeof(ts.logEgasMax));
-    eos_table.read((char*)&ts.nRho, sizeof(ts.nRho));
     eos_table.read((char*)&ts.logRhoMin, sizeof(ts.logRhoMin));
     eos_table.read((char*)&ts.logRhoMax, sizeof(ts.logRhoMax));
-    eos_table.read((char*)&ts.nVar, sizeof(ts.nVar));
     ts.EosRatios.NewAthenaArray(ts.nVar);
     //eos_table.read((char*)&egasOverPres, sizeof(egasOverPres));
     eos_table.read((char*)ts.EosRatios.data(), ts.nVar * sizeof(ts.logRhoMin));
