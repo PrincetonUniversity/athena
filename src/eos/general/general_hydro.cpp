@@ -19,13 +19,13 @@
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
-#include "eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../parameter_input.hpp"
-#include "../field/field.hpp"
+#include "../eos.hpp"
+#include "../../hydro/hydro.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../../field/field.hpp"
 
 #if GENERAL_EOS
 // EquationOfState constructor

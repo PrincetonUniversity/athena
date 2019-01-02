@@ -16,14 +16,14 @@
 #include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../parameter_input.hpp"
+#include "../../field/field.hpp"
+#include "../../coordinates/coordinates.hpp"
 
 // this class header
-#include "eos.hpp"
+#include "../eos.hpp"
 
 const Real my_1pe = 1. + FLT_EPSILON;
 
