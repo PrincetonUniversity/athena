@@ -28,7 +28,7 @@ def prepare(**kwargs):
                      prob='shock_tube',
                      coord='cartesian',
                      flux='hllc',
-                     eos='eos_table',
+                     eos='general/eos_table',
                      **kwargs)
     athena.make()
     src = os.path.join('bin', 'athena')
@@ -39,7 +39,7 @@ def prepare(**kwargs):
                      prob='shock_tube',
                      coord='cartesian',
                      flux='hllc',
-                     eos='hydrogen',
+                     eos='general/hydrogen',
                      **kwargs)
     athena.make()
     src = os.path.join('bin', 'athena')

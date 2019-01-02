@@ -89,7 +89,7 @@ parser.add_argument(
 # --eos=[name] argument
 parser.add_argument('--eos',
                     default='adiabatic',
-                    choices=['adiabatic','isothermal', 'eos_table', 'hydrogen'],
+                    choices=['adiabatic','isothermal', 'general/eos_table', 'general/hydrogen'],
                     help='select equation of state')
 
 # --flux=[name] argument
@@ -348,7 +348,7 @@ elif args['eos'] == 'adiabatic':
 else:
     definitions['GENERAL_EOS'] = '1'
     definitions['NHYDRO_VARIABLES'] = '5'
-    if args['eos'] == 'eos_table':
+    if args['eos'] == 'general/eos_table':
         definitions['EOS_TABLE_ENABLED'] = '1'
 
 # --flux=[name] argument
@@ -362,6 +362,7 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 if args['b']:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
     makefile_options['EOS_FILE'] += '_mhd'
+    makefile_options['EOS_MOD'] = '_mhd'
     definitions['NFIELD_VARIABLES'] = '3'
     makefile_options['RSOLVER_DIR'] = 'mhd/'
     if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
@@ -375,6 +376,7 @@ if args['b']:
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
     makefile_options['EOS_FILE'] += '_hydro'
+    makefile_options['EOS_MOD'] = '_hydro'
     definitions['NFIELD_VARIABLES'] = '0'
     makefile_options['RSOLVER_DIR'] = 'hydro/'
     if args['eos'] == 'isothermal':
@@ -394,9 +396,11 @@ definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
     makefile_options['EOS_FILE'] += '_sr'
+    makefile_options['EOS_MOD'] += '_sr'
     makefile_options['RSOLVER_FILE'] += '_rel'
 if args['g']:
     makefile_options['EOS_FILE'] += '_gr'
+    makefile_options['EOS_MOD'] += '_gr'
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'

@@ -47,7 +47,7 @@ def prepare(**kwargs):
                      prob='hydrogen_shock_tube',
                      coord='cartesian',
                      flux='hllc',
-                     eos='hydrogen',
+                     eos='general/hydrogen',
                      **kwargs)
     athena.make()
 
