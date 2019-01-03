@@ -388,14 +388,52 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-//                                                              enum CCBoundaryType type)
-//  \brief receive the boundary data
+//! \fn bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type)
+//  \brief receive the cell-centered boundary data
 
-bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                                        enum CCBoundaryType type) {
+bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
+  BoundaryData *pbd;
+
+  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
+    pbd=&bd_hydro_;
+  }
+
+  for (int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
+    if (pbd->flag[nb.bufid]==BNDRY_ARRIVED) continue;
+    if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+      if (nb.rank==Globals::my_rank) {// on the same process
+        bflag=false;
+        continue;
+      }
+#ifdef MPI_PARALLEL
+      else { // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+        if (static_cast<bool>(test)==false) {
+          bflag=false;
+          continue;
+        }
+        pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+      }
+#endif
+    }
+  }
+
+  return bflag;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
+//                                                     enum CCBoundaryType type)
+//  \brief set the cell-centered boundary data
+
+void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
+                                               enum CCBoundaryType type) {
+  MeshBlock *pmb=pmy_block_;
   bool *flip=NULL;
   AthenaArray<Real> cbuf;
   int ns, ne;
@@ -415,26 +453,6 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
-    if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
-      if (nb.rank==Globals::my_rank) {// on the same process
-        bflag=false;
-        continue;
-#ifdef MPI_PARALLEL
-      } else { // MPI boundary
-        int test;
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-        if (static_cast<bool>(test)==false) {
-          bflag=false;
-          continue;
-        }
-        pbd->flag[nb.bufid] = BNDRY_ARRIVED;
-      }
-#else
-    }
-#endif
-    }
     if (nb.level==pmb->loc.level)
       SetCellCenteredBoundarySameLevel(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);
     else if (nb.level<pmb->loc.level) // this set only the prolongation buffer
@@ -444,20 +462,20 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (bflag && (block_bcs[INNER_X2]==POLAR_BNDRY
-           ||  block_bcs[OUTER_X2]==POLAR_BNDRY))
+  if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
      PolarSingleCellCentered(dst, ns, ne);
-  return bflag;
+
+  return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait
-//                                      (AthenaArray<Real> &dst, enum CCBoundaryType type)
-//  \brief receive the boundary data for initialization
+//! \fn void BoundaryValues::ReceiveAndSetCellCenteredBoundariesWithWait
+//                                 (AthenaArray<Real> &dst, enum CCBoundaryType type)
+//  \brief receive and set the cell-centered boundary data for initialization
 
-void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                                enum CCBoundaryType
-                                                                type) {
+void BoundaryValues::ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
+                                                                 enum CCBoundaryType
+                                                                 type) {
   MeshBlock *pmb=pmy_block_;
   bool *flip=NULL;
   AthenaArray<Real> cbuf;
@@ -490,6 +508,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
       SetCellCenteredBoundaryFromFiner(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
+
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarSingleCellCentered(dst, ns, ne);
 

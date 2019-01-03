@@ -700,35 +700,48 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
-//  \brief load boundary buffer for x1 direction into the array
+//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(void)
+//  \brief receive the magnetic field boundary data
 
-bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
+bool BoundaryValues::ReceiveFieldBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
-  bool flag=true;
+  bool bflag=true;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if (bd_field_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
     if (bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) {// on the same process
-        flag=false;
+        bflag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
-      } else { // MPI boundary
+      else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(bd_field_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test)==false) {
-          flag=false;
+          bflag=false;
           continue;
         }
         bd_field_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
-#else
-      }
 #endif
     }
+  }
+
+  return bflag;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundaries(FaceField &dst)
+//  \brief set the magnetic field boundary data
+
+void BoundaryValues::SetFieldBoundaries(FaceField &dst) {
+  MeshBlock *pmb=pmy_block_;
+
+  for (int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if (nb.level==pmb->loc.level)
       SetFieldBoundarySameLevel(dst, bd_field_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
@@ -738,20 +751,19 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (flag
-      and (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }
 
-  return flag;
+  return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
-//  \brief load boundary buffer for x1 direction into the array
+//! \fn void BoundaryValues::ReceiveAndSetFieldBoundariesWithWait(FaceField &dst)
+//  \brief receive and set the magnetic field boundary data for initialization
 
-void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
+void BoundaryValues::ReceiveAndSetFieldBoundariesWithWait(FaceField &dst) {
   MeshBlock *pmb=pmy_block_;
 
   for (int n=0; n<nneighbor; n++) {
@@ -773,6 +785,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }
+
   return;
 }
 

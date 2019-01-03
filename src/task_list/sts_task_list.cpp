@@ -102,6 +102,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
     AddSuperTimeStepTask(INT_HYD, CALC_HYDFLX);
     AddSuperTimeStepTask(SEND_HYD,INT_HYD);
     AddSuperTimeStepTask(RECV_HYD,START_ALLRECV);
+    AddSuperTimeStepTask(SETB_HYD,(RECV_HYD|INT_HYD));
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
@@ -111,13 +112,14 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
       AddSuperTimeStepTask(INT_FLD,RECV_FLDFLX);
       AddSuperTimeStepTask(SEND_FLD,INT_FLD);
       AddSuperTimeStepTask(RECV_FLD,START_ALLRECV);
+      AddSuperTimeStepTask(SETB_FLD,(RECV_FLD|INT_FLD));
     }
 
     // compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) // MHD
-      AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD|SETB_FLD));
     else  // HYDRO
-      AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD));
+      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD));
 
     // everything else
     AddSuperTimeStepTask(PHY_BVAL,CON2PRIM);
@@ -201,6 +203,17 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(uint64_t id, uint64_t dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&SuperTimeStepTaskList::FieldReceive_STS);
+      break;
+
+    case (SETB_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::HydroSetBoundaries_STS);
+      break;
+    case (SETB_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::FieldSetBoundaries_STS);
       break;
 
     case (CON2PRIM):
@@ -404,7 +417,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldSend_STS(MeshBlock *pmb, int stage) 
 enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
   } else {
     return TASK_FAIL;
   }
@@ -419,7 +432,7 @@ enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stag
 enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
+    ret=pmb->pbval->ReceiveFieldBoundaryBuffers();
   } else {
     return TASK_FAIL;
   }
@@ -429,6 +442,23 @@ enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stag
   } else {
     return TASK_FAIL;
   }
+}
+
+enum TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
+                                                              int stage) {
+  if (stage <= nstages) {
+    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+    return TASK_SUCCESS;
+  }
+  return TASK_FAIL;
+}
+
+enum TaskStatus SuperTimeStepTaskList::FieldSetBoundaries_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    pmb->pbval->SetFieldBoundaries(pmb->pfield->b);
+    return TASK_SUCCESS;
+  }
+  return TASK_FAIL;
 }
 
 //--------------------------------------------------------------------------------------
