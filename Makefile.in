@@ -27,7 +27,7 @@ EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
-	     src/eos/general/general$(EOS_MOD).cpp \
+	     src/eos/general/general_hydro.cpp \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
 	     $(wildcard src/fft/*.cpp) \
