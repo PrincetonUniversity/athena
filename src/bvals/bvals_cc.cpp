@@ -407,9 +407,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type
       if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
-      }
+      } else { // MPI boundary
 #ifdef MPI_PARALLEL
-      else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -418,8 +417,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type
           continue;
         }
         pbd->flag[nb.bufid] = BNDRY_ARRIVED;
-      }
 #endif
+      }
     }
   }
 
