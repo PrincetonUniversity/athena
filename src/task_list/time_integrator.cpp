@@ -846,7 +846,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldSetBoundaries(MeshBlock *pmb, int s
   if (stage <= nstages) {
     pmb->pbval->SetFieldBoundaries(pmb->pfield->b);
     return TASK_SUCCESS;
-  } 
+  }
   return TASK_FAIL;
 }
 
