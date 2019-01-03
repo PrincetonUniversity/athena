@@ -461,15 +461,15 @@ class RiemannSol(object):
         opt = dict(fontsize=12, ha='center', va='center')
         r = ylim.min() + .8 * dy
         th = .5 * np.pi + .5 * np.arctan2(1, ws[0]['speed'][0])
-        plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{L}$', **opt)
+        plt.text(r * np.cos(th), r * np.sin(th), r'$\mathbf{U}_{L}$', **opt)
         th = .5 * np.arctan2(1, ws[0]['speed'][1]) + .5 * \
             np.arctan(1. / ws[1]['speed'][0])
-        plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{L*}$', **opt)
+        plt.text(r * np.cos(th), r * np.sin(th), r'$\mathbf{U}_{L*}$', **opt)
         th = .5 * np.arctan2(1, ws[1]['speed'][1]) + .5 * \
             np.arctan(1. / ws[2]['speed'][0])
-        plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{R*}$', **opt)
+        plt.text(r * np.cos(th), r * np.sin(th), r'$\mathbf{U}_{R*}$', **opt)
         th = .5 * np.arctan2(1, ws[2]['speed'][1])
-        plt.text(r * np.cos(th), r * np.sin(th), '$\mathbf{U}_{R}$', **opt)
+        plt.text(r * np.cos(th), r * np.sin(th), r'$\mathbf{U}_{R}$', **opt)
         opt.pop('ha')
         opt.pop('va')
         aopt = dict(xycoords='data', textcoords='data',
