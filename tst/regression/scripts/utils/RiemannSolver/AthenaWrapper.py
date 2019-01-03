@@ -3,7 +3,7 @@ from .riemann import riemann_problem
 import os
 import sys
 sys.path.insert(0, '../../../../../vis/python')
-import athena_read
+import athena_read  # noqa
 
 
 def athinput2riemann(athinput, eos=None):

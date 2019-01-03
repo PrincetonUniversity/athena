@@ -11,7 +11,7 @@ import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 from scripts.utils.EquationOfState.writeEOS import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read                             # utilities for reading Athena++ data
+import athena_read  # noqa                     # utilities for reading Athena++ data
 
 _gammas = [1.1, 1.4, 5./3.]
 

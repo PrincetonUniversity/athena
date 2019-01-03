@@ -8,7 +8,7 @@ import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 from scripts.utils.RiemannSolver.riemann import riemann_problem
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read                             # utilities for reading Athena++ data
+import athena_read  # noqa                     # utilities for reading Athena++ data
 
 
 _tests = [[1e-07, 0.00, 0.150, 1.25e-8, 0., 0.062, .25],
