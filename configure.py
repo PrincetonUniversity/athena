@@ -370,10 +370,10 @@ if args['b']:
         makefile_options['RSOLVER_FILE'] += '_mhd'
     if args['eos'] == 'isothermal':
         definitions['NWAVE_VALUE'] = '6'
+        if args['flux'] == 'hlld':
+            makefile_options['RSOLVER_FILE'] += '_iso'
     else:
         definitions['NWAVE_VALUE'] = '7'
-    if args['flux'] == 'hlld':
-        makefile_options['RSOLVER_FILE'] += '_iso'
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
     makefile_options['EOS_FILE'] += '_hydro'
