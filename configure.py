@@ -341,6 +341,7 @@ definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
 definitions['GENERAL_EOS'] = '0'
+makefile_options['GENERAL_EOS_FILE'] = 'noop'
 definitions['EOS_TABLE_ENABLED'] = '0'
 if args['eos'] == 'isothermal':
     definitions['NHYDRO_VARIABLES'] = '4'
@@ -348,6 +349,7 @@ elif args['eos'] == 'adiabatic':
     definitions['NHYDRO_VARIABLES'] = '5'
 else:
     definitions['GENERAL_EOS'] = '1'
+    makefile_options['GENERAL_EOS_FILE'] = 'general'
     definitions['NHYDRO_VARIABLES'] = '5'
     if args['eos'] == 'general/eos_table':
         definitions['EOS_TABLE_ENABLED'] = '1'
@@ -363,7 +365,8 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 if args['b']:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
     makefile_options['EOS_FILE'] += '_mhd'
-    makefile_options['EOS_MOD'] = '_mhd'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_mhd'
     definitions['NFIELD_VARIABLES'] = '3'
     makefile_options['RSOLVER_DIR'] = 'mhd/'
     if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
@@ -377,7 +380,8 @@ if args['b']:
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
     makefile_options['EOS_FILE'] += '_hydro'
-    makefile_options['EOS_MOD'] = '_hydro'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_hydro'
     definitions['NFIELD_VARIABLES'] = '0'
     makefile_options['RSOLVER_DIR'] = 'hydro/'
     if args['eos'] == 'isothermal':
@@ -397,11 +401,13 @@ definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
     makefile_options['EOS_FILE'] += '_sr'
-    makefile_options['EOS_MOD'] += '_sr'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_sr'
     makefile_options['RSOLVER_FILE'] += '_rel'
 if args['g']:
     makefile_options['EOS_FILE'] += '_gr'
-    makefile_options['EOS_MOD'] += '_gr'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_gr'
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
@@ -706,6 +712,7 @@ definitions['COMPILER_FLAGS'] = ' '.join(
 makefile_options['PROBLEM_FILE'] += '.cpp'
 makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
+makefile_options['GENERAL_EOS_FILE'] += '.cpp'
 makefile_options['RSOLVER_FILE'] += '.cpp'
 
 # Read templates

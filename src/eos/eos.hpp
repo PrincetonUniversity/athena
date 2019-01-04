@@ -135,11 +135,11 @@ class EquationOfState {
     #endif  // !MAGNETIC_FIELDS_ENABLED (GR)
   #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
-#if GENERAL_EOS
   Real RiemannAsq(Real rho, Real hint);
   Real SimplePres(Real rho, Real egas);
   Real SimpleEgas(Real rho, Real pres);
   Real SimpleAsq(Real rho, Real pres);
+#if GENERAL_EOS
   Real GetGamma() const {
     throw std::invalid_argument("GetGamma is not defined for general EOS.");
   }
@@ -163,6 +163,7 @@ class EquationOfState {
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
+  Real energy_floor_;                    // energy floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
@@ -178,9 +179,6 @@ class EquationOfState {
   //AthenaArray<Real> eos_rho_, eos_espec_;// eos density and specific internal energy
   InterpTable2D* ptable_;
 #endif // EOS_TABLE_ENABLED
-#if GENERAL_EOS
-  Real energy_floor_;                    // internal energy floor
-#endif
 };
 
 #endif // EOS_EOS_HPP_
