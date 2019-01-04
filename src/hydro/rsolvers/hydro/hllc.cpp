@@ -38,10 +38,9 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-#if not GENERAL_EOS
-  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real gm1 = std::nan("");
+  if (GENERAL_EOS==0) gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real igm1 = 1.0/gm1;
-#endif
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
@@ -69,9 +68,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-#if GENERAL_EOS
-    wroe[IDN] = sqrtdl*sqrtdr;
-#endif
+    if (GENERAL_EOS) wroe[IDN] = sqrtdl*sqrtdr;
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
@@ -79,15 +76,15 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
-#if GENERAL_EOS
-    el = pmy_block->peos->SimpleEgas(wli[IDN], wli[IPR]) +
-         0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    er = pmy_block->peos->SimpleEgas(wri[IDN], wri[IPR]) +
-         0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-#else
-    el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-#endif
+    if (GENERAL_EOS) {
+      el = pmy_block->peos->SimpleEgas(wli[IDN], wli[IPR]) +
+           0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = pmy_block->peos->SimpleEgas(wri[IDN], wri[IPR]) +
+           0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    } else {
+      el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    }
     hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
@@ -95,37 +92,32 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-#if GENERAL_EOS
-#if SPEED_TYPE==0
-    // a from q
-    Real a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
-#endif
-#if SPEED_TYPE==1
-    // a from p_roe
-    wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
-    Real a = pmy_block->peos->SoundSpeed(wroe);
-    //a = (a < 0.0) ? 0.0 : a;
-#endif
-#if SPEED_TYPE==2
-    // a from gq_roe
-    Real ql = (el+wli[IPR])/wli[IDN] - 0.5*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ]));
-    Real qr = (er+wri[IPR])/wri[IDN] - 0.5*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ]));
-    Real gl = SQR(cl) / ql + 1.;
-    Real gr = SQR(cr) / qr + 1.;
-    Real a = ((sqrtdl*gl + sqrtdr*gr)*isdlpdr - 1.) * q;
-    a = (a < 0.0) ? 0.0 : std::sqrt(a);
-#endif
-#if SPEED_TYPE==3
-    // a from gp_roe;
-    wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
-    Real gl = SQR(cl) * wli[IPR] / wli[IDN];
-    Real gr = SQR(cr) * wri[IPR] / wri[IDN];
-    Real a = (sqrtdl*gl + sqrtdr*gr)*isdlpdr * wroe[IPR] / wroe[IDN];
-    a = (a < 0.0) ? 0.0 : std::sqrt(a);
-#endif
-#else //not general EOS
-    Real a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
-#endif
+    Real a;
+    if (GENERAL_EOS) {
+      if (SPEED_TYPE==0) { // a from q (specific enthalpy)
+        a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
+      } else if (SPEED_TYPE==1) { // a from p_roe
+        wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
+        a = pmy_block->peos->SoundSpeed(wroe);
+      } else if (SPEED_TYPE==2) { // a from gq_roe (effective gamma using enthalpy)
+        Real ql = (el+wli[IPR])/wli[IDN]
+                  - 0.5*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ]));
+        Real qr = (er+wri[IPR])/wri[IDN]
+                  - 0.5*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ]));
+        Real gl = SQR(cl) / ql + 1.;
+        Real gr = SQR(cr) / qr + 1.;
+        a = ((sqrtdl*gl + sqrtdr*gr)*isdlpdr - 1.) * q;
+        a = (a < 0.0) ? 0.0 : std::sqrt(a);
+      } else if (SPEED_TYPE==3) { // a from gp_roe (effective gamma using pressure)
+        wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
+        Real gl = SQR(cl) * wli[IPR] / wli[IDN];
+        Real gr = SQR(cr) * wri[IPR] / wri[IDN];
+        a = (sqrtdl*gl + sqrtdr*gr)*isdlpdr * wroe[IPR] / wroe[IDN];
+        a = (a < 0.0) ? 0.0 : std::sqrt(a);
+      }
+    } else { //not general EOS
+      a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
+    }
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
