@@ -27,7 +27,6 @@
 #include "../../parameter_input.hpp"
 #include "../../field/field.hpp"
 
-#if GENERAL_EOS
 // EquationOfState constructor
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
@@ -42,18 +41,18 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
     energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pin->SetReal("hydro","efloor", energy_floor_);
   }
-  #if EOS_TABLE_ENABLED
-  PrepEOS(pin);
-  gamma_ = std::sqrt(-1);
-  #endif
+  if (EOS_TABLE_ENABLED) {
+    PrepEOS(pin);
+    gamma_ = std::sqrt(-1);
+  }
 }
 
 // destructor
 
 EquationOfState::~EquationOfState() {
-  #if EOS_TABLE_ENABLED
-  CleanEOS();
-  #endif
+  if (EOS_TABLE_ENABLED) {
+    CleanEOS();
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -193,4 +192,3 @@ void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 
   return;
 }
-#endif //GENERAL_EOS

@@ -139,6 +139,12 @@ class EquationOfState {
   Real SimplePres(Real rho, Real egas);
   Real SimpleEgas(Real rho, Real pres);
   Real SimpleAsq(Real rho, Real pres);
+  Real GetEosData(int kOut, Real var, Real rho);
+  Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
+  Real GetDensityFloor() const {return density_floor_;}
+  Real GetPressureFloor() const {return pressure_floor_;}
+  void PrepEOS(ParameterInput *pin);
+  void CleanEOS();
 #if GENERAL_EOS
   Real GetGamma() const {
     throw std::invalid_argument("GetGamma is not defined for general EOS.");
@@ -147,17 +153,8 @@ class EquationOfState {
   Real GetGamma() const {return gamma_;}
 #endif
 #if EOS_TABLE_ENABLED
-  void PrepEOS(ParameterInput *pin);
-  void CleanEOS();
-  Real GetEosData(int kOut, Real var, Real rho);
-  //Real GetGamma1FromRhoEgas(Real rho, Real egas);
-  void EosTestLoop();
-  void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data);
   TableSize ts;
 #endif // EOS_TABLE_ENABLED
-  Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
-  Real GetDensityFloor() const {return density_floor_;}
-  Real GetPressureFloor() const {return pressure_floor_;}
 
  private:
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
@@ -175,10 +172,7 @@ class EquationOfState {
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
-#if EOS_TABLE_ENABLED
-  //AthenaArray<Real> eos_rho_, eos_espec_;// eos density and specific internal energy
-  InterpTable2D* ptable_;
-#endif // EOS_TABLE_ENABLED
+  InterpTable2D* ptable_;                // pointer to EOS table data
 };
 
 #endif // EOS_EOS_HPP_

@@ -28,14 +28,14 @@
 // this class header
 #include "../eos.hpp"
 
-#if EOS_TABLE_ENABLED
 //#define EOSDEBUG0
 //#define EOSDEBUG1
+
+void EosTestLoop(EquationOfState *peos);
 
 // Order of datafields for HDF5 EOS tables
 const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)",
                            "asq*rho/h(h/rho,rho)"};
-
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::GetEosData(int kOut, Real var, Real rho)
@@ -167,7 +167,6 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
     throw std::runtime_error(msg.str().c_str());
   }
 
-
   ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.0);
   ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
   ts.hUnit = ts.eUnit/ts.rhoUnit;
@@ -196,8 +195,8 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 //Debugging/testing code
 #ifdef EOSDEBUG0
   std::cout << "prepEOS: " << EOS_fn << ", " << ts.nVar << ", " << ts.nEgas
-  <<  ", " << ts.nRho << "\n";
-  EosTestLoop();
+  <<  ", " << ts.nRho << "\n" << "p(1e-7,1e-7)= " << GetEosData(0, 1e-7, 1e-7) << "\n";
+  EosTestLoop(this);
 #endif
 }
 
@@ -210,24 +209,25 @@ void EquationOfState::CleanEOS() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void EquationOfState::EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data)
+//! \fn void EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data)
 //  \brief Debugging/testing function
-void EquationOfState::EosTestRhoEgas(Real rho, Real egas, AthenaArray<Real> &data) {
+void EosTestRhoEgas(EquationOfState *peos, Real rho, Real egas, AthenaArray<Real> &data) {
   Real idn = 1./rho;
   Real ien = 1./egas;
-  data(0) = GetEosData(0, egas, rho) * egas; // pressure
+  data(0) = peos->GetEosData(0, egas, rho) * egas; // pressure
   data(1) = (data(0) + egas) * idn; // specific enthalpy
-  data(2) = GetEosData(2, data(0), rho) * data(0) * idn; // Asq
-  data(3) = (egas -  GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
-  data(4) = 1.0 - RiemannAsq(rho, data(1)) / data(2); // Asq error
+  data(2) = peos->GetEosData(2, data(0), rho) * data(0) * idn; // Asq
+  data(3) = (egas-peos->GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
+  data(4) = 1.0 - peos->RiemannAsq(rho, data(1)) / data(2); // Asq error
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::EosTestLoop()
 //  \brief Debugging/testing function
-void EquationOfState::EosTestLoop() {
+void EosTestLoop(EquationOfState *peos) {
   Real rho = 0;
   Real egas;
+  TableSize &ts = peos->ts;
   AthenaArray<Real> data;
   data.NewAthenaArray(5);
   std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
@@ -241,20 +241,15 @@ void EquationOfState::EosTestLoop() {
   std::cout << "Input egas (erg/cc):";
   std::cin >> egas;
   while (rho >= 0) {
-    Real Lrho = std::log10(rho*ts.rhoUnit);
-    std::cout << "log10[p/e(e/d,d)] = "
-              << ptable_->interpolate(0, std::log10(egas*ts.eUnit)-Lrho, Lrho) << "\n";
-    EosTestRhoEgas(rho, egas, data);
-    std::cout << "log10[e/p(p/d,d))] = "
-              << ptable_->interpolate(1, std::log10(data(0)*ts.eUnit)-Lrho, Lrho) << "\n";
+    EosTestRhoEgas(peos, rho, egas, data);
     std::cout << rho << ", " << egas << "\n";
     std::cout << "P(d, e)    , h(d, e)    , ASq(d, P)  ,PErr    , ASqErr\n";
     for (int i=0;i<5;i++) std::cout << data(i) << ", ";
     std::cout << "\n";
-    std::cout << "P, e, Asq, Asq: " << SimplePres(rho, egas) << ", "
-                                    << SimpleEgas(rho, data(0)) << ", "
-                                    << SimpleAsq(rho, data(0)) << ", "
-                                    << RiemannAsq(rho, data(1)) << "\n\n";
+    std::cout << "P, e, Asq, Asq: " << peos->SimplePres(rho, egas) << ", "
+                                    << peos->SimpleEgas(rho, data(0)) << ", "
+                                    << peos->SimpleAsq(rho, data(0)) << ", "
+                                    << peos->RiemannAsq(rho, data(1)) << "\n\n";
     std::cout << "Input rho (g/cc):";
     std::cin >> rho;
     std::cout << "Input egas (erg/cc):";
@@ -262,5 +257,3 @@ void EquationOfState::EosTestLoop() {
   }
   data.DeleteAthenaArray();
 }
-
-#endif
