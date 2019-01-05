@@ -9,13 +9,9 @@
 //  \brief defines class InterpTable2D
 //  Contains functions that implement an intpolated lookup table
 
-// C++ headers
-#include <stdexcept> // std::invalid_argument
-
 // Athena headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../coordinates/coordinates.hpp" // Coordinates
 
 class InterpTable2D {
 public:

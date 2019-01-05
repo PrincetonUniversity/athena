@@ -116,60 +116,68 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   dens_lim_field = pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
   espec_lim_field = pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
   ptable_ = new InterpTable2D();
+  ptable_ = pmy_block_->pmy_mesh->peos_table;
 
-  // Determine data type for table file
-  if (EOS_file_type.compare("binary") == 0) { //Raw binary
-    ReadBinaryTable(EOS_fn, ptable_, ts);
-  } else if (EOS_file_type.compare("hdf5") == 0) { // HDF5 table
-#ifndef HDF5OUTPUT
-    std::stringstream msg;
-    msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-        << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-#endif
-    HDF5TableLoader(EOS_fn.c_str(), ptable_, 4, var_names, espec_lim_field.c_str(),
-                    dens_lim_field.c_str());
-    ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
-    ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
-    ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
-    ts.EosRatios.NewAthenaArray(ts.nVar);
-    if (read_ratios) {
-      std::string ratio_field = pin->GetOrAddString("hydro", "EOS_ratio_field", "ratios");
-      int zero[] = {0};
-      int pnVar[] = {ts.nVar};
-      HDF5ReadRealArray(EOS_fn.c_str(), ratio_field.c_str(), 1, zero, pnVar,
-                        1, zero, pnVar, ts.EosRatios);
-      if (ts.EosRatios(0) <= 0) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-            << "Invalid ratio. " << EOS_fn.c_str() << ", " << ratio_field << ", "
-            << ts.EosRatios(0) << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+  // if owned by first meshblock
+  if (!pmy_block_->prev) {
+    pmy_block_->pmy_mesh->peos_table = new InterpTable2D();
+    ptable_ = pmy_block_->pmy_mesh->peos_table;
+    if (EOS_file_type.compare("binary") == 0) { //Raw binary
+      ReadBinaryTable(EOS_fn, ptable_, ts);
+    } else if (EOS_file_type.compare("hdf5") == 0) { // HDF5 table
+  #ifndef HDF5OUTPUT
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
+          << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+  #endif
+      HDF5TableLoader(EOS_fn.c_str(), ptable_, 4, var_names, espec_lim_field.c_str(),
+                      dens_lim_field.c_str());
+      ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
+      ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
+      ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
+      ts.EosRatios.NewAthenaArray(ts.nVar);
+      if (read_ratios) {
+        std::string ratio_field=pin->GetOrAddString("hydro", "EOS_ratio_field", "ratios");
+        int zero[] = {0};
+        int pnVar[] = {ts.nVar};
+        HDF5ReadRealArray(EOS_fn.c_str(), ratio_field.c_str(), 1, zero, pnVar,
+                          1, zero, pnVar, ts.EosRatios);
+        if (ts.EosRatios(0) <= 0) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
+              << "Invalid ratio. " << EOS_fn.c_str() << ", " << ratio_field << ", "
+              << ts.EosRatios(0) << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+      } else {
+        for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
+      }
+    } else if (EOS_file_type.compare("ascii") == 0) { // ASCII/text table
+      AthenaArray<Real> *pratios = NULL;
+      if (read_ratios) pratios = &ts.EosRatios;
+      ASCIITableLoader(EOS_fn.c_str(), ptable_, pratios);
+      ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
+      ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
+      ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
+      if (!read_ratios) {
+        for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
       }
     } else {
-      for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
+          << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
+          << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
     }
-  } else if (EOS_file_type.compare("ascii") == 0) { // ASCII/text table
-    AthenaArray<Real> *pratios = NULL;
-    if (read_ratios) pratios = &ts.EosRatios;
-    ASCIITableLoader(EOS_fn.c_str(), ptable_, pratios);
-    ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
-    ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
-    ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
-    if (!read_ratios) {
-      for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
-    }
-  } else {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-        << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
-        << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
-  ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.0);
-  ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
-  ts.hUnit = ts.eUnit/ts.rhoUnit;
+    ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.0);
+    ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
+    ts.hUnit = ts.eUnit/ts.rhoUnit;
+  } else {
+    //TableSize &prev_ts = pmy_block_->prev->peos->ts;
+    ts = pmy_block_->prev->peos->ts;
+  }
 
 //Debugging/testing code
 #ifdef EOSDEBUG1
