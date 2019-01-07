@@ -45,13 +45,6 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   throw std::runtime_error(msg.str().c_str());
   return -1.0;
 }
-Real EquationOfState::GetEosData(int kOut, Real var, Real rho) {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::GetEosData" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  throw std::runtime_error(msg.str().c_str());
-  return -1.0;
-}
 void EquationOfState::PrepEOS(ParameterInput *pin) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl

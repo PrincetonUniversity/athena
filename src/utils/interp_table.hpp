@@ -41,7 +41,7 @@ private:
 
 class EosTable {
 public:
-  EosTable(ParameterInput *pin);
+  explicit EosTable(ParameterInput *pin);
   ~EosTable();
   InterpTable2D table;
   Real GetEosData(int kOut, Real var, Real rho);

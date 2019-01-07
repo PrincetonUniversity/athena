@@ -9,10 +9,12 @@
 
 // These functions MUST be implemented in an additional file.
 //
-// EquationOfState::RiemannAsq(Real rho, Real hint)
-// EquationOfState::SimplePres(Real rho, Real egas)
-// EquationOfState::SimpleEgas(Real rho, Real pres)
-// EquationOfState::SimpleAsq(Real rho, Real pres)
+// Real EquationOfState::RiemannAsq(Real rho, Real hint)
+// Real EquationOfState::SimplePres(Real rho, Real egas)
+// Real EquationOfState::SimpleEgas(Real rho, Real pres)
+// Real EquationOfState::SimpleAsq(Real rho, Real pres)
+// void EquationOfState::PrepEOS(ParameterInput *pin);
+// void EquationOfState::CleanEOS();
 
 // C/C++ headers
 #include <cmath>   // sqrt()
@@ -54,17 +56,15 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
           << "EOS table data uninitialized. Should be initialized by mesh." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    PrepEOS(pin);
-    gamma_ = std::sqrt(-1);
   }
+  gamma_ = std::sqrt(-1);
+  PrepEOS(pin);
 }
 
 // destructor
 
 EquationOfState::~EquationOfState() {
-  if (EOS_TABLE_ENABLED) {
-    CleanEOS();
-  }
+  CleanEOS();
 }
 
 //----------------------------------------------------------------------------------------

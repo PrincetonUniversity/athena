@@ -126,7 +126,6 @@ class EquationOfState {
   Real SimplePres(Real rho, Real egas);
   Real SimpleEgas(Real rho, Real pres);
   Real SimpleAsq(Real rho, Real pres);
-  Real GetEosData(int kOut, Real var, Real rho);
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}

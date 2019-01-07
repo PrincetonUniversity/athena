@@ -161,24 +161,16 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   return asq_(rho, T);
 }
 
-Real EquationOfState::GetEosData(int kOut, Real var, Real rho) {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::GetEosData" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  throw std::runtime_error(msg.str().c_str());
-  return -1.0;
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
 //  \brief No-op initialize.
-void PrepEOS(ParameterInput *pin) {
+void EquationOfState::PrepEOS(ParameterInput *pin) {
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::CleanEOS()
 //  \brief No-op clean up.
-void CleanEOS() {
+void EquationOfState::CleanEOS() {
   return;
 }

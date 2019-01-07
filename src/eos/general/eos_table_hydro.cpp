@@ -67,8 +67,10 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
 void EquationOfState::PrepEOS(ParameterInput *pin) {
 //Debugging/testing code
 #ifdef EOSDEBUG1
-  std::cout << "Eos table: " << ptable->nVar << ", " << ptable->nRho << ", " << ptable->nEgas << "\n";
-  std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax << "\n";
+  std::cout << "Eos table: " << ptable->nVar << ", " << ptable->nRho << ", "
+            << ptable->nEgas << "\n";
+  std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax
+            << "\n";
   std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
             << ptable->logEgasMax << "\n";
   std::cout << "Ratios: ";
@@ -112,7 +114,8 @@ void EosTestRhoEgas(EquationOfState *peos, Real rho, Real egas, AthenaArray<Real
   data(0) = peos->ptable->GetEosData(0, egas, rho) * egas; // pressure
   data(1) = (data(0) + egas) * idn; // specific enthalpy
   data(2) = peos->ptable->GetEosData(2, data(0), rho) * data(0) * idn; // Asq
-  data(3) = (egas-peos->ptable->GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
+  // PrimToCons error
+  data(3) = (egas-peos->ptable->GetEosData(1, data(0), rho) * data(0)) * ien;
   data(4) = 1.0 - peos->RiemannAsq(rho, data(1)) / data(2); // Asq error
 }
 
