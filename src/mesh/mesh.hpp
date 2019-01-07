@@ -181,7 +181,7 @@ public:
   bool adaptive, multilevel;
   int gflag;
   int turb_flag; // turbulence flag
-  InterpTable2D *peos_table;
+  EosTable *peos_table;
 
   MeshBlock *pblock;
 

@@ -1,6 +1,3 @@
-#ifndef INPUTS_ASCII_TABLE_READER_HPP_
-#define INPUTS_ASCII_TABLE_READER_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -26,7 +23,7 @@
 //                            AthenaArray<Real>* pratios)
 //  \brief Load a table stored in ASCII form and initialize an interpolated table.
 //         Fastest index corresponds to column
-void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
+void ASCIITableLoader(const char *filename, InterpTable2D &table,
                       AthenaArray<Real>* pratios) {
   std::ifstream file(filename, std::ios::in);
   std::string line;
@@ -45,7 +42,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
         << "Invalid shape: (" << nvar << ", " << nx2 << ", " << nx1 << ")" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  ptable->SetSize(nvar, nx2, nx1);
+  table.SetSize(nvar, nx2, nx1);
 
   // Read and store x2lim
   Real min_, max_;
@@ -60,7 +57,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
         << "x2min>=x2max." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  ptable->SetX2lim(min_, max_);
+  table.SetX2lim(min_, max_);
 
   // Read and store x1lim
   while (std::getline(file, line) && (line[0] == '#')); // skip comments
@@ -74,7 +71,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
         << "x1min>=x1max." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  ptable->SetX1lim(min_, max_);
+  table.SetX1lim(min_, max_);
 
   // read ratios for each (#=nvar) x2
   if (pratios) {
@@ -92,10 +89,8 @@ void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
     while (std::getline(file, line) && (line[0] == '#'));
     std::stringstream stream(line);
     for (int col = 0; col < nx1; ++col) {
-      stream >> ptable->data(row, col);
+      stream >> table.data(row, col);
     }
   }
   return;
 }
-
-#endif // INPUTS_ASCII_TABLE_READER_HPP_

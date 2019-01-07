@@ -39,4 +39,17 @@ private:
   Real x2norm_;
 };
 
+class EosTable {
+public:
+  EosTable(ParameterInput *pin);
+  ~EosTable();
+  InterpTable2D table;
+  Real GetEosData(int kOut, Real var, Real rho);
+  Real logRhoMin, logRhoMax;
+  Real logEgasMin, logEgasMax;
+  Real rhoUnit, eUnit, hUnit;
+  int nRho, nEgas, nVar;
+  AthenaArray<Real> EosRatios;
+};
+
 #endif //UTILS_INTERP_TABLE_HPP_

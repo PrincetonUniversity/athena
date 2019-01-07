@@ -22,20 +22,7 @@
 // Declarations
 class Hydro;
 class ParameterInput;
-class InterpTable2D;
 struct FaceField;
-
-//----------------------------------------------------------------------------------------
-//! \struct TableSize
-//  \brief extent and number of cells in an EOS table
-
-typedef struct TableSize {
-  Real logRhoMin, logRhoMax;
-  Real logEgasMin, logEgasMax;
-  Real rhoUnit, eUnit, hUnit;
-  int nRho, nEgas, nVar;
-  AthenaArray<Real> EosRatios;
-} TableSize;
 
 //! \class EquationOfState
 //  \brief data and functions that implement EoS
@@ -145,6 +132,7 @@ class EquationOfState {
   Real GetPressureFloor() const {return pressure_floor_;}
   void PrepEOS(ParameterInput *pin);
   void CleanEOS();
+  EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   Real GetGamma() const {
     throw std::invalid_argument("GetGamma is not defined for general EOS.");
@@ -152,9 +140,6 @@ class EquationOfState {
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
 #endif
-#if EOS_TABLE_ENABLED
-  TableSize ts;
-#endif // EOS_TABLE_ENABLED
 
  private:
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
@@ -172,7 +157,6 @@ class EquationOfState {
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
-  InterpTable2D* ptable_;                // pointer to EOS table data
 };
 
 #endif // EOS_EOS_HPP_

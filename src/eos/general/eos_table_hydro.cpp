@@ -22,8 +22,7 @@
 #include "../../parameter_input.hpp"
 #include "../../field/field.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../../inputs/hdf5_reader.hpp"
-#include "../../inputs/ascii_table_reader.hpp"
+#include "../../utils/interp_table.hpp"
 
 // this class header
 #include "../eos.hpp"
@@ -33,39 +32,25 @@
 
 void EosTestLoop(EquationOfState *peos);
 
-// Order of datafields for HDF5 EOS tables
-const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)",
-                           "asq*rho/h(h/rho,rho)"};
-
-//----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::GetEosData(int kOut, Real var, Real rho)
-//  \brief Gets interpolated data from EOS table assuming 'var' has dimensions
-//         of energy per volume.
-Real EquationOfState::GetEosData(int kOut, Real var, Real rho) {
-  Real x1 = std::log10(rho * ts.rhoUnit);
-  Real x2 = std::log10(var * ts.EosRatios(kOut) * ts.eUnit) - x1;
-  return std::pow((Real)10, ptable_->interpolate(kOut, x2, x1));
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
 //  \brief Return interpolated gas pressure
 Real EquationOfState::SimplePres(Real rho, Real egas) {
-  return GetEosData(0, egas, rho) * egas;
+  return ptable->GetEosData(0, egas, rho) * egas;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
 //  \brief Return interpolated internal energy density
 Real EquationOfState::SimpleEgas(Real rho, Real pres) {
-  return GetEosData(1, pres, rho) * pres;
+  return ptable->GetEosData(1, pres, rho) * pres;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
 //  \brief Return interpolated adiabatic sound speed squared
 Real EquationOfState::SimpleAsq(Real rho, Real pres) {
-  return GetEosData(2, pres, rho) * pres / rho;
+  return ptable->GetEosData(2, pres, rho) * pres / rho;
 }
 
 //----------------------------------------------------------------------------------------
@@ -73,126 +58,27 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
 //  \brief Return interpolated adiabatic sound speed squared for use in
 //         Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  return std::pow((Real)10, ptable_->interpolate(3, std::log10(hint*ts.hUnit),
-                                                 std::log10(rho*ts.rhoUnit))) * hint;
+  return std::pow((Real)10, ptable->table.interpolate(3, std::log10(hint*ptable->hUnit),
+                                                 std::log10(rho*ptable->rhoUnit))) * hint;
 }
-
-//----------------------------------------------------------------------------------------
-//! \fn void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts)
-//  \brief Read data from binary EOS table and initialize interpolated table.
-void ReadBinaryTable(std::string fn, InterpTable2D *ptable, TableSize &ts) {
-  std::ifstream eos_table(fn.c_str(), std::ios::binary);
-  Real egasOverPres;
-  if (eos_table.is_open()) {
-    eos_table.seekg(0, std::ios::beg);
-    eos_table.read(reinterpret_cast<char*>(&ts.nVar), sizeof(ts.nVar));
-    eos_table.read(reinterpret_cast<char*>(&ts.nEgas), sizeof(ts.nEgas));
-    eos_table.read(reinterpret_cast<char*>(&ts.nRho), sizeof(ts.nRho));
-    eos_table.read(reinterpret_cast<char*>(&ts.logEgasMin), sizeof(ts.logEgasMin));
-    eos_table.read(reinterpret_cast<char*>(&ts.logEgasMax), sizeof(ts.logEgasMax));
-    eos_table.read(reinterpret_cast<char*>(&ts.logRhoMin), sizeof(ts.logRhoMin));
-    eos_table.read(reinterpret_cast<char*>(&ts.logRhoMax), sizeof(ts.logRhoMax));
-    ts.EosRatios.NewAthenaArray(ts.nVar);
-    eos_table.read(reinterpret_cast<char*>(ts.EosRatios.data()),
-                   ts.nVar * sizeof(ts.logRhoMin));
-    ptable->SetSize(ts.nVar, ts.nEgas, ts.nRho);
-    ptable->SetX1lim(ts.logRhoMin, ts.logRhoMax);
-    ptable->SetX2lim(ts.logEgasMin, ts.logEgasMax);
-    eos_table.read(reinterpret_cast<char*>(ptable->data.data()),
-                   ts.nVar * ts.nRho * ts.nEgas * sizeof(ts.logRhoMin));
-    eos_table.close();
-  }
-  else throw std::invalid_argument("Unable to open eos table: " + fn);
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
 //  \brief Read data and initialize interpolated table.
 void EquationOfState::PrepEOS(ParameterInput *pin) {
-  std::string EOS_fn, EOS_file_type, dens_lim_field, espec_lim_field;
-  EOS_fn = pin->GetString("hydro", "EOS_file_name");
-  EOS_file_type = pin->GetString("hydro", "EOS_file_type");
-  bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
-  dens_lim_field = pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
-  espec_lim_field = pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
-  ptable_ = new InterpTable2D();
-  ptable_ = pmy_block_->pmy_mesh->peos_table;
-
-  // if owned by first meshblock
-  if (!pmy_block_->prev) {
-    pmy_block_->pmy_mesh->peos_table = new InterpTable2D();
-    ptable_ = pmy_block_->pmy_mesh->peos_table;
-    if (EOS_file_type.compare("binary") == 0) { //Raw binary
-      ReadBinaryTable(EOS_fn, ptable_, ts);
-    } else if (EOS_file_type.compare("hdf5") == 0) { // HDF5 table
-  #ifndef HDF5OUTPUT
-      std::stringstream msg;
-      msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-          << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-  #endif
-      HDF5TableLoader(EOS_fn.c_str(), ptable_, 4, var_names, espec_lim_field.c_str(),
-                      dens_lim_field.c_str());
-      ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
-      ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
-      ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
-      ts.EosRatios.NewAthenaArray(ts.nVar);
-      if (read_ratios) {
-        std::string ratio_field=pin->GetOrAddString("hydro", "EOS_ratio_field", "ratios");
-        int zero[] = {0};
-        int pnVar[] = {ts.nVar};
-        HDF5ReadRealArray(EOS_fn.c_str(), ratio_field.c_str(), 1, zero, pnVar,
-                          1, zero, pnVar, ts.EosRatios);
-        if (ts.EosRatios(0) <= 0) {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-              << "Invalid ratio. " << EOS_fn.c_str() << ", " << ratio_field << ", "
-              << ts.EosRatios(0) << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
-      } else {
-        for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
-      }
-    } else if (EOS_file_type.compare("ascii") == 0) { // ASCII/text table
-      AthenaArray<Real> *pratios = NULL;
-      if (read_ratios) pratios = &ts.EosRatios;
-      ASCIITableLoader(EOS_fn.c_str(), ptable_, pratios);
-      ptable_->GetSize(ts.nVar, ts.nEgas, ts.nRho);
-      ptable_->GetX2lim(ts.logEgasMin, ts.logEgasMax);
-      ptable_->GetX1lim(ts.logRhoMin, ts.logRhoMax);
-      if (!read_ratios) {
-        for (int i=0; i<ts.nVar; ++i) ts.EosRatios(i) = 1.0;
-      }
-    } else {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-          << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
-          << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-
-    ts.rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.0);
-    ts.eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
-    ts.hUnit = ts.eUnit/ts.rhoUnit;
-  } else {
-    //TableSize &prev_ts = pmy_block_->prev->peos->ts;
-    ts = pmy_block_->prev->peos->ts;
-  }
-
 //Debugging/testing code
 #ifdef EOSDEBUG1
-  std::cout << "Eos table: " << ts.nVar << ", " << ts.nRho << ", " << ts.nEgas << "\n";
-  std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
-  std::cout << "logEgasMin, logEgasMax: " << ts.logEgasMin << ", "
-            << ts.logEgasMax << "\n";
+  std::cout << "Eos table: " << ptable->nVar << ", " << ptable->nRho << ", " << ptable->nEgas << "\n";
+  std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax << "\n";
+  std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
+            << ptable->logEgasMax << "\n";
   std::cout << "Ratios: ";
-  for (int i=0;i<ts.nVar;i++) std::cout << ts.EosRatios(i) << ", ";
+  for (int i=0;i<ptable->nVar;i++) std::cout << ptable->EosRatios(i) << ", ";
   std::cout << "\n";
-  for (int i=0;i<ts.nVar;i++) {
+  for (int i=0;i<ptable->nVar;i++) {
     std::cout << "var = " << i << "\n";
-    for (int j=0;j<ts.nRho;j++) {
-      for (int k=0;k<ts.nEgas;k++) {
-        std::cout << std::pow((Real) 10, ptable_->data(i,j,k)) << " ";
+    for (int j=0;j<ptable->nRho;j++) {
+      for (int k=0;k<ptable->nEgas;k++) {
+        std::cout << std::pow((Real) 10, ptable->table.data(i,j,k)) << " ";
       }
       std::cout << "\n";
     }
@@ -202,8 +88,11 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 
 //Debugging/testing code
 #ifdef EOSDEBUG0
-  std::cout << "prepEOS: " << EOS_fn << ", " << ts.nVar << ", " << ts.nEgas
-  <<  ", " << ts.nRho << "\n" << "p(1e-7,1e-7)= " << GetEosData(0, 1e-7, 1e-7) << "\n";
+  std::cout << "prepEOS: " << ptable->nVar << ", " << ptable->nEgas
+            <<  ", " << ptable->nRho << "\n";
+  std::cout << "eUnit, rhoUnit, hUnit: " << ptable->eUnit << ", " << ptable->rhoUnit
+            << ", " << ptable->hUnit << '\n';
+  std::cout << "p(1e-7,1e-7)= " << ptable->GetEosData(0, 1e-7, 1e-7) << "\n";
   EosTestLoop(this);
 #endif
 }
@@ -212,8 +101,6 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 //! \fn void EquationOfState::CleanEOS()
 //  \brief Clear memory/objects used to store EOS data
 void EquationOfState::CleanEOS() {
-  ts.EosRatios.DeleteAthenaArray();
-  ptable_->~InterpTable2D();
 }
 
 //----------------------------------------------------------------------------------------
@@ -222,10 +109,10 @@ void EquationOfState::CleanEOS() {
 void EosTestRhoEgas(EquationOfState *peos, Real rho, Real egas, AthenaArray<Real> &data) {
   Real idn = 1./rho;
   Real ien = 1./egas;
-  data(0) = peos->GetEosData(0, egas, rho) * egas; // pressure
+  data(0) = peos->ptable->GetEosData(0, egas, rho) * egas; // pressure
   data(1) = (data(0) + egas) * idn; // specific enthalpy
-  data(2) = peos->GetEosData(2, data(0), rho) * data(0) * idn; // Asq
-  data(3) = (egas-peos->GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
+  data(2) = peos->ptable->GetEosData(2, data(0), rho) * data(0) * idn; // Asq
+  data(3) = (egas-peos->ptable->GetEosData(1, data(0), rho) * data(0)) * ien; // PrimToCons error
   data(4) = 1.0 - peos->RiemannAsq(rho, data(1)) / data(2); // Asq error
 }
 
@@ -235,14 +122,15 @@ void EosTestRhoEgas(EquationOfState *peos, Real rho, Real egas, AthenaArray<Real
 void EosTestLoop(EquationOfState *peos) {
   Real rho = 0;
   Real egas;
-  TableSize &ts = peos->ts;
+  EosTable *ptable = peos->ptable;
   AthenaArray<Real> data;
   data.NewAthenaArray(5);
-  std::cout << "logRhoMin, logRhoMax: " << ts.logRhoMin << ", " << ts.logRhoMax << "\n";
-  std::cout << "logEgasMin, logEgasMax: " << ts.logEgasMin << ", "
-            << ts.logEgasMax << "\n";
+  std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax
+            << "\n";
+  std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
+            << ptable->logEgasMax << "\n";
   std::cout << "EosRatios = ";
-  for (int i=0; i<ts.nVar; ++i) std::cout << ts.EosRatios(i) << ", ";
+  for (int i=0; i < ptable->nVar; ++i) std::cout << ptable->EosRatios(i) << ", ";
   std::cout << "\n";
   std::cout << "Input rho (g/cc):";
   std::cin >> rho;

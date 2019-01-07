@@ -15,7 +15,7 @@
 #include "../utils/interp_table.hpp" // InterpTable2D
 
 // Declarations
-void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
+void ASCIITableLoader(const char *filename, InterpTable2D &table,
                       AthenaArray<Real>* pratios=NULL);
 
 #endif // INPUTS_ASCII_TABLE_READER_HPP_

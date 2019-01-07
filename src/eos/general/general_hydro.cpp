@@ -17,6 +17,11 @@
 // C/C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
+#include <iostream> // ifstream
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
 #include "../eos.hpp"
@@ -31,6 +36,7 @@
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
+  ptable = pmb->pmy_mesh->peos_table;
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
   if (pin->DoesParameterExist("hydro","efloor")) {
     energy_floor_ = pin->GetReal("hydro","efloor");
@@ -42,6 +48,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
     pin->SetReal("hydro","efloor", energy_floor_);
   }
   if (EOS_TABLE_ENABLED) {
+    if (!ptable) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
+          << "EOS table data uninitialized. Should be initialized by mesh." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     PrepEOS(pin);
     gamma_ = std::sqrt(-1);
   }
