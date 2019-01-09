@@ -1,5 +1,5 @@
 """
-Regression test for general EOS 1D Sod shock tube.
+Regression test for general EOS 1D Sod shock tube with ASCII plain-text tables.
 """
 
 # Modules
@@ -17,13 +17,6 @@ _gammas = [1.1, 1.4, 5./3.]
 
 
 def prepare(**kwargs):
-    """
-    Configure and make the executable.
-
-    This function is called first. It is responsible for calling the configure script and
-    make to create an executable. It takes no inputs and produces no outputs.
-    """
-
     athena.configure(
                      prob='shock_tube',
                      coord='cartesian',
@@ -61,13 +54,6 @@ def prepare(**kwargs):
 
 
 def run(**kwargs):
-    """``
-    Run the executable.
-
-    This function is called second. It is responsible for calling the Athena++ binary in
-    such a way as to produce testable output. It takes no inputs and produces no outputs.
-    """
-
     arguments0 = ['hydro/gamma={0:}', 'job/problem_id=Sod_ideal_{1:}',
                   'time/ncycle_out=0', 'output1/file_type=vtk']
     for i, g in enumerate(_gammas):
@@ -113,15 +99,6 @@ def run(**kwargs):
 
 
 def analyze():
-    """
-    Analyze the output and determine if the test passes.
-
-    This function is called third; nothing from this file is called after it. It is
-    responsible for reading whatever data it needs and making a judgment about whether or
-    not the test passes. It takes no inputs. Output should be True (test passes) or False
-    (test fails).
-    """
-
     analyze_status = True
     for i, g in enumerate(_gammas):
         for t in [10, 26]:

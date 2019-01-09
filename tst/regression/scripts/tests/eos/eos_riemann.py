@@ -33,13 +33,6 @@ _thresh = [dict(zip(['rho', 'press', 'vel'], i)) for i in _thresh]
 
 
 def prepare(**kwargs):
-    """
-    Configure and make the executable.
-
-    This function is called first. It is responsible for calling the configure script and
-    make to create an executable. It takes no inputs and produces no outputs.
-    """
-
     athena.configure(
                      prob='hydrogen_shock_tube',
                      coord='cartesian',
@@ -50,13 +43,6 @@ def prepare(**kwargs):
 
 
 def run(**kwargs):
-    """
-    Run the executable.
-
-    This function is called second. It is responsible for calling the Athena++ binary in
-    such a way as to produce testable output. It takes no inputs and produces no outputs.
-    """
-
     for n, test in enumerate(_tests):
         args = [i + '={0:}'.format(test[i]) for i in test]
         args += ['job/problem_id=eos_riemann_{0:02d}'.format(n), 'time/ncycle_out=0']
@@ -64,15 +50,6 @@ def run(**kwargs):
 
 
 def analyze():
-    """
-    Analyze the output and determine if the test passes.
-
-    This function is called third; nothing from this file is called after it. It is
-    responsible for reading whatever data it needs and making a judgment about whether or
-    not the test passes. It takes no inputs. Output should be True (test passes) or False
-    (test fails).
-    """
-
     analyze_status = True
     for n, state in enumerate(_states):
         t = 1
