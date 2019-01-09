@@ -27,6 +27,7 @@ def prepare(**kwargs):
     src = os.path.join('bin', 'athena')
     dst = os.path.join('bin', 'athena_eos_hllc')
     move(src, dst)
+    os.system('mv obj obj_eos_hllc')
 
     athena.configure(
                      prob='shock_tube',
@@ -38,6 +39,7 @@ def prepare(**kwargs):
     src = os.path.join('bin', 'athena')
     dst = os.path.join('bin', 'athena_H')
     move(src, dst)
+    os.system('mv obj obj_H')
 
     athena.configure(
                      prob='shock_tube',
@@ -58,8 +60,10 @@ def run(**kwargs):
                   'time/ncycle_out=0', 'output1/file_type=vtk']
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
-        athena.run('hydro/athinput.sod', arguments)
+        athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='adiabatic')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_eos_hllc obj')
     src = os.path.join('bin', 'athena_eos_hllc')
     dst = os.path.join('bin', 'athena')
     move(src, dst)
@@ -72,9 +76,9 @@ def run(**kwargs):
         ['hydro/EOS_file_name=gamma_is_{0:.3f}.tab', 'hydro/EOS_file_type=ascii'])
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
-        athena.run('hydro/athinput.sod', arguments)
+        athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='eos_hllc')
         arguments = [j.format(g, i) for j in arguments1]
-        athena.run('hydro/athinput.sod', arguments)
+        athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='eos_hllc')
     # now run with simple H table
     arguments0[0] = 'hydro/gamma=1.6667'
     arguments0[1] = 'job/problem_id=Sod_eos_H_binary'
@@ -88,14 +92,17 @@ def run(**kwargs):
     tmp = ['problem/' + i + '={0:}'for i in tmp] + ['time/tlim={0:}']
     tmp = zip(tmp, [1e-07, 0.00, 3e-8, 1.25e-8, 0.00, 1e-9, .25])
     ic = [i[0].format(i[1]) for i in tmp]
-    athena.run('hydro/athinput.sod', ic + arguments0)
-    athena.run('hydro/athinput.sod', ic + arguments1)
+    athena.run('hydro/athinput.sod', ic + arguments0, lcov_test_suffix='eos_hllc')
+    athena.run('hydro/athinput.sod', ic + arguments1, lcov_test_suffix='eos_hllc')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_H obj')
     src = os.path.join('bin', 'athena_H')
     dst = os.path.join('bin', 'athena')
     move(src, dst)
     arguments0[1] = 'job/problem_id=Sod_eos_H'
-    athena.run('hydro/athinput.sod', ic + arguments0[:-2])
+    athena.run('hydro/athinput.sod', ic + arguments0[:-2], lcov_test_suffix='H')
+    return 'skip_lcov'
 
 
 def analyze():
