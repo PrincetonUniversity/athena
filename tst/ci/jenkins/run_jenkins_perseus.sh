@@ -22,8 +22,8 @@ athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
 pip install -q --user flake8
-pip install -q --user h5py    # outputs/all_outputs.py uses athena_read.athdf() reader, also pgen/hdf5* tests
-pip install -q --user scipy   # necessary for eos/ regression tests
+pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
@@ -76,6 +76,7 @@ time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py eos --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
@@ -179,6 +180,7 @@ time python ./run_tests.py curvilinear --config=--cxx=icc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icc --silent
 time python ./run_tests.py diffusion --config=--cxx=icc --silent
 time python ./run_tests.py symmetry --config=--cxx=icc --silent
+time python ./run_tests.py eos --config=--cxx=icc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icc --silent
