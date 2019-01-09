@@ -21,8 +21,9 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
 pip install -q --user flake8
+pip install -q --user h5py    # outputs/all_outputs.py uses athena_read.athdf() reader, also pgen/hdf5* tests
+pip install -q --user scipy   # necessary for eos/ regression tests
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
