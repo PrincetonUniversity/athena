@@ -50,6 +50,7 @@ time python3 run_tests.py sr --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX --silent
 time python3 run_tests.py symmetry --config=--cxx=$TEMP_CXX --silent
+time python3 run_tests.py eos --config=--cxx=$TEMP_CXX --silent
 
 # mhd/ currently contains the longest set of tests. The following command often times-out after 10 m on Travis CI
 # time python3 run_tests.py mhd --config=--cxx=$TEMP_CXX --silent
