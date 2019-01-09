@@ -106,8 +106,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
       // apply pressure/energy floor, correct total energy
       u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
-      // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point
-      //       i.e. not robust to underflow
+      // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due to
+      //       floating point errors/catastrophic cancellation
       w_p = SimplePres(u_d, u_e - ke);
     }
   }}
