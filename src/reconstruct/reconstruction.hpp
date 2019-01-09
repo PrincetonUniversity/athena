@@ -41,48 +41,46 @@ public:
 
   // functions
   // linear transformations of vectors between primitive and characteristic variables
-  static void LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
-    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-    AthenaArray<Real> &vect);
-  static void RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
-    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-    AthenaArray<Real> &vect);
+  void LeftEigenmatrixDotVector(const int ivx, const int il, const int iu,
+    const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect);
+  void RightEigenmatrixDotVector(const int ivx, const int il, const int iu,
+    const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect);
 
   // reconstruction functions of various orders in each dimension
-  static void DonorCellX1(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void DonorCellX1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void DonorCellX2(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void DonorCellX2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void DonorCellX3(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void DonorCellX3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX1(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseParabolicX1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX2(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseParabolicX2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX3(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  void PiecewiseParabolicX3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:

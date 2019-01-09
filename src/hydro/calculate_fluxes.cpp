@@ -82,11 +82,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int j=jl; j<=ju; ++j) {
       // reconstruct L/R states
       if (order == 1) {
-        pmb->precon->DonorCellX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        pmb->precon->DonorCellX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX1(pmb, k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
 
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
@@ -171,20 +171,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int k=kl; k<=ku; ++k) {
       // reconstruct the first row
       if (order == 1) {
-        pmb->precon->DonorCellX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->DonorCellX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX2(pmb, k, js-1, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       }
       for (int j=js; j<=je+1; ++j) {
         // reconstruct L/R states at j
         if (order == 1) {
-          pmb->precon->DonorCellX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->DonorCellX2(k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
-          pmb->precon->PiecewiseLinearX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->PiecewiseLinearX2(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX2(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
@@ -264,20 +264,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
       if (order == 1) {
-        pmb->precon->DonorCellX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->DonorCellX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
-        pmb->precon->PiecewiseLinearX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX3(pmb, ks-1, j, il, iu, w, bcc, wl_, wr_);
+        pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
         if (order == 1) {
-          pmb->precon->DonorCellX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->DonorCellX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
-          pmb->precon->PiecewiseLinearX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->PiecewiseLinearX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX3(pmb, k, j, il, iu, w, bcc, wlb_, wr_);
+          pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY

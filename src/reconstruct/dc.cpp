@@ -17,8 +17,8 @@
 //! \fn Reconstruction::DonorCellX1()
 //  \brief reconstruct L/R surfaces of the i-th cells
 
-void Reconstruction::DonorCellX1(MeshBlock *pmb, const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -45,8 +45,8 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb, const int k, const int j,
 //! \fn Reconstruction::DonorCellX2()
 //  \brief
 
-void Reconstruction::DonorCellX2(MeshBlock *pmb, const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -73,8 +73,8 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb, const int k, const int j,
 //! \fn Reconstruction::DonorCellX3()
 //  \brief
 
-void Reconstruction::DonorCellX3(MeshBlock *pmb, const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {

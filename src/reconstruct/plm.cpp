@@ -20,17 +20,17 @@
 //! \fn Reconstruction::PiecewiseLinearX1()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
+void Reconstruction::PiecewiseLinearX1(const int k, const int j,
   const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
-  Coordinates *pco = pmb->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
-  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
-  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
-  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
-  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
+  bx.InitWithShallowCopy(scr01_i_);
+  wc.InitWithShallowCopy(scr1_ni_);
+  dwl.InitWithShallowCopy(scr2_ni_);
+  dwr.InitWithShallowCopy(scr3_ni_);
+  dwm.InitWithShallowCopy(scr4_ni_);
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -58,13 +58,13 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
-  if (pmb->precon->characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwr);
+  if (characteristic_reconstruction) {
+    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,dwl);
+    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,dwr);
   }
 
   // Apply van Leer limiter for uniform grid
-  if (pmb->precon->uniform_limiter[X1DIR]) {
+  if (uniform_limiter[X1DIR]) {
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -90,8 +90,8 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
   }
 
     // Project limited slope back to primitive variables, if necessary
-    if (pmb->precon->characteristic_reconstruction) {
-      RightEigenmatrixDotVector(pmb,IVX,il,iu,bx,wc,dwm);
+    if (characteristic_reconstruction) {
+      RightEigenmatrixDotVector(IVX,il,iu,bx,wc,dwm);
     }
 
   // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
@@ -103,13 +103,13 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
     }
   }
 
-  if (pmb->precon->characteristic_reconstruction) {
+  if (characteristic_reconstruction) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
       // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
-      pmb->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
-      pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+      pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+      pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
   }
   return;
@@ -119,17 +119,17 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb, const int k, const int j,
 //! \fn Reconstruction::PiecewiseLinearX2()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
+void Reconstruction::PiecewiseLinearX2(const int k, const int j,
   const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
-  Coordinates *pco = pmb->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
-  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
-  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
-  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
-  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
+  bx.InitWithShallowCopy(scr01_i_);
+  wc.InitWithShallowCopy(scr1_ni_);
+  dwl.InitWithShallowCopy(scr2_ni_);
+  dwr.InitWithShallowCopy(scr3_ni_);
+  dwm.InitWithShallowCopy(scr4_ni_);
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -158,13 +158,13 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
-  if (pmb->precon->characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
+  if (characteristic_reconstruction) {
+    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,dwl);
+    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,dwr);
   }
 
   // Apply van Leer limiter for uniform grid
-  if (pmb->precon->uniform_limiter[X2DIR]) {
+  if (uniform_limiter[X2DIR]) {
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -190,8 +190,8 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
   }
 
   // Project limited slope back to primitive variables, if necessary
-  if (pmb->precon->characteristic_reconstruction) {
-    RightEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwm);
+  if (characteristic_reconstruction) {
+    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,dwm);
   }
 
   // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
@@ -205,12 +205,12 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
     }
   }
 
-  if (pmb->precon->characteristic_reconstruction) {
+  if (characteristic_reconstruction) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
-      pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);
-      pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+      pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i);
+      pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
   }
   return;
@@ -220,17 +220,17 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb, const int k, const int j,
 //! \fn Reconstruction::PiecewiseLinearX3()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
+void Reconstruction::PiecewiseLinearX3(const int k, const int j,
   const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
-  Coordinates *pco = pmb->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(pmb->precon->scr01_i_);
-  wc.InitWithShallowCopy(pmb->precon->scr1_ni_);
-  dwl.InitWithShallowCopy(pmb->precon->scr2_ni_);
-  dwr.InitWithShallowCopy(pmb->precon->scr3_ni_);
-  dwm.InitWithShallowCopy(pmb->precon->scr4_ni_);
+  bx.InitWithShallowCopy(scr01_i_);
+  wc.InitWithShallowCopy(scr1_ni_);
+  dwl.InitWithShallowCopy(scr2_ni_);
+  dwr.InitWithShallowCopy(scr3_ni_);
+  dwm.InitWithShallowCopy(scr4_ni_);
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -258,14 +258,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
-  if (pmb->precon->characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwr);
+  if (characteristic_reconstruction) {
+    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwl);
+    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwr);
   }
 
 
   // Apply van Leer limiter for uniform grid
-  if (pmb->precon->uniform_limiter[X3DIR]) {
+  if (uniform_limiter[X3DIR]) {
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -291,8 +291,8 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
   }
 
   // Project limited slope back to primitive variables, if necessary
-  if (pmb->precon->characteristic_reconstruction) {
-    RightEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwm);
+  if (characteristic_reconstruction) {
+    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwm);
   }
 
   // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
@@ -306,12 +306,12 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb, const int k, const int j,
     }
   }
 
-  if (pmb->precon->characteristic_reconstruction) {
+  if (characteristic_reconstruction) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
-      pmb->peos->ApplyPrimitiveFloors(wl, k, j, i);
-      pmb->peos->ApplyPrimitiveFloors(wr, k, j, i);
+      pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i);
+      pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
   }
   return;
