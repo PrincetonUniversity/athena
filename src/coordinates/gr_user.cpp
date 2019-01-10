@@ -24,9 +24,10 @@
 // Declarations
 static Real Determinant(const AthenaArray<Real> &g);
 static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
-    Real a31, Real a32, Real a33);
+                        Real a31, Real a32, Real a33);
 static Real Determinant(Real a11, Real a12, Real a21, Real a22);
-static void CalculateTransformation(const AthenaArray<Real> &g,
+static void CalculateTransformation(
+    const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation);
 
 //----------------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ static void CalculateTransformation(const AthenaArray<Real> &g,
 //   flag: true if object is for coarse grid only in an AMR calculation
 
 GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag) {
+    : Coordinates(pmb, pin, flag) {
   // Set object names
   pmy_block = pmb;
   Mesh *pm = pmy_block->pmy_mesh;
@@ -493,7 +494,7 @@ GRUser::~GRUser() {
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void GRUser::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths) {
+                         AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^1
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -503,7 +504,7 @@ void GRUser::Edge1Length(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths) {
+                         AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^2
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -513,7 +514,7 @@ void GRUser::Edge2Length(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths) {
+                         AthenaArray<Real> &lengths) {
   // \Delta L \approx \sqrt{-g} \Delta x^3
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -544,7 +545,7 @@ Real GRUser::GetEdge3Length(const int k, const int j, const int i) {
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void GRUser::CenterWidth1(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx1) {
+                          AthenaArray<Real> &dx1) {
   // \Delta W \approx \sqrt{g_{11}} \Delta x^1
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -554,7 +555,7 @@ void GRUser::CenterWidth1(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::CenterWidth2(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx2) {
+                          AthenaArray<Real> &dx2) {
   // \Delta W \approx \sqrt{g_{22}} \Delta x^2
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -564,7 +565,7 @@ void GRUser::CenterWidth2(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::CenterWidth3(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &dx3) {
+                          AthenaArray<Real> &dx3) {
   // \Delta W \approx \sqrt{g_{33}} \Delta x^3
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -582,7 +583,7 @@ void GRUser::CenterWidth3(const int k, const int j, const int il, const int iu,
 //   areas: 1D array of interface areas orthogonal to X-face
 
 void GRUser::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                       AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^2 \Delta x^3
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -592,7 +593,7 @@ void GRUser::Face1Area(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                       AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^3
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -602,7 +603,7 @@ void GRUser::Face2Area(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                       AthenaArray<Real> &areas) {
   // \Delta A \approx \sqrt{-g} \Delta x^1 \Delta x^2
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -642,7 +643,7 @@ Real GRUser::GetFace3Area(const int k, const int j, const int i) {
 //   volumes: 1D array of cell volumes
 
 void GRUser::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes) {
+                        AthenaArray<Real> &volumes) {
   // \Delta V \approx \sqrt{-g} \Delta x^1 \Delta x^2 \Delta x^3
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -674,8 +675,8 @@ Real GRUser::GetCellVolume(const int k, const int j, const int i) {
 //   cons: source terms added to 3D array of conserved variables
 
 void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
-    AthenaArray<Real> &cons) {
+                           const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+                           AthenaArray<Real> &cons) {
   // Extract indices
   int is = pmy_block->is;
   int ie = pmy_block->ie;
@@ -724,8 +725,8 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
         // Calculate 4-velocity
         Real uu_sq = g_11*uu1*uu1 + 2.0*g_12*uu1*uu2 + 2.0*g_13*uu1*uu3
-                   + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
-                   + g_33*uu3*uu3;
+                     + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
+                     + g_33*uu3*uu3;
         Real gamma = std::sqrt(1.0 + uu_sq);
         Real u0 = gamma / alpha;
         Real u1 = uu1 - alpha * gamma * g01;
@@ -776,17 +777,17 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
           s_3 += coord_src_kji_(2,n,k,j,i) * tt[n];
         }
         s_1 -= 0.5 * (coord_src_kji_(0,I00,k,j,i) * tt[I00]
-            + coord_src_kji_(0,I11,k,j,i) * tt[I11]
-            + coord_src_kji_(0,I22,k,j,i) * tt[I22]
-            + coord_src_kji_(0,I33,k,j,i) * tt[I33]);
+                      + coord_src_kji_(0,I11,k,j,i) * tt[I11]
+                      + coord_src_kji_(0,I22,k,j,i) * tt[I22]
+                      + coord_src_kji_(0,I33,k,j,i) * tt[I33]);
         s_2 -= 0.5 * (coord_src_kji_(1,I00,k,j,i) * tt[I00]
-            + coord_src_kji_(1,I11,k,j,i) * tt[I11]
-            + coord_src_kji_(1,I22,k,j,i) * tt[I22]
-            + coord_src_kji_(1,I33,k,j,i) * tt[I33]);
+                      + coord_src_kji_(1,I11,k,j,i) * tt[I11]
+                      + coord_src_kji_(1,I22,k,j,i) * tt[I22]
+                      + coord_src_kji_(1,I33,k,j,i) * tt[I33]);
         s_3 -= 0.5 * (coord_src_kji_(2,I00,k,j,i) * tt[I00]
-            + coord_src_kji_(2,I11,k,j,i) * tt[I11]
-            + coord_src_kji_(2,I22,k,j,i) * tt[I22]
-            + coord_src_kji_(2,I33,k,j,i) * tt[I33]);
+                      + coord_src_kji_(2,I11,k,j,i) * tt[I11]
+                      + coord_src_kji_(2,I22,k,j,i) * tt[I22]
+                      + coord_src_kji_(2,I33,k,j,i) * tt[I33]);
 
         // Extract conserved quantities
         Real &m_1 = cons(IM1,k,j,i);
@@ -813,7 +814,7 @@ void GRUser::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 //   g_inv: array of inverse metric components in 1D
 
 void GRUser::CellMetric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                        AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
@@ -825,7 +826,7 @@ void GRUser::CellMetric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face1Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                         AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
@@ -837,7 +838,7 @@ void GRUser::Face1Metric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face2Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                         AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
@@ -849,7 +850,7 @@ void GRUser::Face2Metric(const int k, const int j, const int il, const int iu,
 }
 
 void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                         AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   for (int n = 0; n < NMETRIC; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
@@ -881,7 +882,8 @@ void GRUser::Face3Metric(const int k, const int j, const int il, const int iu,
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
+void GRUser::PrimToLocal1(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
@@ -965,16 +967,16 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+                 + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
       Real u2_l = uu2_l - alpha * gamma_l * g02;
       Real u3_l = uu3_l - alpha * gamma_l * g03;
       tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+            + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+            + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
@@ -991,14 +993,14 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+                  + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+                  + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1051,7 +1053,8 @@ void GRUser::PrimToLocal1(const int k, const int j, const int il, const int iu,
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
+void GRUser::PrimToLocal2(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
@@ -1135,16 +1138,16 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+                 + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
       Real u2_l = uu2_l - alpha * gamma_l * g02;
       Real u3_l = uu3_l - alpha * gamma_l * g03;
       tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+            + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+            + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
@@ -1161,14 +1164,14 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+                  + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+                  + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1221,7 +1224,8 @@ void GRUser::PrimToLocal2(const int k, const int j, const int il, const int iu,
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
+void GRUser::PrimToLocal3(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Go through 1D block of cells
@@ -1305,16 +1309,16 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
-               + g_33*uu3_l*uu3_l;
+                 + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
       Real u2_l = uu2_l - alpha * gamma_l * g02;
       Real u3_l = uu3_l - alpha * gamma_l * g03;
       tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
-          + g_33*uu3_r*uu3_r;
+            + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+            + g_33*uu3_r*uu3_r;
       Real gamma_r = std::sqrt(1.0 + tmp);
       Real u0_r = gamma_r / alpha;
       Real u1_r = uu1_r - alpha * gamma_r * g01;
@@ -1331,14 +1335,14 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
-                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
-                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+                  + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
-                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
-                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+                  + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1388,7 +1392,8 @@ void GRUser::PrimToLocal3(const int k, const int j, const int il, const int iu,
 //   puts x1-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x1-fluxes of B2/B3 in ey/ez
 
-void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+void GRUser::FluxToGlobal1(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
@@ -1420,13 +1425,13 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
 
     // Transform stress-energy tensor
     Real t10 = m1_t * (m0_t*ttt)
-             + m1_x * (m0_t*txt);
+               + m1_x * (m0_t*txt);
     Real t11 = m1_t * (m1_t*ttt + m1_x*ttx)
-             + m1_x * (m1_t*txt + m1_x*txx);
+               + m1_x * (m1_t*txt + m1_x*txx);
     Real t12 = m1_t * (m2_t*ttt + m2_x*ttx + m2_y*tty)
-             + m1_x * (m2_t*txt + m2_x*txx + m2_y*txy);
+               + m1_x * (m2_t*txt + m2_x*txx + m2_y*txy);
     Real t13 = m1_t * (m3_t*ttt + m3_x*ttx + m3_y*tty + m3_z*ttz)
-             + m1_x * (m3_t*txt + m3_x*txx + m3_y*txy + m3_z*txz);
+               + m1_x * (m3_t*txt + m3_x*txx + m3_y*txy + m3_z*txz);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face1_kji_(0,I00,k,j,i);
@@ -1471,9 +1476,9 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
       Real f21 = m1_t * (m2_t*ftt + m2_x*fxt + m2_y*fyt)
-               + m1_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx);
+                 + m1_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx);
       Real f31 = m1_t * (m3_t*ftt + m3_x*fxt + m3_y*fyt + m3_z*fzt)
-               + m1_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx + m3_z*fzx);
+                 + m1_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx + m3_z*fzx);
       ey(k,j,i) = -f21;
       ez(k,j,i) = f31;
     }
@@ -1499,7 +1504,8 @@ void GRUser::FluxToGlobal1(const int k, const int j, const int il, const int iu,
 //   puts x2-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x2-fluxes of B3/B1 in ey/ez
 
-void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+void GRUser::FluxToGlobal2(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
@@ -1531,13 +1537,13 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
 
     // Transform stress-energy tensor
     Real t20 = m2_t * (m0_t*ttt)
-             + m2_x * (m0_t*txt);
+               + m2_x * (m0_t*txt);
     Real t21 = m2_t * (m1_t*ttt + m1_x*ttx + m1_y*tty + m1_z*ttz)
-             + m2_x * (m1_t*txt + m1_x*txx + m1_y*txy + m1_z*txz);
+               + m2_x * (m1_t*txt + m1_x*txx + m1_y*txy + m1_z*txz);
     Real t22 = m2_t * (m2_t*ttt + m2_x*ttx)
-             + m2_x * (m2_t*txt + m2_x*txx);
+               + m2_x * (m2_t*txt + m2_x*txx);
     Real t23 = m2_t * (m3_t*ttt + m3_x*ttx + m3_y*tty)
-             + m2_x * (m3_t*txt + m3_x*txx + m3_y*txy);
+               + m2_x * (m3_t*txt + m3_x*txx + m3_y*txy);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face2_kji_(0,I00,k,j,i);
@@ -1582,9 +1588,9 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
       Real f32 = m2_t * (m3_t*ftt + m3_x*fxt + m3_y*fyt)
-               + m2_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx);
+                 + m2_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx);
       Real f12 = m2_t * (m1_t*ftt + m1_x*fxt + m1_y*fyt + m1_z*fzt)
-               + m2_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx + m1_z*fzx);
+                 + m2_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx + m1_z*fzx);
       ey(k,j,i) = -f32;
       ez(k,j,i) = f12;
     }
@@ -1610,7 +1616,8 @@ void GRUser::FluxToGlobal2(const int k, const int j, const int il, const int iu,
 //   puts x3-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x3-fluxes of B1/B2 in ey/ez
 
-void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+void GRUser::FluxToGlobal3(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Go through 1D block of cells
@@ -1642,13 +1649,13 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
 
     // Transform stress-energy tensor
     Real t30 = m3_t * (m0_t*ttt)
-             + m3_x * (m0_t*txt);
+               + m3_x * (m0_t*txt);
     Real t31 = m3_t * (m1_t*ttt + m1_x*ttx + m1_y*tty)
-             + m3_x * (m1_t*txt + m1_x*txx + m1_y*txy);
+               + m3_x * (m1_t*txt + m1_x*txx + m1_y*txy);
     Real t32 = m3_t * (m2_t*ttt + m2_x*ttx + m2_y*tty + m2_z*ttz)
-             + m3_x * (m2_t*txt + m2_x*txx + m2_y*txy + m2_z*txz);
+               + m3_x * (m2_t*txt + m2_x*txx + m2_y*txy + m2_z*txz);
     Real t33 = m3_t * (m3_t*ttt + m3_x*ttx)
-             + m3_x * (m3_t*txt + m3_x*txx);
+               + m3_x * (m3_t*txt + m3_x*txx);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face3_kji_(0,I00,k,j,i);
@@ -1693,9 +1700,9 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
       Real f13 = m3_t * (m1_t*ftt + m1_x*fxt + m1_y*fyt)
-               + m3_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx);
+                 + m3_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx);
       Real f23 = m3_t * (m2_t*ftt + m2_x*fxt + m2_y*fyt + m2_z*fzt)
-               + m3_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx + m2_z*fzx);
+                 + m3_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx + m2_z*fzx);
       ey(k,j,i) = -f13;
       ez(k,j,i) = f23;
     }
@@ -1712,7 +1719,7 @@ void GRUser::FluxToGlobal3(const int k, const int j, const int il, const int iu,
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
 
 void GRUser::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                             Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   // Extract metric coefficients
   const Real &g00 = metric_cell_kji_(1,I00,k,j,i);
   const Real &g01 = metric_cell_kji_(1,I01,k,j,i);
@@ -1748,7 +1755,7 @@ void GRUser::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int 
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
 
 void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
+                             Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
   // Extract metric coefficients
   const Real &g_00 = metric_cell_kji_(0,I00,k,j,i);
   const Real &g_01 = metric_cell_kji_(0,I01,k,j,i);
@@ -1802,17 +1809,17 @@ static Real Determinant(const AthenaArray<Real> &g) {
   const Real &a43 = g(I23);
   const Real &a44 = g(I33);
   Real det = a11 * Determinant(a22, a23, a24, a32, a33, a34, a42, a43, a44)
-           - a12 * Determinant(a21, a23, a24, a31, a33, a34, a41, a43, a44)
-           + a13 * Determinant(a21, a22, a24, a31, a32, a34, a41, a42, a44)
-           - a14 * Determinant(a21, a22, a23, a31, a32, a33, a41, a42, a43);
+             - a12 * Determinant(a21, a23, a24, a31, a33, a34, a41, a43, a44)
+             + a13 * Determinant(a21, a22, a24, a31, a32, a34, a41, a42, a44)
+             - a14 * Determinant(a21, a22, a23, a31, a32, a33, a41, a42, a43);
   return det;
 }
 
 static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
-    Real a31, Real a32, Real a33) {
+                        Real a31, Real a32, Real a33) {
   Real det = a11 * Determinant(a22, a23, a32, a33)
-           - a12 * Determinant(a21, a23, a31, a33)
-           + a13 * Determinant(a21, a22, a31, a32);
+             - a12 * Determinant(a21, a23, a31, a33)
+             + a13 * Determinant(a21, a22, a31, a32);
   return det;
 }
 
@@ -1828,7 +1835,8 @@ static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
 // Outputs:
 //   transformation: array of transformation coefficients
 
-static void CalculateTransformation(const AthenaArray<Real> &g,
+static void CalculateTransformation(
+    const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation) {
   // Prepare indices
   int index[4][4];
