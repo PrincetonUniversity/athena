@@ -2204,36 +2204,36 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                  pob->cis, pob->cie,
                                  pob->cjs, pob->cje,
                                  pob->cks, pob->cke+f3);
-            FaceField &src=pmr->coarse_b_;
-            FaceField &dst=pmb->pfield->b;
+            FaceField &src_b=pmr->coarse_b_;
+            FaceField &dst_b=pmb->pfield->b;
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
-                  dst.x1f(k, j, i)=src.x1f(fk, fj, fi);
+                  dst_b.x1f(k, j, i)=src_b.x1f(fk, fj, fi);
               }
             }
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst.x2f(k, j, i)=src.x2f(fk, fj, fi);
+                  dst_b.x2f(k, j, i)=src_b.x2f(fk, fj, fi);
               }
             }
             if (pmb->block_size.nx2==1) {
               int ie=is+block_size.nx1/2-1;
               for (int i=is; i<=ie; i++)
-                dst.x2f(pmb->ks, pmb->js+1, i)=dst.x2f(pmb->ks, pmb->js, i);
+                dst_b.x2f(pmb->ks, pmb->js+1, i)=dst_b.x2f(pmb->ks, pmb->js, i);
             }
             for (int k=ks, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst.x3f(k, j, i)=src.x3f(fk, fj, fi);
+                  dst_b.x3f(k, j, i)=src_b.x3f(fk, fj, fi);
               }
             }
             if (pmb->block_size.nx3==1) {
               int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
-                  dst.x3f(pmb->ks+1, j, i)=dst.x3f(pmb->ks, j, i);
+                  dst_b.x3f(pmb->ks+1, j, i)=dst_b.x3f(pmb->ks, j, i);
               }
             }
           }
@@ -2263,34 +2263,34 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             dst, pmb->phydro->u, 0, NHYDRO-1,
             pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          FaceField &src=pob->pfield->b;
-          FaceField &dst=pmr->coarse_b_;
+          FaceField &src_b=pob->pfield->b;
+          FaceField &dst_b=pmr->coarse_b_;
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie+1; i++, ci++)
-                dst.x1f(k, j, i)=src.x1f(ck, cj, ci);
+                dst_b.x1f(k, j, i)=src_b.x1f(ck, cj, ci);
             }
           }
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je+f2; j++, cj++) {
               for (int i=is, ci=cis; i<=ie; i++, ci++)
-                dst.x2f(k, j, i)=src.x2f(ck, cj, ci);
+                dst_b.x2f(k, j, i)=src_b.x2f(ck, cj, ci);
             }
           }
           for (int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie; i++, ci++)
-                dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
+                dst_b.x3f(k, j, i)=src_b.x3f(ck, cj, ci);
             }
           }
           pmr->ProlongateSharedFieldX1(
-              dst.x1f, pmb->pfield->b.x1f,
+              dst_b.x1f, pmb->pfield->b.x1f,
               pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX2(
-              dst.x2f, pmb->pfield->b.x2f,
+              dst_b.x2f, pmb->pfield->b.x2f,
               pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX3(
-              dst.x3f, pmb->pfield->b.x3f,
+              dst_b.x3f, pmb->pfield->b.x3f,
               pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
           pmr->ProlongateInternalField(
               pmb->pfield->b, pob->cis, pob->cie,
@@ -2328,24 +2328,24 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
                                     pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
-          FaceField &dst=pb->pfield->b;
+          FaceField &dst_b=pb->pfield->b;
           BufferUtility::Unpack3DData(
-              recvbuf[k_outer], dst.x1f,
+              recvbuf[k_outer], dst_b.x1f,
               pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(
-              recvbuf[k_outer], dst.x2f,
+              recvbuf[k_outer], dst_b.x2f,
               pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(
-              recvbuf[k_outer], dst.x3f,
+              recvbuf[k_outer], dst_b.x3f,
               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if (pb->block_size.nx2==1) {
             for (int i=pb->is; i<=pb->ie; i++)
-              dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
+              dst_b.x2f(pb->ks, pb->js+1, i)=dst_b.x2f(pb->ks, pb->js, i);
           }
           if (pb->block_size.nx3==1) {
             for (int j=pb->js; j<=pb->je; j++) {
               for (int i=pb->is; i<=pb->ie; i++)
-                dst.x3f(pb->ks+1, j, i)=dst.x3f(pb->ks, j, i);
+                dst_b.x3f(pb->ks+1, j, i)=dst_b.x3f(pb->ks, j, i);
             }
           }
         }
@@ -2368,21 +2368,21 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
                                       is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
-            FaceField &dst=pb->pfield->b;
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x1f,
+            FaceField &dst_b=pb->pfield->b;
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x1f,
                                         is, ie+1, js, je, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x2f,
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x2f,
                                         is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x3f,
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x3f,
                                         is, ie, js, je, ks, ke+f3, p);
             if (pb->block_size.nx2==1) {
               for (int i=is; i<=ie; i++)
-                dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
+                dst_b.x2f(pb->ks, pb->js+1, i)=dst_b.x2f(pb->ks, pb->js, i);
             }
             if (pb->block_size.nx3==1) {
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
-                  dst.x3f(pb->ks+1, j, i)=dst.x3f(pb->ks, j, i);
+                  dst_b.x3f(pb->ks+1, j, i)=dst_b.x3f(pb->ks, j, i);
               }
             }
           }
