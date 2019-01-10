@@ -1901,10 +1901,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     }
   }
 
-  // store old nbstart and nbend
-  int onbs=nslist[Globals::my_rank];
-  int onbe=onbs+nblist[Globals::my_rank]-1;
-
   // Step 2. Calculate new load balance
   LoadBalance(newcost, newrank, nslist, nblist, ntot);
 
@@ -1927,6 +1923,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
 
 #ifdef MPI_PARALLEL
+  // store old nbstart and nbend
+  int onbs=nslist[Globals::my_rank];
+  int onbe=onbs+nblist[Globals::my_rank]-1;
+
   // Step 3. count the number of the blocks to be sent / received
   int nsend=0, nrecv=0;
   for (int n=nbs; n<=nbe; n++) {
