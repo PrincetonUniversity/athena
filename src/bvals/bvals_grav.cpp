@@ -89,8 +89,8 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
     // Allocate buffers
     // calculate the buffer size
     size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
-        *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
-        *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
+         *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
+         *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
 
     bd.send[n] = new Real[size];
     bd.recv[n] = new Real[size];
@@ -126,13 +126,13 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
   Real time=pmy_mesh_->time;
   Real dt=pmy_mesh_->dt;
   if (GravityBoundaryFunction_[INNER_X2]==nullptr
-     && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+      && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
   if (GravityBoundaryFunction_[OUTER_X2]==nullptr
-     && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+      && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
   if (GravityBoundaryFunction_[INNER_X3]==nullptr
-     && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+      && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
   if (GravityBoundaryFunction_[OUTER_X3]==nullptr
-     && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+      && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   // Apply boundary function on inner-x1
   if (GravityBoundaryFunction_[INNER_X1] != nullptr)
@@ -173,22 +173,22 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
 //  \brief initiate MPI_Irecv for gravity
 
 void GravityBoundaryValues::StartReceivingGravity(void) {
+#ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   GravityBoundaryData *pbd = &bd_gravity_;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-#ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       int size=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
-          *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
-          *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
+               *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
+               *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
       int tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL,
                 nb.rank, tag, MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
     }
-#endif
   }
+#endif
   return;
 }
 
@@ -206,7 +206,7 @@ void GravityBoundaryValues::ClearBoundaryGravity(void) {
     pbd->sflag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
-      MPI_Wait(&(pbd->req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
+      MPI_Wait(&(pbd->req_send[nb.bufid]), MPI_STATUS_IGNORE); // Wait for Isend
 #endif
   }
   return;
@@ -218,7 +218,8 @@ void GravityBoundaryValues::ClearBoundaryGravity(void) {
 //  \brief Set gravity boundary buffers for sending to a block on the same level
 
 int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src,
-  Real *buf, const NeighborBlock& nb) {
+                                                              Real *buf,
+                                                              const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -263,13 +264,12 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
     if (nb.rank == Globals::my_rank) { // on the same process
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
+    }
 #ifdef MPI_PARALLEL
-    } else { // MPI
+    else { // NOLINT
       int tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
-    }
-#else
     }
 #endif
     pbd->sflag[nb.bufid] = BNDRY_COMPLETED;
@@ -284,7 +284,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
 //  \brief Set gravity boundary received from a block on the same level
 
 void GravityBoundaryValues::SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                               const NeighborBlock& nb) {
+                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -299,7 +299,7 @@ void GravityBoundaryValues::SetGravityBoundarySameLevel(AthenaArray<Real> &dst, 
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-// Now, gravity only works with Cartesian coordinate
+  // Now, gravity only works with Cartesian coordinate
   BufferUtility::Unpack3DData(buf, dst, si, ei, sj, ej, sk, ek, p);
   return;
 }
@@ -322,8 +322,9 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
       if (nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
-      } else { // MPI boundary
+      else { // NOLINT
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -333,16 +334,13 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
         }
         pbd->flag[nb.bufid] = BNDRY_ARRIVED;
       }
-#else
-      }
 #endif
     }
     if (nb.level==pmb->loc.level)
       SetGravityBoundarySameLevel(dst, pbd->recv[nb.bufid], nb);
-//    else
-// error message
+    //    else
+    // error message
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
-
   return flag;
 }
