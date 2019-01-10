@@ -55,8 +55,8 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 class Multigrid {
  public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-     int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-     enum BoundaryFlag *input_bcs, bool root);
+            int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            enum BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;

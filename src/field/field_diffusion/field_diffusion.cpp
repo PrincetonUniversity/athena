@@ -123,10 +123,10 @@ FieldDiffusion::~FieldDiffusion() {
 //  \brief Calculate diffusion EMF(Ohmic & Ambipolar for now)
 
 void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
-     const AthenaArray<Real> &bc, EdgeField &e) {
+                                           const AthenaArray<Real> &bc, EdgeField &e) {
   Field *pf = pmy_block->pfield;
   Hydro *ph = pmy_block->phydro;
-  Mesh  *pm = pmy_block->pmy_mesh;
+  // Mesh  *pm = pmy_block->pmy_mesh; // unused variable
 
   if ((eta_ohm==0.0) && (eta_ad==0.0)) return;
 
@@ -211,7 +211,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real Bsq = SQR(bc(IB1,k,j,i))+SQR(bc(IB2,k,j,i))
-                  +SQR(bc(IB3,k,j,i));
+                   +SQR(bc(IB3,k,j,i));
         bmag_(k,j,i) = std::sqrt(Bsq);
       }
     }
@@ -333,13 +333,15 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       }
       if ((eta_ohm > 0.0) || (eta_ad > 0.0)) {
         for (int i=is; i<=ie; ++i)
-          dt_oa = std::min(dt_oa, static_cast<Real>(fac_oa*SQR(len(i))
+          dt_oa = std::min(dt_oa,
+                           static_cast<Real>(fac_oa*SQR(len(i))
                                              /(eta_t(i)+TINY_NUMBER)));
       }
       if (eta_hall > 0.0) {
         for (int i=is; i<=ie; ++i)
-          dt_h = std::min(dt_h,static_cast<Real>(fac_h*SQR(len(i))
-                       /(std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
+          dt_h = std::min(dt_h,
+                          static_cast<Real>(fac_h*SQR(len(i))
+                                            / (std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
       }
     }
   }

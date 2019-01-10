@@ -410,9 +410,10 @@ void MultigridDriver::SolveIterative(void) {
     }
     if (niter>100) {
       if (Globals::my_rank==0) {
-        std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-                  << "Aborting because the # iterations is too large, niter > 100." << std::endl
-                  << "Check the solution as it may not be accurate enough." << std::endl;
+        std::cout
+            << "### Warning in MultigridDriver::SolveIterative" << std::endl
+            << "Aborting because the # iterations is too large, niter > 100." << std::endl
+            << "Check the solution as it may not be accurate enough." << std::endl;
       }
       break;
     }

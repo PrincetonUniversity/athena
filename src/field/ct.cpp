@@ -43,85 +43,89 @@ void Field::CT(const Real wght, FaceField &b_out) {
   len.InitWithShallowCopy(edge_length_);
   len_p1.InitWithShallowCopy(edge_length_p1_);
 
-//---- update B1
+  //---- update B1
 
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-    // add curl(E) in 2D and 3D problem
-    if (pmb->block_size.nx2 > 1) {
-      pmb->pcoord->Face1Area(k,j,is,ie+1,area);
-      pmb->pcoord->Edge3Length(k,j  ,is,ie+1,len);
-      pmb->pcoord->Edge3Length(k,j+1,is,ie+1,len_p1);
-#pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b_out.x1f(k,j,i) -= wght*
-           ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
-      }
-
-      if (pmb->block_size.nx3 > 1) {
-        pmb->pcoord->Edge2Length(k  ,j,is,ie+1,len);
-        pmb->pcoord->Edge2Length(k+1,j,is,ie+1,len_p1);
+    for (int j=js; j<=je; ++j) {
+      // add curl(E) in 2D and 3D problem
+      if (pmb->block_size.nx2 > 1) {
+        pmb->pcoord->Face1Area(k,j,is,ie+1,area);
+        pmb->pcoord->Edge3Length(k,j  ,is,ie+1,len);
+        pmb->pcoord->Edge3Length(k,j+1,is,ie+1,len_p1);
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          b_out.x1f(k,j,i) += wght*
-             ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e2(k+1,j,i) -len(i)*e2(k,j,i));
+          b_out.x1f(k,j,i) -=
+              wght*
+              ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
+        }
+
+        if (pmb->block_size.nx3 > 1) {
+          pmb->pcoord->Edge2Length(k  ,j,is,ie+1,len);
+          pmb->pcoord->Edge2Length(k+1,j,is,ie+1,len_p1);
+#pragma omp simd
+          for (int i=is; i<=ie+1; ++i) {
+            b_out.x1f(k,j,i) +=
+                wght*
+                ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e2(k+1,j,i) -len(i)*e2(k,j,i));
+          }
         }
       }
     }
   }
-}
 
-//---- update B2 (curl terms in 1D and 3D problems)
+  //---- update B2 (curl terms in 1D and 3D problems)
 
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
     if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
-     || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+        || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
     if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
-     || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
+        || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
       pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
         b_out.x2f(k,j,i) += (wght*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)
-                                                                  - len(i)*e3(k,j,i));
+                                                                - len(i)*e3(k,j,i));
       }
       if (pmb->block_size.nx3 > 1) {
         pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
         pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          b_out.x2f(k,j,i) -= wght*
-             ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
+          b_out.x2f(k,j,i) -=
+              wght*
+              ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
         }
       }
     }
   }
 
-//---- update B3 (curl terms in 1D and 2D problems)
+  //---- update B3 (curl terms in 1D and 2D problems)
 
   for (int k=ks; k<=ke+1; ++k) {
-  for (int j=js; j<=je; ++j) {
-    pmb->pcoord->Face3Area(k,j,is,ie,area);
-    pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
-#pragma omp simd
-    for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) -= (wght*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) -
-                                                                len(i)*e2(k,j,i));
-    }
-    if (pmb->block_size.nx2 > 1) {
-      pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
-      pmb->pcoord->Edge1Length(k,j+1,is,ie,len_p1);
+    for (int j=js; j<=je; ++j) {
+      pmb->pcoord->Face3Area(k,j,is,ie,area);
+      pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        b_out.x3f(k,j,i) += wght*
-           ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
+        b_out.x3f(k,j,i) -= (wght*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) -
+                                                                len(i)*e2(k,j,i));
+      }
+      if (pmb->block_size.nx2 > 1) {
+        pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
+        pmb->pcoord->Edge1Length(k,j+1,is,ie,len_p1);
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x3f(k,j,i) +=
+              wght*
+              ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
+        }
       }
     }
   }
-}
 
   return;
 }
@@ -141,18 +145,18 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
 
   // b_in2 may be an unallocated AthenaArray if using a 2S time integrator
   if (wght[2] != 0.0) {
-//---- B1
+    //---- B1
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i)
-              + wght[2]*b_in2.x1f(k,j,i);
+                             + wght[2]*b_in2.x1f(k,j,i);
         }
       }
-}
+    }
 
-//---- B2
+    //---- B2
 
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
@@ -166,22 +170,22 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           b_out.x2f(k,j,i) = wght[0]*b_out.x2f(k,j,i) + wght[1]*b_in1.x2f(k,j,i)
-              + wght[2]*b_in2.x2f(k,j,i);
+                             + wght[2]*b_in2.x2f(k,j,i);
         }
       }
     }
 
-//---- B3
+    //---- B3
 
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i)
-              + wght[2]*b_in2.x3f(k,j,i);
+                             + wght[2]*b_in2.x3f(k,j,i);
         }
       }
-}
+    }
   } else { // do not derefernce b_in2
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -190,9 +194,9 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
           b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i);
         }
       }
-}
+    }
 
-//---- B2
+    //---- B2
 
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
@@ -210,7 +214,7 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
       }
     }
 
-//---- B3
+    //---- B3
 
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -219,7 +223,7 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
           b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i);
         }
       }
-}
+    }
   }
   return;
 }

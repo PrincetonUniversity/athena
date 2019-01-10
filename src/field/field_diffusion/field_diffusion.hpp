@@ -26,7 +26,9 @@ class Coordinates;
 class FieldDiffusion;
 
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
-     const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
+                      const AthenaArray<Real> &bmag,
+                      const int is, const int ie, const int js, const int je,
+                      const int ks, const int ke);
 
 // array indices for magnetic diffusivities
 enum {I_O=0, I_H=1, I_A=2};

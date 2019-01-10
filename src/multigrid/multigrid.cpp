@@ -29,9 +29,10 @@
 //                           bool root);
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-           int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-           enum BoundaryFlag *input_bcs, bool root) {
+Multigrid::Multigrid(
+    MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
+    int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+    enum BoundaryFlag *input_bcs, bool root) {
   pmy_driver_=pmd;
   loc_=iloc;
   gid_=igid;
@@ -56,20 +57,22 @@ Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int i
       }
     }
     int nmaxr=std::max(nbx, std::max(nby, nbz));
-    int nminr=std::min(nbx, std::min(nby, nbz));
+    // int nminr=std::min(nbx, std::min(nby, nbz)); // unused variable
     if (nmaxr!=1 && Globals::my_rank==0) {
-      std::cout << "### Warning in Multigrid::Multigrid" << std::endl
-        << "The root grid can not be reduced to a single cell." << std::endl
-        << "Multigrid should still work, but this is not the most efficient configuration"
-        << " as the coarsest level is not solved exactly but iteratively." << std::endl;
+      std::cout
+          << "### Warning in Multigrid::Multigrid" << std::endl
+          << "The root grid can not be reduced to a single cell." << std::endl
+          << "Multigrid should still work, but this is not the"
+          << " most efficient configuration"
+          << " as the coarsest level is not solved exactly but iteratively." << std::endl;
     }
     if (nbx*nby*nbz>100 && Globals::my_rank==0) {
       std::cout << "### Warning in Multigrid::Multigrid" << std::endl
-        << "The degrees of freedom on the coarsest level is very large: "
-        << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
-        << "Multigrid should still work, but this is not efficient configuration "
-        << "as the coarsest level solver costs considerably." << std::endl
-        << "We recommend to reconsider grid configuration." << std::endl;
+                << "The degrees of freedom on the coarsest level is very large: "
+                << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
+                << "Multigrid should still work, but this is not efficient configuration "
+                << "as the coarsest level solver costs considerably." << std::endl
+                << "We recommend to reconsider grid configuration." << std::endl;
     }
   } else {
     for (int l=0; l<20; l++) {
@@ -206,9 +209,9 @@ void Multigrid::RestrictFMGSource(void) {
         for (int j=js, fj=js; j<=je; j++, fj+=2) {
           for (int i=is, fi=is; i<=ie; i++, fi+=2)
             csrc(n, k, j, i)=0.125*(fsrc(n, fk,   fj,   fi)+fsrc(n, fk,   fj,   fi+1)
-                                   +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
-                                   +fsrc(n, fk+1, fj,   fi)+fsrc(n, fk+1, fj,   fi+1)
-                                   +fsrc(n, fk+1, fj+1, fi)+fsrc(n, fk+1, fj+1, fi+1));
+                                    +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
+                                    +fsrc(n, fk+1, fj,   fi)+fsrc(n, fk+1, fj,   fi+1)
+                                    +fsrc(n, fk+1, fj+1, fi)+fsrc(n, fk+1, fj+1, fi+1));
         }
       }
     }
@@ -263,9 +266,9 @@ void Multigrid::Restrict(void) {
       for (int j=js, fj=js; j<=je; j++, fj+=2) {
         for (int i=is, fi=is; i<=ie; i++, fi+=2)
           dst(n, k, j, i)=0.125*(src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1)
-                                +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
-                                +src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1)
-                                +src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1));
+                                 +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
+                                 +src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1)
+                                 +src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1));
       }
     }
   }
@@ -289,30 +292,38 @@ void Multigrid::ProlongateAndCorrect(void) {
     for (int k=ks, fk=ks; k<=ke; k++, fk+=2) {
       for (int j=js, fj=js; j<=je; j++, fj+=2) {
         for (int i=is, fi=is; i<=ie; i++, fi+=2) {
-          dst(n,fk  ,fj  ,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
-                          +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
-                          +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i-1)+src(n,k,j-1,i-1)));
-          dst(n,fk  ,fj  ,fi+1)+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i+1)
-                          +9.0*(src(n,k,j,i+1)+src(n,k,j-1,i)+src(n,k-1,j,i))
-                          +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i+1)+src(n,k,j-1,i+1)));
-          dst(n,fk  ,fj+1,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j+1,i-1)
-                          +9.0*(src(n,k,j,i-1)+src(n,k,j+1,i)+src(n,k-1,j,i))
-                          +3.0*(src(n,k-1,j+1,i)+src(n,k-1,j,i-1)+src(n,k,j+1,i-1)));
-          dst(n,fk+1,fj  ,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j-1,i-1)
-                          +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k+1,j,i))
-                          +3.0*(src(n,k+1,j-1,i)+src(n,k+1,j,i-1)+src(n,k,j-1,i-1)));
-          dst(n,fk+1,fj+1,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j+1,i-1)
-                          +9.0*(src(n,k,j,i-1)+src(n,k,j+1,i)+src(n,k+1,j,i))
-                          +3.0*(src(n,k+1,j+1,i)+src(n,k+1,j,i-1)+src(n,k,j+1,i-1)));
-          dst(n,fk+1,fj  ,fi+1)+=0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j-1,i+1)
-                          +9.0*(src(n,k,j,i+1)+src(n,k,j-1,i)+src(n,k+1,j,i))
-                          +3.0*(src(n,k+1,j-1,i)+src(n,k+1,j,i+1)+src(n,k,j-1,i+1)));
-          dst(n,fk  ,fj+1,fi+1)+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j+1,i+1)
-                          +9.0*(src(n,k,j,i+1)+src(n,k,j+1,i)+src(n,k-1,j,i))
-                          +3.0*(src(n,k-1,j+1,i)+src(n,k-1,j,i+1)+src(n,k,j+1,i+1)));
-          dst(n,fk+1,fj+1,fi+1)+=0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j+1,i+1)
-                          +9.0*(src(n,k,j,i+1)+src(n,k,j+1,i)+src(n,k+1,j,i))
-                          +3.0*(src(n,k+1,j+1,i)+src(n,k+1,j,i+1)+src(n,k,j+1,i+1)));
+          dst(n,fk  ,fj  ,fi  ) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
+                        +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
+                        +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i-1)+src(n,k,j-1,i-1)));
+          dst(n,fk  ,fj  ,fi+1) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i+1)
+                        +9.0*(src(n,k,j,i+1)+src(n,k,j-1,i)+src(n,k-1,j,i))
+                        +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i+1)+src(n,k,j-1,i+1)));
+          dst(n,fk  ,fj+1,fi  ) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j+1,i-1)
+                        +9.0*(src(n,k,j,i-1)+src(n,k,j+1,i)+src(n,k-1,j,i))
+                        +3.0*(src(n,k-1,j+1,i)+src(n,k-1,j,i-1)+src(n,k,j+1,i-1)));
+          dst(n,fk+1,fj  ,fi  ) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j-1,i-1)
+                        +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k+1,j,i))
+                        +3.0*(src(n,k+1,j-1,i)+src(n,k+1,j,i-1)+src(n,k,j-1,i-1)));
+          dst(n,fk+1,fj+1,fi  ) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j+1,i-1)
+                        +9.0*(src(n,k,j,i-1)+src(n,k,j+1,i)+src(n,k+1,j,i))
+                        +3.0*(src(n,k+1,j+1,i)+src(n,k+1,j,i-1)+src(n,k,j+1,i-1)));
+          dst(n,fk+1,fj  ,fi+1) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j-1,i+1)
+                        +9.0*(src(n,k,j,i+1)+src(n,k,j-1,i)+src(n,k+1,j,i))
+                        +3.0*(src(n,k+1,j-1,i)+src(n,k+1,j,i+1)+src(n,k,j-1,i+1)));
+          dst(n,fk  ,fj+1,fi+1) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j+1,i+1)
+                        +9.0*(src(n,k,j,i+1)+src(n,k,j+1,i)+src(n,k-1,j,i))
+                        +3.0*(src(n,k-1,j+1,i)+src(n,k-1,j,i+1)+src(n,k,j+1,i+1)));
+          dst(n,fk+1,fj+1,fi+1) +=
+              0.015625*(27.0*src(n,k,j,i) + src(n,k+1,j+1,i+1)
+                        +9.0*(src(n,k,j,i+1)+src(n,k,j+1,i)+src(n,k+1,j,i))
+                        +3.0*(src(n,k+1,j+1,i)+src(n,k+1,j,i+1)+src(n,k,j+1,i+1)));
         }
       }
     }
@@ -337,93 +348,93 @@ void Multigrid::FMGProlongate(void) {
       for (int j=js, fj=js; j<=je; j++, fj+=2) {
         for (int i=is, fi=is; i<=ie; i++, fi+=2) {
           dst(n,fk  ,fj,  fi  )=(
-          + 125.0*src(n,k-1,j-1,i-1)+  750.0*src(n,k-1,j-1,i  )-  75.0*src(n,k-1,j-1,i+1)
-          + 750.0*src(n,k-1,j,  i-1)+ 4500.0*src(n,k-1,j,  i  )- 450.0*src(n,k-1,j,  i+1)
-          -  75.0*src(n,k-1,j+1,i-1)-  450.0*src(n,k-1,j+1,i  )+  45.0*src(n,k-1,j+1,i+1)
-          + 750.0*src(n,k,  j-1,i-1)+ 4500.0*src(n,k,  j-1,i  )- 450.0*src(n,k,  j-1,i+1)
-          +4500.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )-2700.0*src(n,k,  j,  i+1)
-          - 450.0*src(n,k,  j+1,i-1)- 2700.0*src(n,k,  j+1,i  )+ 270.0*src(n,k,  j+1,i+1)
-          -  75.0*src(n,k+1,j-1,i-1)-  450.0*src(n,k+1,j-1,i  )+  45.0*src(n,k+1,j-1,i+1)
-          - 450.0*src(n,k+1,j,  i-1)- 2700.0*src(n,k+1,j,  i  )+ 270.0*src(n,k+1,j,  i+1)
-          +  45.0*src(n,k+1,j+1,i-1)+  270.0*src(n,k+1,j+1,i  )-  27.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              + 125.*src(n,k-1,j-1,i-1)+  750.*src(n,k-1,j-1,i  )-  75.*src(n,k-1,j-1,i+1)
+              + 750.*src(n,k-1,j,  i-1)+ 4500.*src(n,k-1,j,  i  )- 450.*src(n,k-1,j,  i+1)
+              -  75.*src(n,k-1,j+1,i-1)-  450.*src(n,k-1,j+1,i  )+  45.*src(n,k-1,j+1,i+1)
+              + 750.*src(n,k,  j-1,i-1)+ 4500.*src(n,k,  j-1,i  )- 450.*src(n,k,  j-1,i+1)
+              +4500.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )-2700.*src(n,k,  j,  i+1)
+              - 450.*src(n,k,  j+1,i-1)- 2700.*src(n,k,  j+1,i  )+ 270.*src(n,k,  j+1,i+1)
+              -  75.*src(n,k+1,j-1,i-1)-  450.*src(n,k+1,j-1,i  )+  45.*src(n,k+1,j-1,i+1)
+              - 450.*src(n,k+1,j,  i-1)- 2700.*src(n,k+1,j,  i  )+ 270.*src(n,k+1,j,  i+1)
+              +  45.*src(n,k+1,j+1,i-1)+  270.*src(n,k+1,j+1,i  )-  27.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk,  fj,  fi+1)=(
-          -  75.0*src(n,k-1,j-1,i-1)+  750.0*src(n,k-1,j-1,i  )+ 125.0*src(n,k-1,j-1,i+1)
-          - 450.0*src(n,k-1,j,  i-1)+ 4500.0*src(n,k-1,j,  i  )+ 750.0*src(n,k-1,j,  i+1)
-          +  45.0*src(n,k-1,j+1,i-1)-  450.0*src(n,k-1,j+1,i  )-  75.0*src(n,k-1,j+1,i+1)
-          - 450.0*src(n,k,  j-1,i-1)+ 4500.0*src(n,k,  j-1,i  )+ 750.0*src(n,k,  j-1,i+1)
-          -2700.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )+4500.0*src(n,k,  j,  i+1)
-          + 270.0*src(n,k,  j+1,i-1)- 2700.0*src(n,k,  j+1,i  )- 450.0*src(n,k,  j+1,i+1)
-          +  45.0*src(n,k+1,j-1,i-1)-  450.0*src(n,k+1,j-1,i  )-  75.0*src(n,k+1,j-1,i+1)
-          + 270.0*src(n,k+1,j,  i-1)- 2700.0*src(n,k+1,j,  i  )- 450.0*src(n,k+1,j,  i+1)
-          -  27.0*src(n,k+1,j+1,i-1)+  270.0*src(n,k+1,j+1,i  )+  45.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              -  75.*src(n,k-1,j-1,i-1)+  750.*src(n,k-1,j-1,i  )+ 125.*src(n,k-1,j-1,i+1)
+              - 450.*src(n,k-1,j,  i-1)+ 4500.*src(n,k-1,j,  i  )+ 750.*src(n,k-1,j,  i+1)
+              +  45.*src(n,k-1,j+1,i-1)-  450.*src(n,k-1,j+1,i  )-  75.*src(n,k-1,j+1,i+1)
+              - 450.*src(n,k,  j-1,i-1)+ 4500.*src(n,k,  j-1,i  )+ 750.*src(n,k,  j-1,i+1)
+              -2700.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )+4500.*src(n,k,  j,  i+1)
+              + 270.*src(n,k,  j+1,i-1)- 2700.*src(n,k,  j+1,i  )- 450.*src(n,k,  j+1,i+1)
+              +  45.*src(n,k+1,j-1,i-1)-  450.*src(n,k+1,j-1,i  )-  75.*src(n,k+1,j-1,i+1)
+              + 270.*src(n,k+1,j,  i-1)- 2700.*src(n,k+1,j,  i  )- 450.*src(n,k+1,j,  i+1)
+              -  27.*src(n,k+1,j+1,i-1)+  270.*src(n,k+1,j+1,i  )+  45.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk  ,fj+1,fi  )=(
-          -  75.0*src(n,k-1,j-1,i-1)-  450.0*src(n,k-1,j-1,i  )+  45.0*src(n,k-1,j-1,i+1)
-          + 750.0*src(n,k-1,j,  i-1)+ 4500.0*src(n,k-1,j,  i  )- 450.0*src(n,k-1,j,  i+1)
-          + 125.0*src(n,k-1,j+1,i-1)+  750.0*src(n,k-1,j+1,i  )-  75.0*src(n,k-1,j+1,i+1)
-          - 450.0*src(n,k,  j-1,i-1)- 2700.0*src(n,k,  j-1,i  )+ 270.0*src(n,k,  j-1,i+1)
-          +4500.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )-2700.0*src(n,k,  j,  i+1)
-          + 750.0*src(n,k,  j+1,i-1)+ 4500.0*src(n,k,  j+1,i  )- 450.0*src(n,k,  j+1,i+1)
-          +  45.0*src(n,k+1,j-1,i-1)+  270.0*src(n,k+1,j-1,i  )-  27.0*src(n,k+1,j-1,i+1)
-          - 450.0*src(n,k+1,j,  i-1)- 2700.0*src(n,k+1,j,  i  )+ 270.0*src(n,k+1,j,  i+1)
-          -  75.0*src(n,k+1,j+1,i-1)-  450.0*src(n,k+1,j+1,i  )+  45.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              -  75.*src(n,k-1,j-1,i-1)-  450.*src(n,k-1,j-1,i  )+  45.*src(n,k-1,j-1,i+1)
+              + 750.*src(n,k-1,j,  i-1)+ 4500.*src(n,k-1,j,  i  )- 450.*src(n,k-1,j,  i+1)
+              + 125.*src(n,k-1,j+1,i-1)+  750.*src(n,k-1,j+1,i  )-  75.*src(n,k-1,j+1,i+1)
+              - 450.*src(n,k,  j-1,i-1)- 2700.*src(n,k,  j-1,i  )+ 270.*src(n,k,  j-1,i+1)
+              +4500.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )-2700.*src(n,k,  j,  i+1)
+              + 750.*src(n,k,  j+1,i-1)+ 4500.*src(n,k,  j+1,i  )- 450.*src(n,k,  j+1,i+1)
+              +  45.*src(n,k+1,j-1,i-1)+  270.*src(n,k+1,j-1,i  )-  27.*src(n,k+1,j-1,i+1)
+              - 450.*src(n,k+1,j,  i-1)- 2700.*src(n,k+1,j,  i  )+ 270.*src(n,k+1,j,  i+1)
+              -  75.*src(n,k+1,j+1,i-1)-  450.*src(n,k+1,j+1,i  )+  45.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk,  fj+1,fi+1)=(
-          +  45.0*src(n,k-1,j-1,i-1)-  450.0*src(n,k-1,j-1,i  )-  75.0*src(n,k-1,j-1,i+1)
-          - 450.0*src(n,k-1,j,  i-1)+ 4500.0*src(n,k-1,j,  i  )+ 750.0*src(n,k-1,j,  i+1)
-          -  75.0*src(n,k-1,j+1,i-1)+  750.0*src(n,k-1,j+1,i  )+ 125.0*src(n,k-1,j+1,i+1)
-          + 270.0*src(n,k,  j-1,i-1)- 2700.0*src(n,k,  j-1,i  )- 450.0*src(n,k,  j-1,i+1)
-          -2700.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )+4500.0*src(n,k,  j,  i+1)
-          - 450.0*src(n,k,  j+1,i-1)+ 4500.0*src(n,k,  j+1,i  )+ 750.0*src(n,k,  j+1,i+1)
-          -  27.0*src(n,k+1,j-1,i-1)+  270.0*src(n,k+1,j-1,i  )+  45.0*src(n,k+1,j-1,i+1)
-          + 270.0*src(n,k+1,j,  i-1)- 2700.0*src(n,k+1,j,  i  )- 450.0*src(n,k+1,j,  i+1)
-          +  45.0*src(n,k+1,j+1,i-1)-  450.0*src(n,k+1,j+1,i  )-  75.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              +  45.*src(n,k-1,j-1,i-1)-  450.*src(n,k-1,j-1,i  )-  75.*src(n,k-1,j-1,i+1)
+              - 450.*src(n,k-1,j,  i-1)+ 4500.*src(n,k-1,j,  i  )+ 750.*src(n,k-1,j,  i+1)
+              -  75.*src(n,k-1,j+1,i-1)+  750.*src(n,k-1,j+1,i  )+ 125.*src(n,k-1,j+1,i+1)
+              + 270.*src(n,k,  j-1,i-1)- 2700.*src(n,k,  j-1,i  )- 450.*src(n,k,  j-1,i+1)
+              -2700.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )+4500.*src(n,k,  j,  i+1)
+              - 450.*src(n,k,  j+1,i-1)+ 4500.*src(n,k,  j+1,i  )+ 750.*src(n,k,  j+1,i+1)
+              -  27.*src(n,k+1,j-1,i-1)+  270.*src(n,k+1,j-1,i  )+  45.*src(n,k+1,j-1,i+1)
+              + 270.*src(n,k+1,j,  i-1)- 2700.*src(n,k+1,j,  i  )- 450.*src(n,k+1,j,  i+1)
+              +  45.*src(n,k+1,j+1,i-1)-  450.*src(n,k+1,j+1,i  )-  75.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk+1,fj,  fi  )=(
-          -  75.0*src(n,k-1,j-1,i-1)-  450.0*src(n,k-1,j-1,i  )+  45.0*src(n,k-1,j-1,i+1)
-          - 450.0*src(n,k-1,j,  i-1)- 2700.0*src(n,k-1,j,  i  )+ 270.0*src(n,k-1,j,  i+1)
-          +  45.0*src(n,k-1,j+1,i-1)+  270.0*src(n,k-1,j+1,i  )-  27.0*src(n,k-1,j+1,i+1)
-          + 750.0*src(n,k,  j-1,i-1)+ 4500.0*src(n,k,  j-1,i  )- 450.0*src(n,k,  j-1,i+1)
-          +4500.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )-2700.0*src(n,k,  j,  i+1)
-          - 450.0*src(n,k,  j+1,i-1)- 2700.0*src(n,k,  j+1,i  )+ 270.0*src(n,k,  j+1,i+1)
-          + 125.0*src(n,k+1,j-1,i-1)+  750.0*src(n,k+1,j-1,i  )-  75.0*src(n,k+1,j-1,i+1)
-          + 750.0*src(n,k+1,j,  i-1)+ 4500.0*src(n,k+1,j,  i  )- 450.0*src(n,k+1,j,  i+1)
-          -  75.0*src(n,k+1,j+1,i-1)-  450.0*src(n,k+1,j+1,i  )+  45.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              -  75.*src(n,k-1,j-1,i-1)-  450.*src(n,k-1,j-1,i  )+  45.*src(n,k-1,j-1,i+1)
+              - 450.*src(n,k-1,j,  i-1)- 2700.*src(n,k-1,j,  i  )+ 270.*src(n,k-1,j,  i+1)
+              +  45.*src(n,k-1,j+1,i-1)+  270.*src(n,k-1,j+1,i  )-  27.*src(n,k-1,j+1,i+1)
+              + 750.*src(n,k,  j-1,i-1)+ 4500.*src(n,k,  j-1,i  )- 450.*src(n,k,  j-1,i+1)
+              +4500.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )-2700.*src(n,k,  j,  i+1)
+              - 450.*src(n,k,  j+1,i-1)- 2700.*src(n,k,  j+1,i  )+ 270.*src(n,k,  j+1,i+1)
+              + 125.*src(n,k+1,j-1,i-1)+  750.*src(n,k+1,j-1,i  )-  75.*src(n,k+1,j-1,i+1)
+              + 750.*src(n,k+1,j,  i-1)+ 4500.*src(n,k+1,j,  i  )- 450.*src(n,k+1,j,  i+1)
+              -  75.*src(n,k+1,j+1,i-1)-  450.*src(n,k+1,j+1,i  )+  45.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk+1,fj,  fi+1)=(
-          +  45.0*src(n,k-1,j-1,i-1)-  450.0*src(n,k-1,j-1,i  )-  75.0*src(n,k-1,j-1,i+1)
-          + 270.0*src(n,k-1,j,  i-1)- 2700.0*src(n,k-1,j,  i  )- 450.0*src(n,k-1,j,  i+1)
-          -  27.0*src(n,k-1,j+1,i-1)+  270.0*src(n,k-1,j+1,i  )+  45.0*src(n,k-1,j+1,i+1)
-          - 450.0*src(n,k,  j-1,i-1)+ 4500.0*src(n,k,  j-1,i  )+ 750.0*src(n,k,  j-1,i+1)
-          -2700.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )+4500.0*src(n,k,  j,  i+1)
-          + 270.0*src(n,k,  j+1,i-1)- 2700.0*src(n,k,  j+1,i  )- 450.0*src(n,k,  j+1,i+1)
-          -  75.0*src(n,k+1,j-1,i-1)+  750.0*src(n,k+1,j-1,i  )+ 125.0*src(n,k+1,j-1,i+1)
-          - 450.0*src(n,k+1,j,  i-1)+ 4500.0*src(n,k+1,j,  i  )+ 750.0*src(n,k+1,j,  i+1)
-          +  45.0*src(n,k+1,j+1,i-1)-  450.0*src(n,k+1,j+1,i  )-  75.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              +  45.*src(n,k-1,j-1,i-1)-  450.*src(n,k-1,j-1,i  )-  75.*src(n,k-1,j-1,i+1)
+              + 270.*src(n,k-1,j,  i-1)- 2700.*src(n,k-1,j,  i  )- 450.*src(n,k-1,j,  i+1)
+              -  27.*src(n,k-1,j+1,i-1)+  270.*src(n,k-1,j+1,i  )+  45.*src(n,k-1,j+1,i+1)
+              - 450.*src(n,k,  j-1,i-1)+ 4500.*src(n,k,  j-1,i  )+ 750.*src(n,k,  j-1,i+1)
+              -2700.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )+4500.*src(n,k,  j,  i+1)
+              + 270.*src(n,k,  j+1,i-1)- 2700.*src(n,k,  j+1,i  )- 450.*src(n,k,  j+1,i+1)
+              -  75.*src(n,k+1,j-1,i-1)+  750.*src(n,k+1,j-1,i  )+ 125.*src(n,k+1,j-1,i+1)
+              - 450.*src(n,k+1,j,  i-1)+ 4500.*src(n,k+1,j,  i  )+ 750.*src(n,k+1,j,  i+1)
+              +  45.*src(n,k+1,j+1,i-1)-  450.*src(n,k+1,j+1,i  )-  75.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk+1,fj+1,fi  )=(
-          +  45.0*src(n,k-1,j-1,i-1)+  270.0*src(n,k-1,j-1,i  )-  27.0*src(n,k-1,j-1,i+1)
-          - 450.0*src(n,k-1,j,  i-1)- 2700.0*src(n,k-1,j,  i  )+ 270.0*src(n,k-1,j,  i+1)
-          -  75.0*src(n,k-1,j+1,i-1)-  450.0*src(n,k-1,j+1,i  )+  45.0*src(n,k-1,j+1,i+1)
-          - 450.0*src(n,k,  j-1,i-1)- 2700.0*src(n,k,  j-1,i  )+ 270.0*src(n,k,  j-1,i+1)
-          +4500.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )-2700.0*src(n,k,  j,  i+1)
-          + 750.0*src(n,k,  j+1,i-1)+ 4500.0*src(n,k,  j+1,i  )- 450.0*src(n,k,  j+1,i+1)
-          -  75.0*src(n,k+1,j-1,i-1)-  450.0*src(n,k+1,j-1,i  )+  45.0*src(n,k+1,j-1,i+1)
-          + 750.0*src(n,k+1,j,  i-1)+ 4500.0*src(n,k+1,j,  i  )- 450.0*src(n,k+1,j,  i+1)
-          + 125.0*src(n,k+1,j+1,i-1)+  750.0*src(n,k+1,j+1,i  )-  75.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              +  45.*src(n,k-1,j-1,i-1)+  270.*src(n,k-1,j-1,i  )-  27.*src(n,k-1,j-1,i+1)
+              - 450.*src(n,k-1,j,  i-1)- 2700.*src(n,k-1,j,  i  )+ 270.*src(n,k-1,j,  i+1)
+              -  75.*src(n,k-1,j+1,i-1)-  450.*src(n,k-1,j+1,i  )+  45.*src(n,k-1,j+1,i+1)
+              - 450.*src(n,k,  j-1,i-1)- 2700.*src(n,k,  j-1,i  )+ 270.*src(n,k,  j-1,i+1)
+              +4500.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )-2700.*src(n,k,  j,  i+1)
+              + 750.*src(n,k,  j+1,i-1)+ 4500.*src(n,k,  j+1,i  )- 450.*src(n,k,  j+1,i+1)
+              -  75.*src(n,k+1,j-1,i-1)-  450.*src(n,k+1,j-1,i  )+  45.*src(n,k+1,j-1,i+1)
+              + 750.*src(n,k+1,j,  i-1)+ 4500.*src(n,k+1,j,  i  )- 450.*src(n,k+1,j,  i+1)
+              + 125.*src(n,k+1,j+1,i-1)+  750.*src(n,k+1,j+1,i  )-  75.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
           dst(n,fk+1,fj+1,fi+1)=(
-          -  27.0*src(n,k-1,j-1,i-1)+  270.0*src(n,k-1,j-1,i  )+  45.0*src(n,k-1,j-1,i+1)
-          + 270.0*src(n,k-1,j,  i-1)- 2700.0*src(n,k-1,j,  i  )- 450.0*src(n,k-1,j,  i+1)
-          +  45.0*src(n,k-1,j+1,i-1)-  450.0*src(n,k-1,j+1,i  )-  75.0*src(n,k-1,j+1,i+1)
-          + 270.0*src(n,k,  j-1,i-1)- 2700.0*src(n,k,  j-1,i  )- 450.0*src(n,k,  j-1,i+1)
-          -2700.0*src(n,k,  j,  i-1)+27000.0*src(n,k,  j,  i  )+4500.0*src(n,k,  j,  i+1)
-          - 450.0*src(n,k,  j+1,i-1)+ 4500.0*src(n,k,  j+1,i  )+ 750.0*src(n,k,  j+1,i+1)
-          +  45.0*src(n,k+1,j-1,i-1)-  450.0*src(n,k+1,j-1,i  )-  75.0*src(n,k+1,j-1,i+1)
-          - 450.0*src(n,k+1,j,  i-1)+ 4500.0*src(n,k+1,j,  i  )+ 750.0*src(n,k+1,j,  i+1)
-          -  75.0*src(n,k+1,j+1,i-1)+  750.0*src(n,k+1,j+1,i  )+ 125.0*src(n,k+1,j+1,i+1)
-            )/32768.0;
+              -  27.*src(n,k-1,j-1,i-1)+  270.*src(n,k-1,j-1,i  )+  45.*src(n,k-1,j-1,i+1)
+              + 270.*src(n,k-1,j,  i-1)- 2700.*src(n,k-1,j,  i  )- 450.*src(n,k-1,j,  i+1)
+              +  45.*src(n,k-1,j+1,i-1)-  450.*src(n,k-1,j+1,i  )-  75.*src(n,k-1,j+1,i+1)
+              + 270.*src(n,k,  j-1,i-1)- 2700.*src(n,k,  j-1,i  )- 450.*src(n,k,  j-1,i+1)
+              -2700.*src(n,k,  j,  i-1)+27000.*src(n,k,  j,  i  )+4500.*src(n,k,  j,  i+1)
+              - 450.*src(n,k,  j+1,i-1)+ 4500.*src(n,k,  j+1,i  )+ 750.*src(n,k,  j+1,i+1)
+              +  45.*src(n,k+1,j-1,i-1)-  450.*src(n,k+1,j-1,i  )-  75.*src(n,k+1,j-1,i+1)
+              - 450.*src(n,k+1,j,  i-1)+ 4500.*src(n,k+1,j,  i  )+ 750.*src(n,k+1,j,  i+1)
+              -  75.*src(n,k+1,j+1,i-1)+  750.*src(n,k+1,j+1,i  )+ 125.*src(n,k+1,j+1,i+1)
+                                 )/32768.0;
         }
       }
     }
@@ -507,7 +518,7 @@ Real Multigrid::CalculateTotal(int type, int n) {
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx=rdx_*static_cast<Real>(1<<ll), dy=rdy_*static_cast<Real>(1<<ll),
-      dz=rdz_*static_cast<Real>  (1<<ll);
+       dz=rdz_*static_cast<Real>  (1<<ll);
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++)
