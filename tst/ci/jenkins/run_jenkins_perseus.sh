@@ -140,6 +140,7 @@ gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
+mv lcov.info ${lcov_dir_name}
 tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
 mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HOME on a reg. basis
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
