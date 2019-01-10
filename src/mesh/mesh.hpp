@@ -170,7 +170,7 @@ class Mesh {
   int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   std::int64_t GetTotalCells() {return static_cast<std::int64_t> (nbtotal)*
-     pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
+        pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
 
   // data
   RegionSize mesh_size;
@@ -209,7 +209,12 @@ class Mesh {
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
   Real *costlist;
-  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
+  // 8x arrays used exclusively for AMR (not SMR):
+  int *nref, *nderef;
+  std::size_t  *bnref, *bnderef;
+  std::size_t *brdisp, *bddisp;
+  int *rdisp, *ddisp;
+
   LogicalLocation *loclist;
   MeshBlockTree tree;
   std::int64_t nrbx1, nrbx2, nrbx3;
