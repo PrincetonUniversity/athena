@@ -57,12 +57,14 @@ class MGBoundaryValues : public BoundaryBase {
   void ApplyPhysicalBoundaries(void);
   void StartReceivingMultigrid(int nc, enum BoundaryType type);
   void ClearBoundaryMultigrid(enum BoundaryType type);
-  int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
+  int LoadMultigridBoundaryBufferSameLevel(
+      AthenaArray<Real> &src,
+      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
                                     int nc, enum BoundaryType type);
-  void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
+  void SetMultigridBoundarySameLevel(
+      AthenaArray<Real> &dst,
+      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
                                        int nc, enum BoundaryType type);
 
