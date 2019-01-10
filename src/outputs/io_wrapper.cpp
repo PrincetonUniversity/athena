@@ -30,30 +30,35 @@ int IOWrapper::Open(const char* fname, enum rwmode rw) {
 
   if (rw==IO_WRAPPER_READ_MODE) {
 #ifdef MPI_PARALLEL
+    // NOLINTNEXTLINE
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh_)
-       !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
+        !=MPI_SUCCESS) // use const_cast to convince the compiler.
 #else
-    if ((fh_ = std::fopen(fname,"rb")) == nullptr) {
+      if ((fh_ = std::fopen(fname,"rb")) == nullptr) // NOLINT
 #endif
-      msg << "### FATAL ERROR in function [IOWrapper:Open]"
-          <<std::endl<< "Input file '" << fname << "' could not be opened" <<std::endl;
-      ATHENA_ERROR(msg);
-      return false;
-    }
+      {
+        msg << "### FATAL ERROR in function [IOWrapper:Open]"
+            <<std::endl<< "Input file '" << fname << "' could not be opened" <<std::endl;
+        ATHENA_ERROR(msg);
+        return false;
+      }
 
   } else if (rw==IO_WRAPPER_WRITE_MODE) {
 #ifdef MPI_PARALLEL
     MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
+    // NOLINTNEXTLINE
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
-                     MPI_INFO_NULL,&fh_) != MPI_SUCCESS) {
+                      MPI_INFO_NULL,&fh_) != MPI_SUCCESS)
 #else
-    if ((fh_ = std::fopen(fname,"wb")) == nullptr) {
+      if ((fh_ = std::fopen(fname,"wb")) == nullptr) // NOLINT
 #endif
-      msg << "### FATAL ERROR in function [IOWrapper:Open]"
-          <<std::endl<< "Output file '" << fname << "' could not be opened" <<std::endl;
-      ATHENA_ERROR(msg);
-      return false;
-    }
+      {
+        msg << "### FATAL ERROR in function [IOWrapper:Open]"
+            << std::endl<< "Output file '" << fname
+            << "' could not be opened" <<std::endl;
+        ATHENA_ERROR(msg);
+        return false;
+      }
   } else {
     return false;
   }
@@ -99,7 +104,7 @@ std::size_t IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t
 //  \brief wrapper for {MPI_File_read_at_all} versus {std::fseek+std::fread}
 
 std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
-                           IOWrapperSize_t count, IOWrapperSize_t offset) {
+                                   IOWrapperSize_t count, IOWrapperSize_t offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
@@ -136,12 +141,12 @@ std::size_t IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSiz
 //  \brief wrapper for {MPI_File_write_at_all} versus {std::fseek+std::fwrite}.
 
 std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
-                            IOWrapperSize_t cnt, IOWrapperSize_t offset) {
+                                    IOWrapperSize_t cnt, IOWrapperSize_t offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
   if (MPI_File_write_at_all(fh_,offset,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)
-     !=MPI_SUCCESS)
+      !=MPI_SUCCESS)
     return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
