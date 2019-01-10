@@ -108,7 +108,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // large deviations from a square mesh. Currently signals a warning for each
       // MeshBlock with non-square cells.
       if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
-            (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
+          (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
         // It is possible for small floating-point differences to arise despite equal
         // analytic values for grid spacings in the coordinates.cpp calculation of:
         // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
@@ -118,7 +118,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // decomposition is used
 
         // std::stringstream msg;
-        std::cout << "### Warning in Reconstruction constructor" << std::endl
+        std::cout
+            << "### Warning in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
             << " require a uniform, Carteisan mesh with" << std::endl
             << "square cells (dx1f=dx2f=dx3f). "
@@ -242,8 +243,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         c6i(i) = -1.0/6.0;
       }
 
-    // coeffcients in x1 for non-uniform or cuvilinear mesh
-    // (unnecessary work in case of uniform curvilinear mesh)
+      // coeffcients in x1 for non-uniform or cuvilinear mesh
+      // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
       for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i) {
@@ -319,8 +320,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c6j(j) = -1.0/6.0;
         }
 
-      // coeffcients in x2 for non-uniform or cuvilinear mesh
-      // (unnecessary work in case of uniform curvilinear mesh)
+        // coeffcients in x2 for non-uniform or cuvilinear mesh
+        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j) {
@@ -396,8 +397,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c6k(k) = -1.0/6.0;
         }
 
-      // coeffcients in x3 for non-uniform or cuvilinear mesh
-      // (unnecessary work in case of uniform curvilinear mesh)
+        // coeffcients in x3 for non-uniform or cuvilinear mesh
+        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k) {

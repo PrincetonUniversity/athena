@@ -29,7 +29,7 @@ void Pack4DData(AthenaArray<Real> &src, Real *buf, int sn, int en,
       for (int j=sj; j<=ej; j++) {
 #pragma omp simd
         for (int i=si; i<=ei; i++)
-            buf[offset++]=src(n,k,j,i);
+          buf[offset++]=src(n,k,j,i);
       }
     }
   }
@@ -65,7 +65,7 @@ void Pack3DData(AthenaArray<Real> &src, Real *buf,
     for (int j=sj; j<=ej; j++) {
 #pragma omp simd
       for (int i=si; i<=ei; i++)
-          buf[offset++]=src(k, j, i);
+        buf[offset++]=src(k, j, i);
     }
   }
   return;

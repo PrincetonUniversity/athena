@@ -77,18 +77,18 @@ int CheckSignalFlags(void) {
 int GetSignalFlag(int s) {
   int ret=-1;
   switch(s) {
-  case SIGTERM:
-    ret=signalflag[ITERM];
-    break;
-  case SIGINT:
-    ret=signalflag[IINT];
-    break;
-  case SIGALRM:
-    ret=signalflag[IALRM];
-    break;
-  default:
-    // nothing
-    break;
+    case SIGTERM:
+      ret=signalflag[ITERM];
+      break;
+    case SIGINT:
+      ret=signalflag[IINT];
+      break;
+    case SIGALRM:
+      ret=signalflag[IALRM];
+      break;
+    default:
+      // nothing
+      break;
   }
   return ret;
 }
@@ -100,21 +100,21 @@ int GetSignalFlag(int s) {
 void SetSignalFlag(int s) {
   // Signal handler functions must have C linkage; C++ linkage is implemantation-defined
   switch(s) {
-  case SIGTERM:
-    signalflag[ITERM]=1;
-    signal(s, SetSignalFlag);
-    break;
-  case SIGINT:
-    signalflag[IINT]=1;
-    signal(s, SetSignalFlag);
-    break;
-  case SIGALRM:
-    signalflag[IALRM]=1;
-    signal(s, SetSignalFlag);
-    break;
-  default:
-    // nothing
-    break;
+    case SIGTERM:
+      signalflag[ITERM]=1;
+      signal(s, SetSignalFlag);
+      break;
+    case SIGINT:
+      signalflag[IINT]=1;
+      signal(s, SetSignalFlag);
+      break;
+    case SIGALRM:
+      signalflag[IALRM]=1;
+      signal(s, SetSignalFlag);
+      break;
+    default:
+      // nothing
+      break;
   }
   return;
 }
