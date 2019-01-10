@@ -43,10 +43,10 @@ EquationOfState::~EquationOfState() {
 // \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
-void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bcc, Coordinates *pco,
-    int il, int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::ConservedToPrimitive(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   // Convert to Primitives
@@ -85,30 +85,31 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // \brief Converts primitive variables into conservative variables
 //        Note that this function assumes cell-centered fields are already calculated
 
-void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int il, int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::PrimitiveToConserved(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
+    AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      Real& u_d  = cons(IDN,k,j,i);
-      Real& u_m1 = cons(IM1,k,j,i);
-      Real& u_m2 = cons(IM2,k,j,i);
-      Real& u_m3 = cons(IM3,k,j,i);
+      for (int i=il; i<=iu; ++i) {
+        Real& u_d  = cons(IDN,k,j,i);
+        Real& u_m1 = cons(IM1,k,j,i);
+        Real& u_m2 = cons(IM2,k,j,i);
+        Real& u_m3 = cons(IM3,k,j,i);
 
-      const Real& w_d  = prim(IDN,k,j,i);
-      const Real& w_vx = prim(IVX,k,j,i);
-      const Real& w_vy = prim(IVY,k,j,i);
-      const Real& w_vz = prim(IVZ,k,j,i);
+        const Real& w_d  = prim(IDN,k,j,i);
+        const Real& w_vx = prim(IVX,k,j,i);
+        const Real& w_vy = prim(IVY,k,j,i);
+        const Real& w_vz = prim(IVZ,k,j,i);
 
-      u_d = w_d;
-      u_m1 = w_vx*w_d;
-      u_m2 = w_vy*w_d;
-      u_m3 = w_vz*w_d;
+        u_d = w_d;
+        u_m1 = w_vx*w_d;
+        u_m2 = w_vy*w_d;
+        u_m3 = w_vz*w_d;
+      }
     }
   }
-}
 
   return;
 }
@@ -150,8 +151,9 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
-void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
-    AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveConservedFloors(
+    AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
+    int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
 
   Real& u_d  = cons(IDN,k,j,i);

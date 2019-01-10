@@ -25,9 +25,9 @@
 
 // Declarations
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime);
+                      Real gamma_prime);
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime);
+                           Real gamma_prime);
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -65,10 +65,10 @@ EquationOfState::~EquationOfState() {}
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
 
-void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-    int ku) {
+void EquationOfState::ConservedToPrimitive(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
   const Real v_sq_max = 1.0 - 1.0/SQR(gamma_max_);
@@ -200,9 +200,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Outputs:
 //   cons: 3D array of conserved variables
 
-void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::PrimitiveToConserved(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
+    AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
@@ -268,8 +269,9 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   follows advice in NR for avoiding large cancellations in solving quadratics
 //   almost same function as in adiabatic_mhd_gr.cpp
 
-void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
+void EquationOfState::FastMagnetosonicSpeedsSR(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
+    int k, int j, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m) {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
@@ -353,9 +355,9 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real denominator_inv = 1.0 / (tmp1 + tmp2 - cs_sq * bt_sq);
       Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) * denominator_inv;
       Real a2 = (6.0*tmp1*vx_sq + tmp2*(vx_sq-1.0) + cs_sq*(bt_sq-bx_sq))
-        * denominator_inv;
+                * denominator_inv;
       Real a1 = (-4.0*tmp1*vx_sq*vx + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1])
-        * denominator_inv;
+                * denominator_inv;
       Real a0 = (tmp1*SQR(vx_sq) - tmp2*vx_sq + cs_sq*bx_sq) * denominator_inv;
 
       // Calculate reduced quartic coefficients
@@ -449,15 +451,15 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 //   same function as in hlld_rel.cpp
 
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime) {
+                      Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
   Real pgas = chi/gamma_prime;                                     // (MM A17)
   Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
-      - ss_sq*0.5/SQR(w_guess);                                    // (MM A1)
+                 - ss_sq*0.5/SQR(w_guess);                                    // (MM A1)
   return ee_calc - ee;
 }
 
@@ -478,18 +480,20 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 //   same function as in hlld_mhd_rel.cpp
 
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-    Real gamma_prime) {
+                           Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);           // (cf. MM A11)
   Real w_cu = SQR(w_guess) * w_guess;
   Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
-  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
-      * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
+  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)
+                  * (ss_sq * (3.0*w_guess*(w_guess+bb_sq)
+                              + SQR(bb_sq)) + m_sq*w_cu);             // (MM A16)
   Real dchi_dw = 1.0 - v_sq
-      - 0.5*gamma_lorentz * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+                 - 0.5*gamma_lorentz
+                 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;           // (cf. MM A14)
   Real drho_dw = -0.5*gamma_lorentz*dd*dv_sq_dw;                      // (MM A15)
   Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
   Real dpgas_drho = 0.0;                                              // (MM A18)

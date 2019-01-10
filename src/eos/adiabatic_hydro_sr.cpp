@@ -76,10 +76,10 @@ EquationOfState::~EquationOfState() {}
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
 
-void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-  int ku) {
+void EquationOfState::ConservedToPrimitive(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Parameters
   const Real max_velocity = std::sqrt(1.0 - 1.0/SQR(gamma_max_));
 
@@ -146,7 +146,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
         } else {
           y0 = 2.0 * std::cbrt(SQR(c2) + c3)
-            * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
+               * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
         }
 
         // Step 5: Find real root of original (resolvent) cubic:
@@ -217,9 +217,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
 
-void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::PrimitiveToConserved(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+    AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_prime = gamma_/(gamma_-1.0);
 

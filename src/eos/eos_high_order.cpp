@@ -27,11 +27,10 @@
 // \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
 // at fourth order accuracy. Wrapper function for specific pointwise conversion routine
 
-void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
-    int kl, int ku) {
-
+void EquationOfState::ConservedToPrimitiveCellAverage(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block_;
   Hydro *ph = pmb->phydro;
 
