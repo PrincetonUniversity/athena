@@ -44,7 +44,6 @@
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
                      int igflag, bool ref_flag) {
-  std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
   root_level = pm->root_level;
@@ -143,9 +142,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-           LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, char *mbdata, int igflag) {
-  std::stringstream msg;
+                     LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
+                     Real icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
   prev=nullptr;
   next=nullptr;
@@ -231,7 +229,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
   InitUserMeshBlockData(pin);
 
-  int os=0;
+  std::size_t os=0;
   // load hydro and field data
   std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
   // load it into the half-step arrays too
@@ -264,12 +262,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
-           iuser_meshblock_data[n].GetSizeInBytes());
+                iuser_meshblock_data[n].GetSizeInBytes());
     os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
   for (int n=0; n<nreal_user_meshblock_data_; n++) {
     std::memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
-           ruser_meshblock_data[n].GetSizeInBytes());
+                ruser_meshblock_data[n].GetSizeInBytes());
     os+=ruser_meshblock_data[n].GetSizeInBytes();
   }
 
@@ -395,7 +393,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes(void) {
   }
   if (MAGNETIC_FIELDS_ENABLED)
     size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
-          +pfield->b.x3f.GetSizeInBytes());
+           +pfield->b.x3f.GetSizeInBytes());
   if (SELF_GRAVITY_ENABLED)
     size+=pgrav->phi.GetSizeInBytes();
 
