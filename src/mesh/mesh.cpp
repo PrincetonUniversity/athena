@@ -190,14 +190,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   // check consistency of the block and mesh
   if (mesh_size.nx1 % block_size.nx1 != 0
-  || mesh_size.nx2 % block_size.nx2 != 0
-  || mesh_size.nx3 % block_size.nx3 != 0) {
+      || mesh_size.nx2 % block_size.nx2 != 0
+      || mesh_size.nx3 % block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
     ATHENA_ERROR(msg);
   }
   if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
-     || (block_size.nx3 < 4 && dim==3)) {
+      || (block_size.nx3 < 4 && dim==3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 meshes." << std::endl;
     ATHENA_ERROR(msg);
@@ -279,10 +279,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   if (multilevel==true) {
     if (block_size.nx1 % 2==1 || (block_size.nx2 % 2==1 && block_size.nx2>1)
-                           || (block_size.nx3 % 2==1 && block_size.nx3>1)) {
+        || (block_size.nx3 % 2==1 && block_size.nx3>1)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-      << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
-      << std::endl;
+          << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -323,14 +323,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           ATHENA_ERROR(msg);
         }
         if (ref_size.x1min > ref_size.x1max || ref_size.x2min > ref_size.x2max
-        || ref_size.x3min > ref_size.x3max)  {
+            || ref_size.x3min > ref_size.x3max)  {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Invalid refinement region is specified."<<  std::endl;
           ATHENA_ERROR(msg);
         }
         if (ref_size.x1min < mesh_size.x1min || ref_size.x1max > mesh_size.x1max
-        || ref_size.x2min < mesh_size.x2min || ref_size.x2max > mesh_size.x2max
-        || ref_size.x3min < mesh_size.x3min || ref_size.x3max > mesh_size.x3max) {
+            || ref_size.x2min < mesh_size.x2min || ref_size.x2max > mesh_size.x2max
+            || ref_size.x3min < mesh_size.x3min || ref_size.x3max > mesh_size.x3max) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Refinement region must be smaller than the whole mesh." << std::endl;
           ATHENA_ERROR(msg);
@@ -436,8 +436,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       ATHENA_ERROR(msg);
     } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
-          << Globals::nranks << ")" << std::endl;
+                << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+                << Globals::nranks << ")" << std::endl;
     }
   }
 #endif
@@ -473,8 +473,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // set gravity flag
   gflag=0;
   if (SELF_GRAVITY_ENABLED) gflag=1;
-//  if (SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
-//    gflag=2;
+  //  if (SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+  //    gflag=2;
 
   // create MeshBlock list for this process
   int nbs=nslist[Globals::my_rank];
@@ -557,7 +557,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // read the restart file
   // the file is already open and the pointer is set to after <par_end>
   IOWrapperSize_t headersize = sizeof(int)*3+sizeof(Real)*2
-                             + sizeof(RegionSize)+sizeof(IOWrapperSize_t);
+                               + sizeof(RegionSize)+sizeof(IOWrapperSize_t);
   char *headerdata = new char[headersize];
   if (Globals::my_rank==0) { // the master process reads the header data
     if (resfile.Read(headerdata,1,headersize)!=headersize) {
@@ -691,12 +691,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     IOWrapperSize_t udoffset=0;
     for (int n=0; n<nint_user_mesh_data_; n++) {
       std::memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
-             iuser_mesh_data[n].GetSizeInBytes());
+                  iuser_mesh_data[n].GetSizeInBytes());
       udoffset+=iuser_mesh_data[n].GetSizeInBytes();
     }
     for (int n=0; n<nreal_user_mesh_data_; n++) {
       std::memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
-             ruser_mesh_data[n].GetSizeInBytes());
+                  ruser_mesh_data[n].GetSizeInBytes());
       udoffset+=ruser_mesh_data[n].GetSizeInBytes();
     }
     delete [] userdata;
@@ -755,8 +755,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       ATHENA_ERROR(msg);
     } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
-          << Globals::nranks << ")" << std::endl;
+                << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+                << Globals::nranks << ")" << std::endl;
       delete [] offset;
       return;
     }
@@ -786,8 +786,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // set gravity flag
   gflag=0;
   if (SELF_GRAVITY_ENABLED) gflag=1;
-//  if (SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
-//    gflag=2;
+  //  if (SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+  //    gflag=2;
 
   // allocate data buffer
   int nb=nblist[Globals::my_rank];
@@ -955,9 +955,9 @@ void Mesh::OutputMeshStructure(int dim) {
         totalcost+=costlist[i];
         std::fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n", j, ranklist[j],
                      costlist[j]);
-        std::fprintf(fp,
-                "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
-                ll, lx1, lx2, lx3);
+        std::fprintf(
+            fp, "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
+            ll, lx1, lx2, lx3);
         if (dim==2) {
           std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           std::fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
@@ -1527,16 +1527,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (nbtotal==onb) {
         iflag=true;
       } else if (nbtotal < onb && Globals::my_rank==0) {
-         std::cout << "### Warning in Mesh::Initialize" << std::endl
-         << "The number of MeshBlocks decreased during AMR grid initialization."
-         << std::endl
-         << "Possibly the refinement criteria have a problem." << std::endl;
+        std::cout << "### Warning in Mesh::Initialize" << std::endl
+                  << "The number of MeshBlocks decreased during AMR grid initialization."
+                  << std::endl
+                  << "Possibly the refinement criteria have a problem." << std::endl;
       }
       if (nbtotal > 2*inb && Globals::my_rank==0) {
-        std::cout << "### Warning in Mesh::Initialize" << std::endl
-         << "The number of MeshBlocks increased more than twice during initialization."
-         << std::endl
-         << "More computing power than you expected may be required." << std::endl;
+        std::cout
+            << "### Warning in Mesh::Initialize" << std::endl
+            << "The number of MeshBlocks increased more than twice during initialization."
+            << std::endl
+            << "More computing power than you expected may be required." << std::endl;
       }
     }
   } while (iflag==false);
@@ -1610,7 +1611,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 
 #ifdef MPI_PARALLEL
   if (nb % Globals::nranks != 0 && adaptive == false
-  && maxcost == mincost && Globals::my_rank==0) {
+      && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in LoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -1964,11 +1965,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (MAGNETIC_FIELDS_ENABLED) {
     bssame+=(bnx1+1)*bnx2*bnx3+bnx1*(bnx2+f2)*bnx3+bnx1*bnx2*(bnx3+f3);
     bsf2c+=((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
-          +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
-          +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
+           +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
+           +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
     bsc2f+=((bnx1/2)+1+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)
-          +(bnx1/2+2)*(((bnx2+1)/2)+f2+2*f2)*((bnx3+1)/2+2*f3)
-          +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2)+f3+2*f3);
+           +(bnx1/2+2)*(((bnx2+1)/2)+f2+2*f2)*((bnx3+1)/2+2*f3)
+           +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2)+f3+2*f3);
   }
   bssame++; // for derefinement counter
 
@@ -2192,11 +2193,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
           if (MAGNETIC_FIELDS_ENABLED) {
             pmr->RestrictFieldX1(pob->pfield->b.x1f, pmr->coarse_b_.x1f,
-                         pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
+                                 pob->cis, pob->cie+1,
+                                 pob->cjs, pob->cje,
+                                 pob->cks, pob->cke);
             pmr->RestrictFieldX2(pob->pfield->b.x2f, pmr->coarse_b_.x2f,
-                         pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
+                                 pob->cis, pob->cie,
+                                 pob->cjs, pob->cje+f2,
+                                 pob->cks, pob->cke);
             pmr->RestrictFieldX3(pob->pfield->b.x3f, pmr->coarse_b_.x3f,
-                         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
+                                 pob->cis, pob->cie,
+                                 pob->cjs, pob->cje,
+                                 pob->cks, pob->cke+f3);
             FaceField &src=pmr->coarse_b_;
             FaceField &dst=pmb->pfield->b;
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
@@ -2252,8 +2259,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-        pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
-                       pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
+        pmr->ProlongateCellCenteredValues(
+            dst, pmb->phydro->u, 0, NHYDRO-1,
+            pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &src=pob->pfield->b;
           FaceField &dst=pmr->coarse_b_;
@@ -2275,14 +2283,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
             }
           }
-          pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
-                         pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
-          pmr->ProlongateSharedFieldX2(dst.x2f, pmb->pfield->b.x2f,
-                         pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
-          pmr->ProlongateSharedFieldX3(dst.x3f, pmb->pfield->b.x3f,
-                         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
-          pmr->ProlongateInternalField(pmb->pfield->b, pob->cis, pob->cie,
-                                       pob->cjs, pob->cje, pob->cks, pob->cke);
+          pmr->ProlongateSharedFieldX1(
+              dst.x1f, pmb->pfield->b.x1f,
+              pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
+          pmr->ProlongateSharedFieldX2(
+              dst.x2f, pmb->pfield->b.x2f,
+              pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
+          pmr->ProlongateSharedFieldX3(
+              dst.x3f, pmb->pfield->b.x3f,
+              pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
+          pmr->ProlongateInternalField(
+              pmb->pfield->b, pob->cis, pob->cie,
+              pob->cjs, pob->cje, pob->cks, pob->cke);
         }
       }
     }

@@ -114,8 +114,9 @@ void MeshBlockTree::CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_
 //  \brief add a MeshBlock to the tree, also creates neighboring blocks
 
 void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-   enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
-   int rl, int &nnew) {
+                                 enum BoundaryFlag* mesh_bcs, std::int64_t rbx,
+                                 std::int64_t rby, std::int64_t rbz,
+                                 int rl, int &nnew) {
   int mx, my, mz;
   if (loc.level==rloc.level) return; // done
 
@@ -137,7 +138,8 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
 
 void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
-                    std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl) {
+                                              std::int64_t rbx, std::int64_t rby,
+                                              std::int64_t rbz, int rl) {
   int mx, my, mz;
   if (loc.level==rloc.level) // done
     return;
@@ -269,7 +271,7 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
     for (int ox2=s2; ox2<=e2; ox2++) {
       for (int ox1=-1; ox1<=1; ox1++) {
         MeshBlockTree *bt=
-          root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl,true);
+            root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl,true);
         if (bt!=nullptr) {
           if (bt->flag==false) {
             int lis, lie, ljs, lje, lks, lke;
