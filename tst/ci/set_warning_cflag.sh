@@ -12,7 +12,7 @@ set_warning_cflag () {
     # Suppress or add warnings based on C++ compiler
     if [ "$1" == "g++" ] || [ "$1" == "gcc" ]; then
 	warn_flags+=("-Wno-unused-variable"
-		     "-Wno-unused-but-set-variable"
+		     "-Wno-unused-but-set-variable"  # separate case vs. previous warning
 		     "-Wno-unused-parameter"
 		     "-Wno-unused-but-set-parameter"
 		     "-Wno-unknown-pragmas"
@@ -31,10 +31,11 @@ set_warning_cflag () {
 	# and add individual warnings (or just try "-w3 -diag-disable:remark"
 
 	# Does ICC have -pedantic?? will it error out?
+	warn_flags+=(#"-w3"
+	             "-diag-disable=175" # "error #175: subscript out of range" for IBY during Hydro, e.g.
 		     "-Wno-unused-variable"
-		     "-Wno-unused-function")
-	# There are still illegal narrowing warnings with icc that need to be addressed
-		     #"-Wshorten-64-to-32")
+		     "-Wno-unused-function"
+		     "-Wshorten-64-to-32") # illegal narrowing warnings (#2259)
     else
 	echo "Unknown CXX=$1 compiler"
 	return 1

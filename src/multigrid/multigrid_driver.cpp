@@ -53,9 +53,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     ATHENA_ERROR(msg);
     return;
   }
-  int nbx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
-  int nbx2=pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
-  int nbx3=pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
+  int nbx1 = pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
+  int nbx2 = pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
+  int nbx3 = pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
   if (nbx1 != nbx2 || nbx1 != nbx3) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -66,8 +66,10 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
 
   fperiodic_=false;
   if (MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
-  && MGBoundary[INNER_X2]==MGPeriodicInnerX2 && MGBoundary[OUTER_X2]==MGPeriodicOuterX2
-  && MGBoundary[INNER_X3]==MGPeriodicInnerX3 && MGBoundary[OUTER_X3]==MGPeriodicOuterX3)
+      && MGBoundary[INNER_X2]==MGPeriodicInnerX2
+      && MGBoundary[OUTER_X2]==MGPeriodicOuterX2
+      && MGBoundary[INNER_X3]==MGPeriodicInnerX3
+      && MGBoundary[OUTER_X3]==MGPeriodicOuterX3)
     fperiodic_=true;
 
   // Setting up the MPI information
@@ -182,8 +184,8 @@ void MultigridDriver::SubtractAverage(int type) {
                  rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
   Real vol=(pmy_mesh_->mesh_size.x1max-pmy_mesh_->mesh_size.x1min)
-          *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
-          *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
+           *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
+           *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
   for (int v=0; v<nvar_; v++) {
     Real total=0.0;
     for (int n=0; n<pmy_mesh_->nbtotal; n++)
@@ -403,14 +405,14 @@ void MultigridDriver::SolveIterative(void) {
       if (eps_==0.0) break;
       if (Globals::my_rank==0)
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-          << "Slow multigrid convergence : defect norm = " << def
-          << ", convergence factor = " << def/olddef << "." << std::endl;
+                  << "Slow multigrid convergence : defect norm = " << def
+                  << ", convergence factor = " << def/olddef << "." << std::endl;
     }
     if (niter>100) {
       if (Globals::my_rank==0) {
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-          << "Aborting because the # iterations is too large, niter > 100." << std::endl
-          << "Check the solution as it may not be accurate enough." << std::endl;
+                  << "Aborting because the # iterations is too large, niter > 100." << std::endl
+                  << "Check the solution as it may not be accurate enough." << std::endl;
       }
       break;
     }
@@ -437,8 +439,8 @@ void MultigridDriver::SolveCoarsestGrid(void) {
   } else {
     if (fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
-              *(pm->mesh_size.x2max-pm->mesh_size.x2min)
-              *(pm->mesh_size.x3max-pm->mesh_size.x3min);
+               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
+               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
       for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
@@ -453,8 +455,8 @@ void MultigridDriver::SolveCoarsestGrid(void) {
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if (fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
-              *(pm->mesh_size.x2max-pm->mesh_size.x2min)
-              *(pm->mesh_size.x3max-pm->mesh_size.x3min);
+               *(pm->mesh_size.x2max-pm->mesh_size.x2min)
+               *(pm->mesh_size.x3max-pm->mesh_size.x3min);
       for (int v=0; v<nvar_; v++) {
         Real ave=mgroot_->CalculateTotal(1, v)/vol;
         mgroot_->SubtractAverage(1, v, ave);
