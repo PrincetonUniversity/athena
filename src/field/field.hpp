@@ -50,8 +50,9 @@ class Field {
   AthenaArray<Real> e1_x2f, e3_x2f; // electric fields at x2-face from Riemann solver
   AthenaArray<Real> e1_x3f, e2_x3f; // electric fields at x3-face from Riemann solver
 
-  void CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-                                  Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+  void CalculateCellCenteredField(
+      const FaceField &bf, AthenaArray<Real> &bc,
+      Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
   void CT(const Real wght, FaceField &b_out);
   void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
                     const Real wght[3]);
