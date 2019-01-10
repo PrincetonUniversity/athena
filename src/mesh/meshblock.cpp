@@ -142,7 +142,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-                     LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
+                     LogicalLocation iloc, RegionSize input_block,
+                     enum BoundaryFlag *input_bcs,
                      Real icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
   prev=nullptr;
