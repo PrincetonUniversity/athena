@@ -1799,15 +1799,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     if (mesh_size.nx2 > 1) lj=1;
     if (mesh_size.nx3 > 1) lk=1;
     for (int n=0; n<tnderef; n++) {
-      if ((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
+      if ((lderef[n].lx1 & 1LL)==0LL &&
+          (lderef[n].lx2 & 1LL)==0LL &&
+          (lderef[n].lx3 & 1LL)==0LL) {
         int r=n, rr=0;
         for (std::int64_t k=0; k<=lk; k++) {
           for (std::int64_t j=0; j<=lj; j++) {
             for (std::int64_t i=0; i<=1; i++) {
               if ((lderef[n].lx1+i)==lderef[r].lx1
-              && (lderef[n].lx2+j)==lderef[r].lx2
-              && (lderef[n].lx3+k)==lderef[r].lx3
-              &&  lderef[n].level ==lderef[r].level)
+                  && (lderef[n].lx2+j)==lderef[r].lx2
+                  && (lderef[n].lx3+k)==lderef[r].lx3
+                  &&  lderef[n].level ==lderef[r].level)
                 rr++;
               r++;
             }
@@ -2171,10 +2173,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           MeshBlock* pob=FindMeshBlock(on+ll);
           MeshRefinement *pmr=pob->pmr;
           pmr->RestrictCellCenteredValues(pob->phydro->u, pmr->coarse_cons_,
-               0, NHYDRO-1, pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
-          int is=pmb->is+(loclist[on+ll].lx1&1L)*pmb->block_size.nx1/2;
-          int js=pmb->js+(loclist[on+ll].lx2&1L)*pmb->block_size.nx2/2;
-          int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
+                                          0, NHYDRO-1,
+                                          pob->cis, pob->cie,
+                                          pob->cjs, pob->cje,
+                                          pob->cks, pob->cke);
+          int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 0LL)*pmb->block_size.nx1/2;
+          int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 0LL)*pmb->block_size.nx2/2;
+          int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 0LL)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
           for (int nv=0; nv<NHYDRO; nv++) {
@@ -2233,9 +2238,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         MeshRefinement *pmr=pmb->pmr;
         int is=pob->cis-1, ie=pob->cie+1, js=pob->cjs-f2,
             je=pob->cje+f2, ks=pob->cks-f3, ke=pob->cke+f3;
-        int cis=(newloc[n].lx1&1L)*pob->block_size.nx1/2+pob->is-1;
-        int cjs=(newloc[n].lx2&1L)*pob->block_size.nx2/2+pob->js-f2;
-        int cks=(newloc[n].lx3&1L)*pob->block_size.nx3/2+pob->ks-f3;
+        int cis = ((newloc[n].lx1 & 1LL) == 0LL)*pob->block_size.nx1/2 + pob->is-1;
+        int cjs = ((newloc[n].lx2 & 1LL) == 0LL)*pob->block_size.nx2/2 + pob->js-f2;
+        int cks = ((newloc[n].lx3 & 1LL) == 0LL)*pob->block_size.nx3/2 + pob->ks-f3;
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer

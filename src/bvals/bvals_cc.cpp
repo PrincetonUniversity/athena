@@ -271,8 +271,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
 
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else                       si-=cng;
+    if ((pmb->loc.lx1 & 1LL) == 0LL) ei+=cng;
+    else                             si-=cng;
   } else if (nb.ox1>0)  {
     si=pmb->cie+1,   ei=pmb->cie+cng;
   } else {
@@ -281,8 +281,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else                       sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
+      else                             sj-=cng;
     }
   } else if (nb.ox2>0) {
     sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -292,8 +292,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else                       sk-=cng;
+      if ((pmb->loc.lx3 & 1LL) == 0LL) ek+=cng;
+      else                             sk-=cng;
     }
   } else if (nb.ox3>0)  {
     sk=pmb->cke+1,   ek=pmb->cke+cng;
