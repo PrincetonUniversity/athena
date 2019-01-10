@@ -426,14 +426,14 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   // bx1
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie+1;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
+    if ((pmb->loc.lx1 & 1LL)==0LL) ei+=cng;
     else             si-=cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+1+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis;
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
@@ -441,7 +441,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
+      if ((pmb->loc.lx3 & 1LL)==0LL) ek+=cng;
       else             sk-=cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+cng;}
@@ -463,7 +463,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   // bx2
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
+    if ((pmb->loc.lx1 & 1LL)==0LL) ei+=cng;
     else             si-=cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis-1;
@@ -471,7 +471,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
       ej++;
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+1+cng;}
@@ -499,7 +499,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
@@ -508,7 +508,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
       ek++;
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
+      if ((pmb->loc.lx3 & 1LL)==0LL) ek+=cng;
       else             sk-=cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+1+cng;}
@@ -713,11 +713,12 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
     NeighborBlock& nb = neighbor[n];
     if (bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if (bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
-      if (nb.rank==Globals::my_rank) {// on the same process
+      if (nb.rank==Globals::my_rank) { // on the same process
         flag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
-      } else { // MPI boundary
+      else { // NOLINT // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(bd_field_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -726,8 +727,6 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
           continue;
         }
         bd_field_.flag[nb.bufid] = BNDRY_ARRIVED;
-      }
-#else
       }
 #endif
     }
@@ -786,41 +785,41 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
 void BoundaryValues::PolarSingleField(FaceField &dst) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
-  && pmb->block_size.nx3 > 1) {
+      && pmb->block_size.nx3 > 1) {
     if (block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           exc_(k)=dst.x1f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x1f(k,j,i)=exc_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+            exc_(k)=dst.x1f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x1f(k,j,i)=exc_(k_shift);
+          }
+        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           exc_(k)=dst.x2f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x2f(k,j,i)=exc_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+            exc_(k)=dst.x2f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x2f(k,j,i)=exc_(k_shift);
+          }
+        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-           exc_(k)=dst.x3f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x3f(k,j,i)=exc_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
+            exc_(k)=dst.x3f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x3f(k,j,i)=exc_(k_shift);
+          }
+        }
       }
     }
 

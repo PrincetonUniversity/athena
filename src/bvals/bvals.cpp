@@ -1680,14 +1680,14 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
     if (nb.ox1==0) {
       si=pmb->cis, ei=pmb->cie;
-      if ((lx1&1L)==0L) ei+=cn;
+      if ((lx1 & 1LL)==0LL) ei+=cn;
       else             si-=cn;
     } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
     else              si=pmb->cis-cn, ei=pmb->cis-1;
     if (nb.ox2==0) {
       sj=pmb->cjs, ej=pmb->cje;
       if (pmb->block_size.nx2 > 1) {
-        if ((lx2&1L)==0L) ej+=cn;
+        if ((lx2 & 1LL)==0LL) ej+=cn;
         else             sj-=cn;
       }
     } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
@@ -1695,7 +1695,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     if (nb.ox3==0) {
       sk=pmb->cks, ek=pmb->cke;
       if (pmb->block_size.nx3 > 1) {
-        if ((lx3&1L)==0L) ek+=cn;
+        if ((lx3 & 1LL)==0LL) ek+=cn;
         else             sk-=cn;
       }
     } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
