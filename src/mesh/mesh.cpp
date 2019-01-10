@@ -514,7 +514,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   MeshBlock *pfirst{};
-  int i, dim;
   IOWrapperSize_t *offset{};
   IOWrapperSize_t datasize, listsize, headeroffset;
 
@@ -590,7 +589,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   delete [] headerdata;
 
-  dim=1;
+  int dim=1;
   if (mesh_size.nx2>1) dim=2;
   if (mesh_size.nx3>1) dim=3;
 
@@ -803,7 +802,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
         << std::endl;
     ATHENA_ERROR(msg);
   }
-  for (i=nbs; i<=nbe; i++) {
+  for (int i=nbs; i<=nbe; i++) {
     // Match fixed-width integer precision of IOWrapperSize_t datasize
     std::uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
@@ -1308,128 +1307,21 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmgrd->Solve(1);
 
 #pragma omp parallel num_threads(nthreads)
-{
-    MeshBlock *pmb;
-    Hydro *phydro;
-    Field *pfield;
-    BoundaryValues *pbval;
+    {
+      MeshBlock *pmb;
+      Hydro *phydro;
+      Field *pfield;
+      BoundaryValues *pbval;
 
-    // prepare to receive conserved variables
-#pragma omp for private(pmb,pbval)
-    for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval;
-      pbval->Initialize();
-      pbval->StartReceivingForInit(true);
-    }
-
-    // send conserved variables
-#pragma omp for private(pmb,pbval)
-    for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval;
-      pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
-        pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
-    }
-
-    // wait to receive conserved variables
-#pragma omp for private(pmb,pbval)
-    for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval;
-      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
-        pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
-      // send and receive shearingbox boundary conditions
-      if (SHEARING_BOX)
-        pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-      pbval->ClearBoundaryForInit(true);
-    }
-
-    // With AMR/SMR GR send primitives to enable cons->prim before prolongation
-    if (GENERAL_RELATIVITY && multilevel) {
-      // prepare to receive primitives
-#pragma omp for
-      for (int i=0; i<nmb; ++i) {
-        pmb_array[i]->pbval->StartReceivingForInit(false);
-      }
-
-      // send primitives
-#pragma omp for private(pmb,pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
-      }
-
-      // wait to receive AMR/SMR GR primitives
-#pragma omp for private(pmb,pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->w, HYDRO_PRIM);
-        pbval->ClearBoundaryForInit(false);
-      }
-    }
-
-    // begin fourth-order correction of midpoint initial condition:
-    // --------------------------
-
-    // correct IC on all MeshBlocks or none; switch cannot be toggled independently
-    bool correct_ic = pmb_array[0]->precon->correct_ic;
-    if (correct_ic == true) {
-#pragma omp for private(pmb, phydro, pfield, pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i];
-        phydro=pmb->phydro;
-        pfield=pmb->pfield;
-        pbval=pmb->pbval;
-
-        // Assume cell-centered analytic value is computed at all real cells, and ghost
-        // cells with the cell-centered U have been exchanged
-        int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-
-        // Laplacian of cell-averaged conserved variables
-        AthenaArray<Real> delta_cons_;
-
-        // Allocate memory for 4D Laplacian
-        int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-        int ncells2 = 1, ncells3 = 1;
-        if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-        if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
-        int ncells4 = NHYDRO;
-        int nl = 0;
-        int nu = ncells4-1;
-        delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
-
-        // Compute and store Laplacian of cell-averaged conserved variables
-        pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
-        // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-        // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
-        Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
-        Real C = (h*h)/24.0;
-
-        // Compute fourth-order approximation to cell-centered conserved variables
-        for (int n=nl; n<=nu; ++n) {
-          for (int k=kl; k<=ku; ++k) {
-            for (int j=jl; j<=ju; ++j) {
-              for (int i=il; i<=iu; ++i) {
-                // We do not actually need to store all cell-centered conserved variables,
-                // but the ConservedToPrimitivePointwise() implementation operates on 4D
-                phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
-              }
-            }
-          }
-        }
-        delta_cons_.DeleteAthenaArray();
-      }
-
-      // begin second exchange of ghost cells with corrected cell-averaged <U>
-      // -----------------  (mostly copied from above)
       // prepare to receive conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        // no need to re-Initialize()
+        pbval->Initialize();
         pbval->StartReceivingForInit(true);
       }
 
+      // send conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
@@ -1450,76 +1342,183 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
         pbval->ClearBoundaryForInit(true);
       }
-      // -----------------  (verbatim copied from above)
-      // end second exchange of ghost cells
-    } // end if (correct_ic == true)
-    // --------------------------
-    // end fourth-order correction of midpoint initial condition
 
-    // Now do prolongation, compute primitives, apply BCs
+      // With AMR/SMR GR send primitives to enable cons->prim before prolongation
+      if (GENERAL_RELATIVITY && multilevel) {
+        // prepare to receive primitives
+#pragma omp for
+        for (int i=0; i<nmb; ++i) {
+          pmb_array[i]->pbval->StartReceivingForInit(false);
+        }
+
+        // send primitives
+#pragma omp for private(pmb,pbval)
+        for (int i=0; i<nmb; ++i) {
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
+        }
+
+        // wait to receive AMR/SMR GR primitives
+#pragma omp for private(pmb,pbval)
+        for (int i=0; i<nmb; ++i) {
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->w, HYDRO_PRIM);
+          pbval->ClearBoundaryForInit(false);
+        }
+      }
+
+      // begin fourth-order correction of midpoint initial condition:
+      // --------------------------
+
+      // correct IC on all MeshBlocks or none; switch cannot be toggled independently
+      bool correct_ic = pmb_array[0]->precon->correct_ic;
+      if (correct_ic == true) {
+#pragma omp for private(pmb, phydro, pfield, pbval)
+        for (int nb=0; nb<nmb; ++nb) {
+          pmb=pmb_array[nb];
+          phydro=pmb->phydro;
+          pfield=pmb->pfield;
+          pbval=pmb->pbval;
+
+          // Assume cell-centered analytic value is computed at all real cells, and ghost
+          // cells with the cell-centered U have been exchanged
+          int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+
+          // Laplacian of cell-averaged conserved variables
+          AthenaArray<Real> delta_cons_;
+
+          // Allocate memory for 4D Laplacian
+          int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+          int ncells2 = 1, ncells3 = 1;
+          if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+          if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+          int ncells4 = NHYDRO;
+          int nl = 0;
+          int nu = ncells4-1;
+          delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+
+          // Compute and store Laplacian of cell-averaged conserved variables
+          pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+          // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+          // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
+          Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+          Real C = (h*h)/24.0;
+
+          // Compute fourth-order approximation to cell-centered conserved variables
+          for (int n=nl; n<=nu; ++n) {
+            for (int k=kl; k<=ku; ++k) {
+              for (int j=jl; j<=ju; ++j) {
+                for (int i=il; i<=iu; ++i) {
+                  // We do not actually need to store all cell-centered cons. variables,
+                  // but the ConservedToPrimitivePointwise() implementation operates on 4D
+                  phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
+                }
+              }
+            }
+          }
+          delta_cons_.DeleteAthenaArray();
+        }
+
+        // begin second exchange of ghost cells with corrected cell-averaged <U>
+        // -----------------  (mostly copied from above)
+        // prepare to receive conserved variables
+#pragma omp for private(pmb,pbval)
+        for (int i=0; i<nmb; ++i) {
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          // no need to re-Initialize()
+          pbval->StartReceivingForInit(true);
+        }
+
+#pragma omp for private(pmb,pbval)
+        for (int i=0; i<nmb; ++i) {
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+          if (MAGNETIC_FIELDS_ENABLED)
+            pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
+        }
+
+        // wait to receive conserved variables
+#pragma omp for private(pmb,pbval)
+        for (int i=0; i<nmb; ++i) {
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+          if (MAGNETIC_FIELDS_ENABLED)
+            pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+          // send and receive shearingbox boundary conditions
+          if (SHEARING_BOX)
+            pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+          pbval->ClearBoundaryForInit(true);
+        }
+        // -----------------  (verbatim copied from above)
+        // end second exchange of ghost cells
+      } // end if (correct_ic == true)
+      // --------------------------
+      // end fourth-order correction of midpoint initial condition
+
+      // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
-      if (multilevel==true)
-        pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                    time, 0.0);
+        pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
+        if (multilevel==true)
+          pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                      time, 0.0);
 
-      int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-      if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
-      if (pbval->nblevel[1][1][2]!=-1) iu+=NGHOST;
-      if (pmb->block_size.nx2 > 1) {
-        if (pbval->nblevel[1][0][1]!=-1) jl-=NGHOST;
-        if (pbval->nblevel[1][2][1]!=-1) ju+=NGHOST;
+        int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+        if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
+        if (pbval->nblevel[1][1][2]!=-1) iu+=NGHOST;
+        if (pmb->block_size.nx2 > 1) {
+          if (pbval->nblevel[1][0][1]!=-1) jl-=NGHOST;
+          if (pbval->nblevel[1][2][1]!=-1) ju+=NGHOST;
+        }
+        if (pmb->block_size.nx3 > 1) {
+          if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
+          if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
+        }
+        pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
+                                        phydro->w, pfield->bcc, pmb->pcoord,
+                                        il, iu, jl, ju, kl, ku);
+        // --------------------------
+        int order = pmb->precon->xorder;
+        if (order == 4) {
+          // fourth-order EOS:
+          // for hydro, shrink buffer by 1 on all sides
+          if (pbval->nblevel[1][1][0] != -1) il+=1;
+          if (pbval->nblevel[1][1][2] != -1) iu-=1;
+          if (pbval->nblevel[1][0][1] != -1) jl+=1;
+          if (pbval->nblevel[1][2][1] != -1) ju-=1;
+          if (pbval->nblevel[0][1][1] != -1) kl+=1;
+          if (pbval->nblevel[2][1][1] != -1) ku-=1;
+          // for MHD, shrink buffer by 3
+          // TODO(felker): add MHD loop limit calculation for 4th order W(U)
+          pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
+                                                     phydro->w, pfield->bcc, pmb->pcoord,
+                                                     il, iu, jl, ju, kl, ku);
+        }
+        // --------------------------
+        // end fourth-order EOS
+        pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                       time, 0.0);
       }
-      if (pmb->block_size.nx3 > 1) {
-        if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
-        if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
-      }
-      pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                      phydro->w, pfield->bcc, pmb->pcoord,
-                                      il, iu, jl, ju, kl, ku);
-      // --------------------------
-      int order = pmb->precon->xorder;
-      if (order == 4) {
-        // fourth-order EOS:
-        // for hydro, shrink buffer by 1 on all sides
-        if (pbval->nblevel[1][1][0] != -1) il+=1;
-        if (pbval->nblevel[1][1][2] != -1) iu-=1;
-        if (pbval->nblevel[1][0][1] != -1) jl+=1;
-        if (pbval->nblevel[1][2][1] != -1) ju-=1;
-        if (pbval->nblevel[0][1][1] != -1) kl+=1;
-        if (pbval->nblevel[2][1][1] != -1) ku-=1;
-        // for MHD, shrink buffer by 3
-        // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-        pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
-                                                   phydro->w, pfield->bcc, pmb->pcoord,
-                                                   il, iu, jl, ju, kl, ku);
-      }
-      // --------------------------
-      // end fourth-order EOS
-      pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                     time, 0.0);
-    }
 
-    // Calc initial diffusion coefficients
+      // Calc initial diffusion coefficients
 #pragma omp for private(pmb,phydro,pfield)
-    for (int i=0; i<nmb; ++i) {
-      pmb=pmb_array[i]; phydro=pmb->phydro, pfield=pmb->pfield;
-      if (phydro->phdif->hydro_diffusion_defined)
-        phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        if (pfield->pfdif->field_diffusion_defined)
-          pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
-      }
-    }
-
-    if ((res_flag==0) && (adaptive==true)) {
-#pragma omp for
       for (int i=0; i<nmb; ++i) {
-        pmb_array[i]->pmr->CheckRefinementCondition();
+        pmb=pmb_array[i]; phydro=pmb->phydro, pfield=pmb->pfield;
+        if (phydro->phdif->hydro_diffusion_defined)
+          phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          if (pfield->pfdif->field_diffusion_defined)
+            pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+        }
       }
-    }
-} // omp parallel
+
+      if ((res_flag==0) && (adaptive==true)) {
+#pragma omp for
+        for (int i=0; i<nmb; ++i) {
+          pmb_array[i]->pmr->CheckRefinementCondition();
+        }
+      }
+    } // omp parallel
 
     if ((res_flag==0) && (adaptive==true)) {
       iflag=false;
@@ -1867,19 +1866,19 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // create a list mapping the previous gid to the current one
   oldtonew[0]=0;
-  int k=1;
+  int k_outer=1;
   for (int n=1; n<ntot; n++) {
     if (newtoold[n]==newtoold[n-1]+1) { // normal
-      oldtonew[k++]=n;
+      oldtonew[k_outer++]=n;
     } else if (newtoold[n]==newtoold[n-1]+nlbl) { // derefined
       for (int j=0; j<nlbl-1; j++)
-        oldtonew[k++]=n-1;
-      oldtonew[k++]=n;
+        oldtonew[k_outer++]=n-1;
+      oldtonew[k_outer++]=n;
     }
   }
   // fill the last block
-  for ( ; k<nbtold; k++)
-    oldtonew[k]=ntot-1;
+  for ( ; k_outer<nbtold; k_outer++)
+    oldtonew[k_outer]=ntot-1;
 
 #ifdef MPI_PARALLEL
   // share the cost list
@@ -1976,7 +1975,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nrecv!=0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
-    int k=0;
+    k_outer=0;
     for (int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
@@ -1985,12 +1984,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
-          int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
-          recvbuf[k] = new Real[bsf2c];
+          int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
+          recvbuf[k_outer] = new Real[bsf2c];
           int tag=CreateAMRMPITag(n-nbs, ox1, ox2, ox3);
-          MPI_Irecv(recvbuf[k], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
-                    tag, MPI_COMM_WORLD, &(req_recv[k]));
-          k++;
+          MPI_Irecv(recvbuf[k_outer], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
+                    tag, MPI_COMM_WORLD, &(req_recv[k_outer]));
+          k_outer++;
         }
       } else { // same or c2f
         if (ranklist[on]==Globals::my_rank) continue;
@@ -2000,11 +1999,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         } else {
           size=bsc2f;
         }
-        recvbuf[k] = new Real[size];
+        recvbuf[k_outer] = new Real[size];
         int tag=CreateAMRMPITag(n-nbs, 0, 0, 0);
-        MPI_Irecv(recvbuf[k], size, MPI_ATHENA_REAL, ranklist[on],
-                  tag, MPI_COMM_WORLD, &(req_recv[k]));
-        k++;
+        MPI_Irecv(recvbuf[k_outer], size, MPI_ATHENA_REAL, ranklist[on],
+                  tag, MPI_COMM_WORLD, &(req_recv[k_outer]));
+        k_outer++;
       }
     }
   }
@@ -2012,7 +2011,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nsend!=0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
-    int k=0;
+    k_outer=0;
     for (int n=onbs; n<=onbe; n++) {
       int nn=oldtonew[n];
       LogicalLocation &oloc=loclist[n];
@@ -2020,31 +2019,31 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       MeshBlock* pb=FindMeshBlock(n);
       if (nloc.level==oloc.level) { // same
         if (newrank[nn]==Globals::my_rank) continue;
-        sendbuf[k] = new Real[bssame];
+        sendbuf[k_outer] = new Real[bssame];
         // pack
         int p=0;
-        BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k], 0, NHYDRO-1,
-                       pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+        BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
+                                  pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k],
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k],
-                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k],
-                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
+          BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k_outer],
+                                    pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+          BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k_outer],
+                                    pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
+          BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k_outer],
+                                    pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
-        int *dcp = reinterpret_cast<int *>(&(sendbuf[k][p]));
+        int *dcp = reinterpret_cast<int *>(&(sendbuf[k_outer][p]));
         *dcp=pb->pmr->deref_count_;
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
-        MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
-                  tag, MPI_COMM_WORLD, &(req_send[k]));
-        k++;
+        MPI_Isend(sendbuf[k_outer], bssame, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[k_outer]));
+        k_outer++;
       } else if (nloc.level>oloc.level) { // c2f
         for (int l=0; l<nlbl; l++) {
           if (newrank[nn+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=newloc[nn+l];
-          int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
-          sendbuf[k] = new Real[bsc2f];
+          int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
+          sendbuf[k_outer] = new Real[bsc2f];
           // pack
           int is, ie, js, je, ks, ke;
           if (ox1==0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
@@ -2054,54 +2053,71 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
           else        ks=pb->ks+pb->block_size.nx3/2-f3, ke=pb->ke+f3;
           int p=0;
-          BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k], 0, NHYDRO-1,
+          BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
                                     is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
-            BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k],
+            BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k_outer],
                                       is, ie+1, js, je, ks, ke, p);
-            BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k],
+            BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k_outer],
                                       is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k],
+            BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k_outer],
                                       is, ie, js, je, ks, ke+f3, p);
           }
           int tag=CreateAMRMPITag(nn+l-nslist[newrank[nn+l]], 0, 0, 0);
-          MPI_Isend(sendbuf[k], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
-                    tag, MPI_COMM_WORLD, &(req_send[k]));
-          k++;
+          MPI_Isend(sendbuf[k_outer], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
+                    tag, MPI_COMM_WORLD, &(req_send[k_outer]));
+          k_outer++;
         }
       } else { // f2c
         if (newrank[nn]==Globals::my_rank) continue;
-        int ox1=oloc.lx1&1L, ox2=oloc.lx2&1L, ox3=oloc.lx3&1L;
-        sendbuf[k] = new Real[bsf2c];
+        int ox1=oloc.lx1 & 1LL, ox2=oloc.lx2 & 1LL, ox3=oloc.lx3 & 1LL;
+        sendbuf[k_outer] = new Real[bsf2c];
         // restrict and pack
         MeshRefinement *pmr=pb->pmr;
         pmr->RestrictCellCenteredValues(pb->phydro->u, pmr->coarse_cons_,
-             0, NHYDRO-1, pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+                                        0, NHYDRO-1,
+                                        pb->cis, pb->cie,
+                                        pb->cjs, pb->cje,
+                                        pb->cks, pb->cke);
         int p=0;
-        BufferUtility::Pack4DData(pmr->coarse_cons_, sendbuf[k], 0, NHYDRO-1,
-                       pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke, p);
+        BufferUtility::Pack4DData(pmr->coarse_cons_, sendbuf[k_outer], 0, NHYDRO-1,
+                                  pb->cis, pb->cie,
+                                  pb->cjs, pb->cje,
+                                  pb->cks, pb->cke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
           pmr->RestrictFieldX1(pb->pfield->b.x1f, pmr->coarse_b_.x1f,
-                               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x1f, sendbuf[k],
-                         pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke, p);
+                               pb->cis, pb->cie+1,
+                               pb->cjs, pb->cje,
+                               pb->cks, pb->cke);
+          BufferUtility::Pack3DData(pmr->coarse_b_.x1f, sendbuf[k_outer],
+                                    pb->cis, pb->cie+1,
+                                    pb->cjs, pb->cje,
+                                    pb->cks, pb->cke, p);
           pmr->RestrictFieldX2(pb->pfield->b.x2f, pmr->coarse_b_.x2f,
-                               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x2f, sendbuf[k],
-                         pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke, p);
+                               pb->cis, pb->cie,
+                               pb->cjs, pb->cje+f2,
+                               pb->cks, pb->cke);
+          BufferUtility::Pack3DData(pmr->coarse_b_.x2f, sendbuf[k_outer],
+                                    pb->cis, pb->cie,
+                                    pb->cjs, pb->cje+f2,
+                                    pb->cks, pb->cke, p);
           pmr->RestrictFieldX3(pb->pfield->b.x3f, pmr->coarse_b_.x3f,
-                               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x3f, sendbuf[k],
-                         pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3, p);
+                               pb->cis, pb->cie,
+                               pb->cjs, pb->cje,
+                               pb->cks, pb->cke+f3);
+          BufferUtility::Pack3DData(pmr->coarse_b_.x3f, sendbuf[k_outer],
+                                    pb->cis, pb->cie,
+                                    pb->cjs, pb->cje,
+                                    pb->cks, pb->cke+f3, p);
         }
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], ox1, ox2, ox3);
-        MPI_Isend(sendbuf[k], bsf2c, MPI_ATHENA_REAL, newrank[nn],
-                  tag, MPI_COMM_WORLD, &(req_send[k]));
-        k++;
+        MPI_Isend(sendbuf[k_outer], bsf2c, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[k_outer]));
+        k_outer++;
       }
     }
   }
-#endif
+#endif // MPI_PARALLEL
 
   // Step 7. construct a new MeshBlock list
   // move the data within the node
@@ -2282,7 +2298,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
   if (nrecv!=0) {
-    int k=0;
+    k_outer=0;
     for (int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
@@ -2290,18 +2306,21 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       MeshBlock *pb=FindMeshBlock(n);
       if (oloc.level==nloc.level) { // same
         if (ranklist[on]==Globals::my_rank) continue;
-        MPI_Wait(&(req_recv[k]), MPI_STATUS_IGNORE);
+        MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
         int p=0;
-        BufferUtility::Unpack4DData(recvbuf[k], pb->phydro->u, 0, NHYDRO-1,
-                       pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+        BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
+                                    pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &dst=pb->pfield->b;
-          BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
+          BufferUtility::Unpack3DData(
+              recvbuf[k_outer], dst.x1f,
+              pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+          BufferUtility::Unpack3DData(
+              recvbuf[k_outer], dst.x2f,
+              pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
+          BufferUtility::Unpack3DData(
+              recvbuf[k_outer], dst.x3f,
+              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if (pb->block_size.nx2==1) {
             for (int i=pb->is; i<=pb->ie; i++)
               dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
@@ -2313,14 +2332,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-        int *dcp=reinterpret_cast<int *>(&(recvbuf[k][p]));
+        int *dcp=reinterpret_cast<int *>(&(recvbuf[k_outer][p]));
         pb->pmr->deref_count_=*dcp;
-        k++;
+        k_outer++;
       } else if (oloc.level>nloc.level) { // f2c
         for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l]==Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
-          int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
+          int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
           int p=0, is, ie, js, je, ks, ke;
           if (ox1==0) is=pb->is,                      ie=pb->is+pb->block_size.nx1/2-1;
           else        is=pb->is+pb->block_size.nx1/2, ie=pb->ie;
@@ -2328,17 +2347,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           else        js=pb->js+pb->block_size.nx2/2, je=pb->je;
           if (ox3==0) ks=pb->ks,                      ke=pb->ks+pb->block_size.nx3/2-f3;
           else        ks=pb->ks+pb->block_size.nx3/2, ke=pb->ke;
-          MPI_Wait(&(req_recv[k]), MPI_STATUS_IGNORE);
-          BufferUtility::Unpack4DData(recvbuf[k], pb->phydro->u, 0, NHYDRO-1,
-                         is, ie, js, je, ks, ke, p);
+          MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
+          BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
+                                      is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
             FaceField &dst=pb->pfield->b;
-            BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
-                           is, ie+1, js, je, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                           is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                           is, ie, js, je, ks, ke+f3, p);
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x1f,
+                                        is, ie+1, js, je, ks, ke, p);
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x2f,
+                                        is, ie, js, je+f2, ks, ke, p);
+            BufferUtility::Unpack3DData(recvbuf[k_outer], dst.x3f,
+                                        is, ie, js, je, ks, ke+f3, p);
             if (pb->block_size.nx2==1) {
               for (int i=is; i<=ie; i++)
                 dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
@@ -2350,7 +2369,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               }
             }
           }
-          k++;
+          k_outer++;
         }
       } else { // c2f
         if (ranklist[on]==Globals::my_rank) continue;
@@ -2358,28 +2377,33 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int p=0;
         int is=pb->cis-1, ie=pb->cie+1, js=pb->cjs-f2,
             je=pb->cje+f2, ks=pb->cks-f3, ke=pb->cke+f3;
-        MPI_Wait(&(req_recv[k]), MPI_STATUS_IGNORE);
-        BufferUtility::Unpack4DData(recvbuf[k], pmr->coarse_cons_,
+        MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
+        BufferUtility::Unpack4DData(recvbuf[k_outer], pmr->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
-        pmr->ProlongateCellCenteredValues(pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
-                                   pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+        pmr->ProlongateCellCenteredValues(
+            pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
+            pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x1f,
+          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x2f,
+          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x2f,
                                       is, ie, js, je+f2, ks, ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k], pmr->coarse_b_.x3f,
+          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
-          pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pb->pfield->b.x1f,
-                               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
-          pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pb->pfield->b.x2f,
-                               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
-          pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pb->pfield->b.x3f,
-                               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
-          pmr->ProlongateInternalField(pb->pfield->b, pb->cis, pb->cie,
-                                       pb->cjs, pb->cje, pb->cks, pb->cke);
+          pmr->ProlongateSharedFieldX1(
+              pmr->coarse_b_.x1f, pb->pfield->b.x1f,
+              pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
+          pmr->ProlongateSharedFieldX2(
+              pmr->coarse_b_.x2f, pb->pfield->b.x2f,
+              pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
+          pmr->ProlongateSharedFieldX3(
+              pmr->coarse_b_.x3f, pb->pfield->b.x3f,
+              pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
+          pmr->ProlongateInternalField(
+              pb->pfield->b, pb->cis, pb->cie,
+              pb->cjs, pb->cje, pb->cks, pb->cke);
         }
-        k++;
+        k_outer++;
       }
     }
   }
