@@ -273,12 +273,12 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
                                          int *nslist) {
   MeshBlockTree* neibt;
   int myox1, myox2=0, myox3=0, myfx1, myfx2, myfx3;
-  myfx1=static_cast<int>(loc.lx1&1L);
-  myfx2=static_cast<int>(loc.lx2&1L);
-  myfx3=static_cast<int>(loc.lx3&1L);
-  myox1=(static_cast<int>(loc.lx1&1L))*2-1;
-  if (block_size_.nx2>1) myox2=(static_cast<int>(loc.lx2&1L))*2-1;
-  if (block_size_.nx3>1) myox3=(static_cast<int>(loc.lx3&1L))*2-1;
+  myfx1 = ((loc.lx1 & 1LL) == 1LL);
+  myfx2 = ((loc.lx2 & 1LL) == 1LL);
+  myfx3 = ((loc.lx3 & 1LL) == 1LL);
+  myox1 = ((loc.lx1 & 1LL) == 1LL)*2-1;
+  if (block_size_.nx2>1) myox2=((loc.lx2 & 1LL) == 1LL)*2-1;
+  if (block_size_.nx3>1) myox3=((loc.lx3 & 1LL) == 1LL)*2-1;
   std::int64_t nrbx1=pmy_mesh_->nrbx1, nrbx2=pmy_mesh_->nrbx2, nrbx3=pmy_mesh_->nrbx3;
 
   int nf1=1, nf2=1;

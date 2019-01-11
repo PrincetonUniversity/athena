@@ -89,11 +89,11 @@ void MeshBlockTree::CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_
   if (loc.level == nl) return;
 
   for (int k=0; k<=1; k++) {
-    if ((loc.lx3*2+k)*(1L<<(nl-loc.level-1)) < nz) {
+    if ((loc.lx3*2+k)*(1LL<<(nl-loc.level-1)) < nz) {
       for (int j=0; j<=1; j++) {
-        if ((loc.lx2*2+j)*(1L<<(nl-loc.level-1)) < ny) {
+        if ((loc.lx2*2+j)*(1LL<<(nl-loc.level-1)) < ny) {
           for (int i=0; i<=1; i++) {
-            if ((loc.lx1*2+i)*(1L<<(nl-loc.level-1)) < nx) {
+            if ((loc.lx1*2+i)*(1LL<<(nl-loc.level-1)) < nx) {
               flag=false; // if there is a leaf, this is a node
               gid=-1;
               pleaf[k][j][i] = new MeshBlockTree(this, i, j, k);
@@ -124,9 +124,9 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
     Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
   // get leaf indexes
   int sh = rloc.level-loc.level-1;
-  mx=static_cast<int>((rloc.lx1>>sh)&1L);
-  my=static_cast<int>((rloc.lx2>>sh)&1L);
-  mz=static_cast<int>((rloc.lx3>>sh)&1L);
+  mx = (((rloc.lx1>>sh) & 1LL) == 1LL);
+  my = (((rloc.lx2>>sh) & 1LL) == 1LL);
+  mz = (((rloc.lx3>>sh) & 1LL) == 1LL);
   pleaf[mz][my][mx]->AddMeshBlock(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
 
   return;
@@ -147,9 +147,9 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
     flag=false;
   // get leaf indexes
   int sh = rloc.level-loc.level-1;
-  mx=static_cast<int>((rloc.lx1>>sh)&1L);
-  my=static_cast<int>((rloc.lx2>>sh)&1L);
-  mz=static_cast<int>((rloc.lx3>>sh)&1L);
+  mx = (((rloc.lx1>>sh) & 1LL) == 1LL);
+  my = (((rloc.lx2>>sh) & 1LL) == 1LL);
+  mz = (((rloc.lx3>>sh) & 1LL) == 1LL);
   if (pleaf[mz][my][mx]==nullptr)
     pleaf[mz][my][mx] = new MeshBlockTree(this, mx, my, mz);
   pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(rloc,rbx,rby,rbz,rl);
@@ -458,9 +458,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     }
     // find a leaf in the next level
     int sh=ll-level-1;
-    ox=static_cast<int>((lx>>sh) & 1L);
-    oy=static_cast<int>((ly>>sh) & 1L);
-    oz=static_cast<int>((lz>>sh) & 1L);
+    ox = (((lx>>sh) & 1LL) == 1LL);
+    oy = (((ly>>sh) & 1LL) == 1LL);
+    oz = (((lz>>sh) & 1LL)  == 1LL);
     bt=bt->pleaf[oz][oy][ox];
     if (bt==nullptr) {
       msg << "### FATAL ERROR in FindNeighbor" << std::endl
@@ -494,10 +494,10 @@ MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (tloc.level==loc.level) return this;
   // get leaf indexes
   int sh = tloc.level-loc.level-1;
-  int mx=static_cast<int>((tloc.lx1>>sh)&1L);
-  int my=static_cast<int>((tloc.lx2>>sh)&1L);
-  int mz=static_cast<int>((tloc.lx3>>sh)&1L);
-  if (pleaf[mz][my][mx]==nullptr) {
+  int mx = (((tloc.lx1>>sh) & 1LL) == 1LL);
+  int my = (((tloc.lx2>>sh) & 1LL) == 1LL);
+  int mz = (((tloc.lx3>>sh) & 1LL) == 1LL);
+  if (pleaf[mz][my][mx] == nullptr) {
     return nullptr;
   } else {
     return pleaf[mz][my][mx]->FindMeshBlock(tloc);

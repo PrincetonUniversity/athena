@@ -338,7 +338,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
         std::int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-        std::int64_t lxmax=nrbx1*(1L<<ref_lev);
+        std::int64_t lxmax=nrbx1*(1LL<<ref_lev);
         for (lx1min=0; lx1min<lxmax; lx1min++) {
           Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
@@ -352,7 +352,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         if (lx1min % 2==1) lx1min--;
         if (lx1max % 2==0) lx1max++;
         if (dim>=2) { // 2D or 3D
-          lxmax=nrbx2*(1L<<ref_lev);
+          lxmax=nrbx2*(1LL<<ref_lev);
           for (lx2min=0; lx2min<lxmax; lx2min++) {
             Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
@@ -367,7 +367,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           if (lx2max % 2==0) lx2max++;
         }
         if (dim==3) { // 3D
-          lxmax=nrbx3*(1L<<ref_lev);
+          lxmax=nrbx3*(1LL<<ref_lev);
           for (lx3min=0; lx3min<lxmax; lx3min++) {
             Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
