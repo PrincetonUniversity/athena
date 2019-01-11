@@ -100,9 +100,9 @@ class ParameterInput {
   InputBlock* FindOrAddBlock(std::string name);
   InputBlock* GetPtrToBlock(std::string name);
   void ParseLine(InputBlock *pib, std::string line, std::string& name,
-       std::string& value, std::string& comment);
+                 std::string& value, std::string& comment);
   void AddParameter(InputBlock *pib, std::string name, std::string value,
-       std::string comment);
+                    std::string comment);
 
   // thread safety
 #ifdef OPENMP_PARALLEL

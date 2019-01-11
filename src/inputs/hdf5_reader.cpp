@@ -26,14 +26,14 @@
 // External library headers
 #include <hdf5.h>  // H5[F|P|S|T]_*, H5[D|F|P|S]*(), hid_t
 #ifdef MPI_PARALLEL
-  #include <mpi.h>  // MPI_COMM_WORLD, MPI_INFO_NULL
+#include <mpi.h>  // MPI_COMM_WORLD, MPI_INFO_NULL
 #endif
 
 // Determine floating-point precision (in memory, not file)
 #if SINGLE_PRECISION_ENABLED
-  #define H5T_REAL H5T_NATIVE_FLOAT
+#define H5T_REAL H5T_NATIVE_FLOAT
 #else
-  #define H5T_REAL H5T_NATIVE_DOUBLE
+#define H5T_REAL H5T_NATIVE_DOUBLE
 #endif
 
 //----------------------------------------------------------------------------------------
@@ -44,21 +44,23 @@
 //  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
-    const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
-    const int *count_mem, AthenaArray<Real> &array, bool collective, bool noop) {
+                       const int *start_file, const int *count_file, int rank_mem,
+                       const int *start_mem, const int *count_mem,
+                       AthenaArray<Real> &array,
+                       bool collective, bool noop) {
 
   // Check that user is not trying to exceed limits of HDF5 array or AthenaArray
   // dimensionality
   if (rank_file > MAX_RANK_FILE) {
     std::stringstream msg;
     msg << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_file
-            << "\nExceeding MAX_RANK_FILE=" << MAX_RANK_FILE << std::endl;
+        << "\nExceeding MAX_RANK_FILE=" << MAX_RANK_FILE << std::endl;
     ATHENA_ERROR(msg);
   }
   if (rank_mem > MAX_RANK_MEM) {
     std::stringstream msg;
     msg << "### FATAL ERROR\nAttempting to read HDF5 array of ndim= " << rank_mem
-            << "\nExceeding MAX_RANK_MEM=" << MAX_RANK_MEM << std::endl;
+        << "\nExceeding MAX_RANK_MEM=" << MAX_RANK_MEM << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -87,13 +89,13 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
 
   // Open data file
   hid_t property_list_file = H5Pcreate(H5P_FILE_ACCESS);
-  #ifdef MPI_PARALLEL
+#ifdef MPI_PARALLEL
   {
     if (collective) {
       H5Pset_fapl_mpio(property_list_file, MPI_COMM_WORLD, MPI_INFO_NULL);
     }
   }
-  #endif
+#endif
   hid_t file = H5Fopen(filename, H5F_ACC_RDONLY, property_list_file);
   H5Pclose(property_list_file);
   if (file < 0) {
@@ -102,13 +104,13 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
     ATHENA_ERROR(msg);
   }
   hid_t property_list_transfer = H5Pcreate(H5P_DATASET_XFER);
-  #ifdef MPI_PARALLEL
+#ifdef MPI_PARALLEL
   {
     if (collective) {
       H5Pset_dxpl_mpio(property_list_transfer, H5FD_MPIO_COLLECTIVE);
     }
   }
-  #endif
+#endif
 
   // Read dataset into array
   hid_t dataset = H5Dopen(file, dataset_name, H5P_DEFAULT);
@@ -117,15 +119,15 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
     H5Sselect_none(dataspace_file);
   }
   H5Sselect_hyperslab(dataspace_file, H5S_SELECT_SET, start_file_hid, NULL,
-      count_file_hid, NULL);
+                      count_file_hid, NULL);
   hid_t dataspace_mem = H5Screate_simple(rank_mem, dims_mem, NULL);
   if (noop) {
     H5Sselect_none(dataspace_mem);
   }
   H5Sselect_hyperslab(dataspace_mem, H5S_SELECT_SET, start_mem_hid, NULL, count_mem_hid,
-      NULL);
+                      NULL);
   H5Dread(dataset, H5T_REAL, dataspace_mem, dataspace_file, property_list_transfer,
-      array.data());
+          array.data());
   H5Dclose(dataset);
   H5Sclose(dataspace_file);
   H5Sclose(dataspace_mem);

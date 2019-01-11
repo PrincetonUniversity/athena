@@ -33,7 +33,7 @@
 //  TimeIntegratorTaskList constructor
 
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm) {
+    : TaskList(pm) {
   // First, define each time-integrator by setting weights for each step of the algorithm
   // and the CFL number stability limit when coupled to the single-stage spatial operator.
   // Currently, the explicit, multistage time-integrators must be expressed as 2S-type
@@ -211,9 +211,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   Real cfl_number = pin->GetReal("time","cfl_number");
   if (cfl_number > cfl_limit) {
     std::cout << "### Warning in CreateTimeIntegrator" << std::endl
-        << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
-        << " for integrator=" << integrator << " in "
-        << dim << "D simulation" << std::endl << "Setting to limit" << std::endl;
+              << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
+              << " for integrator=" << integrator << " in "
+              << dim << "D simulation" << std::endl << "Setting to limit" << std::endl;
     cfl_number = cfl_limit;
   }
   // Save to Mesh class
@@ -277,7 +277,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       } else {
         if (SHEARING_BOX) {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|
-                                         RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+                                          RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
         } else {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
         }
@@ -297,12 +297,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-//    if (SELF_GRAVITY_ENABLED == 1) {
-//      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
-//      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
-//    } else {
+    //    if (SELF_GRAVITY_ENABLED == 1) {
+    //      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
+    //      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
+    //    } else {
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
-//    }
+    //    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if (pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
@@ -325,171 +325,171 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64
   switch((id)) {
     case (START_ALLRECV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::StartAllReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::StartAllReceive);
       break;
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ClearAllBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
 
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::CalculateFluxes);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::CalculateFluxes);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::CalculateEMF);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::CalculateEMF);
       break;
 
     case (SEND_HYDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FluxCorrectSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FluxCorrectSend);
       break;
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFCorrectSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::EMFCorrectSend);
       break;
 
     case (RECV_HYDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FluxCorrectReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FluxCorrectReceive);
       break;
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFCorrectReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroIntegrate);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroIntegrate);
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldIntegrate);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldIntegrate);
       break;
 
     case (SRCTERM_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroSourceTerms);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroSourceTerms);
       break;
 
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroSend);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldSend);
       break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroReceive);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldReceive);
       break;
     case (SEND_HYDSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroShearSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroShearSend);
       break;
     case (RECV_HYDSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroShearReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroShearReceive);
       break;
     case (SEND_FLDSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldShearSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldShearSend);
       break;
     case (RECV_FLDSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldShearReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldShearReceive);
       break;
     case (SEND_EMFSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFShearSend);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::EMFShearSend);
       break;
     case (RECV_EMFSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFShearReceive);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::EMFShearReceive);
       break;
     case (RMAP_EMFSH):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::EMFShearRemap);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::EMFShearRemap);
       break;
 
     case (PROLONG):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::Prolongation);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::Prolongation);
       break;
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::Primitives);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::Primitives);
       break;
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::PhysicalBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::PhysicalBoundary);
       break;
     case (USERWORK):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::UserWork);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::UserWork);
       break;
     case (NEW_DT):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::NewBlockTimeStep);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::NewBlockTimeStep);
       break;
     case (AMR_FLAG):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::CheckRefinement);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::CheckRefinement);
       break;
     case (CORR_GFLX):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::GravFluxCorrection);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::GravFluxCorrection);
       break;
     case (STARTUP_INT):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::StartupIntegrator);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::StartupIntegrator);
       break;
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroDiffusion);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroDiffusion);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldDiffusion);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldDiffusion);
       break;
 
     default:
@@ -942,13 +942,13 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       const IntegratorWeight w = stage_wghts[l-1];
 
       // u1 = u1 + delta*u
-      pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
-          + w.delta*pmb->stage_abscissae[l-1][0];
+      pmb->stage_abscissae[l][1] =
+          pmb->stage_abscissae[l-1][1] + w.delta*pmb->stage_abscissae[l-1][0];
       // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
       pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-          + w.gamma_2*pmb->stage_abscissae[l][1]
-          + w.gamma_3*pmb->stage_abscissae[l-1][2]
-          + w.beta*pmb->pmy_mesh->dt;
+                                   + w.gamma_2*pmb->stage_abscissae[l][1]
+                                   + w.gamma_3*pmb->stage_abscissae[l-1][2]
+                                   + w.beta*pmb->pmy_mesh->dt;
       // u2 = u^n
       pmb->stage_abscissae[l][2] = 0.0;
     }

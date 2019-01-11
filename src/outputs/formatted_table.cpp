@@ -30,7 +30,7 @@
 // destructor not required for this derived class
 
 FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-  : OutputType(oparams) {
+    : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------

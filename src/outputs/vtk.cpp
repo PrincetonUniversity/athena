@@ -51,7 +51,7 @@ static inline void Swap4Bytes(void *vdat) {
 // destructor - not needed for this derived class
 
 VTKOutput::VTKOutput(OutputParameters oparams)
-  : OutputType(oparams) {
+    : OutputType(oparams) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // write x1-coordinates as binary float in big endian order
     std::fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
     if (ncells1 == 1) {
-        data[0] = static_cast<float>(pmb->pcoord->x1v(out_is));
+      data[0] = static_cast<float>(pmb->pcoord->x1v(out_is));
     } else {
       for (int i=out_is; i<=out_ie+1; ++i) {
         data[i-out_is] = static_cast<float>(pmb->pcoord->x1f(i));
@@ -158,7 +158,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // write x2-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
     if (ncells2 == 1) {
-        data[0] = static_cast<float>(pmb->pcoord->x2v(out_js));
+      data[0] = static_cast<float>(pmb->pcoord->x2v(out_js));
     } else {
       for (int j=out_js; j<=out_je+1; ++j) {
         data[j-out_js] = static_cast<float>(pmb->pcoord->x2f(j));
@@ -170,7 +170,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // write x3-coordinates as binary float in big endian order
     std::fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
     if (ncells3 == 1) {
-        data[0] = static_cast<float>(pmb->pcoord->x3v(out_ks));
+      data[0] = static_cast<float>(pmb->pcoord->x3v(out_ks));
     } else {
       for (int k=out_ks; k<=out_ke+1; ++k) {
         data[k-out_ks] = static_cast<float>(pmb->pcoord->x3f(k));

@@ -225,7 +225,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name) {
 
   // if this is the first block in list, save pointer to it in class
   if (pfirst_block == nullptr) {
-     pfirst_block = pib;
+    pfirst_block = pib;
   } else {
     plast->pnext = pib;      // link new node into list
   }
@@ -239,7 +239,8 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name) {
 //  \brief parse "name = value # comment" format, return name/value/comment strings.
 
 void ParameterInput::ParseLine(InputBlock *pib, std::string line,
-     std::string& name, std::string& value, std::string& comment) {
+                               std::string& name, std::string& value,
+                               std::string& comment) {
   std::size_t first_char,last_char,equal_char,hash_char,len;
 
   first_char = line.find_first_not_of(" ");   // find first non-white space
@@ -324,16 +325,15 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 // Note this function is very forgiving (no warnings!) if there is an error in format
 
 void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
-  std::string input_text,block,name,value;
-  std::size_t slash_posn,equal_posn;
+  std::string input_text, block,name, value;
   std::stringstream msg;
   InputBlock *pb;
   InputLine *pl;
 
   for (int i=1; i<argc; i++) {
     input_text = argv[i];
-    slash_posn = input_text.find_first_of("/");   // find "/" character
-    equal_posn = input_text.find_first_of("=");   // find "=" character
+    std::size_t slash_posn = input_text.find_first_of("/");   // find "/" character
+    std::size_t equal_posn = input_text.find_first_of("=");   // find "=" character
 
     // skip if either "/" or "=" do not exist in input
     if ((slash_posn==std::string::npos) || (equal_posn==std::string::npos)) continue;
@@ -653,7 +653,7 @@ bool ParameterInput::SetBoolean(std::string block, std::string name, bool value)
 //  value to def_value if it does not exist
 
 std::string ParameterInput::GetOrAddString(std::string block, std::string name,
-  std::string def_value) {
+                                           std::string def_value) {
   InputBlock* pb;
   std::stringstream ss_value;
 
