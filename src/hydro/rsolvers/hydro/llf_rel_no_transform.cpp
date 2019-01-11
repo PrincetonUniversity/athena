@@ -112,8 +112,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         // Calculate 4-velocity in left state
         Real ucon_l[4], ucov_l[4];
         Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-                 + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-                 + g_33*SQR(uu3_l);
+                   + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+                   + g_33*SQR(uu3_l);
         Real gamma_l = std::sqrt(1.0 + tmp);
         ucon_l[0] = gamma_l / alpha;
         ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -127,8 +127,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         // Calculate 4-velocity in right state
         Real ucon_r[4], ucov_r[4];
         tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-            + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-            + g_33*SQR(uu3_r);
+              + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+              + g_33*SQR(uu3_r);
         Real gamma_r = std::sqrt(1.0 + tmp);
         ucon_r[0] = gamma_r / alpha;
         ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -143,13 +143,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         Real lambda_p_l, lambda_m_l;
         Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
         pmy_block->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx], g00, g0i,
-            gii, &lambda_p_l, &lambda_m_l);
+                                       gii, &lambda_p_l, &lambda_m_l);
 
         // Calculate wavespeeds in right state
         Real lambda_p_r, lambda_m_r;
         Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
         pmy_block->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx], g00, g0i,
-            gii, &lambda_p_r, &lambda_m_r);
+                                       gii, &lambda_p_r, &lambda_m_r);
 
         // Calculate extremal wavespeed
         Real lambda_l = std::min(lambda_m_l, lambda_m_r);

@@ -21,14 +21,18 @@
 #include "../../hydro.hpp"
 
 // Declarations
-static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
-    const int iu, const int ivx, const AthenaArray<Real> &bb,
-    AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
-    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
-    AthenaArray<Real> &flux, AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-    const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux);
+static void HLLETransforming(MeshBlock *pmb, const int k, const int j,
+                             const int il, const int iu, const int ivx,
+                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                             AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                                const int il, const int iu,
+                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                                AthenaArray<Real> &flux);
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -58,7 +62,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
         HLLENonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
       } else {
         HLLETransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
-            prim_r, cons_, flux, ey, ez);
+                         prim_r, cons_, flux, ey, ez);
       }
     }
   }
@@ -94,7 +98,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
                              AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric if in GR
   int i01, i11;
-  #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
   {
     switch (ivx) {
       case IVX:
@@ -114,10 +118,10 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
-  #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
 
   // Transform primitives to locally flat coordinates if in GR
-  #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
   {
     switch (ivx) {
       case IVX:
@@ -131,7 +135,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
-  #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
 
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
@@ -192,13 +196,13 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]), &lambda_p_l,
-        &lambda_m_l);
+                             &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]), &lambda_p_r,
-        &lambda_m_r);
+                             &lambda_m_r);
 
     // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -242,7 +246,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
         cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
-            * lambda_diff_inv;
+                      * lambda_diff_inv;
       }
     }
 
@@ -250,7 +254,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-          + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
+                     + lambda_l*lambda_r * (cons_r[n] - cons_l[n])) * lambda_diff_inv;
     }
 
     // Calculate interface velocity
@@ -286,7 +290,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
   }
 
   // Transform fluxes to global coordinates if in GR
-  #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
   {
     switch (ivx) {
       case IVX:
@@ -300,7 +304,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
-  #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
   return;
 }
 
@@ -362,8 +366,8 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-             + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-             + g_33*SQR(uu3_l);
+               + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+               + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
     ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -377,8 +381,8 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-        + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-        + g_33*SQR(uu3_r);
+          + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+          + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
     ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -393,13 +397,13 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
     pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02, g22,
-        &lambda_p_l, &lambda_m_l);
+                             &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
     pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02, g22,
-        &lambda_p_r, &lambda_m_r);
+                             &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -443,7 +447,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-          + lambda_r*lambda_l * (cons_r[n] - cons_l[n])) / (lambda_r-lambda_l);
+                     + lambda_r*lambda_l * (cons_r[n] - cons_l[n])) / (lambda_r-lambda_l);
     }
 
     // Determine region of wavefan

@@ -45,87 +45,89 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,du,fl,fr,flxi)
-  for (int i=il; i<=iu; ++i) {
-    //--- Step 1.  Load L/R states into local variables
+      for (int i=il; i<=iu; ++i) {
+        //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
+        wli[IDN]=wl(IDN,k,j,i);
+        wli[IVX]=wl(ivx,k,j,i);
+        wli[IVY]=wl(ivy,k,j,i);
+        wli[IVZ]=wl(ivz,k,j,i);
+        if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
 
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
+        wri[IDN]=wr(IDN,k,j,i);
+        wri[IVX]=wr(ivx,k,j,i);
+        wri[IVY]=wr(ivy,k,j,i);
+        wri[IVZ]=wr(ivz,k,j,i);
+        if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
 
-    //--- Step 2.  Compute wave speeds in L,R states (see Toro eq. 10.43)
+        //--- Step 2.  Compute wave speeds in L,R states (see Toro eq. 10.43)
 
-    Real cl = pmy_block->peos->SoundSpeed(wli);
-    Real cr = pmy_block->peos->SoundSpeed(wri);
-    Real a  = 0.5*std::max( (std::fabs(wli[IVX]) + cl), (std::fabs(wri[IVX]) + cr) );
+        Real cl = pmy_block->peos->SoundSpeed(wli);
+        Real cr = pmy_block->peos->SoundSpeed(wri);
+        Real a  = 0.5*std::max( (std::fabs(wli[IVX]) + cl), (std::fabs(wri[IVX]) + cr) );
 
-    //--- Step 3.  Compute L/R fluxes
+        //--- Step 3.  Compute L/R fluxes
 
-    Real mxl = wli[IDN]*wli[IVX];
-    Real mxr = wri[IDN]*wri[IVX];
+        Real mxl = wli[IDN]*wli[IVX];
+        Real mxr = wri[IDN]*wri[IVX];
 
-    fl[IDN] = mxl;
-    fr[IDN] = mxr;
+        fl[IDN] = mxl;
+        fr[IDN] = mxr;
 
-    fl[IVX] = mxl*wli[IVX];
-    fr[IVX] = mxr*wri[IVX];
+        fl[IVX] = mxl*wli[IVX];
+        fr[IVX] = mxr*wri[IVX];
 
-    fl[IVY] = mxl*wli[IVY];
-    fr[IVY] = mxr*wri[IVY];
+        fl[IVY] = mxl*wli[IVY];
+        fr[IVY] = mxr*wri[IVY];
 
-    fl[IVZ] = mxl*wli[IVZ];
-    fr[IVZ] = mxr*wri[IVZ];
+        fl[IVZ] = mxl*wli[IVZ];
+        fr[IVZ] = mxr*wri[IVZ];
 
-    Real el,er;
-    if (NON_BAROTROPIC_EOS) {
-      el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-      fl[IVX] += wli[IPR];
-      fr[IVX] += wri[IPR];
-      fl[IEN] = (el + wli[IPR])*wli[IVX];
-      fr[IEN] = (er + wri[IPR])*wri[IVX];
-    } else {
-      fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
-      fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
+        Real el,er;
+        if (NON_BAROTROPIC_EOS) {
+          el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY])
+                                            + SQR(wli[IVZ]));
+          er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY])
+                                            + SQR(wri[IVZ]));
+          fl[IVX] += wli[IPR];
+          fr[IVX] += wri[IPR];
+          fl[IEN] = (el + wli[IPR])*wli[IVX];
+          fr[IEN] = (er + wri[IPR])*wri[IVX];
+        } else {
+          fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
+          fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
+        }
+
+        //--- Step 4.  Compute difference in L/R states dU
+
+        du[IDN] = wri[IDN]          - wli[IDN];
+        du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
+        du[IVY] = wri[IDN]*wri[IVY] - wli[IDN]*wli[IVY];
+        du[IVZ] = wri[IDN]*wri[IVZ] - wli[IDN]*wli[IVZ];
+        if (NON_BAROTROPIC_EOS) du[IEN] = er - el;
+
+        //--- Step 5. Compute the LLF flux at interface (see Toro eq. 10.42).
+
+        flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
+        flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
+        flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]) - a*du[IVY];
+        flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]) - a*du[IVZ];
+        if (NON_BAROTROPIC_EOS) {
+          flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
+        }
+
+        //--- Step 6. Store results into 3D array of fluxes
+
+        flx(IDN,k,j,i) = flxi[IDN];
+        flx(ivx,k,j,i) = flxi[IVX];
+        flx(ivy,k,j,i) = flxi[IVY];
+        flx(ivz,k,j,i) = flxi[IVZ];
+        if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
+      }
     }
-
-    //--- Step 4.  Compute difference in L/R states dU
-
-    du[IDN] = wri[IDN]          - wli[IDN];
-    du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
-    du[IVY] = wri[IDN]*wri[IVY] - wli[IDN]*wli[IVY];
-    du[IVZ] = wri[IDN]*wri[IVZ] - wli[IDN]*wli[IVZ];
-    if (NON_BAROTROPIC_EOS) du[IEN] = er - el;
-
-    //--- Step 5. Compute the LLF flux at interface (see Toro eq. 10.42).
-
-    flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
-    flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
-    flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]) - a*du[IVY];
-    flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]) - a*du[IVZ];
-    if (NON_BAROTROPIC_EOS) {
-      flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
-    }
-
-    //--- Step 6. Store results into 3D array of fluxes
-
-    flx(IDN,k,j,i) = flxi[IDN];
-    flx(ivx,k,j,i) = flxi[IVX];
-    flx(ivy,k,j,i) = flxi[IVY];
-    flx(ivz,k,j,i) = flxi[IVZ];
-    if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
   }
-  }
-}
 
   return;
 }

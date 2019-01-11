@@ -328,9 +328,10 @@ void HydroDiffusion::FaceYdx(const int k, const int j, const int il, const int i
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       len(i) = (prim(IM1,k,j,i) - prim(IM1,k,j-1,i)) / pco_->h2v(i) / pco_->dx2v(j-1)
-               + pco_->h2v(i)*0.5*(  (prim(IM2,k,j,i+1) + prim(IM2,k,j-1,i+1)) /pco_->h2v(i+1)
-                                     - (prim(IM2,k,j,i-1) + prim(IM2,k,j-1,i-1)) /pco_->h2v(i-1)
-                                     ) / (pco_->dx1v(i-1) + pco_->dx1v(i));
+               + pco_->h2v(i)*0.5*
+               (  (prim(IM2,k,j,i+1) + prim(IM2,k,j-1,i+1)) /pco_->h2v(i+1)
+                  - (prim(IM2,k,j,i-1) + prim(IM2,k,j-1,i-1)) /pco_->h2v(i-1)
+                  ) / (pco_->dx1v(i-1) + pco_->dx1v(i));
     }
   } else {
 #pragma omp simd

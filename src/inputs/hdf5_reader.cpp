@@ -48,7 +48,6 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
                        const int *start_mem, const int *count_mem,
                        AthenaArray<Real> &array,
                        bool collective, bool noop) {
-
   // Check that user is not trying to exceed limits of HDF5 array or AthenaArray
   // dimensionality
   if (rank_file > MAX_RANK_FILE) {
