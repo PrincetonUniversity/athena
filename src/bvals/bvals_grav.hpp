@@ -57,10 +57,10 @@ class GravityBoundaryValues : public BoundaryBase {
   void StartReceivingGravity(void);
   void ClearBoundaryGravity(void);
   int LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb);
+                                         const NeighborBlock& nb);
   bool SendGravityBoundaryBuffers(AthenaArray<Real> &src);
   void SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                 const NeighborBlock& nb);
+                                   const NeighborBlock& nb);
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
 
  private:

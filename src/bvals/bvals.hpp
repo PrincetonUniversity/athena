@@ -144,11 +144,11 @@ void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+                       FaceField &b, Real time, Real dt,
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+                       FaceField &b, Real time, Real dt,
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 
 // function to return boundary flag given input string
@@ -216,28 +216,33 @@ class BoundaryValues : public BoundaryBase {
   void ClearBoundaryForInit(bool cons_and_field);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+                               FaceField &bfdst, AthenaArray<Real> &bcdst,
+                               const Real time, const Real dt);
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+                            FaceField &bfdst, AthenaArray<Real> &bcdst,
+                            const Real time, const Real dt);
 
-  int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                      int ns, int ne, Real *buf, const NeighborBlock& nb);
-  int LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
-      int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb);
+  int LoadCellCenteredBoundaryBufferSameLevel(
+      AthenaArray<Real> &src, int ns, int ne, Real *buf, const NeighborBlock& nb);
+  int LoadCellCenteredBoundaryBufferToCoarser(
+      AthenaArray<Real> &src, int ns, int ne, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb);
   int LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
-                      int ns, int ne, Real *buf, const NeighborBlock& nb);
+                                            int ns, int ne, Real *buf,
+                                            const NeighborBlock& nb);
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                        enum CCBoundaryType type);
   void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
-                                  Real *buf, const NeighborBlock& nb, bool *flip);
+                                        Real *buf, const NeighborBlock& nb, bool *flip);
   void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
-                      AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip);
+                                          AthenaArray<Real> &cbuf,
+                                          const NeighborBlock& nb, bool *flip);
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
-                                  Real *buf, const NeighborBlock& nb, bool *flip);
+                                        Real *buf, const NeighborBlock& nb, bool *flip);
   bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
                                           enum CCBoundaryType type);
   void ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                           enum CCBoundaryType type);
+                                                  enum CCBoundaryType type);
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
@@ -324,7 +329,7 @@ class BoundaryValues : public BoundaryBase {
 
   BValFunc_t BoundaryFunction_[6];
 
-// Shearingbox
+  // Shearingbox
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
