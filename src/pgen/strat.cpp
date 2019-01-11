@@ -63,11 +63,11 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
                          FaceField &b, Real time, Real dt,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh);
+                         int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
                          FaceField &b, Real time, Real dt,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh);
+                         int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 
@@ -406,64 +406,64 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &prim, FaceField &b,
-                         Real time, Real dt, int is, int ie, int js,
-                         int je, int ks, int ke, int ngh) {
+                         Real time, Real dt,
+                         int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Copy field components from last physical zone
   // zero slope boundary for B field
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          b.x1f(ks-k,j,i) = b.x1f(ks,j,i);
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu+1; i++) {
+          b.x1f(kl-k,j,i) = b.x1f(kl,j,i);
         }
       }
     }
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie; i++) {
-          b.x2f(ks-k,j,i) = b.x2f(ks,j,i);
+      for (int j=jl; j<=ju+1; j++) {
+        for (int i=il; i<=iu; i++) {
+          b.x2f(kl-k,j,i) = b.x2f(kl,j,i);
         }
       }
     }
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          b.x3f(ks-k,j,i) = b.x3f(ks,j,i);
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
+          b.x3f(kl-k,j,i) = b.x3f(kl,j,i);
         }
       }
     }
   } // MHD
 
   for (int k=1; k<=ngh; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        Real x3 = pco->x3v(ks-k);
-        Real x3b = pco->x3v(ks);
-        Real den = prim(IDN,ks,j,i);
-        // First calculate the effective gas temperature (Tks=cs^2)
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++) {
+        Real x3 = pco->x3v(kl-k);
+        Real x3b = pco->x3v(kl);
+        Real den = prim(IDN,kl,j,i);
+        // First calculate the effective gas temperature (Tkl=cs^2)
         // in the last physical zone. If isothermal, use H=1
-        Real Tks = 0.5*SQR(Omega_0);
+        Real Tkl = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
-          Real pressks = prim(IPR,ks,j,i);
-          pressks = std::max(pressks,pfloor);
-          Tks = pressks/den;
+          Real presskl = prim(IPR,kl,j,i);
+          presskl = std::max(presskl,pfloor);
+          Tkl = presskl/den;
         }
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
-        prim(IDN,ks-k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
-                                          (2.0*Tks/SQR(Omega_0)));
+        prim(IDN,kl-k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
+                                          (2.0*Tkl/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
-        prim(IVX,ks-k,j,i) = prim(IVX,ks,j,i);
-        prim(IVY,ks-k,j,i) = prim(IVY,ks,j,i);
+        prim(IVX,kl-k,j,i) = prim(IVX,kl,j,i);
+        prim(IVY,kl-k,j,i) = prim(IVY,kl,j,i);
         // If there's inflow into the grid, set the normal velocity to zero
-        if (prim(IVZ,ks,j,i) >= 0.0) {
-          prim(IVZ,ks-k,j,i) = 0.0;
+        if (prim(IVZ,kl,j,i) >= 0.0) {
+          prim(IVZ,kl-k,j,i) = 0.0;
         } else {
-          prim(IVZ,ks-k,j,i) = prim(IVZ,ks,j,i);
+          prim(IVZ,kl-k,j,i) = prim(IVZ,kl,j,i);
         }
         if (NON_BAROTROPIC_EOS)
-          prim(IPR,ks-k,j,i) = prim(IDN,ks-k,j,i)*Tks;
+          prim(IPR,kl-k,j,i) = prim(IDN,kl-k,j,i)*Tkl;
       }
     }
   }
@@ -482,67 +482,68 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &prim,
                          FaceField &b, Real time, Real dt,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                         int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          b.x1f(ke+k,j,i) = b.x1f(ke,j,i);
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu+1; i++) {
+          b.x1f(ku+k,j,i) = b.x1f(ku,j,i);
         }
       }
     }
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie; i++) {
-          b.x2f(ke+k,j,i) = b.x2f(ke,j,i);
+      for (int j=jl; j<=ju+1; j++) {
+        for (int i=il; i<=iu; i++) {
+          b.x2f(ku+k,j,i) = b.x2f(ku,j,i);
         }
       }
     }
     for (int k=1; k<=ngh; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          b.x3f(ke+1+k,j,i) = b.x3f(ke+1,j,i);
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
+          b.x3f(ku+1+k,j,i) = b.x3f(ku+1,j,i);
         }
       }
     }
   } // MHD
 
   for (int k=1; k<=ngh; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        Real x3 = pco->x3v(ke+k);
-        Real x3b = pco->x3v(ke);
-        Real den = prim(IDN,ke,j,i);
-        // First calculate the effective gas temperature (Tks=cs^2)
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++) {
+        Real x3 = pco->x3v(ku+k);
+        Real x3b = pco->x3v(ku);
+        Real den = prim(IDN,ku,j,i);
+        // First calculate the effective gas temperature (Tku=cs^2)
         // in the last physical zone. If isothermal, use H=1
-        Real Tke = 0.5*SQR(Omega_0);
+        Real Tku = 0.5*SQR(Omega_0);
         if (NON_BAROTROPIC_EOS) {
-          Real presske = prim(IPR,ke,j,i);
-          presske = std::max(presske,pfloor);
-          Tke = presske/den;
+          Real pressku = prim(IPR,ku,j,i);
+          pressku = std::max(pressku,pfloor);
+          Tku = pressku/den;
         }
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
-        prim(IDN,ke+k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
-                                          (2.0*Tke/SQR(Omega_0)));
+        prim(IDN,ku+k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
+                                          (2.0*Tku/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
-        prim(IVX,ke+k,j,i) = prim(IVX,ke,j,i);
-        prim(IVY,ke+k,j,i) = prim(IVY,ke,j,i);
+        prim(IVX,ku+k,j,i) = prim(IVX,ku,j,i);
+        prim(IVY,ku+k,j,i) = prim(IVY,ku,j,i);
         // If there's inflow into the grid, set the normal velocity to zero
-        if (prim(IVZ,ke,j,i) <= 0.0) {
-          prim(IVZ,ke+k,j,i) = 0.0;
+        if (prim(IVZ,ku,j,i) <= 0.0) {
+          prim(IVZ,ku+k,j,i) = 0.0;
         } else {
-          prim(IVZ,ke+k,j,i) = prim(IVZ,ke,j,i);
+          prim(IVZ,ku+k,j,i) = prim(IVZ,ku,j,i);
         }
         if (NON_BAROTROPIC_EOS)
-          prim(IPR,ke+k,j,i) = prim(IDN,ke+k,j,i)*Tke;
+          prim(IPR,ku+k,j,i) = prim(IDN,ku+k,j,i)*Tku;
       }
     }
   }
   return;
 }
+
 
 static Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
@@ -565,6 +566,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 
   return bxby;
 }
+
 
 static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;

@@ -45,7 +45,7 @@ static Real bxl,byl,bzl;
 // fixes BCs on L-x1 (left edge) of grid to postshock flow.
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                        FaceField &b, Real time, Real dt,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh);
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -193,15 +193,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                        FaceField &b, Real time, Real dt,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
-        prim(IDN,k,j,is-i) = dl;
-        prim(IVX,k,j,is-i) = ul;
-        prim(IVY,k,j,is-i) = 0.0;
-        prim(IVZ,k,j,is-i) = 0.0;
-        prim(IPR,k,j,is-i) = pl;
+        prim(IDN,k,j,il-i) = dl;
+        prim(IVX,k,j,il-i) = ul;
+        prim(IVY,k,j,il-i) = 0.0;
+        prim(IVZ,k,j,il-i) = 0.0;
+        prim(IPR,k,j,il-i) = pl;
       }
     }
   }
