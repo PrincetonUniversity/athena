@@ -432,7 +432,7 @@ void MultigridDriver::SolveIterative(void) {
 
 void MultigridDriver::SolveCoarsestGrid(void) {
   Mesh *pm=pmy_mesh_;
-  int ni = (std::max(pm->nrbx1), std::max(pm->nrbx2, pm->nrbx3))
+  int ni = (std::max(pm->nrbx1, std::max(pm->nrbx2, pm->nrbx3))
             >> (nrootlevel_-1));
   if (fperiodic_ && ni==1) { // trivial case - all zero
     mgroot_->ZeroClearData();
