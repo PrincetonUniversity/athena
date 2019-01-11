@@ -169,7 +169,7 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
         if (pmb_->block_size.nx2 > 1) {
           x2flux(IEN,k,j,i) += x2diflx(k,j,i);
           if (j==je) x2flux(IEN,k,j+1,i) += x2diflx(k,j+1,i);
-       }
+        }
         if (pmb_->block_size.nx3 > 1) {
           x3flux(IEN,k,j,i) += x3diflx(k,j,i);
           if (k==ke) x3flux(IEN,k+1,j,i) += x3diflx(k+1,j,i);
@@ -317,12 +317,12 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
       if ((nu_iso > 0.0) || (nu_aniso > 0.0)) {
         for (int i=is; i<=ie; ++i)
           dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
-                                     *fac/(nu_t(i)+TINY_NUMBER)));
+                                                      *fac/(nu_t(i)+TINY_NUMBER)));
       }
       if ((kappa_iso > 0.0) || (kappa_aniso > 0.0)) {
         for (int i=is; i<=ie; ++i)
           dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))
-                                  *fac/(kappa_t(i)+TINY_NUMBER)));
+                                                      *fac/(kappa_t(i)+TINY_NUMBER)));
       }
     }
   }

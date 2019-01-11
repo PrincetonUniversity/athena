@@ -36,8 +36,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   if (gm_ != 0.0) {
     if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0
-    || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
-    && phyd->pmy_block->block_size.nx3==1)) {
+        || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
+            && phyd->pmy_block->block_size.nx3==1)) {
       hydro_sourceterms_defined = true;
     } else {
       std::stringstream msg;
@@ -79,8 +79,10 @@ HydroSourceTerms::~HydroSourceTerms() {
 //  \brief Adds source terms to conserved variables
 
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
-     const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons) {
+                                           const AthenaArray<Real> *flux,
+                                           const AthenaArray<Real> &prim,
+                                           const AthenaArray<Real> &bcc,
+                                           AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)
