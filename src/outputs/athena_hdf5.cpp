@@ -837,11 +837,11 @@ void ATHDF5Output::MakeXDMF() {
     xdmf << "      </DataItem>\n";
     if (nx3 > 1) {
       xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx3+1
-          << "\">\n";
+           << "\">\n";
       xdmf << "        <DataItem Dimensions=\"3 2\" NumberType=\"Int\"> " << n_block
-          << " 0 1 1 1 " << nx3+1 << " </DataItem>\n";
+           << " 0 1 1 1 " << nx3+1 << " </DataItem>\n";
       xdmf << "        <DataItem Dimensions=\"" << num_blocks_global << " " << nx3+1
-          << "\" Format=\"HDF\"> " << filename << ":/x3f </DataItem>\n";
+           << "\" Format=\"HDF\"> " << filename << ":/x3f </DataItem>\n";
       xdmf << "      </DataItem>\n";
     }
     xdmf << "    </Geometry>\n";
@@ -851,24 +851,24 @@ void ATHDF5Output::MakeXDMF() {
     for (int n_dataset = 0; n_dataset < num_datasets; ++n_dataset) {
       for (int n_variable = 0; n_variable < num_variables[n_dataset]; ++n_variable) {
         xdmf << "    <Attribute Name=\"" << variable_names[n_quantity++]
-            << "\" Center=\"Cell\">\n";
+             << "\" Center=\"Cell\">\n";
         if (nx3 > 1) {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx3 << " "
-              << nx2 << " " << nx1 << "\">\n";
+               << nx2 << " " << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
-              << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " "
-              << nx2 << " " << nx1 << " </DataItem>\n";
+               << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " "
+               << nx2 << " " << nx1 << " </DataItem>\n";
         } else {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx2 << " "
-              << nx1 << "\">\n";
+               << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
-              << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " "
-              << nx1 << " </DataItem>\n";
+               << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " "
+               << nx1 << " </DataItem>\n";
         }
         xdmf << "        <DataItem Dimensions=\"" << num_variables[n_dataset] << " "
-            << num_blocks_global << " " << nx3 << " " << nx2 << " " << nx1
-            << "\" Format=\"HDF\"> " << filename << ":/" << dataset_names[n_dataset]
-            << " </DataItem>\n";
+             << num_blocks_global << " " << nx3 << " " << nx2 << " " << nx1
+             << "\" Format=\"HDF\"> " << filename << ":/" << dataset_names[n_dataset]
+             << " </DataItem>\n";
         xdmf << "      </DataItem>\n";
         xdmf << "    </Attribute>\n";
       }

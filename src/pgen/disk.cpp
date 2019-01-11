@@ -51,7 +51,7 @@ void DiskInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
-                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);

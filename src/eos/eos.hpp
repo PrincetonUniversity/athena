@@ -111,7 +111,7 @@ class EquationOfState {
   void FastMagnetosonicSpeedsSR(
       const AthenaArray<Real> &, const AthenaArray<Real> &,
       int, int, int, int, int, AthenaArray<Real> &,
-                                AthenaArray<Real> &) {return;}
+      AthenaArray<Real> &) {return;}
   void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
                      Real g00, Real g01, Real g11,
                      Real *plambda_plus, Real *plambda_minus);
