@@ -63,9 +63,7 @@ ParameterInput::ParameterInput() {
   pfirst_block = NULL;
   last_filename_ = "";
 #ifdef OPENMP_PARALLEL
-  omp_init_lock(&rlock_);
-  omp_init_lock(&wlock_);
-  reading_=0;
+  omp_init_lock(&lock_);
 #endif
 }
 
@@ -79,8 +77,7 @@ ParameterInput::~ParameterInput() {
     delete pold_block;
   }
 #ifdef OPENMP_PARALLEL
-  omp_destroy_lock(&rlock_);
-  omp_destroy_lock(&wlock_);
+  omp_destroy_lock(&lock_);
 #endif
 }
 
@@ -397,7 +394,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
   InputLine* pl;
   std::stringstream msg;
 
-  StartReading();
+  Lock();
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
@@ -417,7 +414,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
   }
 
   std::string val=pl->param_value;
-  EndReading();
+  Unlock();
 
   // Convert string to integer and return value
   return atoi(val.c_str());
@@ -432,7 +429,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
   InputLine* pl;
   std::stringstream msg;
 
-  StartReading();
+  Lock();
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
@@ -452,7 +449,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
   }
 
   std::string val=pl->param_value;
-  EndReading();
+  Unlock();
 
   // Convert string to real and return value
   return static_cast<Real>(atof(val.c_str()));
@@ -467,7 +464,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
   InputLine* pl;
   std::stringstream msg;
 
-  StartReading();
+  Lock();
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
@@ -487,7 +484,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
   }
 
   std::string val=pl->param_value;
-  EndReading();
+  Unlock();
 
   // check is string contains integers 0 or 1 (instead of true or false) and return
   if (val.compare(0, 1, "0")==0 || val.compare(0, 1, "1")==0) {
@@ -513,7 +510,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
   InputLine* pl;
   std::stringstream msg;
 
-  StartReading();
+  Lock();
 
   // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
@@ -533,7 +530,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
   }
 
   std::string val=pl->param_value;
-  EndReading();
+  Unlock();
 
   // return value
   return val;
@@ -547,15 +544,24 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
 
 int ParameterInput::GetOrAddInteger(std::string block, std::string name, int def_value) {
   InputBlock* pb;
+  InputLine *pl;
   std::stringstream ss_value;
+  int ret;
 
-  if (DoesParameterExist(block, name)) return GetInteger(block,name);
-  StartWriting();
-  pb = FindOrAddBlock(block);
-  ss_value << def_value;
-  AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
-  EndWriting();
-  return def_value;
+  Lock();
+  if (DoesParameterExist(block, name)) {
+    pb = GetPtrToBlock(block);
+    pl = pb->GetPtrToLine(name);
+    std::string val = pl->param_value;
+    ret = atoi(val.c_str());
+  } else {
+    pb = FindOrAddBlock(block);
+    ss_value << def_value;
+    AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
+    ret = def_value;
+  }
+  Unlock();
+  return ret;
 }
 
 //----------------------------------------------------------------------------------------
@@ -566,15 +572,24 @@ int ParameterInput::GetOrAddInteger(std::string block, std::string name, int def
 
 Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_value) {
   InputBlock* pb;
+  InputLine *pl;
   std::stringstream ss_value;
+  Real ret;
 
-  if (DoesParameterExist(block, name)) return GetReal(block,name);
-  StartWriting();
-  pb = FindOrAddBlock(block);
-  ss_value << def_value;
-  AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
-  EndWriting();
-  return def_value;
+  Lock();
+  if (DoesParameterExist(block, name)) {
+    pb = GetPtrToBlock(block);
+    pl = pb->GetPtrToLine(name);
+    std::string val = pl->param_value;
+    ret = static_cast<Real>(atof(val.c_str()));
+  } else {
+    pb = FindOrAddBlock(block);
+    ss_value << def_value;
+    AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
+    ret = def_value;
+  }
+  Unlock();
+  return ret;
 }
 
 //----------------------------------------------------------------------------------------
@@ -585,15 +600,53 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_
 
 bool ParameterInput::GetOrAddBoolean(std::string block,std::string name, bool def_value) {
   InputBlock* pb;
+  InputLine *pl;
   std::stringstream ss_value;
+  bool ret;
 
-  if (DoesParameterExist(block, name)) return GetBoolean(block,name);
-  StartWriting();
-  pb = FindOrAddBlock(block);
-  ss_value << def_value;
-  AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
-  EndWriting();
-  return def_value;
+  Lock();
+  if (DoesParameterExist(block, name)) {
+    pb = GetPtrToBlock(block);
+    pl = pb->GetPtrToLine(name);
+    std::string val = pl->param_value;
+    std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+    std::istringstream is(val);
+    is >> std::boolalpha >> ret;
+  } else {
+    pb = FindOrAddBlock(block);
+    ss_value << def_value;
+    AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
+    ret = def_value;
+  }
+  Unlock();
+  return ret;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name,
+//                                                 std::string def_value)
+//  \brief returns string value stored in block/name if it exists, or creates and sets
+//  value to def_value if it does not exist
+
+std::string ParameterInput::GetOrAddString(std::string block, std::string name,
+  std::string def_value) {
+  InputBlock* pb;
+  InputLine *pl;
+  std::stringstream ss_value;
+  std::string ret;
+
+  Lock();
+  if (DoesParameterExist(block, name)) {
+    pb = GetPtrToBlock(block);
+    pl = pb->GetPtrToLine(name);
+    ret = pl->param_value;
+  } else {
+    pb = FindOrAddBlock(block);
+    AddParameter(pb, name, def_value, "# Default value added at run time");
+    ret = def_value;
+  }
+  Unlock();
+  return ret;
 }
 
 //----------------------------------------------------------------------------------------
@@ -604,11 +657,11 @@ int ParameterInput::SetInteger(std::string block, std::string name, int value) {
   InputBlock* pb;
   std::stringstream ss_value;
 
-  StartWriting();
+  Lock();
   pb = FindOrAddBlock(block);
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Updated during run time");
-  EndWriting();
+  Unlock();
   return value;
 }
 
@@ -620,47 +673,44 @@ Real ParameterInput::SetReal(std::string block, std::string name, Real value) {
   InputBlock* pb;
   std::stringstream ss_value;
 
-  StartWriting();
+  Lock();
   pb = FindOrAddBlock(block);
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Updated during run time");
-  EndWriting();
+  Unlock();
   return value;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real ParameterInput::SetBoolean(std::string block, std::string name, bool value)
+//! \fn bool ParameterInput::SetBoolean(std::string block, std::string name, bool value)
 //  \brief updates a boolean parameter; creates it if it does not exist
 
 bool ParameterInput::SetBoolean(std::string block, std::string name, bool value) {
   InputBlock* pb;
   std::stringstream ss_value;
 
-  StartWriting();
+  Lock();
   pb = FindOrAddBlock(block);
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Updated during run time");
-  EndWriting();
+  Unlock();
   return value;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name,
-//std::string def_value)
-//  \brief returns string value stored in block/name if it exists, or creates and sets
-//  value to def_value if it does not exist
+//! \fn std::string ParameterInput::SetString(std::string block, std::string name,
+//                                            std::string  value)
+//  \brief updates a string parameter; creates it if it does not exist
 
-std::string ParameterInput::GetOrAddString(std::string block, std::string name,
-  std::string def_value) {
+std::string ParameterInput::SetString(std::string block, std::string name,
+                                      std::string value) {
   InputBlock* pb;
-  std::stringstream ss_value;
 
-  if (DoesParameterExist(block, name)) return GetString(block,name);
-  StartWriting();
+  Lock();
   pb = FindOrAddBlock(block);
-  AddParameter(pb, name, def_value, "# Default value added at run time");
-  EndWriting();
-  return def_value;
+  AddParameter(pb, name, value, "# Updated during run time");
+  Unlock();
+  return value;
 }
 
 //----------------------------------------------------------------------------------------
@@ -787,52 +837,22 @@ InputLine* InputBlock::GetPtrToLine(std::string name) {
 }
 
 
-
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::StartReading(void)
-//  \brief set the readers' lock (only for OpenMP)
-
-void ParameterInput::StartReading(void) {
+//! \fn void ParameterInput::Lock(void)
+//  \brief Lock ParameterInput for reading and writing
+void ParameterInput::Lock(void) {
 #ifdef OPENMP_PARALLEL
-  omp_set_lock(&rlock_);
-  reading_++;
-  if (reading_==1)
-    omp_set_lock(&wlock_);
-  omp_unset_lock(&rlock_);
+  omp_set_lock(&lock_);
 #endif
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::EndReading(void)
-//  \brief unset the readers' lock (only for OpenMP)
-void ParameterInput::EndReading(void) {
+//! \fn void ParameterInput::Unlock(void)
+//  \brief Unlock ParameterInput for reading and writing
+void ParameterInput::Unlock(void) {
 #ifdef OPENMP_PARALLEL
-  omp_set_lock(&rlock_);
-  reading_--;
-  if (reading_==0)
-    omp_unset_lock(&wlock_);
-  omp_unset_lock(&rlock_);
-#endif
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::StartWriting(void)
-//  \brief set the writer's lock (only for OpenMP)
-void ParameterInput::StartWriting(void) {
-#ifdef OPENMP_PARALLEL
-  omp_set_lock(&wlock_);
-#endif
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::EndWriting(void)
-//  \brief unset the writer's lock (only for OpenMP)
-void ParameterInput::EndWriting(void) {
-#ifdef OPENMP_PARALLEL
-  omp_unset_lock(&wlock_);
+  omp_unset_lock(&lock_);
 #endif
   return;
 }
