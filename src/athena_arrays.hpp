@@ -84,7 +84,7 @@ class AthenaArray {
   // functions that initialize an array with shallow copy or slice from another array
   void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
-    const int nvar);
+                            const int nvar);
 
  private:
   T *pdata_;
@@ -96,7 +96,7 @@ class AthenaArray {
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
+    : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
 }
 
 // destructor
@@ -164,7 +164,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
 
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
-  const int indx, const int nvar) {
+                                          const int indx, const int nvar) {
   pdata_ = src.pdata_;
 
   if (dim == 5) {
