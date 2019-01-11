@@ -93,7 +93,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     start_cons_file[0] = start_cons_indices[n];
     start_cons_mem[0] = n;
     HDF5ReadRealArray(input_filename.c_str(), dataset_cons.c_str(), 5, start_cons_file,
-        count_cons_file, 4, start_cons_mem, count_cons_mem, phydro->u, true);
+                      count_cons_file, 4, start_cons_mem,
+                      count_cons_mem, phydro->u, true);
   }
 
   // Set field array selections
@@ -120,7 +121,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     count_field_mem[1] = block_size.nx2;
     count_field_mem[2] = block_size.nx1 + 1;
     HDF5ReadRealArray(input_filename.c_str(), dataset_b1.c_str(), 4, start_field_file,
-        count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x1f, true);
+                      count_field_file, 3, start_field_mem,
+                      count_field_mem, pfield->b.x1f, true);
 
     // Set B2
     count_field_file[1] = block_size.nx3;
@@ -130,7 +132,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     count_field_mem[1] = block_size.nx2 + 1;
     count_field_mem[2] = block_size.nx1;
     HDF5ReadRealArray(input_filename.c_str(), dataset_b2.c_str(), 4, start_field_file,
-        count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x2f, true);
+                      count_field_file, 3, start_field_mem,
+                      count_field_mem, pfield->b.x2f, true);
 
     // Set B3
     count_field_file[1] = block_size.nx3 + 1;
@@ -140,26 +143,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     count_field_mem[1] = block_size.nx2;
     count_field_mem[2] = block_size.nx1;
     HDF5ReadRealArray(input_filename.c_str(), dataset_b3.c_str(), 4, start_field_file,
-        count_field_file, 3, start_field_mem, count_field_mem, pfield->b.x3f, true);
+                      count_field_file, 3, start_field_mem,
+                      count_field_mem, pfield->b.x3f, true);
   }
 
   // Make no-op collective reads if using MPI and ranks have unequal numbers of blocks
-  #ifdef MPI_PARALLEL
+#ifdef MPI_PARALLEL
   {
     int num_blocks_this_rank = pmy_mesh->nblist[Globals::my_rank];
     if (lid == num_blocks_this_rank - 1) {
       int block_shortage_this_rank = 0;
       for (int rank = 0; rank < Globals::nranks; ++rank) {
-        block_shortage_this_rank = std::max(block_shortage_this_rank,
-            pmy_mesh->nblist[rank] - num_blocks_this_rank);
+        block_shortage_this_rank =
+            std::max(block_shortage_this_rank,
+                     pmy_mesh->nblist[rank] - num_blocks_this_rank);
       }
       for (int block = 0; block < block_shortage_this_rank; ++block) {
         for (int n = 0; n < NHYDRO; ++n) {
           start_cons_file[0] = start_cons_indices[n];
           start_cons_mem[0] = n;
           HDF5ReadRealArray(input_filename.c_str(), dataset_cons.c_str(), 5,
-              start_cons_file, count_cons_file, 4, start_cons_mem, count_cons_mem,
-              phydro->u, true, true);
+                            start_cons_file, count_cons_file, 4,
+                            start_cons_mem, count_cons_mem,
+                            phydro->u, true, true);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
           count_field_file[1] = block_size.nx3;
@@ -169,8 +175,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           count_field_mem[1] = block_size.nx2;
           count_field_mem[2] = block_size.nx1 + 1;
           HDF5ReadRealArray(input_filename.c_str(), dataset_b1.c_str(), 4,
-              start_field_file, count_field_file, 3, start_field_mem, count_field_mem,
-              pfield->b.x1f, true, true);
+                            start_field_file, count_field_file, 3,
+                            start_field_mem, count_field_mem,
+                            pfield->b.x1f, true, true);
           count_field_file[1] = block_size.nx3;
           count_field_file[2] = block_size.nx2 + 1;
           count_field_file[3] = block_size.nx1;
@@ -178,8 +185,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           count_field_mem[1] = block_size.nx2 + 1;
           count_field_mem[2] = block_size.nx1;
           HDF5ReadRealArray(input_filename.c_str(), dataset_b2.c_str(), 4,
-              start_field_file, count_field_file, 3, start_field_mem, count_field_mem,
-              pfield->b.x2f, true, true);
+                            start_field_file, count_field_file, 3,
+                            start_field_mem, count_field_mem,
+                            pfield->b.x2f, true, true);
           count_field_file[1] = block_size.nx3 + 1;
           count_field_file[2] = block_size.nx2;
           count_field_file[3] = block_size.nx1;
@@ -187,12 +195,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           count_field_mem[1] = block_size.nx2;
           count_field_mem[2] = block_size.nx1;
           HDF5ReadRealArray(input_filename.c_str(), dataset_b3.c_str(), 4,
-              start_field_file, count_field_file, 3, start_field_mem, count_field_mem,
-              pfield->b.x3f, true, true);
+                            start_field_file, count_field_file, 3,
+                            start_field_mem, count_field_mem,
+                            pfield->b.x3f, true, true);
         }
       }
     }
   }
-  #endif
+#endif
   return;
 }
