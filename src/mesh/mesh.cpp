@@ -1753,12 +1753,16 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   int rd=0, dd=0;
   for (int n=0; n<Globals::nranks; n++) {
-    bnref[n]   = nref[n]*sizeof(LogicalLocation);
-    bnderef[n] = nderef[n]*sizeof(LogicalLocation);
     rdisp[n] = rd;
     ddisp[n] = dd;
-    brdisp[n] = rd*sizeof(LogicalLocation);
-    bddisp[n] = dd*sizeof(LogicalLocation);
+    // technically could overflow, since sizeof() operator returns
+    // std::size_t = long unsigned int > int
+    // on many platforms (LP64). However, these are used below in MPI calls for
+    // integer arguments (recvcounts, displs). MPI does not support > 64-bit count ranges
+    bnref[n] = static_cast<int>(nref[n]*sizeof(LogicalLocation));
+    bnderef[n] = static_cast<int>(nderef[n]*sizeof(LogicalLocation));
+    brdisp[n] = static_cast<int>(rd*sizeof(LogicalLocation));
+    bddisp[n] = static_cast<int>(dd*sizeof(LogicalLocation));
     rd+=nref[n];
     dd+=nderef[n];
   }

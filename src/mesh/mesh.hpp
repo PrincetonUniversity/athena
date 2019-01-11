@@ -211,15 +211,19 @@ class Mesh {
   Real *costlist;
   // 8x arrays used exclusively for AMR (not SMR):
   int *nref, *nderef;
-  std::size_t  *bnref, *bnderef;
-  std::size_t *brdisp, *bddisp;
   int *rdisp, *ddisp;
+  int *bnref, *bnderef;
+  int *brdisp, *bddisp;
+  // the last 4x should be std::size_t, but are limited to int by MPI
 
   LogicalLocation *loclist;
   MeshBlockTree tree;
   // number of MeshBlocks in the x1, x2, x3 directions of the root grid:
+  // (unlike LogicalLocation.lxi, nrbxi don't grow w/ AMR # of levels, so keep 32-bit int)
   int nrbx1, nrbx2, nrbx3;
-  //std::int64_t nrbx1, nrbx2, nrbx3;  // old type in 2018; find unnecessary static_casts
+  // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
+  //std::int64_t nrbx1, nrbx2, nrbx3;
+
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
