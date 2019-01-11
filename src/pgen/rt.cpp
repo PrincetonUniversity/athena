@@ -259,7 +259,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //! \fn void ProjectPressureInnerX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjuctPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -323,7 +323,7 @@ void ProjuctPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjuctPressureOuterX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjuctPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -387,7 +387,7 @@ void ProjuctPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjuctPressureInnerX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjuctPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -451,7 +451,7 @@ void ProjuctPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjuctPressureOuterX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjuctPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
