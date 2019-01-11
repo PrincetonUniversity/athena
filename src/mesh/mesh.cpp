@@ -451,10 +451,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
     ddisp = new int[Globals::nranks];
-    bnref = new std::size_t[Globals::nranks];
-    bnderef = new std::size_t[Globals::nranks];
-    brdisp = new std::size_t[Globals::nranks];
-    bddisp = new std::size_t[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
@@ -768,10 +768,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
     ddisp = new int[Globals::nranks];
-    bnref = new std::size_t[Globals::nranks];
-    bnderef = new std::size_t[Globals::nranks];
-    brdisp = new std::size_t[Globals::nranks];
-    bddisp = new std::size_t[Globals::nranks];
+    bnref = new int[Globals::nranks];
+    bnderef = new int[Globals::nranks];
+    brdisp = new int[Globals::nranks];
+    bddisp = new int[Globals::nranks];
   }
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
