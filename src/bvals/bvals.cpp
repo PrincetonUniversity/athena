@@ -216,7 +216,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       ATHENA_ERROR(msg);
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
@@ -229,7 +229,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       ATHENA_ERROR(msg);
     }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_south_polar_blocks_ = 0;

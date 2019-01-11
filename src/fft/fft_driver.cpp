@@ -86,7 +86,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     lx2max = lx2max>lx2?lx2min:lx2;
     lx3max = lx3max>lx3?lx3min:lx3;
   }
-
+  // KGF: possible underflow from std::int64_t
   int nbx1 = static_cast<int>(lx1max-lx1min+1);
   int nbx2 = static_cast<int>(lx2max-lx2min+1);
   int nbx3 = static_cast<int>(lx3max-lx3min+1);
@@ -114,9 +114,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1 = static_cast<int>(pm->nrbx1/nbx1);
-  npx2 = static_cast<int>(pm->nrbx2/nbx2);
-  npx3 = static_cast<int>(pm->nrbx3/nbx3);
+  npx1 = pm->nrbx1/nbx1;
+  npx2 = pm->nrbx2/nbx2;
+  npx3 = pm->nrbx3/nbx3;
 
   fft_mesh_size_=pm->mesh_size;
 

@@ -85,13 +85,14 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   if (block_bcs[INNER_X2] == POLAR_BNDRY
       || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
-    // possible loss of precision to 32 bit int, if std::int64_t nrbx3 is large
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     int num_north_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY
       || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     int num_south_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
@@ -128,6 +129,7 @@ BoundaryBase::~BoundaryBase() {
 
 unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
                                           int fi1, int fi2) {
+  // KGF: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
   unsigned int ux1=(unsigned)(ox1+1);
   unsigned int ux2=(unsigned)(ox2+1);
   unsigned int ux3=(unsigned)(ox3+1);
@@ -479,6 +481,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // polar neighbors
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     int num_north_polar_blocks = static_cast<int>(nrbx3 * (1 << level));
     for (int n = 0; n < num_north_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;
@@ -496,6 +499,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
+    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     int num_south_polar_blocks = static_cast<int>(nrbx3 * (1 << level));
     for (int n = 0; n < num_south_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;

@@ -140,7 +140,7 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
                               LogicalLocation loc, RegionSize bsize) {
   const AthenaFFTComplex *src=out_;
   int is, ie, js, je, ks, ke;
-  // possible loss of accuracy from std::int64_t loc.lx1 to int is, e.g.
+  // KGF: possible overflow from std::int64_t loc.lx1 to int is, e.g.
   is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
   js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
   ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
@@ -175,7 +175,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
                           LogicalLocation loc, RegionSize bsize) {
   AthenaFFTComplex *dst=in_;
   int is, ie, js, je, ks, ke;
-  // possible loss of accuracy from std::int64_t loc.lx1 to int is, e.g.
+  // KGF: possible overflow from std::int64_t loc.lx1 to int is, e.g.
   is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
   js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
   ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
@@ -517,7 +517,7 @@ void FFTBlock::MpiInitialize() {
 AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize,
                                RegionSize bsize) {
   dim_=dim;
-  // loc.lxi are std::int64_t in general, but w/o AMR, they are unilikely to overflow
+  // KGF: loc.lxi are std::int64_t in general, but w/o AMR, they are unilikely to overflow
   // std::int32_t type limits
   Lx[0] = msize.x1max-msize.x1min;
   Nx[0] = msize.nx1;

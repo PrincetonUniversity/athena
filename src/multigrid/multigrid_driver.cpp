@@ -94,8 +94,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
   }
   rootbuf_=new Real[pm->nbtotal*nvar_];
   mgtlist_ = new MultigridTaskList(this);
-  rootsrc_.NewAthenaArray(nvar_, static_cast<int>(pm->nrbx3), static_cast<int>(pm->nrbx2),
-                          static_cast<int>(pm->nrbx1));
+  rootsrc_.NewAthenaArray(nvar_, pm->nrbx3, pm->nrbx2, pm->nrbx1);
 }
 
 // destructor
@@ -223,6 +222,7 @@ void MultigridDriver::FillRootGridSource(void) {
     for (int n=0; n<pmy_mesh_->nbtotal; n++) {
       LogicalLocation &loc=pmy_mesh_->loclist[n];
       for (int v=0; v<nvar_; v++)
+        // KGF: possible std::int64_t overflow. Unlikely to occur with Multigrid
         rootsrc_(v, static_cast<int>(loc.lx3), static_cast<int>(loc.lx2),
                  static_cast<int>(loc.lx1))=rootbuf_[n*nvar_+v];
     }
@@ -267,6 +267,7 @@ void MultigridDriver::TransferFromRootToBlocks(void) {
   } else {
     while (pmg!=nullptr) {
       LogicalLocation &loc=pmg->loc_;
+      // KGF: possible std::int64_t overflow. Unlikely to occur with Multigrid
       pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
                            static_cast<int>(loc.lx3));
       pmg=pmg->next;
@@ -431,8 +432,7 @@ void MultigridDriver::SolveIterative(void) {
 
 void MultigridDriver::SolveCoarsestGrid(void) {
   Mesh *pm=pmy_mesh_;
-  int ni = (std::max(static_cast<int>(pm->nrbx1),
-                     std::max(static_cast<int>(pm->nrbx2), static_cast<int>(pm->nrbx3)))
+  int ni = (std::max(pm->nrbx1), std::max(pm->nrbx2, pm->nrbx3))
             >> (nrootlevel_-1));
   if (fperiodic_ && ni==1) { // trivial case - all zero
     mgroot_->ZeroClearData();
