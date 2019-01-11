@@ -71,12 +71,12 @@ class AthenaFFTIndex{
   ~AthenaFFTIndex();
 
   explicit AthenaFFTIndex(const AthenaFFTIndex *psrc);
-// mesh size
+  // mesh size
   Real Lx[3];
   int Nx[3];
-// MPI decomposition
+  // MPI decomposition
   int np[3], ip[3];
-// local size and indices
+  // local size and indices
   int nx[3], is[3], ie[3];
 
   int iloc[3],ploc[3];
@@ -210,13 +210,13 @@ class FFTDriver {
 
 #ifdef MPI_PARALLEL
 namespace DecompositionNames{
-  const unsigned int x_decomp = 1<<0;
-  const unsigned int y_decomp = 1<<1;
-  const unsigned int z_decomp = 1<<2;
-  const unsigned int xy_decomp = x_decomp | y_decomp;
-  const unsigned int yz_decomp = y_decomp | z_decomp;
-  const unsigned int xz_decomp = x_decomp | z_decomp;
-  const unsigned int xyz_decomp = x_decomp | y_decomp | z_decomp;
+const unsigned int x_decomp = 1<<0;
+const unsigned int y_decomp = 1<<1;
+const unsigned int z_decomp = 1<<2;
+const unsigned int xy_decomp = x_decomp | y_decomp;
+const unsigned int yz_decomp = y_decomp | z_decomp;
+const unsigned int xz_decomp = x_decomp | z_decomp;
+const unsigned int xyz_decomp = x_decomp | y_decomp | z_decomp;
 };
 #endif
 

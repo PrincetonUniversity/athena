@@ -86,7 +86,7 @@ void TurbulenceDriver::Driving(void) {
   Mesh *pm=pmy_mesh_;
   bool new_perturb = false;
 
-// check driving time interval to generate new perturbation
+  // check driving time interval to generate new perturbation
   if (pm->time >= tdrive) {
     if (Globals::my_rank==0)
       std::cout << "generating turbulence at " << pm->time << std::endl;
@@ -153,7 +153,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
   int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
-// set random amplitudes with gaussian deviation
+  // set random amplitudes with gaussian deviation
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
@@ -168,7 +168,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
     }
   }
 
-// set power spectrum: only power-law
+  // set power spectrum: only power-law
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
@@ -337,7 +337,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 
             if (NON_BAROTROPIC_EOS) {
               pmb->phydro->u(IEN,k,j,i) += s*(M1*v1+M2*v2+M3*v3)
-                                         + 0.5*s*s*den*(SQR(v1)+SQR(v2)+SQR(v3));
+                                           + 0.5*s*s*den*(SQR(v1)+SQR(v2)+SQR(v3));
             }
             pmb->phydro->u(IM1,k,j,i) += s*den*v1;
             pmb->phydro->u(IM2,k,j,i) += s*den*v2;

@@ -24,7 +24,7 @@
 // constructor, initializes data structures and parameters
 
 FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
-            RegionSize msize, RegionSize bsize) {
+                   RegionSize msize, RegionSize bsize) {
   pmy_driver_ = pfd;
   loc_=iloc;
   gid_=igid;
@@ -59,7 +59,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   b_out_ = new AthenaFFTIndex(orig_idx_);
 #endif
 
-//  f_in_->PrintIndex();
+  //  f_in_->PrintIndex();
 #ifdef FFT
   for (int i=0; i<3; i++) {
     Nx[f_in_->iloc[i]]=f_in_->Nx[i];
@@ -76,15 +76,15 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 // destructor
 
 FFTBlock::~FFTBlock() {
-    delete[] in_;
-    delete[] out_;
-    delete orig_idx_;
-    delete f_in_;
-    delete f_out_;
-    delete b_in_;
-    delete b_out_;
-    if (fplan_!=nullptr) DestroyPlan(fplan_);
-    if (bplan_!=nullptr) DestroyPlan(bplan_);
+  delete[] in_;
+  delete[] out_;
+  delete orig_idx_;
+  delete f_in_;
+  delete f_out_;
+  delete b_in_;
+  delete b_out_;
+  if (fplan_!=nullptr) DestroyPlan(fplan_);
+  if (bplan_!=nullptr) DestroyPlan(bplan_);
 }
 
 void FFTBlock::DestroyPlan(AthenaFFTPlan *plan) {
@@ -227,7 +227,7 @@ void FFTBlock::ApplyKernel(int mode) {
 //  \brief initialize FFT plan using mesh information
 
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
-                                          enum AthenaFFTDirection dir) {
+                                         enum AthenaFFTDirection dir) {
   int nfast,nmid,nslow;
   if (dir == AthenaFFTForward) {
     nfast = f_in_->Nx[0]; nmid = f_in_->Nx[1]; nslow = f_in_->Nx[2];
@@ -244,7 +244,7 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 1D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
-                                     enum AthenaFFTDirection dir) {
+                                    enum AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -264,8 +264,8 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 //                                           enum AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 2D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
-                                     AthenaFFTComplex *data,
-                                     enum AthenaFFTDirection dir) {
+                                    AthenaFFTComplex *data,
+                                    enum AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
@@ -315,8 +315,8 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //  \brief initialize FFT plan for 3D FFT
 
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
-                                     AthenaFFTComplex *data,
-                                     enum AthenaFFTDirection dir) {
+                                    AthenaFFTComplex *data,
+                                    enum AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
@@ -376,10 +376,10 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 void FFTBlock::Execute(AthenaFFTPlan *plan) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-    if (plan->dim == 3) fft_3d(in_, out_, plan->dir, plan->plan3d);
-    if (plan->dim == 2) fft_2d(in_, out_, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(in_, out_, plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(in_, out_, plan->dir, plan->plan2d);
 #else
-    fftw_execute_dft(plan->plan, in_, out_);
+  fftw_execute_dft(plan->plan, in_, out_);
 #endif
 #endif // FFT
 }
@@ -391,10 +391,10 @@ void FFTBlock::Execute(AthenaFFTPlan *plan) {
 void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-    if (plan->dim == 3) fft_3d(data, data, plan->dir, plan->plan3d);
-    if (plan->dim == 2) fft_2d(data, data, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(data, data, plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(data, data, plan->dir, plan->plan2d);
 #else
-    fftw_execute_dft(plan->plan, data, data);
+  fftw_execute_dft(plan->plan, data, data);
 #endif
 #endif // FFT
 }
@@ -405,7 +405,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data) {
 //  \brief excute out-place FFT
 
 void FFTBlock::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
-                        AthenaFFTComplex *out_data) {
+                       AthenaFFTComplex *out_data) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
   if (plan->dim == 3) fft_3d(in_data, out_data, plan->dir, plan->plan3d);
@@ -425,26 +425,26 @@ void FFTBlock::MpiInitialize() {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
   if ((pdim_ == 2 || pdim_ ==1) && dim_ == 3) {
-// To achieve best performance with 2D-pencil decomposition,
-// (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
-//     one needs to permute the axes to make it fast by setting "permute0":
-//       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0
-//       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1
-//       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2
-// (2) swap axes for input array (swap1=true)
-//     forward FFT with permute1=2 option.
-//       yz_decomp (i,j,k) --> (i,k,j) --> (j,i,k)
-//       xz_decomp (j,k,i) --> (j,i,k) --> (k,j,i)
-//       xy_decomp (k,i,j) --> (k,j,i) --> (i,k,j)
-// (3) swap axes from the output of forward FFT to prepare backward FFT (swap2==treu).
-//     excute backward FFT with permute2=2 option
-//       yz_decomp (j,i,k) --> (j,k,i) --> (i,j,k)
-//       xz_decomp (k,j,i) --> (k,i,j) --> (j,k,i)
-//       xy_decomp (i,k,j) --> (i,j,k) --> (k,i,j)
-// (4) final outcome is the same with original input before swapping.
-//     assign it back to original Athena array with permutation
-//
-// swap1=swap2=true; permute1=permute2=2; permute0 depends on the decomposition
+    // To achieve best performance with 2D-pencil decomposition,
+    // (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
+    //     one needs to permute the axes to make it fast by setting "permute0":
+    //       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0
+    //       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1
+    //       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2
+    // (2) swap axes for input array (swap1=true)
+    //     forward FFT with permute1=2 option.
+    //       yz_decomp (i,j,k) --> (i,k,j) --> (j,i,k)
+    //       xz_decomp (j,k,i) --> (j,i,k) --> (k,j,i)
+    //       xy_decomp (k,i,j) --> (k,j,i) --> (i,k,j)
+    // (3) swap axes from the output of forward FFT to prepare backward FFT (swap2==treu).
+    //     excute backward FFT with permute2=2 option
+    //       yz_decomp (j,i,k) --> (j,k,i) --> (i,j,k)
+    //       xz_decomp (k,j,i) --> (k,i,j) --> (j,k,i)
+    //       xy_decomp (i,k,j) --> (i,j,k) --> (k,i,j)
+    // (4) final outcome is the same with original input before swapping.
+    //     assign it back to original Athena array with permutation
+    //
+    // swap1=swap2=true; permute1=permute2=2; permute0 depends on the decomposition
 
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
