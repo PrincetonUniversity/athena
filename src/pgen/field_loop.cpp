@@ -102,104 +102,106 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-// Use vector potential to initialize field loop
+  // Use vector potential to initialize field loop
   // the origin of the initial loop
   Real x0 = pin->GetOrAddReal("problem","x0",0.0);
   Real y0 = pin->GetOrAddReal("problem","y0",0.0);
   Real z0 = pin->GetOrAddReal("problem","z0",0.0);
 
   for (int k=ks; k<=ke+1; k++) {
-  for (int j=js; j<=je+1; j++) {
-  for (int i=is; i<=ie+1; i++) {
-    // (iprob=1): field loop in x1-x2 plane (cylinder in 3D) */
-    if (iprob==1) {
-      ax(k,j,i) = 0.0;
-      ay(k,j,i) = 0.0;
-      if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
-        az(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)-x0) +
-                                         SQR(pcoord->x2f(j)-y0)));
-      } else {
-        az(k,j,i) = 0.0;
-      }
-    }
+    for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie+1; i++) {
+        // (iprob=1): field loop in x1-x2 plane (cylinder in 3D) */
+        if (iprob==1) {
+          ax(k,j,i) = 0.0;
+          ay(k,j,i) = 0.0;
+          if ((SQR(pcoord->x1f(i)-x0) + SQR(pcoord->x2f(j)-y0)) < rad*rad) {
+            az(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)-x0) +
+                                             SQR(pcoord->x2f(j)-y0)));
+          } else {
+            az(k,j,i) = 0.0;
+          }
+        }
 
-    // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-    if (iprob==2) {
-      if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ax(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
-      } else {
-        ax(k,j,i) = 0.0;
-      }
-      ay(k,j,i) = 0.0;
-      az(k,j,i) = 0.0;
-    }
+        // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
+        if (iprob==2) {
+          if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
+            ax(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
+          } else {
+            ax(k,j,i) = 0.0;
+          }
+          ay(k,j,i) = 0.0;
+          az(k,j,i) = 0.0;
+        }
 
-    // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
-    if (iprob==3) {
-      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
-      } else {
-        ay(k,j,i) = 0.0;
-      }
-      ax(k,j,i) = 0.0;
-      az(k,j,i) = 0.0;
-    }
+        // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
+        if (iprob==3) {
+          if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
+            ay(k,j,i) = amp*(rad - std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
+          } else {
+            ay(k,j,i) = 0.0;
+          }
+          ax(k,j,i) = 0.0;
+          az(k,j,i) = 0.0;
+        }
 
-    // (iprob=4): rotated cylindrical field loop in 3D.  Similar to iprob=1 with a
-    // rotation about the x2-axis.  Define coordinate systems (x1,x2,x3) and (x,y,z)
-    // with the following transformation rules:
-    //    x =  x1*std::cos(ang_2) + x3*std::sin(ang_2)
-    //    y =  x2
-    //    z = -x1*std::sin(ang_2) + x3*std::cos(ang_2)
-    // This inverts to:
-    //    x1  = x*std::cos(ang_2) - z*std::sin(ang_2)
-    //    x2  = y
-    //    x3  = x*std::sin(ang_2) + z*std::cos(ang_2)
+        // (iprob=4): rotated cylindrical field loop in 3D.  Similar to iprob=1 with a
+        // rotation about the x2-axis.  Define coordinate systems (x1,x2,x3) and (x,y,z)
+        // with the following transformation rules:
+        //    x =  x1*std::cos(ang_2) + x3*std::sin(ang_2)
+        //    y =  x2
+        //    z = -x1*std::sin(ang_2) + x3*std::cos(ang_2)
+        // This inverts to:
+        //    x1  = x*std::cos(ang_2) - z*std::sin(ang_2)
+        //    x2  = y
+        //    x3  = x*std::sin(ang_2) + z*std::cos(ang_2)
 
-    if (iprob==4) {
-      Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
-      Real y = pcoord->x2f(j);
-      // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
-      while (x >  0.5*lambda) x -= lambda;
-      while (x < -0.5*lambda) x += lambda;
-      if ((x*x + y*y) < rad*rad) {
-        ax(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(-sin_a2);
-      } else {
-        ax(k,j,i) = 0.0;
-      }
-      ay(k,j,i) = 0.0;
+        if (iprob==4) {
+          Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
+          Real y = pcoord->x2f(j);
+          // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
+          while (x >  0.5*lambda) x -= lambda;
+          while (x < -0.5*lambda) x += lambda;
+          if ((x*x + y*y) < rad*rad) {
+            ax(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(-sin_a2);
+          } else {
+            ax(k,j,i) = 0.0;
+          }
+          ay(k,j,i) = 0.0;
 
-      x = pcoord->x1f(i)*cos_a2 + pcoord->x3v(k)*sin_a2;
-      y = pcoord->x2f(j);
-      // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
-      while (x >  0.5*lambda) x -= lambda;
-      while (x < -0.5*lambda) x += lambda;
-      if ((x*x + y*y) < rad*rad) {
-        az(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(cos_a2);
-      } else {
-        az(k,j,i) = 0.0;
-      }
-    }
+          x = pcoord->x1f(i)*cos_a2 + pcoord->x3v(k)*sin_a2;
+          y = pcoord->x2f(j);
+          // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
+          while (x >  0.5*lambda) x -= lambda;
+          while (x < -0.5*lambda) x += lambda;
+          if ((x*x + y*y) < rad*rad) {
+            az(k,j,i) = amp*(rad - std::sqrt(x*x + y*y))*(cos_a2);
+          } else {
+            az(k,j,i) = 0.0;
+          }
+        }
 
-    // (iprob=5): spherical field loop in rotated plane
-    if (iprob==5) {
-      ax(k,j,i) = 0.0;
-      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) +
-                                  SQR(pcoord->x3f(k))));
-      } else {
-        ay(k,j,i) = 0.0;
-      }
-      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
-        az(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) +
-                                  SQR(pcoord->x3v(k))));
-      } else {
-        az(k,j,i) = 0.0;
+        // (iprob=5): spherical field loop in rotated plane
+        if (iprob==5) {
+          ax(k,j,i) = 0.0;
+          if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j))
+               + SQR(pcoord->x3f(k))) < rad*rad) {
+            ay(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) +
+                                           SQR(pcoord->x3f(k))));
+          } else {
+            ay(k,j,i) = 0.0;
+          }
+          if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j))
+               + SQR(pcoord->x3v(k))) < rad*rad) {
+            az(k,j,i) = amp*(rad-std::sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) +
+                                           SQR(pcoord->x3v(k))));
+          } else {
+            az(k,j,i) = 0.0;
+          }
+        }
       }
     }
   }
-}
-}
 
   // Initialize density and momenta.  If drat != 1, then density and temperature will be
   // different inside loop than background values
@@ -209,67 +211,68 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
   Real diag = std::sqrt(x1size*x1size + x2size*x2size + x3size*x3size);
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-  for (int i=is; i<=ie; i++) {
-     phydro->u(IDN,k,j,i) = 1.0;
-     phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
-     phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
-     phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
-     if ((SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
-       phydro->u(IDN,k,j,i) = drat;
-       phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
-       phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
-       phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
-     }
-     if (SHEARING_BOX) {
-       Real x1 = pcoord->x1v(i);
-       phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
-       phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
-     }
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        phydro->u(IDN,k,j,i) = 1.0;
+        phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
+        phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
+        phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
+        if ((SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
+          phydro->u(IDN,k,j,i) = drat;
+          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
+          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
+          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
+        }
+        if (SHEARING_BOX) {
+          Real x1 = pcoord->x1v(i);
+          phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
+          phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
+        }
+      }
+    }
   }
-}
-}
 
   // initialize interface B
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-  for (int i=is; i<=ie+1; i++) {
-    pfield->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pcoord->dx2f(j) -
-                        (ay(k+1,j,i) - ay(k,j,i))/pcoord->dx3f(k);
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie+1; i++) {
+        pfield->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pcoord->dx2f(j) -
+                               (ay(k+1,j,i) - ay(k,j,i))/pcoord->dx3f(k);
+      }
+    }
   }
-}
-}
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je+1; j++) {
-  for (int i=is; i<=ie; i++) {
-    pfield->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pcoord->dx3f(k) -
-                        (az(k,j,i+1) - az(k,j,i))/pcoord->dx1f(i);
+    for (int j=js; j<=je+1; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pcoord->dx3f(k) -
+                               (az(k,j,i+1) - az(k,j,i))/pcoord->dx1f(i);
+      }
+    }
   }
-}
-}
   for (int k=ks; k<=ke+1; k++) {
-  for (int j=js; j<=je; j++) {
-  for (int i=is; i<=ie; i++) {
-    pfield->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pcoord->dx1f(i) -
-                        (ax(k,j+1,i) - ax(k,j,i))/pcoord->dx2f(j);
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        pfield->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pcoord->dx1f(i) -
+                               (ax(k,j+1,i) - ax(k,j,i))/pcoord->dx2f(j);
+      }
+    }
   }
-}
-}
 
   // initialize total energy
   if (NON_BAROTROPIC_EOS) {
     for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        phydro->u(IEN,k,j,i) = 1.0/gm1 +
-          0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
-          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i))
-           + SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          phydro->u(IEN,k,j,i) =
+              1.0/gm1 +
+              0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
+                   SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
+                   SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
+              (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i))
+               + SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+        }
       }
     }
-}
   }
 
   ax.DeleteAthenaArray();
