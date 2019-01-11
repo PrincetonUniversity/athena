@@ -120,7 +120,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
           if (iprob == 1) {
             phydro->u(IM2,k,j,i) = (1.0 + std::cos(kx*pcoord->x1v(i)))*
-                (1.0 + std::cos(ky*pcoord->x2v(j)))/4.0;
+                                   (1.0 + std::cos(ky*pcoord->x2v(j)))/4.0;
           } else {
             phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+std::cos(ky*pcoord->x2v(j)));
           }
@@ -185,8 +185,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
           if (iprob == 1) {
             phydro->u(IM3,k,j,i) = (1.0 + std::cos(kx*(pcoord->x1v(i))))/8.0
-                *(1.0 + std::cos(ky*pcoord->x2v(j)))
-                *(1.0 + std::cos(kz*pcoord->x3v(k)));
+                                   *(1.0 + std::cos(ky*pcoord->x2v(j)))
+                                   *(1.0 + std::cos(kz*pcoord->x3v(k)));
           } else {
             phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(
                 1.0 + std::cos(kz*pcoord->x3v(k)));
@@ -274,7 +274,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i)
-                - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
+                                 - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
           }
         } else {
 #pragma omp simd
@@ -338,7 +338,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i)
-                + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
+                                 + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
           }
         } else {
 #pragma omp simd
@@ -402,7 +402,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i)
-                - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+                                 - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
           }
         } else {
 #pragma omp simd
@@ -466,7 +466,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             prim(IPR,ke+k,j,i) = prim(IPR,ke-k+1,j,i)
-                + prim(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+                                 + prim(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
           }
         } else {
 #pragma omp simd

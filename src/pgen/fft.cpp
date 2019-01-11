@@ -120,7 +120,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
   clock_t tstop = clock();
   float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
-      static_cast<Real>(CLOCKS_PER_SEC);
+                   static_cast<Real>(CLOCKS_PER_SEC);
   std::int64_t zones = GetTotalCells();
   float zc_cpus = static_cast<Real>(zones*ncycle)/cpu_time;
 
@@ -146,8 +146,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
         src(k,j,i) = std::exp(-r2);
       }
-}
-}
+    }
+  }
 
   pfft->LoadSource(src,1,NGHOST,loc,block_size);
   pfft->ExecuteForward();
@@ -162,8 +162,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         err1 += std::abs(dst(0,k,j,i) - src(k,j,i));
         err2 += std::abs(dst(1,k,j,i));
       }
-}
-}
+    }
+  }
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);

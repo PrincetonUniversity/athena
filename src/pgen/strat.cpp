@@ -61,13 +61,13 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
               AthenaArray<Real> &cons);
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
-                  AthenaArray<Real> &a,
-                  FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke, int ngh);
+                         AthenaArray<Real> &a,
+                         FaceField &b, Real time, Real dt,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh);
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
-                  AthenaArray<Real> &a,
-                  FaceField &b, Real time, Real dt,
-                  int is, int ie, int js, int je, int ks, int ke, int ngh);
+                         AthenaArray<Real> &a,
+                         FaceField &b, Real time, Real dt,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
 static Real hst_dVxVy(MeshBlock *pmb, int iout);
 
@@ -227,9 +227,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM3,k,j,i) = rd*rvz;
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/(gam-1.0)
-              + 0.5*(SQR(phydro->u(IM1,k,j,i))
-                     + SQR(phydro->u(IM2,k,j,i))
-                     + SQR(phydro->u(IM3,k,j,i)))/rd;
+                                 + 0.5*(SQR(phydro->u(IM1,k,j,i))
+                                        + SQR(phydro->u(IM2,k,j,i))
+                                        + SQR(phydro->u(IM3,k,j,i)))/rd;
         } // Hydro
 
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
@@ -451,7 +451,7 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
         prim(IDN,ks-k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
-                                     (2.0*Tks/SQR(Omega_0)));
+                                          (2.0*Tks/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
         prim(IVX,ks-k,j,i) = prim(IVX,ks,j,i);
@@ -525,7 +525,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
         // Now extrapolate the density to balance gravity
         // assuming a constant temperature in the ghost zones
         prim(IDN,ke+k,j,i) = den*std::exp(-(SQR(x3)-SQR(x3b))/
-                                     (2.0*Tke/SQR(Omega_0)));
+                                          (2.0*Tke/SQR(Omega_0)));
         // Copy the velocities, but not the momenta ---
         // important because of the density extrapolation above
         prim(IVX,ke+k,j,i) = prim(IVX,ke,j,i);

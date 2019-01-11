@@ -130,29 +130,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         // Volume centered coordinates and quantities
-         Real rad,x1,x2;
-         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-             rad = pcoord->x1v(i);
-         } else { // cartesian
-             x1=pcoord->x1v(i);
-             x2=pcoord->x2v(j);
-             rad = std::sqrt(SQR(x1) + SQR(x2));
-         }
-         Real rho = rho0*std::pow(rad, alpha);
-         Real P   = P0  *std::pow(rad, 2*beta);
+        Real rad,x1,x2;
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          rad = pcoord->x1v(i);
+        } else { // cartesian
+          x1=pcoord->x1v(i);
+          x2=pcoord->x2v(j);
+          rad = std::sqrt(SQR(x1) + SQR(x2));
+        }
+        Real rho = rho0*std::pow(rad, alpha);
+        Real P   = P0  *std::pow(rad, 2*beta);
 
-         phydro->u(IDN,k,j,i) = rho;
+        phydro->u(IDN,k,j,i) = rho;
 
-         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-             phydro->u(IM1,k,j,i) = rho*vr;
-             phydro->u(IM2,k,j,i) = 0.0;
-         } else { // cartesian
-             phydro->u(IM1,k,j,i) = rho*vr*x1/rad;
-             phydro->u(IM2,k,j,i) = rho*vr*x2/rad;
-         }
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          phydro->u(IM1,k,j,i) = rho*vr;
+          phydro->u(IM2,k,j,i) = 0.0;
+        } else { // cartesian
+          phydro->u(IM1,k,j,i) = rho*vr*x1/rad;
+          phydro->u(IM2,k,j,i) = rho*vr*x2/rad;
+        }
 
-         phydro->u(IM3,k,j,i) = 0.0;
-         phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vr);
+        phydro->u(IM3,k,j,i) = 0.0;
+        phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vr);
       }
     }
   }

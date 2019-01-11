@@ -222,7 +222,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int j=jl; j<=ju; j++) {
         for (int i=il; i<=iu; i++) {
           Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
-              + pmb->pcoord->x3v(k)*sin_a2;
+                   + pmb->pcoord->x3v(k)*sin_a2;
           Real sn = std::sin(k_par*x);
 
           Real d1 = d0 + amp*sn*rem[0][wave_flag];
@@ -363,7 +363,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (Globals::my_rank == 0) {
     // normalize errors by number of cells
     Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
-        *(mesh_size.x3max-mesh_size.x3min);
+              *(mesh_size.x3max-mesh_size.x3min);
     for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
     for (int i=0; i<(NHYDRO+NFIELD); ++i) {
@@ -527,7 +527,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
           pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-              (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+                                 (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
         }
       }
     }
@@ -536,7 +536,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
           pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-              (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+                                 (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
         }
       }
     }
@@ -545,7 +545,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-              (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+                                 (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
         }
       }
     }
@@ -559,7 +559,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
-            pcoord->x3v(k)*sin_a2;
+                 pcoord->x3v(k)*sin_a2;
         Real sn = std::sin(k_par*x);
         phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];

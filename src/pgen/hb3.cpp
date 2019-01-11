@@ -173,10 +173,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           rvx = amp*std::sqrt(p0/d0);
         }
       } else {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-              << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
-          ATHENA_ERROR(msg);
+        std::stringstream msg;
+        msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+            << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
+        ATHENA_ERROR(msg);
       }
       phydro->u(IDN,ks,j,i) = rd;
       phydro->u(IM1,ks,j,i) = rd*rvx;
@@ -185,9 +185,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,ks,j,i) -= rd*qshear*Omega_0*x1;
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,ks,j,i) = rp/gm1 +
-            0.5*(SQR(phydro->u(IM1,ks,j,i)) +
-                 SQR(phydro->u(IM2,ks,j,i)) +
-                 SQR(phydro->u(IM3,ks,j,i)))/rd;
+                                0.5*(SQR(phydro->u(IM1,ks,j,i)) +
+                                     SQR(phydro->u(IM2,ks,j,i)) +
+                                     SQR(phydro->u(IM3,ks,j,i)))/rd;
       }
 
       // Initialize magnetic field.  For 2D shearing box

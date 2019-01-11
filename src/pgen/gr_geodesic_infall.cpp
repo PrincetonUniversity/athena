@@ -104,7 +104,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
-          &theta, &phi);
+                                   &theta, &phi);
 
       // Calculate primitives depending on location
       Real rho = rho_min * std::pow(r, rho_pow);

@@ -163,7 +163,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-}
+  }
 
 
   return;

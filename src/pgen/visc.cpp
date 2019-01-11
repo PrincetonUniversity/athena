@@ -143,10 +143,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   } else {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
-          << "viscous iprob has to be either 0 or 1" << std::endl;
-      ATHENA_ERROR(msg);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl
+        << "viscous iprob has to be either 0 or 1" << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   return;

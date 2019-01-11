@@ -48,27 +48,27 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-    for (int i=is; i<=ie; ++i) {
-      phydro->u(IDN,k,j,i) = 1.0;
-      phydro->u(IM1,k,j,i) = 0.0;
-      phydro->u(IM2,k,j,i) = 0.0;
-      phydro->u(IM3,k,j,i) = 0.0;
-      if ((shk_dir==1 && pcoord->x1v(i) < 0.1) ||
-          (shk_dir==2 && pcoord->x2v(j) < 0.1) ||
-          (shk_dir==3 && pcoord->x3v(k) < 0.1)) {
-        phydro->u(IEN,k,j,i)= 1.0e3/(peos->GetGamma() - 1.0);
-      } else if ((shk_dir==1 && pcoord->x1v(i) > 0.9) ||
-               (shk_dir==2 && pcoord->x2v(j) > 0.9) ||
-               (shk_dir==3 && pcoord->x3v(k) > 0.9)) {
-        phydro->u(IEN,k,j,i)= 1.0e2/(peos->GetGamma() - 1.0);
-      } else {
-        phydro->u(IEN,k,j,i)= 0.01/(peos->GetGamma() - 1.0);
+      for (int i=is; i<=ie; ++i) {
+        phydro->u(IDN,k,j,i) = 1.0;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) = 0.0;
+        if ((shk_dir==1 && pcoord->x1v(i) < 0.1) ||
+            (shk_dir==2 && pcoord->x2v(j) < 0.1) ||
+            (shk_dir==3 && pcoord->x3v(k) < 0.1)) {
+          phydro->u(IEN,k,j,i)= 1.0e3/(peos->GetGamma() - 1.0);
+        } else if ((shk_dir==1 && pcoord->x1v(i) > 0.9) ||
+                   (shk_dir==2 && pcoord->x2v(j) > 0.9) ||
+                   (shk_dir==3 && pcoord->x3v(k) > 0.9)) {
+          phydro->u(IEN,k,j,i)= 1.0e2/(peos->GetGamma() - 1.0);
+        } else {
+          phydro->u(IEN,k,j,i)= 0.01/(peos->GetGamma() - 1.0);
+        }
       }
     }
   }
-}
 
   return;
 }
