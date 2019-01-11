@@ -127,7 +127,7 @@ Real Hydro::NewBlockTimeStep(void) {
 
   min_dt_hyperbolic = min_dt*pmb->pmy_mesh->cfl_number;
 
-// calculate the timestep limited by the diffusion process
+  // calculate the timestep limited by the diffusion process
   if (phdif->hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
     phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
@@ -136,7 +136,7 @@ Real Hydro::NewBlockTimeStep(void) {
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
-     pmb->pfield->pfdif->field_diffusion_defined) {
+      pmb->pfield->pfdif->field_diffusion_defined) {
     Real mindt_oa, mindt_h;
     pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);
     min_dt = std::min(min_dt,mindt_oa);

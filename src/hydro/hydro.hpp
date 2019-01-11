@@ -52,16 +52,17 @@ class Hydro {
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
   void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-    AthenaArray<Real> &u_in2, const Real wght[3]);
+                    AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    const Real wght, AthenaArray<Real> &u_out);
+                                  const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-    AthenaArray<Real> &bcc, const int order);
+                       AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bx,
+                     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+                     AthenaArray<Real> &e1, AthenaArray<Real> &e2);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);

@@ -74,8 +74,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   laplacian_l_fc.InitWithShallowCopy(scr1_nkji_);
   laplacian_r_fc.InitWithShallowCopy(scr2_nkji_);
 
-//----------------------------------------------------------------------------------------
-// i-direction
+  //--------------------------------------------------------------------------------------
+  // i-direction
 
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
@@ -104,7 +104,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   RiemannSolver(kl, ku, jl, ju, is, ie+1, IVX, b1, wl, wr, x1flux, e3x1, e2x1);
 
   // begin x1 fourth-order hydro:
-  //------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------
   if (order == 4) {
     // Compute Laplacian of primitive Riemann states on x1 faces
     pmb->pcoord->LaplacianX1(wl, laplacian_l_fc, is, ie+1, jl, ju, kl, ku, 0, NWAVE-1);
@@ -155,27 +155,27 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       }
     }
   } // end if (order == 4)
-  //------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------
   // end x1 fourth-order hydro
 
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-      pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
+      for (int j=jl; j<=ju; ++j) {
+        pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
-                      / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-        Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-        w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+        for (int i=is; i<=ie+1; ++i) {
+          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
+                          / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+          w_x1f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+        }
       }
     }
-}
   }
 
-//----------------------------------------------------------------------------------------
-// j-direction
+  //--------------------------------------------------------------------------------------
+  // j-direction
 
   if (pmb->block_size.nx2 > 1) {
     // set the loop limits
@@ -203,7 +203,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     RiemannSolver(kl, ku, js, je+1, il, iu, IVY, b2, wl, wr, x2flux, e1x2, e3x2);
 
     // begin x2 fourth-order hydro
-    //------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------
     if (order == 4) {
       // Compute Laplacian of primitive Riemann states on x2 faces
       pmb->pcoord->LaplacianX2(wl, laplacian_l_fc, il, iu, js, je+1, kl, ku, 0, NWAVE-1);
@@ -255,7 +255,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         }
       }
     } // end if (order == 4)
-    //------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------
     // end x2 fourth-order hydro
 
     // compute weights for GS07 CT algorithm
@@ -266,17 +266,17 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
-                / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+                            / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
             Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-          w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+            w_x2f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
         }
       }
-}
     }
   }
 
-//----------------------------------------------------------------------------------------
-// k-direction
+  //--------------------------------------------------------------------------------------
+  // k-direction
 
   if (pmb->block_size.nx3 > 1) {
     // set the loop limits
@@ -300,7 +300,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     RiemannSolver(ks, ke+1, jl, ju, il, iu, IVZ, b3, wl, wr, x3flux, e2x3, e1x3);
 
     // begin x3 fourth-order hydro
-    //------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------
     if (order == 4) {
       // Compute Laplacian of primitive Riemann states on x3 faces
       pmb->pcoord->LaplacianX3(wl, laplacian_l_fc, il, iu, jl, ju, ks, ke+1, 0, NWAVE-1);
@@ -351,24 +351,24 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           }
         }
       }
-       } // end if (order == 4)
-    //------------------------------------------------------------------------------
+    } // end if (order == 4)
+    //------------------------------------------------------------------------------------
     // end x3 fourth-order hydro
 
     // compute weights for GS07 CT algorithm
     if (MAGNETIC_FIELDS_ENABLED) {
       for (int k=ks; k<=ke+1; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
+        for (int j=jl; j<=ju; ++j) {
+          pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
-                        / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
-          Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
-          w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          for (int i=il; i<=iu; ++i) {
+            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
+                            / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
+            Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
+            w_x3f(k,j,i) = 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
+          }
         }
       }
-}
     }
   }
 
