@@ -37,13 +37,13 @@
 
 // Declarations
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz);
+                                    Real *px, Real *py, Real *pz);
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real QuadraticRoot(Real a1, Real a0, bool greater_root);
 static Real CubicRootReal(Real a2, Real a1, Real a0);
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-    Real *px3, Real *px4);
+                         Real *px3, Real *px4);
 
 // Global variables
 Real amp;                     // amplitude of wave
@@ -133,9 +133,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       case 1: case 5: {  // Alfven (A 65)
         // Calculate wavespeed
         Real lambda_ap = (b[1] + std::sqrt(wtot) * u[1])
-            / (b[0] + std::sqrt(wtot) * u[0]);            // (A 38)
+                         / (b[0] + std::sqrt(wtot) * u[0]);            // (A 38)
         Real lambda_am = (b[1] - std::sqrt(wtot) * u[1])
-            / (b[0] - std::sqrt(wtot) * u[0]);            // (A 38)
+                         / (b[0] - std::sqrt(wtot) * u[0]);            // (A 38)
         Real sign = 1.0;
         if (lambda_ap > lambda_am) {  // \lambda_{a,\pm} = \lambda_a^\pm
           if (wave_flag == 1) {  // leftgoing
@@ -188,23 +188,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         Real gamma_2 = SQR(u[0]);
         Real gamma_4 = SQR(gamma_2);
         Real coeff_4 = factor_a * gamma_4
-                     - factor_b * gamma_2
-                     - SQR(b[0]);
+                       - factor_b * gamma_2
+                       - SQR(b[0]);
         Real coeff_3 = -factor_a * 4.0 * gamma_4 * vx
-                     + factor_b * 2.0 * gamma_2 * vx
-                     + 2.0 * b[0] * b[1];
+                       + factor_b * 2.0 * gamma_2 * vx
+                       + 2.0 * b[0] * b[1];
         Real coeff_2 = factor_a * 6.0 * gamma_4 * SQR(vx)
-                     + factor_b * gamma_2 * (1.0-SQR(vx))
-                     + SQR(b[0]) - SQR(b[1]);
+                       + factor_b * gamma_2 * (1.0-SQR(vx))
+                       + SQR(b[0]) - SQR(b[1]);
         Real coeff_1 = -factor_a * 4.0 * gamma_4 * vx*SQR(vx)
-                     - factor_b * 2.0 * gamma_2 * vx
-                     - 2.0 * b[0] * b[1];
+                       - factor_b * 2.0 * gamma_2 * vx
+                       - 2.0 * b[0] * b[1];
         Real coeff_0 = factor_a * gamma_4 * SQR(SQR(vx))
-                     + factor_b * gamma_2 * SQR(vx)
-                     + SQR(b[1]);
+                       + factor_b * gamma_2 * SQR(vx)
+                       + SQR(b[1]);
         Real lambda_fl, lambda_sl, lambda_sr, lambda_fr;
         QuarticRoots(coeff_3/coeff_4, coeff_2/coeff_4, coeff_1/coeff_4, coeff_0/coeff_4,
-            &lambda_fl, &lambda_sl, &lambda_sr, &lambda_fr);
+                     &lambda_fl, &lambda_sl, &lambda_sr, &lambda_fr);
         Real lambda_other_ms;
         if (wave_flag == 0) {
           lambda = lambda_fl;
@@ -225,9 +225,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
         // Determine which sign to use
         Real lambda_ap = (b[1] + std::sqrt(wtot) * u[1])
-            / (b[0] + std::sqrt(wtot) * u[0]);            // (A 38)
+                         / (b[0] + std::sqrt(wtot) * u[0]);            // (A 38)
         Real lambda_am = (b[1] - std::sqrt(wtot) * u[1])
-            / (b[0] - std::sqrt(wtot) * u[0]);            // (A 38)
+                         / (b[0] - std::sqrt(wtot) * u[0]);            // (A 38)
         Real lambda_a = lambda_ap;
         Real sign = 1.0;
         if (lambda_ap > lambda_am) {  // \lambda_{a,\pm} = \lambda_a^\pm
@@ -266,9 +266,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         Real g_1 = 1.0/u[0] * (by + lambda*vy / (1.0-lambda*vx) * bx);       // (A 60)
         Real g_2 = 1.0/u[0] * (bz + lambda*vz / (1.0-lambda*vx) * bx);       // (A 61)
         Real c_1 = (g_1*alpha_12 + g_2*alpha_22)
-            / (alpha_11*alpha_22 - SQR(alpha_12)) * u[0] * (1.0-lambda*vx);  // (A 63)
+                   / (alpha_11*alpha_22 - SQR(alpha_12))
+                   * u[0] * (1.0-lambda*vx);                                 // (A 63)
         Real c_2 = -(g_1*alpha_11 + g_2*alpha_12)
-            / (alpha_11*alpha_22 - SQR(alpha_12)) * u[0] * (1.0-lambda*vx);  // (A 63)
+                   / (alpha_11*alpha_22 - SQR(alpha_12))
+                   * u[0] * (1.0-lambda*vx);                                 // (A 63)
         Real b_t[4];
         for (int mu = 0; mu < 4; ++mu) {
           b_t[mu] = c_1 * alpha_1[mu] + c_2 * alpha_2[mu];  // (A 62)
@@ -292,10 +294,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
             <= std::abs(lambda_other_ms-lambda_a)) {  // ...to the associated Alfven wave
           Real b_t_normalized[4];
           Real denom = std::sqrt((alpha_11*alpha_22 - SQR(alpha_12))
-              * (SQR(f_1)*alpha_11 + 2.0*f_1*f_2*alpha_12 + SQR(f_2)*alpha_22));
+                                 * (SQR(f_1)*alpha_11 +
+                                    2.0*f_1*f_2*alpha_12 +
+                                    SQR(f_2)*alpha_22));
           for (int mu = 0; mu < 4; ++mu) {
-            b_t_normalized[mu] = ((f_1*alpha_12+f_2*alpha_22) * alpha_1[mu]
-                - (f_1*alpha_11+f_2*alpha_12) * alpha_2[mu]) / denom;        // (A 75)
+            b_t_normalized[mu] =
+                ((f_1*alpha_12+f_2*alpha_22) * alpha_1[mu]
+                 - (f_1*alpha_11+f_2*alpha_12) * alpha_2[mu]) / denom;        // (A 75)
           }
           Real b_t_norm = -SQR(b_t[0]);
           for (int i = 1; i < 4; ++i) {
@@ -306,20 +311,20 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
           if (denom == 0.0) {
             delta_pgas = 0.0;
           } else {
-            delta_pgas = -(g+SQR(a)) * cs_sq / denom * b_t_norm;  // (A 74)
+            delta_pgas = -(g+SQR(a)) * cs_sq / denom * b_t_norm;              // (A 74)
           }
           delta_rho = rho / (gamma_adi*pgas) * delta_pgas;
           for (int mu = 0; mu < 4; ++mu) {
             delta_u[mu] =
                 -a*delta_pgas / (wgas*cs_sq*(g+SQR(a))) * phi_plus_a_u[mu]
-                - b_over_a / wgas * b_t_normalized[mu];                     // (A 72)
+                - b_over_a / wgas * b_t_normalized[mu];                       // (A 72)
             delta_b[mu] = -b_over_a * delta_pgas/wgas * u[mu]
-                - (1.0+SQR(a)/g) * b_t_normalized[mu];                      // (A 73)
+                          - (1.0+SQR(a)/g) * b_t_normalized[mu];              // (A 73)
           }
         } else {  // using more distant magnetosonic wave
-          delta_pgas = -1.0;                                // (A 78)
+          delta_pgas = -1.0;                                                  // (A 78)
           delta_rho = rho / (gamma_adi*pgas) * delta_pgas;
-          Real b_t_reduced[4] = {0.0};                      // (A 79)
+          Real b_t_reduced[4] = {0.0};                                        // (A 79)
           Real denom = wgas * SQR(a) - b_sq * g;
           if (denom != 0.0) {
             for (int mu = 0; mu < 4; ++mu) {
@@ -328,9 +333,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
           }
           for (int mu = 0; mu < 4; ++mu) {
             delta_u[mu] = a / (wgas*cs_sq*(g+SQR(a))) * phi_plus_a_u[mu]
-                - b_over_a * g/wgas * b_t_reduced[mu];                    // (A 76)
+                          - b_over_a * g/wgas * b_t_reduced[mu];              // (A 76)
             delta_b[mu] = b_over_a / wgas * u[mu]
-                - (1.0+SQR(a)/g) * g * b_t_reduced[mu];                   // (A 77)
+                          - (1.0+SQR(a)/g) * g * b_t_reduced[mu];             // (A 77)
           }
         }
       }
@@ -453,12 +458,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           for (int i = pmb->is; i <= pmb->ie; ++i) {
             for (int n = 0; n < NHYDRO; ++n) {
               errors[n] += std::abs(pmb->phydro->u(n,k,j,i) - initial(pmb->lid,n,k,j,i))
-                  * volume(i);
+                           * volume(i);
             }
             if (MAGNETIC_FIELDS_ENABLED) {
               for (int n = IB1; n <= IB3; ++n) {
-                errors[NHYDRO+n] += std::abs(pmb->pfield->bcc(n,k,j,i)
-                    - initial(pmb->lid,NHYDRO+n,k,j,i)) * volume(i);
+                errors[NHYDRO+n] +=
+                    std::abs(pmb->pfield->bcc(n,k,j,i)
+                             - initial(pmb->lid,NHYDRO+n,k,j,i)) * volume(i);
               }
             }
             errors[(NHYDRO+NFIELD)] += volume(i);
@@ -469,17 +475,17 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
 
     // Reduce errors across ranks
-    #ifdef MPI_PARALLEL
+#ifdef MPI_PARALLEL
     {
       if (Globals::my_rank == 0) {
         MPI_Reduce(MPI_IN_PLACE, errors, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
-            MPI_COMM_WORLD);
+                   MPI_COMM_WORLD);
       } else {
         MPI_Reduce(errors, 0, (NHYDRO+NFIELD)+1, MPI_ATHENA_REAL, MPI_SUM, 0,
                    MPI_COMM_WORLD);
       }
     }
-    #endif
+#endif
 
     // Write errors to file if root
     if (Globals::my_rank == 0) {
@@ -584,47 +590,47 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x2_min = pmy_mesh->mesh_size.x2min;
   Real x3_min = pmy_mesh->mesh_size.x3min;
   Real arg_min, arg_max;
-  #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
   {
     Real t_left, x_left, y_left, z_left;
     Real t_right, x_right, y_right, z_right;
     GetMinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left, &y_left,
-        &z_left);
+                            &z_left);
     GetMinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right, &x_right, &y_right,
-        &z_right);
+                            &z_right);
     arg_min = x_left - lambda * t_left;
     arg_max = x_right - lambda * t_right;
   }
-  #else  // SR
+#else  // SR
   {
     arg_min = x1_min;
     arg_max = x1_max;
   }
-  #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
   wavenumber = 2.0*PI / (arg_max - arg_min);
 
   // Initialize hydro variables
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-      #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
       {
         pcoord->CellMetric(k, j, il, iu, g, gi);
       }
-      #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
       for (int i=il; i<=iu; ++i) {
         // Find location of cell in spacetime
         Real t, x, y, z;
-        #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
         {
           GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &t,
-              &x, &y, &z);
+                                  &x, &y, &z);
         }
-        #else  // SR
+#else  // SR
         {
           t = 0.0;
           x = pcoord->x1v(i);
         }
-        #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
 
         // Calculate scalar perturbations
         Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
@@ -651,18 +657,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
         // Transform vector perturbations
         Real u_local[4], b_local[4], u_local_low[4], b_local_low[4];
-        #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
         {
           TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
-              &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+                          &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
           TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
-              &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
-          pcoord->LowerVectorCell(u_local[0], u_local[1], u_local[2], u_local[3], k, j, i,
+                          &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+          pcoord->LowerVectorCell(
+              u_local[0], u_local[1], u_local[2], u_local[3], k, j, i,
               &u_local_low[0], &u_local_low[1], &u_local_low[2], &u_local_low[3]);
-          pcoord->LowerVectorCell(b_local[0], b_local[1], b_local[2], b_local[3], k, j, i,
+          pcoord->LowerVectorCell(
+              b_local[0], b_local[1], b_local[2], b_local[3], k, j, i,
               &b_local_low[0], &b_local_low[1], &b_local_low[2], &b_local_low[3]);
         }
-        #else  // SR
+#else  // SR
         {
           for (int mu = 0; mu < 4; ++mu) {
             u_local[mu] = u_mink[mu];
@@ -671,7 +679,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             b_local_low[mu] = (mu == 0 ? -1.0 : 1.0) * b_local[mu];
           }
         }
-        #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
 
         // Calculate useful local scalars
         Real b_sq_local = 0.0;
@@ -701,16 +709,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IDN,k,j,i) = u_local[0] * rho_local;
         if (GENERAL_RELATIVITY) {
           phydro->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local_low[0]
-              - b_local[0]*b_local_low[0] + ptot_local;
+                                 - b_local[0]*b_local_low[0] + ptot_local;
           phydro->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local_low[1]
-              - b_local[0]*b_local_low[1];
+                                 - b_local[0]*b_local_low[1];
           phydro->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local_low[2]
-              - b_local[0]*b_local_low[2];
+                                 - b_local[0]*b_local_low[2];
           phydro->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local_low[3]
-              - b_local[0]*b_local_low[3];
+                                 - b_local[0]*b_local_low[3];
         } else {  // SR
           phydro->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local[0] - b_local[0]*b_local[0]
-            - ptot_local;
+                                 - ptot_local;
           phydro->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local[1] - b_local[0]*b_local[1];
           phydro->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local[2] - b_local[0]*b_local[2];
           phydro->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local[3] - b_local[0]*b_local[3];
@@ -724,13 +732,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=kl; k<=ku+1; ++k) {
       for (int j=jl; j<=ju+1; ++j) {
         for (int i=il; i<=iu+1; ++i) {
-          #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
           {
             // Set B^1 if needed
             if (j != ju+1 && k != ku+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
-                  &t, &x, &y, &z);
+                                      &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -739,9 +747,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               }
               Real u_local[4], b_local[4];
               TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
-                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+                              &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
               TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
-                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+                              &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x1f(k,j,i) = b_local[1] * u_local[0] - b_local[0] * u_local[1];
             }
 
@@ -749,7 +757,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (i != iu+1 && k != ku+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
-                  &t, &x, &y, &z);
+                                      &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -758,9 +766,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               }
               Real u_local[4], b_local[4];
               TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
-                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+                              &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
               TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
-                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+                              &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x2f(k,j,i) = b_local[2] * u_local[0] - b_local[0] * u_local[2];
             }
 
@@ -768,7 +776,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (i != iu+1 && j != ju+1) {
               Real t, x, y, z;
               GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
-                  &t, &x, &y, &z);
+                                      &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -777,13 +785,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               }
               Real u_local[4], b_local[4];
               TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
-                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+                              &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
               TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
-                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+                              &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x3f(k,j,i) = b_local[3] * u_local[0] - b_local[0] * u_local[3];
             }
           }
-          #else  // SR
+#else  // SR
           {
             Real local_amp = amp * std::sin(wavenumber * pcoord->x1v(i));
             Real u_local[4], b_local[4];
@@ -803,7 +811,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pfield->b.x3f(k,j,i) = bz_local;
             }
           }
-          #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
         }
       }
     }
@@ -861,7 +869,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz) {
+                                    Real *px, Real *py, Real *pz) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
@@ -883,7 +891,7 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
@@ -948,7 +956,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0) {
     return -2.0 * std::sqrt(q) * std::cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
   } else {
     Real a = -copysign(1.0, r)
-        * std::cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)
+             * std::cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)
     Real b = (a != 0.0) ? q/a : 0.0;                   // (NR 5.6.16)
     return a + b - a2/3.0;
   }
@@ -979,7 +987,7 @@ static Real CubicRootReal(Real a2, Real a1, Real a0) {
 //   similar function to those in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-    Real *px3, Real *px4) {
+                         Real *px3, Real *px4) {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*SQR(a3);
   Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);

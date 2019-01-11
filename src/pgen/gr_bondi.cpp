@@ -31,11 +31,12 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh);
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                            Real theta, Real phi,
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
                                 Real *ppgas, Real *put, Real *pur);
 static Real TemperatureMin(Real r, Real t_min, Real t_max);
@@ -127,7 +128,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i=il; i<=iu; ++i) {
         Real r(0.0), theta(0.0), phi(0.0);
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
-            &theta, &phi);
+                                     &theta, &phi);
         Real rho, pgas, ut, ur;
         CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
         Real u0(0.0), u1(0.0), u2(0.0), u3(0.0);
@@ -149,7 +150,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // Find normalization
     Real r, theta, phi;
     GetBoyerLindquistCoordinates(pcoord->x1f(is), pcoord->x2v((jl+ju)/2),
-        pcoord->x3v((kl+ku)/2), &r, &theta, &phi);
+                                 pcoord->x3v((kl+ku)/2), &r, &theta, &phi);
     Real rho, pgas, ut, ur;
     CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
     Real bbr = 1.0/SQR(r);
@@ -166,7 +167,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // Set B^1
           if (j != ju+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
-                &r, &theta, &phi);
+                                         &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
@@ -181,7 +182,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // Set B^2
           if (i != iu+1 && k != ku+1) {
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
-                &r, &theta, &phi);
+                                         &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
@@ -196,7 +197,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // Set B^3
           if (i != iu+1 && j != ju+1) {
             GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
-                &r, &theta, &phi);
+                                         &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
@@ -213,12 +214,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     // Calculate cell-centered magnetic field
     pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, il, iu, jl, ju, kl,
-        ku);
+                                       ku);
   }
 
   // Initialize conserved variables
   peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il, iu, jl, ju,
-      kl, ku);
+                             kl, ku);
 
   // Free scratch arrays
   g.DeleteAthenaArray();
@@ -241,7 +242,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   return;
 }
 
@@ -276,7 +277,8 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                            Real theta, Real phi,
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -321,7 +323,7 @@ static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho
   Real pgas = temp * rho;
   Real ur = c1 / (SQR(r) * std::pow(temp, n_adi));    // (HSW 75)
   Real ut = std::sqrt(1.0/SQR(1.0-2.0*m/r) * SQR(ur)
-      + 1.0/(1.0-2.0*m/r));
+                      + 1.0/(1.0-2.0*m/r));
 
   // Set primitives
   *prho = rho;

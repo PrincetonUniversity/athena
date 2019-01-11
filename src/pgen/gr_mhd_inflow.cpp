@@ -35,11 +35,12 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh);
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
 static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                            Real theta, Real phi,
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
                                Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
 
@@ -180,7 +181,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   bb.NewAthenaArray(3, ke+1, je+1, ie+NGHOST+1);
   if (MAGNETIC_FIELDS_ENABLED) {
     pfield->CalculateCellCenteredField(pfield->b, bb, pcoord, is-NGHOST, ie+NGHOST, js,
-        je, ks, ke);
+                                       je, ks, ke);
   }
 
   // Initialize primitive values
@@ -215,7 +216,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize conserved values
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
-      je, ks, ke);
+                             je, ks, ke);
   bb.DeleteAthenaArray();
   return;
 }
@@ -235,7 +236,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   return;
 }
 

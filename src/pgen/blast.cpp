@@ -79,59 +79,59 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // setup uniform ambient medium with spherical over-pressured region
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-  for (int i=is; i<=ie; i++) {
-    Real rad;
-    if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-      Real x = pcoord->x1v(i);
-      Real y = pcoord->x2v(j);
-      Real z = pcoord->x3v(k);
-      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-      Real x = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
-      Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j));
-      Real z = pcoord->x3v(k);
-      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
-      Real x = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::cos(pcoord->x3v(k));
-      Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::sin(pcoord->x3v(k));
-      Real z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
-      rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-    }
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        Real rad;
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+          Real x = pcoord->x1v(i);
+          Real y = pcoord->x2v(j);
+          Real z = pcoord->x3v(k);
+          rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+        } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          Real x = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
+          Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j));
+          Real z = pcoord->x3v(k);
+          rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+        } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
+          Real x = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::cos(pcoord->x3v(k));
+          Real y = pcoord->x1v(i)*std::sin(pcoord->x2v(j))*std::sin(pcoord->x3v(k));
+          Real z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
+          rad = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+        }
 
-    Real den = da;
-    if (rad < rout) {
-      if (rad < rin) {
-        den = drat*da;
-      } else {   // add smooth ramp in density
-        Real f = (rad-rin) / (rout-rin);
-        Real log_den = (1.0-f) * std::log(drat*da) + f * std::log(da);
-        den = std::exp(log_den);
-      }
-    }
+        Real den = da;
+        if (rad < rout) {
+          if (rad < rin) {
+            den = drat*da;
+          } else {   // add smooth ramp in density
+            Real f = (rad-rin) / (rout-rin);
+            Real log_den = (1.0-f) * std::log(drat*da) + f * std::log(da);
+            den = std::exp(log_den);
+          }
+        }
 
-    phydro->u(IDN,k,j,i) = den;
-    phydro->u(IM1,k,j,i) = 0.0;
-    phydro->u(IM2,k,j,i) = 0.0;
-    phydro->u(IM3,k,j,i) = 0.0;
-    if (NON_BAROTROPIC_EOS) {
-      Real pres = pa;
-      if (rad < rout) {
-        if (rad < rin) {
-          pres = prat*pa;
-        } else {  // add smooth ramp in pressure
-          Real f = (rad-rin) / (rout-rin);
-          Real log_pres = (1.0-f) * std::log(prat*pa) + f * std::log(pa);
-          pres = std::exp(log_pres);
+        phydro->u(IDN,k,j,i) = den;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) = 0.0;
+        if (NON_BAROTROPIC_EOS) {
+          Real pres = pa;
+          if (rad < rout) {
+            if (rad < rin) {
+              pres = prat*pa;
+            } else {  // add smooth ramp in pressure
+              Real f = (rad-rin) / (rout-rin);
+              Real log_pres = (1.0-f) * std::log(prat*pa) + f * std::log(pa);
+              pres = std::exp(log_pres);
+            }
+          }
+          phydro->u(IEN,k,j,i) = pres/gm1;
+          if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
+            phydro->u(IEN,k,j,i) += den;
         }
       }
-      phydro->u(IEN,k,j,i) = pres/gm1;
-      if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
-        phydro->u(IEN,k,j,i) += den;
     }
   }
-}
-}
 
   // initialize interface B and total energy
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -148,7 +148,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x1f(k,j,i) = b0 * std::abs(std::sin(theta))
-                * (std::cos(angle) * std::cos(phi) + std::sin(angle) * std::sin(phi));
+                                   * (std::cos(angle) * std::cos(phi)
+                                      + std::sin(angle) * std::sin(phi));
           }
         }
       }
@@ -166,7 +167,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real theta = pcoord->x2v(j);
             Real phi = pcoord->x3v(k);
             pfield->b.x2f(k,j,i) = b0 * std::cos(theta)
-                * (std::cos(angle) * std::cos(phi) + std::sin(angle) * std::sin(phi));
+                                   * (std::cos(angle) * std::cos(phi)
+                                      + std::sin(angle) * std::sin(phi));
             if (std::sin(theta) < 0.0)
               pfield->b.x2f(k,j,i) *= -1.0;
           }
@@ -376,7 +378,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         ATHENA_ERROR(msg);
       }
 
-    // The file does not exist -- open the file in write mode and add headers
+      // The file does not exist -- open the file in write mode and add headers
     } else {
       if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
