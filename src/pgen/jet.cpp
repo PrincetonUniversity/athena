@@ -25,7 +25,8 @@
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+                Real time, Real dt,
+                int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
 static Real r_amb,d_amb,p_amb,vx_amb,vy_amb,vz_amb,bx_amb,by_amb,bz_amb;
@@ -79,50 +80,51 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize conserved variables
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-  for (int i=is; i<=ie; ++i) {
-    phydro->u(IDN,k,j,i) = d_amb;
-    phydro->u(IM1,k,j,i) = d_amb*vx_amb;
-    phydro->u(IM2,k,j,i) = d_amb*vy_amb;
-    phydro->u(IM3,k,j,i) = d_amb*vz_amb;
-    if (NON_BAROTROPIC_EOS) {
-      phydro->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        phydro->u(IDN,k,j,i) = d_amb;
+        phydro->u(IM1,k,j,i) = d_amb*vx_amb;
+        phydro->u(IM2,k,j,i) = d_amb*vy_amb;
+        phydro->u(IM3,k,j,i) = d_amb*vz_amb;
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,k,j,i) = p_amb/gm1
+                                 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
+        }
+      }
     }
   }
-}
-}
 
   // initialize interface B
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-    for (int i=is; i<=ie+1; ++i) {
-      pfield->b.x1f(k,j,i) = bx_amb;
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
+          pfield->b.x1f(k,j,i) = bx_amb;
+        }
+      }
     }
-}
-}
     for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
-    for (int i=is; i<=ie; ++i) {
-      pfield->b.x2f(k,j,i) = by_amb;
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          pfield->b.x2f(k,j,i) = by_amb;
+        }
+      }
     }
-}
-}
     for (int k=ks; k<=ke+1; ++k) {
-    for (int j=js; j<=je; ++j) {
-    for (int i=is; i<=ie; ++i) {
-      pfield->b.x3f(k,j,i) = bz_amb;
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          pfield->b.x3f(k,j,i) = bz_amb;
+        }
+      }
     }
-}
-}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; ++k) {
-      for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        phydro->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
+        for (int j=js; j<=je; ++j) {
+          for (int i=is; i<=ie; ++i) {
+            phydro->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
+          }
+        }
       }
-}
-}
     }
   }
 
@@ -135,71 +137,72 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-        Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                Real time, Real dt,
+                int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // set primitive variables in inlet ghost zones
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int i=1; i<=ngh; ++i) {
-      Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-      if (rad <= r_jet) {
-        prim(IDN,k,j,is-i) = d_jet;
-        prim(IVX,k,j,is-i) = vx_jet;
-        prim(IVY,k,j,is-i) = vy_jet;
-        prim(IVZ,k,j,is-i) = vz_jet;
-        prim(IPR,k,j,is-i) = p_jet;
-      } else {
-        prim(IDN,k,j,is-i) = prim(IDN,k,j,is);
-        prim(IVX,k,j,is-i) = prim(IVX,k,j,is);
-        prim(IVY,k,j,is-i) = prim(IVY,k,j,is);
-        prim(IVZ,k,j,is-i) = prim(IVZ,k,j,is);
-        prim(IPR,k,j,is-i) = prim(IPR,k,j,is);
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      for (int i=1; i<=ngh; ++i) {
+        Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
+        if (rad <= r_jet) {
+          prim(IDN,k,j,il-i) = d_jet;
+          prim(IVX,k,j,il-i) = vx_jet;
+          prim(IVY,k,j,il-i) = vy_jet;
+          prim(IVZ,k,j,il-i) = vz_jet;
+          prim(IPR,k,j,il-i) = p_jet;
+        } else {
+          prim(IDN,k,j,il-i) = prim(IDN,k,j,il);
+          prim(IVX,k,j,il-i) = prim(IVX,k,j,il);
+          prim(IVY,k,j,il-i) = prim(IVY,k,j,il);
+          prim(IVZ,k,j,il-i) = prim(IVZ,k,j,il);
+          prim(IPR,k,j,il-i) = prim(IPR,k,j,il);
+        }
       }
     }
   }
-}
 
   // set magnetic field in inlet ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if (rad <= r_jet) {
-          b.x1f(k,j,is-i) = bx_jet;
-        } else {
-          b.x1f(k,j,is-i) = b.x1f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
+          if (rad <= r_jet) {
+            b.x1f(k,j,il-i) = bx_jet;
+          } else {
+            b.x1f(k,j,il-i) = b.x1f(k,j,il);
+          }
         }
       }
     }
-}
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if (rad <= r_jet) {
-          b.x2f(k,j,is-i) = by_jet;
-        } else {
-          b.x2f(k,j,is-i) = b.x2f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
+          if (rad <= r_jet) {
+            b.x2f(k,j,il-i) = by_jet;
+          } else {
+            b.x2f(k,j,il-i) = b.x2f(k,j,il);
+          }
         }
       }
     }
-}
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
-        if (rad <= r_jet) {
-          b.x3f(k,j,is-i) = bz_jet;
-        } else {
-          b.x3f(k,j,is-i) = b.x3f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          Real rad = std::sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
+          if (rad <= r_jet) {
+            b.x3f(k,j,il-i) = bz_jet;
+          } else {
+            b.x3f(k,j,il-i) = b.x3f(k,j,il);
+          }
         }
       }
     }
-}
   }
 }
