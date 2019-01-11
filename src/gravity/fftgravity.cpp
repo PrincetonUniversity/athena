@@ -44,7 +44,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     return;
   }
 
-// initialize using FFTGravity
+  // initialize using FFTGravity
 
   int igid=Globals::my_rank;
   pmy_fb=new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
@@ -75,8 +75,8 @@ void FFTGravityDriver::Solve(int stage, int mode) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
       pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
   }
 
   pfb->ExecuteForward();
@@ -90,8 +90,8 @@ void FFTGravityDriver::Solve(int stage, int mode) {
       pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
                           pmb->loc, pmb->block_size);
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
   }
 
   gtlist_->DoTaskListOneStage(pmy_mesh_, stage);

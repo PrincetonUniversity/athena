@@ -104,8 +104,8 @@ void MGGravityDriver::Solve(int stage) {
       if (mode_>=2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
     pmggrav=pmggrav->next;
   }
 
@@ -128,8 +128,8 @@ void MGGravityDriver::Solve(int stage) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho=mean_rho;
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
     pmggrav=pmggrav->next;
   }
   return;
@@ -153,7 +153,7 @@ void MGGravity::Smooth(int color) {
     for (int j=js; j<=je; j++) {
       for (int i=is+c; i<=ie; i+=2)
         u(0,k,j,i)-=((6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
-                     -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
+                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
       c^=1;
     }
     c^=1;
@@ -179,7 +179,7 @@ void MGGravity::CalculateDefect(void) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
-                         -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
+                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
       }
     }
   }
