@@ -2178,9 +2178,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                           pob->cis, pob->cie,
                                           pob->cjs, pob->cje,
                                           pob->cks, pob->cke);
-          int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 0LL)*pmb->block_size.nx1/2;
-          int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 0LL)*pmb->block_size.nx2/2;
-          int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 0LL)*pmb->block_size.nx3/2;
+          int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
+          int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
+          int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
           for (int nv=0; nv<NHYDRO; nv++) {
@@ -2245,9 +2245,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         MeshRefinement *pmr=pmb->pmr;
         int is=pob->cis-1, ie=pob->cie+1, js=pob->cjs-f2,
             je=pob->cje+f2, ks=pob->cks-f3, ke=pob->cke+f3;
-        int cis = ((newloc[n].lx1 & 1LL) == 0LL)*pob->block_size.nx1/2 + pob->is-1;
-        int cjs = ((newloc[n].lx2 & 1LL) == 0LL)*pob->block_size.nx2/2 + pob->js-f2;
-        int cks = ((newloc[n].lx3 & 1LL) == 0LL)*pob->block_size.nx3/2 + pob->ks-f3;
+        int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is-1;
+        int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js-f2;
+        int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks-f3;
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer

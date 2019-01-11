@@ -40,8 +40,9 @@ int BoundaryBase::maxneighbor_;
 // \brief Set neighbor information
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
-  int iox1, int iox2, int iox3, enum NeighborType itype, int ibid, int itargetid,
-  bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
+                                int iox1, int iox2, int iox3,
+                                enum NeighborType itype, int ibid, int itargetid,
+                                bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
   type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
   fi1=ifi1; fi2=ifi2;
@@ -126,7 +127,7 @@ BoundaryBase::~BoundaryBase() {
 //  \brief calculate a buffer identifier
 
 unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
-                                                 int fi1, int fi2) {
+                                          int fi1, int fi2) {
   unsigned int ux1=(unsigned)(ox1+1);
   unsigned int ux2=(unsigned)(ox2+1);
   unsigned int ux3=(unsigned)(ox3+1);
@@ -331,7 +332,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         tbid=FindBufferID(-n,0,0,myfx2,myfx3);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-          nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, shear);
+                                      nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE,
+                                      bufid, tbid, false, shear);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -373,7 +375,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         tbid=FindBufferID(0,-n,0,myfx1,myfx3);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-          nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar, false);
+                                      nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE,
+                                      bufid, tbid, polar, false);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -411,7 +414,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
           tbid=FindBufferID(0,0,-n,myfx1,myfx2);
         }
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-            nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false);
+                                        nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE,
+                                        bufid, tbid, false, false);
         bufid+=nf1*nf2; nneighbor++;
       }
     }
