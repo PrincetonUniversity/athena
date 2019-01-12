@@ -6,17 +6,19 @@
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 
+// C headers
+
 // C++ headers
 #include <string>
 
 // Athena++ headers
-#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "field.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -74,7 +76,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       g_.NewAthenaArray(NMETRIC,ncells1);
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
-// ptr to diffusion object
+    // ptr to diffusion object
     pfdif = new FieldDiffusion(pmb,pin);
   }
 }
@@ -122,8 +124,9 @@ Field::~Field() {
 // \! fn
 // \! brief
 
-void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
+void Field::CalculateCellCenteredField(
+    const FaceField &bf, AthenaArray<Real> &bc, Coordinates *pco,
+    int is, int ie, int js, int je, int ks, int ke) {
   // Defer to Reconstruction class to check if uniform Cartesian formula can be used
   // (unweighted average)
   const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[0];
@@ -132,7 +135,7 @@ void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &b
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-    // calc cell centered fields first
+      // calc cell centered fields first
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
         const Real& b1_i   = bf.x1f(k,j,i  );

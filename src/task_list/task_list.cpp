@@ -6,15 +6,16 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
-// needed for vector of pointers in DoTaskListOneStage()
-#include <vector>
+// C headers
 
-// Athena++ classes headers
+// C++ headers
+#include <vector>
+// needed for vector of pointers in DoTaskListOneStage()
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
-
-// this class header
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
@@ -75,7 +76,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   MeshBlock *pmb = pmesh->pblock;
   // initialize counters stored in each MeshBlock
-  while (pmb != NULL)  {
+  while (pmb != nullptr)  {
     pmb->tasks.Reset(ntasks);
     pmb=pmb->next;
   }
@@ -93,19 +94,15 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nthreads = pmesh->GetNumMeshThreads();
 
   // cycle through all MeshBlocks and perform all tasks possible
-  while(nmb_left > 0) {
-
+  while (nmb_left > 0) {
 #pragma omp parallel shared(nmb_left) num_threads(nthreads)
-{
-    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-    for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
-        nmb_left--;
+    {
+#pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+      for (int i=0; i<nmb; ++i) {
+        if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE)
+          nmb_left--;
       }
     }
-}
-
   }
-
   return;
 }

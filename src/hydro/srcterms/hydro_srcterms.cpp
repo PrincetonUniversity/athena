@@ -5,20 +5,23 @@
 //========================================================================================
 //  \brief Class to implement source terms in the hydro equations
 
-// C/C++ headers
+// C headers
+
+// C++ headers
+#include <cstring>    // strcmp
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
+#include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 // HydroSourceTerms constructor
 
@@ -32,9 +35,9 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   // cylindrical.
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   if (gm_ != 0.0) {
-    if (COORDINATE_SYSTEM == "spherical_polar"
-    || (COORDINATE_SYSTEM == "cylindrical"
-    && phyd->pmy_block->block_size.nx3==1)) {
+    if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0
+        || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
+            && phyd->pmy_block->block_size.nx3==1)) {
       hydro_sourceterms_defined = true;
     } else {
       std::stringstream msg;
@@ -42,7 +45,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
           << "The point mass gravity works only in spherical polar coordinates"
           << "or in 2D cylindrical coordinates." << std::endl
           << "Check <problem> GM parameter in the input file." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
@@ -63,7 +66,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   if (SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
 
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
-  if (UserSourceTerm != NULL) hydro_sourceterms_defined = true;
+  if (UserSourceTerm != nullptr) hydro_sourceterms_defined = true;
 }
 
 // destructor
@@ -76,8 +79,10 @@ HydroSourceTerms::~HydroSourceTerms() {
 //  \brief Adds source terms to conserved variables
 
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
-     const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons) {
+                                           const AthenaArray<Real> *flux,
+                                           const AthenaArray<Real> &prim,
+                                           const AthenaArray<Real> &bcc,
+                                           AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)
@@ -95,9 +100,8 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
   // MyNewSourceTerms()
 
   //  user-defined source terms
-  if (UserSourceTerm != NULL)
+  if (UserSourceTerm != nullptr)
     UserSourceTerm(pmb, time,dt,prim,bcc,cons);
 
   return;
 }
-

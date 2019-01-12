@@ -25,16 +25,18 @@
 //           \Xi = r^2 - a^2 cos^2\theta
 //   other "Kerr-Schild" coordinates exist
 
+// C headers
+
 // C++ headers
 #include <cmath>  // abs(), cos(), log(), sin(), sqrt()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // KerrSchild Constructor
@@ -44,7 +46,7 @@
 //   flag: true if object is for coarse grid only in an AMR calculation
 
 KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag) {
+    : Coordinates(pmb, pin, flag) {
   // Set indices
   pmy_block = pmb;
   coarse_flag = flag;
@@ -99,12 +101,12 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   const Real &a = bh_spin_;
 
   // Initialize volume-averaged coordinates and spacings: r-direction
-  for (int i = il-ng; i <= iu+ng; ++i) {
+  for (int i=il-ng; i<=iu+ng; ++i) {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = 0.5 * (r_m + r_p);  // approximate
   }
-  for (int i = il-ng; i <= iu+ng-1; ++i) {
+  for (int i=il-ng; i<=iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
   }
 
@@ -115,12 +117,12 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     x2v(jl) = 0.5 * (theta_m + theta_p);  // approximate
     dx2v(jl) = dx2f(jl);
   } else {
-    for (int j = jl-ng; j <= ju+ng; ++j) {
+    for (int j=jl-ng; j<=ju+ng; ++j) {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = 0.5 * (theta_m + theta_p);  // approximate
     }
-    for (int j = jl-ng; j <= ju+ng-1; ++j) {
+    for (int j=jl-ng; j<=ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
     }
   }
@@ -132,32 +134,32 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     x3v(kl) = 0.5 * (phi_m + phi_p);
     dx3v(kl) = dx3f(kl);
   } else {
-    for (int k = kl-ng; k <= ku+ng; ++k) {
+    for (int k=kl-ng; k<=ku+ng; ++k) {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = kl-ng; k <= ku+ng-1; ++k) {
+    for (int k=kl-ng; k<=ku+ng-1; ++k) {
       dx3v(k) = x3v(k+1) - x3v(k);
     }
   }
 
   // Initialize area-averaged coordinates used with MHD AMR
   if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    for (int i = il-ng; i <= iu+ng; ++i) {
+    for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
     if (pmb->block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
-      for (int j = jl-ng; j <= ju+ng; ++j) {
+      for (int j=jl-ng; j<=ju+ng; ++j) {
         x2s1(j) = x2s3(j) = x2v(j);
       }
     }
     if (pmb->block_size.nx3 == 1) {
       x3s1(kl) = x3s2(kl) = x3v(kl);
     } else {
-      for (int k = kl-ng; k <= ku+ng; ++k) {
+      for (int k=kl-ng; k<=ku+ng; ++k) {
         x3s1(k) = x3s2(k) = x3v(k);
       }
     }
@@ -167,7 +169,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   metric_cell_i1_.NewAthenaArray(ncells1);
   metric_cell_j1_.NewAthenaArray(ncells2);
   metric_cell_j2_.NewAthenaArray(ncells2);
-  for (int i = il-ng; i <= iu+ng; ++i) {
+  for (int i=il-ng; i<=iu+ng; ++i) {
     Real r_c = x1v(i);
     metric_cell_i1_(i) = r_c;
   }
@@ -178,7 +180,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   } else {
     jll = jl; juu = ju;
   }
-  for (int j = jll; j <= juu; ++j) {
+  for (int j=jll; j<=juu; ++j) {
     Real theta_c = x2v(j);
     Real sin_c = std::sin(theta_c);
     Real cos_c = std::cos(theta_c);
@@ -191,7 +193,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
   if (coarse_flag == false) {
-
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(ncells1);
     coord_vol_i2_.NewAthenaArray(ncells1);
@@ -270,8 +271,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     trans_face3_ji6_.NewAthenaArray(ncells2, ncells1);
 
     // Calculate intermediate geometric quantities: r-direction
-    for (int i = il-ng; i <= iu+ng; ++i) {
-
+    for (int i=il-ng; i<=iu+ng; ++i) {
       // Useful quantities
       Real r_c = x1v(i);
       Real r_m = x1f(i);
@@ -317,8 +317,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 
     // Calculate intermediate geometric quantities: theta-direction
-    for (int j = jll; j <= juu; ++j) {
-
+    for (int j=jll; j<=juu; ++j) {
       // Useful quantities
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
@@ -394,7 +393,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     } else {
       kll = kl; kuu = ku;
     }
-    for (int k = kll; k <= kuu; ++k) {
+    for (int k=kll; k<=kuu; ++k) {
       // Volumes, areas, lengths, and widths
       coord_vol_k1_(k) = dx3f(k);
       coord_area1_k1_(k) = coord_vol_k1_(k);
@@ -404,9 +403,8 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 
     // Calculate intermediate geometric quantities: r-theta-direction
-    for (int j = jll; j <= juu; ++j) {
-      for (int i = il-ng; i <= iu+ng; ++i) {
-
+    for (int j=jll; j<=juu; ++j) {
+      for (int i=il-ng; i<=iu+ng; ++i) {
         // Useful quantities
         Real a2 = SQR(a);
         Real r_c = x1v(i);
@@ -441,37 +439,50 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         Real sigma_pc = r_p_sq + a2 * cos_c_sq;
 
         // Volumes, areas, lengths, and widths
-        coord_width3_ji1_(j,i) = std::sqrt(r_c_sq + a2
-          + 2.0 * m * a2 * r_c * sin_c_sq / (r_c_sq + a2 * cos_c_sq));
+        coord_width3_ji1_(j,i) =
+            std::sqrt(r_c_sq + a2
+                      + 2.0 * m * a2 * r_c * sin_c_sq / (r_c_sq + a2 * cos_c_sq));
 
         // Coordinate transformations
         trans_face1_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_m/sigma_mc);
-        trans_face1_ji2_(j,i) = std::sqrt((sigma_mc + 2.0*m*r_m)
-            / (r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq));
+        trans_face1_ji2_(j,i) =
+            std::sqrt((sigma_mc + 2.0*m*r_m)
+                      / (r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq));
         trans_face1_ji3_(j,i) = std::sqrt(sigma_mc);
-        trans_face1_ji4_(j,i) = std::abs(sin_c)
+        trans_face1_ji4_(j,i) =
+            std::abs(sin_c)
             * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq);
-        trans_face1_ji5_(j,i) = 2.0*m*r_m * std::sqrt(sigma_mc/((sigma_mc + 2.0*m*r_m)
-            * (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq)));
-        trans_face1_ji6_(j,i) = -2.0*m*a*r_m * std::abs(sin_c)
+        trans_face1_ji5_(j,i) =
+            2.0*m*r_m * std::sqrt(sigma_mc/((sigma_mc + 2.0*m*r_m)
+                                            * (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m
+                                               + delta_m*a2*cos_c_sq)));
+        trans_face1_ji6_(j,i) =
+            -2.0*m*a*r_m * std::abs(sin_c)
             * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
-          / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
-        trans_face1_ji7_(j,i) = -a * (sigma_mc + 2.0*m*r_m) * std::abs(sin_c)
+            / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
+        trans_face1_ji7_(j,i) =
+            -a * (sigma_mc + 2.0*m*r_m) * std::abs(sin_c)
             * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
             / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
         if (i == (iu+ng)) {
           trans_face1_ji1_(j,i+1) = 1.0 / std::sqrt(1.0 + 2.0*m*r_p/sigma_pc);
-          trans_face1_ji2_(j,i+1) = std::sqrt((sigma_pc + 2.0*m*r_p)
-              / (r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq));
+          trans_face1_ji2_(j,i+1) =
+              std::sqrt((sigma_pc + 2.0*m*r_p)
+                        / (r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq));
           trans_face1_ji3_(j,i+1) = std::sqrt(sigma_pc);
-          trans_face1_ji4_(j,i+1) = std::abs(sin_c)
-            * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq);
-          trans_face1_ji5_(j,i+1) = 2.0*m*r_p * std::sqrt(sigma_pc/((sigma_pc + 2.0*m*r_p)
-            * (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq)));
-          trans_face1_ji6_(j,i+1) = -2.0*m*a*r_p * std::abs(sin_c)
+          trans_face1_ji4_(j,i+1) =
+              std::abs(sin_c)
+              * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq);
+          trans_face1_ji5_(j,i+1) =
+              2.0*m*r_p * std::sqrt(sigma_pc/((sigma_pc + 2.0*m*r_p)
+                                              * (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p
+                                                 + delta_p*a2*cos_c_sq)));
+          trans_face1_ji6_(j,i+1) =
+              -2.0*m*a*r_p * std::abs(sin_c)
               * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
               / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
-          trans_face1_ji7_(j,i+1) = -a * (sigma_pc + 2.0*m*r_p) * std::abs(sin_c)
+          trans_face1_ji7_(j,i+1) =
+              -a * (sigma_pc + 2.0*m*r_p) * std::abs(sin_c)
               * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
               / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
         }
@@ -481,7 +492,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         trans_face2_ji3_(j,i) = std::sqrt(sigma_cm);
         trans_face2_ji4_(j,i) = std::sqrt(sigma_cm) * std::abs(sin_m);
         trans_face2_ji5_(j,i) = 2.0*m*r_c
-          / (sigma_cm * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm));
+                                / (sigma_cm * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm));
         trans_face2_ji6_(j,i) = -a * sin_m_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
         if (j == juu) {
           trans_face2_ji1_(j+1,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
@@ -489,7 +500,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
           trans_face2_ji3_(j+1,i) = std::sqrt(sigma_cp);
           trans_face2_ji4_(j+1,i) = std::sqrt(sigma_cp) * std::abs(sin_p);
           trans_face2_ji5_(j+1,i) = 2.0*m*r_c
-              / (sigma_cp * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp));
+                                    / (sigma_cp * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp));
           trans_face2_ji6_(j+1,i) = -a * sin_p_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
         }
         trans_face3_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
@@ -497,7 +508,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         trans_face3_ji3_(j,i) = std::sqrt(sigma_cc);
         trans_face3_ji4_(j,i) = std::sqrt(sigma_cc) * std::abs(sin_c);
         trans_face3_ji5_(j,i) = 2.0*m*r_c
-            / (sigma_cc * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc));
+                                / (sigma_cc * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc));
         trans_face3_ji6_(j,i) = -a * sin_c_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
       }
     }
@@ -605,35 +616,35 @@ KerrSchild::~KerrSchild() {
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void KerrSchild::Edge1Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths) {
+                             AthenaArray<Real> &lengths) {
   // \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j)
-        * (ONE_3RD * coord_len1_i2_(i) + coord_len1_j2_(j));
+                 * (ONE_3RD * coord_len1_i2_(i) + coord_len1_j2_(j));
   }
   return;
 }
 
 void KerrSchild::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths) {
+                             AthenaArray<Real> &lengths) {
   // \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + ONE_3RD * coord_len2_j2_(j));
   }
   return;
 }
 
 void KerrSchild::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths) {
+                             AthenaArray<Real> &lengths) {
   // \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     lengths(i) = coord_len3_k1_(k) * coord_len3_j1_(j)
-        * (coord_len3_i1_(i) + coord_len3_j2_(j));
+                 * (coord_len3_i1_(i) + coord_len3_j2_(j));
   }
   return;
 }
@@ -663,7 +674,7 @@ Real KerrSchild::GetEdge3Length(const int k, const int j, const int i) {
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 void KerrSchild::CenterWidth1(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx1) {
+                              AthenaArray<Real> &dx1) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
@@ -674,7 +685,7 @@ void KerrSchild::CenterWidth1(const int k, const int j, const int il, const int 
 }
 
 void KerrSchild::CenterWidth2(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx2) {
+                              AthenaArray<Real> &dx2) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // \Delta W >= r (\theta_+ - \theta_-)
@@ -684,7 +695,7 @@ void KerrSchild::CenterWidth2(const int k, const int j, const int il, const int 
 }
 
 void KerrSchild::CenterWidth3(const int k, const int j, const int il, const int iu,
-                               AthenaArray<Real> &dx3) {
+                              AthenaArray<Real> &dx3) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
@@ -703,37 +714,37 @@ void KerrSchild::CenterWidth3(const int k, const int j, const int il, const int 
 //   areas: 1D array of interface areas orthogonal to X-face
 
 void KerrSchild::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                           AthenaArray<Real> &areas) {
   // \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     areas(i) = GetFace1Area(k, j, i);
   }
   return;
 }
 
 void KerrSchild::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                           AthenaArray<Real> &areas) {
   // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
-        * (ONE_3RD * coord_area2_i2_(i) + coord_area2_j2_(j));
+               * (ONE_3RD * coord_area2_i2_(i) + coord_area2_j2_(j));
   }
   return;
 }
 
 void KerrSchild::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas) {
+                           AthenaArray<Real> &areas) {
   // \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
   //     * (r_-^2 + r_- r_+ + r_+^2
   //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     areas(i) = ONE_3RD * coord_area3_i1_(i) * coord_area3_j1_(j)
-        * (coord_area3_i2_(i) + coord_area3_j2_(j));
+               * (coord_area3_i2_(i) + coord_area3_j2_(j));
   }
   return;
 }
@@ -780,11 +791,11 @@ Real KerrSchild::GetFace3Area(const int k, const int j, const int i) {
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 
 void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes) {
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+                            AthenaArray<Real> &volumes) {
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     volumes(i) = ONE_3RD * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
-        * (coord_vol_i2_(i) + coord_vol_j2_(j));
+                 * (coord_vol_i2_(i) + coord_vol_j2_(j));
   }
   return;
 }
@@ -815,9 +826,9 @@ Real KerrSchild::GetCellVolume(const int k, const int j, const int i) {
 // Outputs:
 //   cons: source terms added to 3D array of conserved variables
 
-void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
-    AthenaArray<Real> &cons) {
+void KerrSchild::CoordSrcTerms(
+    const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons) {
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->peos->GetGamma();
 
@@ -829,7 +840,6 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
     for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
-
       // Extract geometric quantities that do not depend on r
       const Real &sin = coord_src_j1_(j);
       const Real &cos = coord_src_j2_(j);
@@ -841,9 +851,8 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
 
       // Go through 1D slice
-      #pragma omp simd
+#pragma omp simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
-
         // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
         const Real &g_01 = g_(I01,i);
@@ -928,9 +937,11 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
         // Calculate source terms
         Real s_1 = 0.5 * (d1_g_00*tt00 + 2.0*d1_g_01*tt01 + 2.0*d1_g_03*tt03
-            + d1_g_11*tt11 + 2.0*d1_g_13*tt13 + d1_g_22*tt22 + d1_g_33*tt33);
+                          + d1_g_11*tt11 + 2.0*d1_g_13*tt13
+                          + d1_g_22*tt22 + d1_g_33*tt33);
         Real s_2 = 0.5 * (d2_g_00*tt00 + 2.0*d2_g_01*tt01 + 2.0*d2_g_03*tt03
-            + d2_g_11*tt11 + 2.0*d2_g_13*tt13 + d2_g_22*tt22 + d2_g_33*tt33);
+                          + d2_g_11*tt11 + 2.0*d2_g_13*tt13
+                          + d2_g_22*tt22 + d2_g_33*tt33);
 
         // Extract conserved quantities
         Real &m_1 = cons(IM1,k,j,i);
@@ -955,7 +966,7 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 //   g_inv: array of inverse metric components in 1D
 
 void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                            AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   // Extract useful quantities that do not depend on r
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
@@ -964,9 +975,8 @@ void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu
   const Real &cos2 = metric_cell_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_cell_i1_(i);
     Real r2 = SQR(r);
@@ -1003,7 +1013,7 @@ void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu
 //   g_inv: array of inverse metric components in 1D
 
 void KerrSchild::Face1Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   // Extract useful quantities that do not depend on r
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
@@ -1012,9 +1022,8 @@ void KerrSchild::Face1Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face1_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face1_i1_(i);
     Real r2 = SQR(r);
@@ -1051,7 +1060,7 @@ void KerrSchild::Face1Metric(const int k, const int j, const int il, const int i
 //   g_inv: array of inverse metric components in 1D
 
 void KerrSchild::Face2Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   // Extract useful quantities that do not depend on r
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
@@ -1060,9 +1069,8 @@ void KerrSchild::Face2Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face2_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face2_i1_(i);
     Real r2 = SQR(r);
@@ -1099,7 +1107,7 @@ void KerrSchild::Face2Metric(const int k, const int j, const int il, const int i
 //   g_inv: array of inverse metric components in 1D
 
 void KerrSchild::Face3Metric(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
+                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
   // Extract useful quantities that do not depend on r
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
@@ -1108,9 +1116,8 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
   const Real &cos2 = metric_face3_j2_(j);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract remaining useful quantities
     const Real &r = metric_face3_i1_(i);
     Real r2 = SQR(r);
@@ -1158,7 +1165,8 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int iu,
+void KerrSchild::PrimToLocal1(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Calculate metric coefficients
@@ -1166,9 +1174,8 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
     Face1Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
     const Real &mx_0 = trans_face1_ji5_(j,i);
@@ -1204,7 +1211,6 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1221,7 +1227,7 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
-          + g_33*uu3_l*uu3_l;
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
@@ -1244,12 +1250,12 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
-          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
-          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1302,7 +1308,8 @@ void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int 
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int iu,
+void KerrSchild::PrimToLocal2(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Calculate metric coefficients
@@ -1310,9 +1317,8 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
     Face2Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
     const Real &mx_2 = trans_face2_ji3_(j,i);
@@ -1347,7 +1353,6 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1364,7 +1369,7 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
-          + g_33*uu3_l*uu3_l;
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
@@ -1387,12 +1392,12 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
-          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
-          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1445,7 +1450,8 @@ void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int 
 //   puts B^y/B^z in IBY/IBZ slots
 //   u^\hat{i} = M^\hat{i}_j \tilde{u}^j
 
-void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int iu,
+void KerrSchild::PrimToLocal3(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
   // Calculate metric coefficients
@@ -1453,9 +1459,8 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
     Face3Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
     const Real &mx_3 = trans_face3_ji4_(j,i);
@@ -1490,7 +1495,6 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
-
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
@@ -1507,7 +1511,7 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 
       // Calculate global 4-velocities
       Real tmp = g_11*uu1_l*uu1_l + 2.0*g_13*uu1_l*uu3_l + g_22*uu2_l*uu2_l
-          + g_33*uu3_l*uu3_l;
+                 + g_33*uu3_l*uu3_l;
       Real gamma_l = std::sqrt(1.0 + tmp);
       Real u0_l = gamma_l / alpha;
       Real u1_l = uu1_l - alpha * gamma_l * g01;
@@ -1530,12 +1534,12 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_13*bb1_l*u3_l + g_22*bb2_l*u2_l
-          + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
+                  + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_33*bb3_l*u3_l;
       Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
       Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
       Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
       Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_13*bb1_r*u3_r + g_22*bb2_r*u2_r
-          + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
+                  + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_33*bb3_r*u3_r;
       Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
       Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
       Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
@@ -1585,16 +1589,16 @@ void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int 
 //   puts r-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts r-fluxes of B2/B3 in ey/ez
 
-void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+void KerrSchild::FluxToGlobal1(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric coefficients
   Face1Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
     const Real &mx_0 = trans_face1_ji5_(j,i);
@@ -1687,16 +1691,16 @@ void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int
 //   puts theta-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts theta-fluxes of B3/B1 in ey/ez
 
-void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+void KerrSchild::FluxToGlobal2(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric coefficients
   Face2Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
     const Real &mx_2 = trans_face2_ji3_(j,i);
@@ -1787,16 +1791,16 @@ void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts phi-fluxes of B1/B2 in ey/ez
 
-void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+void KerrSchild::FluxToGlobal3(
+    const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric coefficients
   Face3Metric(k, j, il, iu, g_, gi_);
 
   // Go through 1D block of cells
-  #pragma omp simd
-  for (int i = il; i <= iu; ++i) {
-
+#pragma omp simd
+  for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
     const Real &mx_3 = trans_face3_ji4_(j,i);
@@ -1878,7 +1882,7 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
 
 void KerrSchild::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                                 int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   // Extract geometric quantities
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
@@ -1925,7 +1929,7 @@ void KerrSchild::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, 
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
 
 void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
+                                 Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
   // Extract geometric quantities
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;

@@ -6,19 +6,21 @@
 //! \file hydro.cpp
 //  \brief implementation of functions in class Hydro
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <string>
 
 // Athena++ headers
-#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../eos/eos.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
+#include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -112,7 +114,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // ptr to diffusion object
   phdif = new HydroDiffusion(this,pin);
-
 }
 
 // destructor

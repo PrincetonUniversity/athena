@@ -5,11 +5,13 @@
 //========================================================================================
 //! \file show_config.cpp
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------

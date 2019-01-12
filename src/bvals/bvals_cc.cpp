@@ -6,28 +6,30 @@
 //! \file bvals_cc.cpp
 //  \brief functions that apply BCs for CELL_CENTERED variables
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <cmath>
+#include <cstdlib>
+#include <cstring>    // memcpy()
 #include <iomanip>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cstring>    // memcpy
-#include <cstdlib>
-#include <cmath>
 
-// Athena++ classes headers
-#include "bvals.hpp"
+// Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -39,8 +41,8 @@
 //                     &src, int ns, int ne, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
-int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                                    int ns, int ne, Real *buf, const NeighborBlock& nb) {
+int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(
+    AthenaArray<Real> &src, int ns, int ne, Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -61,8 +63,9 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &s
 //                     const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the coarser level
 
-int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
-    int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb) {
+int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(
+    AthenaArray<Real> &src, int ns, int ne, Real *buf, AthenaArray<Real> &cbuf,
+    const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
@@ -88,8 +91,8 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &s
 //                                  int ns, int ne, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the finer level
 
-int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
-                                    int ns, int ne, Real *buf, const NeighborBlock& nb) {
+int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(
+    AthenaArray<Real> &src, int ns, int ne, Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn=pmb->cnghost-1;
@@ -137,11 +140,11 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src
 //  \brief Send boundary buffers of cell-centered variables
 void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                                      enum CCBoundaryType type) {
-  MeshBlock *pmb=pmy_block_, *pbl;
+  MeshBlock *pmb=pmy_block_, *pbl=nullptr;
   int mylevel=pmb->loc.level;
   int ns, ne;
   AthenaArray<Real> cbuf;
-  BoundaryData *pbd, *ptarget;
+  BoundaryData *pbd{}, *ptarget{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
@@ -186,8 +189,9 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
 //                         int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip)
 //  \brief Set hydro boundary received from a block on the same level
 
-void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
-                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip) {
+void BoundaryValues::SetCellCenteredBoundarySameLevel(
+    AthenaArray<Real> &dst, int ns, int ne, Real *buf,
+    const NeighborBlock& nb, bool *flip) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -205,7 +209,7 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign = 1.0;
-      if (flip!=NULL) sign =flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign =flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -222,29 +226,33 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
     if (ShBoxCoord_==2) {
       Mesh *pmy_mesh = pmb->pmy_mesh;
       int level = pmb->loc.level - pmy_mesh->root_level;
-      int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+      std::int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
       Real qomL = qshear_*Omega_0_*x1size_;
       if ((pmb->loc.lx1==0) && (nb.ox1<0)) {
-        for (int k=sk;k<=ek;++k) {
-          for (int j=sj;j<=ej;++j) {
-            for (int i=si;i<=ei;++i) {
+        for (int k=sk; k<=ek; ++k) {
+          for (int j=sj; j<=ej; ++j) {
+            for (int i=si; i<=ei; ++i) {
               if (NON_BAROTROPIC_EOS)
                 dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
-                    *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
-                      -SQR(dst(IM3,k,j,i)));
+                                  *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
+                                    -SQR(dst(IM3,k,j,i)));
               dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
-            }}}
+            }
+          }
+        }
       } // inner boundary
       if ((pmb->loc.lx1==(nrbx1-1)) && (nb.ox1>0)) {
-        for (int k=sk;k<=ek;++k) {
-          for (int j=sj;j<=ej;++j) {
-            for (int i=si;i<=ei;++i) {
-            if (NON_BAROTROPIC_EOS)
-              dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
-                 *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
-                 -SQR(dst(IM3,k,j,i)));
-            dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
-          }}}
+        for (int k=sk; k<=ek; ++k) {
+          for (int j=sj; j<=ej; ++j) {
+            for (int i=si; i<=ei; ++i) {
+              if (NON_BAROTROPIC_EOS)
+                dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                                  *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
+                                    -SQR(dst(IM3,k,j,i)));
+              dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
+            }
+          }
+        }
       } // outer boundary
     }
   }
@@ -256,8 +264,9 @@ void BoundaryValues::SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst,
 //           Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip)
 //  \brief Set hydro prolongation buffer received from a block on a coarser level
 
-void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
-             Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip) {
+void BoundaryValues::SetCellCenteredBoundaryFromCoarser(
+    int ns, int ne, Real *buf, AthenaArray<Real> &cbuf,
+    const NeighborBlock& nb, bool *flip) {
   MeshBlock *pmb=pmy_block_;
 
   int si, sj, sk, ei, ej, ek;
@@ -265,8 +274,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
 
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else                       si-=cng;
+    if ((pmb->loc.lx1 & 1LL) == 0LL) ei+=cng;
+    else                             si-=cng;
   } else if (nb.ox1>0)  {
     si=pmb->cie+1,   ei=pmb->cie+cng;
   } else {
@@ -275,8 +284,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else                       sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
+      else                             sj-=cng;
     }
   } else if (nb.ox2>0) {
     sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -286,8 +295,8 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else                       sk-=cng;
+      if ((pmb->loc.lx3 & 1LL) == 0LL) ek+=cng;
+      else                             sk-=cng;
     }
   } else if (nb.ox3>0)  {
     sk=pmb->cke+1,   ek=pmb->cke+cng;
@@ -299,7 +308,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign = 1.0;
-      if (flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -320,8 +329,9 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
 //                   int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip)
 //  \brief Set hydro boundary received from a block on a finer level
 
-void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
-                     int ns, int ne, Real *buf, const NeighborBlock& nb, bool *flip) {
+void BoundaryValues::SetCellCenteredBoundaryFromFiner(
+    AthenaArray<Real> &dst, int ns, int ne, Real *buf, const NeighborBlock& nb,
+    bool *flip) {
   MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
@@ -372,7 +382,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
   if (nb.polar) {
     for (int n=ns; n<=ne; ++n) {
       Real sign=1.0;
-      if (flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
+      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -396,10 +406,10 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
                                                         enum CCBoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
-  bool *flip=NULL;
+  bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
-  BoundaryData *pbd;
+  BoundaryData *pbd{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
@@ -420,8 +430,9 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
       if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
-      } else { // MPI boundary
+      else { // NOLINT // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -431,8 +442,6 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
         }
         pbd->flag[nb.bufid] = BNDRY_ARRIVED;
       }
-#else
-    }
 #endif
     }
     if (nb.level==pmb->loc.level)
@@ -445,8 +454,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
   }
 
   if (bflag && (block_bcs[INNER_X2]==POLAR_BNDRY
-           ||  block_bcs[OUTER_X2]==POLAR_BNDRY))
-     PolarSingleCellCentered(dst, ns, ne);
+                ||  block_bcs[OUTER_X2]==POLAR_BNDRY))
+    PolarSingleCellCentered(dst, ns, ne);
   return bflag;
 }
 
@@ -459,10 +468,10 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
                                                                 enum CCBoundaryType
                                                                 type) {
   MeshBlock *pmb=pmy_block_;
-  bool *flip=NULL;
+  bool *flip=nullptr;
   AthenaArray<Real> cbuf;
   int ns, ne;
-  BoundaryData *pbd;
+  BoundaryData *pbd{};
 
   if (type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
@@ -505,20 +514,20 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
 void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
-  && pmb->block_size.nx3 > 1) {
+      && pmb->block_size.nx3 > 1) {
     if (block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-             exc_(k)=dst(n,k,j,i);
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-             int k_shift = k;
-             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=exc_(k_shift);
-           }
-         }
+          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+              exc_(k)=dst(n,k,j,i);
+            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+              int k_shift = k;
+              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+              dst(n,k,j,i)=exc_(k_shift);
+            }
+          }
         }
       }
     }
@@ -527,15 +536,15 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
-         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-             exc_(k)=dst(n,k,j,i);
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-             int k_shift = k;
-             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=exc_(k_shift);
-           }
-         }
+          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+              exc_(k)=dst(n,k,j,i);
+            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+              int k_shift = k;
+              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+              dst(n,k,j,i)=exc_(k_shift);
+            }
+          }
         }
       }
     }

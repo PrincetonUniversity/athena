@@ -8,7 +8,11 @@
 //! \file reconstruction.hpp
 //  \brief defines class Reconstruction, data and functions for spatial reconstruction
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 
@@ -20,7 +24,7 @@ class ParameterInput;
 //  \brief member functions implement various spatial reconstruction algorithms
 
 class Reconstruction {
-public:
+ public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
   ~Reconstruction();
 
@@ -41,51 +45,66 @@ public:
 
   // functions
   // linear transformations of vectors between primitive and characteristic variables
-  static void LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
-    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-    AthenaArray<Real> &vect);
-  static void RightEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
-    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
-    AthenaArray<Real> &vect);
+  static void LeftEigenmatrixDotVector(
+      MeshBlock *pmb, const int ivx, const int il, const int iu,
+      const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect);
+  static void RightEigenmatrixDotVector(
+      MeshBlock *pmb, const int ivx, const int il, const int iu,
+      const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect);
 
   // reconstruction functions of various orders in each dimension
   static void DonorCellX1(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+                          const int jl, const int ju  , const int il, const int iu,
+                          const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void DonorCellX2(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+                          const int jl, const int ju  , const int il, const int iu,
+                          const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void DonorCellX3(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+                          const int jl, const int ju  , const int il, const int iu,
+                          const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX1(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseLinearX1(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX2(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseLinearX2(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearX3(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseLinearX3(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX1(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseParabolicX1(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX2(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseParabolicX2(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseParabolicX3(MeshBlock *pmb, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  static void PiecewiseParabolicX3(
+      MeshBlock *pmb, const int kl, const int ku,
+      const int jl, const int ju, const int il, const int iu,
+      const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-private:
+ private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
   // scratch arrays used in PLM and PPM reconstruction functions

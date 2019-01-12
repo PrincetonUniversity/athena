@@ -11,8 +11,10 @@
 // read from the input file.  See comments at start of parameter_input.cpp for more
 // information on the Athena++ input file format.
 
+// C headers
+
 // C++ headers
-#include <cstddef>  // size_t
+#include <cstddef>  // std::size_t
 #include <ostream>  // ostream
 #include <string>   // string
 
@@ -42,7 +44,7 @@ typedef struct InputLine {
 //  \brief  node in a linked list of all input blocks contained within input file
 
 class InputBlock {
-public:
+ public:
   // constructor/destructor
   InputBlock();
   ~InputBlock();
@@ -64,7 +66,7 @@ public:
 //  Functions are implemented in parameter_input.cpp
 
 class ParameterInput {
-public:
+ public:
   // constructor/destructor
   ParameterInput();
   ~ParameterInput();
@@ -92,15 +94,15 @@ public:
   void RollbackNextTime();
   void ForwardNextTime(Real time);
 
-private:
+ private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
   InputBlock* FindOrAddBlock(std::string name);
   InputBlock* GetPtrToBlock(std::string name);
   void ParseLine(InputBlock *pib, std::string line, std::string& name,
-       std::string& value, std::string& comment);
+                 std::string& value, std::string& comment);
   void AddParameter(InputBlock *pib, std::string name, std::string value,
-       std::string comment);
+                    std::string comment);
 
   // thread safety
 #ifdef OPENMP_PARALLEL
@@ -112,6 +114,5 @@ private:
   void EndReading(void);
   void StartWriting(void);
   void EndWriting(void);
-
 };
 #endif // PARAMETER_INPUT_HPP_

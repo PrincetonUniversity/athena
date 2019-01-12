@@ -5,19 +5,21 @@
 //========================================================================================
 //  \brief Class to implement diffusion processes in the hydro equations
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 
 // Athena++ headers
-#include "hydro_diffusion.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
-#include "../../parameter_input.hpp"
 #include "../../field/field.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../hydro.hpp"
+#include "hydro_diffusion.hpp"
 
 // HydroDiffusion constructor
 
@@ -53,7 +55,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
     divv_.NewAthenaArray(ncells3,ncells2,ncells1);
 
     nu.NewAthenaArray(2,ncells3,ncells2,ncells1);
-    if(pmb_->pmy_mesh->ViscosityCoeff_==NULL)
+    if (pmb_->pmy_mesh->ViscosityCoeff_==nullptr)
       CalcViscCoeff_ = ConstViscosity;
     else
       CalcViscCoeff_ = pmb_->pmy_mesh->ViscosityCoeff_;
@@ -70,7 +72,7 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
       cndflx[X3DIR].NewAthenaArray(ncells3+1,ncells2,ncells1);
 
       kappa.NewAthenaArray(2,ncells3,ncells2,ncells1);
-      if(pmb_->pmy_mesh->ConductionCoeff_==NULL)
+      if (pmb_->pmy_mesh->ConductionCoeff_==nullptr)
         CalcCondCoeff_ = ConstConduction;
       else
         CalcCondCoeff_ = pmb_->pmy_mesh->ConductionCoeff_;
@@ -123,8 +125,8 @@ HydroDiffusion::~HydroDiffusion() {
 //  \brief Calculate diffusion flux for hydro flux
 
 void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &cons, AthenaArray<Real> *flux) {
-
+                                            const AthenaArray<Real> &cons,
+                                            AthenaArray<Real> *flux) {
   Hydro *ph=pmb_->phydro;
   Field *pf=pmb_->pfield;
 
@@ -148,7 +150,6 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
 
 void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
                                                  AthenaArray<Real> *flux_des) {
-
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
@@ -164,14 +165,14 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
         x1flux(IEN,k,j,i) += x1diflx(k,j,i);
-        if(i==ie) x1flux(IEN,k,j,i+1) += x1diflx(k,j,i+1);
+        if (i==ie) x1flux(IEN,k,j,i+1) += x1diflx(k,j,i+1);
         if (pmb_->block_size.nx2 > 1) {
           x2flux(IEN,k,j,i) += x2diflx(k,j,i);
-          if(j==je) x2flux(IEN,k,j+1,i) += x2diflx(k,j+1,i);
-       }
+          if (j==je) x2flux(IEN,k,j+1,i) += x2diflx(k,j+1,i);
+        }
         if (pmb_->block_size.nx3 > 1) {
           x3flux(IEN,k,j,i) += x3diflx(k,j,i);
-          if(k==ke) x3flux(IEN,k+1,j,i) += x3diflx(k+1,j,i);
+          if (k==ke) x3flux(IEN,k+1,j,i) += x3diflx(k+1,j,i);
         }
       }
     }
@@ -186,7 +187,6 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 
 void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src,
                                            AthenaArray<Real> *flux_des) {
-
   int size1 = flux_des[X1DIR].GetSize();
 #pragma omp simd
   for (int i=0; i<size1; ++i)
@@ -264,13 +264,15 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
   Real fac;
-  if (pmb_->block_size.nx3>1) fac = 1.0/6.0;
-  else if (pmb_->block_size.nx2>1) fac = 0.25;
-  else fac = 0.5;
+  if (pmb_->block_size.nx3>1)
+    fac = 1.0/6.0;
+  else if (pmb_->block_size.nx2>1)
+    fac = 0.25;
+  else
+    fac = 0.5;
 
   dt_vis = (FLT_MAX);
   dt_cnd = (FLT_MAX);
-
 
   AthenaArray<Real> nu_t;
   nu_t.InitWithShallowCopy(nu_tot_);
@@ -315,12 +317,12 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
       if ((nu_iso > 0.0) || (nu_aniso > 0.0)) {
         for (int i=is; i<=ie; ++i)
           dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
-                                     *fac/(nu_t(i)+TINY_NUMBER)));
+                                                      *fac/(nu_t(i)+TINY_NUMBER)));
       }
       if ((kappa_iso > 0.0) || (kappa_aniso > 0.0)) {
         for (int i=is; i<=ie; ++i)
           dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))
-                                  *fac/(kappa_t(i)+TINY_NUMBER)));
+                                                      *fac/(kappa_t(i)+TINY_NUMBER)));
       }
     }
   }

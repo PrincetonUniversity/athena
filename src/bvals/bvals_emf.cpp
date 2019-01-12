@@ -7,18 +7,20 @@
 //  \brief functions that apply BCs for emf corrections
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // memcpy
+#include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -29,8 +31,6 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
-
-// this class header
 #include "bvals.hpp"
 
 // MPI header
@@ -93,8 +93,8 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-   }
+      ATHENA_ERROR(msg);
+  }
 
   int p=0;
   // pack e2
@@ -156,7 +156,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
           std::memcpy(pbl->pbval->recv_innerbuf_emf_[n],
-                  send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
+                      send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
           pbl->pbval->shbox_inner_emf_flag_[n]=BNDRY_ARRIVED;
         } else { // MPI
 #ifdef MPI_PARALLEL
@@ -165,8 +165,9 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
 #endif
-       }
-    }}
+        }
+      }
+    }
   } // inner boundaries
 
   if (shbb_.outer == true) {
@@ -191,7 +192,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
           std::memcpy(pbl->pbval->recv_outerbuf_emf_[n],
-                  send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
+                      send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
           pbl->pbval->shbox_outer_emf_flag_[n]=BNDRY_ARRIVED;
         } else { // MPI
 #ifdef MPI_PARALLEL
@@ -202,7 +203,8 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void) {
                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
 #endif
         }
-    }}
+      }
+    }
   } // outer boundaries
   return;
 }
@@ -264,8 +266,8 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-   }
+      ATHENA_ERROR(msg);
+  }
 
   int p=0;
   // unpack e2
@@ -273,7 +275,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
     for (int j=sj; j<=ej; j++)
       dst.x2e(k,j)+=buf[p++];
   }
- // unpack e3
+  // unpack e3
   for (int k=sk; k<=ek; k++) {
     for (int j=psj; j<=pej; j++)
       dst.x3e(k,j)+=buf[p++];
@@ -348,7 +350,6 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void) {
   } // outer boundary
 
   return (flagi && flago);
-
 }
 
 
@@ -370,7 +371,7 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void) {
       RemapFluxEMF(k,js,je+2,eps_,shboxmap_inner_emf_.x2e,flx_inner_emf_.x2e);
       for (int j=js; j<=je; j++) {
         shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1)
-                                       -flx_inner_emf_.x2e(j);
+                                        -flx_inner_emf_.x2e(j);
       }
     }
     // step 2.-- average the EMF correction
@@ -387,10 +388,10 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void) {
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js-1,je+1,-eps_,shboxmap_outer_emf_.x2e,
-                                     flx_outer_emf_.x2e);
+                   flx_outer_emf_.x2e);
       for (int j=js; j<=je; j++)
         shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1)
-                                       -flx_outer_emf_.x2e(j);
+                                        -flx_outer_emf_.x2e(j);
     }
     // step 2.-- average the EMF correction
     // average e2
@@ -422,7 +423,8 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work) {
       e3(k,j) = 0.0;
       if (k==ke+NGHOST) e2(k+1,j) = 0.0;
       if (j==je+NGHOST) e3(k,j+1) = 0.0;
-  }}
+    }
+  }
 
   return;
 }
@@ -439,8 +441,8 @@ void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int joute
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 
-// jinner,jouter are index range over which flux must be returned.  Set loop
-// limits depending on direction of upwind differences
+  // jinner,jouter are index range over which flux must be returned.  Set loop
+  // limits depending on direction of upwind differences
 
   if (eps > 0.0) { // eps always > 0 for inner i boundary
     jl = jinner-1;
@@ -451,15 +453,15 @@ void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int joute
   }
 
   for (j=jl; j<=ju; j++) {
-      dUc = U(k,j+1) - U(k,j-1);
-      dUl = U(k,j  ) - U(k,j-1);
-      dUr = U(k,j+1) - U(k,j  );
+    dUc = U(k,j+1) - U(k,j-1);
+    dUl = U(k,j  ) - U(k,j-1);
+    dUr = U(k,j+1) - U(k,j  );
 
-      dUm = 0.0;
-      if (dUl*dUr > 0.0) {
-        lim_slope = std::min(fabs(dUl),fabs(dUr));
-        dUm = SIGN(dUc)*std::min(0.5*fabs(dUc),2.0*lim_slope);
-      }
+    dUm = 0.0;
+    if (dUl*dUr > 0.0) {
+      lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
+      dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
+    }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary
       Flux(j+1) = eps*(U(k,j) + 0.5*(1.0 - eps)*dUm);

@@ -36,11 +36,12 @@ def analyze():
                 continue
             data.append([float(val) for val in line.split()])
 
+    analyze_status = True
     if data[0][4] > 2.0e-8:
         print("RMS error in L-going fast wave too large", data[0][4])
-        return False
+        analyze_status = False
     if data[0][13] > 5.5:
         print("maximum relative error in L-going fast wave too large", data[0][13])
-        return False
+        analyze_status = False
 
-    return True
+    return analyze_status

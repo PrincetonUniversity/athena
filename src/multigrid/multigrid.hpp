@@ -1,6 +1,5 @@
 #ifndef MULTIGRID_MULTIGRID_HPP_
 #define MULTIGRID_MULTIGRID_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,19 +8,22 @@
 //! \file multigrid.hpp
 //  \brief
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>
-#ifdef MPI_PARALLEL
-#include <mpi.h>
-#endif
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../bvals/bvals_mg.hpp"
+#include "../globals.hpp"
+#include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 
 class Mesh;
 class MeshBlock;
@@ -51,10 +53,10 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //  \brief gravitational block
 
 class Multigrid {
-public:
+ public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-     int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-     enum BoundaryFlag *input_bcs, bool root);
+            int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            enum BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
@@ -91,7 +93,7 @@ public:
   friend class MGBoundaryValues;
   friend class MGGravityDriver;
 
-protected:
+ protected:
   int gid_, lid_;
   LogicalLocation loc_;
   MultigridDriver *pmy_driver_;
@@ -99,7 +101,8 @@ protected:
   int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
-private:
+
+ private:
   bool root_flag_;
   TaskState ts_;
 };
@@ -109,7 +112,7 @@ private:
 //  \brief Multigrid driver
 
 class MultigridDriver {
-public:
+ public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
   virtual ~MultigridDriver();
   void AddMultigrid(Multigrid *nmg);
@@ -139,7 +142,7 @@ public:
   friend class MultigridTaskList;
   friend class MGBoundaryValues;
 
-protected:
+ protected:
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
@@ -150,7 +153,8 @@ protected:
   bool fperiodic_;
   Real last_ave_;
   Real eps_;
-private:
+
+ private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;
   AthenaArray<Real> rootsrc_;

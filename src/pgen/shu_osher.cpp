@@ -11,18 +11,20 @@
 //   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)
 //========================================================================================
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <cmath>  // sin()
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
@@ -44,25 +46,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = (peos->GetGamma()) - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
+    for (int j=js; j<=je; ++j) {
 #pragma omp simd
-    for (int i=is; i<=ie; ++i) {
-
-      if (pcoord->x1v(i) < -0.8) {
-        phydro->u(IDN,k,j,i) = dl;
-        phydro->u(IM1,k,j,i) = ul*dl;
-        phydro->u(IM2,k,j,i) = vl*dl;
-        phydro->u(IM3,k,j,i) = wl*dl;
-        phydro->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
-      } else {
-        phydro->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pcoord->x1v(i)));
-        phydro->u(IM1,k,j,i) = 0.0;
-        phydro->u(IM2,k,j,i) = 0.0;
-        phydro->u(IM3,k,j,i) = 0.0;
-        phydro->u(IEN,k,j,i) = 1.0/gm1;
+      for (int i=is; i<=ie; ++i) {
+        if (pcoord->x1v(i) < -0.8) {
+          phydro->u(IDN,k,j,i) = dl;
+          phydro->u(IM1,k,j,i) = ul*dl;
+          phydro->u(IM2,k,j,i) = vl*dl;
+          phydro->u(IM3,k,j,i) = wl*dl;
+          phydro->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+        } else {
+          phydro->u(IDN,k,j,i) = 1.0 + 0.2*std::sin(5.0*PI*(pcoord->x1v(i)));
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) = 0.0;
+          phydro->u(IM3,k,j,i) = 0.0;
+          phydro->u(IEN,k,j,i) = 1.0/gm1;
+        }
       }
     }
-  }}
+  }
 
   return;
 }
