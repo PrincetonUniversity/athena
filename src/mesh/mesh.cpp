@@ -1590,7 +1590,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   nlist[j]=nb-slist[j];
 
 #ifdef MPI_PARALLEL
-  if (nb % Globals::nranks != 0 && adaptive == false
+  if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
   && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in LoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "

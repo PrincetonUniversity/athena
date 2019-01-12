@@ -30,11 +30,14 @@ public:
   void AddGravitySolverTask(uint64_t id, uint64_t dep);
 
   // functions
-  enum TaskStatus StartGravityReceive(MeshBlock *pmb, int stage);
   enum TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
+
+private:
+  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage);
+
 };
 
 
@@ -43,12 +46,11 @@ public:
 
 namespace GravitySolverTaskNames {
   const uint64_t NONE=0;
-  const uint64_t START_GRAV_RECV=1LL<<0;
-  const uint64_t CLEAR_GRAV=1LL<<1;
+  const uint64_t CLEAR_GRAV=1LL<<0;
 
-  const uint64_t SEND_GRAV_BND=1LL<<2;
-  const uint64_t RECV_GRAV_BND=1LL<<3;
-  const uint64_t GRAV_PHYS_BND=1LL<<4;
+  const uint64_t SEND_GRAV_BND=1LL<<1;
+  const uint64_t RECV_GRAV_BND=1LL<<2;
+  const uint64_t GRAV_PHYS_BND=1LL<<3;
 };
 
 #endif // TASK_LIST_GRAV_TASK_LIST_HPP_

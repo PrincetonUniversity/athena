@@ -219,15 +219,13 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
   // Now assemble list of tasks for each stage of time integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
-    AddTimeIntegratorTask(STARTUP_INT,NONE);
-    AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
     // calculate hydro/field diffusive fluxes
-    AddTimeIntegratorTask(DIFFUSE_HYD,START_ALLRECV);
+    AddTimeIntegratorTask(DIFFUSE_HYD,NONE);
     if (MAGNETIC_FIELDS_ENABLED)
-      AddTimeIntegratorTask(DIFFUSE_FLD,START_ALLRECV);
+      AddTimeIntegratorTask(DIFFUSE_FLD,DIFFUSE_HYD);
     // compute hydro fluxes, integrate hydro variables
     if (MAGNETIC_FIELDS_ENABLED)
-      AddTimeIntegratorTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
+      AddTimeIntegratorTask(CALC_HYDFLX,DIFFUSE_FLD);
     else
       AddTimeIntegratorTask(CALC_HYDFLX,DIFFUSE_HYD);
     if (pm->multilevel==true) { // SMR or AMR
@@ -239,7 +237,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
-    AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
+    AddTimeIntegratorTask(RECV_HYD,NONE);
     AddTimeIntegratorTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
       AddTimeIntegratorTask(SEND_HYDSH,SETB_HYD);
@@ -261,7 +259,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       }
 
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
-      AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
+      AddTimeIntegratorTask(RECV_FLD,NONE);
       AddTimeIntegratorTask(SETB_FLD,(RECV_FLD|INT_FLD));
       if (SHEARING_BOX) { // Shearingbox BC for Bfield
         AddTimeIntegratorTask(SEND_FLDSH,SETB_FLD);
@@ -318,12 +316,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
   task_list_[ntasks].dependency=dep;
 
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
-  switch((id)) {
-    case (START_ALLRECV):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::StartAllReceive);
-      break;
+  switch(id) {
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -479,11 +472,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CheckRefinement);
       break;
-    case (STARTUP_INT):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::StartupIntegrator);
-      break;
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -506,73 +494,63 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
 }
 
 
-//----------------------------------------------------------------------------------------
-// Function to initialize the time integrator
+void TimeIntegratorTaskList::StartupTaskList(MeshBlock **pmb_array, int nmymb,
+                                             int stage) {
+  MeshBlock *pmb=pmb_array[0];
+  if (stage == 1) {
+    for (int i=0; i<nmymb; ++i) {
+      pmb=pmb_array[i];
+      // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
+      // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
+      pmb->stage_abscissae[0][0] = 0.0;
+      pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
+      pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
 
-enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int stage) {
-  // Initialize time-integrator only on first stage
-  if (stage != 1) {
-    return TASK_SUCCESS;
-  } else {
-    // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
-    // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
-    pmb->stage_abscissae[0][0] = 0.0;
-    pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
-    pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
+      // Given overall timestep dt, compute the time abscissae for all registers, stages
+      for (int l=1; l<=nstages; l++) {
+        // Update the dt abscissae of each memory register to values at end of this stage
+        const IntegratorWeight w = stage_wghts[l-1];
 
-    // Given overall timestep dt, precompute the time abscissae for all registers, stages
-    for (int l=1; l<=nstages; l++) {
-      // Update the dt abscissae of each memory register to values at end of this stage
-      const IntegratorWeight w = stage_wghts[l-1];
+        // u1 = u1 + delta*u
+        pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
+            + w.delta*pmb->stage_abscissae[l-1][0];
+        // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
+        pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
+            + w.gamma_2*pmb->stage_abscissae[l][1]
+            + w.gamma_3*pmb->stage_abscissae[l-1][2]
+            + w.beta*pmb->pmy_mesh->dt;
+        // u2 = u^n
+        pmb->stage_abscissae[l][2] = 0.0;
+      }
 
-      // u1 = u1 + delta*u
-      pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
-          + w.delta*pmb->stage_abscissae[l-1][0];
-      // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-      pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-          + w.gamma_2*pmb->stage_abscissae[l][1]
-          + w.gamma_3*pmb->stage_abscissae[l-1][2]
-          + w.beta*pmb->pmy_mesh->dt;
-      // u2 = u^n
-      pmb->stage_abscissae[l][2] = 0.0;
+      // Initialize storage registers
+      Hydro *ph=pmb->phydro;
+      ph->u1.ZeroClear();
+      if (integrator == "ssprk5_4")
+        ph->u2 = ph->u;
+
+      if (MAGNETIC_FIELDS_ENABLED) { // MHD
+        Field *pf=pmb->pfield;
+        pf->b1.x1f.ZeroClear();
+        pf->b1.x2f.ZeroClear();
+        pf->b1.x3f.ZeroClear();
+      }
     }
-
-    // Initialize storage registers
-    Hydro *ph=pmb->phydro;
-    // Cache U^n in third memory register, u2, via deep copy
-    // (if using a 3S* or 3N time-integrator)
-    if (integrator == "ssprk5_4")
-      ph->u2 = ph->u;
-
-    if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      Field *pf=pmb->pfield;
-      // Cache face-averaged B^n in third memory register, b2, via AthenaArray deep copy
-      // (if using a 3S* time-integrator)
-      // pf->b2.x1f = pf->b.x1f;
-      // pf->b2.x2f = pf->b.x2f;
-      // pf->b2.x3f = pf->b.x3f;
-
-      // 2nd set of registers, including b1, need to be initialized to 0 each cycle
-      pf->b1.x1f.ZeroClear();
-      pf->b1.x2f.ZeroClear();
-      pf->b1.x3f.ZeroClear();
-    }
-    // 2nd set of registers, including u1, need to be initialized to 0 each cycle
-    ph->u1.ZeroClear();
-
-    return TASK_SUCCESS;
   }
-}
 
-//----------------------------------------------------------------------------------------
-// Functions to start/end MPI communication
-
-enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int stage) {
   Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
   Real time = pmb->pmy_mesh->time+dt;
-  pmb->pbval->StartReceivingAll(time);
-  return TASK_SUCCESS;
+
+  for (int i=0; i<nmymb; ++i) {
+    pmb=pmb_array[i];
+    pmb->pbval->StartReceivingAll(time);
+  }
+
+  return;
 }
+
+//----------------------------------------------------------------------------------------
+// Functions to end MPI communication
 
 enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundaryAll();

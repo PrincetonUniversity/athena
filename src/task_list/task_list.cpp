@@ -6,8 +6,9 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
-// needed for vector of pointers in DoTaskListOneStage()
-#include <vector>
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -40,12 +41,10 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
                                                   TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
-
   if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
-
     if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
@@ -73,39 +72,53 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
-  MeshBlock *pmb = pmesh->pblock;
-  // initialize counters stored in each MeshBlock
-  while (pmb != NULL)  {
-    pmb->tasks.Reset(ntasks);
-    pmb=pmb->next;
-  }
 
-  // initialize a vector of MeshBlock pointers
-  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-  std::vector<MeshBlock*> pmb_array(nmb);
-  pmb = pmesh->pblock;
-  for (int i=0; i<nmb; ++i) {
-    pmb_array[i] = pmb;
-    pmb=pmb->next;
-  }
-
-  int nmb_left = nmb;
   int nthreads = pmesh->GetNumMeshThreads();
+#pragma omp parallel num_threads(nthreads)
+{
+  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+  int tid = 0, tis=0;
+  int nmbt = nmb / nthreads;
+  int nmbres = nmb % nthreads;
+  int nmymb = nmbt;
+
+#ifdef OPENMP_PARALLEL
+  // calculate the number and index of the MeshBlocks owned by this thread
+  tid = omp_get_thread_num();
+  if (tid < nmbres) {
+    tis = nmbt * tid + tid;
+    nmymb++;
+  } else {
+    tis = nmbt * tid + nmbres;
+  }
+#endif
+
+  // initialize the task states, initiate MPI and construct the MeshBlock list
+  MeshBlock **pmb_array = new MeshBlock*[nmymb];
+  MeshBlock *pmb = pmesh->FindMeshBlock(tis+pmesh->pblock->gid);
+  for (int n=0; n < nmymb; ++n) {
+    pmb->tasks.Reset(ntasks);
+    pmb_array[n] = pmb;
+    pmb = pmb->next;
+  }
 
   // cycle through all MeshBlocks and perform all tasks possible
-  while(nmb_left > 0) {
+  int nmb_left = nmymb;
+  StartupTaskList(pmb_array, nmymb, stage);
 
-#pragma omp parallel shared(nmb_left) num_threads(nthreads)
-{
-    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-    for (int i=0; i<nmb; ++i) {
+#pragma omp barrier
+
+  while(nmb_left > 0) {
+    for (int i=0; i<nmymb; ++i) {
       if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;
       }
     }
-}
-
   }
+
+  delete [] pmb_array;
+
+} // omp parallel
 
   return;
 }
