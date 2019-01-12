@@ -297,12 +297,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-//    if (SELF_GRAVITY_ENABLED == 1) {
-//      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
-//      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
-//    } else {
     AddTimeIntegratorTask(USERWORK,PHY_BVAL);
-//    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if (pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
@@ -483,11 +478,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CheckRefinement);
-      break;
-    case (CORR_GFLX):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::GravFluxCorrection);
       break;
     case (STARTUP_INT):
       task_list_[ntasks].TaskFunc=
@@ -1014,12 +1004,5 @@ enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stag
   if (stage != nstages) return TASK_SUCCESS; // only do on last stage
 
   pmb->pmr->CheckRefinementCondition();
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int stage) {
-  if (stage != nstages) return TASK_SUCCESS; // only do on last stage
-
-  pmb->phydro->CorrectGravityFlux();
   return TASK_SUCCESS;
 }

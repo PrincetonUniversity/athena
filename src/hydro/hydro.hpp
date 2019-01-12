@@ -63,7 +63,6 @@ public:
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
-  void CorrectGravityFlux(void);
 
 private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep

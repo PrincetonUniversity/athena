@@ -149,11 +149,6 @@ public:
   enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  enum TaskStatus GravSend(MeshBlock *pmb, int stage);
-  enum TaskStatus GravReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus GravSolve(MeshBlock *pmb, int stage);
-  enum TaskStatus GravFluxCorrection(MeshBlock *pmb, int stage);
-
   enum TaskStatus StartupIntegrator(MeshBlock *pmb, int stage);
 };
 
@@ -257,19 +252,17 @@ namespace HydroIntegratorTaskNames {
   const uint64_t NEW_DT   = 1LL<<39;
   const uint64_t AMR_FLAG = 1LL<<40;
 
-  const uint64_t CORR_GFLX = 1LL<<41;
+  const uint64_t SEND_HYDSH = 1LL<<41;
+  const uint64_t SEND_EMFSH = 1LL<<42;
+  const uint64_t SEND_FLDSH = 1LL<<43;
+  const uint64_t RECV_HYDSH = 1LL<<44;
+  const uint64_t RECV_EMFSH = 1LL<<45;
+  const uint64_t RECV_FLDSH = 1LL<<46;
+  const uint64_t RMAP_EMFSH = 1LL<<47;
 
-  const uint64_t SEND_HYDSH = 1LL<<42;
-  const uint64_t SEND_EMFSH = 1LL<<43;
-  const uint64_t SEND_FLDSH = 1LL<<44;
-  const uint64_t RECV_HYDSH = 1LL<<45;
-  const uint64_t RECV_EMFSH = 1LL<<46;
-  const uint64_t RECV_FLDSH = 1LL<<47;
-  const uint64_t RMAP_EMFSH = 1LL<<48;
-
-  const uint64_t DIFFUSE_HYD      = 1LL<<49;
-  const uint64_t DIFFUSE_FLD      = 1LL<<50;
-  const uint64_t CALC_DIFFUSIVITY = 1LL<<51;
+  const uint64_t DIFFUSE_HYD      = 1LL<<48;
+  const uint64_t DIFFUSE_FLD      = 1LL<<59;
+  const uint64_t CALC_DIFFUSIVITY = 1LL<<50;
 }; // namespace HydroIntegratorTaskNames
 
 #endif // TASK_LIST_TASK_LIST_HPP_
