@@ -183,7 +183,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::int64_t zones = GetTotalCells();
       std::int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
       double zc_cpus = static_cast<double>(mb_zones*ncycle)/cpu_time;
-      double zc_cpus2 = static_cast<double>(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
+      double zc_cpus2 =
+          static_cast<double>(mb_zones
+                              *static_cast<double>(std::log2(mb_zones))
+                              *ncycle)/cpu_time;
 
       if (Globals::my_rank == 0) {
         std::cout << "Timing Possison Solver                               " << std::endl;
