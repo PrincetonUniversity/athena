@@ -192,13 +192,13 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
       break;
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::HydroSetBoundaries_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroSetBoundaries_STS);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&SuperTimeStepTaskList::FieldSetBoundaries_STS);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldSetBoundaries_STS);
       break;
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
@@ -233,12 +233,12 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
 
 void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 #pragma omp single
-{
+  {
     // Set RKL1 params
     pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
     pmb->pmy_mesh->nuj = (1.-stage)/stage;
     pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(pow(nstages,2.)+nstages);
-}
+  }
 
   // Clear flux arrays from previous stage
   pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);

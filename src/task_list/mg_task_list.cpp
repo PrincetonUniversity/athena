@@ -101,7 +101,7 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_STARTRECVL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::StartReceive);
+        (&MultigridTaskList::StartReceive);
       break;
     case (MG_STARTRECV0F):
     case (MG_STARTRECV1R):
@@ -110,13 +110,13 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_STARTRECV2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::StartReceiveFace);
+        (&MultigridTaskList::StartReceiveFace);
       break;
     case (MG_CLEARBND0):
     case (MG_CLEARBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ClearBoundary);
+        (&MultigridTaskList::ClearBoundary);
       break;
     case (MG_CLEARBND0F):
     case (MG_CLEARBND1R):
@@ -125,13 +125,13 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_CLEARBND2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ClearBoundaryFace);
+        (&MultigridTaskList::ClearBoundaryFace);
       break;
     case (MG_SENDBND0):
     case (MG_SENDBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SendBoundary);
+        (&MultigridTaskList::SendBoundary);
       break;
     case (MG_SENDBND0F):
     case (MG_SENDBND1R):
@@ -140,7 +140,7 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_SENDBND2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SendBoundaryFace);
+        (&MultigridTaskList::SendBoundaryFace);
       break;
     case (MG_RECVBND0):
     case (MG_RECVBNDL):
@@ -155,19 +155,19 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_RECVBND2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ReceiveBoundaryFace);
+        (&MultigridTaskList::ReceiveBoundaryFace);
       break;
     case (MG_SMOOTH1R):
     case (MG_SMOOTH2R):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SmoothRed);
+        (&MultigridTaskList::SmoothRed);
       break;
     case (MG_SMOOTH1B):
     case (MG_SMOOTH2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SmoothBlack);
+        (&MultigridTaskList::SmoothBlack);
       break;
     case (MG_PHYSBND0):
     case (MG_PHYSBND1R):
@@ -177,22 +177,22 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_PHYSBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::PhysicalBoundary);
+        (&MultigridTaskList::PhysicalBoundary);
       break;
     case (MG_RESTRICT):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::Restrict);
+          (&MultigridTaskList::Restrict);
       break;
     case (MG_PROLONG):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::Prolongate);
+          (&MultigridTaskList::Prolongate);
       break;
     case (MG_FMGPROLONG):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::FMGProlongate);
+          (&MultigridTaskList::FMGProlongate);
       break;
 
     default:

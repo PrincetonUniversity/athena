@@ -398,13 +398,13 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64
 
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::HydroSetBoundaries);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::HydroSetBoundaries);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::FieldSetBoundaries);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::FieldSetBoundaries);
       break;
 
     case (SEND_HYDSH):
@@ -510,12 +510,12 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
       // u1 = u1 + delta*u
       pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
-          + w.delta*pmb->stage_abscissae[l-1][0];
+                                   + w.delta*pmb->stage_abscissae[l-1][0];
       // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
       pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-          + w.gamma_2*pmb->stage_abscissae[l][1]
-          + w.gamma_3*pmb->stage_abscissae[l-1][2]
-          + w.beta*pmb->pmy_mesh->dt;
+                                   + w.gamma_2*pmb->stage_abscissae[l][1]
+                                   + w.gamma_3*pmb->stage_abscissae[l-1][2]
+                                   + w.beta*pmb->pmy_mesh->dt;
       // u2 = u^n
       pmb->stage_abscissae[l][2] = 0.0;
     }

@@ -472,7 +472,7 @@ void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
   }
 
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
-     PolarSingleCellCentered(dst, ns, ne);
+    PolarSingleCellCentered(dst, ns, ne);
 
   return;
 }
