@@ -1362,7 +1362,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->ReceiveAndSetCellCenteredBoundaryBuffersWithWait(pmb->phydro->w,
+          pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
                                                                   HYDRO_PRIM);
           pbval->ClearBoundaryForInit(false);
         }
@@ -1442,10 +1442,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->ReceiveAndSetCellCenteredBoundaryBuffersWithWait(pmb->phydro->u,
+          pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u,
                                                                   HYDRO_CONS);
           if (MAGNETIC_FIELDS_ENABLED)
-            pbval->ReceiveAndSetFieldBoundaryBuffersWithWait(pmb->pfield->b);
+            pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
           // send and receive shearingbox boundary conditions
           if (SHEARING_BOX)
             pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
