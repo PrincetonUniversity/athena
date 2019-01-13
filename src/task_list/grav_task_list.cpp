@@ -6,31 +6,32 @@
 //! \file grav_task_list.cpp
 //  \brief
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
-#include "task_list.hpp"
-#include "grav_task_list.hpp"
+// Athena++ headers
 #include "../athena.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../bvals/bvals_grav.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "grav_task_list.hpp"
+#include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //  GravitySolverTaskList constructor
 
 GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm) {
-
+    : TaskList(pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
@@ -42,41 +43,42 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep)
+//! \fn void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id,
+//                                                       std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
+void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
   using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
-  switch(id) {
+  switch (id) {
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::ClearGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::ClearGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::SendGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::SendGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::ReceiveGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::ReceiveGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&GravitySolverTaskList::PhysicalBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&GravitySolverTaskList::PhysicalBoundary);
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddGravitySolverTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   ntasks++;
   return;

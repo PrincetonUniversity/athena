@@ -6,23 +6,27 @@
 //! \file plm-uniform.cpp
 //  \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX1(const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+void Reconstruction::PiecewiseLinearX1(
+    const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
@@ -83,16 +87,16 @@ void Reconstruction::PiecewiseLinearX1(const int k, const int j,
         Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
         Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
         dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-          (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
+                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
         if (dw2 <= 0.0) dwm(n,i) = 0.0;
       }
     }
   }
 
-    // Project limited slope back to primitive variables, if necessary
-    if (characteristic_reconstruction) {
-      RightEigenmatrixDotVector(IVX,il,iu,bx,wc,dwm);
-    }
+  // Project limited slope back to primitive variables, if necessary
+  if (characteristic_reconstruction) {
+    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,dwm);
+  }
 
   // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
   for (int n=0; n<(NWAVE); ++n) {
@@ -107,7 +111,7 @@ void Reconstruction::PiecewiseLinearX1(const int k, const int j,
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
-      // TODO(kfelker): check that fused loop with NWAVE redundant application is slower
+      // TODO(felker): check if fused loop with NWAVE redundant application is slower
       pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
       pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
     }
@@ -119,9 +123,10 @@ void Reconstruction::PiecewiseLinearX1(const int k, const int j,
 //! \fn Reconstruction::PiecewiseLinearX2()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX2(const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+void Reconstruction::PiecewiseLinearX2(
+    const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
@@ -174,7 +179,7 @@ void Reconstruction::PiecewiseLinearX2(const int k, const int j,
       }
     }
 
-  // Apply Mignone limiter for non-uniform grid
+    // Apply Mignone limiter for non-uniform grid
   } else {
     Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
     Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
@@ -183,7 +188,7 @@ void Reconstruction::PiecewiseLinearX2(const int k, const int j,
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
         dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-          (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
+                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
         if (dw2 <= 0.0) dwm(n,i) = 0.0;
       }
     }
@@ -220,9 +225,10 @@ void Reconstruction::PiecewiseLinearX2(const int k, const int j,
 //! \fn Reconstruction::PiecewiseLinearX3()
 //  \brief
 
-void Reconstruction::PiecewiseLinearX3(const int k, const int j,
-  const int il, const int iu, const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+void Reconstruction::PiecewiseLinearX3(
+    const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
   AthenaArray<Real> bx,wc,dwl,dwr,dwm;
@@ -275,7 +281,7 @@ void Reconstruction::PiecewiseLinearX3(const int k, const int j,
       }
     }
 
-  // Apply Mignone limiter for non-uniform grid
+    // Apply Mignone limiter for non-uniform grid
   } else {
     for (int n=0; n<(NWAVE); ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -284,7 +290,7 @@ void Reconstruction::PiecewiseLinearX3(const int k, const int j,
         Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
         Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
         dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-          (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
+                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
         if (dw2 <= 0.0) dwm(n,i) = 0.0;
       }
     }

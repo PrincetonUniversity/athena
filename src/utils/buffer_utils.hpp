@@ -8,16 +8,21 @@
 //! \file buffer_utils.hpp
 //  \brief prototypes of utility functions to pack/unpack buffers
 
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 
 namespace BufferUtility {
 void Pack4DData(AthenaArray<Real> &src, Real *buf, int sn, int en,
-               int si, int ei, int sj, int ej, int sk, int ek, int &offset);
+                int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 void Unpack4DData(Real *buf, AthenaArray<Real> &dst, int sn, int en,
                   int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 void Pack3DData(AthenaArray<Real> &src, Real *buf,
-               int si, int ei, int sj, int ej, int sk, int ek, int &offset);
+                int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 void Unpack3DData(Real *buf, AthenaArray<Real> &dst,
                   int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 }

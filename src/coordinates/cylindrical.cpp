@@ -7,24 +7,26 @@
 //  \brief implements functions for cylindrical (r-phi-z) coordinates in a derived class
 //  of the Coordinates abstract base class.
 
-// C/C++ headers
-#include <math.h>   // pow function
+// C headers
+
+// C++ headers
+#include <cmath>   // pow()
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Cylindrical coordinates constructor
 
 Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag) {
+    : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
@@ -78,7 +80,8 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
   for (int i=il-ng; i<=iu+ng; ++i) {
-    x1v(i) = (TWO_3RD)*(pow(x1f(i+1),3)-pow(x1f(i),3))/(pow(x1f(i+1),2) - pow(x1f(i),2));
+    x1v(i) = (TWO_3RD)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3)) /
+             (std::pow(x1f(i+1),2) - std::pow(x1f(i),2));
   }
   for (int i=il-ng; i<=iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
@@ -189,7 +192,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 #pragma omp simd
     for (int i=il-ng; i<=iu+(ng-1); ++i) {
-       // Rf_{i+1}/R_{i}/Rf_{i+1}^2
+      // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
       // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
       coord_area3vc_i_(i)= 0.5*(SQR(x1v(i+1)) - SQR(x1v(i)));
@@ -232,7 +235,7 @@ Cylindrical::~Cylindrical() {
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void Cylindrical::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                              AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     len(i) = x1f(i)*dx2f(j);
@@ -254,11 +257,11 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
 void Cylindrical::VolCenter2Length(const int k, const int j, const int il, const int iu,
                                    AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-        // length2 = r d(theta)
-        len(i) = x1v(i)*dx2v(j);
-    }
-    return;
+  for (int i=il; i<=iu; ++i) {
+    // length2 = r d(theta)
+    len(i) = x1v(i)*dx2v(j);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -277,7 +280,7 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                            AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area1 = r dphi dz
@@ -287,7 +290,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
 }
 
 void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                            AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area3 = dr r dphi = d(r^2/2) dphi
@@ -336,7 +339,7 @@ void Cylindrical::VolCenterFace3Area(const int k, const int j, const int il, con
 // Cell Volume function: compute volume of cell as vector
 
 void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol) {
+                             AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // volume = dr dz r dphi = d(r^2/2) dphi dz
@@ -354,13 +357,14 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
+void Cylindrical::CoordSrcTerms(
+    const Real dt, const AthenaArray<Real> *flux,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   HydroDiffusion *phd = pmy_block->phydro->phdif;
   bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                            (phd->nu_iso > 0.0 || phd->nu_aniso > 0.0));
+                             (phd->nu_iso > 0.0 || phd->nu_aniso > 0.0));
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
@@ -369,9 +373,9 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         // src_1 = <M_{phi phi}><1/r>
         Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
         if (NON_BAROTROPIC_EOS) {
-           m_pp += prim(IEN,k,j,i);
+          m_pp += prim(IEN,k,j,i);
         } else {
-           m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+          m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
@@ -385,7 +389,7 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         Real& x_i   = x1f(i);
         Real& x_ip1 = x1f(i+1);
         u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
-                                           + x_ip1*flux[X1DIR](IM2,k,j,i+1));
+                                             + x_ip1*flux[X1DIR](IM2,k,j,i+1));
       }
     }
   }

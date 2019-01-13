@@ -6,20 +6,25 @@
 //! \file dc.cpp
 //  \brief piecewise constant (donor cell) reconstruction
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX1()
 //  \brief reconstruct L/R surfaces of the i-th cells
 
 void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+                                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                                 AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
@@ -37,7 +42,6 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
       wl(IBZ,i+1) = wr(IBZ,i) = bcc(IB3,k,j,i);
     }
   }
-
   return;
 }
 
@@ -45,9 +49,10 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
 //! \fn Reconstruction::DonorCellX2()
 //  \brief
 
+
 void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+                                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                                 AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
@@ -65,7 +70,6 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
       wl(IBZ,i) = wr(IBZ,i) = bcc(IB1,k,j,i);
     }
   }
-
   return;
 }
 
@@ -74,8 +78,8 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
 //  \brief
 
 void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+                                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                                 AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
   for (int n=0; n<(NHYDRO); ++n) {
 #pragma omp simd
@@ -93,7 +97,5 @@ void Reconstruction::DonorCellX3(const int k, const int j, const int il, const i
       wl(IBZ,i) = wr(IBZ,i) = bcc(IB2,k,j,i);
     }
   }
-
   return;
 }
-

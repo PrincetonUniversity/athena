@@ -19,25 +19,28 @@
 // - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
 //   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
 //  \brief The HLLE Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
-void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+void Hydro::RiemannSolver(
+    const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+    AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+    AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -47,9 +50,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
 #pragma omp simd private(wli,wri,wroe,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
-
-//--- Step 1.  Load L/R states into local variables
-
+    //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,i);
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
@@ -62,7 +63,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IVZ]=wr(ivz,i);
     if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
 
-//--- Step2.  Compute Roe-averaged state
+    //--- Step 2.  Compute Roe-averaged state
 
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
@@ -82,7 +83,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
     }
 
-//--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
+    //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
@@ -92,16 +93,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
     }
 
-//--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
-
+    //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
     Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
     Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
 
-//-- Step 5. Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
-
+    //-- Step 5. Compute L/R fluxes along lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
     Real vxl = wli[IVX] - bm;
     Real vxr = wri[IVX] - bp;
 
@@ -127,8 +126,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }
 
-//--- Step 6. Compute the HLLE flux at interface.
-
+    //--- Step 6. Compute the HLLE flux at interface.
     Real tmp=0.0;
     if (bp != bm) tmp = 0.5*(bp + bm)/(bp - bm);
 
@@ -144,6 +142,5 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flx(ivz,k,j,i) = flxi[IVZ];
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
   }
-
   return;
 }

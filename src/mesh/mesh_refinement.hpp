@@ -8,7 +8,11 @@
 //! \file mesh_refinement.hpp
 //  \brief defines MeshRefinement class used for static/adaptive mesh refinement
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
@@ -31,7 +35,7 @@ class MeshRefinement {
   friend class BoundaryValues;
   friend class MeshBlock;
   friend class Mesh;
-public:
+ public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
 
@@ -58,7 +62,7 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void CheckRefinementCondition(void);
 
-private:
+ private:
   // data
   MeshBlock *pmy_block_;
   Coordinates *pcoarsec;

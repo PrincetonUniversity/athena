@@ -39,7 +39,8 @@ module purge
 # (vs. /usr/bin/gcc v4.8.5 (released 2015-06-23)
 module load rh/devtoolset/7  # GCC 7.3.1 (v7.3 released on 2018-01-25)
 #module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
-module load openmpi/gcc/3.0.0/64
+module load openmpi/gcc/3.0.3/64
+# OpenMPI v3.0.3 was released on 2018-10-29
 # OpenMPI v3.0.0 was released on 2017-09-12. Originally, was only installed on Perseus
 # without development files (mpicc, etc.) as a VisIt 2.13.1 dependency
 
@@ -139,6 +140,7 @@ gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
+mv lcov.info ${lcov_dir_name}
 tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
 mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HOME on a reg. basis
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
@@ -161,26 +163,26 @@ module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 # Note, do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 
-time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
+time python ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
 time python ./run_tests.py pgen/hdf5_reader_serial --silent
-time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
-time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
-time python ./run_tests.py omp --config=--cxx=icc --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc \
+time python ./run_tests.py grav --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
+time python ./run_tests.py omp --config=--cxx=icpc --silent
+timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icpc \
 	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
-time python ./run_tests.py hydro --config=--cxx=icc --silent
-time python ./run_tests.py mhd --config=--cxx=icc --silent
-time python ./run_tests.py amr --config=--cxx=icc --silent
-time python ./run_tests.py outputs --config=--cxx=icc --silent
-time python ./run_tests.py sr --config=--cxx=icc --silent
-time python ./run_tests.py gr --config=--cxx=icc --silent
-time python ./run_tests.py curvilinear --config=--cxx=icc --silent
-time python ./run_tests.py shearingbox --config=--cxx=icc --silent
-time python ./run_tests.py diffusion --config=--cxx=icc --silent
-time python ./run_tests.py symmetry --config=--cxx=icc --silent
+time python ./run_tests.py hydro --config=--cxx=icpc --silent
+time python ./run_tests.py mhd --config=--cxx=icpc --silent
+time python ./run_tests.py amr --config=--cxx=icpc --silent
+time python ./run_tests.py outputs --config=--cxx=icpc --silent
+time python ./run_tests.py sr --config=--cxx=icpc --silent
+time python ./run_tests.py gr --config=--cxx=icpc --silent
+time python ./run_tests.py curvilinear --config=--cxx=icpc --silent
+time python ./run_tests.py shearingbox --config=--cxx=icpc --silent
+time python ./run_tests.py diffusion --config=--cxx=icpc --silent
+time python ./run_tests.py symmetry --config=--cxx=icpc --silent
 
 # High-order solver regression tests w/ Intel compiler
-time python ./run_tests.py hydro4 --config=--cxx=icc --silent
+time python ./run_tests.py hydro4 --config=--cxx=icpc --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-17.0/1.10.0
@@ -189,17 +191,17 @@ mpi_hdf5_library_path='/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64'
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc \
+time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
      --config=--lib=${mpi_hdf5_library_path} --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
-time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
-time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
-time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
-time python ./run_tests.py sr --config=--cxx=icc-debug --silent
-time python ./run_tests.py gr --config=--cxx=icc-debug --silent
+time python ./run_tests.py pgen/pgen_compile --config=--cxx=icpc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
+time python ./run_tests.py hydro --config=--cxx=icpc-debug --silent
+time python ./run_tests.py mhd --config=--cxx=icpc-debug --silent
+time python ./run_tests.py sr --config=--cxx=icpc-debug --silent
+time python ./run_tests.py gr --config=--cxx=icpc-debug --silent
 
 set +e
 # end regression tests

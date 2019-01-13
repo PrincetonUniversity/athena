@@ -1,6 +1,5 @@
 #ifndef FFT_ATHENA_FFT_HPP_
 #define FFT_ATHENA_FFT_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -9,13 +8,15 @@
 //! \file athena_fft.hpp
 //  \brief defines FFT class which implements parallel FFT using MPI/OpenMP
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/meshblock_tree.hpp"
 
@@ -23,8 +24,8 @@
 #include <fftw3.h>
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-#include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
+#include "plimpton/fft_3d.h"
 #endif // MPI_PARALLEL
 #endif
 
@@ -65,17 +66,17 @@ class FFTDriver;
 class TurbulenceDriver;
 
 class AthenaFFTIndex{
-public:
+ public:
   AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
   ~AthenaFFTIndex();
 
   explicit AthenaFFTIndex(const AthenaFFTIndex *psrc);
-// mesh size
+  // mesh size
   Real Lx[3];
   int Nx[3];
-// MPI decomposition
+  // MPI decomposition
   int np[3], ip[3];
-// local size and indices
+  // local size and indices
   int nx[3], is[3], ie[3];
 
   int iloc[3],ploc[3];
@@ -92,7 +93,7 @@ public:
 
   friend class FFTDriver;
   friend class FFTBlock;
-private:
+ private:
   int dim_;
   int npermute_, swap_;
   void Permute_(int loc[], int npermute);
@@ -104,7 +105,7 @@ private:
 //  \brief
 
 class FFTBlock {
-public:
+ public:
   FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
            RegionSize msize, RegionSize bsize);
   virtual ~FFTBlock();
@@ -115,10 +116,10 @@ public:
                       LogicalLocation loc, RegionSize bsize);
   virtual void ApplyKernel(int mode);
 
-  int64_t GetIndex(const int i, const int j, const int k);
-  int64_t GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
+  std::int64_t GetIndex(const int i, const int j, const int k);
+  std::int64_t GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx);
 
-  int64_t GetGlobalIndex(const int i, const int j, const int k);
+  std::int64_t GetGlobalIndex(const int i, const int j, const int k);
 
   void DestroyPlan(AthenaFFTPlan *plan);
   void MpiInitialize();
@@ -152,8 +153,8 @@ public:
   friend class FFTDriver;
   friend class Mesh;
 
-protected:
-  int64_t cnt_,gcnt_;
+ protected:
+  std::int64_t cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
   AthenaFFTComplex *in_, *out_;
@@ -176,7 +177,7 @@ protected:
 //  \brief FFT driver
 
 class FFTDriver {
-public:
+ public:
   FFTDriver(Mesh *pm, ParameterInput *pin);
   virtual ~FFTDriver();
 
@@ -191,8 +192,8 @@ public:
   friend class FFTBlock;
   friend class Mesh;
 
-protected:
-  int64_t gcnt_;
+ protected:
+  std::int64_t gcnt_;
   int nranks_, nblocks_;
   int *ranklist_, *nslist_, *nblist_;
   Mesh *pmy_mesh_;
@@ -209,13 +210,13 @@ protected:
 
 #ifdef MPI_PARALLEL
 namespace DecompositionNames{
-  const unsigned int x_decomp = 1<<0;
-  const unsigned int y_decomp = 1<<1;
-  const unsigned int z_decomp = 1<<2;
-  const unsigned int xy_decomp = x_decomp | y_decomp;
-  const unsigned int yz_decomp = y_decomp | z_decomp;
-  const unsigned int xz_decomp = x_decomp | z_decomp;
-  const unsigned int xyz_decomp = x_decomp | y_decomp | z_decomp;
+const unsigned int x_decomp = 1<<0;
+const unsigned int y_decomp = 1<<1;
+const unsigned int z_decomp = 1<<2;
+const unsigned int xy_decomp = x_decomp | y_decomp;
+const unsigned int yz_decomp = y_decomp | z_decomp;
+const unsigned int xz_decomp = x_decomp | z_decomp;
+const unsigned int xyz_decomp = x_decomp | y_decomp | z_decomp;
 };
 #endif
 

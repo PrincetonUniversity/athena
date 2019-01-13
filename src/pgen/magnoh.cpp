@@ -15,7 +15,7 @@
 // pressure = 1.E-6*B^2   actually zero in the exact solution
 //
 // Can apply sine wave perturbation in a form
-//   *(1+perturb*cos(mphi*phi)) to the magnetic potential Az
+//   *(1+perturb*std::cos(mphi*phi)) to the magnetic potential Az
 //
 // REFERENCES:
 // 1) Velikovich, Giuliani, Zalesak, Gardiner, "Exact self-similar solutions for the
@@ -25,9 +25,12 @@
 // solutions for the magnetized Noh problem with axial and azimuthal field", Phys. of
 // Plasmas, in prep (2018)
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -35,13 +38,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 static Real gm1;
 static Real alpha, beta, rho0, P0, pcoeff, vr, perturb, mphi;
@@ -89,12 +92,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gm1 = peos->GetGamma() - 1.0;
 
-  if (COORDINATE_SYSTEM != "cartesian" &&  COORDINATE_SYSTEM != "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0 &&
+      std::strcmp(COORDINATE_SYSTEM, "cylindrical") != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in magnoh.cpp ProblemGenerator" << std::endl
         << "Unrecognized COORDINATE_SYSTEM= " << COORDINATE_SYSTEM << std::endl
         << "Only Cartesian and cylindrical are supported for this problem" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // initialize vector potential for inflowing B
@@ -107,7 +111,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
       Real rad,phi;
-      if (COORDINATE_SYSTEM == "cylindrical") {
+      if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
         rad = pcoord->x1f(i);
         phi = pcoord->x2f(j);
       } else { // cartesian
@@ -117,7 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phi = atan2(x2, x1);
       }
       // if (rad==0.0) rad=3.0/100000;
-      az(j,i) = (bphi0/(beta+1))*pow(rad,beta+1)*(1+perturb*cos(mphi*phi));
+      az(j,i) = (bphi0/(beta+1))*std::pow(rad,beta+1)*(1+perturb*std::cos(mphi*phi));
     }
   }
 
@@ -126,29 +130,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         // Volume centered coordinates and quantities
-         Real rad,x1,x2;
-         if(COORDINATE_SYSTEM == "cylindrical") {
-             rad = pcoord->x1v(i);
-         } else { // cartesian
-             x1=pcoord->x1v(i);
-             x2=pcoord->x2v(j);
-             rad = std::sqrt(SQR(x1) + SQR(x2));
-         }
-         Real rho = rho0*pow(rad, alpha);
-         Real P   = P0  *pow(rad, 2*beta);
+        Real rad,x1,x2;
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          rad = pcoord->x1v(i);
+        } else { // cartesian
+          x1=pcoord->x1v(i);
+          x2=pcoord->x2v(j);
+          rad = std::sqrt(SQR(x1) + SQR(x2));
+        }
+        Real rho = rho0*std::pow(rad, alpha);
+        Real P   = P0  *std::pow(rad, 2*beta);
 
-         phydro->u(IDN,k,j,i) = rho;
+        phydro->u(IDN,k,j,i) = rho;
 
-         if(COORDINATE_SYSTEM == "cylindrical") {
-             phydro->u(IM1,k,j,i) = rho*vr;
-             phydro->u(IM2,k,j,i) = 0.0;
-         } else { // cartesian
-             phydro->u(IM1,k,j,i) = rho*vr*x1/rad;
-             phydro->u(IM2,k,j,i) = rho*vr*x2/rad;
-         }
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          phydro->u(IM1,k,j,i) = rho*vr;
+          phydro->u(IM2,k,j,i) = 0.0;
+        } else { // cartesian
+          phydro->u(IM1,k,j,i) = rho*vr*x1/rad;
+          phydro->u(IM2,k,j,i) = rho*vr*x2/rad;
+        }
 
-         phydro->u(IM3,k,j,i) = 0.0;
-         phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vr);
+        phydro->u(IM3,k,j,i) = 0.0;
+        phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vr);
       }
     }
   }
@@ -159,7 +163,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
           Real geom_coeff=1.0;
-          if (COORDINATE_SYSTEM == "cylindrical") geom_coeff=1.0/pcoord->x1f(i);
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff=1.0/pcoord->x1f(i);
+          }
           pfield->b.x1f(k,j,i) = geom_coeff*(az(j+1,i) - az(j,i))/pcoord->dx2f(j);
         }
       }
@@ -168,7 +174,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
           Real geom_coeff=1.0;
-          if (COORDINATE_SYSTEM == "cylindrical") geom_coeff=-1.0; // Left hand system?
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff=-1.0; // Left hand system?
+          }
           pfield->b.x2f(k,j,i) = geom_coeff*(az(j,i) - az(j,i+1))/pcoord->dx1f(i);
         }
       }
@@ -177,9 +185,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           Real rad;
-          if (COORDINATE_SYSTEM == "cylindrical") rad = pcoord->x1v(i);
-          else rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
-          pfield->b.x3f(k,j,i) = bz*pow(rad,beta);
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            rad = pcoord->x1v(i);
+          } else {
+            rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
+          }
+          pfield->b.x3f(k,j,i) = bz*std::pow(rad,beta);
         }
       }
     }

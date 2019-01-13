@@ -8,7 +8,11 @@
 //! \file hydro.hpp
 //  \brief definitions for Hydro class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 //#include "../task_list/task_list.hpp"
@@ -25,7 +29,7 @@ struct IntegratorWeight;
 class Hydro {
   friend class Field;
   friend class EquationOfState;
-public:
+ public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
   ~Hydro();
 
@@ -48,23 +52,25 @@ public:
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
   void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-    AthenaArray<Real> &u_in2, const Real wght[3]);
+                    AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    const Real wght, AthenaArray<Real> &u_out);
+                                  const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-    AthenaArray<Real> &bcc, const int order);
+                       AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
-  void RiemannSolver(const int k, const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-    AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
+
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
 
-private:
+ private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
   AthenaArray<Real> wl_, wr_, wlb_;

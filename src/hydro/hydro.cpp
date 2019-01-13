@@ -6,20 +6,22 @@
 //! \file hydro.cpp
 //  \brief implementation of functions in class Hydro
 
-// C/C++ headers
-#include <string>
+// C headers
+
+// C++ headers
 #include <algorithm>
+#include <string>
 
 // Athena++ headers
-#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../eos/eos.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
+#include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -116,7 +118,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // ptr to diffusion object
   phdif = new HydroDiffusion(this,pin);
-
 }
 
 // destructor
@@ -200,5 +201,3 @@ Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt) {
   Real tmp_min = std::min(static_cast<Real>(0.5),v_over_c);
   return 0.5 + std::max(static_cast<Real>(-0.5),tmp_min);
 }
-
-

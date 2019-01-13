@@ -15,25 +15,28 @@
 // - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
 //   Springer-Verlag, Berlin, (1999) chpt. 10.
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
 //  \brief The LLF Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-  AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          const int ivx, const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],du[(NWAVE)];
@@ -45,8 +48,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
 #pragma omp simd private(wli,wri,du,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
-
-//--- Step 1.  Load L/R states into local variables
+    //--- Step 1.  Load L/R states into local variables
 
     wli[IDN]=wl(IDN,i);
     wli[IVX]=wl(ivx,i);
@@ -66,13 +68,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     Real bxi = bx(k,j,i);
 
-//--- Step 2.  Compute wave speeds in L,R states (see Toro eq. 10.43)
+    //--- Step 2.  Compute wave speeds in L,R states (see Toro eq. 10.43)
 
     Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
-    Real a = 0.5*std::max( (fabs(wli[IVX]) + cfl), (fabs(wri[IVX]) + cfr) );
+    Real a = 0.5*std::max( (std::fabs(wli[IVX]) + cfl), (std::fabs(wri[IVX]) + cfr) );
 
-//--- Step 3.  Compute L/R fluxes
+    //--- Step 3.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -112,7 +114,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     fl[IBZ] = wli[IBZ]*wli[IVX] - bxi*wli[IVZ];
     fr[IBZ] = wri[IBZ]*wri[IVX] - bxi*wri[IVZ];
 
-//--- Step 4.  Compute difference in L/R states dU
+    //--- Step 4.  Compute difference in L/R states dU
 
     du[IDN] = wri[IDN]          - wli[IDN];
     du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
@@ -122,7 +124,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     du[IBY] = wri[IBY] - wli[IBY];
     du[IBZ] = wri[IBZ] - wli[IBZ];
 
-//--- Step 5.  Compute the LLF flux at interface (see Toro eq. 10.42).
+    //--- Step 5.  Compute the LLF flux at interface (see Toro eq. 10.42).
 
     flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
     flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -134,7 +136,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flxi[IBY] = 0.5*(fl[IBY] + fr[IBY]) - a*du[IBY];
     flxi[IBZ] = 0.5*(fl[IBZ] + fr[IBZ]) - a*du[IBZ];
 
-//--- Step 6. Store results into 3D array of fluxes
+    //--- Step 6. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];

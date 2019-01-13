@@ -6,7 +6,10 @@
 //! \file reconstruction.cpp
 //  \brief
 
-// C/C++ headers
+// C headers
+
+// C++ headers
+#include <cstring>    // strcmp()
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -14,18 +17,17 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "reconstruction.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "reconstruction.hpp"
 
 // constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
-
   // read and set type of spatial reconstruction
   characteristic_reconstruction = false;
   uniform_limiter[X1DIR] = true;
@@ -59,7 +61,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
         << "xorder=" << input_recon << " not valid choice for reconstruction"<< std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
@@ -73,14 +75,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "xorder=" << input_recon <<
           " (PPM) reconstruction selected, but nghost=" << NGHOST << std::endl
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
 
   // Perform checks of fourth-order solver configuration restrictions:
   if (xorder == 4) {
     // Uniform, Cartesian mesh with square cells (dx1f=dx2f=dx3f)
-    if (COORDINATE_SYSTEM == "cartesian") {
+    if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
       if (pmb->block_size.x1rat != 1.0 || pmb->block_size.x2rat != 1.0 ||
           pmb->block_size.x3rat != 1.0) {
         std::stringstream msg;
@@ -95,7 +97,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "x1rat= " << pmb->block_size.x1rat << std::endl
             << "x2rat= " << pmb->block_size.x2rat << std::endl
             << "x3rat= " << pmb->block_size.x3rat << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
       Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
@@ -105,7 +107,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // large deviations from a square mesh. Currently signals a warning for each
       // MeshBlock with non-square cells.
       if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
-            (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
+          (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
         // It is possible for small floating-point differences to arise despite equal
         // analytic values for grid spacings in the coordinates.cpp calculation of:
         // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
@@ -115,7 +117,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // decomposition is used
 
         // std::stringstream msg;
-        std::cout << "### Warning in Reconstruction constructor" << std::endl
+        std::cout
+            << "### Warning in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
             << " require a uniform, Carteisan mesh with" << std::endl
             << "square cells (dx1f=dx2f=dx3f). "
@@ -126,14 +129,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "dx1f=" << dx_i << std::endl
             << "dx2f=" << dx_j << std::endl
             << "dx3f=" << dx_k << std::endl;
-        // throw std::runtime_error(msg.str().c_str());
+        // ATHENA_ERROR(msg);
       }
       if (pmb->pmy_mesh->multilevel==true) {
         std::stringstream msg;
         msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
             << " currently does not support SMR/AMR " << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
     } else {
       std::stringstream msg;
@@ -141,7 +144,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM
           << " is incompatible with selected time/xorder=" << input_recon << std::endl
           << "Reconfigure with Cartesian coordinates " << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
 
     if (SHEARING_BOX) {
@@ -149,7 +152,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
           << "Selected time/xorder=" << input_recon << " flux calculations"
           << "currently does not support shearing box boundary conditions " << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
       return;
     }
 
@@ -165,17 +168,16 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           << "time/xorder=" << input_recon
           << " reconstruction selected, but nghost=" << NGHOST << std::endl
           << "Reconfigure with --nghost=XXX with XXX > " << req_nghost-1 << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
-
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
-  if (COORDINATE_SYSTEM == "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     // cylindrical: r should be non uniform; the others depend on the mesh spacing
     uniform_limiter[X1DIR]=false;
   }
-  if (COORDINATE_SYSTEM == "spherical_polar") {
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     // spherical_polar: r and theta should be non uniform, phi can be uniform
     uniform_limiter[X1DIR]=false;
     uniform_limiter[X2DIR]=false;
@@ -242,8 +244,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         c6i(i) = -1.0/6.0;
       }
 
-    // coeffcients in x1 for non-uniform or cuvilinear mesh
-    // (unnecessary work in case of uniform curvilinear mesh)
+      // coeffcients in x1 for non-uniform or cuvilinear mesh
+      // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
       for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i) {
@@ -253,7 +255,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
         c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
         c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
-
         if (i > (pmb->is)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
           Real& dx_im2 = pmb->pcoord->dx1f(i-2);
           Real qa = dx_im2 + dx_im1 + dx_i + dx_ip1;
@@ -269,12 +270,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       }
       // Compute curvilinear geometric factors for limiter (Mignone eq 48)
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
-        if ((COORDINATE_SYSTEM == "cylindrical") ||
-            (COORDINATE_SYSTEM == "spherical_polar")) {
+        if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
+            (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
           Real h_plus, h_minus;
           Real& dx_i   = pmb->pcoord->dx1f(i);
           Real& xv_i   = pmb->pcoord->x1v(i);
-          if (COORDINATE_SYSTEM == "cylindrical") {
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             // cylindrical radial coordinate
             h_plus = 3.0 + dx_i/(2.0*xv_i);
             h_minus = 3.0 - dx_i/(2.0*xv_i);
@@ -319,8 +320,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c6j(j) = -1.0/6.0;
         }
 
-      // coeffcients in x2 for non-uniform or cuvilinear mesh
-      // (unnecessary work in case of uniform curvilinear mesh)
+        // coeffcients in x2 for non-uniform or cuvilinear mesh
+        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j) {
@@ -347,18 +348,18 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
         for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j) {
           // corrections to PPMx2 only for spherical polar coordinates
-          if (COORDINATE_SYSTEM == "spherical_polar") {
+          if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             // x2 = theta polar coordinate adjustment
             Real h_plus, h_minus;
             Real& dx_j   = pmb->pcoord->dx2f(j);
             Real& xf_j   = pmb->pcoord->x2f(j);
             Real& xf_jp1   = pmb->pcoord->x2f(j+1);
-            Real dmu = cos(xf_j) - cos(xf_jp1);
-            Real dmu_tilde = sin(xf_j) - sin(xf_jp1);
-            h_plus = (dx_j*(dmu_tilde + dx_j*cos(xf_jp1)))/(
-                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
-            h_minus = -(dx_j*(dmu_tilde + dx_j*cos(xf_j)))/(
-                dx_j*(sin(xf_j) + sin(xf_jp1)) - 2.0*dmu);
+            Real dmu = std::cos(xf_j) - std::cos(xf_jp1);
+            Real dmu_tilde = std::sin(xf_j) - std::sin(xf_jp1);
+            h_plus = (dx_j*(dmu_tilde + dx_j*std::cos(xf_jp1)))/(
+                dx_j*(std::sin(xf_j) + std::sin(xf_jp1)) - 2.0*dmu);
+            h_minus = -(dx_j*(dmu_tilde + dx_j*std::cos(xf_j)))/(
+                dx_j*(std::sin(xf_j) + std::sin(xf_jp1)) - 2.0*dmu);
             hplus_ratio_j(j) = (h_plus + 1.0)/(h_minus - 1.0);
             hminus_ratio_j(j) = (h_minus + 1.0)/(h_plus - 1.0);
           } else {
@@ -396,8 +397,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c6k(k) = -1.0/6.0;
         }
 
-      // coeffcients in x3 for non-uniform or cuvilinear mesh
-      // (unnecessary work in case of uniform curvilinear mesh)
+        // coeffcients in x3 for non-uniform or cuvilinear mesh
+        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k) {
@@ -433,7 +434,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       }
     }
   }
-
 }
 
 // destructor

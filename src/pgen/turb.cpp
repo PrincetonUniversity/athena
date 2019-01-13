@@ -7,23 +7,25 @@
 //  \brief Problem generator for turbulence generator
 //
 
+// C headers
+
 // C++ headers
-#include <sstream>
 #include <cmath>
-#include <stdexcept>
 #include <ctime>
+#include <sstream>
+#include <stdexcept>
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
 #ifdef OPENMP_PARALLEL
@@ -31,7 +33,7 @@
 #endif
 
 
-int64_t rseed; // seed for turbulence power spectrum
+std::int64_t rseed; // seed for turbulence power spectrum
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -45,17 +47,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     SetGravityThreshold(eps);
   }
 
-// turb_flag is initialzed in the Mesh constructor to 0 by default;
-// turb_flag = 1 for decaying turbulence
-// turb_flag = 2 for impulsively driven turbulence
-// turb_flag = 3 for continuously driven turbulence
+  // turb_flag is initialzed in the Mesh constructor to 0 by default;
+  // turb_flag = 1 for decaying turbulence
+  // turb_flag = 2 for impulsively driven turbulence
+  // turb_flag = 3 for continuously driven turbulence
   turb_flag = pin->GetInteger("problem","turb_flag");
   if (turb_flag != 0) {
 #ifndef FFT
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
         << "non zero Turbulence flag is set without FFT!" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
 #endif
   }
@@ -69,18 +71,20 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-  for (int i=is; i<=ie; i++) {
-    phydro->u(IDN,k,j,i) = 1.0;
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        phydro->u(IDN,k,j,i) = 1.0;
 
-    phydro->u(IM1,k,j,i) = 0.0;
-    phydro->u(IM2,k,j,i) = 0.0;
-    phydro->u(IM3,k,j,i) = 0.0;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) = 0.0;
 
-    if (NON_BAROTROPIC_EOS) {
-      phydro->u(IEN,k,j,i) = 1.0;
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,k,j,i) = 1.0;
+        }
+      }
     }
-  }}}
+  }
 }
 
 
@@ -90,5 +94,4 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-
 }
