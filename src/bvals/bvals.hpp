@@ -239,10 +239,10 @@ class BoundaryValues : public BoundaryBase {
                                           const NeighborBlock& nb, bool *flip);
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
                                         Real *buf, const NeighborBlock& nb, bool *flip);
-  bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                          enum CCBoundaryType type);
-  void ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                  enum CCBoundaryType type);
+  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type);
+  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type);
+  void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
+                                                   enum CCBoundaryType type);
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
@@ -255,8 +255,9 @@ class BoundaryValues : public BoundaryBase {
   void SetFieldBoundarySameLevel(FaceField &dst, Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
-  bool ReceiveFieldBoundaryBuffers(FaceField &dst);
-  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
+  bool ReceiveFieldBoundaryBuffers(void);
+  void SetFieldBoundaries(FaceField &dst);
+  void ReceiveAndSetFieldBoundariesWithWait(FaceField &dst);
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 

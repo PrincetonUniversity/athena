@@ -34,11 +34,9 @@ GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
     : TaskList(pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
-    AddGravitySolverTask(START_GRAV_RECV,NONE);
-
     // compute hydro fluxes, integrate hydro variables
-    AddGravitySolverTask(SEND_GRAV_BND,START_GRAV_RECV);
-    AddGravitySolverTask(RECV_GRAV_BND,START_GRAV_RECV);
+    AddGravitySolverTask(SEND_GRAV_BND,NONE);
+    AddGravitySolverTask(RECV_GRAV_BND,NONE);
     AddGravitySolverTask(GRAV_PHYS_BND,SEND_GRAV_BND|RECV_GRAV_BND);
     AddGravitySolverTask(CLEAR_GRAV, GRAV_PHYS_BND);
   } // end of using namespace block
@@ -56,11 +54,6 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
 
   using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
   switch (id) {
-    case (START_GRAV_RECV):
-      task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&GravitySolverTaskList::StartGravityReceive);
-      break;
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -91,17 +84,19 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
   return;
 }
 
+
+void GravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  pmb->pgbval->StartReceivingGravity();
+
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn
 //  \brief
 
 //----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
-
-enum TaskStatus GravitySolverTaskList::StartGravityReceive(MeshBlock *pmb, int stage) {
-  pmb->pgbval->StartReceivingGravity();
-  return TASK_SUCCESS;
-}
 
 enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
   pmb->pgbval->ClearBoundaryGravity();

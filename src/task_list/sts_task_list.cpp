@@ -87,20 +87,19 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
 
   // Now assemble list of tasks for each stage of SuperTimeStep integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
-    AddSuperTimeStepTask(STARTUP_INT,NONE);
-    AddSuperTimeStepTask(START_ALLRECV,STARTUP_INT);
     // calculate hydro/field diffusive fluxes
-    AddSuperTimeStepTask(DIFFUSE_HYD,START_ALLRECV);
+    AddSuperTimeStepTask(DIFFUSE_HYD,NONE);
     if (MAGNETIC_FIELDS_ENABLED)
-      AddSuperTimeStepTask(DIFFUSE_FLD,START_ALLRECV);
+      AddSuperTimeStepTask(DIFFUSE_FLD,NONE);
     // compute hydro fluxes, integrate hydro variables
     if (MAGNETIC_FIELDS_ENABLED)
-      AddSuperTimeStepTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD|DIFFUSE_FLD));
+      AddSuperTimeStepTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
     else
-      AddSuperTimeStepTask(CALC_HYDFLX,(START_ALLRECV|DIFFUSE_HYD));
+      AddSuperTimeStepTask(CALC_HYDFLX,DIFFUSE_HYD);
     AddSuperTimeStepTask(INT_HYD, CALC_HYDFLX);
     AddSuperTimeStepTask(SEND_HYD,INT_HYD);
-    AddSuperTimeStepTask(RECV_HYD,START_ALLRECV);
+    AddSuperTimeStepTask(RECV_HYD,NONE);
+    AddSuperTimeStepTask(SETB_HYD,(RECV_HYD|INT_HYD));
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
@@ -109,14 +108,15 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
       AddSuperTimeStepTask(RECV_FLDFLX,SEND_FLDFLX);
       AddSuperTimeStepTask(INT_FLD,RECV_FLDFLX);
       AddSuperTimeStepTask(SEND_FLD,INT_FLD);
-      AddSuperTimeStepTask(RECV_FLD,START_ALLRECV);
+      AddSuperTimeStepTask(RECV_FLD,NONE);
+      AddSuperTimeStepTask(SETB_FLD,(RECV_FLD|INT_FLD));
     }
 
     // compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) // MHD
-      AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD|SETB_FLD));
     else  // HYDRO
-      AddSuperTimeStepTask(CON2PRIM,(INT_HYD|RECV_HYD));
+      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD));
 
     // everything else
     AddSuperTimeStepTask(PHY_BVAL,CON2PRIM);
@@ -133,12 +133,7 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
   task_list_[ntasks].dependency=dep;
 
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
-  switch((id)) {
-    case (START_ALLRECV):
-      task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::StartAllReceive_STS);
-      break;
+  switch (id) {
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -195,6 +190,16 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::FieldReceive_STS);
       break;
+    case (SETB_HYD):
+      task_list_[ntasks].TaskFunc=
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::HydroSetBoundaries_STS);
+      break;
+    case (SETB_FLD):
+      task_list_[ntasks].TaskFunc=
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::FieldSetBoundaries_STS);
+      break;
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -204,11 +209,6 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::PhysicalBoundary_STS);
-      break;
-    case (STARTUP_INT):
-      task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::StartupIntegrator_STS);
       break;
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
@@ -230,14 +230,29 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
   return;
 }
 
-//----------------------------------------------------------------------------------------
-// Functions to start/end MPI communication
 
-enum TaskStatus SuperTimeStepTaskList::StartAllReceive_STS(MeshBlock *pmb, int stage) {
+void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+#pragma omp single
+  {
+    // Set RKL1 params
+    pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
+    pmb->pmy_mesh->nuj = (1.-stage)/stage;
+    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(pow(nstages,2.)+nstages);
+  }
+
+  // Clear flux arrays from previous stage
+  pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+
   Real time = pmb->pmy_mesh->time;
   pmb->pbval->StartReceivingAll(time);
-  return TASK_SUCCESS;
+
+  return;
 }
+
+//----------------------------------------------------------------------------------------
+// Functions to end MPI communication
 
 enum TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundaryAll();
@@ -395,7 +410,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldSend_STS(MeshBlock *pmb, int stage) 
 enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
   } else {
     return TASK_FAIL;
   }
@@ -410,7 +425,7 @@ enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stag
 enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
+    ret=pmb->pbval->ReceiveFieldBoundaryBuffers();
   } else {
     return TASK_FAIL;
   }
@@ -420,6 +435,23 @@ enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stag
   } else {
     return TASK_FAIL;
   }
+}
+
+enum TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
+                                                              int stage) {
+  if (stage <= nstages) {
+    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+    return TASK_SUCCESS;
+  }
+  return TASK_FAIL;
+}
+
+enum TaskStatus SuperTimeStepTaskList::FieldSetBoundaries_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    pmb->pbval->SetFieldBoundaries(pmb->pfield->b);
+    return TASK_SUCCESS;
+  }
+  return TASK_FAIL;
 }
 
 //--------------------------------------------------------------------------------------
@@ -465,25 +497,6 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
     // Real dt = pmb->pmy_mesh->dt;
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
                                    pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
-  } else {
-    return TASK_FAIL;
-  }
-
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus SuperTimeStepTaskList::StartupIntegrator_STS(MeshBlock *pmb, int stage) {
-  if (stage <= nstages) {
-    // Set RKL1 params
-    pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
-    pmb->pmy_mesh->nuj = (1.-stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages,2.)+nstages);
-
-    // Clear flux arrays from previous stage
-    pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
-    if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
-    }
   } else {
     return TASK_FAIL;
   }

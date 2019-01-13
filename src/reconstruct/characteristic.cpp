@@ -34,7 +34,7 @@
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 void Reconstruction::LeftEigenmatrixDotVector(
-    MeshBlock *pmb, const int ivx, const int il, const int iu,
+    const int ivx, const int il, const int iu,
     const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect) {
   // permute components of input primitive vector depending on direction
   int ivy = IVX + ((ivx-IVX)+1)%3;
@@ -43,7 +43,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
   if (MAGNETIC_FIELDS_ENABLED) {
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
-      Real gamma = pmb->peos->GetGamma();
+      Real gamma = pmy_block_->peos->GetGamma();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
@@ -133,7 +133,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
       // Isothermal MHD ------------------------------------------------------------------
     } else {
-      Real iso_cs = pmb->peos->GetIsoSoundSpeed();
+      Real iso_cs = pmy_block_->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -220,7 +220,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
   } else {
     // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
-      Real gamma = pmb->peos->GetGamma();
+      Real gamma = pmy_block_->peos->GetGamma();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IPR,i)/w(IDN,i);
@@ -242,7 +242,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
       // Isothermal hydrodynamics --------------------------------------------------------
     } else {
-      Real iso_cs = pmb->peos->GetIsoSoundSpeed();
+      Real iso_cs = pmy_block_->peos->GetIsoSoundSpeed();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Multiply row of L-eigenmatrix with vector using matrix elements from eq. A7
@@ -278,7 +278,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 
 void Reconstruction::RightEigenmatrixDotVector(
-    MeshBlock *pmb, const int ivx, const int il, const int iu,
+    const int ivx, const int il, const int iu,
     const AthenaArray<Real> &b1, const AthenaArray<Real> &w, AthenaArray<Real> &vect) {
   // permute components of output primitive vector depending on direction
   int ivy = IVX + ((ivx-IVX)+1)%3;
@@ -287,7 +287,7 @@ void Reconstruction::RightEigenmatrixDotVector(
   if (MAGNETIC_FIELDS_ENABLED) {
     // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
-      Real gamma = pmb->peos->GetGamma();
+      Real gamma = pmy_block_->peos->GetGamma();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real id = 1.0/w(IDN,i);
@@ -373,7 +373,7 @@ void Reconstruction::RightEigenmatrixDotVector(
 
       // Isothermal MHD ------------------------------------------------------------------
     } else {
-      Real iso_cs = pmb->peos->GetIsoSoundSpeed();
+      Real iso_cs = pmy_block_->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -455,7 +455,7 @@ void Reconstruction::RightEigenmatrixDotVector(
   } else {
     // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
-      Real gamma = pmb->peos->GetGamma();
+      Real gamma = pmy_block_->peos->GetGamma();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real asq = gamma*w(IPR,i)/w(IDN,i);
@@ -479,7 +479,7 @@ void Reconstruction::RightEigenmatrixDotVector(
 
       // Isothermal hydrodynamics --------------------------------------------------------
     } else {
-      Real iso_cs = pmb->peos->GetIsoSoundSpeed();
+      Real iso_cs = pmy_block_->peos->GetIsoSoundSpeed();
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // Multiply row of R-eigenmatrix with vector using matrix elements from eq. A3

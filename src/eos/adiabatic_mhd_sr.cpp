@@ -255,7 +255,7 @@ void EquationOfState::PrimitiveToConserved(
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
-//   prim: 3D array of primitive states
+//   prim: 1D array of primitive states
 //   bbx_vals: 1D array of B^x
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
@@ -289,14 +289,14 @@ void EquationOfState::FastMagnetosonicSpeedsSR(
 #pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
     // Extract primitives
-    Real rho = prim(IDN,k,j,i);
-    Real pgas = prim(IPR,k,j,i);
-    Real vx = prim(ivx,k,j,i);
-    Real vy = prim(ivy,k,j,i);
-    Real vz = prim(ivz,k,j,i);
+    Real rho = prim(IDN,i);
+    Real pgas = prim(IPR,i);
+    Real vx = prim(ivx,i);
+    Real vy = prim(ivy,i);
+    Real vz = prim(ivz,i);
     Real bbx = bbx_vals(i);
-    Real bby = prim(IBY,k,j,i);
-    Real bbz = prim(IBZ,k,j,i);
+    Real bby = prim(IBY,i);
+    Real bbz = prim(IBZ,i);
 
     // Calculate velocity
     Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
@@ -507,8 +507,8 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
-  Real& w_d  = prim(IDN,k,j,i);
-  Real& w_p  = prim(IPR,k,j,i);
+  Real& w_d  = prim(IDN,i);
+  Real& w_p  = prim(IPR,i);
   // Eventually, may want to check that small field errors don't overwhelm gas floor
   // Real density_floor_local = density_floor_;
   // if (sigma_max_ > 0.0) {

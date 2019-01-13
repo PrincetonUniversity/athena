@@ -42,37 +42,41 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //----------------------------------------------------------------------------------------
 // Riemann solver
 // Inputs:
-//   kl,ku,jl,ju,il,iu: lower and upper x1-, x2-, and x3-indices
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
-//   prim_l,prim_r: 3D arrays of left and right primitive states
+//   prim_l,prim_r: 1D arrays of left and right primitive states
+//   dxw: 1D array of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
+//   wct: 3D array of weighting factors for CT
 // Notes:
 //   prim_l, prim_r overwritten
 //   tries to implement HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
 //       Harm
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-                          const int il, const int iu, const int ivx,
-                          const AthenaArray<Real> &bb,
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, const AthenaArray<Real> &bb,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                           AthenaArray<Real> &flux,
-                          AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-      if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
-        HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux,
-                            ey, ez);
-      } else {
-        HLLETransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, lambdas_p_l_,
-                         lambdas_m_l_, lambdas_p_r_, lambdas_m_r_,
-                         g_, gi_, prim_l, prim_r, cons_,
-                         flux, ey, ez);
-      }
-    }
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+  Real dt = pmy_block->pmy_mesh->dt;
+  if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
+    HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux, ey,
+                        ez);
+  } else {
+    HLLETransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_,
+                     lambdas_p_l_, lambdas_m_l_, lambdas_p_r_, lambdas_m_r_,
+                     g_, gi_, prim_l, prim_r, cons_, flux,
+                     ey, ez);
+  }
+  for(int i=il; i<=iu; ++i) {
+    wct(k,j,i) = GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i),
+                                dt);
   }
   return;
 }
@@ -88,7 +92,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //   bb_normal: 1D scratch array for normal magnetic fields
 //   lambdas_p_l,lambdas_m_l,lambdas_p_r,lambdas_m_r: 1D scratch arrays for wavespeeds
 //   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l,prim_r: 3D arrays of left and right primitive states
+//   prim_l,prim_r: 1D arrays of left and right primitive states
 //   cons: 1D scratch array for conserved quantities
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
@@ -176,54 +180,54 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 #pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
     // Extract left primitives
-    Real rho_l = prim_l(IDN,k,j,i);
-    Real pgas_l = prim_l(IPR,k,j,i);
+    Real rho_l = prim_l(IDN,i);
+    Real pgas_l = prim_l(IPR,i);
     Real u_l[4];
     if (GENERAL_RELATIVITY) {
-      Real vx_l = prim_l(ivx,k,j,i);
-      Real vy_l = prim_l(ivy,k,j,i);
-      Real vz_l = prim_l(ivz,k,j,i);
+      Real vx_l = prim_l(ivx,i);
+      Real vy_l = prim_l(ivy,i);
+      Real vz_l = prim_l(ivz,i);
       u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
       u_l[1] = vx_l;
       u_l[2] = vy_l;
       u_l[3] = vz_l;
     } else {  // SR
-      Real vx_l = prim_l(ivx,k,j,i);
-      Real vy_l = prim_l(ivy,k,j,i);
-      Real vz_l = prim_l(ivz,k,j,i);
+      Real vx_l = prim_l(ivx,i);
+      Real vy_l = prim_l(ivy,i);
+      Real vz_l = prim_l(ivz,i);
       u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
       u_l[1] = u_l[0] * vx_l;
       u_l[2] = u_l[0] * vy_l;
       u_l[3] = u_l[0] * vz_l;
     }
 
-    Real bb2_l = prim_l(IBY,k,j,i);
-    Real bb3_l = prim_l(IBZ,k,j,i);
+    Real bb2_l = prim_l(IBY,i);
+    Real bb3_l = prim_l(IBZ,i);
 
     // Extract right primitives
-    Real rho_r = prim_r(IDN,k,j,i);
-    Real pgas_r = prim_r(IPR,k,j,i);
+    Real rho_r = prim_r(IDN,i);
+    Real pgas_r = prim_r(IPR,i);
     Real u_r[4];
     if (GENERAL_RELATIVITY) {
-      Real vx_r = prim_r(ivx,k,j,i);
-      Real vy_r = prim_r(ivy,k,j,i);
-      Real vz_r = prim_r(ivz,k,j,i);
+      Real vx_r = prim_r(ivx,i);
+      Real vy_r = prim_r(ivy,i);
+      Real vz_r = prim_r(ivz,i);
       u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
       u_r[1] = vx_r;
       u_r[2] = vy_r;
       u_r[3] = vz_r;
     } else {  // SR
-      Real vx_r = prim_r(ivx,k,j,i);
-      Real vy_r = prim_r(ivy,k,j,i);
-      Real vz_r = prim_r(ivz,k,j,i);
+      Real vx_r = prim_r(ivx,i);
+      Real vy_r = prim_r(ivy,i);
+      Real vz_r = prim_r(ivz,i);
       u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
       u_r[1] = u_r[0] * vx_r;
       u_r[2] = u_r[0] * vy_r;
       u_r[3] = u_r[0] * vz_r;
     }
 
-    Real bb2_r = prim_r(IBY,k,j,i);
-    Real bb3_r = prim_r(IBZ,k,j,i);
+    Real bb2_r = prim_r(IBY,i);
+    Real bb3_r = prim_r(IBZ,i);
 
     // Extract normal magnetic field
     Real bb1 = bb_normal(i);
@@ -370,7 +374,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 //   il,iu: lower and upper x1-indices
 //   bb: 3D array of normal magnetic fields
 //   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l,prim_r: 3D arrays of left and right primitive states
+//   prim_l,prim_r: 1D arrays of left and right primitive states
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
@@ -378,15 +382,13 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   derived from RiemannSolver() in hlle_mhd_rel_no_transform.cpp assuming ivx = IVY
 //   same function as in hlld_rel.cpp
-
 static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                                 const int il, const int iu, const AthenaArray<Real> &bb,
                                 AthenaArray<Real> &g, AthenaArray<Real> &gi,
                                 AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                                 AthenaArray<Real> &flux,
-                                AthenaArray<Real> &ey, AthenaArray<Real> &ez)
+                                AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #if GENERAL_RELATIVITY
-{
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
 
@@ -408,24 +410,24 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,k,j,i);
-    const Real &pgas_l = prim_l(IPR,k,j,i);
-    const Real &uu1_l = prim_l(IVX,k,j,i);
-    const Real &uu2_l = prim_l(IVY,k,j,i);
-    const Real &uu3_l = prim_l(IVZ,k,j,i);
+    const Real &rho_l = prim_l(IDN,i);
+    const Real &pgas_l = prim_l(IPR,i);
+    const Real &uu1_l = prim_l(IVX,i);
+    const Real &uu2_l = prim_l(IVY,i);
+    const Real &uu3_l = prim_l(IVZ,i);
     const Real &bb2_l = bb(k,j,i);
-    const Real &bb3_l = prim_l(IBY,k,j,i);
-    const Real &bb1_l = prim_l(IBZ,k,j,i);
+    const Real &bb3_l = prim_l(IBY,i);
+    const Real &bb1_l = prim_l(IBZ,i);
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,k,j,i);
-    const Real &pgas_r = prim_r(IPR,k,j,i);
-    const Real &uu1_r = prim_r(IVX,k,j,i);
-    const Real &uu2_r = prim_r(IVY,k,j,i);
-    const Real &uu3_r = prim_r(IVZ,k,j,i);
+    const Real &rho_r = prim_r(IDN,i);
+    const Real &pgas_r = prim_r(IPR,i);
+    const Real &uu1_r = prim_r(IVX,i);
+    const Real &uu2_r = prim_r(IVY,i);
+    const Real &uu3_r = prim_r(IVZ,i);
     const Real &bb2_r = bb(k,j,i);
-    const Real &bb3_r = prim_r(IBY,k,j,i);
-    const Real &bb1_r = prim_r(IBZ,k,j,i);
+    const Real &bb3_r = prim_r(IBY,i);
+    const Real &bb1_r = prim_r(IBZ,i);
 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
@@ -580,10 +582,5 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     ez(k,j,i) = flux_interface[IBZ];
   }
   return;
-}
-
-#else
-{
-  return;
-}
 #endif  // GENERAL_RELATIVITY
+}

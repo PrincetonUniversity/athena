@@ -67,7 +67,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
     // Allocate memory for scratch vectors
-    cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
+    if (pmb->block_size.nx3 == 1)
+      cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
+    else
+      cc_e_.NewAthenaArray(3,ncells3,ncells2,ncells1);
 
     face_area_.NewAthenaArray(ncells1);
     edge_length_.NewAthenaArray(ncells1);
@@ -129,9 +132,9 @@ void Field::CalculateCellCenteredField(
     int is, int ie, int js, int je, int ks, int ke) {
   // Defer to Reconstruction class to check if uniform Cartesian formula can be used
   // (unweighted average)
-  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[0];
-  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[1];
-  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[2];
+  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[X1DIR];
+  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[X2DIR];
+  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[X3DIR];
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

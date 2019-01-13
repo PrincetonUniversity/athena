@@ -11,12 +11,12 @@
 // #define __STDC_FORMAT_MACROS
 
 // C++ headers
-#include <algorithm>  // std::sort
+#include <algorithm>  // std::sort()
 #include <cfloat>     // FLT_MAX
 #include <cinttypes>  // std::int64_t format macro PRId64 for fixed-width integer types
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdlib>
-#include <cstring>    // std::memcpy
+#include <cstring>    // std::memcpy()
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -1334,9 +1334,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+        pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u, HYDRO_CONS);
         if (MAGNETIC_FIELDS_ENABLED)
-          pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+          pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
         // send and receive shearingbox boundary conditions
         if (SHEARING_BOX)
           pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
@@ -1362,7 +1362,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->w, HYDRO_PRIM);
+          pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
+                                                                  HYDRO_PRIM);
           pbval->ClearBoundaryForInit(false);
         }
       }
@@ -1441,9 +1442,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->ReceiveCellCenteredBoundaryBuffersWithWait(pmb->phydro->u, HYDRO_CONS);
+          pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u,
+                                                                  HYDRO_CONS);
           if (MAGNETIC_FIELDS_ENABLED)
-            pbval->ReceiveFieldBoundaryBuffersWithWait(pmb->pfield->b);
+            pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
           // send and receive shearingbox boundary conditions
           if (SHEARING_BOX)
             pbval->SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
@@ -1610,7 +1612,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   nlist[j]=nb-slist[j];
 
 #ifdef MPI_PARALLEL
-  if (nb % Globals::nranks != 0 && adaptive == false
+  if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
       && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in LoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "

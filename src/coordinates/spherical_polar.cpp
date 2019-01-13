@@ -248,9 +248,9 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng-1; ++j) {
         // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
+        coord_area1vc_j_(j)= std::fabs(cos(x2v(j))-cos(x2v(j+1)));
       }
-      coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
+      coord_area2_j_(ju+ng+1) = std::fabs(sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
         coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
       if (IsPole(ju+1))   // outer polar boundary

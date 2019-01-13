@@ -30,7 +30,7 @@ python -m flake8
 echo "Finished linting Python files with flake8"
 
 # step #0b: lint C++ files
-cd tst/style/; ./cpplint_athena.sh
+cd tst/style/; ./check_athena_cpp_style.sh
 cd ../regression/
 
 # Build step #1: regression tests using GNU compiler and OpenMPI library

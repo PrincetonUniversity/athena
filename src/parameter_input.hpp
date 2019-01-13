@@ -91,6 +91,7 @@ class ParameterInput {
   bool SetBoolean(std::string block, std::string name, bool value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
+  std::string SetString(std::string block, std::string name, std::string value);
   void RollbackNextTime();
   void ForwardNextTime(Real time);
 
@@ -106,13 +107,10 @@ class ParameterInput {
 
   // thread safety
 #ifdef OPENMP_PARALLEL
-  omp_lock_t rlock_, wlock_;
-  int reading_;
+  omp_lock_t lock_;
 #endif
 
-  void StartReading(void);
-  void EndReading(void);
-  void StartWriting(void);
-  void EndWriting(void);
+  void Lock(void);
+  void Unlock(void);
 };
 #endif // PARAMETER_INPUT_HPP_

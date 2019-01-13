@@ -58,21 +58,22 @@ class Hydro {
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                        AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
-  void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-                     const int il, const int iu, const int ivx,
-                     const AthenaArray<Real> &bx,
-                     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-                     AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
   void AddGravityFlux(void);
   void AddGravityFluxWithGflx(void);
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
-  void CorrectGravityFlux(void);
 
  private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_;
+  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
@@ -91,9 +92,12 @@ class Hydro {
 
   // fourth-order hydro
   // 4D scratch arrays
-  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   TimeStepFunc_t UserTimeStep_;
+
+  Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };
 #endif // HYDRO_HYDRO_HPP_

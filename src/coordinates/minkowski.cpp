@@ -242,9 +242,9 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 // Inputs
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_l: 3D array of left primitives, using global coordinates
-//   prim_r: 3D array of right primitives, using global coordinates
+//   bb1: 1D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_l: values overwritten in local coordinates
 //   prim_r: values overwritten in local coordinates
@@ -258,8 +258,8 @@ void Minkowski::PrimToLocal1(
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bbx(i) = bb1(k,j,i);
+    for (int i = il; i <= iu; ++i) {
+      bbx(i) = bb1(i);
     }
   }
   return;
@@ -271,8 +271,8 @@ void Minkowski::PrimToLocal2(
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bbx(i) = bb2(k,j,i);
+    for (int i = il; i <= iu; ++i) {
+      bbx(i) = bb2(i);
     }
   }
   return;
@@ -284,8 +284,8 @@ void Minkowski::PrimToLocal3(
     AthenaArray<Real> &bbx) {
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bbx(i) = bb3(k,j,i);
+    for (int i = il; i <= iu; ++i) {
+      bbx(i) = bb3(i);
     }
   }
   return;

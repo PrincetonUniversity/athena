@@ -73,7 +73,7 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
     dx2_.NewAthenaArray(ncells1);
     dx3_.NewAthenaArray(ncells1);
 
-    if (pmb->pmy_mesh->FieldDiffusivity_==NULL)
+    if (pmb->pmy_mesh->FieldDiffusivity_ == nullptr)
       CalcMagDiffCoeff_ = ConstDiffusivity;
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;

@@ -28,12 +28,11 @@
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
-
   // read and set type of spatial reconstruction
   characteristic_reconstruction = false;
-  uniform_limiter[0] = true;
-  uniform_limiter[1] = true;
-  uniform_limiter[2] = true;
+  uniform_limiter[X1DIR] = true;
+  uniform_limiter[X2DIR] = true;
+  uniform_limiter[X3DIR] = true;
   std::string input_recon = pin->GetOrAddString("time","xorder","2");
   // read fourth-order solver switches
   correct_ic = pin->GetOrAddBoolean("time", "correct_ic", false);
@@ -174,21 +173,23 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   }
 
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
-  if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
-      (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
-    // curvilinear: all directions, regardless of non/uniformity
-    uniform_limiter[0]=false;
-    uniform_limiter[1]=false;
-    uniform_limiter[2]=false;
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+    // cylindrical: r should be non uniform; the others depend on the mesh spacing
+    uniform_limiter[X1DIR]=false;
+  }
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+    // spherical_polar: r and theta should be non uniform, phi can be uniform
+    uniform_limiter[X1DIR]=false;
+    uniform_limiter[X2DIR]=false;
   }
   // nonuniform geometric spacing or user-defined MeshGenerator, for all coordinate
   // systems, use nonuniform limiter (non-curvilinear will default to Cartesian factors)
   if (pmb->block_size.x1rat != 1.0)
-    uniform_limiter[0]=false;
+    uniform_limiter[X1DIR]=false;
   if (pmb->block_size.x2rat != 1.0)
-    uniform_limiter[1]=false;
+    uniform_limiter[X2DIR]=false;
   if (pmb->block_size.x3rat != 1.0)
-    uniform_limiter[2]=false;
+    uniform_limiter[X3DIR]=false;
   // uniform cartesian,minkowski,sinusoidal,tilted,schwarzschild,kerr-schild,gr_user
   // will use first PLM/PPM limiter without any coordinate terms
 
@@ -232,7 +233,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     hminus_ratio_i.NewAthenaArray(ncells1);
 
     // coeffiencients in x1 for uniform Cartesian mesh
-    if (uniform_limiter[0]) {
+    if (uniform_limiter[X1DIR]) {
 #pragma omp simd
       for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i) {
         c1i(i) = 0.5;
@@ -254,7 +255,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
         c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
         c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
-
         if (i > (pmb->is)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
           Real& dx_im2 = pmb->pcoord->dx1f(i-2);
           Real qa = dx_im2 + dx_im1 + dx_i + dx_ip1;
@@ -309,7 +309,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       hminus_ratio_j.NewAthenaArray(ncells2);
 
       // coeffiencients in x2 for uniform Cartesian mesh
-      if (uniform_limiter[1]) {
+      if (uniform_limiter[X2DIR]) {
 #pragma omp simd
         for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j) {
           c1j(j) = 0.5;
@@ -386,7 +386,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       hminus_ratio_k.NewAthenaArray(ncells3);
 
       // coeffiencients in x3 for uniform Cartesian mesh
-      if (uniform_limiter[2]) {
+      if (uniform_limiter[X3DIR]) {
 #pragma omp simd
         for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k) {
           c1k(k) = 0.5;

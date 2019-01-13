@@ -214,22 +214,9 @@ void HydroDiffusion::AddHydroDiffusionFlux(AthenaArray<Real> *flux_src,
 //  \brief Reset diffusion flux back to zeros
 
 void HydroDiffusion::ClearHydroFlux(AthenaArray<Real> *flux) {
-  int size1 = flux[X1DIR].GetSize();
-  int size2 = flux[X2DIR].GetSize();
-  int size3 = flux[X3DIR].GetSize();
-
-#pragma omp simd
-  for (int i=0; i<size1; ++i)
-    flux[X1DIR](i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size2; ++i)
-    flux[X2DIR](i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size3; ++i)
-    flux[X3DIR](i) = 0.0;
-
+  flux[X1DIR].ZeroClear();
+  flux[X2DIR].ZeroClear();
+  flux[X3DIR].ZeroClear();
   return;
 }
 
@@ -260,9 +247,8 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
 // Get the hydro diffusion timestep
 // currently return dt for viscous and conduction processes
 void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
-  int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
-  int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
-
+  int il = pmb_->is-NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
+  int iu = pmb_->ie+NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   Real fac;
   if (pmb_->block_size.nx3>1)
     fac = 1.0/6.0;
@@ -283,44 +269,44 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   dx2.InitWithShallowCopy(dx2_);
   dx3.InitWithShallowCopy(dx3_);
 
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
         nu_t(i) = 0.0;
         kappa_t(i) = 0.0;
       }
       if (nu_iso > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) nu_t(i) += nu(ISO,k,j,i);
+        for (int i=il; i<=iu; ++i) nu_t(i) += nu(ISO,k,j,i);
       }
       if (nu_aniso > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) nu_t(i) += nu(ANI,k,j,i);
+        for (int i=il; i<=iu; ++i) nu_t(i) += nu(ANI,k,j,i);
       }
       if (kappa_iso > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ISO,k,j,i);
+        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(ISO,k,j,i);
       }
       if (kappa_aniso > 0.0) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) kappa_t(i) += kappa(ANI,k,j,i);
+        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(ANI,k,j,i);
       }
-      pmb_->pcoord->CenterWidth1(k,j,is,ie,len);
-      pmb_->pcoord->CenterWidth2(k,j,is,ie,dx2);
-      pmb_->pcoord->CenterWidth3(k,j,is,ie,dx3);
+      pmb_->pcoord->CenterWidth1(k,j,il,iu,len);
+      pmb_->pcoord->CenterWidth2(k,j,il,iu,dx2);
+      pmb_->pcoord->CenterWidth3(k,j,il,iu,dx3);
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
         len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
         len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
       }
       if ((nu_iso > 0.0) || (nu_aniso > 0.0)) {
-        for (int i=is; i<=ie; ++i)
+        for (int i=il; i<=iu; ++i)
           dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
                                                       *fac/(nu_t(i)+TINY_NUMBER)));
       }
       if ((kappa_iso > 0.0) || (kappa_aniso > 0.0)) {
-        for (int i=is; i<=ie; ++i)
+        for (int i=il; i<=iu; ++i)
           dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))
                                                       *fac/(kappa_t(i)+TINY_NUMBER)));
       }
