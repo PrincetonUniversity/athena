@@ -89,7 +89,7 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   }
 
   // clear the task states, startup the integrator and initialize mpi calls
-#pragma omp parallel for num_threads(nthreads)
+  #pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
   for (int i=0; i<nmb; ++i) {
     pmb_array[i]->tasks.Reset(ntasks);
     StartupTaskList(pmb_array[i], stage);
@@ -97,12 +97,11 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
 
   int nmb_left = nmb;
   // cycle through all MeshBlocks and perform all tasks possible
-  while (nmb_left > 0) {
-#pragma omp parallel shared(nmb_left) num_threads(nthreads)
-    {
-#pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
-      for (int i=0; i<nmb; ++i) {
-        if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks) == TL_COMPLETE) {
+  while(nmb_left > 0) {
+    #pragma omp parallel for reduction(- : nmb_left) \
+                         num_threads(nthreads) schedule(dynamic,1)
+    for (int i=0; i<nmb; ++i) {
+      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks) == TL_COMPLETE) {
           nmb_left--;
         }
       }
