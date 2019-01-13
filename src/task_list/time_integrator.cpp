@@ -495,57 +495,49 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64
 }
 
 
-void TimeIntegratorTaskList::StartupTaskList(MeshBlock **pmb_array, int nmymb,
-                                             int stage) {
-  MeshBlock *pmb=pmb_array[0];
+void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   if (stage == 1) {
-    for (int i=0; i<nmymb; ++i) {
-      pmb=pmb_array[i];
-      // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
-      // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
-      pmb->stage_abscissae[0][0] = 0.0;
-      pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
-      pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
+    // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
+    // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
+    pmb->stage_abscissae[0][0] = 0.0;
+    pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
+    pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
 
-      // Given overall timestep dt, compute the time abscissae for all registers, stages
-      for (int l=1; l<=nstages; l++) {
-        // Update the dt abscissae of each memory register to values at end of this stage
-        const IntegratorWeight w = stage_wghts[l-1];
+    // Given overall timestep dt, compute the time abscissae for all registers, stages
+    for (int l=1; l<=nstages; l++) {
+      // Update the dt abscissae of each memory register to values at end of this stage
+      const IntegratorWeight w = stage_wghts[l-1];
 
-        // u1 = u1 + delta*u
-        pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
-            + w.delta*pmb->stage_abscissae[l-1][0];
-        // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-        pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-            + w.gamma_2*pmb->stage_abscissae[l][1]
-            + w.gamma_3*pmb->stage_abscissae[l-1][2]
-            + w.beta*pmb->pmy_mesh->dt;
-        // u2 = u^n
-        pmb->stage_abscissae[l][2] = 0.0;
-      }
+      // u1 = u1 + delta*u
+      pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
+          + w.delta*pmb->stage_abscissae[l-1][0];
+      // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
+      pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
+          + w.gamma_2*pmb->stage_abscissae[l][1]
+          + w.gamma_3*pmb->stage_abscissae[l-1][2]
+          + w.beta*pmb->pmy_mesh->dt;
+      // u2 = u^n
+      pmb->stage_abscissae[l][2] = 0.0;
+    }
 
-      // Initialize storage registers
-      Hydro *ph=pmb->phydro;
-      ph->u1.ZeroClear();
-      if (integrator == "ssprk5_4")
-        ph->u2 = ph->u;
+    // Initialize storage registers
+    Hydro *ph=pmb->phydro;
+    ph->u1.ZeroClear();
+    if (integrator == "ssprk5_4")
+      ph->u2 = ph->u;
 
-      if (MAGNETIC_FIELDS_ENABLED) { // MHD
-        Field *pf=pmb->pfield;
-        pf->b1.x1f.ZeroClear();
-        pf->b1.x2f.ZeroClear();
-        pf->b1.x3f.ZeroClear();
-      }
+    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      Field *pf=pmb->pfield;
+      pf->b1.x1f.ZeroClear();
+      pf->b1.x2f.ZeroClear();
+      pf->b1.x3f.ZeroClear();
     }
   }
 
   Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
   Real time = pmb->pmy_mesh->time+dt;
 
-  for (int i=0; i<nmymb; ++i) {
-    pmb=pmb_array[i];
-    pmb->pbval->StartReceivingAll(time);
-  }
+  pmb->pbval->StartReceivingAll(time);
 
   return;
 }

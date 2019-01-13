@@ -48,7 +48,6 @@ struct Task {
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
-
 //---------------------------------------------------------------------------------------
 //! \class TaskState
 //  \brief container for task states
@@ -63,7 +62,6 @@ class TaskState {
     finished_tasks = 0ULL;
   }
 };
-
 
 //----------------------------------------------------------------------------------------
 //! \class TaskList
@@ -89,7 +87,7 @@ class TaskList {
   Mesh* pmy_mesh_;
   struct Task task_list_[64];
 
-  virtual void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage) = 0;
+  virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -154,7 +152,7 @@ class TimeIntegratorTaskList : public TaskList {
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
  private:
-  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage) override;
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
 //----------------------------------------------------------------------------------------
@@ -198,7 +196,7 @@ class SuperTimeStepTaskList : public TaskList {
   enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
-  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage) override;
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
 //----------------------------------------------------------------------------------------

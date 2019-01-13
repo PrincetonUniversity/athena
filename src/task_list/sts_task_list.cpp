@@ -231,10 +231,7 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
 }
 
 
-void SuperTimeStepTaskList::StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage) {
-  MeshBlock *pmb=pmb_array[0];
-  Real time = pmb->pmy_mesh->time;
-
+void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 #pragma omp single
 {
     // Set RKL1 params
@@ -243,15 +240,14 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock **pmb_array, int nmymb, in
     pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(pow(nstages,2.)+nstages);
 }
 
-  for (int i=0; i<nmymb; ++i) {
-    pmb=pmb_array[i];
-    // Clear flux arrays from previous stage
-    pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
-    if (MAGNETIC_FIELDS_ENABLED)
-      pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+  // Clear flux arrays from previous stage
+  pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
 
-    pmb->pbval->StartReceivingAll(time);
-  }
+  Real time = pmb->pmy_mesh->time;
+  pmb->pbval->StartReceivingAll(time);
+
   return;
 }
 

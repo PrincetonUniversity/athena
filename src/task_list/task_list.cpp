@@ -46,7 +46,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
                                                   TaskState &ts) {
   int skip=0;
   enum TaskStatus ret;
-  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  if (ts.num_tasks_left == 0) return TL_NOTHING_TO_DO;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
@@ -58,7 +58,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
           if (skip==0) ts.indx_first_task++;
-          if (ts.num_tasks_left==0) return TL_COMPLETE;
+          if (ts.num_tasks_left == 0) return TL_COMPLETE;
           if (ret==TASK_NEXT) continue;
           return TL_RUNNING;
         }
@@ -78,48 +78,36 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nthreads = pmesh->GetNumMeshThreads();
-#pragma omp parallel num_threads(nthreads)
-  {
-    int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-    int tid = 0, tis=0;
-    int nmbt = nmb / nthreads;
-    int nmbres = nmb % nthreads;
-    int nmymb = nmbt;
+  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
 
-#ifdef OPENMP_PARALLEL
-    // calculate the number and index of the MeshBlocks owned by this thread
-    tid = omp_get_thread_num();
-    if (tid < nmbres) {
-      tis = nmbt * tid + tid;
-      nmymb++;
-    } else {
-      tis = nmbt * tid + nmbres;
-    }
-#endif
+  // construct the MeshBlock array on this process
+  MeshBlock **pmb_array = new MeshBlock*[nmb];
+  MeshBlock *pmb = pmesh->pblock;
+  for (int n=0; n < nmb; ++n) {
+    pmb_array[n] = pmb;
+    pmb = pmb->next;
+  }
 
-    // initialize the task states, initiate MPI and construct the MeshBlock list
-    MeshBlock **pmb_array = new MeshBlock*[nmymb];
-    MeshBlock *pmb = pmesh->FindMeshBlock(tis+pmesh->pblock->gid);
-    for (int n=0; n < nmymb; ++n) {
-      pmb->tasks.Reset(ntasks);
-      pmb_array[n] = pmb;
-      pmb = pmb->next;
-    }
+  // clear the task states, startup the integrator and initialize mpi calls
+#pragma omp parallel for num_threads(nthreads)
+  for (int i=0; i<nmb; ++i) {
+    pmb_array[i]->tasks.Reset(ntasks);
+    StartupTaskList(pmb_array[i], stage);
+  }
 
-    // cycle through all MeshBlocks and perform all tasks possible
-    int nmb_left = nmymb;
-    StartupTaskList(pmb_array, nmymb, stage);
-
-#pragma omp barrier
-    while (nmb_left > 0) {
-      for (int i=0; i<nmymb; ++i) {
-        if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks)
-            == TL_COMPLETE) {
+  int nmb_left = nmb;
+  // cycle through all MeshBlocks and perform all tasks possible
+  while (nmb_left > 0) {
+#pragma omp parallel shared(nmb_left) num_threads(nthreads)
+    {
+#pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+      for (int i=0; i<nmb; ++i) {
+        if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks) == TL_COMPLETE) {
           nmb_left--;
         }
       }
     }
-    delete [] pmb_array;
-  } // omp parallel
+  }
+  delete [] pmb_array;
   return;
 }
