@@ -36,7 +36,7 @@ public:
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 
 private:
-  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage);
+  void StartupTaskList(MeshBlock *pmb, int stage);
 
 };
 

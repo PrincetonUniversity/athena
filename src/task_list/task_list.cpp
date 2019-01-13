@@ -74,51 +74,40 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
 
   int nthreads = pmesh->GetNumMeshThreads();
-#pragma omp parallel num_threads(nthreads)
-{
   int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-  int tid = 0, tis=0;
-  int nmbt = nmb / nthreads;
-  int nmbres = nmb % nthreads;
-  int nmymb = nmbt;
 
-#ifdef OPENMP_PARALLEL
-  // calculate the number and index of the MeshBlocks owned by this thread
-  tid = omp_get_thread_num();
-  if (tid < nmbres) {
-    tis = nmbt * tid + tid;
-    nmymb++;
-  } else {
-    tis = nmbt * tid + nmbres;
-  }
-#endif
-
-  // initialize the task states, initiate MPI and construct the MeshBlock list
-  MeshBlock **pmb_array = new MeshBlock*[nmymb];
-  MeshBlock *pmb = pmesh->FindMeshBlock(tis+pmesh->pblock->gid);
-  for (int n=0; n < nmymb; ++n) {
-    pmb->tasks.Reset(ntasks);
+  // construct the MeshBlock array on this process
+  MeshBlock **pmb_array = new MeshBlock*[nmb];
+  MeshBlock *pmb = pmesh->pblock;
+  for (int n=0; n < nmb; ++n) {
     pmb_array[n] = pmb;
     pmb = pmb->next;
   }
 
+  // clear the task states, startup the integrator and initialize mpi calls
+  #pragma omp parallel for num_threads(nthreads)
+  for (int i=0; i<nmb; ++i) {
+    pmb_array[i]->tasks.Reset(ntasks);
+    StartupTaskList(pmb_array[i], stage);
+  }
+
+  int nmb_left = nmb;
   // cycle through all MeshBlocks and perform all tasks possible
-  int nmb_left = nmymb;
-  StartupTaskList(pmb_array, nmymb, stage);
-
-#pragma omp barrier
-
   while(nmb_left > 0) {
-    for (int i=0; i<nmymb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
+
+#pragma omp parallel shared(nmb_left) num_threads(nthreads)
+{
+    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+    for (int i=0; i<nmb; ++i) {
+      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks) == TL_COMPLETE) {
         nmb_left--;
       }
     }
+}
+
   }
 
   delete [] pmb_array;
-
-} // omp parallel
 
   return;
 }

@@ -83,10 +83,8 @@ void GravitySolverTaskList::AddGravitySolverTask(uint64_t id, uint64_t dep) {
 }
 
 
-void GravitySolverTaskList::StartupTaskList(MeshBlock **pmb_array, int nmymb,
-                                            int stage) {
-  for (int i=0; i<nmymb; ++i)
-    pmb_array[i]->pgbval->StartReceivingGravity();
+void GravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  pmb->pgbval->StartReceivingGravity();
 
   return;
 }

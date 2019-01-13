@@ -86,7 +86,7 @@ private:
   Mesh* pmy_mesh_;
   struct Task task_list_[64];
 
-  virtual void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage) = 0;
+  virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 
 };
 
@@ -152,7 +152,7 @@ public:
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
 private:
-  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage);
+  void StartupTaskList(MeshBlock *pmb, int stage);
 };
 
 //----------------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ public:
   enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
 private:
-  void StartupTaskList(MeshBlock **pmb_array, int nmymb, int stage);
+  void StartupTaskList(MeshBlock *pmb, int stage);
 };
 
 //----------------------------------------------------------------------------------------
