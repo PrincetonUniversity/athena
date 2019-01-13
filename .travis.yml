@@ -123,7 +123,7 @@ matrix:
       env:
       compiler:
       # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
-      script: cd tst/style/ && ./cpplint_athena.sh
+      script: cd tst/style/ && ./check_athena_cpp_style.sh
 
 # Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:

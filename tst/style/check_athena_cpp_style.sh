@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SCRIPT: cpplint_athena.sh
+# SCRIPT: check_athena_cpp_style.sh
 # AUTHOR: Kyle Gerard Felker - kfelker@princeton.edu
 # DATE:   4/18/2018
 # PURPOSE:  Wrapper script to ./cpplint.py application to check Athena++ src/ code
@@ -8,7 +8,7 @@
 #           implementation may not support recursive globbing of src/ subdirectories
 #           and files, so this uses "find" cmd w/ non-POSIX Bash process substitution.
 #
-# USAGE: ./cpplint_athena.sh
+# USAGE: ./check_athena_cpp_style.sh
 #        Assumes this script is executed from ./tst/style/ with cpplint.py in
 #        the same directory, and that CPPLINT.cfg is in root directory.
 #        TODO: add explicit check of execution directory
