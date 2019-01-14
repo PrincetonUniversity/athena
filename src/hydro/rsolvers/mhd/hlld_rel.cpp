@@ -1107,7 +1107,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                 + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
     bcon_r[1] = (bb1_r + bcon_r[0] * ucon_r[1]) / ucon_r[0];
     bcon_r[2] = (bb2_r + bcon_r[0] * ucon_r[2]) / ucon_r[0];
-    bcon_r[3] = (bb3_r + bcon_r[0] * ucon_rl[3]) / ucon_r[0];
+    bcon_r[3] = (bb3_r + bcon_r[0] * ucon_r[3]) / ucon_r[0];
     bcov_r[0] = g_00*bcon_r[0] + g_01*bcon_r[1] + g_02*bcon_r[2] + g_03*bcon_r[3];
     bcov_r[1] = g_10*bcon_r[0] + g_11*bcon_r[1] + g_12*bcon_r[2] + g_13*bcon_r[3];
     bcov_r[2] = g_20*bcon_r[0] + g_21*bcon_r[1] + g_22*bcon_r[2] + g_23*bcon_r[3];
