@@ -151,7 +151,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       u_m3 = w_vz*w_d;
       u_e = SimpleEgas(u_d, w_p); // cellwise conversion
     }
-  }}
+  }
+}
 
   return;
 }
