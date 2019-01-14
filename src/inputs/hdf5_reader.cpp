@@ -99,7 +99,7 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
   H5Pclose(property_list_file);
   if (file < 0) {
     std::stringstream msg;
-    msg << "### FATAL ERROR\nCould not open " << filename << "\n";
+    msg << "### FATAL ERROR\nCould not open " << filename << std::endl;
     ATHENA_ERROR(msg);
   }
   hid_t property_list_transfer = H5Pcreate(H5P_DATASET_XFER);

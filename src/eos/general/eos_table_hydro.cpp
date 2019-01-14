@@ -68,33 +68,33 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
 //Debugging/testing code
 #ifdef EOSDEBUG1
   std::cout << "Eos table: " << ptable->nVar << ", " << ptable->nRho << ", "
-            << ptable->nEgas << "\n";
+            << ptable->nEgas << std::endl;
   std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax
-            << "\n";
+            << std::endl;
   std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
-            << ptable->logEgasMax << "\n";
+            << ptable->logEgasMax << std::endl;
   std::cout << "Ratios: ";
   for (int i=0; i<ptable->nVar; i++) std::cout << ptable->EosRatios(i) << ", ";
-  std::cout << "\n";
+  std::cout << std::endl;
   for (int i=0; i<ptable->nVar; i++) {
-    std::cout << "var = " << i << "\n";
+    std::cout << "var = " << i << std::endl;
     for (int j=0; j<ptable->nRho; j++) {
       for (int k=0; k<ptable->nEgas; k++) {
         std::cout << std::pow((Real) 10, ptable->table.data(i,j,k)) << " ";
       }
-      std::cout << "\n";
+      std::cout << std::endl;
     }
-    std::cout << "\n";
+    std::cout << std::endl;
   }
 #endif
 
 //Debugging/testing code
 #ifdef EOSDEBUG0
   std::cout << "prepEOS: " << ptable->nVar << ", " << ptable->nEgas
-            <<  ", " << ptable->nRho << "\n";
+            <<  ", " << ptable->nRho << std::endl;
   std::cout << "eUnit, rhoUnit, hUnit: " << ptable->eUnit << ", " << ptable->rhoUnit
             << ", " << ptable->hUnit << '\n';
-  std::cout << "p(1e-7,1e-7)= " << ptable->GetEosData(0, 1e-7, 1e-7) << "\n";
+  std::cout << "p(1e-7,1e-7)= " << ptable->GetEosData(0, 1e-7, 1e-7) << std::endl;
   EosTestLoop(this);
 #endif
 }
@@ -129,22 +129,22 @@ void EosTestLoop(EquationOfState *peos) {
   AthenaArray<Real> data;
   data.NewAthenaArray(5);
   std::cout << "logRhoMin, logRhoMax: " << ptable->logRhoMin << ", " << ptable->logRhoMax
-            << "\n";
+            << std::endl;
   std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
-            << ptable->logEgasMax << "\n";
+            << ptable->logEgasMax << std::endl;
   std::cout << "EosRatios = ";
   for (int i=0; i < ptable->nVar; ++i) std::cout << ptable->EosRatios(i) << ", ";
-  std::cout << "\n";
+  std::cout << std::endl;
   std::cout << "Input rho (g/cc):";
   std::cin >> rho;
   std::cout << "Input egas (erg/cc):";
   std::cin >> egas;
   while (rho >= 0) {
     EosTestRhoEgas(peos, rho, egas, data);
-    std::cout << rho << ", " << egas << "\n";
+    std::cout << rho << ", " << egas << std::endl;
     std::cout << "P(d, e)    , h(d, e)    , ASq(d, P)  ,PErr    , ASqErr\n";
     for (int i=0; i<5; i++) std::cout << data(i) << ", ";
-    std::cout << "\n";
+    std::cout << std::endl;
     std::cout << "P, e, Asq, Asq: " << peos->SimplePres(rho, egas) << ", "
                                     << peos->SimpleEgas(rho, data(0)) << ", "
                                     << peos->SimpleAsq(rho, data(0)) << ", "
