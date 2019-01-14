@@ -16,6 +16,6 @@
 
 // Declarations
 void ASCIITableLoader(const char *filename, InterpTable2D &table,
-                      AthenaArray<Real>* pratios=NULL);
+                      AthenaArray<Real>* pratios=nullptr);
 
 #endif // INPUTS_ASCII_TABLE_READER_HPP_

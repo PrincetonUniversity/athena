@@ -110,7 +110,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 //  \brief Read data from HDF5 EOS table and initialize interpolated table.
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
-  AthenaArray<Real> *pratios = NULL;
+  AthenaArray<Real> *pratios = nullptr;
   std::cout << "Read_ratios_0:" << read_ratios << '\n';
   if (read_ratios) pratios = &peos_table->EosRatios;
   std::cout << "Read_ratios_1:" << read_ratios << '\n';
