@@ -4,10 +4,12 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shock_tube.cpp
-//  \brief Problem generator for shock tube problems.
+//  \brief Problem generator for hydrogen EOS shock tube problems.
 //
-// Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
-// shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
+// Problem generator for simple hydrogen EOS shock tube (1-D Riemann) problems.
+// Initializes plane-parallel shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D),
+// and along x3 (in 3D).
+//
 //========================================================================================
 
 // C headers
@@ -30,6 +32,17 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
+
+//========================================================================================
+//! \fn Real press(Real rho, Real T)
+//  \brief Calculate pressure as a function of density and temperature for H EOS.
+//========================================================================================
+
+Real press(Real rho, Real T) {
+  // Ionization fraction
+  Real x = 2. /(1 + std::sqrt(1 + 4. * rho * std::exp(1. / T) * std::pow(T, -1.5)));
+  return rho * T * (1. + x);
+}
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
@@ -325,7 +338,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
   wl[IVZ] = pin->GetReal("problem","wl");
-  if (NON_BAROTROPIC_EOS) wl[IPR] = pin->GetReal("problem","pl");
+  if (NON_BAROTROPIC_EOS) {
+    if (pin->DoesParameterExist("problem","Tl"))
+      wl[IPR] = press(wl[IDN], pin->GetReal("problem","Tl"));
+    else
+      wl[IPR] = pin->GetReal("problem","pl");
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     wl[NHYDRO  ] = pin->GetReal("problem","bxl");
     wl[NHYDRO+1] = pin->GetReal("problem","byl");
@@ -338,7 +356,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");
   wr[IVZ] = pin->GetReal("problem","wr");
-  if (NON_BAROTROPIC_EOS) wr[IPR] = pin->GetReal("problem","pr");
+  if (NON_BAROTROPIC_EOS) {
+    if (pin->DoesParameterExist("problem","Tr"))
+      wr[IPR] = press(wr[IDN], pin->GetReal("problem","Tr"));
+    else
+      wr[IPR] = pin->GetReal("problem","pr");
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     wr[NHYDRO  ] = pin->GetReal("problem","bxr");
     wr[NHYDRO+1] = pin->GetReal("problem","byr");

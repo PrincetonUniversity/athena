@@ -34,7 +34,7 @@ _thresh = [dict(zip(['rho', 'press', 'vel'], i)) for i in _thresh]
 
 def prepare(**kwargs):
     athena.configure(
-                     prob='hydrogen_shock_tube',
+                     prob='shock_tube',
                      coord='cartesian',
                      flux='hllc',
                      eos='general/hydrogen',
