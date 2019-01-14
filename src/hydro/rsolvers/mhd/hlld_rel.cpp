@@ -127,7 +127,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   const Real delta_kx_aug = 1.0e-12;  // amount to add to \Delta K^x
 
   // Calculate metric if in GR
-  int i01, i11;
+  int i01(0), i11(0);
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
