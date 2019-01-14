@@ -110,7 +110,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       //       floating point errors/catastrophic cancellation
       w_p = SimplePres(u_d, u_e - ke);
     }
-  }}
+  }
+}
 
   return;
 }
