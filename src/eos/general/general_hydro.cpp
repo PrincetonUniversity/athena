@@ -54,7 +54,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
           << "EOS table data uninitialized. Should be initialized by mesh." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
   gamma_ = std::sqrt(-1);
@@ -202,4 +202,10 @@ void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
   w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
 
   return;
+}
+
+Real EquationOfState::GetGamma() {
+  std::stringstream msg;
+  msg << "GetGamma is not defined for general EOS." << std::endl;
+  ATHENA_ERROR(msg);
 }

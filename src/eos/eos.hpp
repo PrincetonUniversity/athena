@@ -12,7 +12,6 @@
 // C headers
 
 // C++ headers
-#include <stdexcept> // std::invalid_argument
 
 // Athena headers
 #include "../athena.hpp"         // Real
@@ -145,9 +144,7 @@ class EquationOfState {
   void CleanEOS();
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
-  Real GetGamma() const {
-    throw std::invalid_argument("GetGamma is not defined for general EOS.");
-  }
+  Real GetGamma();
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
 #endif

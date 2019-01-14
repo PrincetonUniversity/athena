@@ -40,7 +40,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
         << "Invalid shape: (" << nvar << ", " << nx2 << ", " << nx1 << ")" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   table.SetSize(nvar, nx2, nx1);
 
@@ -55,7 +55,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
         << "x2min>=x2max." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   table.SetX2lim(min_, max_);
 
@@ -69,7 +69,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
     std::stringstream msg;
     msg << "### FATAL ERROR in ASCIITableLoader" << std::endl
         << "x1min>=x1max." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   table.SetX1lim(min_, max_);
 

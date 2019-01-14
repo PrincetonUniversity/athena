@@ -60,7 +60,9 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
          * sizeof(peos_table->logRhoMin));
     eos_file.close();
   } else {
-    throw std::invalid_argument("Unable to open eos table: " + fn);
+    std::stringstream msg;
+    msg << "Unable to open eos table: " << fn << std::endl;
+    ATHENA_ERROR(msg);
   }
 }
 
@@ -72,7 +74,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
       << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
-  throw std::runtime_error(msg.str().c_str());
+  ATHENA_ERROR(msg);
 #endif
   bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
   std::string dens_lim_field =
@@ -96,7 +98,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
       msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
           << "Invalid ratio. " << fn.c_str() << ", " << ratio_field << ", "
           << peos_table->EosRatios(0) << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   } else {
     for (int i=0; i<peos_table->nVar; ++i) peos_table->EosRatios(i) = 1.0;
@@ -144,7 +146,7 @@ EosTable::EosTable (ParameterInput *pin) {
     msg << "### FATAL ERROR in EosTable::EosTable" << std::endl
         << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
         << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 }
 

@@ -162,7 +162,7 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
           << "Rank of data field '" << var_names[i] << "' in file '" << filename
           << "' must be 2. Rank is " << ndims << "." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
     H5Sget_simple_extent_dims(dspace, dims, NULL);
     tmp[0] = static_cast<int>(dims[0]);
@@ -175,7 +175,7 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
       std::stringstream msg;
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
           << "Inconsistent data field shape in file '" << filename << "'." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
     }
   }
   H5Fclose(file);

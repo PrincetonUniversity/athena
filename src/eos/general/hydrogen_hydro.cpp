@@ -108,7 +108,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState inversion"
         << std::endl << "Root not bracketed" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   while ( (std::fabs(Ta - Tb) >= prec) && (fb - fa >= prec) ) {
