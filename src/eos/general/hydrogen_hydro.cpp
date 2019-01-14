@@ -8,20 +8,20 @@
 //======================================================================================
 
 // C++ headers
-#include <cmath>   // sqrt()
-#include <cfloat>  // FLT_MIN
-#include <iostream> // ifstream
-#include <fstream>
-#include <sstream>
 #include <algorithm>
+#include <cfloat>  // FLT_MIN
+#include <cmath>   // sqrt()
+#include <fstream>
+#include <iostream> // ifstream
+#include <sstream>
 #include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../parameter_input.hpp"
-#include "../../field/field.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../field/field.hpp"
+#include "../../parameter_input.hpp"
 
 // this class header
 #include "../eos.hpp"
@@ -90,8 +90,9 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   } else if ( f0 > 0 ) {
     fb = f0;
     Tb = T0;
+  } else {
+    return T0;
   }
-  else return T0;
 
   if ( f1 < 0 ) {
     fa = f1;
@@ -99,17 +100,18 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   } else if ( f1 > 0 ) {
     fb = f1;
     Tb = T1;
+  } else {
+    return T1;
   }
-  else return T1;
 
-  if ( (Ta < 0) or (Tb < 0) ) {
+  if ( (Ta < 0) || (Tb < 0) ) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState inversion"
         << std::endl << "Root not bracketed" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
-  while ( (std::fabs(Ta - Tb) >= prec) and (fb - fa >= prec) ) {
+  while ( (std::fabs(Ta - Tb) >= prec) && (fb - fa >= prec) ) {
     T0 = .5 * Ta + .5 * Tb;
     f0 = f(rho, T0) / sol - 1.;
     if ( f0 < 0 ) {
@@ -118,8 +120,9 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
     } else if ( f0 > 0 ) {
       fb = f0;
       Tb = T0;
+    } else {
+      return T0;
     }
-    else return T0;
   }
 
   return T0;

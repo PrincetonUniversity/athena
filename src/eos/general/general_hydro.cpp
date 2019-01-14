@@ -17,22 +17,22 @@
 // void EquationOfState::CleanEOS();
 
 // C/C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
-#include <iostream> // ifstream
+#include <cmath>   // sqrt()
 #include <fstream>
+#include <iostream> // ifstream
 #include <sstream>
-#include <string>
 #include <stdexcept> // std::invalid_argument
+#include <string>
 
 // Athena++ headers
-#include "../eos.hpp"
-#include "../../hydro/hydro.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "../../field/field.hpp"
+#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
-#include "../../field/field.hpp"
+#include "../eos.hpp"
 
 // EquationOfState constructor
 
@@ -125,7 +125,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int il, int iu, int jl, int ju, int kl, int ku) {
-
   // Force outer-loop vectorization
 #pragma omp simd
   for (int k=kl; k<=ku; ++k) {

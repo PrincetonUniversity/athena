@@ -7,8 +7,8 @@
 //  \brief Implements ASCII table reader functions
 
 // C++ headers
-#include <iostream>   // ifstream
 #include <fstream>
+#include <iostream>   // ifstream
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // string
@@ -28,7 +28,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
   std::ifstream file(filename, std::ios::in);
   std::string line;
 
-  while (std::getline(file, line) && (line[0] == '#')); // skip comments
+  while (std::getline(file, line) && (line[0] == '#')) continue; // skip comments
   int nvar, nx2, nx1;
   std::stringstream stream;
   stream.str(line);
@@ -46,7 +46,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
 
   // Read and store x2lim
   Real min_, max_;
-  while (std::getline(file, line) && (line[0] == '#')); // skip comments
+  while (std::getline(file, line) && (line[0] == '#')) continue; // skip comments
   stream.str(line);
   stream.clear();
   stream >> min_;
@@ -60,7 +60,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
   table.SetX2lim(min_, max_);
 
   // Read and store x1lim
-  while (std::getline(file, line) && (line[0] == '#')); // skip comments
+  while (std::getline(file, line) && (line[0] == '#')) continue; // skip comments
   stream.str(line);
   stream.clear();
   stream >> min_;
@@ -75,7 +75,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
 
   // read ratios for each (#=nvar) x2
   if (pratios) {
-    while (std::getline(file, line) && (line[0] == '#'));
+    while (std::getline(file, line) && (line[0] == '#')) continue;
     stream.str(line);
     stream.clear();
     pratios->NewAthenaArray(nvar);
@@ -86,7 +86,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
 
   // read table data
   for (int row = 0; row < nx2 * nvar; ++row) {
-    while (std::getline(file, line) && (line[0] == '#'));
+    while (std::getline(file, line) && (line[0] == '#')) continue;
     std::stringstream stream(line);
     for (int col = 0; col < nx1; ++col) {
       stream >> table.data(row, col);

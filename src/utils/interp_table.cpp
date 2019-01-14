@@ -7,15 +7,15 @@
 //  \brief implements functions in class InterpTable2D an intpolated lookup table
 
 // C++ headers
-#include <stdexcept> // std::invalid_argument
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
+#include <cmath>   // sqrt()
+#include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
-#include "interp_table.hpp"
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../coordinates/coordinates.hpp" // Coordinates
+#include "interp_table.hpp"
 
 // A do nothing constructor
 InterpTable2D::InterpTable2D() {}

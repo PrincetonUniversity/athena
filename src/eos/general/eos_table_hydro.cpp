@@ -8,20 +8,20 @@
 //======================================================================================
 
 // C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
-#include <iostream> // ifstream
+#include <cmath>   // sqrt()
 #include <fstream>
+#include <iostream> // ifstream
 #include <sstream>
-#include <string>
 #include <stdexcept> // std::invalid_argument
+#include <string>
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../parameter_input.hpp"
-#include "../../field/field.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../field/field.hpp"
+#include "../../parameter_input.hpp"
 #include "../../utils/interp_table.hpp"
 
 // this class header
@@ -74,12 +74,12 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   std::cout << "logEgasMin, logEgasMax: " << ptable->logEgasMin << ", "
             << ptable->logEgasMax << "\n";
   std::cout << "Ratios: ";
-  for (int i=0;i<ptable->nVar;i++) std::cout << ptable->EosRatios(i) << ", ";
+  for (int i=0; i<ptable->nVar; i++) std::cout << ptable->EosRatios(i) << ", ";
   std::cout << "\n";
-  for (int i=0;i<ptable->nVar;i++) {
+  for (int i=0; i<ptable->nVar; i++) {
     std::cout << "var = " << i << "\n";
-    for (int j=0;j<ptable->nRho;j++) {
-      for (int k=0;k<ptable->nEgas;k++) {
+    for (int j=0; j<ptable->nRho; j++) {
+      for (int k=0; k<ptable->nEgas; k++) {
         std::cout << std::pow((Real) 10, ptable->table.data(i,j,k)) << " ";
       }
       std::cout << "\n";
@@ -143,7 +143,7 @@ void EosTestLoop(EquationOfState *peos) {
     EosTestRhoEgas(peos, rho, egas, data);
     std::cout << rho << ", " << egas << "\n";
     std::cout << "P(d, e)    , h(d, e)    , ASq(d, P)  ,PErr    , ASqErr\n";
-    for (int i=0;i<5;i++) std::cout << data(i) << ", ";
+    for (int i=0; i<5; i++) std::cout << data(i) << ", ";
     std::cout << "\n";
     std::cout << "P, e, Asq, Asq: " << peos->SimplePres(rho, egas) << ", "
                                     << peos->SimpleEgas(rho, data(0)) << ", "

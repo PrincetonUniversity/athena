@@ -8,23 +8,23 @@
 //======================================================================================
 
 // C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
-#include <iostream> // ifstream
+#include <cmath>   // sqrt()
 #include <fstream>
+#include <iostream> // ifstream
 #include <sstream>
-#include <string>
 #include <stdexcept> // std::invalid_argument
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "interp_table.hpp"
-#include "../parameter_input.hpp"
-#include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../inputs/hdf5_reader.hpp"
+#include "../field/field.hpp"
 #include "../inputs/ascii_table_reader.hpp"
+#include "../inputs/hdf5_reader.hpp"
+#include "../parameter_input.hpp"
+#include "interp_table.hpp"
 
 // Order of datafields for HDF5 EOS tables
 const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)",
@@ -59,8 +59,9 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
          peos_table->nVar * peos_table->nRho * peos_table->nEgas
          * sizeof(peos_table->logRhoMin));
     eos_file.close();
+  } else {
+    throw std::invalid_argument("Unable to open eos table: " + fn);
   }
-  else throw std::invalid_argument("Unable to open eos table: " + fn);
 }
 
 //----------------------------------------------------------------------------------------

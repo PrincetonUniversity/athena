@@ -385,7 +385,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Initialize the discontinuity in the Hydro variables ---------------------------------
 
   switch(shk_dir) {
-
 //--- shock in 1-direction
   case 1:
     for (int k=ks; k<=ke; ++k) {

@@ -7,10 +7,10 @@
 //  \brief Implements no-op versions of the general eos functions
 
 // C/C++ headers
-#include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
-#include <iostream> // ifstream
+#include <cmath>   // sqrt()
 #include <fstream>
+#include <iostream> // ifstream
 #include <sstream>
 #include <string>
 

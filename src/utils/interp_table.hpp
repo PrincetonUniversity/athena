@@ -14,7 +14,7 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 
 class InterpTable2D {
-public:
+ public:
   InterpTable2D();
   InterpTable2D(const int nvar, const int nx2, const int nx1);
   ~InterpTable2D();
@@ -27,7 +27,7 @@ public:
   void GetX1lim(Real &x1min, Real &x1max);
   void GetX2lim(Real &x2min, Real &x2max);
   void GetSize(int &nvar, int &nx2, int &nx1);
-private:
+ private:
   int nvar_;
   int nx1_;
   int nx2_;
@@ -40,7 +40,7 @@ private:
 };
 
 class EosTable {
-public:
+ public:
   explicit EosTable(ParameterInput *pin);
   ~EosTable();
   InterpTable2D table;
