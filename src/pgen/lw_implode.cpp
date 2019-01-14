@@ -9,14 +9,18 @@
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
@@ -40,7 +44,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
   for (int j=js; j<=je; j++) {
     if (pcoord->x2v(j) > y0) {
-      // TODO(kfelker): check this condition for multi-meshblock setups
+      // TODO(felker): check this condition for multi-meshblock setups
       // further adjust y0 to be between cell center and lower x2 face
       y0 = pcoord->x2f(j) + 0.5*pcoord->dx2f(j);
       break;

@@ -9,7 +9,7 @@
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under 
+   certain rights in this software.  This software is distributed under
    the GNU General Public License.
 
    See the README file in the top-level directory of the distribution.
@@ -50,11 +50,11 @@ struct extent_3d {
 /* function prototypes */
 
 void remap_3d(double *, double *, double *, struct remap_plan_3d *);
-struct remap_plan_3d *remap_3d_create_plan(MPI_Comm, 
+struct remap_plan_3d *remap_3d_create_plan(MPI_Comm,
   int, int, int, int, int, int,	int, int, int, int, int, int,
   int, int, int, int);
 void remap_3d_destroy_plan(struct remap_plan_3d *);
-int remap_3d_collide(struct extent_3d *, 
+int remap_3d_collide(struct extent_3d *,
 		     struct extent_3d *, struct extent_3d *);
 
 /* machine specifics */

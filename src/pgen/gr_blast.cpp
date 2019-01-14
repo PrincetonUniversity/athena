@@ -6,19 +6,22 @@
 //! \file gr_blast.cpp
 //  \brief Problem generator for GRMHD spherical blast wave in flat spacetime.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min()
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY
@@ -27,9 +30,9 @@
 
 // Declarations
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz);
+                                    Real *px, Real *py, Real *pz);
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3);
 
 //----------------------------------------------------------------------------------------
@@ -91,11 +94,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   gi.NewAthenaArray(NMETRIC, ncells1);
 
   // Initialize hydro variables
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) {
-
+      for (int i=il; i<=iu; ++i) {
         // Calculate distance to nearest blast center
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
@@ -147,7 +149,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real bconz = bz;
         Real bcon0, bcon1, bcon2, bcon3;
         TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
-            &bcon3);
+                        &bcon3);
         b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
@@ -163,9 +165,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
+        for (int i=il; i<=iu+1; ++i) {
           Real ut = 1.0;
           Real ux = 0.0;
           Real uy = 0.0;
@@ -184,7 +186,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
             TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
             TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
-                &bcon3);
+                            &bcon3);
             pfield->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
           }
           if (i != iu+1 && k != ku+1) {
@@ -195,7 +197,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
             TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
             TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
-                &bcon3);
+                            &bcon3);
             pfield->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
           }
           if (i != iu+1 && j != ju+1) {
@@ -206,7 +208,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
             TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
             TransformVector(bcont, bconx, bcony, bconz, x, y, z, &bcon0, &bcon1, &bcon2,
-                &bcon3);
+                            &bcon3);
             pfield->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
           }
         }
@@ -227,8 +229,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+                                    Real *px, Real *py, Real *pz) {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
     *py = x2;
@@ -249,8 +251,8 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
     *pa2 = ay;
@@ -271,7 +273,7 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 
 static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
   Real distance = 0.0;
-  if (COORDINATE_SYSTEM == "minkowski") {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
   }
   return distance;

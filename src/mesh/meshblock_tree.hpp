@@ -9,12 +9,15 @@
 //  \brief defines the LogicalLocation structure and MeshBlockTree class
 //======================================================================================
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../defs.hpp"
 #include "../bvals/bvals.hpp"
-
+#include "../defs.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
@@ -24,7 +27,7 @@ class MeshBlockTree {
   friend class Mesh;
   friend class MeshBlock;
   friend class BoundaryBase;
-public:
+ public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
   ~MeshBlockTree();
@@ -33,24 +36,25 @@ public:
   MeshBlockTree* GetLeaf(int ox, int oy, int oz) {return pleaf[oz][oy][ox];}
 
   // functions
-  void CreateRootGrid(int64_t nx, int64_t ny, int64_t nz, int nl);
+  void CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_t nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-       enum BoundaryFlag* mesh_bcs, int64_t rbx, int64_t rby, int64_t rbz,
-       int rl, int &nnew);
+                    enum BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby,
+                    std::int64_t rbz, int rl, int &nnew);
   void AddMeshBlockWithoutRefine(LogicalLocation rloc,
-                                 int64_t rbx, int64_t rby, int64_t rbz, int rl);
+                                 std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
+                                 int rl);
   void Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &nnew);
+              std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &nnew);
   void Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-              int64_t rbx, int64_t rby, int64_t rbz, int rl, int &ndel);
+                std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &ndel);
   MeshBlockTree* FindMeshBlock(LogicalLocation tloc);
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                 enum BoundaryFlag* bcs, int64_t rbx, int64_t rby, int64_t rbz,
-                 int rl, bool amrflag=false);
+                              enum BoundaryFlag* bcs, std::int64_t rbx, std::int64_t rby,
+                              std::int64_t rbz, int rl, bool amrflag=false);
 
-private:
+ private:
   // data
   bool flag; // false: virtual node, has leaves; true: real node, is a leaf
   MeshBlockTree* pparent;

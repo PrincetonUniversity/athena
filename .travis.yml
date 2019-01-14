@@ -14,11 +14,13 @@ sudo: false # use faster container-based build
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty-5.0
     packages:
       - "python3"
       - "python3-pip"
-      - "clang-5.0"  # Ubuntu 14.04 ships wit Clang 3.5.0 as of 2018-10-29
+      - "g++-7"      # Ubuntu 14.04.05 ships with GCC 4.8.4 (not 4.8.2) as of 2018-12-11
+      - "clang-5.0"  # Ubuntu 14.04.05 ships with Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
 env:
   matrix:
@@ -121,14 +123,26 @@ matrix:
       env:
       compiler:
       # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
-      script: cd tst/style/ && ./cpplint_athena.sh
+      script: cd tst/style/ && ./check_athena_cpp_style.sh
 
-# Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
+# Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:
+  # Specify upgraded compilers on Ubuntu image builds:
+  # /usr/local/clang-5.0.0/bin (tags/RELEASE_500/final) as of 2018-12-12
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang && CXX=clang++"; fi
+  # /usr/bin/, clang 5.0.2-svn... : won't take /usr/local/clang/lib/libomp.so workaround in run_tests_travis.sh
+  # Could try /usr/local/clang-5.0/lib/libomp.so
+  #- if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "g++" ]]; then eval "CC=gcc-7 && CXX=g++-7"; fi
   - test -n $CC  && unset CC
-  # Cache compiler variable from Travis CI Build Matrix before unsetting
-  - export TEMP_CXX=$CXX
+  # Cache general 'compiler' choice (g++ vs. clang++) from Travis CI Build Matrix before unsetting
+  - export TEMP_CXX=$CXX_FOR_BUILD
+  - export TEMP_CCMD=$CXX
   - test -n $CXX && unset CXX
+  # Dump default system and (possibly upgraded) selected C++ compiler versions
+  - g++ --version
+  - clang++ --version
+  - ${TEMP_CCMD} --version
 # Install OpenMPI, MPICH, and FFTW
 install:
   - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
