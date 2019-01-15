@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream> // ifstream
 #include <sstream>
+#include <stdexcept> // std::invalid_argument
 #include <string>
 
 // Athena++ headers
