@@ -94,6 +94,7 @@ void FFTBlock::DestroyPlan(AthenaFFTPlan *plan) {
   if (plan->plan2d != nullptr) fft_2d_destroy_plan(plan->plan2d);
 #endif
   if (plan->plan != nullptr) fftw_destroy_plan(plan->plan);
+  fftw_cleanup();
   delete plan;
 #endif
 }
