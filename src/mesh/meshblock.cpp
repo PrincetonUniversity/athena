@@ -7,18 +7,18 @@
 //  \brief implementation of functions in MeshBlock class
 
 // C headers
-#include <stdlib.h>
-#include <string.h>  // memcpy
 
 // C++ headers
-#include <algorithm>  // sort
+#include <algorithm>  // sort()
+#include <cstdlib>
+#include <cstring>    // memcpy()
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
@@ -31,11 +31,11 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
-#include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../utils/buffer_utils.hpp"
+#include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
-#include "mesh.hpp"
 
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
@@ -44,13 +44,12 @@
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
                      int igflag, bool ref_flag) {
-  std::stringstream msg;
   int root_level;
   pmy_mesh = pm;
   root_level = pm->root_level;
   block_size = input_block;
-  prev=NULL;
-  next=NULL;
+  prev=nullptr;
+  next=nullptr;
   gid=igid;
   lid=ilid;
   loc=iloc;
@@ -98,19 +97,19 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pbval  = new BoundaryValues(this, input_bcs, pin);
 
   // Coordinates
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoord = new Cartesian(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     pcoord = new Cylindrical(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     pcoord = new SphericalPolar(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "minkowski") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     pcoord = new KerrSchild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "gr_user") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoord = new GRUser(this, pin, false);
   }
 
@@ -137,12 +136,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-           LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, char *mbdata, int igflag) {
-  std::stringstream msg;
+                     LogicalLocation iloc, RegionSize input_block,
+                     enum BoundaryFlag *input_bcs,
+                     Real icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
-  prev=NULL;
-  next=NULL;
+  prev=nullptr;
+  next=nullptr;
   gid=igid;
   lid=ilid;
   loc=iloc;
@@ -195,19 +194,19 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
 
   // Coordinates
-  if (COORDINATE_SYSTEM == "cartesian") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoord = new Cartesian(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "cylindrical") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     pcoord = new Cylindrical(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     pcoord = new SphericalPolar(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "minkowski") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     pcoord = new KerrSchild(this, pin, false);
-  } else if (COORDINATE_SYSTEM == "gr_user") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoord = new GRUser(this, pin, false);
   }
 
@@ -222,45 +221,45 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
   InitUserMeshBlockData(pin);
 
-  int os=0;
+  std::size_t os=0;
   // load hydro and field data
-  memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
+  std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
   // load it into the half-step arrays too
-  memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+  std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
+    std::memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
     os += phydro->w.GetSizeInBytes();
-    memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
+    std::memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
     os += phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-    memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
+    std::memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
     os += pfield->b.x1f.GetSizeInBytes();
-    memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-    memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
+    std::memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
     os += pfield->b.x2f.GetSizeInBytes();
-    memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-    memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
+    std::memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
+    std::memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
   // NEW_PHYSICS: add load of new physics from restart file here
   if (SELF_GRAVITY_ENABLED >= 1) {
-    memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
+    std::memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
     os += pgrav->phi.GetSizeInBytes();
   }
 
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
-    memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
-           iuser_meshblock_data[n].GetSizeInBytes());
+    std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
+                iuser_meshblock_data[n].GetSizeInBytes());
     os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
   for (int n=0; n<nreal_user_meshblock_data_; n++) {
-    memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
-           ruser_meshblock_data[n].GetSizeInBytes());
+    std::memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
+                ruser_meshblock_data[n].GetSizeInBytes());
     os+=ruser_meshblock_data[n].GetSizeInBytes();
   }
 
@@ -271,8 +270,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-  if (prev!=NULL) prev->next=next;
-  if (next!=NULL) next->prev=prev;
+  if (prev!=nullptr) prev->next=next;
+  if (next!=nullptr) next->prev=prev;
 
   delete pcoord;
   delete pbval;
@@ -307,7 +306,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   nreal_user_meshblock_data_=n;
   ruser_meshblock_data = new AthenaArray<Real>[n];
@@ -323,7 +322,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   nint_user_meshblock_data_=n;
@@ -341,7 +340,7 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
         << std::endl << "User output variables are already allocated." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   nuser_out_var=n;
@@ -364,7 +363,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
         << std::endl << "User output variable is not allocated." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   user_out_var_names_[n]=name;
@@ -372,11 +371,11 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
+//! \fn std::size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
-size_t MeshBlock::GetBlockSizeInBytes(void) {
-  size_t size;
+std::size_t MeshBlock::GetBlockSizeInBytes(void) {
+  std::size_t size;
 
   size=phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
@@ -385,7 +384,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void) {
   }
   if (MAGNETIC_FIELDS_ENABLED)
     size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
-          +pfield->b.x3f.GetSizeInBytes());
+           +pfield->b.x3f.GetSizeInBytes());
   if (SELF_GRAVITY_ENABLED)
     size+=pgrav->phi.GetSizeInBytes();
 

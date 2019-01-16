@@ -9,6 +9,10 @@
 //! \file hdf5_reader.hpp
 //  \brief Declares HDF5 reader functions
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
@@ -20,8 +24,9 @@
 
 // Declarations
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
-    const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
-    const int *count_mem, AthenaArray<Real> &array, bool collective=false,
-    bool noop=false);
+                       const int *start_file, const int *count_file, int rank_mem,
+                       const int *start_mem, const int *count_mem,
+                       AthenaArray<Real> &array,
+                       bool collective=false, bool noop=false);
 
 #endif  // INPUTS_HDF5_READER_HPP_

@@ -10,11 +10,15 @@
 // The attribute "weak" is used to ensure the loader selects the user-defined version of
 // functions rather than the default version given here.
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

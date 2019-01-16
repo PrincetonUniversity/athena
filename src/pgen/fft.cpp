@@ -7,6 +7,8 @@
 //  \brief Problem generator for complex-to-complex FFT test.
 //
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <ctime>
@@ -17,15 +19,15 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
@@ -79,7 +81,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
@@ -118,8 +120,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
   clock_t tstop = clock();
   float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
-      static_cast<Real>(CLOCKS_PER_SEC);
-  int64_t zones = GetTotalCells();
+                   static_cast<Real>(CLOCKS_PER_SEC);
+  std::int64_t zones = GetTotalCells();
   float zc_cpus = static_cast<Real>(zones*ncycle)/cpu_time;
 
   if (Globals::my_rank == 0) {
@@ -136,14 +138,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
           r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
         src(k,j,i) = std::exp(-r2);
-      }}}
+      }
+    }
+  }
 
   pfft->LoadSource(src,1,NGHOST,loc,block_size);
   pfft->ExecuteForward();
@@ -157,7 +161,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int i=is; i<=ie; ++i) {
         err1 += std::abs(dst(0,k,j,i) - src(k,j,i));
         err2 += std::abs(dst(1,k,j,i));
-      }}}
+      }
+    }
+  }
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);

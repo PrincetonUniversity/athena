@@ -6,86 +6,88 @@
 //! \file fft_grav_task_list.cpp
 //  \brief
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
-#include "task_list.hpp"
-#include "fft_grav_task_list.hpp"
+// Athena++ headers
 #include "../athena.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "../bvals/bvals_grav.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "fft_grav_task_list.hpp"
+#include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //  FFTGravitySolverTaskList constructor
 
 FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-  : TaskList(pm) {
-
+    : TaskList(pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
-    AddFFTGravitySolverTask(START_GRAV_RECV,NONE);
-
     // compute hydro fluxes, integrate hydro variables
-    AddFFTGravitySolverTask(SEND_GRAV_BND,START_GRAV_RECV);
-    AddFFTGravitySolverTask(RECV_GRAV_BND,START_GRAV_RECV);
+    AddFFTGravitySolverTask(SEND_GRAV_BND,NONE);
+    AddFFTGravitySolverTask(RECV_GRAV_BND,NONE);
     AddFFTGravitySolverTask(GRAV_PHYS_BND,SEND_GRAV_BND|RECV_GRAV_BND);
     AddFFTGravitySolverTask(CLEAR_GRAV, GRAV_PHYS_BND);
   } // end of using namespace block
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTGravitySolverTaskList::AddFFTGravitySolverTask(uint64_t id, uint64_t dep)
+//! \fn void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id,
+//                                                       std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void FFTGravitySolverTaskList::AddFFTGravitySolverTask(uint64_t id, uint64_t dep) {
+void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
   using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
-  switch((id)) {
-    case (START_GRAV_RECV):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&FFTGravitySolverTaskList::StartFFTGravityReceive);
-      break;
+  switch (id) {
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&FFTGravitySolverTaskList::PhysicalBoundary);
+          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&FFTGravitySolverTaskList::PhysicalBoundary);
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddFFTGravitySolverTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   ntasks++;
+  return;
+}
+
+
+void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  pmb->pgbval->StartReceivingFFTGravity();
+
   return;
 }
 
@@ -96,15 +98,9 @@ void FFTGravitySolverTaskList::AddFFTGravitySolverTask(uint64_t id, uint64_t dep
 //----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
 
-enum TaskStatus FFTGravitySolverTaskList::StartFFTGravityReceive(MeshBlock *pmb,
-                                                                 int stage) {
-  pmb->pgrav->pgbval->StartReceivingFFTGravity();
-  return TASK_SUCCESS;
-}
-
 enum TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb,
                                                                   int stage) {
-  pmb->pgrav->pgbval->ClearBoundaryFFTGravity();
+  pmb->pgbval->ClearBoundaryFFTGravity();
   return TASK_SUCCESS;
 }
 

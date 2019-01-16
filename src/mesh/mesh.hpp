@@ -10,19 +10,21 @@
 //  The Mesh is the overall grid structure, and MeshBlocks are local patches of data
 //  (potentially on different levels) that tile the entire domain.
 
-// C/C++ headers
-#include <stdint.h>  // int64_t
+// C headers
+
+// C++ headers
+#include <cstdint>  // int64_t
 #include <string>
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../outputs/io_wrapper.hpp"
-#include "../task_list/task_list.hpp"
 #include "../bvals/bvals.hpp"
-#include "meshblock_tree.hpp"
+#include "../outputs/io_wrapper.hpp"
+#include "../parameter_input.hpp"
+#include "../task_list/task_list.hpp"
 #include "mesh_refinement.hpp"
+#include "meshblock_tree.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -59,7 +61,7 @@ class MeshBlock {
   friend class ATHDF5Output;
 #endif
 
-public:
+ public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
@@ -106,13 +108,13 @@ public:
   MeshBlock *prev, *next;
 
   // functions
-  size_t GetBlockSizeInBytes(void);
+  std::size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
   void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
 
-private:
+ private:
   // data
   Real cost;
   Real new_block_dt;
@@ -158,7 +160,7 @@ class Mesh {
   friend class ATHDF5Output;
 #endif
 
-public:
+ public:
   explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
@@ -166,8 +168,8 @@ public:
   // accessors
   int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
   int GetNumMeshThreads() const {return num_mesh_threads_;}
-  int64_t GetTotalCells() {return static_cast<int64_t> (nbtotal)*
-     pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
+  std::int64_t GetTotalCells() {return static_cast<std::int64_t> (nbtotal)*
+        pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
 
   // data
   RegionSize mesh_size;
@@ -200,16 +202,27 @@ public:
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
-private:
+ private:
   // data
   int root_level, max_level, current_level;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
   Real *costlist;
-  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
+  // 8x arrays used exclusively for AMR (not SMR):
+  int *nref, *nderef;
+  int *rdisp, *ddisp;
+  int *bnref, *bnderef;
+  int *brdisp, *bddisp;
+  // the last 4x should be std::size_t, but are limited to int by MPI
+
   LogicalLocation *loclist;
   MeshBlockTree tree;
-  int64_t nrbx1, nrbx2, nrbx3; // number of MeshBlocks spanning each length of mesh
+  // number of MeshBlocks in the x1, x2, x3 directions of the root grid:
+  // (unlike LogicalLocation.lxi, nrbxi don't grow w/ AMR # of levels, so keep 32-bit int)
+  int nrbx1, nrbx2, nrbx3;
+  // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
+  //std::int64_t nrbx1, nrbx2, nrbx3;
+
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
@@ -260,11 +273,13 @@ private:
 
 
 //----------------------------------------------------------------------------------------
-// \!fn Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval)
+// \!fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
+//                                 bool sym_interval)
 // \brief wrapper fn to compute Real x logical location for either [0., 1.] or [-0.5, 0.5]
 //        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
 
-inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interval) {
+inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
+                                  bool sym_interval) {
   // index is typically 0, ... nrange for non-ghost boundaries
   if (sym_interval == false) {
     // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
@@ -273,8 +288,8 @@ inline Real ComputeMeshGeneratorX(int64_t index, int64_t nrange, bool sym_interv
     // to map to a [-0.5, 0.5] range, rescale int indices around 0 before FP conversion
     // if nrange is even, there is an index at center x=0.0; map it to (int) 0
     // if nrange is odd, the center x=0.0 is between two indices; map them to -1, 1
-    int64_t noffset = index - (nrange)/2;
-    int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
+    std::int64_t noffset = index - (nrange)/2;
+    std::int64_t noffset_ceil = index - (nrange+1)/2; // = noffset if nrange is even
     //std::cout << "noffset, noffset_ceil = " << noffset << ", " << noffset_ceil << "\n";
     // average the (possibly) biased integer indexing
     return static_cast<Real>(noffset + noffset_ceil)/(2.0*nrange);
@@ -290,8 +305,8 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   if (rs.x1rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x1rat,rs.nx1);
-    Real rnx=pow(rs.x1rat,x*rs.nx1);
+    Real ratn=std::pow(rs.x1rat,rs.nx1);
+    Real rnx=std::pow(rs.x1rat,x*rs.nx1);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
@@ -308,8 +323,8 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   if (rs.x2rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x2rat,rs.nx2);
-    Real rnx=pow(rs.x2rat,x*rs.nx2);
+    Real ratn=std::pow(rs.x2rat,rs.nx2);
+    Real rnx=std::pow(rs.x2rat,x*rs.nx2);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
@@ -325,8 +340,8 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   if (rs.x3rat==1.0) {
     rw=x, lw=1.0-x;
   } else {
-    Real ratn=pow(rs.x3rat,rs.nx3);
-    Real rnx=pow(rs.x3rat,x*rs.nx3);
+    Real ratn=std::pow(rs.x3rat,rs.nx3);
+    Real rnx=std::pow(rs.x3rat,x*rs.nx3);
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }

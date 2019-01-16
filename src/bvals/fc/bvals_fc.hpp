@@ -44,8 +44,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   void SendFieldBoundaryBuffers(FaceField &src);
 
-  bool ReceiveFieldBoundaryBuffers(FaceField &dst);
-  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
+
+  bool ReceiveFieldBoundaryBuffers(void);
+  void SetFieldBoundaries(FaceField &dst);
+  void ReceiveAndSetFieldBoundariesWithWait(FaceField &dst);
 
   void SetFieldBoundarySameLevel(FaceField &dst, Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);

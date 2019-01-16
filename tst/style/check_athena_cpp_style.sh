@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SCRIPT: cpplint_athena.sh
+# SCRIPT: check_athena_cpp_style.sh
 # AUTHOR: Kyle Gerard Felker - kfelker@princeton.edu
 # DATE:   4/18/2018
 # PURPOSE:  Wrapper script to ./cpplint.py application to check Athena++ src/ code
@@ -8,7 +8,7 @@
 #           implementation may not support recursive globbing of src/ subdirectories
 #           and files, so this uses "find" cmd w/ non-POSIX Bash process substitution.
 #
-# USAGE: ./cpplint_athena.sh
+# USAGE: ./check_athena_cpp_style.sh
 #        Assumes this script is executed from ./tst/style/ with cpplint.py in
 #        the same directory, and that CPPLINT.cfg is in root directory.
 #        TODO: add explicit check of execution directory
@@ -25,20 +25,41 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/p
 set +e
 echo "End of Google C++ Style cpplint.py test"
 
-# Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
+# Begin custom Athena++ style rules and checks:
 echo "Starting std::sqrt(), std::cbrt(), \t test"
 while read -r file
 do
     echo "Checking $file...."
     # sed -n '/\t/p' $file
+
+    # TYPE 1: may cause bugs, or introduces abhorrent style (e.g. mixing tabs and spaces).
+    # --------------------------
     grep -n "$(printf '\t')" $file
     if [ $? -ne 1 ]; then echo "ERROR: Do not use \t tab characters"; exit 1; fi
 
-    grep -ri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
+    # TYPE 2: strict ISO C++11 compilance and/or technical edge-cases.
+    # Code would be fine for >95% of environments and libraries with these violations, but they may affect portability.
+    # --------------------------
+
+    # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
+    # Note, currently all such chained grep calls will miss violations if a comment is at the end of line, e.g.:
+    #     }}  // this is a comment after a style error
+    grep -nri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit 1; fi
 
-    grep -ri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
+    grep -nri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
+
+    # TYPE 3: purely stylistic inconsistencies.
+    # These errors would not cause any changes to code behavior if they were ignored, but they may affect readability.
+    # --------------------------
+    grep -nri "}}" "$file" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use single closing brace '}}' per line"; exit 1; fi
+
+    # GNU Grep Extended Regex (ERE) syntax:
+    grep -nrEi '^\s+#pragma' "$file"
+    if [ $? -ne 1 ]; then echo "ERROR: Left justify any #pragma statements"; exit 1; fi
+
     # To lint each src/ file separately, use:
     # ./cpplint.py --counting=detailed "$file"
 done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print)

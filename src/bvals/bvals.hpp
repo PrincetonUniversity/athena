@@ -8,10 +8,12 @@
 //! \file bvals.hpp
 //  \brief defines BoundaryBase, BoundaryValues classes used for setting BCs on all data
 
+// C headers
+
 // C++ headers
 #include <string>   // string
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "./bvals_interfaces.hpp"
@@ -50,9 +52,6 @@ struct FaceField;
 
 // Notation question: boundary value vs. boundary condition vs. boundary function
 // BE CONSISTENT. What should the classes be named?
-
-// TOOD(felker): convert all class access specifiers (public:, private:, protected:) to
-// 1-space indent, following Google C++ style
 
 // KGF: potential names = BoundaryLogic, BoundaryNeighbors, BoundaryBase
 // Used in mesh.hpp, meshblock_tree.hpp (Friend class), bvals_mg/grav*
@@ -132,15 +131,16 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
 
   // these typically define a coupled interaction of these boundary variables
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+                               FaceField &bfdst, AthenaArray<Real> &bcdst,
+                               const Real time, const Real dt);
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
+                            FaceField &bfdst, AthenaArray<Real> &bcdst,
+                            const Real time, const Real dt);
   // called in Mesh::Initialize() after processing ParameterInput(), before
   // pbval->Initialize() is called in this class
   void CheckBoundary(void);
 
   // linked list of BoundaryVariable derived class instances:
-
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
@@ -155,6 +155,7 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered
   // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
   AthenaArray<Real> azimuthal_shift_;
+
 
   BValFunc_t BoundaryFunction_[6];
 

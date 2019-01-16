@@ -7,24 +7,26 @@
 //  \brief implements functions for spherical polar (r-theta-phi) coordinates in a
 //  derived class of the Coordinates abstract base class.
 
-// C/C++ headers
-#include <math.h>  // pow, trig functions
+// C headers
+
+// C++ headers
+#include <cmath>  // pow(), trig functions
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Spherical polar coordinates constructor
 
 SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
-  : Coordinates(pmb, pin, flag) {
+    : Coordinates(pmb, pin, flag) {
   pmy_block = pmb;
   coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
@@ -78,7 +80,8 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^4/4)/d(r^3/3)
   for (int i=il-ng; i<=iu+ng; ++i) {
-    x1v(i) = 0.75*(pow(x1f(i+1),4) - pow(x1f(i),4))/(pow(x1f(i+1),3) - pow(x1f(i),3));
+    x1v(i) = 0.75*(std::pow(x1f(i+1),4) - std::pow(x1f(i),4)) /
+             (std::pow(x1f(i+1),3) - std::pow(x1f(i),3));
   }
   for (int i=il-ng; i<=iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
@@ -91,9 +94,9 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     dx2v(jl) = dx2f(jl);
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
-      x2v(j) = ((sin(x2f(j+1)) - x2f(j+1)*cos(x2f(j+1))) -
-                (sin(x2f(j  )) - x2f(j  )*cos(x2f(j  ))))/
-                (cos(x2f(j  )) - cos(x2f(j+1)));
+      x2v(j) = ((std::sin(x2f(j+1)) - x2f(j+1)*std::cos(x2f(j+1))) -
+                (std::sin(x2f(j  )) - x2f(j  )*std::cos(x2f(j  ))))/
+               (std::cos(x2f(j  )) - std::cos(x2f(j+1)));
     }
     for (int j=jl-ng; j<=ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
@@ -128,24 +131,24 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // x2-direction
   if (pmb->block_size.nx2 == 1) {
-    h32v(jl) = sin(x2v(jl));
-    h32f(jl) = sin(x2f(jl));
-    dh32vd2(jl) = cos(x2v(jl));
-    dh32fd2(jl) = cos(x2f(jl));
+    h32v(jl) = std::sin(x2v(jl));
+    h32f(jl) = std::sin(x2f(jl));
+    dh32vd2(jl) = std::cos(x2v(jl));
+    dh32fd2(jl) = std::cos(x2f(jl));
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
-      h32v(j) = sin(x2v(j));
-      h32f(j) = sin(x2f(j));
-      dh32vd2(j) = cos(x2v(j));
-      dh32fd2(j) = cos(x2f(j));
+      h32v(j) = std::sin(x2v(j));
+      h32f(j) = std::sin(x2f(j));
+      dh32vd2(j) = std::cos(x2v(j));
+      dh32fd2(j) = std::cos(x2f(j));
     }
   }
 
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
-      x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
-                          /(SQR(x1f(i+1)) - SQR(x1f(i)));
+      x1s2(i) = x1s3(i) = (2.0/3.0)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3))
+                /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
     if (pmb->block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
@@ -223,12 +226,12 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     if (pmb->block_size.nx2 > 1) {
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        Real sm = fabs(sin(x2f(j  )));
-        Real sp = fabs(sin(x2f(j+1)));
-        Real cm = cos(x2f(j  ));
-        Real cp = cos(x2f(j+1));
+        Real sm = std::fabs(std::sin(x2f(j  )));
+        Real sp = std::fabs(std::sin(x2f(j+1)));
+        Real cm = std::cos(x2f(j  ));
+        Real cp = std::cos(x2f(j+1));
         // d(sin theta) = d(-cos theta)
-        coord_area1_j_(j) = fabs(cm - cp);
+        coord_area1_j_(j) = std::fabs(cm - cp);
         // sin theta
         coord_area2_j_(j) = sm;
         // d(sin theta) = d(-cos theta)
@@ -239,25 +242,28 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
         // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
         coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
-        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= fabs(cos(x2v(j))-cos(x2v(j+1)));
         // sin theta at the volume center for non-ideal MHD
-        coord_area2vc_j_(j)= fabs(sin(x2v(j)));
+        coord_area2vc_j_(j)= std::fabs(std::sin(x2v(j)));
       }
-      coord_area2_j_(ju+ng+1) = fabs(sin(x2f(ju+ng+1)));
+#pragma omp simd
+      for (int j=jl-ng; j<=ju+ng-1; ++j) {
+        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
+        coord_area1vc_j_(j)= std::fabs(cos(x2v(j))-cos(x2v(j+1)));
+      }
+      coord_area2_j_(ju+ng+1) = std::fabs(sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
-        coord_area1vc_j_(jl-1)= 2.0-cos(x2v(jl-1))-cos(x2v(jl));
+        coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
       if (IsPole(ju+1))   // outer polar boundary
-        coord_area1vc_j_(ju)  = 2.0+cos(x2v(ju))+cos(x2v(ju+1));
+        coord_area1vc_j_(ju)  = 2.0+std::cos(x2v(ju))+std::cos(x2v(ju+1));
     } else {
-      Real sm = fabs(sin(x2f(jl  )));
-      Real sp = fabs(sin(x2f(jl+1)));
-      Real cm = cos(x2f(jl  ));
-      Real cp = cos(x2f(jl+1));
-      coord_area1_j_(jl) = fabs(cm - cp);
+      Real sm = std::fabs(std::sin(x2f(jl  )));
+      Real sp = std::fabs(std::sin(x2f(jl+1)));
+      Real cm = std::cos(x2f(jl  ));
+      Real cp = std::cos(x2f(jl+1));
+      coord_area1_j_(jl) = std::fabs(cm - cp);
       coord_area2_j_(jl) = sm;
       coord_area1vc_j_(jl)= coord_area1_j_(jl);
-      coord_area2vc_j_(jl)= sin(x2v(jl));
+      coord_area2vc_j_(jl)= std::sin(x2v(jl));
       coord_vol_j_(jl) = coord_area1_j_(jl);
       coord_src1_j_(jl) = (sp - sm)/coord_vol_j_(jl);
       coord_src2_j_(jl) = (sp - sm)/((sm + sp)*coord_vol_j_(jl));
@@ -316,7 +322,7 @@ SphericalPolar::~SphericalPolar() {
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void SphericalPolar::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                                 AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // length2 = r d(theta)
@@ -328,10 +334,10 @@ void SphericalPolar::Edge2Length(const int k, const int j, const int il, const i
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void SphericalPolar::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                                 AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // length3 = r sin(theta) d(phi)
+    // length3 = r std::sin(theta) d(phi)
     len(i) = x1f(i)*coord_area2_j_(j)*dx3f(k);
   }
   return;
@@ -368,7 +374,7 @@ void SphericalPolar::VolCenter3Length(const int k, const int j, const int il,
                                       const int iu, AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // length3 = r sin(theta) d(phi)
+    // length3 = r std::sin(theta) d(phi)
     len(i) = x1v(i)*coord_area2vc_j_(j)*dx3v(k);
   }
   return;
@@ -390,7 +396,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
                                   AthenaArray<Real> &dx3) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
+    dx3(i) = x1v(i)*std::fabs(std::sin(x2v(j)))*dx3f(k);
   }
   return;
 }
@@ -399,7 +405,7 @@ void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const 
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void SphericalPolar::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                               AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
@@ -409,7 +415,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
 }
 
 void SphericalPolar::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                               AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
@@ -419,7 +425,7 @@ void SphericalPolar::Face2Area(const int k, const int j, const int il, const int
 }
 
 void SphericalPolar::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                               AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // area3 = dr r dtheta = d(r^2/2) dtheta
@@ -479,10 +485,10 @@ void SphericalPolar::VolCenterFace3Area(const int k, const int j, const int il,
 // Cell Volume function: compute volume of cell as vector
 
 void SphericalPolar::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol) {
+                                AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
-    // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
+    // volume = r^2 std::sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
     vol(i) = coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
   }
   return;
@@ -506,7 +512,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
   HydroDiffusion *phd = pmy_block->phydro->phdif;
   bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                            (phd->nu_iso>0.0 || phd->nu_aniso>0.0));
+                             (phd->nu_iso>0.0 || phd->nu_aniso>0.0));
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
@@ -516,12 +522,12 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
         Real m_ii = prim(IDN,k,j,i)*(SQR(prim(IM2,k,j,i)) + SQR(prim(IM3,k,j,i)));
         if (NON_BAROTROPIC_EOS) {
-           m_ii += 2.0*prim(IEN,k,j,i);
+          m_ii += 2.0*prim(IEN,k,j,i);
         } else {
-           m_ii += 2.0*(iso_cs*iso_cs)*prim(IDN,k,j,i);
+          m_ii += 2.0*(iso_cs*iso_cs)*prim(IDN,k,j,i);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-           m_ii += SQR(bcc(IB1,k,j,i));
+          m_ii += SQR(bcc(IB1,k,j,i));
         }
         if (do_hydro_diffusion) {
           m_ii += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
@@ -532,24 +538,24 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
         // src_2 = -< M_{theta r} ><1/r>
         u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
-         + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
+                        (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
+                         + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
 
         // src_3 = -< M_{phi r} ><1/r>
         u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
-         + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
+                        (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
+                         + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
 
         // src_2 = < M_{phi phi} ><cot theta/r>
         Real m_pp = prim(IDN,k,j,i)*SQR(prim(IM3,k,j,i));
         if (NON_BAROTROPIC_EOS) {
-           m_pp += prim(IEN,k,j,i);
+          m_pp += prim(IEN,k,j,i);
         } else {
-           m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+          m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i))
-                         - SQR(bcc(IB3,k,j,i)) );
+          m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i))
+                        - SQR(bcc(IB3,k,j,i)) );
         }
         if (do_hydro_diffusion)
           m_pp += 0.5*(phd->visflx[X3DIR](IM3,k+1,j,i)+phd->visflx[X3DIR](IM3,k,j,i));
@@ -559,15 +565,15 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         // src_3 = -< M_{phi theta} ><cot theta/r>
         if (use_x2_fluxes) {
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-              (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
-              + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
+                          (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
+                           + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
         } else {
           Real m_ph = prim(IDN,k,j,i) * prim(IM3,k,j,i) * prim(IM2,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
           if (do_hydro_diffusion)
-              m_ph += 0.5*(phd->visflx[X2DIR](IM3,k,j+1,i)+phd->visflx[X2DIR](IM3,k,j,i));
+            m_ph += 0.5*(phd->visflx[X2DIR](IM3,k,j+1,i)+phd->visflx[X2DIR](IM3,k,j,i));
 
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }

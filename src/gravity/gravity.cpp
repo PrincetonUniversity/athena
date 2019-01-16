@@ -6,20 +6,22 @@
 //! \file gravity.cpp
 //  \brief implementation of functions in class Gravity
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals_grav.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "gravity.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -27,20 +29,20 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
   if (four_pi_G==0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
   grav_mean_rho=pmb->pmy_mesh->grav_mean_rho_;
   if (grav_mean_rho==-1.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Background Mean Density must be set in the Mesh::InitUserMeshData "
         << "using the SetMeanDensity function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 

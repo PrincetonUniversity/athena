@@ -47,14 +47,15 @@ public:
   // required: universal
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                        enum CCBoundaryType type);
+  // required: universal
+  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type);
 
   // required: universal
-  bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                          enum CCBoundaryType type);
+  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type);
 
   // optional: initialization in mesh.cpp
-  void ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                           enum CCBoundaryType type);
+  void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
+                                                   enum CCBoundaryType type);
 
   // required: unrefined
   void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,

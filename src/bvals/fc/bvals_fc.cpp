@@ -6,20 +6,21 @@
 //! \file bvals_fc.cpp
 //  \brief functions that apply BCs for FACE_CENTERED variables
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // memcpy
+#include <cstring>    // memcpy()
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
@@ -28,6 +29,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -424,14 +426,14 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   // bx1
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie+1;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
+    if ((pmb->loc.lx1 & 1LL)==0LL) ei+=cng;
     else             si-=cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+1+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis;
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
@@ -439,7 +441,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if (nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
+      if ((pmb->loc.lx3 & 1LL)==0LL) ek+=cng;
       else             sk-=cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+cng;}
@@ -461,7 +463,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   // bx2
   if (nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1&1L)==0L) ei+=cng;
+    if ((pmb->loc.lx1 & 1LL)==0LL) ei+=cng;
     else             si-=cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis-1;
@@ -469,7 +471,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
       ej++;
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+1+cng;}
@@ -497,7 +499,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if (nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2&1L)==0L) ej+=cng;
+      if ((pmb->loc.lx2 & 1LL)==0LL) ej+=cng;
       else             sj-=cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
@@ -506,7 +508,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
       ek++;
-      if ((pmb->loc.lx3&1L)==0L) ek+=cng;
+      if ((pmb->loc.lx3 & 1LL)==0LL) ek+=cng;
       else             sk-=cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+1+cng;}
@@ -700,35 +702,47 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
-//  \brief load boundary buffer for x1 direction into the array
+//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(void)
+//  \brief receive the magnetic field boundary data
 
-bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
+bool BoundaryValues::ReceiveFieldBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
-  bool flag=true;
+  bool bflag=true;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if (bd_field_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
     if (bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
-      if (nb.rank==Globals::my_rank) {// on the same process
-        flag=false;
+      if (nb.rank==Globals::my_rank) { // on the same process
+        bflag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
-      } else { // MPI boundary
+      else { // NOLINT // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(bd_field_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test)==false) {
-          flag=false;
+          bflag=false;
           continue;
         }
         bd_field_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
-#else
-      }
 #endif
     }
+  }
+  return bflag;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundaries(FaceField &dst)
+//  \brief set the magnetic field boundary data
+
+void BoundaryValues::SetFieldBoundaries(FaceField &dst) {
+  MeshBlock *pmb=pmy_block_;
+
+  for (int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if (nb.level==pmb->loc.level)
       SetFieldBoundarySameLevel(dst, bd_field_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
@@ -738,20 +752,18 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst) {
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (flag
-      and (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlockField(dst);
     PolarBoundaryAverageField(dst);
   }
-
-  return flag;
+  return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
-//  \brief load boundary buffer for x1 direction into the array
+//! \fn void BoundaryValues::ReceiveAndSetFieldBoundariesWithWait(FaceField &dst)
+//  \brief receive and set the magnetic field boundary data for initialization
 
-void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
+void BoundaryValues::ReceiveAndSetFieldBoundariesWithWait(FaceField &dst) {
   MeshBlock *pmb=pmy_block_;
 
   for (int n=0; n<nneighbor; n++) {
@@ -769,10 +781,11 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst) {
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2] == POLAR_BNDRY or block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlockField(dst);
     PolarBoundaryAverageField(dst);
   }
+
   return;
 }
 
@@ -787,37 +800,37 @@ void BoundaryValues::PolarBoundarySingleAzimuthalBlockField(FaceField &dst) {
     if (block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           azimuthal_shift_(k) = dst.x1f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+            azimuthal_shift_(k) = dst.x1f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
+          }
+        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-           azimuthal_shift_(k) = dst.x2f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
+            azimuthal_shift_(k) = dst.x2f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
+          }
+        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
-       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-           azimuthal_shift_(k) = dst.x3f(k,j,i);
-         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
-           int k_shift = k;
-           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
-         }
-       }
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
+            azimuthal_shift_(k) = dst.x3f(k,j,i);
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
+          }
+        }
       }
     }
 
@@ -877,16 +890,16 @@ void BoundaryValues::PolarBoundaryAverageField(FaceField &dst) {
   }
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
     int j = pmb->js;
-    for (int k = ks; k <= ke; ++k) {
-      for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int i=is; i<=ie; ++i) {
         dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
       }
     }
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
     int j = pmb->je + 1;
-    for (int k = ks; k <= ke; ++k) {
-      for (int i = is; i <= ie; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int i=is; i<=ie; ++i) {
         dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
       }
     }

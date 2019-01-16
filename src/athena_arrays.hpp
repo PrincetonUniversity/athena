@@ -12,12 +12,17 @@
 //  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
 //  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
 
+// C headers
+
 // C++ headers
 #include <cstddef>  // size_t
+#include <cstring>  // memset
+
+// Athena++ headers
 
 template<typename T>
 class AthenaArray {
-public:
+ public:
   AthenaArray();
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
@@ -35,6 +40,7 @@ public:
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
+  void ZeroClear(void);
 
   // functions to get array dimensions
   int GetDim1() const { return nx1_; }
@@ -45,7 +51,7 @@ public:
 
   // a function to get the total size of the array
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
-  size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
+  std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
 
   bool IsShallowCopy() { return (scopy_ == true); }
   T *data() { return pdata_; }
@@ -80,9 +86,9 @@ public:
   // functions that initialize an array with shallow copy or slice from another array
   void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
-    const int nvar);
+                            const int nvar);
 
-private:
+ private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_;
   bool scopy_;  // true if shallow copy (prevents source from being deleted)
@@ -92,7 +98,7 @@ private:
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(NULL), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
+    : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
 }
 
 // destructor
@@ -160,7 +166,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
 
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
-  const int indx, const int nvar) {
+                                          const int indx, const int nvar) {
   pdata_ = src.pdata_;
 
   if (dim == 5) {
@@ -287,10 +293,10 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, i
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
   if (scopy_) {
-    pdata_ = NULL;
+    pdata_ = nullptr;
   } else {
     delete[] pdata_;
-    pdata_ = NULL;
+    pdata_ = nullptr;
     scopy_ = true;
   }
 }
@@ -309,6 +315,15 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
   T* tmp_pdata_ = pdata_;
   pdata_ = array2.pdata_;
   array2.pdata_ = tmp_pdata_;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::ZeroClear()
+//  \brief  fill the array with zero
+
+template<typename T>
+void AthenaArray<T>::ZeroClear(void) {
+  std::memset(pdata_, 0, GetSizeInBytes());
 }
 
 #endif // ATHENA_ARRAYS_HPP_

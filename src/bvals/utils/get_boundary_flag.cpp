@@ -5,13 +5,15 @@
 //========================================================================================
 //! \file get_boundary_flag.cpp
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "bvals.hpp"
 
@@ -40,6 +42,6 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
         << "Input string=" << input_string << " not valid boundary type" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 }

@@ -8,10 +8,12 @@
 //! \file bvals_grav.hpp
 //  \brief defines GravityBoundaryValues class
 
+// C headers
+
 // C++ headers
 #include <string>   // string
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "bvals.hpp"
@@ -44,7 +46,7 @@ typedef struct GravityBoundaryData {
 //  \brief BVals data and functions
 
 class GravityBoundaryValues : public BoundaryBase {
-public:
+ public:
   // compare with bvals.hpp:: BoundaryValues derived class
   // BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
@@ -98,7 +100,7 @@ public:
 
   // optional interfaces: RefinedBoundary, PolarBoundary, ...
 
-private:
+ private:
   MeshBlock *pmy_block_;
   GravityBoundaryFunc_t GravityBoundaryFunction_[6];
   GravityBoundaryData bd_gravity_;

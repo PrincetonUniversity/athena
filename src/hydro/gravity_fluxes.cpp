@@ -6,12 +6,15 @@
 //! \file gravity_fluxes.cpp
 //  \brief Calculate gravity fluxes
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../gravity/gravity.hpp"
-
+#include "../mesh/mesh.hpp"
+#include "hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFlux(void)
@@ -28,7 +31,7 @@ void Hydro::AddGravityFlux(void) {
   AthenaArray<Real> &x3flux=flux[X3DIR];
   AthenaArray<Real> &phi=pmb->pgrav->phi;
   Real phil;
-  Real gxl,gyl,gzl;
+  Real gxl, gyl(0.0), gzl(0.0);
 
   // i-direction
   for (int k=ks; k<=ke; ++k) {
@@ -51,7 +54,7 @@ void Hydro::AddGravityFlux(void) {
         // momentum fluxes in x1-dir.
         // 2nd term is needed only if Jean's swindle used
         x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G
-                          +  grav_mean_rho*phil;
+                             +  grav_mean_rho*phil;
         x1flux(IM2,k,j,i) += gxl*gyl/four_pi_G;
         x1flux(IM3,k,j,i) += gxl*gzl/four_pi_G;
         // energy source term is included as a source term separately
@@ -80,7 +83,7 @@ void Hydro::AddGravityFlux(void) {
           // 2nd term is needed only if Jean's swindle used
           x2flux(IM1,k,j,i) += gyl*gxl/four_pi_G;
           x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G
-                            +  grav_mean_rho*phil;
+                               +  grav_mean_rho*phil;
           x2flux(IM3,k,j,i) += gyl*gzl/four_pi_G;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
@@ -108,7 +111,7 @@ void Hydro::AddGravityFlux(void) {
           x3flux(IM1,k,j,i) += gzl*gxl/four_pi_G;
           x3flux(IM2,k,j,i) += gzl*gyl/four_pi_G;
           x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G
-                            +  grav_mean_rho*phil;
+                               +  grav_mean_rho*phil;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
         }
@@ -167,9 +170,6 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
   Coordinates *pco=pmb->pcoord;
   Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
 
-  AthenaArray<Real> &x1flux=flux[X1DIR];
-  AthenaArray<Real> &x2flux=flux[X2DIR];
-  AthenaArray<Real> &x3flux=flux[X3DIR];
   AthenaArray<Real> &x1gflx=gflx[X1DIR];
   AthenaArray<Real> &x2gflx=gflx[X2DIR];
   AthenaArray<Real> &x3gflx=gflx[X3DIR];
@@ -179,11 +179,12 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
   int il, iu, jl, ju, kl, ku;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real phic, phil;
+  // Real phic; // set, but unused variable
+  Real phil;
   Real gxl,gyl,gzl;
-//----------------------------------------------------------------------------------------
-// i-direction
-// set the loop limits
+  //--------------------------------------------------------------------------------------
+  // i-direction
+  // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx2 > 1) {
@@ -201,7 +202,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
         Real dx1 = pco->dx1v(i);
         Real dx2 = pco->dx2v(j);
         Real dx3 = pco->dx3v(k);
-        phic = phi_in(k,j,i);
+        //phic = phi_in(k,j,i);
         phil = 0.5*(phi_in(k,j,i-1) + phi_in(k,j,i  ));
         // gx, gy, and gz centered at L and R x1-faces
         gxl =       (phi_in(k,j  ,i-1) - phi_in(k,j  ,i  ))/dx1;
@@ -219,7 +220,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
         // momentum fluxes in x1-dir.
         // 2nd term is needed only if Jean's swindle used
         x1gflx(IM1,k,j,i) = 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G
-                          + grav_mean_rho*phil;
+                            + grav_mean_rho*phil;
         x1gflx(IM2,k,j,i) = gxl*gyl/four_pi_G;
         x1gflx(IM3,k,j,i) = gxl*gzl/four_pi_G;
         // energy source term is included as a source term separately
@@ -227,8 +228,8 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
       }
     }
   }
-//----------------------------------------------------------------------------------------
-// j-direction
+  //--------------------------------------------------------------------------------------
+  // j-direction
 
   gxl = 0.0, gyl = 0.0, gzl = 0.0;
   if (pmb->block_size.nx2 > 1) {
@@ -246,7 +247,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);
-          phic = phi_in(k,j,i);
+          //phic = phi_in(k,j,i);
           phil = 0.5*(phi_in(k,j-1,i)+phi_in(k,j  ,i));
 
           // gx, gy, and gz centered at L and R x2-faces
@@ -264,7 +265,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
           // 2nd term is needed only if Jean's swindle used
           x2gflx(IM1,k,j,i) = gyl*gxl/four_pi_G;
           x2gflx(IM2,k,j,i) = 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G
-                            + grav_mean_rho*phil;
+                              + grav_mean_rho*phil;
           x2gflx(IM3,k,j,i) = gyl*gzl/four_pi_G;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
@@ -272,8 +273,8 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
       }
     }
   } // 2D or 3D
-//----------------------------------------------------------------------------------------
-// k-direction
+  //--------------------------------------------------------------------------------------
+  // k-direction
 
   gxl = 0.0, gyl = 0.0, gzl = 0.0;
   if (pmb->block_size.nx3 > 1) {
@@ -288,7 +289,7 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
           Real dx1 = pco->dx1v(i);
           Real dx2 = pco->dx2v(j);
           Real dx3 = pco->dx3v(k);
-          phic = phi_in(k,j,i);
+          //phic = phi_in(k,j,i);
           phil = 0.5*(phi_in(k-1,j,i)+phi_in(k  ,j,i));
 
           // gx, gy, and gz centered at L and R x3-faces
@@ -306,89 +307,12 @@ void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
           x3gflx(IM1,k,j,i) = gzl*gxl/four_pi_G;
           x3gflx(IM2,k,j,i) = gzl*gyl/four_pi_G;
           x3gflx(IM3,k,j,i) = 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G
-                            + grav_mean_rho*phil;
+                              + grav_mean_rho*phil;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
         }
       }
     }
-  } //3D
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void Hydro::CorrectGravityFlux(void)
-//  \brief Correct the fluxes using the updated gravitational fluxes
-//         Implemented for one poisson solver call. (old Athena style)
-
-void Hydro::CorrectGravityFlux(void) {
-  MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1gflx=gflx[X1DIR];
-  AthenaArray<Real> &x2gflx=gflx[X2DIR];
-  AthenaArray<Real> &x3gflx=gflx[X3DIR];
-  AthenaArray<Real> &x1gflx_old=gflx_old[X1DIR];
-  AthenaArray<Real> &x2gflx_old=gflx_old[X2DIR];
-  AthenaArray<Real> &x3gflx_old=gflx_old[X3DIR];
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
-  x1area.InitWithShallowCopy(x1face_area_);
-  x2area.InitWithShallowCopy(x2face_area_);
-  x2area_p1.InitWithShallowCopy(x2face_area_p1_);
-  x3area.InitWithShallowCopy(x3face_area_);
-  x3area_p1.InitWithShallowCopy(x3face_area_p1_);
-  vol.InitWithShallowCopy(cell_volume_);
-  dflx.InitWithShallowCopy(dflx_);
-
-#pragma omp for schedule(static)
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      // calculate x1-flux divergence
-      pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
-      for (int n=IM1; n<=IM3; ++n) {
-        for (int i=is; i<=ie; ++i) {
-          dflx(n,i) = x1area(i+1)*(x1gflx(n,k,j,i+1)-x1gflx_old(n,k,j,i+1))
-                      - x1area(i)*(x1gflx(n,k,j,i)-x1gflx_old(n,k,j,i));
-        }
-      }
-
-      // calculate x2-flux divergence
-      if (pmb->block_size.nx2 > 1) {
-        pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
-        pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
-        for (int n=IM1; n<=IM3; ++n) {
-#pragma omp simd
-          for (int i=is; i<=ie; ++i) {
-            dflx(n,i) += x2area_p1(i)*(x2gflx(n,k,j+1,i)-x2gflx_old(n,k,j+1,i))
-                       - x2area(i)*(x2gflx(n,k,j,i)-x2gflx_old(n,k,j,i));
-          }
-        }
-      }
-
-      // calculate x3-flux divergence
-      if (pmb->block_size.nx3 > 1) {
-        pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );
-        pmb->pcoord->Face3Area(k+1,j,is,ie,x3area_p1);
-        for (int n=IM1; n<=IM3; ++n) {
-#pragma omp simd
-          for (int i=is; i<=ie; ++i) {
-            dflx(n,i) += x3area_p1(i)*(x3gflx(n,k+1,j,i)-x3gflx_old(n,k+1,j,i))
-                       - x3area(i)*(x3gflx(n,k,j,i)-x3gflx_old(n,k,j,i));
-          }
-        }
-      }
-
-      // update conserved variables
-      pmb->pcoord->CellVolume(k,j,is,ie,vol);
-      for (int n=IM1; n<=IM3; ++n) {
-        for (int i=is; i<=ie; ++i) {
-          u(n,k,j,i) -= 0.5*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
-        }
-      }
-    }
-  }
-
+  } // 3D
   return;
 }

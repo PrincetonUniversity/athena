@@ -11,26 +11,28 @@
 //  upper (lower) pole.  Works in 2D and 3D.
 //========================================================================================
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>      // sqrt
 #include <fstream>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>      // sqrt
-#include <algorithm>  // min
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../bvals/bvals.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
 
 static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,
@@ -40,14 +42,18 @@ static Real A2(const Real x1, const Real x2, const Real x3);
 static Real A1(const Real x1, const Real x2, const Real x3);
 
 // User-defined boundary conditions along inner/outer edges (not poles)
-void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
-void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
-void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
-void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // problem parameters which are useful to make global to this file
 static Real vy0, rho0, isocs2, gamma_gas;
@@ -218,7 +224,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        phydro->u(IDN,k,j,i) = rho0 ;
+        phydro->u(IDN,k,j,i) = rho0;
         VelProfileCyl(pcoord->x1v(i),pcoord->x2v(j),pcoord->x3v(k),v1,v2,v3);
         phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
         phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
@@ -226,13 +232,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = isocs2*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
           phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))
-                                      +SQR(phydro->u(IM2,k,j,i))
-                                      +SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+                                       +SQR(phydro->u(IM2,k,j,i))
+                                       +SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {
             phydro->u(IEN,k,j,i) +=
-              0.5*(SQR(0.5*(pfield->b.x1f(k,j,i+1) + pfield->b.x1f(k,j,i)))
-                 + SQR(0.5*(pfield->b.x2f(k,j+1,i) + pfield->b.x2f(k,j,i)))
-                 + SQR(0.5*(pfield->b.x3f(k+1,j,i) + pfield->b.x3f(k,j,i))));
+                0.5*(SQR(0.5*(pfield->b.x1f(k,j,i+1) + pfield->b.x1f(k,j,i)))
+                     + SQR(0.5*(pfield->b.x2f(k,j+1,i) + pfield->b.x2f(k,j,i)))
+                     + SQR(0.5*(pfield->b.x3f(k+1,j,i) + pfield->b.x3f(k,j,i))));
           }
         }
       }
@@ -247,9 +253,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
                           Real &v1, Real &v2, Real &v3) {
-  v1 = vy0*sin(x2)*sin(x3);
-  v2 = vy0*cos(x2)*sin(x3);
-  v3 = vy0*cos(x3);
+  v1 = vy0*std::sin(x2)*std::sin(x3);
+  v2 = vy0*std::cos(x2)*std::sin(x3);
+  v3 = vy0*std::cos(x3);
   return;
 }
 
@@ -267,17 +273,17 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 static Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
-  Real x=x1*fabs(sin(x2))*cos(x3);
-  Real y=x1*fabs(sin(x2))*sin(x3);
+  Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
-   x=-x;
-   y=-y;
+    x=-x;
+    y=-y;
   }
-  Real z=x1*cos(x2);
-  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+  Real z=x1*std::cos(x2);
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
-  a2=-az*fabs(sin(x2));
+  a2=-az*std::fabs(std::sin(x2));
   return a2;
 }
 
@@ -287,17 +293,17 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 static Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
-  Real x=x1*fabs(sin(x2))*cos(x3);
-  Real y=x1*fabs(sin(x2))*sin(x3);
+  Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
+  Real y=x1*std::fabs(std::sin(x2))*std::sin(x3);
   if (x2<0.0||x2>PI) {
-   x=-x;
-   y=-y;
+    x=-x;
+    y=-y;
   }
-  Real z=x1*cos(x2);
-  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && fabs(z-zc)<0.2) {
+  Real z=x1*std::cos(x2);
+  if (std::sqrt(SQR(x-xc)+SQR(y-yc))<=0.5 && std::fabs(z-zc)<0.2) {
     az=b0*(0.5-std::sqrt(SQR(x-xc)+SQR(y-yc)));
   }
-  a1=az*cos(x2);
+  a1=az*std::cos(x2);
   return a1;
 }
 
@@ -305,47 +311,51 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 //!\f: User-defined boundary Conditions: LoopInnerX1
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // Real rad, phi, z;
   Real v1, v2, v3;
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
-        prim(IDN,k,j,is-i) = rho0;
-        VelProfileCyl(pco->x1v(is-i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
-        prim(IM1,k,j,is-i) = v1;
-        prim(IM2,k,j,is-i) = v2;
-        prim(IM3,k,j,is-i) = v3;
+        prim(IDN,k,j,il-i) = rho0;
+        VelProfileCyl(pco->x1v(il-i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
+        prim(IM1,k,j,il-i) = v1;
+        prim(IM2,k,j,il-i) = v2;
+        prim(IM3,k,j,il-i) = v3;
         if (NON_BAROTROPIC_EOS)
-          prim(IEN,k,j,is-i) = isocs2*prim(IDN,k,j,is-i);
+          prim(IEN,k,j,il-i) = isocs2*prim(IDN,k,j,il-i);
       }
     }
   }
   // copy face-centered magnetic fields into ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x1f(k,j,(is-i)) = b.x1f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          b.x1f(k,j,(il-i)) = b.x1f(k,j,il);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x2f(k,j,(is-i)) = b.x2f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          b.x2f(k,j,(il-i)) = b.x2f(k,j,il);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x3f(k,j,(is-i)) = b.x3f(k,j,is);
+        for (int i=1; i<=ngh; ++i) {
+          b.x3f(k,j,(il-i)) = b.x3f(k,j,il);
+        }
       }
-    }}
+    }
   }
 }
 
@@ -353,47 +363,51 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX1
 
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // Real rad,phi,z;
   Real v1, v2, v3;
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
-        prim(IDN,k,j,ie+i) = rho0;
-        VelProfileCyl(pco->x1v(ie+i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
-        prim(IM1,k,j,ie+i) = v1;
-        prim(IM2,k,j,ie+i) = v2;
-        prim(IM3,k,j,ie+i) = v3;
+        prim(IDN,k,j,iu+i) = rho0;
+        VelProfileCyl(pco->x1v(iu+i),pco->x2v(j),pco->x3v(k),v1,v2,v3);
+        prim(IM1,k,j,iu+i) = v1;
+        prim(IM2,k,j,iu+i) = v2;
+        prim(IM3,k,j,iu+i) = v3;
         if (NON_BAROTROPIC_EOS)
-          prim(IEN,k,j,ie+i) = isocs2*prim(IDN,k,j,ie+i);
+          prim(IEN,k,j,iu+i) = isocs2*prim(IDN,k,j,iu+i);
       }
     }
   }
   // copy face-centered magnetic fields into ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x1f(k,j,(ie+i+1)) = b.x1f(k,j,(ie+1));
+        for (int i=1; i<=ngh; ++i) {
+          b.x1f(k,j,(iu+i+1)) = b.x1f(k,j,(iu+1));
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x2f(k,j,(ie+i)) = b.x2f(k,j,ie);
+        for (int i=1; i<=ngh; ++i) {
+          b.x2f(k,j,(iu+i)) = b.x2f(k,j,iu);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=js; j<=je; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=1; i<=ngh; ++i) {
-        b.x3f(k,j,(ie+i)) = b.x3f(k,j,ie);
+        for (int i=1; i<=ngh; ++i) {
+          b.x3f(k,j,(iu+i)) = b.x3f(k,j,iu);
+        }
       }
-    }}
+    }
   }
 }
 
@@ -401,47 +415,51 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopInnerX2
 
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // Real rad,phi,z;
   Real v1, v2, v3;
-  for (int k=ks; k<=ke; ++k) {
+  for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        prim(IDN,k,js-j,i) = rho0;
-        VelProfileCyl(pco->x1v(i),pco->x2v(js-j),pco->x3v(k),v1,v2,v3);
-        prim(IM1,k,js-j,i) = v1;
-        prim(IM2,k,js-j,i) = v2;
-        prim(IM3,k,js-j,i) = v3;
+      for (int i=il; i<=iu; ++i) {
+        prim(IDN,k,jl-j,i) = rho0;
+        VelProfileCyl(pco->x1v(i),pco->x2v(jl-j),pco->x3v(k),v1,v2,v3);
+        prim(IM1,k,jl-j,i) = v1;
+        prim(IM2,k,jl-j,i) = v2;
+        prim(IM3,k,jl-j,i) = v3;
         if (NON_BAROTROPIC_EOS)
-          prim(IEN,k,js-j,i) = isocs2*prim(IDN,k,js-j,i);
+          prim(IEN,k,jl-j,i) = isocs2*prim(IDN,k,jl-j,i);
       }
     }
   }
   // copy face-centered magnetic fields into ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(js-j),i) = b.x1f(k,js,i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(jl-j),i) = b.x1f(k,jl,i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(js-j),i) = b.x2f(k,js,i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(jl-j),i) = b.x2f(k,jl,i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(js-j),i) = b.x3f(k,js,i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(jl-j),i) = b.x3f(k,jl,i);
+        }
       }
-    }}
+    }
   }
 }
 
@@ -449,46 +467,50 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX2
 
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-       Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  Real rad,phi,z;
+                 Real time, Real dt,
+                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //  Real rad,phi,z;
   Real v1, v2, v3;
-  for (int k=ks; k<=ke; ++k) {
+  for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        prim(IDN,k,je+j,i) = rho0;
-        VelProfileCyl(pco->x1v(i),pco->x2v(je+j),pco->x3v(k),v1,v2,v3);
-        prim(IM1,k,je+j,i) = v1;
-        prim(IM2,k,je+j,i) = v2;
-        prim(IM3,k,je+j,i) = v3;
+      for (int i=il; i<=iu; ++i) {
+        prim(IDN,k,ju+j,i) = rho0;
+        VelProfileCyl(pco->x1v(i),pco->x2v(ju+j),pco->x3v(k),v1,v2,v3);
+        prim(IM1,k,ju+j,i) = v1;
+        prim(IM2,k,ju+j,i) = v2;
+        prim(IM3,k,ju+j,i) = v3;
         if (NON_BAROTROPIC_EOS)
-          prim(IEN,k,je+j,i) = isocs2*prim(IDN,k,je+j,i);
+          prim(IEN,k,ju+j,i) = isocs2*prim(IDN,k,ju+j,i);
       }
     }
   }
   // copy face-centered magnetic fields into ghost zones
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(je+j  ),i) = b.x1f(k,(je  ),i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(ju+j  ),i) = b.x1f(k,(ju  ),i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+j+1),i) = b.x2f(k,(je+1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(ju+j+1),i) = b.x2f(k,(ju+1),i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(je+j  ),i) = b.x3f(k,(je  ),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(ju+j  ),i) = b.x3f(k,(ju  ),i);
+        }
       }
-    }}
+    }
   }
 }
