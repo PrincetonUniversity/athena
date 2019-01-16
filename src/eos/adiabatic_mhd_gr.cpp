@@ -26,6 +26,7 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
+/*
 #pragma omp declare simd simdlen(SIMD_WIDTH)
 static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
@@ -38,6 +39,13 @@ static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
     Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
     AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
+*/
+#pragma omp declare simd simdlen(SIMD_WIDTH)
+static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArray<Real> &dd_vals,
+				       const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
+				       const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
+				       Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
+				       AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
 #pragma omp declare simd simdlen(SIMD_WIDTH)
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
@@ -182,9 +190,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Set primitives
+	/*
         success_(i) = ConservedToPrimitiveNormalInitial(normal_dd_, normal_ee_,
             normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
             prim, normal_gamma_, pmag_);
+	*/
+        success_(i) = ConservedToPrimitiveNormal(3, normal_dd_, normal_ee_,
+						 normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
+						 prim, normal_gamma_, pmag_);
       }
 
       // Pass 2: Cleanup (most cells should be skipped)
@@ -193,9 +206,15 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Reapply iteration procedure in case convergence not attained (possibly slow)
         if (not success_(i)) {
+	  /*
           success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
               normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
               prim, normal_gamma_, pmag_);
+	  */
+	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
+						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
+						   prim, normal_gamma_, pmag_);
+
         }
       }
 
@@ -230,9 +249,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           normal_ee_(i) += wgas_add * SQR(normal_gamma_(i)) + pgas_add;
 
           // Recalculate primitives
+	  /*
           success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
               normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
               prim, normal_gamma_, pmag_);
+	  */
+	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
+						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
+						   prim, normal_gamma_, pmag_);
 
           // Handle failures
           if (not success_(i)) {
@@ -429,7 +453,7 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
   }
   return;
 }
-
+/*
 //----------------------------------------------------------------------------------------
 // Function for calculating primitives in normal observer frame: initial pass
 // Inputs:
@@ -575,7 +599,7 @@ static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
   pmag_vals(i) = 0.5 * (bb_sq/gamma_sq + SQR(ss));                // (NH 3.7, 3.11)
   return success;
 }
-
+*/
 //----------------------------------------------------------------------------------------
 // Function for calculating primitives in normal observer frame: cleanup passes
 // Inputs:
@@ -609,14 +633,14 @@ static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
 //   same exact function as ConservedToPrimitiveNormalInitial(), except this does 7
 //       iterations
 
-static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
-    const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-    const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
-    Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-    AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
+static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArray<Real> &dd_vals,
+				       const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
+				       const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
+				       Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
+				       AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
 
   // Parameters
-  const int num_iterations = 7;
+  //const int num_iterations = 7;
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
   const Real a_min = 1.0e-12;
