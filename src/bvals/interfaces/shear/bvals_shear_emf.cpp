@@ -7,6 +7,8 @@
 // //  \brief functions that apply BCs for emf corrections in shearing box calculations
 // //======================================================================================
 
+// // C headers
+
 // // C++ headers
 // #include <algorithm>  // min
 // #include <cmath>
@@ -18,7 +20,7 @@
 // #include <stdexcept>  // runtime_error
 // #include <string>     // c_str()
 
-// // Athena++ classes headers
+// // Athena++ headers
 // #include "../athena.hpp"
 // #include "../athena_arrays.hpp"
 // #include "../coordinates/coordinates.hpp"
@@ -29,8 +31,6 @@
 // #include "../mesh/mesh.hpp"
 // #include "../parameter_input.hpp"
 // #include "../utils/buffer_utils.hpp"
-
-// // this class header
 // #include "bvals.hpp"
 
 // // MPI header
@@ -93,7 +93,7 @@
 //       std::stringstream msg;
 //       msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
 //           << "nb = " << nb << " not valid" << std::endl;
-//       throw std::runtime_error(msg.str().c_str());
+//       ATHENA_ERROR(msg);
 //    }
 
 //   int p=0;
@@ -166,7 +166,8 @@
 //                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
 // #endif
 //        }
-//     }}
+//     }
+//}
 //   } // inner boundaries
 
 //   if (shbb_.outer == true) {
@@ -202,7 +203,8 @@
 //                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
 // #endif
 //         }
-//     }}
+//     }
+//}
 //   } // outer boundaries
 //   return;
 // }
@@ -264,7 +266,7 @@
 //       std::stringstream msg;
 //       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
 //           << "nb = " << nb << " not valid" << std::endl;
-//       throw std::runtime_error(msg.str().c_str());
+//       ATHENA_ERROR(msg);
 //    }
 
 //   int p=0;
@@ -422,8 +424,8 @@
 //       e3(k,j) = 0.0;
 //       if (k==ke+NGHOST) e2(k+1,j) = 0.0;
 //       if (j==je+NGHOST) e3(k,j+1) = 0.0;
-//   }}
-
+//   }
+//}
 //   return;
 // }
 
@@ -457,8 +459,8 @@
 
 //       dUm = 0.0;
 //       if (dUl*dUr > 0.0) {
-//         lim_slope = std::min(fabs(dUl),fabs(dUr));
-//         dUm = SIGN(dUc)*std::min(0.5*fabs(dUc),2.0*lim_slope);
+//         lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
+//         dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
 //       }
 
 //     if (eps > 0.0) { // eps always > 0 for inner i boundary

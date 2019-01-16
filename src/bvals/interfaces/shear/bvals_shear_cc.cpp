@@ -7,6 +7,8 @@
 // //  \brief functions that apply BCs for CELL_CENTERED variables
 // //======================================================================================
 
+// // C headers
+
 // // C++ headers
 // #include <algorithm>  // min
 // #include <cmath>
@@ -18,7 +20,7 @@
 // #include <stdexcept>  // runtime_error
 // #include <string>     // c_str()
 
-// // Athena++ classes headers
+// // Athena++ headers
 // #include "../athena.hpp"
 // #include "../athena_arrays.hpp"
 // #include "../coordinates/coordinates.hpp"
@@ -29,8 +31,6 @@
 // #include "../mesh/mesh.hpp"
 // #include "../parameter_input.hpp"
 // #include "../utils/buffer_utils.hpp"
-
-// // this class header
 // #include "bvals.hpp"
 
 // // MPI header
@@ -90,7 +90,7 @@
 //       std::stringstream msg;
 //       msg << "### FATAL ERROR in BoundaryValues:LoadCellCenteredShearing "
 //           << std::endl << "nb = " << nb << " not valid" << std::endl;
-//       throw std::runtime_error(msg.str().c_str());
+//       ATHENA_ERROR(msg);
 //   }
 
 //   int p=0;
@@ -139,7 +139,8 @@
 //           } // update energy
 //           src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
 //         }
-//     }}
+//     }
+//}
 //   }
 
 //   if (shbb_.outer == true) {
@@ -160,7 +161,8 @@
 //           } // update energy
 //           src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);// update IM2
 //         }
-//     }}
+//     }
+//}
 //   }
 //   return;
 // }
@@ -209,7 +211,8 @@
 //                                       - SQR(src(IM2,k,j,ii)));
 //           }
 //         }
-//     }}
+//     }
+// }
 
 //     // step 2. -- conservative remaping
 //     for (int n=0; n<NHYDRO; n++) {
@@ -221,7 +224,8 @@
 //                                              -flx_inner_hydro_(j);
 //           }
 //         }
-//     }}
+//     }
+// }
 
 //   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
 //   // MPI_Isend otherwise
@@ -241,7 +245,8 @@
 //                     &rq_innersend_hydro_[n]);
 // #endif
 //         }
-//       }}
+//       }
+// }
 //   } // inner boundaries
 
 //   if (shbb_.outer == true) {
@@ -265,7 +270,8 @@
 //                                       -SQR(src(IM2,k,j,ii)));
 //           }
 //         }
-//     }}
+//     }
+// }
 
 //     // step 2. -- conservative remaping
 //     for (int n=0; n<NHYDRO; n++) {
@@ -278,7 +284,8 @@
 //                                              -flx_outer_hydro_(j);
 //           }
 //         }
-//     }}
+//     }
+// }
 
 //   // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
 //   // MPI_Isend otherwise
@@ -302,7 +309,8 @@
 //                     &rq_outersend_hydro_[n]);
 // #endif
 //         }
-//     }}
+//     }
+// }
 //   } // outer boundaries
 //   return;
 // }
@@ -361,7 +369,7 @@
 //       std::stringstream msg;
 //       msg << "### FATAL ERROR in BoundaryValues:SetCellCenteredShearing " << std::endl
 //           << "nb = " << nb << " not valid" << std::endl;
-//       throw std::runtime_error(msg.str().c_str());
+//       ATHENA_ERROR(msg);
 //   }
 
 //   // set [sj:ej] of current meshblock
@@ -456,7 +464,7 @@
 //   int ku, ii,jj;
 
 //   int level = pmb->loc.level-pmesh->root_level;
-//   int64_t nrbx2 = pmesh->nrbx2*(1L<<level);
+//   std::int64_t nrbx2 = pmesh->nrbx2*(1L<<level);
 //   int nx2   = pmb->block_size.nx2; // # of cells per meshblock
 //   int nx3   = pmb->block_size.nx3; // # of cells per meshblock
 //   int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
@@ -469,7 +477,7 @@
 //   int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
 //   int Ngrids  = static_cast<int>(joffset/nx2);
 //   joverlap_   = joffset - Ngrids*nx2;
-//   eps_ = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
+//   eps_ = (std::fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
 
 //   if (shbb_.inner == true) { // if inner block
 //     for (int n=0; n<4; n++) {
@@ -491,7 +499,7 @@
 //         shbox_inner_emf_flag_[n]=BNDRY_COMPLETED;
 //       }
 //     }
-//     int jblock;
+//     int jblock=0;
 //     for (int j=0; j<nrbx2; j++) {
 //       // index of current meshblock on the shearingboundary block list
 //       if (shbb_.igidlist[j] == pmb->gid)  jblock = j;
@@ -499,7 +507,7 @@
 //     // send [js:je-joverlap] of the meshblock to other
 //     // attach [je-joverlap+1:MIN(je-joverlap+(NGHOST),je-js+1)]
 //     // to its right end.
-//     int jtmp = jblock + Ngrids;
+//     std::int64_t jtmp = jblock + Ngrids;
 //     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
 //     send_inner_gid_[1]  = shbb_.igidlist[jtmp];
 //     send_inner_rank_[1] = shbb_.irnklist[jtmp];
@@ -682,13 +690,13 @@
 //         shbox_outer_emf_flag_[n]=BNDRY_COMPLETED;
 //       }
 //     }
-//     int jblock;
+//     int jblock=0;
 //     for (int j=0; j<nrbx2; j++) {
 //       // index of current meshblock on the shearingboundary block list
 //       if (shbb_.ogidlist[j] == pmb->gid) jblock = j;
 //     }
 //     // recv [js-NGHOST:je-joverlap] of the meshblock from other
-//     int jtmp = jblock + Ngrids;
+//     std::int64_t jtmp = jblock + Ngrids;
 //     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
 //     recv_outer_gid_[1]  = shbb_.ogidlist[jtmp];
 //     recv_outer_rank_[1] = shbb_.ornklist[jtmp];
@@ -880,8 +888,8 @@
 
 //       dUm = 0.0;
 //       if (dUl*dUr > 0.0) {
-//         lim_slope = std::min(fabs(dUl),fabs(dUr));
-//         dUm = SIGN(dUc)*std::min(0.5*fabs(dUc),2.0*lim_slope);
+//         lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
+//         dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
 //       }
 
 //     if (eps > 0.0) { // eps always > 0 for inner i boundary
