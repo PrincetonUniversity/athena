@@ -1,5 +1,5 @@
 <comment>
-problem   = Kerlerian disk in spherical polar coordinates
+problem   = Keplerian disk in spherical polar coordinates
 reference = 
 configure = --prob=disk --coord=spherical_polar
 
