@@ -83,7 +83,7 @@
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
 #define COMPILER_COMMAND "@COMPILER_COMMAND@"
-#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@"
+#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@" // NOLINT
 
 //----------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
