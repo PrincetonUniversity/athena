@@ -39,13 +39,13 @@ ox1_bc = user  # outer boundary
 
 nx2    = 64                 # number of cells in theta-direction
 x2min  = 0.0                # minimum theta
-x2max  = 3.141592653589793  # maximum theta (pi)
+x2max  = 3.1415926535897932  # maximum theta (pi)
 ix2_bc = polar              # upper boundary
 ox2_bc = polar              # lower boundary
 
 nx3    = 64                 # number of cells in phi-direction
 x3min  = 0.0                # minimum phi
-x3max  = 6.283185307179586  # maximum phi (2*pi)
+x3max  = 6.2831853071795862  # maximum phi (2*pi)
 ix3_bc = periodic           # clockwise boundary
 ox3_bc = periodic           # counterclockwise boundary
 

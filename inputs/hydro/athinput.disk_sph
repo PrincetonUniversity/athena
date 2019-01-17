@@ -39,7 +39,7 @@ ox2_bc      = user      # Outer-X2 boundary condition flag
 
 nx3         = 4              # Number of zones in X3-direction
 x3min       = 0.0            # minimum value of X3
-x3max       = 6.28318530718  # maximum value of X3
+x3max       = 6.2831853071795862  # maximum value of X3
 ix3_bc      = periodic       # Inner-X3 boundary condition flag
 ox3_bc      = periodic       # Outer-X3 boundary condition flag
 

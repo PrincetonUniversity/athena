@@ -30,7 +30,7 @@ ox2_bc = outflow             # lower boundary
 
 nx3    = 1                  # number of cells in phi-direction
 x3min  = 0.0                # minimum phi
-x3max  = 6.283185307179586  # maximum phi (2*pi)
+x3max  = 6.2831853071795862  # maximum phi (2*pi)
 ix3_bc = periodic           # clockwise boundary
 ox3_bc = periodic           # counterclockwise boundary
 
