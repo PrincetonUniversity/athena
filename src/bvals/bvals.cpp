@@ -305,16 +305,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 
   // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
-    Mesh *pmy_mesh = pmb->pmy_mesh;
     Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
     qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
     ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
-    x1size_ = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
-    x2size_ = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-    x3size_ = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-    int level = pmb->loc.level - pmy_mesh->root_level;
-    std::int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
-    std::int64_t nrbx2 = pmy_mesh->nrbx2*(1L << level);
+    x1size_ = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
+    x2size_ = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
+    x3size_ = pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min;
+    int level = pmb->loc.level - pmy_mesh_->root_level;
+    std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
+    std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
 
     shbb_.outer = false;
     shbb_.inner = false;
@@ -322,7 +321,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       int ncells3 = pmb->block_size.nx3;
-      if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+      if (pmy_mesh_->mesh_size.nx3>1) ncells3 += 2*NGHOST;
       ssize_ = NGHOST*ncells3;
 
       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
