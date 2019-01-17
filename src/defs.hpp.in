@@ -98,7 +98,9 @@
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)
 
+// all constants specified to 17 total digits of precision = max_digits10 for "double"
 #define PI 3.1415926535897932
+#define TWO_PI 6.2831853071795862
 #define SQRT2 1.4142135623730951
 #define ONE_OVER_SQRT2 0.7071067811865475
 #define ONE_3RD 0.3333333333333333
