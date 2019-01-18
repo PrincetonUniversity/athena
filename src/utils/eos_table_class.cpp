@@ -35,29 +35,28 @@ const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,
 //  \brief Read data from binary EOS table and initialize interpolated table.
 void ReadBinaryTable(std::string fn, EosTable *peos_table) {
   std::ifstream eos_file(fn.c_str(), std::ios::binary);
-  Real egasOverPres;
   if (eos_file.is_open()) {
     eos_file.seekg(0, std::ios::beg);
     eos_file.read(reinterpret_cast<char*>(&peos_table->nVar), sizeof(peos_table->nVar));
     eos_file.read(reinterpret_cast<char*>(&peos_table->nEgas), sizeof(peos_table->nEgas));
     eos_file.read(reinterpret_cast<char*>(&peos_table->nRho), sizeof(peos_table->nRho));
     eos_file.read(reinterpret_cast<char*>(&peos_table->logEgasMin),
-                   sizeof(peos_table->logEgasMin));
+                  sizeof(peos_table->logEgasMin));
     eos_file.read(reinterpret_cast<char*>(&peos_table->logEgasMax),
-                   sizeof(peos_table->logEgasMax));
+                  sizeof(peos_table->logEgasMax));
     eos_file.read(reinterpret_cast<char*>(&peos_table->logRhoMin),
-                   sizeof(peos_table->logRhoMin));
+                  sizeof(peos_table->logRhoMin));
     eos_file.read(reinterpret_cast<char*>(&peos_table->logRhoMax),
-                   sizeof(peos_table->logRhoMax));
+                  sizeof(peos_table->logRhoMax));
     peos_table->EosRatios.NewAthenaArray(peos_table->nVar);
     eos_file.read(reinterpret_cast<char*>(peos_table->EosRatios.data()),
-                   peos_table->nVar * sizeof(peos_table->logRhoMin));
+                  peos_table->nVar * sizeof(peos_table->logRhoMin));
     peos_table->table.SetSize(peos_table->nVar, peos_table->nEgas, peos_table->nRho);
     peos_table->table.SetX1lim(peos_table->logRhoMin, peos_table->logRhoMax);
     peos_table->table.SetX2lim(peos_table->logEgasMin, peos_table->logEgasMax);
     eos_file.read(reinterpret_cast<char*>(peos_table->table.data.data()),
-         peos_table->nVar * peos_table->nRho * peos_table->nEgas
-         * sizeof(peos_table->logRhoMin));
+                  peos_table->nVar * peos_table->nRho * peos_table->nEgas
+                  * sizeof(peos_table->logRhoMin));
     eos_file.close();
   } else {
     std::stringstream msg;
@@ -71,16 +70,18 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
 //  \brief Read data from HDF5 EOS table and initialize interpolated table.
 void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 #ifndef HDF5OUTPUT
+  {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
       << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
   ATHENA_ERROR(msg);
+  }
 #endif
   bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
   std::string dens_lim_field =
-    pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
+      pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
   std::string espec_lim_field =
-    pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
+      pin->GetOrAddString("hydro", "EOS_espec_lim_field", "LogEspecLim");
   HDF5TableLoader(fn.c_str(), &peos_table->table, 4, var_names,
                   espec_lim_field.c_str(), dens_lim_field.c_str());
   peos_table->table.GetSize(peos_table->nVar, peos_table->nEgas, peos_table->nRho);

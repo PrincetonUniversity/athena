@@ -58,14 +58,15 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
 //  \brief Return interpolated adiabatic sound speed squared for use in
 //         Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  return std::pow((Real)10, ptable->table.interpolate(3, std::log10(hint*ptable->hUnit),
-                                                 std::log10(rho*ptable->rhoUnit))) * hint;
+  return std::pow(static_cast<Real>(10.0),
+                  ptable->table.interpolate(3, std::log10(hint*ptable->hUnit),
+                                            std::log10(rho*ptable->rhoUnit))) * hint;
 }
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
 //  \brief Read data and initialize interpolated table.
 void EquationOfState::PrepEOS(ParameterInput *pin) {
-//Debugging/testing code
+  // Debugging/testing code
 #ifdef EOSDEBUG1
   std::cout << "Eos table: " << ptable->nVar << ", " << ptable->nRho << ", "
             << ptable->nEgas << std::endl;
@@ -88,7 +89,7 @@ void EquationOfState::PrepEOS(ParameterInput *pin) {
   }
 #endif
 
-//Debugging/testing code
+  // Debugging/testing code
 #ifdef EOSDEBUG0
   std::cout << "prepEOS: " << ptable->nVar << ", " << ptable->nEgas
             <<  ", " << ptable->nRho << std::endl;
@@ -146,9 +147,9 @@ void EosTestLoop(EquationOfState *peos) {
     for (int i=0; i<5; i++) std::cout << data(i) << ", ";
     std::cout << std::endl;
     std::cout << "P, e, Asq, Asq: " << peos->SimplePres(rho, egas) << ", "
-                                    << peos->SimpleEgas(rho, data(0)) << ", "
-                                    << peos->SimpleAsq(rho, data(0)) << ", "
-                                    << peos->RiemannAsq(rho, data(1)) << "\n\n";
+              << peos->SimpleEgas(rho, data(0)) << ", "
+              << peos->SimpleAsq(rho, data(0)) << ", "
+              << peos->RiemannAsq(rho, data(1)) << "\n\n";
     std::cout << "Input rho (g/cc):";
     std::cin >> rho;
     std::cout << "Input egas (erg/cc):";
