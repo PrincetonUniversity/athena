@@ -1,7 +1,7 @@
 <comment>
-problem = 2D Circularly Polarized Alfven Wave
+problem   = 2D Circularly Polarized Alfven Wave
 reference = G. Toth. JCP, vol. 161, pp. 605-662 (2000).
-config  = -b --prob=cpaw
+configure = --prob=cpaw -b
 
 <job>
 problem_id = cpaw      # problem ID: basename of output filenames
