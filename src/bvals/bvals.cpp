@@ -214,7 +214,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
         || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
       // PI is specified to 16 digits after the decimal pt.
-      if (pmy_mesh_->mesh_size.x3max != static_cast<Real>(2.0*PI)
+      if (pmy_mesh_->mesh_size.x3max != static_cast<Real>(TWO_PI)
           || pmy_mesh_->mesh_size.x3min != static_cast<Real>(0.0)) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -227,7 +227,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
             << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
             << "x3min=" << pmy_mesh_->mesh_size.x3min << "\n"
             << "x3max=" << pmy_mesh_->mesh_size.x3max << std::endl
-            << static_cast<Real>(2.0*PI) << "\n";
+            << static_cast<Real>(TWO_PI) << "\n";
         ATHENA_ERROR(msg);
       }
       // Also, x3 boundaries must both be periodic

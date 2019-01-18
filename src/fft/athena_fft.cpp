@@ -68,7 +68,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
     kNx[b_in_->iloc[i]]=b_in_->Nx[i];
     knx[b_in_->iloc[i]]=b_in_->nx[i];
     kdisp[b_in_->iloc[i]]=b_in_->is[i];
-    dkx[b_in_->iloc[i]]=2*PI/b_in_->Lx[i];
+    dkx[b_in_->iloc[i]]=TWO_PI/b_in_->Lx[i];
   }
 #endif
 }

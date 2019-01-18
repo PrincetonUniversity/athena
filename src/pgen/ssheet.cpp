@@ -102,8 +102,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
             <<","<<x3size<<"]"<<std::endl;
 
-  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
-  Real ky = (2.0*PI/x2size)*(static_cast<Real>(nwy));
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
   Real x1,x2,rd,rp,rvx,rvy;
   // update the physical variables as initial conditions
