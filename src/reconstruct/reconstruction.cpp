@@ -141,8 +141,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM
-          << " is incompatible with selected time/xorder=" << input_recon << std::endl
+          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << "\n"
+          << "is incompatible with selected time/xorder=" << input_recon << std::endl
           << "Reconfigure with Cartesian coordinates " << std::endl;
       ATHENA_ERROR(msg);
     }

@@ -1,5 +1,6 @@
 <comment>
 problem = 1D linear wave
+configure = --prob=gr_linear_wave -s --coord=cartesian --flux=hllc
 
 <job>
 problem_id = linear_wave_hydro_rel
