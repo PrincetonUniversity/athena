@@ -1,5 +1,6 @@
 <comment>
 problem = GR MHD spherical blast wave
+configure  = --prob=gr_blast -g -b --coord=
 
 <job>
 problem_id = gr_blast

@@ -1,5 +1,6 @@
 <job>
 problem_id = magnetized_inflow
+configure  = --prob=gr_mhd_inflow -g -b --coord=
 
 <output1>
 file_type = vtk

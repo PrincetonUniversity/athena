@@ -1,6 +1,7 @@
 <comment>
 problem   = Fishbone-Moncrief equilibrium torus
 reference = Fishbone & Moncrief 1976, ApJ 207 962
+configure  = --prob=gr_torus -g -b --coord=
 
 <job>
 problem_id = fm_torus

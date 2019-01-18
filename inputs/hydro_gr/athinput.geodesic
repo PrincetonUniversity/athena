@@ -1,5 +1,6 @@
 <comment>
-problem = Geodesic infall
+problem   = Geodesic infall (Hydro only)
+configure = --prob=gr_geodesic_infall -g --coord=
 
 <job>
 problem_id = gr_infall

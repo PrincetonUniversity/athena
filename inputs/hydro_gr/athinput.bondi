@@ -1,5 +1,6 @@
 <comment>
-problem = GR hydro accretion in radial direction
+problem   = GR hydro accretion in radial direction
+configure = --prob=gr_bondi -g --coord=
 
 <job>
 problem_id = gr_bondi
