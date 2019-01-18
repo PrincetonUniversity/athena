@@ -26,7 +26,7 @@
 //  \brief Check for any compatibility issues if polar-type boundary flags are selected.
 //  Called after setting 6x boundary functions in MeshBlock's BoundaryValues() constructor
 
-void BoundaryValues::CheckPolarBoundaries(void) {
+void BoundaryValues::CheckPolarBoundaries() {
   // Check that spherical-like coordinates were specified at compile time (this check
   // must be manually updated when a new coordinate system is added to coordinates/)
   if (((std::strcmp(COORDINATE_SYSTEM, "spherical_polar") != 0)
@@ -73,9 +73,9 @@ void BoundaryValues::CheckPolarBoundaries(void) {
           << static_cast<Real>(TWO_PI) << "\n";
       ATHENA_ERROR(msg);
     }
-    // Also, lower and upper x3 boundaries must both be periodic
-    if (block_bcs[INNER_X3] != PERIODIC_BNDRY
-        || block_bcs[OUTER_X3] != PERIODIC_BNDRY) {
+    // Also, lower and upper x3 boundaries (of Mesh) must both be periodic
+    if (pmy_mesh_->mesh_bcs[INNER_X3] != PERIODIC_BNDRY
+        || pmy_mesh_->mesh_bcs[OUTER_X3] != PERIODIC_BNDRY) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "3D spherical-like coordinates with a x2 'polar' or 'polar_wedge' \n"
