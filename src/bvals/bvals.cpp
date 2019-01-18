@@ -282,19 +282,37 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
             << "ox2_bc= " << block_bcs[OUTER_X2] << std::endl;
         ATHENA_ERROR(msg);
       }
-    }
+    } // end 2D
   }
   // Check that spherical-like coordinates are used and AMR is disabled (SMR is ok)
   if ((block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
        || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-       || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) && pmy_mesh_->adaptive==true) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-        << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
-        << "flags is currently unsupported" << std::endl;
-    ATHENA_ERROR(msg);
+       || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)) {
+    // no restriction on user-defined metrics. This check must be updated when a new
+    // spherical-like coordinate system is added to the coordinates/ directory
+    if (((std::strcmp(COORDINATE_SYSTEM, "spherical_polar") != 0)
+          && (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") != 0)
+          && (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") != 0)
+          && (std::strcmp(COORDINATE_SYSTEM, "gr_user") != 0))) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "The use of 'polar' or 'polar_wedge' boundary flags is limited \n"
+          << "to spherical-like coordinate systems. \n"
+          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    if (pmy_mesh_->multilevel==true) {
+      if (pmy_mesh_->adaptive==true) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
+            << "flags is currently unsupported" << std::endl;
+        ATHENA_ERROR(msg);
+      } else {
+        // TODO(kfelker): SMR: all blocks along a pole are at the same level of refinement
+      }
+    }
   }
-
   // Count number of blocks wrapping around pole
   if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
