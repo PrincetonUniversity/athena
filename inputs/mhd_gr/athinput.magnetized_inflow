@@ -1,6 +1,6 @@
 <job>
 problem_id = magnetized_inflow
-configure  = --prob=gr_mhd_inflow -g -b --coord=
+configure  = --prob=gr_mhd_inflow -g -b --coord=kerr-schild
 
 <output1>
 file_type = vtk
@@ -11,9 +11,9 @@ dt        = 15.0
 cfl_number = 0.4
 nlim       = -1
 tlim       = 15.0
-integrator  = vl2       # time integration algorithm
-xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 1         # interval for stdout summary info
+integrator = vl2   # time integration algorithm
+xorder     = 2     # order of spatial reconstruction
+ncycle_out = 1     # interval for stdout summary info
 
 <mesh>
 nx1    = 128                 # number of cells in r-direction
@@ -29,11 +29,11 @@ x2max  = 1.5708277427214323  # maximum theta ((1/2+10^-5)*pi)
 ix2_bc = outflow             # upper boundary
 ox2_bc = outflow             # lower boundary
 
-nx3    = 1                  # number of cells in phi-direction
-x3min  = 0.0                # minimum phi
+nx3    = 1                   # number of cells in phi-direction
+x3min  = 0.0                 # minimum phi
 x3max  = 6.2831853071795862  # maximum phi (2*pi)
-ix3_bc = periodic           # clockwise boundary
-ox3_bc = periodic           # counterclockwise boundary
+ix3_bc = periodic            # clockwise boundary
+ox3_bc = periodic            # counterclockwise boundary
 
 <coord>
 m = 1.0  # black hole mass M

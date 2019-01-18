@@ -1,6 +1,6 @@
 <comment>
 problem   = Geodesic infall (Hydro only)
-configure = --prob=gr_geodesic_infall -g --coord=
+configure = --prob=gr_geodesic_infall -g --coord=kerr-schild
 
 <job>
 problem_id = gr_infall
@@ -19,9 +19,9 @@ dt        = 1.0
 cfl_number = 0.4
 nlim       = -1
 tlim       = 1.0
-integrator  = vl2       # time integration algorithm
-xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 1         # interval for stdout summary info
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
 
 <mesh>
 nx1    = 100      # number of cells in r-direction
@@ -55,7 +55,3 @@ rho_pow   = -1.5                   # ... * r^rho_pow
 pgas_min  = 3.3333333333333335e-5  # floor on p_gas given by pgas_min ...
 pgas_pow  = -2.5                   # ... * r^pgas_pow
 gamma_max = 50.0                   # ceiling on normal Lorentz factor gamma
-
-<problem>
-energy = 1.0  # E/m for particles
-l_z    = 0.0  # L_z/m for particles
