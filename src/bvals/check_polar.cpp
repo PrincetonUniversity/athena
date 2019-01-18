@@ -87,9 +87,9 @@ void BoundaryValues::CheckPolarBoundaries() {
     }
     // 'polar' vs. 'polar_wedge' selection in 3D: use the latter if and only if the Mesh
     // doesn't span exactly x2min=0.0,x2max=pi for lower,upper boundaries, respectively
-    if ((pmy_mesh_->mesh_size.x3min == static_cast<Real>(0.0)
+    if ((pmy_mesh_->mesh_size.x2min == static_cast<Real>(0.0)
          && block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE)
-        || (pmy_mesh_->mesh_size.x3min != static_cast<Real>(0.0)
+        || (pmy_mesh_->mesh_size.x2min != static_cast<Real>(0.0)
             && block_bcs[INNER_X2] == POLAR_BNDRY)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -100,10 +100,10 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "\nUse 'polar_wedge' if x2min>" << 0.0 << std::endl;
       ATHENA_ERROR(msg);
     }
-    if ((pmy_mesh_->mesh_size.x3max == static_cast<Real>(PI)
+    if ((pmy_mesh_->mesh_size.x2max == static_cast<Real>(PI)
          && block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)
-        || (pmy_mesh_->mesh_size.x3max == static_cast<Real>(PI)
-            && block_bcs[OUTER_X2] != POLAR_BNDRY)) {
+        || (pmy_mesh_->mesh_size.x2max != static_cast<Real>(PI)
+            && block_bcs[OUTER_X2] == POLAR_BNDRY)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "3D spherical-like coordinates with x2max=" << pmy_mesh_->mesh_size.x2max
