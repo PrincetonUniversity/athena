@@ -111,16 +111,12 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
   AthenaArray<Real> *pratios = nullptr;
-  std::cout << "Read_ratios_0:" << read_ratios << '\n';
   if (read_ratios) pratios = &peos_table->EosRatios;
-  std::cout << "Read_ratios_1:" << read_ratios << '\n';
   ASCIITableLoader(fn.c_str(), peos_table->table, pratios);
   peos_table->table.GetSize(peos_table->nVar, peos_table->nEgas, peos_table->nRho);
   peos_table->table.GetX2lim(peos_table->logEgasMin, peos_table->logEgasMax);
   peos_table->table.GetX1lim(peos_table->logRhoMin, peos_table->logRhoMax);
-  std::cout << "Read_ratios_2:" << read_ratios << '\n';
   if (!read_ratios) {
-    std::cout << "Read_ratios_3:" << read_ratios << '\n';
     for (int i=0; i<peos_table->nVar; ++i) peos_table->EosRatios(i) = 1.0;
   }
 }
