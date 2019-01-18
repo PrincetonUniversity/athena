@@ -113,22 +113,22 @@ void BoundaryValues::CheckPolarBoundaries(void) {
           << "\nUse 'polar_wedge' if x2max <" << PI << std::endl;
       ATHENA_ERROR(msg);
     }
-  }
-  // single MeshBlock or even number of MeshBlocks wrapping around poles in 3D
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
+    // single MeshBlock or even number of MeshBlocks wrapping around poles in 3D
+    if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+      if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
-  }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
+    if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+      if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
   } else { // 2D or 1D:
     // 'polar' boundary flag can only be used in 3D
