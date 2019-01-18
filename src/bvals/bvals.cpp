@@ -206,141 +206,29 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
             << "Flag ox3_bc=" << block_bcs[OUTER_X3] << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
-    // Begin compatibilty checks of user selections of polar vs. polare_wedge boundaries
+  }
+  // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
+      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
+      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    CheckPolarBoundaries();
+  }
 
-    // For 3D spherical-like coordinates with at least one 'polar' or 'polar_wedge' x2
-    // boundary, the Mesh must extend from 0.0 to 2*PI along the azimuthal x3 dimension
-    if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
-        || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-        || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-      // PI is specified to 16 digits after the decimal pt.
-      if (pmy_mesh_->mesh_size.x3max != static_cast<Real>(TWO_PI)
-          || pmy_mesh_->mesh_size.x3min != static_cast<Real>(0.0)) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "3D spherical-like coordinates with a x2 'polar' or 'polar_wedge' \n"
-            << "boundary requires that the Mesh spans the full [0, 2*pi] azimuthal \n"
-            << "range. Current x2 boundary selections are: \n"
-            << "ix2_bc=" << block_bcs[INNER_X2] << "\n"
-            << "ox2_bc=" << block_bcs[OUTER_X2] << "\n"
-            << "range. Current x3 domain limits are: \n" << std::scientific
-            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
-            << "x3min=" << pmy_mesh_->mesh_size.x3min << "\n"
-            << "x3max=" << pmy_mesh_->mesh_size.x3max << std::endl
-            << static_cast<Real>(TWO_PI) << "\n";
-        ATHENA_ERROR(msg);
-      }
-      // Also, x3 boundaries must both be periodic
-      if (block_bcs[INNER_X3] != PERIODIC_BNDRY
-          || block_bcs[OUTER_X3] != PERIODIC_BNDRY) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "3D spherical-like coordinates with a x2 'polar' or 'polar_wedge' \n"
-            << "boundary requires that both x3 boundary conditions are periodic \n"
-            << "Current x3 boundary selections are: \n"
-            << "ix3_bc=" << block_bcs[INNER_X3] << "\n"
-            << "ox3_bc=" << block_bcs[OUTER_X3] << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      // 'polar' vs. 'polar_wedge' selection in 3D: use the latter if and only if the Mesh
-      // doesn't span exactly x2min=0.0,x2max=pi for lower,upper boundaries, respectively
-      if ((pmy_mesh_->mesh_size.x3min == static_cast<Real>(0.0)
-           && block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE)
-          || (pmy_mesh_->mesh_size.x3min != static_cast<Real>(0.0)
-              && block_bcs[INNER_X2] == POLAR_BNDRY)) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "3D spherical-like coordinates with x2min=" << pmy_mesh_->mesh_size.x2min
-            << "\nwith lower boundary condition ix2_bc=" << block_bcs[INNER_X2] << "\n"
-            << "Use 'polar' boundary if and only if x2min=" << std::scientific
-            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1) << 0.0
-            << "\nUse 'polar_wedge' if x2min>" << 0.0 << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      if ((pmy_mesh_->mesh_size.x3max == static_cast<Real>(PI)
-              && block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)
-          || (pmy_mesh_->mesh_size.x3max == static_cast<Real>(PI)
-              && block_bcs[OUTER_X2] != POLAR_BNDRY)) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "3D spherical-like coordinates with x2max=" << pmy_mesh_->mesh_size.x2max
-            << "\nwith lower boundary condition ox2_bc=" << block_bcs[OUTER_X2] << "\n"
-            << "Use 'polar' boundary if and only if x2max=" << std::scientific
-            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1) << PI
-            << "\nUse 'polar_wedge' if x2max <" << PI << std::endl;
-        ATHENA_ERROR(msg);
-      }
-    }
-  } else { // 2D or 1D:
-    if (pmb->block_size.nx2 > 1) {
-      if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Use 'polar_wedge', not 'polar' boundary flag for 2D spherical-like \n"
-            << "coordinate boundaries. Current x2 boundary selections are: \n"
-            << "ix2_bc= " << block_bcs[INNER_X2] << "\n"
-            << "ox2_bc= " << block_bcs[OUTER_X2] << std::endl;
-        ATHENA_ERROR(msg);
-      }
-    } // end 2D
-  }
-  // Check that spherical-like coordinates are used and AMR is disabled (SMR is ok)
-  if ((block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
-       || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-       || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)) {
-    // no restriction on user-defined metrics. This check must be updated when a new
-    // spherical-like coordinate system is added to the coordinates/ directory
-    if (((std::strcmp(COORDINATE_SYSTEM, "spherical_polar") != 0)
-          && (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") != 0)
-          && (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") != 0)
-          && (std::strcmp(COORDINATE_SYSTEM, "gr_user") != 0))) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "The use of 'polar' or 'polar_wedge' boundary flags is limited \n"
-          << "to spherical-like coordinate systems. \n"
-          << "Specified COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
-      ATHENA_ERROR(msg);
-    }
-    if (pmy_mesh_->multilevel==true) {
-      if (pmy_mesh_->adaptive==true) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
-            << "flags is currently unsupported" << std::endl;
-        ATHENA_ERROR(msg);
-      } else {
-        // TODO(kfelker): SMR: all blocks along a pole are at the same level of refinement
-      }
-    }
-  }
   // Count number of blocks wrapping around pole
   if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
-    }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
+    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
-    }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
+    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_south_polar_blocks_ = 0;
   }
-  // end compatibility checks for 'polar' and 'polar_wedge' boundaries
 
   InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
   if (pmy_mesh_->multilevel==true) // SMR or AMR

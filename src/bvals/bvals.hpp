@@ -330,6 +330,8 @@ class BoundaryValues : public BoundaryBase {
 
   BValFunc_t BoundaryFunction_[6];
 
+  void CheckPolarBoundaries(void);
+
   // Shearingbox
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
