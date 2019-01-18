@@ -69,8 +69,7 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "range. Current x3 domain limits are: \n" << std::scientific
           << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
           << "x3min=" << pmy_mesh_->mesh_size.x3min << "\n"
-          << "x3max=" << pmy_mesh_->mesh_size.x3max << std::endl
-          << static_cast<Real>(TWO_PI) << "\n";
+          << "x3max=" << pmy_mesh_->mesh_size.x3max << std::endl;
       ATHENA_ERROR(msg);
     }
     // Also, lower and upper x3 boundaries (of Mesh) must both be periodic
@@ -137,8 +136,8 @@ void BoundaryValues::CheckPolarBoundaries() {
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Use 'polar_wedge', not 'polar' boundary flag for 2D spherical-like \n"
           << "coordinate boundaries. Current x2 boundary selections are: \n"
-          << "ix2_bc= " << block_bcs[INNER_X2] << "\n"
-          << "ox2_bc= " << block_bcs[OUTER_X2] << std::endl;
+          << "ix2_bc=" << block_bcs[INNER_X2] << "\n"
+          << "ox2_bc=" << block_bcs[OUTER_X2] << std::endl;
       ATHENA_ERROR(msg);
     }
   }

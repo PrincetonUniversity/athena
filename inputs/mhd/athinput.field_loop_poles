@@ -45,6 +45,18 @@ ox3_bc      = periodic       # Outer-X3 boundary condition flag
 
 refinement  = None
 
+# The following refinement regions are used in tests.  By default,
+# they are ignored.  To use, set MeshBlock size to 4^3.
+
+<refinement1>
+x1min = 1.0
+x1max = 1.5
+x2min = 0.0
+x2max = 1.5708
+x3min = 0.0
+x3max = 6.2831853071795862
+level=1
+
 <meshblock>
 nx1         = 32             # block size in X1-direction
 nx2         = 16             # block size in X2-direction
