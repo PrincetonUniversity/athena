@@ -48,7 +48,7 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
     elif out_type == 'ascii':
         with open(fn, 'w') as f:
             f.write('# Entries must be space separated.\n')
-            f.write('# n_var, n_rho, n_espec\n')
+            f.write('# n_var, n_espec, n_rho\n')
             np.array([nvar, ne, nd]).tofile(f, **iopt)
             f.write('\n# Log espec lim\n')
             elim.tofile(f, **opt)
