@@ -45,6 +45,11 @@ ox3_bc      = periodic       # Outer-X3 boundary condition flag
 
 refinement  = None
 
+<meshblock>
+nx1         = 32             # block size in X1-direction
+nx2         = 16             # block size in X2-direction
+nx3         = 64             # block size in X3-direction
+
 <hydro>
 gamma           = 1.66666667 # gamma = C_p/C_v
 iso_sound_speed = 0.1        # isothermal sound speed
