@@ -46,7 +46,7 @@ def run(**kwargs):
     for n, test in enumerate(_tests):
         args = [i + '={0:}'.format(test[i]) for i in test]
         args += ['job/problem_id=eos_riemann_{0:02d}'.format(n), 'time/ncycle_out=0']
-        athena.run('hydro/athinput.cc18', args)
+        athena.run('hydro/athinput.sod_general_H', args)
 
 
 def analyze():
