@@ -72,10 +72,10 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
 void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 #ifndef HDF5OUTPUT
   {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EosTable::EosTable, ReadHDF5Table" << std::endl
-      << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
-  ATHENA_ERROR(msg);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EosTable::EosTable, ReadHDF5Table" << std::endl
+        << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
+    ATHENA_ERROR(msg);
   }
 #endif
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);

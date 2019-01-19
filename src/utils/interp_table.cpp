@@ -6,6 +6,8 @@
 //! \file interp_table.cpp
 //  \brief implements functions in class InterpTable2D an intpolated lookup table
 
+// C headers
+
 // C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
