@@ -1,4 +1,3 @@
-#define SPEED_TYPE 0
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -97,27 +96,7 @@ void Hydro::RiemannSolver(
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
     Real a;
     if (GENERAL_EOS) {
-      if (SPEED_TYPE==0) { // a from q (specific enthalpy)
-        a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
-      } else if (SPEED_TYPE==1) { // a from p_roe
-        wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
-        a = pmy_block->peos->SoundSpeed(wroe);
-      } else if (SPEED_TYPE==2) { // a from gq_roe (effective gamma using enthalpy)
-        Real ql = (el+wli[IPR])/wli[IDN]
-                  - 0.5*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ]));
-        Real qr = (er+wri[IPR])/wri[IDN]
-                  - 0.5*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ]));
-        Real gl = SQR(cl) / ql + 1.;
-        Real gr = SQR(cr) / qr + 1.;
-        a = ((sqrtdl*gl + sqrtdr*gr)*isdlpdr - 1.) * q;
-        a = (a < 0.0) ? 0.0 : std::sqrt(a);
-      } else if (SPEED_TYPE==3) { // a from gp_roe (effective gamma using pressure)
-        wroe[IPR] = (sqrtdl*wli[IPR] + sqrtdr*wri[IPR])*isdlpdr;
-        Real gl = SQR(cl) * wli[IPR] / wli[IDN];
-        Real gr = SQR(cr) * wri[IPR] / wri[IDN];
-        a = (sqrtdl*gl + sqrtdr*gr)*isdlpdr * wroe[IPR] / wroe[IDN];
-        a = (a < 0.0) ? 0.0 : std::sqrt(a);
-      }
+      a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
     } else { //not general EOS
       a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
     }
