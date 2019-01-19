@@ -81,7 +81,7 @@ Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   int yil = static_cast<int>(y); // lower y index
   int nx = nx2_;
   int ny = nx1_;
-  //if off table do linear extrapolation
+  // if off table, do linear extrapolation
   if (xil < 0) { // below xmin
     xil = 0;
   } else if (xil >= nx - 1) { // above xmax
@@ -96,8 +96,8 @@ Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   }
   yrl = 1 + yil - y;  // y residual
 
-  //Sample from the 4 nearest data points and weight appropriately
-  //data is an attribute of the eos class
+  // Sample from the 4 nearest data points and weight appropriately
+  // data is an attribute of the eos class
   out =   xrl  *  yrl  *data(var, xil , yil )
           +   xrl  *(1-yrl)*data(var, xil ,yil+1)
           + (1-xrl)*  yrl  *data(var,xil+1, yil )

@@ -146,7 +146,6 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
 void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar,
                      const char **var_names, const char *x2lim_name,
                      const char *x1lim_name) {
-  int ndims;
   hsize_t dims[2];
   int tmp[2];
   int count_file[2];
@@ -156,7 +155,7 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
   for (int i = 0; i < nvar; ++i) {
     dataset = H5Dopen(file, var_names[i], H5P_DEFAULT);
     dspace = H5Dget_space(dataset);
-    ndims = H5Sget_simple_extent_ndims(dspace);
+    int ndims = H5Sget_simple_extent_ndims(dspace);
     if (ndims != 2) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HDF5TableLoader" << std::endl
@@ -167,7 +166,6 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
     H5Sget_simple_extent_dims(dspace, dims, NULL);
     tmp[0] = static_cast<int>(dims[0]);
     tmp[1] = static_cast<int>(dims[1]);
-    //std::cout << "Shape: " << tmp[0] << ", " << tmp[1] << '\n';
     if (i == 0) {
       count_file[0] = tmp[0];
       count_file[1] = tmp[1];

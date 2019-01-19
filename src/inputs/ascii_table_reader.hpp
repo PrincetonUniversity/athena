@@ -1,6 +1,5 @@
 #ifndef INPUTS_ASCII_TABLE_READER_HPP_
 #define INPUTS_ASCII_TABLE_READER_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -8,6 +7,10 @@
 //========================================================================================
 //! \file ascii_table_reader.hpp
 //  \brief Declares ASCII table reader functions
+
+// C headers
+
+// C++ headers
 
 // Athena++ headers
 #include "../athena.hpp"             // Real

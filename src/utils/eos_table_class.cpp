@@ -7,6 +7,8 @@
 //  \brief Implements class EosTable for an EOS lookup table
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
