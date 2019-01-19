@@ -9,7 +9,11 @@
 //  \brief defines class InterpTable2D
 //  Contains functions that implement an intpolated lookup table
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 

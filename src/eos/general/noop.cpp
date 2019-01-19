@@ -6,7 +6,9 @@
 //! \file noop.cpp
 //  \brief Implements no-op versions of the general eos functions
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
 #include <fstream>

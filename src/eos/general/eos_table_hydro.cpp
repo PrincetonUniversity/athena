@@ -7,6 +7,8 @@
 //  \brief implements functions in class EquationOfState for an EOS lookup table
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()

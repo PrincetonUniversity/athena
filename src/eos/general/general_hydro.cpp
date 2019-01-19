@@ -16,7 +16,9 @@
 // void EquationOfState::PrepEOS(ParameterInput *pin);
 // void EquationOfState::CleanEOS();
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
 #include <fstream>
