@@ -23,13 +23,12 @@
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 
-// use general EOS framework default=0 (false).
-#define GENERAL_EOS @GENERAL_EOS@
-
-
 // configure.py dict(definitions) Boolean values:
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
+
+// use general EOS framework default=0 (false).
+#define GENERAL_EOS @GENERAL_EOS@
 
 // use EOS table default=0 (false).
 #define EOS_TABLE_ENABLED @EOS_TABLE_ENABLED@

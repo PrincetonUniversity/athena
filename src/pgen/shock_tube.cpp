@@ -188,7 +188,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             if (GENERAL_EOS) {
               e0 = pmb->peos->SimpleEgas(d0, 0.95);
             } else {
-            e0 = 0.95/gm1;
+              e0 = 0.95/gm1;
             }
             e0 += 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
           }

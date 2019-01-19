@@ -31,6 +31,8 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
                        bool collective=false, bool noop=false);
 
 void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar,
-    const char **var_names, const char *x2lim_name=NULL, const char *x1lim_name=NULL);
+                     const char **var_names,
+                     const char *x2lim_name=NULL,
+                     const char *x1lim_name=NULL);
 
 #endif  // INPUTS_HDF5_READER_HPP_

@@ -97,8 +97,8 @@ Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   //Sample from the 4 nearest data points and weight appropriately
   //data is an attribute of the eos class
   out =   xrl  *  yrl  *data(var, xil , yil )
-      +   xrl  *(1-yrl)*data(var, xil ,yil+1)
-      + (1-xrl)*  yrl  *data(var,xil+1, yil )
-      + (1-xrl)*(1-yrl)*data(var,xil+1,yil+1);
+          +   xrl  *(1-yrl)*data(var, xil ,yil+1)
+          + (1-xrl)*  yrl  *data(var,xil+1, yil )
+          + (1-xrl)*(1-yrl)*data(var,xil+1,yil+1);
   return out;
 }
