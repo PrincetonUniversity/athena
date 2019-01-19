@@ -7,6 +7,8 @@
 //  \brief implements functions in class EquationOfState for an EOS lookup table
 //======================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>
 #include <cfloat>  // FLT_MIN
@@ -22,8 +24,6 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../field/field.hpp"
 #include "../../parameter_input.hpp"
-
-// this class header
 #include "../eos.hpp"
 
 const Real my_1pe = 1. + FLT_EPSILON;

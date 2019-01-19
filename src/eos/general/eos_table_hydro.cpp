@@ -25,8 +25,6 @@
 #include "../../field/field.hpp"
 #include "../../parameter_input.hpp"
 #include "../../utils/interp_table.hpp"
-
-// this class header
 #include "../eos.hpp"
 
 void EosTestLoop(EquationOfState *peos);
