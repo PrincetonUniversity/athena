@@ -6,6 +6,8 @@
 //! \file ascii_table_reader.cpp
 //  \brief Implements ASCII table reader functions
 
+// C headers
+
 // C++ headers
 #include <fstream>
 #include <iostream>   // ifstream
@@ -87,9 +89,9 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
   // read table data
   for (int row = 0; row < nx2 * nvar; ++row) {
     while (std::getline(file, line) && (line[0] == '#')) continue;
-    std::stringstream stream(line);
+    std::stringstream lstream(line);
     for (int col = 0; col < nx1; ++col) {
-      stream >> table.data(row, col);
+      lstream >> table.data(row, col);
     }
   }
   return;
