@@ -59,7 +59,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = std::sqrt(-1);
+  gamma_ = 0.0; // Not actually used
   PrepEOS(pin);
 }
 
