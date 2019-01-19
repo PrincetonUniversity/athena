@@ -70,10 +70,10 @@ def run(**kwargs):
     arguments0[1] = 'job/problem_id=Sod_eos_hllc_{1:}'
     arguments1 = arguments0[:]
     arguments0.extend(
-        ['hydro/EOS_file_name=gamma_is_{0:.3f}.data', 'hydro/EOS_file_type=binary'])
+        ['hydro/eos_file_name=gamma_is_{0:.3f}.data', 'hydro/eos_file_type=binary'])
     arguments1[1] = 'job/problem_id=Sod_eos_hllc_ascii_{1:}'
     arguments1.extend(
-        ['hydro/EOS_file_name=gamma_is_{0:.3f}.tab', 'hydro/EOS_file_type=ascii'])
+        ['hydro/eos_file_name=gamma_is_{0:.3f}.tab', 'hydro/eos_file_type=ascii'])
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
         athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='eos_hllc')
@@ -82,10 +82,10 @@ def run(**kwargs):
     # now run with simple H table
     arguments0[0] = 'hydro/gamma=1.6667'
     arguments0[1] = 'job/problem_id=Sod_eos_H_binary'
-    arguments0[-2] = 'hydro/EOS_file_name=SimpleHydrogen.data'
+    arguments0[-2] = 'hydro/eos_file_name=SimpleHydrogen.data'
     arguments1[0] = 'hydro/gamma=1.6667'
     arguments1[1] = 'job/problem_id=Sod_eos_H_ascii'
-    arguments1[-2] = 'hydro/EOS_file_name=SimpleHydrogen.tab'
+    arguments1[-2] = 'hydro/eos_file_name=SimpleHydrogen.tab'
     arguments0.append('mesh/nx1=512')
     arguments1.append('mesh/nx1=512')
     tmp = ['dl', 'ul', 'pl', 'dr', 'ur', 'pr']

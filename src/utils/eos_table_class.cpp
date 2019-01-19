@@ -78,7 +78,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   ATHENA_ERROR(msg);
   }
 #endif
-  bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
+  bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   std::string dens_lim_field =
       pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
   std::string espec_lim_field =
@@ -111,7 +111,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 //! \fn void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
 //  \brief Read data from HDF5 EOS table and initialize interpolated table.
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
-  bool read_ratios = pin->GetOrAddBoolean("hydro", "EOS_read_ratios", true);
+  bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   AthenaArray<Real> *pratios = nullptr;
   if (read_ratios) pratios = &peos_table->EosRatios;
   ASCIITableLoader(fn.c_str(), peos_table->table, pratios);
@@ -125,24 +125,24 @@ void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 
 // EosTable constructor
 EosTable::EosTable (ParameterInput *pin) {
-  std::string EOS_fn, EOS_file_type;
-  EOS_fn = pin->GetString("hydro", "EOS_file_name");
-  EOS_file_type = pin->GetString("hydro", "EOS_file_type");
-  rhoUnit = pin->GetOrAddReal("hydro", "EosRhoUnit", 1.0);
-  eUnit = pin->GetOrAddReal("hydro", "EosEgasUnit", 1.0);
+  std::string EOS_fn, eos_file_type;
+  EOS_fn = pin->GetString("hydro", "eos_file_name");
+  eos_file_type = pin->GetString("hydro", "eos_file_type");
+  rhoUnit = pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0);
+  eUnit = pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0);
   hUnit = eUnit/rhoUnit;
   table = InterpTable2D();
 
-  if (EOS_file_type.compare("binary") == 0) { //Raw binary
+  if (eos_file_type.compare("binary") == 0) { //Raw binary
     ReadBinaryTable(EOS_fn, this);
-  } else if (EOS_file_type.compare("hdf5") == 0) { // HDF5 table
+  } else if (eos_file_type.compare("hdf5") == 0) { // HDF5 table
     ReadHDF5Table(EOS_fn, this, pin);
-  } else if (EOS_file_type.compare("ascii") == 0) { // ASCII/text table
+  } else if (eos_file_type.compare("ascii") == 0) { // ASCII/text table
     ReadAsciiTable(EOS_fn, this, pin);
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in EosTable::EosTable" << std::endl
-        << "EOS table of type '" << EOS_file_type << "' not recognized."  << std::endl
+        << "EOS table of type '" << eos_file_type << "' not recognized."  << std::endl
         << "Options are 'ascii', 'binary', and 'hdf5'." << std::endl;
     ATHENA_ERROR(msg);
   }
