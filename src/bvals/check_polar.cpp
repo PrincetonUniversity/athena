@@ -125,20 +125,19 @@ void BoundaryValues::CheckPolarBoundaries() {
       ATHENA_ERROR(msg);
     }
 
-    // Azimuthal x3 boundaries (of Mesh) must both be periodic if 'polar' is used at all
-    if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
-      if (pmy_mesh_->mesh_bcs[INNER_X3] != PERIODIC_BNDRY
-          || pmy_mesh_->mesh_bcs[OUTER_X3] != PERIODIC_BNDRY) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "3D spherical-like coordinates with at least one x2 'polar' \n"
-            << "boundary requires that both x3 boundary conditions are periodic \n"
-            << "Current x3 boundary selections are: \n"
-            << "ix3_bc=" << block_bcs[INNER_X3] << "\n"
-            << "ox3_bc=" << block_bcs[OUTER_X3] << std::endl;
-        ATHENA_ERROR(msg);
-      }
-    } // TODO(felker): similar restriction on periodic x3 boundaries for 'polar_wedge'?
+    // Azimuthal x3 boundaries (of Mesh) must both be periodic if 'polar' or 'polar_wedge'
+    // flags are used even once
+    if (pmy_mesh_->mesh_bcs[INNER_X3] != PERIODIC_BNDRY
+        || pmy_mesh_->mesh_bcs[OUTER_X3] != PERIODIC_BNDRY) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "3D spherical-like coordinates with at least one x2 'polar' \n"
+          << "boundary requires that both x3 boundary conditions are periodic \n"
+          << "Current x3 boundary selections are: \n"
+          << "ix3_bc=" << block_bcs[INNER_X3] << "\n"
+          << "ox3_bc=" << block_bcs[OUTER_X3] << std::endl;
+      ATHENA_ERROR(msg);
+    }
 
     // single MeshBlock or even number of MeshBlocks wrapping around poles in 3D
     if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
