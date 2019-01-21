@@ -15,12 +15,12 @@ class StateVector(object):
                 if rho != d:
                     raise ValueError('Conflicting arguments "rho" and "d" specified.')
             rho = d
-        self.eos = eos
-        self.p = p
-        self.rho = rho
-        self.T = T
-        self.ei = ei
-        self.u = u
+        self.eos = eos  # equation of state
+        self.p = p      # pressure
+        self.rho = rho  # density
+        self.T = T      # temperature
+        self.ei = ei    # internal energy density
+        self.u = u      # fluid speed
         self._alt_names = {'press': 'p', 'dens': 'rho', 'vel1': 'u', 'vel': 'u'}
 
     def ram(self):
@@ -40,16 +40,18 @@ class StateVector(object):
             raise ValueError('Density must be specified.')
         if (not ignore_u) and self.u is None:
             raise ValueError('Speed must be specified.')
-        var = ['p', 'ei', 'T']
+        var = ['p', 'ei', 'T']  # need at least one of these to continue
         tmp = {i: getattr(self, i) for i in var if getattr(self, i) is not None}
         if not tmp:
             raise ValueError('Insufficient information to complete state.')
-        need = [i for i in var if i not in tmp]
-        have = [i for i in var if i in tmp]
+        need = [i for i in var if i not in tmp]  # parameters we need to compute
+        have = [i for i in var if i in tmp]      # parameters we have
+        # is the eos ideal
         try:
             ideal = self.eos.ideal
         except AttributeError:
             ideal = False
+        # determine independent variable of the EOS
         if ideal:
             indep = sorted(tmp.keys())[0]
         else:
@@ -128,11 +130,11 @@ class RiemannSol(object):
     def __init__(self, left, right, eos):
         left.complete()
         right.complete()
-        self.left = left
-        self.right = right
-        self.eos = eos
+        self.left = left    # left state vector
+        self.right = right  # right state vector
+        self.eos = eos      # equation of state
         # set some normalizations used in root finding
-        self._norm = {'p': min(left.p, right.p)}
+        self._norm = {'p': min(left.p, right.p)}  # pressure normalisation for root find
         a = max(abs(self.left.u), abs(self.right.u))
         b = .01 * np.sqrt(max(self.left.p / self.left.rho, self.right.p / self.right.rho))
         self._norm['speed'] = 1. / max(a, b)
@@ -151,7 +153,11 @@ class RiemannSol(object):
 
     def _shock_jump(self, edge, mid):
         """Find the middle state on the opposite side of a shock from a specified
-        edge state and mid.p."""
+        edge state and mid.p.
+
+        Inputted mid state must have pressure specified
+
+        Returns mid_state, flux across wave/shock"""
         dp = mid.p - edge.p
         psum = mid.p + edge.p
         if self.eos.ideal:
@@ -166,7 +172,7 @@ class RiemannSol(object):
             # for a general EOS we need to root find for mass flux
 
             def f(fm):
-                """Function (of mass flux) to find root of."""
+                """Energy function (of mass flux) to find root of."""
                 fsqr = fm**2
                 rho = fsqr * edge.rho / (fsqr - dp * edge.rho)
                 ei = (edge.ei * fsqr + .5 * dp * psum * edge.rho) / (fsqr - dp * edge.rho)
@@ -190,25 +196,25 @@ class RiemannSol(object):
             mid.rho = fsqr * edge.rho / (fsqr - dp * edge.rho)
             mid.ei = self.eos.ei_of_rho_p(mid.rho, mid.p)
             mid.u = dp / fout
-            return mid, fout
+            return mid, fout  # return middle state, flux
 
     def _get_mids(self, p):
         """Determine the two middle states for a specified middle pressure (p*)."""
         lmid = StateVector(p=p, eos=self.eos)  # left middle state
         rmid = StateVector(p=p, eos=self.eos)  # right middle state
         # determine if the left/right waves are shock or rarefaction/simple waves
-        if p > self.left.p:
+        if p > self.left.p:  # left wave is shock
             lmid, lf = self._shock_jump(self.left, lmid)
             lmid.u = self.left.u - lmid.u
-        else:
+        else:  # left wave is rarefaction/simple wave
             rho, u = self._rare_int_left(p)
             lmid.rho = rho
             lmid.u = self.left.u - u
             lf = np.nan
-        if p > self.right.p:
+        if p > self.right.p:  # right wave is shock
             rmid, rf = self._shock_jump(self.right, rmid)
             rmid.u = self.right.u + rmid.u
-        else:
+        else:  # right wave is rarefaction/simple wave
             rho, u = self._rare_int_right(p)
             rmid.rho = rho
             rmid.u = self.right.u + u
@@ -227,12 +233,12 @@ class RiemannSol(object):
         # initialize rarefaction integrators
         self._rare_int_left.init_data(self._pl, self._pu)
         self._rare_int_right.init_data(self._pl, self._pu)
-        # find the pressure that give du=0
+        # find the pressure that gives du=0
         p0, r = brentq(self._du, self._pl / pnorm, self._pu / pnorm, **brent_opt)
         if not r.converged:
             raise RuntimeError('Middle pressure not converged.')
 
-        # save middle states
+        # save middle states, and keep left/right fluxes
         self.lmid, self.rmid, lf, rf = self._get_mids(p0 * pnorm)
         u = .5 * (self.lmid.u + self.rmid.u)
         self.lmid.u = u
@@ -303,7 +309,7 @@ class RiemannSol(object):
                 return self._rare_int_right.characteristic(xi)
             if self.waves[2]['speed'][1] < xi:
                 return self.right
-            # at discontinuity or wave edge
+            # If here we are at a discontinuity or wave edge
             args = ['p', 'u', 'rho']
             if self.waves[0]['speed'][0] == xi:
                 if self.waves[0]['kind'] == 'simple':

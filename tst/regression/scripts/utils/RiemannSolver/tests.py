@@ -1,9 +1,11 @@
+"""This file contains some test problems/examples for this Riemann solver"""
 import numpy as np
 from .riemann import RiemannSol, StateVector
 from .eos import Ideal, SimpleHydrogen
 
 
 def sod_test(eos=None, gamma=None, plot=True):
+    """Run the canonical Sod shock tube test"""
     if eos is None:
         if gamma is None:
             gamma = 5. / 3.
@@ -29,27 +31,34 @@ def sod_test(eos=None, gamma=None, plot=True):
 
 
 def eos_test(plot=True):
+    """Run a shock tube test for a few EOS"""
     r0 = 1e-7
     p0 = 3e-8
     wl = dict(rho=r0, p=p0, u=0.)
     wr = dict(rho=.125 * r0, p=1e-9, u=0.)
-    eoss = [SimpleHydrogen()]
+    eoss = [SimpleHydrogen()]  # first used EOS
+    # initialize Riemann problem
     sols = [RiemannSol(StateVector(eos=eoss[-1], **wl),
                        StateVector(eos=eoss[-1], **wr), eoss[-1])]
-    sols[0].gen_sol()
+    sols[0].gen_sol()  # solve Riemann problem
 
+    # Convert left/right temperature to pressures for ideal EOS states
     wl['T'] = None
     wl['p'] = sols[0].left.p
     wr['T'] = None
     wr['p'] = sols[0].right.p
 
+    # find gammas for each fan state
     gs = np.array([eoss[0]._gamma1(w.rho, w.T) for w in sols[0].states])
+    # use ideal EOS with max gamma
     eoss.append(Ideal(gs.max()))
     sols.append(RiemannSol(StateVector(
         eos=eoss[-1], **wl), StateVector(eos=eoss[-1], **wr), eoss[-1]))
+    # use ideal EOS with min gamma
     eoss.append(Ideal(gs.min()))
     sols.append(RiemannSol(StateVector(
         eos=eoss[-1], **wl), StateVector(eos=eoss[-1], **wr), eoss[-1]))
+    # solve Riemann problems
     sols[1].gen_sol()
     sols[2].gen_sol()
 
