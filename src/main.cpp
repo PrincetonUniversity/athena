@@ -452,7 +452,8 @@ int main(int argc, char *argv[]) {
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif
-      pouts->MakeOutputs(pmesh,pinput);
+      if (pmesh->time < pmesh->tlim) // skip the final output as it happens later
+        pouts->MakeOutputs(pmesh,pinput);
 #ifdef ENABLE_EXCEPTIONS
     }
     catch(std::bad_alloc& ba) {
