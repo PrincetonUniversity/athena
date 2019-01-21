@@ -49,8 +49,6 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
           << "flags is currently unsupported" << std::endl;
       ATHENA_ERROR(msg);
-    } else {
-      // TODO(felker): SMR check: all blocks along a pole are at the same refinement lvl
     }
   }
 
