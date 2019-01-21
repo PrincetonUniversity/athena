@@ -67,15 +67,15 @@ def run(**kwargs):
     dst = os.path.join('bin', 'athena')
     move(src, dst)
     arguments0[1] = 'job/problem_id=Sod_eos_hllc_hdf5_{1:}'
-    arguments0.extend(
-        ['hydro/eos_file_name=gamma_is_{0:.3f}.hdf5', 'hydro/eos_file_type=hdf5'])
+    arguments0.extend(['hydro/eos_file_name=gamma_is_{0:.3f}.hdf5'])
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
+        print(arguments)
         athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='eos_hllc_hdf5')
     # now run with simple H table
     arguments0[0] = 'hydro/gamma=1.6667'
     arguments0[1] = 'job/problem_id=Sod_eos_H_hdf5'
-    arguments0[-2] = 'hydro/eos_file_name=SimpleHydrogen.hdf5'
+    arguments0[-1] = 'hydro/eos_file_name=SimpleHydrogen.hdf5'
     tmp = ['dl', 'ul', 'pl', 'dr', 'ur', 'pr']
     tmp = ['problem/' + i + '={0:}'for i in tmp] + ['time/tlim={0:}']
     tmp = zip(tmp, [1e-07, 0.00, 3e-8, 1.25e-8, 0.00, 1e-9, .25])
@@ -88,7 +88,8 @@ def run(**kwargs):
     dst = os.path.join('bin', 'athena')
     move(src, dst)
     arguments0[1] = 'job/problem_id=Sod_eos_H'
-    athena.run('hydro/athinput.sod', ic + arguments0[:-2])
+    print(ic + arguments0[:-1])
+    athena.run('hydro/athinput.sod', ic + arguments0[:-1])
     return 'skip_lcov'
 
 

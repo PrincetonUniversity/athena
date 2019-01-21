@@ -129,12 +129,22 @@ void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 EosTable::EosTable (ParameterInput *pin) {
   std::string EOS_fn, eos_file_type;
   EOS_fn = pin->GetString("hydro", "eos_file_name");
-  eos_file_type = pin->GetString("hydro", "eos_file_type");
+  eos_file_type = pin->GetOrAddString("hydro", "eos_file_type", "auto");
   rhoUnit = pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0);
   eUnit = pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0);
   hUnit = eUnit/rhoUnit;
   table = InterpTable2D();
 
+  if (eos_file_type.compare("auto") == 0) {
+    std::string ext = EOS_fn.substr(EOS_fn.find_last_of(".") + 1);
+    if (ext.compare("data")*ext.compare("bin") == 0) {
+      eos_file_type.assign("binary");
+    } else if (ext.compare("hdf5") == 0) {
+      eos_file_type.assign("hdf5");
+    } else if (ext.compare("tab")*ext.compare("txt")*ext.compare("ascii") == 0) {
+      eos_file_type.assign("ascii");
+    }
+  }
   if (eos_file_type.compare("binary") == 0) { //Raw binary
     ReadBinaryTable(EOS_fn, this);
   } else if (eos_file_type.compare("hdf5") == 0) { // HDF5 table
