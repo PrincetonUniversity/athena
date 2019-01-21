@@ -137,12 +137,12 @@ void BoundaryValues::CheckPolarBoundaries() {
       ATHENA_ERROR(msg);
     }
 
-    // even number of cells in the azimuthal direction for all MeshBlocks
-    if (pmy_block_->block_size.nx3%2!=0) {
+    // even number of cells in the azimuthal direction for the root grid of the Mesh
+    if (pmy_mesh_->mesh_size.nx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of 'polar' or 'polar_wedge' boundary flags in 3D\n"
-          << "requires an even number of cells per MeshBlock in the\n"
+          << "requires a Mesh with an even number of cells in the\n"
           << "azimuthal direction." << std::endl;
       ATHENA_ERROR(msg);
     }
