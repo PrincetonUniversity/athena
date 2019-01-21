@@ -595,7 +595,7 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real ParameterInput::GetOrAddBoolean(std::string block, std::string name,
+//! \fn bool ParameterInput::GetOrAddBoolean(std::string block, std::string name,
 //    bool def_value)
 //  \brief returns boolean value stored in block/name if it exists, or creates and sets
 //  value to def_value if it does not exist
@@ -611,9 +611,13 @@ bool ParameterInput::GetOrAddBoolean(std::string block,std::string name, bool de
     pb = GetPtrToBlock(block);
     pl = pb->GetPtrToLine(name);
     std::string val = pl->param_value;
-    std::transform(val.begin(), val.end(), val.begin(), ::tolower);
-    std::istringstream is(val);
-    is >> std::boolalpha >> ret;
+    if (val.compare(0, 1, "0")==0 || val.compare(0, 1, "1")==0) {
+      ret = static_cast<bool>(atoi(val.c_str()));
+    } else {
+      std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+      std::istringstream is(val);
+      is >> std::boolalpha >> ret;
+    }
   } else {
     pb = FindOrAddBlock(block);
     ss_value << def_value;
