@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import numpy as np
 from .riemann import RiemannSol, StateVector
 from .eos import Ideal, SimpleHydrogen
