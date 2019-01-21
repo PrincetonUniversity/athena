@@ -1182,7 +1182,7 @@ void BoundaryValues::CheckBoundary(void) {
        || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
        || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)) {
     int mylevel=pmy_block_->loc.level;
-    if (nblevel[1][1][0] != mylevel || nblevel[1][1][2] != mylevel) {
+    if (nblevel[0][1][1] != mylevel || nblevel[2][1][1] != mylevel) {
       std::int64_t lx1=pmy_block_->loc.lx1;
       std::int64_t lx2=pmy_block_->loc.lx2;
       std::int64_t lx3=pmy_block_->loc.lx3;
@@ -1194,9 +1194,9 @@ void BoundaryValues::CheckBoundary(void) {
           << "are at the same refinement level. Current MeshBlock: \n"
           << "LogicalLocation = (" << lx1 << ", " << lx2 << ", " << lx3 << ")\n"
           << "----------------------------------\n"
-          << "Left  azimuthal neighbor level = " << nblevel[1][1][0] << "\n"
+          << "Left  azimuthal neighbor level = " << nblevel[0][1][1] << "\n"
           << "This MeshBlock's logical level = " << mylevel << "\n"
-          << "Right aziumthal neighbor level = " << nblevel[1][1][2] << "\n"
+          << "Right aziumthal neighbor level = " << nblevel[2][1][1] << "\n"
           << "----------------------------------" << std::endl;
       ATHENA_ERROR(msg);
     }
