@@ -63,8 +63,8 @@ void BoundaryValues::CheckPolarBoundaries() {
         << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
         << "x2min=" << std::scientific << 0.0 << "\n"
         << "Current x2 boundary selections are: \n"
-        << "ix2_bc=" << block_bcs[INNER_X2] << "\n"
-        << "ox2_bc=" << block_bcs[OUTER_X2] << "\n"
+        << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
+        << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << "\n"
         << "Current x2 domain limits are: \n"
         << "x2min=" << pmy_mesh_->mesh_size.x2min << "\n"
         << "x2max=" << pmy_mesh_->mesh_size.x2max << std::endl;
@@ -79,8 +79,8 @@ void BoundaryValues::CheckPolarBoundaries() {
         << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
         << "x2max=" << std::scientific << PI << "\n"
         << "Current x2 boundary selections are: \n"
-        << "ix2_bc=" << block_bcs[INNER_X2] << "\n"
-        << "ox2_bc=" << block_bcs[OUTER_X2] << "\n"
+        << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
+        << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << "\n"
         << "Current x2 domain limits are: \n"
         << "x2min=" << pmy_mesh_->mesh_size.x2min << "\n"
         << "x2max=" << pmy_mesh_->mesh_size.x2max << std::endl;
@@ -132,8 +132,8 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "3D spherical-like coordinates with at least one x2 'polar' \n"
           << "boundary requires that both x3 boundary conditions are periodic \n"
           << "Current x3 boundary selections are: \n"
-          << "ix3_bc=" << block_bcs[INNER_X3] << "\n"
-          << "ox3_bc=" << block_bcs[OUTER_X3] << std::endl;
+          << "ix3_bc=" << GetBoundaryString(block_bcs[INNER_X3]) << "\n"
+          << "ox3_bc=" << GetBoundaryString(block_bcs[OUTER_X3]) << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -161,8 +161,8 @@ void BoundaryValues::CheckPolarBoundaries() {
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Use 'polar_wedge', not 'polar' boundary flag for 2D spherical-like \n"
           << "coordinate boundaries. Current x2 boundary selections are: \n"
-          << "ix2_bc=" << block_bcs[INNER_X2] << "\n"
-          << "ox2_bc=" << block_bcs[OUTER_X2] << std::endl;
+          << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
+          << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << std::endl;
       ATHENA_ERROR(msg);
     }
   }
