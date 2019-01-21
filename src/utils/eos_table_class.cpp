@@ -127,8 +127,8 @@ void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 
 // EosTable constructor
 EosTable::EosTable (ParameterInput *pin) {
-  std::string EOS_fn, eos_file_type;
-  EOS_fn = pin->GetString("hydro", "eos_file_name");
+  std::string eos_fn, eos_file_type;
+  eos_fn = pin->GetString("hydro", "eos_file_name");
   eos_file_type = pin->GetOrAddString("hydro", "eos_file_type", "auto");
   rhoUnit = pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0);
   eUnit = pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0);
@@ -136,7 +136,7 @@ EosTable::EosTable (ParameterInput *pin) {
   table = InterpTable2D();
 
   if (eos_file_type.compare("auto") == 0) {
-    std::string ext = EOS_fn.substr(EOS_fn.find_last_of(".") + 1);
+    std::string ext = eos_fn.substr(eos_fn.find_last_of(".") + 1);
     if (ext.compare("data")*ext.compare("bin") == 0) {
       eos_file_type.assign("binary");
     } else if (ext.compare("hdf5") == 0) {
@@ -146,11 +146,11 @@ EosTable::EosTable (ParameterInput *pin) {
     }
   }
   if (eos_file_type.compare("binary") == 0) { //Raw binary
-    ReadBinaryTable(EOS_fn, this);
+    ReadBinaryTable(eos_fn, this);
   } else if (eos_file_type.compare("hdf5") == 0) { // HDF5 table
-    ReadHDF5Table(EOS_fn, this, pin);
+    ReadHDF5Table(eos_fn, this, pin);
   } else if (eos_file_type.compare("ascii") == 0) { // ASCII/text table
-    ReadAsciiTable(EOS_fn, this, pin);
+    ReadAsciiTable(eos_fn, this, pin);
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in EosTable::EosTable" << std::endl
