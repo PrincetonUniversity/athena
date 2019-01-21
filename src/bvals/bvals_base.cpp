@@ -490,6 +490,35 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       neighbor_loc.lx3 = n;
       neighbor_loc.level = loc.level;
       neibt = tree.FindMeshBlock(neighbor_loc);
+      // SMR+3D polar boundary check: all blocks around a pole are at same refinement lvl:
+      if (neibt == nullptr || neibt->gid) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryBase::SearchAndSetNeighbors" << std::endl
+            << "The use of SMR with any 'polar' or 'polar_wedge' boundary in 3D\n"
+            << "requires that all MeshBlocks around a pole at the same radius \n"
+            << "are at the same refinement level.\n"
+            << "Current MeshBlock LogicalLocation = ("
+            << loc.lx1 << ", " << loc.lx2 << ", " << loc.lx3
+            << ")\nFindMeshBlock() returned nullptr or negative gid when finding\n"
+            << "aziumthal neighbor n=" << n << "/"
+            << num_north_polar_blocks << " total number of north polar blocks.\n"
+            << "Azimuthal neighbor's LogicalLocation = ("
+            << neighbor_loc.lx1 << ", " << neighbor_loc.lx2 << ", " << neighbor_loc.lx3
+            << ")\n----------------------------------\n"
+            << "This MeshBlock's logical  level = " << loc.level << "\n"
+            << "This MeshBlock's physical level = " << level << "\n"
+            << "Aziumthal neighbor's level is ";
+        if (neibt == nullptr) {
+          // neighbor block is coarser or doesn't exist (physical boundary or broken tree)
+          msg << "coarser.\n";
+        } else {
+          // negative global ID in returned MeshBlockTree indicates that neibt points to
+          // the parent MeshBlock of the actual neighbor block at a finer refinement
+          msg << "finer.\n";
+        }
+        msg << "----------------------------------" << std::endl;
+        ATHENA_ERROR(msg);
+      }
       int nid = neibt->gid;
       polar_neighbor_north[neibt->loc.lx3].rank = ranklist[nid];
       polar_neighbor_north[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
@@ -508,6 +537,31 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       neighbor_loc.lx3 = n;
       neighbor_loc.level = loc.level;
       neibt = tree.FindMeshBlock(neighbor_loc);
+      if (neibt == nullptr || neibt->gid) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryBase::SearchAndSetNeighbors" << std::endl
+            << "The use of SMR with any 'polar' or 'polar_wedge' boundary in 3D\n"
+            << "requires that all MeshBlocks around a pole at the same radius \n"
+            << "are at the same refinement level.\n"
+            << "Current MeshBlock LogicalLocation = ("
+            << loc.lx1 << ", " << loc.lx2 << ", " << loc.lx3
+            << ")\nFindMeshBlock() returned nullptr or negative gid when finding\n"
+            << "aziumthal neighbor n=" << n << "/"
+            << num_south_polar_blocks << " total number of south polar blocks.\n"
+            << "Azimuthal neighbor's LogicalLocation = ("
+            << neighbor_loc.lx1 << ", " << neighbor_loc.lx2 << ", " << neighbor_loc.lx3
+            << ")\n----------------------------------\n"
+            << "This MeshBlock's logical  level = " << loc.level << "\n"
+            << "This MeshBlock's physical level = " << level << "\n"
+            << "Aziumthal neighbor's level is ";
+        if (neibt == nullptr) {
+          msg << "coarser.\n";
+        } else {
+          msg << "finer.\n";
+        }
+        msg << "----------------------------------" << std::endl;
+        ATHENA_ERROR(msg);
+      }
       int nid = neibt->gid;
       polar_neighbor_south[neibt->loc.lx3].rank = ranklist[nid];
       polar_neighbor_south[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];

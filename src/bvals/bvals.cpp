@@ -1176,31 +1176,6 @@ void BoundaryValues::CheckBoundary(void) {
       }
     }
   }
-  // SMR + 3D polar boundary check: all blocks along a pole are at same refinement level:
-  if (pmy_mesh_->multilevel == true && pmy_block_->block_size.nx3 > 1 &&
-      (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
-       || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-       || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)) {
-    int mylevel=pmy_block_->loc.level;
-    if (nblevel[0][1][1] != mylevel || nblevel[2][1][1] != mylevel) {
-      std::int64_t lx1=pmy_block_->loc.lx1;
-      std::int64_t lx2=pmy_block_->loc.lx2;
-      std::int64_t lx3=pmy_block_->loc.lx3;
-
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-          << "The use of SMR with any 'polar' or 'polar_wedge' boundary in 3D\n"
-          << "requires that all MeshBlocks around a pole at the same radius \n"
-          << "are at the same refinement level. Current MeshBlock: \n"
-          << "LogicalLocation = (" << lx1 << ", " << lx2 << ", " << lx3 << ")\n"
-          << "----------------------------------\n"
-          << "Left  azimuthal neighbor level = " << nblevel[0][1][1] << "\n"
-          << "This MeshBlock's logical level = " << mylevel << "\n"
-          << "Right aziumthal neighbor level = " << nblevel[2][1][1] << "\n"
-          << "----------------------------------" << std::endl;
-      ATHENA_ERROR(msg);
-    }
-  }
   return;
 }
 
