@@ -491,7 +491,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       neighbor_loc.level = loc.level;
       neibt = tree.FindMeshBlock(neighbor_loc);
       // SMR+3D polar boundary check: all blocks around a pole are at same refinement lvl:
-      if (neibt == nullptr || neibt->gid) {
+      if (neibt == nullptr || neibt->gid < 0) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryBase::SearchAndSetNeighbors" << std::endl
             << "The use of SMR with any 'polar' or 'polar_wedge' boundary in 3D\n"
@@ -537,7 +537,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
       neighbor_loc.lx3 = n;
       neighbor_loc.level = loc.level;
       neibt = tree.FindMeshBlock(neighbor_loc);
-      if (neibt == nullptr || neibt->gid) {
+      if (neibt == nullptr || neibt->gid < 0) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryBase::SearchAndSetNeighbors" << std::endl
             << "The use of SMR with any 'polar' or 'polar_wedge' boundary in 3D\n"
