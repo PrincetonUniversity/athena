@@ -38,7 +38,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
-//  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
+//  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_, *pbl;
@@ -160,7 +160,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
-//  \brief Receive and apply the surace flux from the finer neighbor(s)
+//  \brief Receive and apply the surface flux from the finer neighbor(s)
 
 bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_;

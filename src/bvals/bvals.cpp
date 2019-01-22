@@ -15,6 +15,7 @@
 #include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>   // endl
+#include <limits>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -206,30 +207,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         ATHENA_ERROR(msg);
     }
   }
+  // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
+      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
+      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    CheckPolarBoundaries();
+  }
 
   // Count number of blocks wrapping around pole
   if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
-    }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
+    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
-      ATHENA_ERROR(msg);
-    }
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or less!)
+    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_south_polar_blocks_ = 0;
@@ -305,16 +300,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 
   // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
-    Mesh *pmy_mesh = pmb->pmy_mesh;
     Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
     qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
     ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
-    x1size_ = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
-    x2size_ = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-    x3size_ = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-    int level = pmb->loc.level - pmy_mesh->root_level;
-    std::int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
-    std::int64_t nrbx2 = pmy_mesh->nrbx2*(1L << level);
+    x1size_ = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
+    x2size_ = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
+    x3size_ = pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min;
+    int level = pmb->loc.level - pmy_mesh_->root_level;
+    std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
+    std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
 
     shbb_.outer = false;
     shbb_.inner = false;
@@ -322,7 +316,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       int ncells3 = pmb->block_size.nx3;
-      if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+      if (pmy_mesh_->mesh_size.nx3>1) ncells3 += 2*NGHOST;
       ssize_ = NGHOST*ncells3;
 
       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
@@ -1167,7 +1161,8 @@ void BoundaryValues::Initialize(void) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)
-//  \brief checks if the boundary conditions are correctly enrolled
+//  \brief checks if the boundary conditions are correctly enrolled (and other boundary
+//  values compatibility checks performed at the top of Mesh::Initialize())
 
 void BoundaryValues::CheckBoundary(void) {
   for (int i=0; i<nface_; i++) {
@@ -1181,6 +1176,7 @@ void BoundaryValues::CheckBoundary(void) {
       }
     }
   }
+  return;
 }
 
 //----------------------------------------------------------------------------------------

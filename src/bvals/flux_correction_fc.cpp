@@ -538,7 +538,7 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFCorrection(void)
-//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if
+//  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if
 //  needed
 void BoundaryValues::SendEMFCorrection(void) {
   MeshBlock *pmb=pmy_block_;
@@ -1475,7 +1475,7 @@ void BoundaryValues::PolarSingleEMF(void) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveEMFCorrection(void)
-//  \brief Receive and Apply the surace EMF to the coarse neighbor(s) if needed
+//  \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
 
 bool BoundaryValues::ReceiveEMFCorrection(void) {
   MeshBlock *pmb=pmy_block_;

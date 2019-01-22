@@ -79,17 +79,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ku += (NGHOST);
   }
 
-  // Get mass and spin of black hole
-  Real m = pcoord->GetMass();
-  Real a = pcoord->GetSpin();
-  Real a2 = SQR(a);
-
-  // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-
-  // Read other properties
-  Real e = pin->GetReal("problem", "energy");
-  Real lz = pin->GetReal("problem", "l_z");
+  // Read problem properties
   Real rho_min = pin->GetReal("hydro", "rho_min");
   Real rho_pow = pin->GetReal("hydro", "rho_pow");
   Real pgas_min = pin->GetReal("hydro", "pgas_min");

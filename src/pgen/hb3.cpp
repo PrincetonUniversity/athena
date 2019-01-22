@@ -138,10 +138,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::cout << "[hb3.cpp]: [Lx,Lz,Ly] = [" <<x1size <<","<<x2size<<","<<x3size<<"]"
             << std::endl;
 
-  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
-  Real kz = (2.0*PI/x2size)*(static_cast<Real>(nwy));
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  // Real kz = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
-  Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
+  Real x1, x2; //, x3;
+  Real rd, rp, rval;
+  Real rvx, rvy, rvz;
   std::int64_t iseed = -1-gid; // Initialize on the first call to ran2
   // Initialize perturbations
   //   ipert = 1 - isentropic perturbations to P & d [default]

@@ -607,7 +607,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     arg_max = x1_max;
   }
 #endif  // GENERAL_RELATIVITY
-  wavenumber = 2.0*PI / (arg_max - arg_min);
+  wavenumber = TWO_PI / (arg_max - arg_min);
 
   // Initialize hydro variables
   for (int k=kl; k<=ku; ++k) {

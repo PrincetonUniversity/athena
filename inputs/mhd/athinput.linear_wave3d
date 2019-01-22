@@ -51,7 +51,7 @@ nx2        = 32        # Number of zones in X2-direction
 nx3        = 32        # Number of zones in X3-direction
 
 # The following refinement regions are used in regression tests.  By default,
-# they are ignored.  To use, set meshblock size to 16^3.
+# they are ignored.  To use, set MeshBlock size to 16^3.
 
 <refinement1>
 x1min = 0.3

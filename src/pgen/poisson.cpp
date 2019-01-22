@@ -89,12 +89,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (dim > 1) r2 += SQR(y - y0);
         if (dim > 2) r2 += SQR(z - z0);
         if (iprob == 1) {
-          den = std::sin(2*PI*x/x1size);
-          if (dim > 1) den *= std::sin(2*PI*y/x2size);
-          if (dim > 2) den *= std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
-          phia = SQR(2*PI/x1size);
-          if (dim > 1) phia += SQR(2*PI/x2size);
-          if (dim > 2) phia += SQR(2*PI/x3size);
+          den = std::sin(TWO_PI*x/x1size);
+          if (dim > 1) den *= std::sin(TWO_PI*y/x2size);
+          if (dim > 2) den *= std::sin(TWO_PI*z/x3size); // dkx=2*PI/Nx
+          phia = SQR(TWO_PI/x1size);
+          if (dim > 1) phia += SQR(TWO_PI/x2size);
+          if (dim > 2) phia += SQR(TWO_PI/x3size);
           phia = -den*four_pi_G/phia;
           den+=2.0;
         } else if (iprob == 2) {
@@ -242,9 +242,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       Real x2size = mesh_size.x2max - mesh_size.x2min;
       Real x3size = mesh_size.x3max - mesh_size.x3min;
       Real four_pi_G = pin->GetReal("problem","four_pi_G");
-      Real phiamp = SQR(2*PI/x1size);
-      phiamp += SQR(2*PI/x2size);
-      phiamp += SQR(2*PI/x3size);
+      Real phiamp = SQR(TWO_PI/x1size);
+      phiamp += SQR(TWO_PI/x2size);
+      phiamp += SQR(TWO_PI/x3size);
       phiamp = 1.0*four_pi_G/phiamp;
 
       if (Globals::my_rank == 0) {
