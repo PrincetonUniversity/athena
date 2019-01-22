@@ -106,23 +106,37 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "Otherwise, use 'polar_wedge' flag(s)" << std::endl;
       ATHENA_ERROR(msg);
     }
-    if ((pmy_mesh_->mesh_size.x3min == static_cast<Real>(0.0)
-         && pmy_mesh_->mesh_size.x3max == static_cast<Real>(TWO_PI))
-        && (block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-            || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "3D spherical-like coordinates with current x3 domain limits:\n"
-          << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
-          << "x3min=" << std::scientific << pmy_mesh_->mesh_size.x3min << "\n"
-          << "x3max=" << pmy_mesh_->mesh_size.x3max << "\n"
-          << "Use 'polar_wedge' boundary flag(s) if and only if: \n"
-          << "x3min >" << 0.0 << "\nOR\n"
-          << "x3max <" << TWO_PI << "\n"
-          << "Otherwise, use 'polar' flag(s)" << std::endl;
-      ATHENA_ERROR(msg);
+    if (block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
+        || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+      if ((pmy_mesh_->mesh_size.x3min == static_cast<Real>(0.0)
+           && pmy_mesh_->mesh_size.x3max == static_cast<Real>(TWO_PI))) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "3D spherical-like coordinates with current x3 domain limits:\n"
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+            << "x3min=" << std::scientific << pmy_mesh_->mesh_size.x3min << "\n"
+            << "x3max=" << pmy_mesh_->mesh_size.x3max << "\n"
+            << "Use 'polar_wedge' boundary flag(s) if and only if: \n"
+            << "x3min >" << 0.0 << "\nOR\n"
+            << "x3max <" << TWO_PI << "\n"
+            << "Otherwise, use 'polar' flag(s)" << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      // in 3D, 'polar_wedge' only makes sense if each MeshBlock spans dx3=pi/n, n=int
+      Real block_dx3 = pmy_block_->block_size.x3max - pmy_block_->block_size.x3min;
+      if (std::fmod(PI, block_dx3) > std::numeric_limits<Real>::epsilon()) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "3D spherical-like coordinates with current x3 domain limits:\n"
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+            << "x3min=" << std::scientific << pmy_mesh_->mesh_size.x3min << "\n"
+            << "x3max=" << pmy_mesh_->mesh_size.x3max << "\n"
+            << "Use 'polar_wedge' boundary flag(s) if and only if each MeshBlock\n"
+            << "spans dx3=PI/n, for some integer n. Current MeshBlock azimuthal length:\n"
+            << "dx3=" << block_dx3 << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
-
     // Azimuthal x3 boundaries (of Mesh) must both be periodic if 'polar' or 'polar_wedge'
     // flags are used even once
     if (pmy_mesh_->mesh_bcs[INNER_X3] != PERIODIC_BNDRY
