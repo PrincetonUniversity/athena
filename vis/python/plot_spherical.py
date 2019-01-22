@@ -66,10 +66,20 @@ def main(**kwargs):
 
     # Read data
     if kwargs['theta_compression'] is not None:
-        data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level,
-                                 face_func_2=theta_func)
+        if quantities[0] == 'Levels':
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities[1:],
+                                     level=level, return_levels=True,
+                                     face_func_2=theta_func)
+        else:
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities,
+                                     level=level, face_func_2=theta_func)
     else:
-        data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level)
+        if quantities[0] == 'Levels':
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities[1:],
+                                     level=level, return_levels=True)
+        else:
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities,
+                                     level=level)
 
     # Extract basic coordinate information
     coordinates = data['Coordinates']
