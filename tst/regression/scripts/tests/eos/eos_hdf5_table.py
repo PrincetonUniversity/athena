@@ -96,7 +96,7 @@ def run(**kwargs):
 def analyze():
     analyze_status = True
     for i, g in enumerate(_gammas):
-        for t in [10, 26]:
+        for t in [10, 25]:
             x_ref, _, _, data_ref = athena_read.vtk(
                 'bin/Sod_ideal_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
             x_new, _, _, data_new = athena_read.vtk(
@@ -113,7 +113,7 @@ def analyze():
                     analyze_status = False
 
     tol = [3e-3, 6e-4]
-    for i, t in enumerate([10, 26]):
+    for i, t in enumerate([10, 25]):
         x_ref, _, _, data_ref = athena_read.vtk(
             'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
         x_new, _, _, data_new = athena_read.vtk(
