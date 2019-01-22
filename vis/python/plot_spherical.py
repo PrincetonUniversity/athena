@@ -59,6 +59,7 @@ def main(**kwargs):
 
     # Define grid compression in theta-direction
     h = kwargs['theta_compression'] if kwargs['theta_compression'] is not None else 1.0
+
     def theta_func(xmin, xmax, _, nf):
         x2_vals = np.linspace(xmin, xmax, nf)
         theta_vals = x2_vals + (1.0 - h) / 2.0 * np.sin(2.0 * x2_vals)
