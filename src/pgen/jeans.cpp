@@ -93,7 +93,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
   gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
 
-  kwave = 2.0*PI/lambda;
+  kwave = TWO_PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
   omega = std::sqrt(std::fabs(omega2));
 
@@ -105,19 +105,15 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   if (Globals::my_rank==0) {
-    //moved print statements here from Meshblock::ProblemGenerator
+    // moved print statements here from MeshBlock::ProblemGenerator
     std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
     std::cout << "lambda " << lambda << std::endl;
-    std::cout << "period " << (2*PI/omega) << std::endl;
+    std::cout << "period " << (TWO_PI/omega) << std::endl;
     std::cout << "angle2 " << ang_2*180./PI << " "
               << sin_a2 << " " << cos_a2 << std::endl;
     std::cout << "angle3 " << ang_3*180./PI << " "
               << sin_a3 << " " << cos_a3 << std::endl;
   }
-
-
-
-
   return;
 }
 
@@ -127,20 +123,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real x, sinkx, coskx;
-
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3)
                  + pcoord->x3v(k)*sin_a2;
-        sinkx = std::sin(x*kwave);
-        coskx = std::cos(x*kwave);
+        Real sinkx = std::sin(x*kwave);
+        Real coskx = std::cos(x*kwave);
 
         phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*std::sin(pcoord->x1v(i)*kwave));
 
-        //when unstable initial v omega/kwave*amp*coskx
-        //when stable initial v 0
+        // when unstable, initial v=omega/kwave*amp*coskx
+        // when stable, initial v=0
         Real m = (omega2 < 0) ? d0*(omega/kwave)*amp*coskx:0.0;
 
         phydro->u(IM1,k,j,i) = m*cos_a3*cos_a2;
@@ -156,7 +150,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  //  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
+  //  pmy_mesh->tlim=pin->SetReal("time","tlim",TWO_PI/omega*2.0);
+  return;
 }
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
@@ -313,6 +308,5 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::fprintf(pfile,"\n");
     std::fclose(pfile);
   }
-
   return;
 }

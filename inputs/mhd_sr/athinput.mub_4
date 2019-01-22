@@ -1,6 +1,7 @@
 <comment>
 problem   = SR MHD shocktube problem 4
 reference = Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
+configure = --prob=gr_shock_tube -s -b --coord=cartesian
 
 <job>
 problem_id = mhd_shock_rel_4

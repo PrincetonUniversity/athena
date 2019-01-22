@@ -38,7 +38,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
-//  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
+//  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_, *pbl;
@@ -98,7 +98,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
         }
         // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
-        int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
+        int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid & 1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=ns; nn<=ne; nn++) {
             for (int k=pmb->ks; k<=pmb->ke; k+=2) {
@@ -126,7 +126,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
         }
         // x3 direction - 3D only
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
-        int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
+        int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid & 1);
         for (int nn=ns; nn<=ne; nn++) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
             pco->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
@@ -160,7 +160,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
-//  \brief Receive and apply the surace flux from the finer neighbor(s)
+//  \brief Receive and apply the surface flux from the finer neighbor(s)
 
 bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_;
@@ -217,7 +217,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
           }
         }
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
-        int js=pmb->js+(pmb->je-pmb->js)*(nb.fid&1)+(nb.fid&1);
+        int js=pmb->js+(pmb->je-pmb->js)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
         else          is+=pmb->block_size.nx1/2;
@@ -230,7 +230,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
           }
         }
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
-        int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid&1)+(nb.fid&1);
+        int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
         else          is+=pmb->block_size.nx1/2;

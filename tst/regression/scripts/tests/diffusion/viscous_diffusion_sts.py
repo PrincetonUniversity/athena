@@ -39,7 +39,7 @@ def analyze():
     l1ERROR = []
 
     for n in res:
-        x1v, v2 = np.loadtxt("bin/visc"+str(n)+".block0.out2.00002.tab",
+        x1v, v2 = np.loadtxt("bin/visc"+str(n)+".block0.out2.00001.tab",
                              usecols=(1, 2), dtype=float,
                              unpack=True, comments='#')
 

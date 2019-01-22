@@ -181,12 +181,12 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
     // x1x2 edge (both 2D and 3D)
     if (nb.eid>=0 && nb.eid<4) {
       int i, j;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -206,12 +206,12 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x1x3 edge
     } else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -237,12 +237,12 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       // x2x3 edge
     } else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -429,12 +429,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       // x1x2 edge
       if (nb.eid>=0 && nb.eid<4) {
         int i, j;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           i=pmb->is;
         } else {
           i=pmb->ie+1;
         }
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           j=pmb->js;
         } else {
           j=pmb->je+1;
@@ -455,12 +455,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x1x3 edge
       } else if (nb.eid>=4 && nb.eid<8) {
         int i, k;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           i=pmb->is;
         } else {
           i=pmb->ie+1;
         }
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           k=pmb->ks;
         } else {
           k=pmb->ke+1;
@@ -474,13 +474,13 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // x2x3 edge
       } else if (nb.eid>=8 && nb.eid<12) {
         int j, k;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           j=pmb->js;
         } else {
           j=pmb->je+1;
         }
         bool pole = pco->IsPole(j);
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           k=pmb->ks;
         } else {
           k=pmb->ke+1;
@@ -500,12 +500,12 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
     } else if (pmb->block_size.nx2 > 1) { // 2D
       // x1x2 edge
       int i, j;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -538,7 +538,7 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFCorrection(void)
-//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if
+//  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if
 //  needed
 void BoundaryValues::SendEMFCorrection(void) {
   MeshBlock *pmb=pmy_block_;
@@ -752,12 +752,12 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
     // x1x2 edge (2D and 3D)
     if (nb.eid>=0 && nb.eid<4) {
       int i, j;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -780,12 +780,12 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       // x1x3 edge
     } else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -806,12 +806,12 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       // x2x3 edge
     } else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -991,12 +991,12 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
       // x1x2 edge
       if (nb.eid>=0 && nb.eid<4) {
         int i, j, kl=pmb->ks, ku=pmb->ke;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           i=pmb->is;
         } else {
           i=pmb->ie+1;
         }
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           j=pmb->js;
         } else {
           j=pmb->je+1;
@@ -1013,12 +1013,12 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         // x1x3 edge
       } else if (nb.eid>=4 && nb.eid<8) {
         int i, k, jl=pmb->js, ju=pmb->je;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           i=pmb->is;
         } else {
           i=pmb->ie+1;
         }
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           k=pmb->ks;
         } else {
           k=pmb->ke+1;
@@ -1034,12 +1034,12 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         // x2x3 edge
       } else if (nb.eid>=8 && nb.eid<12) {
         int j, k, il=pmb->is, iu=pmb->ie;
-        if ((nb.eid&1)==0) {
+        if ((nb.eid & 1)==0) {
           j=pmb->js;
         } else {
           j=pmb->je+1;
         }
-        if ((nb.eid&2)==0) {
+        if ((nb.eid & 2)==0) {
           k=pmb->ks;
         } else {
           k=pmb->ke+1;
@@ -1056,12 +1056,12 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
       }
     } else if (pmb->block_size.nx2 > 1) { // 2D
       int i, j, k=pmb->ks;
-      if ((nb.eid&1)==0) {
+      if ((nb.eid & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((nb.eid&2)==0) {
+      if ((nb.eid & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -1189,12 +1189,12 @@ void BoundaryValues::ClearCoarseEMFBoundary(void) {
     if (edge_flag_[n]==true) continue;
     if (n>=0 && n<4) {
       int i, j;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -1204,12 +1204,12 @@ void BoundaryValues::ClearCoarseEMFBoundary(void) {
       // x1x3 edge
     } else if (n>=4 && n<8) {
       int i, k;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -1219,12 +1219,12 @@ void BoundaryValues::ClearCoarseEMFBoundary(void) {
       // x2x3 edge
     } else if (n>=8 && n<12) {
       int k, j;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -1366,12 +1366,12 @@ void BoundaryValues::AverageEMFBoundary(void) {
     // x1x2 edge (both 2D and 3D)
     if (n>=0 && n<4) {
       int i, j;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
@@ -1381,12 +1381,12 @@ void BoundaryValues::AverageEMFBoundary(void) {
       // x1x3 edge
     } else if (n>=4 && n<8) {
       int i, k;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -1396,12 +1396,12 @@ void BoundaryValues::AverageEMFBoundary(void) {
       // x2x3 edge
     } else if (n>=8 && n<12) {
       int j, k;
-      if ((n&1)==0) {
+      if ((n & 1)==0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
-      if ((n&2)==0) {
+      if ((n & 2)==0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
@@ -1475,7 +1475,7 @@ void BoundaryValues::PolarSingleEMF(void) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveEMFCorrection(void)
-//  \brief Receive and Apply the surace EMF to the coarse neighbor(s) if needed
+//  \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
 
 bool BoundaryValues::ReceiveEMFCorrection(void) {
   MeshBlock *pmb=pmy_block_;

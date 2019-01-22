@@ -44,9 +44,8 @@
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
                      int igflag, bool ref_flag) {
-  int root_level;
   pmy_mesh = pm;
-  root_level = pm->root_level;
+  // int root_level = pm->root_level;
   block_size = input_block;
   prev=nullptr;
   next=nullptr;
@@ -61,7 +60,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
-
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
 

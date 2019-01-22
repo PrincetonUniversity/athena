@@ -151,8 +151,9 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
                        int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 
-// function to return boundary flag given input string
+// functions to return boundary flag given input string, and vice versa
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
+std::string GetBoundaryString(enum BoundaryFlag input_flag);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
 typedef struct ShearingBoundaryBlock {
@@ -329,6 +330,8 @@ class BoundaryValues : public BoundaryBase {
 #endif
 
   BValFunc_t BoundaryFunction_[6];
+
+  void CheckPolarBoundaries(void);
 
   // Shearingbox
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
