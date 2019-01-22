@@ -15,6 +15,7 @@
 #include <iostream>   // endl
 #include <limits>
 #include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
 
 // Athena++ headers
 #include "../athena.hpp"
