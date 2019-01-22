@@ -123,8 +123,19 @@ void BoundaryValues::CheckPolarBoundaries() {
         ATHENA_ERROR(msg);
       }
       // in 3D, 'polar_wedge' only makes sense if each MeshBlock spans dx3=pi/n, n=int
-      Real block_dx3 = pmy_block_->block_size.x3max - pmy_block_->block_size.x3min;
-      if (std::fmod(PI, block_dx3) > std::numeric_limits<Real>::epsilon()) {
+      Real mesh_dx3 = (pmy_mesh_->mesh_size.x3max
+                       - pmy_mesh_->mesh_size.x3min)/pmy_mesh_->nrbx3;
+      // Real block_dx3 = pmy_block_->block_size.x3max - pmy_block_->block_size.x3min;
+      // (accumulation of floating-point round off makes it too dificult to impose this
+      // condition individually on each MeshBlock's specific x3 limits)
+      Real block_dx3= mesh_dx3;
+      // std::fmod() returns PI/dx3 with truncated fractional part, not actual remainder
+      Real remainder = std::abs(std::remainder(PI, block_dx3));
+      // scale the machine precision by the # of azimuthal blocks due to accumulation of
+      // error from multiple subtraction operations to compute block_dx3
+      Real fp_tol = std::numeric_limits<Real>::epsilon()*pmy_mesh_->nrbx3;
+      if (remainder > fp_tol
+          || pmy_mesh_->mesh_size.x3rat != 1.0) { // nonuniform azimuth spacing forbidden
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
             << "3D spherical-like coordinates with current x3 domain limits:\n"
@@ -133,7 +144,10 @@ void BoundaryValues::CheckPolarBoundaries() {
             << "x3max=" << pmy_mesh_->mesh_size.x3max << "\n"
             << "Use 'polar_wedge' boundary flag(s) if and only if each MeshBlock\n"
             << "spans dx3=PI/n, for some integer n. Current MeshBlock azimuthal length:\n"
-            << "dx3=" << block_dx3 << std::endl;
+            << "dx3=" << block_dx3 << std::endl
+            << "divides PI an int number of times, with |remainder|=" << remainder << "\n"
+            << "which exceeds floating-point rounding tolerance eps*nrbx3=" << fp_tol
+            << std::endl;
         ATHENA_ERROR(msg);
       }
     }
