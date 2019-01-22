@@ -426,7 +426,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   if (file < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in athdf5 initialization\n"
-        << "Could not open " << filename << "\n";
+        << "Could not open " << filename << std::endl;
     ATHENA_ERROR(msg);
   }
 

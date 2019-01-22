@@ -13,6 +13,7 @@
 #   --eos=xxx         use xxx as the equation of state
 #   --flux=xxx        use xxx as the Riemann solver
 #   --nghost=xxx      set NGHOST=xxx
+#   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -88,7 +89,8 @@ parser.add_argument(
 # --eos=[name] argument
 parser.add_argument('--eos',
                     default='adiabatic',
-                    choices=['adiabatic', 'isothermal'],
+                    choices=['adiabatic', 'isothermal', 'general/eos_table',
+                             'general/hydrogen'],
                     help='select equation of state')
 
 # --flux=[name] argument
@@ -323,6 +325,16 @@ if args['eos'] == 'isothermal':
     if args['s'] or args['g']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'Isothermal EOS is incompatible with relativity')
+if args['eos'][:8] == 'general/':
+    if args['s'] or args['g']:
+        raise SystemExit('### CONFIGURE ERROR: '
+                         + 'General EOS is incompatible with relativity')
+    if args['b']:
+        raise SystemExit('### CONFIGURE ERROR: MHD compatability with General EOS'
+                         + ' has not yet been implemented')
+    if args['flux'] not in ['hllc', 'hlld']:
+        raise SystemExit('### CONFIGURE ERROR: '
+                         + 'General EOS is incompatible with flux ' + args['flux'])
 
 # --- Step 3. Set definitions and Makefile options based on above argument
 
@@ -338,13 +350,22 @@ definitions['PROBLEM'] = makefile_options['PROBLEM_FILE'] = args['prob']
 definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['coord']
 
 # --eos=[name] argument
-definitions['NON_BAROTROPIC_EOS'] = '1' if args['eos'] == 'adiabatic' else '0'
+definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
-if args['eos'] == 'adiabatic':
-    definitions['NHYDRO_VARIABLES'] = '5'
+definitions['GENERAL_EOS'] = '0'
+makefile_options['GENERAL_EOS_FILE'] = 'noop'
+definitions['EOS_TABLE_ENABLED'] = '0'
 if args['eos'] == 'isothermal':
     definitions['NHYDRO_VARIABLES'] = '4'
+elif args['eos'] == 'adiabatic':
+    definitions['NHYDRO_VARIABLES'] = '5'
+else:
+    definitions['GENERAL_EOS'] = '1'
+    makefile_options['GENERAL_EOS_FILE'] = 'general'
+    definitions['NHYDRO_VARIABLES'] = '5'
+    if args['eos'] == 'general/eos_table':
+        definitions['EOS_TABLE_ENABLED'] = '1'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
@@ -357,25 +378,29 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 if args['b']:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
     makefile_options['EOS_FILE'] += '_mhd'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_mhd'
     definitions['NFIELD_VARIABLES'] = '3'
     makefile_options['RSOLVER_DIR'] = 'mhd/'
     if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
         makefile_options['RSOLVER_FILE'] += '_mhd'
-    if args['eos'] == 'adiabatic':
-        definitions['NWAVE_VALUE'] = '7'
-    else:
+    if args['eos'] == 'isothermal':
         definitions['NWAVE_VALUE'] = '6'
         if args['flux'] == 'hlld':
             makefile_options['RSOLVER_FILE'] += '_iso'
+    else:
+        definitions['NWAVE_VALUE'] = '7'
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
     makefile_options['EOS_FILE'] += '_hydro'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_hydro'
     definitions['NFIELD_VARIABLES'] = '0'
     makefile_options['RSOLVER_DIR'] = 'hydro/'
-    if args['eos'] == 'adiabatic':
-        definitions['NWAVE_VALUE'] = '5'
-    else:
+    if args['eos'] == 'isothermal':
         definitions['NWAVE_VALUE'] = '4'
+    else:
+        definitions['NWAVE_VALUE'] = '5'
 
 # -sts argument
 if args['sts']:
@@ -389,9 +414,13 @@ definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
     makefile_options['EOS_FILE'] += '_sr'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_sr'
     makefile_options['RSOLVER_FILE'] += '_rel'
 if args['g']:
     makefile_options['EOS_FILE'] += '_gr'
+    if definitions['GENERAL_EOS'] != '0':
+        makefile_options['GENERAL_EOS_FILE'] += '_gr'
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
@@ -711,6 +740,7 @@ definitions['COMPILER_FLAGS'] = ' '.join(
 makefile_options['PROBLEM_FILE'] += '.cpp'
 makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
+makefile_options['GENERAL_EOS_FILE'] += '.cpp'
 makefile_options['RSOLVER_FILE'] += '.cpp'
 
 # Read templates

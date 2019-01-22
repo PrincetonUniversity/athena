@@ -146,7 +146,7 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
     case (MG_RECVBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ReceiveBoundary);
+        (&MultigridTaskList::ReceiveBoundary);
       break;
     case (MG_RECVBND0F):
     case (MG_RECVBND1R):
@@ -181,17 +181,17 @@ void MultigridTaskList::AddMultigridTask(std::uint64_t id, std::uint64_t dep) {
       break;
     case (MG_RESTRICT):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+          static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
           (&MultigridTaskList::Restrict);
       break;
     case (MG_PROLONG):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+          static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
           (&MultigridTaskList::Prolongate);
       break;
     case (MG_FMGPROLONG):
       task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+          static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
           (&MultigridTaskList::FMGProlongate);
       break;
 

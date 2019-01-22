@@ -275,6 +275,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     max_level = 63;
   }
 
+  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
   if (multilevel==true) {
@@ -666,6 +667,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     max_level = 63;
   }
 
+  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
   // read user Mesh data
@@ -875,6 +877,7 @@ Mesh::~Mesh() {
   for (int n=0; n<nint_user_mesh_data_; n++)
     iuser_mesh_data[n].DeleteAthenaArray();
   if (nint_user_mesh_data_>0) delete [] iuser_mesh_data;
+  if (EOS_TABLE_ENABLED) peos_table->~EosTable();
 }
 
 //----------------------------------------------------------------------------------------
@@ -1363,7 +1366,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
           pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
-                                                                  HYDRO_PRIM);
+                                                             HYDRO_PRIM);
           pbval->ClearBoundaryForInit(false);
         }
       }
@@ -1443,7 +1446,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
           pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u,
-                                                                  HYDRO_CONS);
+                                                             HYDRO_CONS);
           if (MAGNETIC_FIELDS_ENABLED)
             pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
           // send and receive shearingbox boundary conditions

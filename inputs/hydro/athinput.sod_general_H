@@ -1,16 +1,16 @@
 <comment>
-problem   = Sod's shock tube
+problem   = A Sod-like shock tube for testing general EOS; initialize temp not pres
 reference = Sod, G.A., JCP 27, pp. 1-31 (1978)
-configure = --prob=shock_tube
+configure = --prob=shock_tube --eos=general/hydrogen
 
 <job>
 problem_id  = Sod       # problem ID: basename of output filenames
 
 <output1>
-file_type   = tab       # Tabular data dump
+file_type   = vtk       # vtk data dump
 variable    = prim      # variables to be output
 data_format = %12.5e    # Optional data format string
-dt          = 0.01      # time increment between outputs
+dt          = 10        # time increment between outputs
 x2_slice    = 0.0       # slice in x2
 x3_slice    = 0.0       # slice in x3
 
@@ -20,7 +20,7 @@ dt          = 0.01      # time increment between outputs
 data_format = %12.5e    # Optional data format string
 
 <time>
-cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim        = -1        # cycle limit
 tlim        = 0.25      # time limit
 integrator  = vl2       # time integration algorithm
@@ -59,14 +59,14 @@ shock_dir     = 1       # Shock Direction -- (1,2,3) = (x1,x2,x3)
 xshock        = 0.0     # position of initial interface
 compute_error = 0       # set value to one to compute L1 error
 
-dl = 1.0                # density on left
-pl = 1.0                # pressure
+dl = 1e-7               # density on left
+Tl = 0.15               # temperature
 ul = 0.0                # X-velocity
 vl = 0.0                # Y-velocity
 wl = 0.0                # Z-velocity
 
-dr = 0.125              # density on right
-pr = 0.1                # pressure
+dr = 1.25e-8            # density on right
+Tr = 0.062              # temperature
 ur = 0.0                # X-velocity
 vr = 0.0                # Y-velocity
 wr = 0.0                # Z-velocity
