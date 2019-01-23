@@ -115,7 +115,7 @@ def analyze():
                 'bin/Sod_eos_hllc_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
             x_ascii, _, _, data_ascii = athena_read.vtk(
                 'bin/Sod_eos_hllc_ascii_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
-            loc = [0, 0, slice(None)]
+            loc = tuple([0, 0, slice(None)])
             for var in ['rho', 'press']:
                 norm = comparison.l1_norm(x_ref, data_ref[var][loc])
                 diff = comparison.l1_diff(
@@ -140,7 +140,7 @@ def analyze():
             'bin/Sod_eos_H_binary.block0.out1.{1:05d}.vtk'.format(i, t))
         x_ascii, _, _, data_ascii = athena_read.vtk(
             'bin/Sod_eos_H_ascii.block0.out1.{1:05d}.vtk'.format(i, t))
-        loc = [0, 0, slice(None)]
+        loc = tuple([0, 0, slice(None)])
         for var in ['rho', 'press']:
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])
             diff = comparison.l1_diff(

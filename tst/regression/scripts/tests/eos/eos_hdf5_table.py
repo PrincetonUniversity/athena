@@ -101,7 +101,7 @@ def analyze():
                 'bin/Sod_ideal_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
             x_new, _, _, data_new = athena_read.vtk(
                 'bin/Sod_eos_hllc_hdf5_{0:}.block0.out1.{1:05d}.vtk'.format(i, t))
-            loc = [0, 0, slice(None)]
+            loc = tuple([0, 0, slice(None)])
             for var in ['rho', 'press']:
                 diff = comparison.l1_diff(
                     x_ref, data_ref[var][loc], x_new, data_new[var][loc])
@@ -118,7 +118,7 @@ def analyze():
             'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
         x_new, _, _, data_new = athena_read.vtk(
             'bin/Sod_eos_H_hdf5.block0.out1.{1:05d}.vtk'.format(i, t))
-        loc = [0, 0, slice(None)]
+        loc = tuple([0, 0, slice(None)])
         for var in ['rho', 'press']:
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])
             diff = comparison.l1_diff(
