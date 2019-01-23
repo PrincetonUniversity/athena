@@ -9,7 +9,6 @@
 // C headers
 
 // C++ headers
-#include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
 #include <stdexcept> // std::invalid_argument
 
