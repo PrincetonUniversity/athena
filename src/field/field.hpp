@@ -52,7 +52,7 @@ class Field {
 
   void CalculateCellCenteredField(
       const FaceField &bf, AthenaArray<Real> &bc,
-      Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+      Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void CT(const Real wght, FaceField &b_out);
   void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
                     const Real wght[3]);
