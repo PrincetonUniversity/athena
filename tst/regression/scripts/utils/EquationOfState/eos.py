@@ -40,7 +40,9 @@ class SimpleHydrogen(EOS):
         return np.exp(1. / T - 1.5 * np.log(T))
 
     def _x(self, rho, T):
-        return 2. / (1 + np.sqrt(1 + 4. * np.exp(1. / T - 1.5 * np.log(T) + np.log(rho))))
+        with np.errstate(over='ignore'):
+            return 2. / (1 + np.sqrt(1 + 4.
+                                     * np.exp(1. / T - 1.5 * np.log(T) + np.log(rho))))
 
     def _x_T(self, rho, T):
         x = self._x(rho, T)
