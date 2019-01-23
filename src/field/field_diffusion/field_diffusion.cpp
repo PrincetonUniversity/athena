@@ -9,8 +9,8 @@
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
 #include <cmath>      // sqrt(), fabs()
+#include <limits>
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -294,9 +294,9 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
     fac_h = 1.0;
   else
     fac_h=0.5;
-
-  dt_oa = (FLT_MAX);
-  dt_h  = (FLT_MAX);
+  Real real_max = std::numeric_limits<Real>::max();
+  dt_oa = (real_max);
+  dt_h  = (real_max);
 
   AthenaArray<Real> eta_t;
   eta_t.InitWithShallowCopy(eta_tot_);

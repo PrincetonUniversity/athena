@@ -12,13 +12,13 @@
 
 // C++ headers
 #include <algorithm>  // std::sort()
-#include <cfloat>     // FLT_MAX
 #include <cinttypes>  // std::int64_t format macro PRId64 for fixed-width integer types
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdlib>
 #include <cstring>    // std::memcpy()
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -74,9 +74,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   cfl_number = pin->GetReal("time", "cfl_number");
   ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
-  dt            = (FLT_MAX*0.4);
-  dt_hyperbolic = (FLT_MAX*0.4);
-  dt_parabolic  = (FLT_MAX*0.4);
+  Real real_max = std::numeric_limits<Real>::max();
+  dt            = (real_max*0.4);
+  dt_hyperbolic = (real_max*0.4);
+  dt_parabolic  = (real_max*0.4);
   muj = 0.0;
   nuj = 0.0;
   muj_tilde = 0.0;
@@ -944,7 +945,8 @@ void Mesh::OutputMeshStructure(int dim) {
   }
 
   // output relative size/locations of meshblock to file, for plotting
-  Real mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
+  Real real_max = std::numeric_limits<Real>::max();
+  Real mincost=real_max, maxcost=0.0, totalcost=0.0;
   for (int i=root_level; i<=max_level; i++) {
     for (int j=0; j<nbtotal; j++) {
       if (loclist[j].level==i) {
@@ -1577,7 +1579,8 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
 
 void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
   std::stringstream msg;
-  Real totalcost=0, maxcost=0.0, mincost=(FLT_MAX);
+  Real real_max = std::numeric_limits<Real>::max();
+  Real totalcost=0, maxcost=0.0, mincost=(real_max);
 
   for (int i=0; i<nb; i++) {
     totalcost+=clist[i];
