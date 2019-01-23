@@ -11,6 +11,11 @@
 
 // C++ headers
 #include <cmath>  // pow(), trig functions
+#include <iomanip>
+#include <iostream>   // endl
+#include <limits>
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -42,6 +47,23 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   Mesh *pm=pmy_block->pmy_mesh;
   RegionSize& block_size = pmy_block->block_size;
 
+  // check that Mesh's polar coordinate range does not exceed [0, pi], even in 2D
+  // (use 2D cylindrical coordinates to create a circular Mesh)
+  if (block_size.nx2 > 1
+      && (pm->mesh_size.x2min < static_cast<Real>(0.0)
+          || pm->mesh_size.x2max > static_cast<Real>(PI))) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in SphericalPolar constructor" << std::endl
+        << "2D or 3D spherical-polar coordinates requires that\n"
+        << "x2 does not exceed the following limits:\n"
+        << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+        << "x2min=" << std::scientific << 0.0 << "\n"
+        << "x2max=" << PI << "\n"
+        << "Current x2 domain limits are: \n"
+        << "x2min=" << pm->mesh_size.x2min << "\n"
+        << "x2max=" << pm->mesh_size.x2max << std::endl;
+    ATHENA_ERROR(msg);
+  }
   // allocate arrays for volume-centered coordinates and positions of cells
   int ncells1 = (iu-il+1) + 2*ng;
   int ncells2 = 1, ncells3 = 1;

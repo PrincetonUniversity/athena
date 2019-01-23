@@ -6,6 +6,7 @@
 PROBLEM_FILE = @PROBLEM_FILE@
 COORDINATES_FILE = @COORDINATES_FILE@
 EOS_FILE = @EOS_FILE@
+GENERAL_EOS_FILE = @GENERAL_EOS_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 MPIFFT_FILE = @MPIFFT_FILE@
@@ -26,6 +27,7 @@ EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
+	     src/eos/general/$(GENERAL_EOS_FILE) \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
 	     $(wildcard src/fft/*.cpp) \

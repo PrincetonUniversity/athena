@@ -9,7 +9,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
+#include <limits>
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -247,6 +247,7 @@ void HydroDiffusion::SetHydroDiffusivity(AthenaArray<Real> &w, AthenaArray<Real>
 // Get the hydro diffusion timestep
 // currently return dt for viscous and conduction processes
 void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
+  Real real_max = std::numeric_limits<Real>::max();
   int il = pmb_->is-NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
   int iu = pmb_->ie+NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   Real fac;
@@ -257,8 +258,8 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   else
     fac = 0.5;
 
-  dt_vis = (FLT_MAX);
-  dt_cnd = (FLT_MAX);
+  dt_vis = (real_max);
+  dt_cnd = (real_max);
 
   AthenaArray<Real> nu_t;
   nu_t.InitWithShallowCopy(nu_tot_);

@@ -23,10 +23,15 @@
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 
-
 // configure.py dict(definitions) Boolean values:
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
+
+// use general EOS framework default=0 (false).
+#define GENERAL_EOS @GENERAL_EOS@
+
+// use EOS table default=0 (false).
+#define EOS_TABLE_ENABLED @EOS_TABLE_ENABLED@
 
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
@@ -83,7 +88,7 @@
 // compiler options
 #define COMPILED_WITH "@COMPILER_CHOICE@"
 #define COMPILER_COMMAND "@COMPILER_COMMAND@"
-#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@"
+#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@" // NOLINT
 
 //----------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
@@ -99,11 +104,13 @@
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)
 
+// all constants specified to 17 total digits of precision = max_digits10 for "double"
 #define PI 3.1415926535897932
+#define TWO_PI 6.2831853071795862
 #define SQRT2 1.4142135623730951
-#define ONE_OVER_SQRT2 0.7071067811865475
-#define ONE_3RD 0.3333333333333333
-#define TWO_3RD 0.6666666666666667
+#define ONE_OVER_SQRT2 0.70710678118654752
+#define ONE_3RD 0.33333333333333333
+#define TWO_3RD 0.66666666666666667
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )

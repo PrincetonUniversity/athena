@@ -115,7 +115,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j,
                              AthenaArray<Real> &cons, AthenaArray<Real> &flux,
                              AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric if in GR
-  int i01, i11;
+  int i01(0), i11(0);
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {

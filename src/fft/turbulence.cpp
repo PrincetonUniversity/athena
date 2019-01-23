@@ -159,11 +159,11 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
       for (int i=0; i<knx1; i++) {
         Real q1=ran2(&rseed);
         Real q2=ran2(&rseed);
-        Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(2.0*PI*q2);
+        Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(TWO_PI*q2);
         q1=ran2(&rseed);
         std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
-        amp[kidx][0] = q3*std::cos(2.0*PI*q1);
-        amp[kidx][1] = q3*std::sin(2.0*PI*q1);
+        amp[kidx][0] = q3*std::cos(TWO_PI*q1);
+        amp[kidx][1] = q3*std::sin(TWO_PI*q1);
       }
     }
   }

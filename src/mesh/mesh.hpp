@@ -23,6 +23,7 @@
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
 #include "../task_list/task_list.hpp"
+#include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 
@@ -181,6 +182,7 @@ class Mesh {
   bool adaptive, multilevel;
   int gflag;
   int turb_flag; // turbulence flag
+  EosTable *peos_table;
 
   MeshBlock *pblock;
 

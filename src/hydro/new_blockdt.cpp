@@ -10,8 +10,8 @@
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
 #include <cmath>      // fabs(), sqrt()
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -56,9 +56,10 @@ Real Hydro::NewBlockTimeStep(void) {
   dt3.InitWithShallowCopy(dt3_);
   Real wi[(NWAVE)];
 
-  Real min_dt = (FLT_MAX);
-  Real min_dt_hyperbolic = (FLT_MAX);
-  Real min_dt_parabolic  = (FLT_MAX);
+  Real real_max = std::numeric_limits<Real>::max();
+  Real min_dt = (real_max);
+  Real min_dt_hyperbolic = (real_max);
+  Real min_dt_parabolic  = (real_max);
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

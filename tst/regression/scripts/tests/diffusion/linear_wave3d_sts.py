@@ -47,7 +47,7 @@ def analyze():
     rate = 2.0*(4.0*0.01+3.0*0.02/4.0+0.02*4.0/5.0)/15.0*ksqr
 
     basename = 'bin/DecayLinWave.block0.out2.'
-    nframe = 101
+    nframe = 100
     dumprate = 0.03
     max_vy = np.zeros(nframe)
     tt = np.zeros(nframe)

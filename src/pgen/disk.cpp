@@ -11,12 +11,12 @@
 
 // C++ headers
 #include <algorithm>  // min
-#include <cfloat>     // FLT_MIN
 #include <cmath>      // sqrt
 #include <cstdlib>    // srand
 #include <cstring>    // strcmp()
 #include <fstream>
 #include <iostream>   // endl
+#include <limits>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -87,7 +87,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   } else {
     p0_over_r0=SQR(pin->GetReal("hydro","iso_sound_speed"));
   }
-  dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  Real float_min = std::numeric_limits<float>::min();
+  dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(float_min)));
 
   // enroll user-defined boundary condition
   if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {

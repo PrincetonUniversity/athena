@@ -131,18 +131,18 @@ Field::~Field() {
 
 void Field::CalculateCellCenteredField(
     const FaceField &bf, AthenaArray<Real> &bc, Coordinates *pco,
-    int is, int ie, int js, int je, int ks, int ke) {
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Defer to Reconstruction class to check if uniform Cartesian formula can be used
   // (unweighted average)
   const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[X1DIR];
   const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[X2DIR];
   const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[X3DIR];
 
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       // calc cell centered fields first
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
         const Real& b1_i   = bf.x1f(k,j,i  );
         const Real& b1_ip1 = bf.x1f(k,j,i+1);
         const Real& b2_j   = bf.x2f(k,j  ,i);

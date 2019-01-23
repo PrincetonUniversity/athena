@@ -103,9 +103,9 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 //  \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
   Real pcoeff(0.0);
-  Real dx1sq=SQR(2*PI/(kNx[0]*dkx[0]));
-  Real dx2sq=SQR(2*PI/(kNx[1]*dkx[1]));
-  Real dx3sq=SQR(2*PI/(kNx[2]*dkx[2]));
+  Real dx1sq=SQR(TWO_PI/(kNx[0]*dkx[0]));
+  Real dx2sq=SQR(TWO_PI/(kNx[1]*dkx[1]));
+  Real dx3sq=SQR(TWO_PI/(kNx[2]*dkx[2]));
   for (int k=0; k<knx[2]; k++) {
     for (int j=0; j<knx[1]; j++) {
       for (int i=0; i<knx[0]; i++) {
@@ -120,9 +120,9 @@ void FFTGravity::ApplyKernel(int mode) {
           if (ky > 0.5*kNx[1]) ky -= kNx[1];
           if (kz > 0.5*kNx[2]) kz -= kNx[2];
           if (mode == 0) { // Discrete FT
-            kx *= 2*PI/static_cast<Real>(kNx[0]);
-            ky *= 2*PI/static_cast<Real>(kNx[1]);
-            kz *= 2*PI/static_cast<Real>(kNx[2]);
+            kx *= TWO_PI/static_cast<Real>(kNx[0]);
+            ky *= TWO_PI/static_cast<Real>(kNx[1]);
+            kz *= TWO_PI/static_cast<Real>(kNx[2]);
             pcoeff = ((2.0*std::cos(kx)-2.0)/dx1sq);
             if (dim_ > 1) pcoeff += ((2.0*std::cos(ky)-2.0)/dx2sq);
             if (dim_ > 2) pcoeff += ((2.0*std::cos(kz)-2.0)/dx3sq);

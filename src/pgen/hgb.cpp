@@ -136,9 +136,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int nwx = pin->GetOrAddInteger("problem","nwx",1);
   int nwy = pin->GetOrAddInteger("problem","nwy",1);
   int nwz = pin->GetOrAddInteger("problem","nwz",1);
-  Real kx = (2.0*PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
-  Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
-  Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
+  Real kx = (TWO_PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
+  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
 
   // For PF density wave test, read data from file: not implemented yet.
 
@@ -439,9 +439,9 @@ static Real hst_dBy(MeshBlock *pmb, int iout) {
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
 
-  fky = 2.0*PI/Ly;
+  fky = TWO_PI/Ly;
   fkx = -4.0*PI/Lx + qshear*Omega_0*fky*pmb->pmy_mesh->time;
-  fkz = 2.0*PI/Lz;
+  fkz = TWO_PI/Lz;
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);

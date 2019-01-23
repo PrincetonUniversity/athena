@@ -36,6 +36,10 @@ class Coordinates;
 struct RegionSize;
 struct FaceField;
 
+// functions to return boundary flag given input string, and vice versa
+enum BoundaryFlag GetBoundaryFlag(std::string input_string);
+std::string GetBoundaryString(enum BoundaryFlag input_flag);
+
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
 //  \brief Base class for all the BoundaryValues classes
@@ -139,6 +143,7 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // called in Mesh::Initialize() after processing ParameterInput(), before
   // pbval->Initialize() is called in this class
   void CheckBoundary(void);
+  void CheckPolarBoundaries(void);
 
   // linked list of BoundaryVariable derived class instances:
 

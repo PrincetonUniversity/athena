@@ -390,9 +390,9 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
         # Set volume function for preset coordinates if needed
         coord = f.attrs['Coordinates'].decode('ascii', 'replace')
         if level < max_level and not subsample and not fast_restrict and vol_func is None:
-            x1_rat = f.attrs['RootGridX1'][2].decode('ascii', 'replace')
-            x2_rat = f.attrs['RootGridX2'][2].decode('ascii', 'replace')
-            x3_rat = f.attrs['RootGridX3'][2].decode('ascii', 'replace')
+            x1_rat = f.attrs['RootGridX1'][2]
+            x2_rat = f.attrs['RootGridX2'][2]
+            x3_rat = f.attrs['RootGridX3'][2]
             if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
                     or coord == 'sinusoidal'):
                 if ((nx1 == 1 or x1_rat == 1.0) and (nx2 == 1 or x2_rat == 1.0)

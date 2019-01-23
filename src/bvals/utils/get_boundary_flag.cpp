@@ -41,7 +41,40 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
-        << "Input string=" << input_string << " not valid boundary type" << std::endl;
+        << "Input string=" << input_string << "\n"
+        << "is an invalid boundary type" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn GetBoundaryString(enum BoundaryFlag input_flag)
+//  \brief Parses enumerated type BoundaryFlag internal integer representation to return
+//  string describing the boundary condition. Used for diagnostics. Inverse of
+//  GetBoundaryFlag()
+
+std::string GetBoundaryString(enum BoundaryFlag input_flag) {
+  if (input_flag == REFLECTING_BNDRY) {
+    return "reflecting";
+  } else if (input_flag == OUTFLOW_BNDRY) {
+    return "outflow";
+  } else if (input_flag == USER_BNDRY) {
+    return "user";
+  } else if (input_flag == PERIODIC_BNDRY) {
+    return "periodic";
+  } else if (input_flag == SHEAR_PERIODIC_BNDRY) {
+    return "shear_periodic";
+  } else if (input_flag == POLAR_BNDRY) {
+    return "polar";
+  } else if (input_flag == POLAR_BNDRY_WEDGE) {
+    return "polar_wedge";
+  } else if (input_flag == BNDRY_UNDEF) {
+    return "none";
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetBoundaryString" << std::endl
+        << "Input enum BoundaryFlag=" << input_flag << "\n"
+        << "is an invalid boundary type" << std::endl;
     ATHENA_ERROR(msg);
   }
 }

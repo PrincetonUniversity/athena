@@ -21,8 +21,9 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
 pip install -q --user flake8
+pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
@@ -76,6 +77,7 @@ time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
 time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
+time python ./run_tests.py eos --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
@@ -155,7 +157,7 @@ module purge
 # Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
 # (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
 # Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
-module load intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.0.117
+module load intel/19.0/64/19.0.1.144 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
 # Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
@@ -180,6 +182,7 @@ time python ./run_tests.py curvilinear --config=--cxx=icpc --silent
 time python ./run_tests.py shearingbox --config=--cxx=icpc --silent
 time python ./run_tests.py diffusion --config=--cxx=icpc --silent
 time python ./run_tests.py symmetry --config=--cxx=icpc --silent
+time python ./run_tests.py eos --config=--cxx=icpc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python ./run_tests.py hydro4 --config=--cxx=icpc --silent
