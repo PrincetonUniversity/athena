@@ -1,7 +1,7 @@
 """This file contains some test problems/examples for this Riemann solver"""
 import numpy as np
 from .riemann import RiemannSol, StateVector
-from .eos import Ideal, SimpleHydrogen
+from scripts.utils.EquationOfState.eos import Ideal, SimpleHydrogen
 
 
 def sod_test(eos=None, gamma=None, plot=True):

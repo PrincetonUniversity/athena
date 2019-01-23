@@ -1,4 +1,4 @@
-from .eos import Ideal, SimpleHydrogen
+from scripts.utils.EquationOfState.eos import Ideal, SimpleHydrogen
 from .riemann import riemann_problem
 import os
 import sys

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import brentq
 from scipy.integrate import odeint
 from scipy.interpolate import interp1d
-from .eos import parse_eos
+from scripts.utils.EquationOfState.eos import parse_eos
 from . import brent_opt, ode_opt
 
 
