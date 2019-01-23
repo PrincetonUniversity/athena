@@ -19,10 +19,10 @@
 // C headers
 
 // C++ headers
-#include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
 #include <fstream>
 #include <iostream> // ifstream
+#include <limits>
 #include <sstream>
 #include <stdexcept> // std::invalid_argument
 #include <string>
@@ -41,13 +41,14 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   ptable = pmb->pmy_mesh->peos_table;
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(FLT_MIN)));
+  Real float_min = std::numeric_limits<float>::min();
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(float_min)));
   if (pin->DoesParameterExist("hydro","efloor")) {
     energy_floor_ = pin->GetReal("hydro","efloor");
     pressure_floor_ = energy_floor_ * (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", pressure_floor_);
   } else {
-    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(FLT_MIN)));
+    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(float_min)));
     energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
     pin->SetReal("hydro","efloor", energy_floor_);
   }

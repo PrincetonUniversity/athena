@@ -11,10 +11,10 @@
 
 // C++ headers
 #include <algorithm>
-#include <cfloat>  // FLT_MIN
 #include <cmath>   // sqrt()
 #include <fstream>
 #include <iostream> // ifstream
+#include <limits>
 #include <sstream>
 #include <stdexcept> // std::invalid_argument
 
@@ -26,7 +26,8 @@
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
 
-const Real my_1pe = 1. + FLT_EPSILON;
+Real float_eps = std::numeric_limits<float>::epsilon();
+const Real my_1pe = 1. + float_eps;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {

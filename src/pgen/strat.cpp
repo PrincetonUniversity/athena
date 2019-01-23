@@ -34,9 +34,9 @@
 
 // C++ headers
 #include <algorithm>
-#include <cfloat>     // FLT_MIN
 #include <cmath>      // sqrt()
 #include <iostream>
+#include <limits>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -115,10 +115,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
-  Real x1, x2, x3, xmin, xmax;
+  Real x1, x2, x3;
+  //Real xmin, xmax;
   Real x1f, x2f, x3f;
   Real rd(0.0), rp(0.0);
-  Real rvx, rvy, rvz, rbx, rby, rbz;
+  Real rvx, rvy, rvz;
+  //Real rbx, rby, rbz;
   Real rval;
 
   // initialize density
@@ -126,16 +128,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize boxsize
   Real Lx = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
-  Real Ly = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-  Real Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
+  //Real Ly = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
+  //Real Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
   // initialize wavenumbers
   int nwx = pin->GetOrAddInteger("problem","nwx",1);
-  int nwy = pin->GetOrAddInteger("problem","nwy",1);
-  int nwz = pin->GetOrAddInteger("problem","nwz",1);
+  //int nwy = pin->GetOrAddInteger("problem","nwy",1);
+  //int nwz = pin->GetOrAddInteger("problem","nwz",1);
   Real kx = (2.0*PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
-  Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
-  Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
+  //Real ky = (2.0*PI/Ly)*(static_cast<Real>(nwy));
+  //Real kz = (2.0*PI/Lz)*(static_cast<Real>(nwz));
 
   // Ensure a different initial random seed for each meshblock.
   std::int64_t iseed = -1 - gid;
@@ -153,8 +155,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Read problem parameters for initial conditions
   amp = pin->GetReal("problem","amp");
   ipert = pin->GetOrAddInteger("problem","ipert", 1);
-  dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
-  pfloor=pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
+
+  Real float_min = std::numeric_limits<float>::min();
+  dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(float_min)));
+  pfloor=pin->GetOrAddReal("hydro","pfloor",(1024*(float_min)));
 
   if (MAGNETIC_FIELDS_ENABLED) {
     ifield = pin->GetOrAddInteger("problem","ifield", 1);

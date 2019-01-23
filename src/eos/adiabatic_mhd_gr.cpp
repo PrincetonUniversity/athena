@@ -11,8 +11,8 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cfloat>     // FLT_MIN
 #include <cmath>      // abs(), cbrt(), isfinite(), isnan(), NAN, std::pow(), sqrt()
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros
@@ -49,8 +49,9 @@ static void PrimitiveToConservedSingle(
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
+  Real float_min = std::numeric_limits<float>::min();
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)) );
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
