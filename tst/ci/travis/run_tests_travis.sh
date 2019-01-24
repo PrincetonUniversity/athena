@@ -46,7 +46,7 @@ time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --
 time python3 run_tests.py outputs --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py gr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
-time python3 run_tests.py sr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
+#time python3 run_tests.py sr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent  # 9x tests take about 11-15m on Travis CI
 time python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py symmetry --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
