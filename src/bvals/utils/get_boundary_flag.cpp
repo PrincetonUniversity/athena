@@ -14,8 +14,8 @@
 #include <string>
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "bvals.hpp"
+#include "../../athena.hpp"
+#include "../bvals.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn GetBoundaryFlag(std::string input_string)

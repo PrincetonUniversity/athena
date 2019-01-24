@@ -17,9 +17,9 @@
 #include <stdexcept>  // runtime_error
 
 // Athena++ headers
-#include "../coordinates/coordinates.hpp"
-#include "../mesh/mesh.hpp"
-#include "bvals.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../bvals.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckPolarBoundaries(void)
