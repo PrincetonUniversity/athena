@@ -19,15 +19,16 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../defs.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
-Real vflow;
+Real vflow, threshold;
 int RefinementCondition(MeshBlock *pmb);
 
 //----------------------------------------------------------------------------------------
@@ -37,8 +38,10 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  if (adaptive==true)
+  if (adaptive==true) {
+    threshold = pin->GetReal("problem","thr");
     EnrollUserRefinementCondition(RefinementCondition);
+  }
   vflow = pin->GetReal("problem","vflow");
 
   return;
@@ -58,7 +61,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // moving at (+vflow), random perturbations.  This is the classic, unresolved K-H test.
 
   if (iprob == 1) {
-
     // Read problem parameters
     Real drat = pin->GetReal("problem","drat");
     Real amp = pin->GetReal("problem","amp");
@@ -331,6 +333,73 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
+  //--- iprob=5. Uniform stream with density ratio "drat" located in region -1/4<y<1/4
+  // moving at (-vflow) seperated by two resolved slip-surfaces from background medium
+  // with d=1 moving at (+vflow), with m=2 perturbation, for the AMR test.
+
+  if (iprob == 5) {
+    // Read problem parameters
+    Real a = pin->GetReal("problem","a");
+    Real sigma = pin->GetReal("problem","sigma");
+    Real drat = pin->GetReal("problem","drat");
+    Real amp = pin->GetReal("problem","amp");
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real w=(std::tanh((std::fabs(pcoord->x2v(j))-0.25)/a)+1.0)*0.5;
+          phydro->u(IDN,k,j,i) = w+(1.0-w)*drat;
+          phydro->u(IM1,k,j,i) = w*vflow-(1.0-w)*vflow*drat;
+          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*amp
+                               * std::sin(2.0*TWO_PI*pcoord->x1v(i))
+                               * std::exp(-SQR(std::fabs(pcoord->x2v(j))-0.25)
+                                          /(sigma*sigma));
+          phydro->u(IM3,k,j,i) = 0.0;
+          // Pressure scaled to give a sound speed of 1 with gamma=1.4
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN,k,j,i) =
+                2.5/gm1 + 0.25*(SQR(phydro->u(IM1,k,j,i)) +
+                               SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+          }
+        }
+      }
+    }
+
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = b0;
+          }
+        }
+      }
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = 0.0;
+          }
+        }
+      }
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+            }
+          }
+        }
+      }
+    }
+  }
+
   return;
 }
 
@@ -340,15 +409,16 @@ int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real vgmax=0.0;
   for (int k=pmb->ks; k<=pmb->ke; k++) {
-    for (int j=pmb->js; j<=pmb->je; j++) {
-      for (int i=pmb->is; i<=pmb->ie; i++) {
+    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
         Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
         Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
-        if (vgy > vgmax) vgmax=vgy;
-        if (vgx > vgmax) vgmax=vgx;
+        Real vg=sqrt(vgx*vgx+vgy*vgy);
+        if (vg > vgmax) vgmax=vg;
       }
     }
   }
-  if (vgmax > 0.01) return 1;
-  return -1;
+  if (vgmax > threshold) return 1;
+  if (vgmax < 0.5*threshold) return -1;
+  return 0;
 }
