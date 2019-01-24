@@ -6,17 +6,19 @@
 //! \file coordinates.cpp
 //  \brief implements functions for Coordinates abstract base class
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>
 
 // Athena++ headers
-#include "coordinates.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
 #include "../bvals/bvals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
@@ -52,13 +54,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
   x2f.NewAthenaArray((ncells2+1));
   x3f.NewAthenaArray((ncells3+1));
 
-  int64_t nrootmesh, noffset;
-  int64_t &lx1=pmy_block->loc.lx1;
-  int64_t &lx2=pmy_block->loc.lx2;
-  int64_t &lx3=pmy_block->loc.lx3;
+  std::int64_t nrootmesh, noffset;
+  std::int64_t &lx1=pmy_block->loc.lx1;
+  std::int64_t &lx2=pmy_block->loc.lx2;
+  std::int64_t &lx3=pmy_block->loc.lx3;
   int &ll=pmy_block->loc.level;
 
-//--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)
+  //--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)
 
   nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
 
@@ -67,9 +69,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = static_cast<int64_t>(i-is + lx1*block_size.nx1);
+        noffset = static_cast<std::int64_t>(i-is + lx1*block_size.nx1);
       } else {
-        noffset = static_cast<int64_t>((i-is)*2 + lx1*block_size.nx1);
+        noffset = static_cast<std::int64_t>((i-is)*2 + lx1*block_size.nx1);
       }
       Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
       x1f(i) = pm->MeshGenerator_[X1DIR](rx, mesh_size);
@@ -81,15 +83,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
     // check that coordinate spacing is reasonable
-    Real rmax=1.0, rmin=1.0;
-    for (int i=is; i<=ie; i++) {
-      rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
-      rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
-    }
-    if (rmax > 1.1 || rmin  < 1.0/1.1) {
-       std::cout << "### Warning in Coordinates constructor" << std::endl
-         << "Neighboring cell sizes differ by more than 10% in the x1 direction."
-         << std::endl;
+    if (!coarse_flag) {
+      Real rmax=1.0, rmin=1.0;
+      for (int i=is; i<=ie-1; i++) {
+        rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
+        rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
+      }
+      if (rmax > 1.1 || rmin  < 1.0/1.1) {
+        std::cout << "### Warning in Coordinates constructor" << std::endl
+                  << "Neighboring cell sizes differ by more than 10% in the x1 direction."
+                  << std::endl;
+      }
     }
 
   } else {
@@ -98,9 +102,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (coarse_flag == false) {
-        noffset = static_cast<int64_t>(i-is + lx1*block_size.nx1);
+        noffset = static_cast<std::int64_t>(i-is + lx1*block_size.nx1);
       } else {
-        noffset = static_cast<int64_t>((i-is)*2 + lx1*block_size.nx1);
+        noffset = static_cast<std::int64_t>((i-is)*2 + lx1*block_size.nx1);
       }
       Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
       x1f(i) = pm->MeshGenerator_[X1DIR](rx, mesh_size);
@@ -117,17 +121,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
   if (pmy_block->pbval->block_bcs[INNER_X1] == REFLECTING_BNDRY) {
     for (int i=1; i<=ng; ++i) {
       dx1f(is-i) = dx1f(is+i-1);
-       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
+      x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
   if (pmy_block->pbval->block_bcs[OUTER_X1] == REFLECTING_BNDRY) {
     for (int i=1; i<=ng; ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
-       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
+      x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
     }
   }
 
-//--- X2-DIRECTION: initialize coordinates and spacing of cell FACES (x2f,dx2f)
+  //--- X2-DIRECTION: initialize coordinates and spacing of cell FACES (x2f,dx2f)
 
   if (ncells2 > 1) {
     nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
@@ -137,9 +141,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = static_cast<int64_t>(j-js + lx2*block_size.nx2);
+          noffset = static_cast<std::int64_t>(j-js + lx2*block_size.nx2);
         } else {
-          noffset = static_cast<int64_t>((j-js)*2 + lx2*block_size.nx2);
+          noffset = static_cast<std::int64_t>((j-js)*2 + lx2*block_size.nx2);
         }
         Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
         x2f(j) = pm->MeshGenerator_[X2DIR](rx, mesh_size);
@@ -151,15 +155,18 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      Real rmax=1.0, rmin=1.0;
-      for (int j=pmy_block->js; j<=pmy_block->je; j++) {
-        rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
-        rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
-      }
-      if (rmax > 1.1 || rmin  < 1.0/1.1) {
-         std::cout << "### Warning in Coordinates constructor" << std::endl
-           << "Neighboring cell sizes differ by more than 10% in the x2 direction."
-           << std::endl;
+      if (!coarse_flag) {
+        Real rmax=1.0, rmin=1.0;
+        for (int j=js; j<=je-1; j++) {
+          rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
+          rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
+        }
+        if (rmax > 1.1 || rmin  < 1.0/1.1) {
+          std::cout
+              << "### Warning in Coordinates constructor" << std::endl
+              << "Neighboring cell sizes differ by more than 10% in the x2 direction."
+              << std::endl;
+        }
       }
 
     } else {
@@ -167,9 +174,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for (int j=js-ng; j<=je+ng+1; ++j) {
         if (coarse_flag == false) {
-          noffset = static_cast<int64_t>(j-js + lx2*block_size.nx2);
+          noffset = static_cast<std::int64_t>(j-js + lx2*block_size.nx2);
         } else {
-          noffset = static_cast<int64_t>((j-js)*2 + lx2*block_size.nx2);
+          noffset = static_cast<std::int64_t>((j-js)*2 + lx2*block_size.nx2);
         }
         Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
         x2f(j) = pm->MeshGenerator_[X2DIR](rx, mesh_size);
@@ -184,28 +191,28 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
     if (pmy_block->pbval->block_bcs[INNER_X2] == REFLECTING_BNDRY
-     || pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY) { // also polar boundary
+        || pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(js-j) = dx2f(js+j-1);
-         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+        x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
     if (pmy_block->pbval->block_bcs[OUTER_X2] == REFLECTING_BNDRY
-     || pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) { // also polar boundary
+        || pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
-         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
+        x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
       }
     }
 
-  // 1D problem
+    // 1D problem
   } else {
     dx2f(js  ) = block_size.x2max-block_size.x2min;
     x2f (js  ) = block_size.x2min;
     x2f (je+1) = block_size.x2max;
   }
 
-//--- X3-DIRECTION: initialize coordinates and spacing of cell FACES (x3f,dx3f)
+  //--- X3-DIRECTION: initialize coordinates and spacing of cell FACES (x3f,dx3f)
 
   if (ncells3 > 1) {
     nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
@@ -215,9 +222,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
         if (coarse_flag == false) {
-          noffset = static_cast<int64_t>(k-ks + lx3*block_size.nx3);
+          noffset = static_cast<std::int64_t>(k-ks + lx3*block_size.nx3);
         } else {
-          noffset = static_cast<int64_t>((k-ks)*2 + lx3*block_size.nx3);
+          noffset = static_cast<std::int64_t>((k-ks)*2 + lx3*block_size.nx3);
         }
         Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, false);
         x3f(k) = pm->MeshGenerator_[X3DIR](rx, mesh_size);
@@ -229,25 +236,27 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
 
       // check that coordinate spacing is reasonable
-      Real rmax=1.0, rmin=1.0;
-      for (int k=pmy_block->ks; k<=pmy_block->ke; k++) {
-        rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
-        rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
+      if (!coarse_flag) {
+        Real rmax=1.0, rmin=1.0;
+        for (int k=ks; k<=ke-1; k++) {
+          rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
+          rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
+        }
+        if (rmax > 1.1 || rmin  < 1.0/1.1) {
+          std::cout
+              << "### Warning in Coordinates constructor" << std::endl
+              << "Neighboring cell sizes differ by more than 10% in the x3 direction."
+              << std::endl;
+        }
       }
-      if (rmax > 1.1 || rmin  < 1.0/1.1) {
-         std::cout << "### Warning in Coordinates constructor" << std::endl
-           << "Neighboring cell sizes differ by more than 10% in the x3 direction."
-           << std::endl;
-      }
-
     } else {
       // uniform grid: use UniformMeshGeneratorX3()
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         if (coarse_flag == false) {
-          noffset = static_cast<int64_t>(k-ks + lx3*block_size.nx3);
+          noffset = static_cast<std::int64_t>(k-ks + lx3*block_size.nx3);
         } else {
-          noffset = static_cast<int64_t>((k-ks)*2 + lx3*block_size.nx3);
+          noffset = static_cast<std::int64_t>((k-ks)*2 + lx3*block_size.nx3);
         }
         Real rx = ComputeMeshGeneratorX(noffset, nrootmesh, true);
         x3f(k) = pm->MeshGenerator_[X3DIR](rx, mesh_size);
@@ -264,23 +273,22 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     if (pmy_block->pbval->block_bcs[INNER_X3] == REFLECTING_BNDRY) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
-         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+        x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
     if (pmy_block->pbval->block_bcs[OUTER_X3] == REFLECTING_BNDRY) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
-         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
+        x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
       }
     }
 
-  // 1D or 2D problem
+    // 1D or 2D problem
   } else {
     dx3f(ks) = block_size.x3max-block_size.x3min;
     x3f(ks  ) = block_size.x3min;
     x3f(ke+1) = block_size.x3max;
   }
-
 }
 
 // destructor
@@ -299,7 +307,7 @@ Coordinates::~Coordinates() {
 // Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
 
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                              AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     len(i) = dx1f(i);
@@ -310,7 +318,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                              AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     len(i) = dx2f(j);
@@ -321,7 +329,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 // Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len) {
+                              AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     len(i) = dx3f(k);
@@ -351,26 +359,26 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i) {
 void Coordinates::VolCenter1Length(const int k, const int j, const int il, const int iu,
                                    AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-        len(i) = dx1v(i);
-    }
-    return;
+  for (int i=il; i<=iu; ++i) {
+    len(i) = dx1v(i);
+  }
+  return;
 }
 void Coordinates::VolCenter2Length(const int k, const int j, const int il, const int iu,
                                    AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-        len(i) = dx2v(j);
-    }
-    return;
+  for (int i=il; i<=iu; ++i) {
+    len(i) = dx2v(j);
+  }
+  return;
 }
 void Coordinates::VolCenter3Length(const int k, const int j, const int il, const int iu,
                                    AthenaArray<Real> &len) {
 #pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-        len(i) = dx3v(k);
-    }
-    return;
+  for (int i=il; i<=iu; ++i) {
+    len(i) = dx3v(k);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -407,7 +415,7 @@ void Coordinates::CenterWidth3(const int k, const int j, const int il, const int
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                            AthenaArray<Real> &area) {
 #pragma nounroll
   for (int i=il; i<=iu; ++i) {
     // area1 = dy dz
@@ -418,7 +426,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                            AthenaArray<Real> &area) {
 #pragma nounroll
   for (int i=il; i<=iu; ++i) {
     // area2 = dx dz
@@ -429,7 +437,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area) {
+                            AthenaArray<Real> &area) {
 #pragma nounroll
   for (int i=il; i<=iu; ++i) {
     // area3 = dx dy
@@ -492,7 +500,7 @@ void Coordinates::VolCenterFace3Area(const int k, const int j, const int il, con
 // Cell Volume function: compute volume of cell as vector
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol) {
+                             AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // volume = dx dy dz
@@ -522,20 +530,20 @@ void Coordinates::Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
-              /(dx1f(i)*dx1f(i));
+                             /(dx1f(i)*dx1f(i));
         }
         if (pmy_block->block_size.nx2 > 1) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
-                /(dx2f(j)*dx2f(j));
+                                /(dx2f(j)*dx2f(j));
           }
         }
         if (pmy_block->block_size.nx3 > 1) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
-                /(dx3f(k)*dx3f(k));
+                                /(dx3f(k)*dx3f(k));
           }
         }
       }
@@ -548,52 +556,103 @@ void Coordinates::Laplacian(const AthenaArray<Real> &s, AthenaArray<Real> &delta
 // LaplacianX* functions: calculate Laplacian in subspaces orthogonal to X-dir
 
 void Coordinates::LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
-                              const int il, const int iu, const int jl, const int ju,
-                              const int kl, const int ku, const int nl, const int nu) {
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-        if (pmy_block->block_size.nx2 > 1) {
+                              const int n, const int k, const int j,
+                              const int il, const int iu) {
+  if (pmy_block->block_size.nx3 > 1) {
+#pragma omp simd
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j))
+                   + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    }
+  } else if (pmy_block->block_size.nx2 > 1) {
+#pragma omp simd
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    }
+  } else {
+    delta_s.ZeroClear();
+  }
+}
+
+
+void Coordinates::LaplacianX1All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                                 const int nl, const int nu, const int kl, const int ku,
+                                 const int jl, const int ju, const int il, const int iu) {
+  if (pmy_block->block_size.nx3 > 1) {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
-                /(dx2f(j)*dx2f(j));
-          }
-        } else { // 1D domain
-#pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            delta_s(n,k,j,i) = 0.0;
-          }
-        }
-        if (pmy_block->block_size.nx3 > 1) {
-#pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
-                /(dx3f(k)*dx3f(k));
+                               / (dx2f(j)*dx2f(j))
+                               + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
+                               /(dx3f(k)*dx3f(k));
           }
         }
       }
     }
+  } else if (pmy_block->block_size.nx2 > 1) {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
+                               / (dx2f(j)*dx2f(j));
+          }
+        }
+      }
+    }
+  } else {
+    delta_s.ZeroClear();
   }
   return;
 }
 
+
 void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
-                              const int il, const int iu, const int jl, const int ju,
-                              const int kl, const int ku, const int nl, const int nu) {
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+                              const int n, const int k, const int j,
+                              const int il, const int iu) {
+  if (pmy_block->block_size.nx3 > 1) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
-              /(dx1f(i)*dx1f(i));
-        }
-        if (pmy_block->block_size.nx3 > 1) {
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
+                   + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
+    }
+  } else {
+#pragma omp simd
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    }
+  }
+}
+
+void Coordinates::LaplacianX2All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                                 const int nl, const int nu, const int kl, const int ku,
+                                 const int jl, const int ju, const int il, const int iu) {
+  if (pmy_block->block_size.nx3 > 1) {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
-                /(dx3f(k)*dx3f(k));
+            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+                               / (dx1f(i)*dx1f(i))
+                               + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
+                               / (dx3f(k)*dx3f(k));
+          }
+        }
+      }
+    }
+  } else {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+                               / (dx1f(i)*dx1f(i));
           }
         }
       }
@@ -603,21 +662,48 @@ void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &del
 }
 
 void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
-                              const int il, const int iu, const int jl, const int ju,
-                              const int kl, const int ku, const int nl, const int nu) {
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+                              const int n, const int k, const int j,
+                              const int il, const int iu) {
+  if (pmy_block->block_size.nx2 > 1) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
-              /(dx1f(i)*dx1f(i));
-        }
-        if (pmy_block->block_size.nx2 > 1) {
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
+                   + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
+    }
+  } else {
+#pragma omp simd
+    for(int i=il; i<=iu; ++i) {
+      delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
+    }
+  }
+  return;
+}
+
+void Coordinates::LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &delta_s,
+                                 const int nl, const int nu, const int kl, const int ku,
+                                 const int jl, const int ju, const int il, const int iu) {
+  if (pmy_block->block_size.nx2 > 1) {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
-                /(dx2f(j)*dx2f(j));
+            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+                               / (dx1f(i)*dx1f(i))
+                               + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
+                               / (dx2f(j)*dx2f(j));
+          }
+        }
+      }
+    }
+  } else {
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
+                               / (dx1f(i)*dx1f(i));
           }
         }
       }
@@ -628,8 +714,9 @@ void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &del
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
+void Coordinates::CoordSrcTerms(
+    const Real dt, const AthenaArray<Real> *flux,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   return;
 }
 
@@ -663,7 +750,8 @@ bool Coordinates::IsPole(int j) {
 //   g,g_inv: arrays of metric covariant and contravariant components
 //   dg_dx1,dg_dx2,dg_dx3: arrays of spatial derivatives of covariant components
 
-void Coordinates::Metric(Real x1, Real x2, Real x3, ParameterInput *pin,
+void Coordinates::Metric(
+    Real x1, Real x2, Real x3, ParameterInput *pin,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
     AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3) {
   pmy_block->pmy_mesh->UserMetric_(x1, x2, x3, pin, g, g_inv, dg_dx1, dg_dx2, dg_dx3);

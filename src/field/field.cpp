@@ -6,17 +6,19 @@
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 
+// C headers
+
 // C++ headers
 #include <string>
 
 // Athena++ headers
-#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "field.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -65,7 +67,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
     // Allocate memory for scratch vectors
-    cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
+    if (pmb->block_size.nx3 == 1)
+      cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
+    else
+      cc_e_.NewAthenaArray(3,ncells3,ncells2,ncells1);
 
     face_area_.NewAthenaArray(ncells1);
     edge_length_.NewAthenaArray(ncells1);
@@ -74,7 +79,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       g_.NewAthenaArray(NMETRIC,ncells1);
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
-// ptr to diffusion object
+    // ptr to diffusion object
     pfdif = new FieldDiffusion(pmb,pin);
   }
 }
@@ -122,19 +127,20 @@ Field::~Field() {
 // \! fn
 // \! brief
 
-void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke) {
+void Field::CalculateCellCenteredField(
+    const FaceField &bf, AthenaArray<Real> &bc, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Defer to Reconstruction class to check if uniform Cartesian formula can be used
   // (unweighted average)
-  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[0];
-  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[1];
-  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[2];
+  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[X1DIR];
+  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[X2DIR];
+  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[X3DIR];
 
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-    // calc cell centered fields first
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      // calc cell centered fields first
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
+      for (int i=il; i<=iu; ++i) {
         const Real& b1_i   = bf.x1f(k,j,i  );
         const Real& b1_ip1 = bf.x1f(k,j,i+1);
         const Real& b2_j   = bf.x2f(k,j  ,i);

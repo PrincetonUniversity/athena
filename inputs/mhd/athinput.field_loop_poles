@@ -39,11 +39,28 @@ ox2_bc      = user           # Outer-X2 boundary condition flag
 
 nx3         = 64             # Number of zones in X3-direction
 x3min       = 0.0            # minimum value of X3
-x3max       = 6.28318530718  # maximum value of X3
+x3max       = 6.2831853071795862  # maximum value of X3
 ix3_bc      = periodic       # Inner-X3 boundary condition flag
 ox3_bc      = periodic       # Outer-X3 boundary condition flag
 
 refinement  = None
+
+# The following refinement regions are used in tests.  By default,
+# they are ignored.  To use, set MeshBlock size to 4^3.
+
+<refinement1>
+x1min = 1.0
+x1max = 1.5
+x2min = 0.0
+x2max = 1.5708
+x3min = 0.0
+x3max = 6.2831853071795862
+level=1
+
+<meshblock>
+nx1         = 32             # block size in X1-direction
+nx2         = 16             # block size in X2-direction
+nx3         = 64             # block size in X3-direction
 
 <hydro>
 gamma           = 1.66666667 # gamma = C_p/C_v

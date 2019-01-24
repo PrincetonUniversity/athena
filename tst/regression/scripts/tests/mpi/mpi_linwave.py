@@ -41,7 +41,8 @@ def run(**kwargs):
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 2,
                   'mhd/athinput.linear_wave3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 4,
-                  'mhd/athinput.linear_wave3d', arguments)
+                  'mhd/athinput.linear_wave3d', arguments, lcov_test_suffix='mpi')
+    return 'skip_lcov'
 
 
 # Analyze outputs

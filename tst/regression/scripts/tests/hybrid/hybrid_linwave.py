@@ -40,7 +40,9 @@ def run(**kwargs):
                   'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=1'])
     # 4 total threads = 2 MPI ranks x 2 OpenMP threads / rank
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 2,
-                  'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=2'])
+                  'mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=2'],
+                  lcov_test_suffix='hybrid')
+    return 'skip_lcov'
 
 
 # Analyze outputs

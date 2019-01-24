@@ -6,20 +6,23 @@
 //! \file gr_geodesic_infall.cpp
 //  \brief Problem generator for dust falling onto black hole.
 
+// C headers
+
 // C++ headers
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
+#include <cstring>  // strcmp()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // enums, Real, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY
@@ -32,7 +35,8 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh);
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+// TODO(felker): can the 4x copies of this function in pgen/ files be shared?
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
 
@@ -75,17 +79,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ku += (NGHOST);
   }
 
-  // Get mass and spin of black hole
-  Real m = pcoord->GetMass();
-  Real a = pcoord->GetSpin();
-  Real a2 = SQR(a);
-
-  // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-
-  // Read other properties
-  Real e = pin->GetReal("problem", "energy");
-  Real lz = pin->GetReal("problem", "l_z");
+  // Read problem properties
   Real rho_min = pin->GetReal("hydro", "rho_min");
   Real rho_pow = pin->GetReal("hydro", "rho_pow");
   Real pgas_min = pin->GetReal("hydro", "pgas_min");
@@ -95,13 +89,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
   gi.NewAthenaArray(NMETRIC, iu+1);
-  for (int j = jl; j <= ju; j++) {
-    for (int i = il; i <= iu; i++) {
-
+  for (int j=jl; j<=ju; j++) {
+    for (int i=il; i<=iu; i++) {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
-          &theta, &phi);
+                                   &theta, &phi);
 
       // Calculate primitives depending on location
       Real rho = rho_min * std::pow(r, rho_pow);
@@ -111,7 +104,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real uu3 = 0.0;
 
       // Set primitive values
-      for (int k = kl; k <= ku; k++) {
+      for (int k=kl; k<=ku; k++) {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
@@ -144,7 +137,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   return;
 }
 
@@ -159,7 +152,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 
 static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi) {
-  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
+      std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
     *ptheta = x2;
     *pphi = x3;

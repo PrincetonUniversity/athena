@@ -38,7 +38,9 @@ def run(**kwargs):
     os.system('mv bin/athena_omp bin/athena')
     athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=1'])
     athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=2'])
-    athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=4'])
+    athena.run('mhd/athinput.linear_wave3d', arguments + ['mesh/num_threads=4'],
+               lcov_test_suffix='omp')
+    return 'skip_lcov'
 
 
 # Analyze outputs

@@ -14,59 +14,63 @@
 // - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
 //   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
 //! \brief The HLLC Riemann solver for adiabatic hydrodynamics (use HLLE for isothermal)
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+void Hydro::RiemannSolver(
+    const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+    AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+    AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+    AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real gm1;
+  if (GENERAL_EOS) {
+    gm1 = std::nan("");
+  } else {
+    gm1 = pmy_block->peos->GetGamma() - 1.0;
+  }
   Real igm1 = 1.0/gm1;
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
 #pragma distribute_point
 #pragma omp simd private(wli,wri,wroe,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
+    //--- Step 1.  Load L/R states into local variables
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IPR]=wl(IPR,i);
 
-//--- Step 1.  Load L/R states into local variables
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IPR]=wr(IPR,i);
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    wli[IPR]=wl(IPR,k,j,i);
-
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    wri[IPR]=wr(IPR,k,j,i);
-
-//--- Step2.  Compute Roe-averaged state
+    //--- Step 2.  Compute Roe-averaged state
 
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    //    wroe[IDN] = sqrtdl*sqrtdr; // unused in signal velocity estimates
+    if (GENERAL_EOS) wroe[IDN] = sqrtdl*sqrtdr;
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
@@ -74,18 +78,30 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
-    el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    if (GENERAL_EOS) {
+      el = pmy_block->peos->SimpleEgas(wli[IDN], wli[IPR]) +
+           0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = pmy_block->peos->SimpleEgas(wri[IDN], wri[IPR]) +
+           0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    } else {
+      el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    }
     hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
 
-//--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
+    //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-    Real a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
+    Real a;
+    if (GENERAL_EOS) {
+      a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
+    } else { //not general EOS
+      a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
+    }
 
-//--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
+    //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
     Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
     Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
@@ -93,7 +109,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
 
-//--- Step 5.  Compute the contact wave speed and pressure
+    //--- Step 5. Compute the contact wave speed and pressure
 
     Real vxl = wli[IVX] - al;
     Real vxr = wri[IVX] - ar;
@@ -112,7 +128,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // No loop-carried dependencies anywhere in this loop
     //    #pragma distribute_point
-//--- Step 6.  Compute L/R fluxes along the line bm, bp
+    //--- Step 6. Compute L/R fluxes along the line bm, bp
 
     vxl = wli[IVX] - bm;
     vxr = wri[IVX] - bp;
@@ -132,7 +148,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     fl[IEN] = el*vxl + wli[IPR]*wli[IVX];
     fr[IEN] = er*vxr + wri[IPR]*wri[IVX];
 
-//--- Step 8.  Compute flux weights or scales
+    //--- Step 8. Compute flux weights or scales
 
     Real sl,sr,sm;
     if (am >= 0.0) {
@@ -145,8 +161,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       sm =  bp/(bp - am);
     }
 
-//--- Step 9.  Compute the HLLC flux at interface, including the weighted contribution
-// of the flux along the contact
+    //--- Step 9. Compute the HLLC flux at interface, including weighted contribution
+    // of the flux along the contact
 
     flxi[IDN] = sl*fl[IDN] + sr*fr[IDN];
     flxi[IVX] = sl*fl[IVX] + sr*fr[IVX] + sm*cp;
@@ -160,7 +176,5 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     flx(ivz,k,j,i) = flxi[IVZ];
     flx(IEN,k,j,i) = flxi[IEN];
   }
-  }}
-
   return;
 }

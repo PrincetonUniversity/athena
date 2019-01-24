@@ -30,6 +30,7 @@ import athena_read
 
 # Main function
 def main(**kwargs):
+
     # Load function for transforming coordinates
     if kwargs['stream'] is not None:
         from scipy.ndimage import map_coordinates
@@ -65,14 +66,30 @@ def main(**kwargs):
         return theta_vals
 
     # Read data
-    data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level,
-                             face_func_2=theta_func)
+    if kwargs['theta_compression'] is not None:
+        if quantities[0] == 'Levels':
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities[1:],
+                                     level=level, return_levels=True,
+                                     face_func_2=theta_func)
+        else:
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities,
+                                     level=level, face_func_2=theta_func)
+    else:
+        if quantities[0] == 'Levels':
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities[1:],
+                                     level=level, return_levels=True)
+        else:
+            data = athena_read.athdf(kwargs['data_file'], quantities=quantities,
+                                     level=level)
 
     # Extract basic coordinate information
     coordinates = data['Coordinates']
     r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
+    r_face = data['x1f']
+    theta_face = data['x2f']
+    phi_face = data['x3f']
     nx1 = len(r)
     nx2 = len(theta)
     nx3 = len(phi)
@@ -81,26 +98,22 @@ def main(**kwargs):
     if kwargs['r_max'] is not None:
         r_max = kwargs['r_max']
     else:
-        r_max = data['x1f'][-1]
+        r_max = r_face[-1]
 
     # Account for logarithmic radial coordinate
     if kwargs['logr']:
         r = np.log10(r)
+        r_face = np.log10(r_face)
         r_max = np.log10(r_max)
 
     # Create scalar grid
     if kwargs['midplane']:
-        phi_extended = \
-            np.concatenate((phi[-1:] - 2.0 * np.pi, phi, phi[:1] + 2.0 * np.pi))
-        phi_extended -= 0.5 * 2.0 * np.pi / nx3
-        r_grid, phi_grid = np.meshgrid(r, phi_extended)
+        r_grid, phi_grid = np.meshgrid(r_face, phi_face)
         x_grid = r_grid * np.cos(phi_grid)
         y_grid = r_grid * np.sin(phi_grid)
     else:
-        theta_extended = np.concatenate((-theta[0:1], theta, 2.0 * np.pi - theta[::-1],
-                                         2.0 * np.pi + theta[0:1]))
-        theta_extended_corrected = theta_extended - 0.5 * (theta[1] - theta[0])
-        r_grid, theta_grid = np.meshgrid(r, theta_extended_corrected)
+        theta_face_extended = np.concatenate((theta_face, 2.0*np.pi - theta_face[-2::-1]))
+        r_grid, theta_grid = np.meshgrid(r_face, theta_face_extended)
         x_grid = r_grid * np.sin(theta_grid)
         y_grid = r_grid * np.cos(theta_grid)
 
@@ -113,7 +126,7 @@ def main(**kwargs):
             r_grid_stream_coord = (x_grid_stream.T**2 + y_grid_stream.T**2) ** 0.5
             phi_grid_stream_coord = np.pi + np.arctan2(-y_grid_stream.T, -x_grid_stream.T)
             phi_grid_stream_pix = ((phi_grid_stream_coord + phi[0])
-                                   / (2.0 * np.pi + 2.0 * phi[0])) * (nx3 + 1)
+                                   / (2.0*np.pi + 2.0 * phi[0])) * (nx3 + 1)
         else:
             z_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
             x_grid_stream, z_grid_stream = np.meshgrid(x_stream, z_stream)
@@ -122,9 +135,12 @@ def main(**kwargs):
                 np.arctan2(x_grid_stream.T, -z_grid_stream.T)
             if kwargs['theta_compression'] is None:
                 theta_grid_stream_pix = ((theta_grid_stream_coord + theta[0])
-                                         / (2.0 * np.pi + 2.0 * theta[0])) * (2 * nx2 + 1)
+                                         / (2.0*np.pi + 2.0 * theta[0])) * (2 * nx2 + 1)
             else:
                 theta_grid_stream_pix = np.empty_like(theta_grid_stream_coord)
+                theta_extended = np.concatenate((-theta[0:1], theta,
+                                                 2.0*np.pi - theta[::-1],
+                                                 2.0*np.pi + theta[0:1]))
                 for (i, j), theta_val in np.ndenumerate(theta_grid_stream_coord):
                     index = sum(theta_extended[1:-1] < theta_val) - 1
                     if index < 0:
@@ -149,10 +165,9 @@ def main(**kwargs):
     # Perform slicing/averaging of scalar data
     if kwargs['midplane']:
         if nx2 % 2 == 0:
-            vals = np.mean(data[kwargs['quantity']]
-                           [:, nx2 / 2 - 1:nx2 / 2 + 1, :], axis=1)
+            vals = np.mean(data[kwargs['quantity']][:, nx2/2-1:nx2/2+1, :], axis=1)
         else:
-            vals = data[kwargs['quantity']][:, nx2 / 2, :]
+            vals = data[kwargs['quantity']][:, nx2/2, :]
         if kwargs['average']:
             vals = np.repeat(np.mean(vals, axis=0, keepdims=True), nx3, axis=0)
     else:
@@ -166,23 +181,20 @@ def main(**kwargs):
                                + data[kwargs['quantity']][nx3 / 2, :, :])
 
     # Join scalar data through boundaries
-    if kwargs['midplane']:
-        vals = np.vstack((vals[-1:, :], vals, vals[:1, :]))
-    else:
-        vals = np.vstack((vals_left[:1, :], vals_right,
-                          vals_left[::-1, :], vals_right[:1, :]))
+    if not kwargs['midplane']:
+        vals = np.vstack((vals_right, vals_left))
 
     # Perform slicing/averaging of vector data
     if kwargs['stream'] is not None:
         if kwargs['midplane']:
             if nx2 % 2 == 0:
                 vals_r = np.mean(data[kwargs['stream'] + '1']
-                                 [:, nx2 / 2 - 1:nx2 / 2 + 1, :], axis=1).T
+                                 [:, nx2/2-1:nx2/2+1, :], axis=1).T
                 vals_phi = np.mean(data[kwargs['stream'] + '3']
-                                   [:, nx2 / 2 - 1:nx2 / 2 + 1, :], axis=1).T
+                                   [:, nx2/2-1:nx2/2+1, :], axis=1).T
             else:
-                vals_r = data[kwargs['stream'] + '1'][:, nx2 / 2, :].T
-                vals_phi = data[kwargs['stream'] + '3'][:, nx2 / 2, :].T
+                vals_r = data[kwargs['stream'] + '1'][:, nx2/2, :].T
+                vals_phi = data[kwargs['stream'] + '3'][:, nx2/2, :].T
             if kwargs['stream_average']:
                 vals_r = np.tile(np.reshape(np.mean(vals_r, axis=1), (nx1, 1)), nx3)
                 vals_phi = np.tile(np.reshape(np.mean(vals_phi, axis=1), (nx1, 1)), nx3)
@@ -194,9 +206,9 @@ def main(**kwargs):
                 vals_theta_left = -vals_theta_right
             else:
                 vals_r_right = data[kwargs['stream'] + '1'][0, :, :].T
-                vals_r_left = data[kwargs['stream'] + '1'][nx3 / 2, :, :].T
+                vals_r_left = data[kwargs['stream'] + '1'][nx3/2, :, :].T
                 vals_theta_right = data[kwargs['stream'] + '2'][0, :, :].T
-                vals_theta_left = -data[kwargs['stream'] + '2'][nx3 / 2, :, :].T
+                vals_theta_left = -data[kwargs['stream'] + '2'][nx3/2, :, :].T
 
     # Join vector data through boundaries
     if kwargs['stream'] is not None:
@@ -290,11 +302,20 @@ def main(**kwargs):
     plt.gca().set_aspect('equal')
     plt.xlim((-r_max, r_max))
     plt.ylim((-r_max, r_max))
-    r_string = r'\log_{10}(r)\ ' if kwargs['logr'] else r'r\ '
-    angle_string_x = r'\cos(\phi)' if kwargs['midplane'] else r'\sin(\theta)'
-    angle_string_y = r'\sin(\phi)' if kwargs['midplane'] else r'\cos(\theta)'
-    plt.xlabel('$' + r_string + angle_string_x + '$')
-    plt.ylabel('$' + r_string + angle_string_y + '$')
+    if kwargs['logr']:
+        if kwargs['midplane']:
+            plt.xlabel(r'$\log_{10}(r)\ x / r$')
+            plt.ylabel(r'$\log_{10}(r)\ y / r$')
+        else:
+            plt.xlabel(r'$\log_{10}(r)\ x / r$')
+            plt.ylabel(r'$\log_{10}(r)\ z / r$')
+    else:
+        if kwargs['midplane']:
+            plt.xlabel(r'$x$')
+            plt.ylabel(r'$y$')
+        else:
+            plt.xlabel(r'$x$')
+            plt.ylabel(r'$z$')
     plt.colorbar(im)
     if kwargs['output_file'] == 'show':
         plt.show()

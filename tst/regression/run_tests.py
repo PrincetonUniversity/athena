@@ -106,15 +106,23 @@ def main(**kwargs):
                 try:
                     module.prepare(**kwargs)
                 except Exception:
+                    os.listdir('obj')  # temporary debugging diagnostic for Jenkins+Gcov
                     traceback.print_exc()
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 try:
-                    module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
+                    run_ret = module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
                 except Exception:
                     traceback.print_exc()
                     test_errors.append('run()')
                     raise TestError(name_full.replace('.', '/') + '.py')
+                else:
+                    # (optional) if test_name.run() completes w/o error, perform code
+                    # coverage analysis after the final athena.run() call, producing
+                    # test_name.info (no suffix). Function only actually executes on cmd
+                    # line if --coverage=CMD is passed to this run_tests.py script:
+                    if run_ret is None:
+                        athena.analyze_code_coverage(lcov_test_name, '')
                 try:
                     result = module.analyze()
                 except Exception:
@@ -127,10 +135,6 @@ def main(**kwargs):
             else:
                 test_results.append(result)
                 test_errors.append(None)
-                # (optional) if test passed, run code coverage analysis after the final
-                # athena.run() call, producing base_test_name.info (no suffix).
-                # Function only executes if --coverage=CMD is passed to this script
-                athena.analyze_code_coverage(lcov_test_name, '')
             finally:
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))

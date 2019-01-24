@@ -10,7 +10,11 @@
 //  \brief defines Gravity class which implements data and functions for gravitational
 //         potential
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 
@@ -23,7 +27,7 @@ class GravityBoundaryValues;
 //  \brief gravitational potential data and functions
 
 class Gravity {
-public:
+ public:
   Gravity(MeshBlock *pmb, ParameterInput *pin);
   ~Gravity();
 
@@ -37,10 +41,9 @@ public:
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
 
-private:
+ private:
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
-
 };
 
 #endif // GRAVITY_GRAVITY_HPP_
