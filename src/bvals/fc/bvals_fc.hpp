@@ -16,6 +16,7 @@
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../bvals.hpp"
+#include "../bvals_interfaces.hpp"
 
 // MPI headers
 #ifdef MPI_PARALLEL
@@ -97,48 +98,50 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   //-------------------- prototypes for all BC functions ---------------------------------
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
 
   virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
 
   virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh);
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh);
+  //protected:
+
  private:
   // standard Field and emf BV private variables
   BoundaryData bd_field_, bd_emfcor_;
@@ -177,8 +180,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 //   MPI_Request rq_innersend_emf_[4],  rq_innerrecv_emf_[4];
 //   MPI_Request rq_outersend_emf_[4],  rq_outerrecv_emf_[4];
 // #endif
-
-  // protected:
 };
 
 #endif // BVALS_FC_BVALS_FC_HPP_

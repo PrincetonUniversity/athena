@@ -159,8 +159,49 @@ class BoundaryCommunication {
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBuffer
-//  \brief contains methods for managing buffers, MPI requests
+//  \brief contains methods for managing MPI send/recvs and associated loads/stores from
+//  communication buffers
+class BoundaryBuffer {
+ public:
+  BoundaryBuffer() {}
+  virtual ~BoundaryBuffer() {}
+  // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
+  virtual int LoadBoundaryBufferSameLevel(
+      AthenaArray<Real> &src, int nl, int nu, Real *buf, const NeighborBlock& nb) = 0;
+  virtual void SendBoundaryBuffers(AthenaArray<Real> &src, enum CCBoundaryType type) = 0;
+  virtual bool ReceiveBoundaryBuffers(enum CCBoundaryType type) = 0;
+  // used only during problem initialization in mesh.cpp:
+  virtual void ReceiveAndSetBoundariesWithWait(AthenaArray<Real> &dst,
+                                                   enum CCBoundaryType type) = 0;
+  virtual void SetBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type) = 0;
+  virtual void SetBoundarySameLevel(
+      AthenaArray<Real> &dst, int nl, int nu, Real *buf,
+      const NeighborBlock& nb, bool *flip) = 0;
 
+  // SMR/AMR-exclusive buffer management methods
+  virtual int LoadBoundaryBufferToCoarser(
+      AthenaArray<Real> &src, int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb) = 0;
+  virtual int LoadBoundaryBufferToFiner(
+      AthenaArray<Real> &src, int nl, int nu, Real *buf, const NeighborBlock& nb) = 0;
+  virtual void SetBoundaryFromCoarser(
+      int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb, bool *flip) = 0;
+  virtual void SetBoundaryFromFiner(
+      AthenaArray<Real> &dst, int nl, int nu,
+      Real *buf, const NeighborBlock& nb, bool *flip) = 0;
+  // TODO(felker): handle the 6x unique Field-related flux correction functions
+  virtual void SendFluxCorrection(enum FluxCorrectionType type) = 0;
+  virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) = 0;
+
+  // optional extensions: spherical-polar-like coordinates, shearing box, etc.
+  //virtual void PolarBoundarySingleAzimuthalBlockCC(AthenaArray<Real> &dst,
+  //    int nl, int nu) = 0;
+
+  // compare to PolarBoundarySingleAzimuthalBlockField(),
+  //                      PolarBoundarySingleAzimuthalBlockEMF()
+  // what about PolarBoundaryAverageField()?
+};
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryPhysics
@@ -181,53 +222,70 @@ class BoundaryPhysics {
   // base class. E.g. "BoundaryArray *dst = phydro->w" in the class constructor
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
 
   virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
   virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               FaceField &b, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh) = 0;
 
   virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh) = 0;
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  FaceField &b, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh) = 0;
 };
 
 //----------------------------------------------------------------------------------------
 // Abstract classes containing mix of pure virtual, virtual, and concrete functoins
 //----------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryVariable
+//  \brief nodes in a linked list of BoundaryVariable derived class instances
+
+class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
+                         public BoundaryPhysics {
+ public:
+  BoundaryVariable() : pnext_bvar(nullptr) {}
+  virtual ~BoundaryVariable() {}
+
+  BoundaryVariable *pnext_bvar;   // ptr to next node in linked list of BoundaryVariable
+
+  // protected:
+  // private:
+};
 
 
 

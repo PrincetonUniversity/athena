@@ -16,6 +16,7 @@
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../bvals.hpp"
+#include "../bvals_interfaces.hpp"
 
 // MPI headers
 #ifdef MPI_PARALLEL
@@ -30,7 +31,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Allow functions to access most any variable to allow for fully general BC dependence
   friend class Hydro;
   friend class Field;
-public:
+ public:
   CellCenteredBoundaryVariable();
   virtual ~CellCenteredBoundaryVariable();
 
@@ -100,48 +101,50 @@ public:
   //-------------------- prototypes for all BC functions ---------------------------------
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
 
   virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
   virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nl, int nu);
+                              int kl, int ku, int nu, int ngh);
 
   virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh);
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nl, int nu);
+                                 int ju, int kl, int ku, int nu, int ngh);
+  //protected:
+
  private:
   // standard cell-centered and flux BV private variables
   BoundaryData bd_hydro_, bd_flcor_;
@@ -161,9 +164,6 @@ public:
 //   MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
 //   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
 // #endif
-
-  //protected:
-
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_

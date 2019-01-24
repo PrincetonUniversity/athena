@@ -145,8 +145,6 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   void CheckBoundary(void);
   void CheckPolarBoundaries(void);
 
-  // linked list of BoundaryVariable derived class instances:
-
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
   // Set in the BoundaryValues() constructor based on block_bcs = input_bcs:
@@ -161,6 +159,7 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
   AthenaArray<Real> azimuthal_shift_;
 
+  BoundaryVariable *pfirst_bvar_; // ptr to first BoundaryVariable instance in linked list
 
   BValFunc_t BoundaryFunction_[6];
 
