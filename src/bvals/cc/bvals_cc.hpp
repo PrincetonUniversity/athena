@@ -33,44 +33,44 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   friend class Field;
  public:
   CellCenteredBoundaryVariable();
-  virtual ~CellCenteredBoundaryVariable();
+  ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> &var_cc;
 
-  // BoundaryCommunication pure virtual functions:
-  virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
-  virtual void DestroyBoundaryData(BoundaryData &bd) override;
-  virtual void Initialize(void) override;
-  virtual void StartReceivingForInit(bool cons_and_field) override;
-  virtual void ClearBoundaryForInit(bool cons_and_field) override;
-  virtual void StartReceivingAll(const Real time) override;
-  virtual void ClearBoundaryAll(void) override;
+  // BoundaryCommunication pure functions:
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
+  void DestroyBoundaryData(BoundaryData &bd) override;
+  void Initialize(void) override;
+  void StartReceivingForInit(bool cons_and_field) override;
+  void ClearBoundaryForInit(bool cons_and_field) override;
+  void StartReceivingAll(const Real time) override;
+  void ClearBoundaryAll(void) override;
 
-  // BoundaryBuffer pure virtual functions:
-  virtual int LoadBoundaryBufferSameLevel(
-       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
-  virtual void SendBoundaryBuffers( enum CCBoundaryType type) override;
-  virtual bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
-  virtual void ReceiveAndSetBoundariesWithWait(
-                                               enum CCBoundaryType type) override;
-  virtual void SetBoundaries( enum CCBoundaryType type) override;
-  virtual void SetBoundarySameLevel(
-       int nl, int nu, Real *buf,
-      const NeighborBlock& nb, bool *flip) override;
-  virtual int LoadBoundaryBufferToCoarser(
-       int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
-      const NeighborBlock& nb) override;
-  virtual int LoadBoundaryBufferToFiner(
-       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
-  virtual void SetBoundaryFromCoarser(
-      int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
-      const NeighborBlock& nb, bool *flip) override;
-  virtual void SetBoundaryFromFiner(
-       int nl, int nu,
-      Real *buf, const NeighborBlock& nb, bool *flip) override;
+  // BoundaryBuffer pure functions:
+  int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
+                                  const NeighborBlock& nb) override;
+  void SendBoundaryBuffers(enum CCBoundaryType type) override;
+  bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
+  void ReceiveAndSetBoundariesWithWait(enum CCBoundaryType type) override;
+  void SetBoundaries(enum CCBoundaryType type) override;
+  void SetBoundarySameLevel(int nl, int nu, Real *buf,
+                            const NeighborBlock& nb,
+                            bool *flip) override;
+  int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
+                                  AthenaArray<Real> &cbuf,
+                                  const NeighborBlock& nb) override;
+  int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
+                                const NeighborBlock& nb) override;
+  void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
+                              AthenaArray<Real> &cbuf,
+                              const NeighborBlock& nb,
+                              bool *flip) override;
+  void SetBoundaryFromFiner(int nl, int nu,
+                            Real *buf, const NeighborBlock& nb,
+                            bool *flip) override;
 
-  virtual void SendFluxCorrection(enum FluxCorrectionType type) override;
-  virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
+  void SendFluxCorrection(enum FluxCorrectionType type) override;
+  bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // Cell-centered flux correction functions are much simpler than Field counterpart
@@ -98,51 +98,51 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   //                const int i, const Real eps, const AthenaArray<Real> &U,
   //                AthenaArray<Real> &Flux);
 
-  // BoundaryPhysics pure virtual functions:
-  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
+  // BoundaryPhysics pure functions:
+  void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
 
-  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
-  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) override;
+  void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
+  void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                      int il, int iu, int jl, int ju,
+                      int kl, int ku, int nu, int ngh) override;
 
-  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh) override;
-  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh) override;
+  void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                         int il, int iu, int jl,
+                         int ju, int kl, int ku, int nu, int ngh) override;
+  void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+                         int il, int iu, int jl,
+                         int ju, int kl, int ku, int nu, int ngh) override;
   //protected:
 
  private:

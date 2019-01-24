@@ -174,7 +174,8 @@ class BoundaryBuffer {
   virtual void ReceiveAndSetBoundariesWithWait(enum CCBoundaryType type) = 0;
   virtual void SetBoundaries(enum CCBoundaryType type) = 0;
   virtual void SetBoundarySameLevel(int nl, int nu, Real *buf,
-                                    const NeighborBlock& nb, bool *flip) = 0;
+                                    const NeighborBlock& nb,
+                                    bool *flip) = 0;
 
   // SMR/AMR-exclusive buffer management methods
   virtual int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
@@ -182,10 +183,13 @@ class BoundaryBuffer {
                                           const NeighborBlock& nb) = 0;
   virtual int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
                                         const NeighborBlock& nb) = 0;
-  virtual void SetBoundaryFromCoarser(int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
-                                      const NeighborBlock& nb, bool *flip) = 0;
+  virtual void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
+                                      AthenaArray<Real> &cbuf,
+                                      const NeighborBlock& nb,
+                                      bool *flip) = 0;
   virtual void SetBoundaryFromFiner(int nl, int nu, Real *buf,
-                                    const NeighborBlock& nb, bool *flip) = 0;
+                                    const NeighborBlock& nb,
+                                    bool *flip) = 0;
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   virtual void SendFluxCorrection(enum FluxCorrectionType type) = 0;
