@@ -35,55 +35,55 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   CellCenteredBoundaryVariable();
   virtual ~CellCenteredBoundaryVariable();
 
-  // standard cell-centered buffer management:
-  // required: unrefined
-  int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                      int ns, int ne, Real *buf, const NeighborBlock& nb);
-  // optional: SMR/AMR
-  int LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
-      int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb);
-  int LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
-                      int ns, int ne, Real *buf, const NeighborBlock& nb);
+  AthenaArray<Real> &var_cc;
 
-  // required: universal
-  void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-                                       enum CCBoundaryType type);
-  // required: universal
-  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type);
+  // BoundaryCommunication pure virtual functions:
+  virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
+  virtual void DestroyBoundaryData(BoundaryData &bd) override;
+  virtual void Initialize(void) override;
+  virtual void StartReceivingForInit(bool cons_and_field) override;
+  virtual void ClearBoundaryForInit(bool cons_and_field) override;
+  virtual void StartReceivingAll(const Real time) override;
+  virtual void ClearBoundaryAll(void) override;
 
-  // required: universal
-  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type);
+  // BoundaryBuffer pure virtual functions:
+  virtual int LoadBoundaryBufferSameLevel(
+       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
+  virtual void SendBoundaryBuffers( enum CCBoundaryType type) override;
+  virtual bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
+  virtual void ReceiveAndSetBoundariesWithWait(
+                                               enum CCBoundaryType type) override;
+  virtual void SetBoundaries( enum CCBoundaryType type) override;
+  virtual void SetBoundarySameLevel(
+       int nl, int nu, Real *buf,
+      const NeighborBlock& nb, bool *flip) override;
+  virtual int LoadBoundaryBufferToCoarser(
+       int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb) override;
+  virtual int LoadBoundaryBufferToFiner(
+       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
+  virtual void SetBoundaryFromCoarser(
+      int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb, bool *flip) override;
+  virtual void SetBoundaryFromFiner(
+       int nl, int nu,
+      Real *buf, const NeighborBlock& nb, bool *flip) override;
 
-  // optional: initialization in mesh.cpp
-  void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
-                                                   enum CCBoundaryType type);
-
-  // required: unrefined
-  void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
-
-  // optional: SMR/AMR
-  void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
-                                          AthenaArray<Real> &cbuf,
-                                          const NeighborBlock& nb, bool *flip);
-  void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
-
-  // optional? compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarBoundarySingleAzimuthalBlockEMF()
-  // what about PolarBoundaryAverageField()?
-  void PolarBoundarySingleAzimuthalBlockCC(AthenaArray<Real> &dst, int ns, int ne);
-
+  virtual void SendFluxCorrection(enum FluxCorrectionType type) override;
+  virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
+  // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
+  // TODO(felker): handle the 6x unique Field-related flux correction functions
   // Cell-centered flux correction functions are much simpler than Field counterpart
   // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
   // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
   //   Set/LoadEMFBoundaryPolarBuffer()
   // - AverageEMFBoundary(), ClearCoarseEMFBoundary(),
   //                         PolarBoundarySingleAzimuthalBlockEMF()
-  void SendFluxCorrection(enum FluxCorrectionType type);
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
-  // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
 
+  // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
+  //                      PolarBoundarySingleAzimuthalBlockEMF()
+  // what about PolarBoundaryAverageField()?
+  void PolarBoundarySingleAzimuthalBlock(int nl, int nu);
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -98,51 +98,51 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   //                const int i, const Real eps, const AthenaArray<Real> &U,
   //                AthenaArray<Real> &Flux);
 
-  //-------------------- prototypes for all BC functions ---------------------------------
+  // BoundaryPhysics pure virtual functions:
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
 
   virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
   virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh);
+                              int il, int iu, int jl, int ju,
+                              int kl, int ku, int nu, int ngh) override;
 
   virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh);
+                                 int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nu, int ngh) override;
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 AthenaArray<Real> &arr_cc, int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh);
+                                 int il, int iu, int jl,
+                                 int ju, int kl, int ku, int nu, int ngh) override;
   //protected:
 
  private:
@@ -150,20 +150,20 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   BoundaryData bd_hydro_, bd_flcor_;
 
   // Shearingbox Hydro
-//   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-//   // working arrays of remapped quantities
-//   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
-//   // Hydro flux from conservative remapping
-//   AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
-//   int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
-//   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
-//   int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
-//   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
-// #ifdef MPI_PARALLEL
-//   // MPI request for send and recv msgs
-//   MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
-//   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
-// #endif
+  //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  //   // working arrays of remapped quantities
+  //   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
+  //   // Hydro flux from conservative remapping
+  //   AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
+  //   int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
+  //   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
+  //   int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
+  //   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
+  // #ifdef MPI_PARALLEL
+  //   // MPI request for send and recv msgs
+  //   MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
+  //   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
+  // #endif
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_

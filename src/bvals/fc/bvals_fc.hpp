@@ -31,37 +31,56 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // Allow functions to access most any variable to allow for fully general BC dependence
   friend class Hydro;
   friend class Field;
-
  public:
   FaceCenteredBoundaryVariable();
   virtual ~FaceCenteredBoundaryVariable();
-  // standard Field buffer management (unrefined and SMR/AMR)
-  int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
-                                       const NeighborBlock& nb);
-  int LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
-                                       const NeighborBlock& nb);
-  int LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
-                                     const NeighborBlock& nb);
 
-  void SendFieldBoundaryBuffers(FaceField &src);
+  FaceField &var_fc;
 
+  // BoundaryCommunication pure virtual functions:
+  virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
+  virtual void DestroyBoundaryData(BoundaryData &bd) override;
+  virtual void Initialize(void) override;
+  virtual void StartReceivingForInit(bool cons_and_field) override;
+  virtual void ClearBoundaryForInit(bool cons_and_field) override;
+  virtual void StartReceivingAll(const Real time) override;
+  virtual void ClearBoundaryAll(void) override;
 
-  bool ReceiveFieldBoundaryBuffers(void);
-  void SetFieldBoundaries(FaceField &dst);
-  void ReceiveAndSetFieldBoundariesWithWait(FaceField &dst);
+  // BoundaryBuffer pure virtual functions:
+  virtual int LoadBoundaryBufferSameLevel(
+       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
+  // 1x LoadField*() don't use: int nl, int nu
+  virtual void SendBoundaryBuffers( enum CCBoundaryType type) override;
+  virtual bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
+  virtual void ReceiveAndSetBoundariesWithWait(
+                                               enum CCBoundaryType type) override;
+  virtual void SetBoundaries( enum CCBoundaryType type) override;
+  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
+  virtual void SetBoundarySameLevel(
+       int nl, int nu, Real *buf,
+      const NeighborBlock& nb, bool *flip) override;
+  virtual int LoadBoundaryBufferToCoarser(
+       int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb) override;
+  // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
+  // needed for switching HYDRO_CONS and HYDRO_PRIM
+  virtual int LoadBoundaryBufferToFiner(
+       int nl, int nu, Real *buf, const NeighborBlock& nb) override;
+  virtual void SetBoundaryFromCoarser(
+      int nl, int nu, Real *buf, AthenaArray<Real> &cbuf,
+      const NeighborBlock& nb, bool *flip) override;
+  virtual void SetBoundaryFromFiner(
+      int nl, int nu,
+      Real *buf, const NeighborBlock& nb, bool *flip) override;
+  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load), but also "bool flip"
+  virtual void SendFluxCorrection(enum FluxCorrectionType type) override;
+  virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
+  // originally: SendEMFCorrection(void), ReceiveEMFCorrection(void)
 
-  void SetFieldBoundarySameLevel(FaceField &dst, Real *buf, const NeighborBlock& nb);
-  void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
-  void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
+  virtual void PolarBoundarySingleAzimuthalBlockField(FaceField &dst);
 
-  // above, only PolarBoundarySingleAzimuthalBlockCC(), no PolarAxis*Average()
-  void PolarBoundarySingleAzimuthalBlockField(FaceField &dst);
-  void PolarBoundaryAverageField(FaceField &dst);
-
-  // EMF buffer management (unrefined and SMR/AMR)
-  // Hydro FluxCorrection only has counterparts for these
-  void SendEMFCorrection(void);
-  bool ReceiveEMFCorrection(void);
+  // Face-centered/Field/EMF unique methods:
+  void PolarBoundaryAverageField(FaceField &dst); // formerly PolarAxisFieldAverage()
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
