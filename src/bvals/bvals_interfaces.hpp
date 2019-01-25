@@ -167,28 +167,19 @@ class BoundaryBuffer {
   BoundaryBuffer() {}
   virtual ~BoundaryBuffer() {}
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
-  virtual int LoadBoundaryBufferSameLevel(Real *buf,
-                                          const NeighborBlock& nb) = 0;
+  virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SendBoundaryBuffers(void) = 0;
   virtual bool ReceiveBoundaryBuffers(void) = 0;
   // used only during problem initialization in mesh.cpp:
   virtual void ReceiveAndSetBoundariesWithWait(void) = 0;
   virtual void SetBoundaries(void) = 0;
-  virtual void SetBoundarySameLevel(Real *buf,
-                                    const NeighborBlock& nb,
-                                    bool *flip) = 0;
+  virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
 
   // SMR/AMR-exclusive buffer management methods
-  virtual int LoadBoundaryBufferToCoarser(Real *buf,
-                                          const NeighborBlock& nb) = 0;
-  virtual int LoadBoundaryBufferToFiner(Real *buf,
-                                        const NeighborBlock& nb) = 0;
-  virtual void SetBoundaryFromCoarser(Real *buf,
-                                      const NeighborBlock& nb,
-                                      bool *flip) = 0;
-  virtual void SetBoundaryFromFiner(Real *buf,
-                                    const NeighborBlock& nb,
-                                    bool *flip) = 0;
+  virtual int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) = 0;
+  virtual int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) = 0;
+  virtual void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) = 0;
+  virtual void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) = 0;
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   virtual void SendFluxCorrection(enum FluxCorrectionType type) = 0;

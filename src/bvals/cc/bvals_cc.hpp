@@ -82,19 +82,15 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveBoundaryBuffers(void) override;
   void ReceiveAndSetBoundariesWithWait(void) override;
   void SetBoundaries(void) override;
-  void SetBoundarySameLevel(Real *buf,
-                            const NeighborBlock& nb,
-                            bool *flip) override;
-  int LoadBoundaryBufferToCoarser(Real *buf,  // coarse_buf
-                                  const NeighborBlock& nb) override;
-  int LoadBoundaryBufferToFiner(Real *buf,
-                                const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(Real *buf, // coarse_buf
-                              const NeighborBlock& nb,
-                              bool *flip) override;
-  void SetBoundaryFromFiner(Real *buf,
-                            const NeighborBlock& nb,
-                            bool *flip) override;
+  // "bool *flip" is passed in 3x Set...From*(), computed by enum switch in wrapper
+  // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  // coarse_buf:
+  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
+  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
+  // coarse_buf:
+  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
 
   void SendFluxCorrection(enum FluxCorrectionType type) override;
   bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
@@ -184,6 +180,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // (3D) nl=nu=0 for gravity
   // nl=0, nu=NHYDRO-1 for Hydro
   int nl_, nu_;
+
+  bool *flip_across_pole;
 
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];

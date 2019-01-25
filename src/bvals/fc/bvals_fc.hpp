@@ -57,22 +57,14 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void ReceiveAndSetBoundariesWithWait(void) override;
   void SetBoundaries(void) override;
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
-  void SetBoundarySameLevel(Real *buf,
-                            const NeighborBlock& nb,
-                            bool *flip) override;
-  int LoadBoundaryBufferToCoarser(Real *buf,
-                                  const NeighborBlock& nb) override;
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
   // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
   // needed for switching HYDRO_CONS and HYDRO_PRIM
-  int LoadBoundaryBufferToFiner(Real *buf,
-                                const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(Real *buf,
-                              const NeighborBlock& nb,
-                              bool *flip) override;
-  void SetBoundaryFromFiner(Real *buf,
-                            const NeighborBlock& nb,
-                            bool *flip) override;
-  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load), but also "bool flip"
+  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
+  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
   void SendFluxCorrection(enum FluxCorrectionType type) override;
   bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
   // originally: SendEMFCorrection(void), ReceiveEMFCorrection(void)
@@ -168,6 +160,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
+
+  // original bvals_fc.cpp functions never took "bool *flip" as a function parameter
+  // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
+  bool *flip_across_pole;
 
 #ifdef MPI_PARALLEL
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
