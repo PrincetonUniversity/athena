@@ -38,8 +38,8 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(
-//                     Real *buf, const NeighborBlock& nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
+//                                                               const NeighborBlock& nb)
 //  \brief Set face-centered boundary buffers for sending to a block on the same level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
@@ -97,8 +97,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(
-//                                                 Real *buf, const NeighborBlock& nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set face-centered boundary buffers for sending to a block on the coarser level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
@@ -171,8 +171,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(,
-//                                                 Real *buf, const NeighborBlock& nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set face-centered boundary buffers for sending to a block on the finer level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
@@ -280,15 +280,18 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     int ssize;
     if (nb.level==pmb->loc.level)
-      ssize=LoadBoundaryBufferSameLevel(src, bd_fc_.send[nb.bufid],nb);
+      // KGF: src
+      ssize=LoadBoundaryBufferSameLevel(bd_fc_.send[nb.bufid],nb);
     else if (nb.level<pmb->loc.level)
-      ssize=LoadBoundaryBufferToCoarser(src, bd_fc_.send[nb.bufid],nb);
+      // KGF: src
+      ssize=LoadBoundaryBufferToCoarser(bd_fc_.send[nb.bufid],nb);
     else
-      ssize=LoadBoundaryBufferToFiner(src, bd_fc_.send[nb.bufid], nb);
+      // KGF: src
+      ssize=LoadBoundaryBufferToFiner(bd_fc_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // find target buffer
@@ -306,13 +309,12 @@ void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetBoundarySameLevel(,
-//                                               Real *buf, const NeighborBlock& nb)
+//! \fn void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
+//                                                              const NeighborBlock& nb)
 //  \brief Set face-centered boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
-                                                        const NeighborBlock& nb,
-                                                        bool *flip) {
+                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -414,13 +416,12 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(,
-//                                        Real *buf, const NeighborBlock& nb, bool *flip)
+//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set face-centered prolongation buffer received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
-                                                          const NeighborBlock& nb,
-                                                          bool *flip) {
+                                                          const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
@@ -540,13 +541,12 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetFielBoundaryFromFiner(,
-//                                         Real *buf, const NeighborBlock& nb, bool *flip)
+//! \fn void FaceCenteredBoundaryVariable::SetFielBoundaryFromFiner(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set face-centered boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
-                                                        const NeighborBlock& nb,
-                                                        bool *flip) {
+                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
@@ -714,8 +714,8 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     if (bd_fc_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
     if (bd_fc_.flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) { // on the same process
@@ -746,8 +746,8 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 void FaceCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     if (nb.level==pmb->loc.level)
       SetBoundarySameLevel(dst, bd_fc_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
@@ -757,7 +757,7 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
     bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -771,22 +771,24 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
 void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
       MPI_Wait(&(bd_fc_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if (nb.level==pmb->loc.level)
+      // KGF: dst
       SetBoundarySameLevel(dst, bd_fc_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
       SetBoundaryFromCoarser(bd_fc_.recv[nb.bufid], nb);
     else
-      SetBoundaryFromFiner(dst, bd_fc_.recv[nb.bufid], nb);
+      // KGF: dst
+      SetBoundaryFromFiner(bd_fc_.recv[nb.bufid], nb);
     bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -802,75 +804,75 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x1f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x2f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x3f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
     }
 
-    if (block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval->block_bcs[OUTER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x1f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x2f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval->azimuthal_shift_(k) = dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = azimuthal_shift_(k_shift);
+            dst.x3f(k,j,i) = pbval->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -893,7 +895,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
     kl -= NGHOST;
     ku += NGHOST;
   }
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY) {
     int j = pmb->js;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
@@ -901,7 +903,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
       }
     }
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     int j = pmb->je + 1;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
