@@ -336,7 +336,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox1<0) ei++;
   }
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -362,7 +362,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox2<0) ej++;
   }
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -393,7 +393,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox3<0) ek++;
   }
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -453,7 +453,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -483,7 +483,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sj=pmb->cjs-cng, ej=pmb->cjs;
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -520,7 +520,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sk=pmb->cks-cng, ek=pmb->cks;
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -592,7 +592,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -632,7 +632,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -684,7 +684,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
+    Real sign = flip_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
