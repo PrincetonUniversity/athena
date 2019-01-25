@@ -131,7 +131,6 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
 enum BoundaryType {BNDRY_CC=0, BNDRY_FC=1, BNDRY_HYDRO=2,
                    BNDRY_MGGRAV=3, BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};
-enum FluxCorrectionType {FLUX_HYDRO=0, FLUX_FIELD=1};
 enum HydroBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
 
 //----------------------------------------------------------------------------------------
