@@ -154,7 +154,8 @@ void EquationOfState::PrimitiveToConserved(
         u_m1 = w_vx*w_d;
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
-        u_e = SimpleEgas(u_d, w_p); // cellwise conversion
+        // cellwise conversion
+        u_e = SimpleEgas(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
       }
     }
   }
