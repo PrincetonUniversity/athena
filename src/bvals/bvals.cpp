@@ -27,7 +27,7 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
-#include "../gravity/mggravity.hpp"
+#include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"

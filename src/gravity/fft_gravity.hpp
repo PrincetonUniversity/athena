@@ -1,12 +1,11 @@
 #ifndef GRAVITY_FFT_GRAVITY_HPP_
 #define GRAVITY_FFT_GRAVITY_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file fftgravity.hpp
+//! \file fft_gravity.hpp
 //  \brief defines FFTGravity class
 
 // C headers
