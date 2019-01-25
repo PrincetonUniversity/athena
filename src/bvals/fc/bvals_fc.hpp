@@ -6,7 +6,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_fc.hpp
-//  \brief
+//  \brief handle boundaries for any FaceField type variable that represents a physical
+//         quantity indexed along / located around face-centers of cells
 
 // C headers
 
@@ -37,7 +38,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   FaceField &var_fc;
 
-  // BoundaryCommunication pure functions:
+  // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
   void Initialize(void) override;
@@ -46,27 +47,25 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void StartReceivingAll(const Real time) override;
   void ClearBoundaryAll(void) override;
 
-  // BoundaryBuffer pure functions:
+  // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
                                   const NeighborBlock& nb) override;
   // 1x LoadField*() don't use: int nl, int nu
-  void SendBoundaryBuffers(enum CCBoundaryType type) override;
-  bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
-  void ReceiveAndSetBoundariesWithWait(enum CCBoundaryType type) override;
-  void SetBoundaries(enum CCBoundaryType type) override;
+  void SendBoundaryBuffers(void) override;
+  bool ReceiveBoundaryBuffers(void) override;
+  void ReceiveAndSetBoundariesWithWait(void) override;
+  void SetBoundaries(void) override;
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
   void SetBoundarySameLevel(int nl, int nu, Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
   int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
-                                  AthenaArray<Real> &cbuf,
                                   const NeighborBlock& nb) override;
   // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
   // needed for switching HYDRO_CONS and HYDRO_PRIM
   int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
                                 const NeighborBlock& nb) override;
   void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
-                              AthenaArray<Real> &cbuf,
                               const NeighborBlock& nb,
                               bool *flip) override;
   void SetBoundaryFromFiner(int nl, int nu,
@@ -115,7 +114,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
   //                   const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
-  //-------------------- prototypes for all BC functions ---------------------------------
+  // BoundaryPhysics:
   void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
                       int kl, int ku, int nu, int ngh);
@@ -164,7 +163,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard Field and emf BV private variables
-  BoundaryData bd_field_, bd_emfcor_;
+  BoundaryData bd_fc_, bd_fc_flcor_; // bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;

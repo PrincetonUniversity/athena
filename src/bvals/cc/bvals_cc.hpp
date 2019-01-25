@@ -6,7 +6,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_cc.hpp
-//  \brief
+//  \brief handle boundaries for any AthenaArray type variable that represents a physical
+//         quantity indexed along / located around cell-centers
 
 // C headers
 
@@ -37,7 +38,37 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   AthenaArray<Real> &var_cc;
 
-  // BoundaryCommunication pure functions:
+  // Probably should pull these variables out of function signatures, since FaceCentered
+  // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
+  // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf
+  // int nl, nu;
+
+  // what about bool *flip? CC or Hydro-specific?
+
+  // Current Facade class BoundaryValues calls in time_integrator.cpp:
+  // StartReceivingAll(time);
+  // ClearBoundaryAll();
+  // SendFluxCorrection(FLUX_HYDRO);
+  // SendEMFCorrection();
+  // ReceiveFluxCorrection(FLUX_HYDRO)
+  // ReceiveEMFCorrection()
+  // SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+  // SendFieldBoundaryBuffers(pmb->pfield->b);
+  // ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
+  // ReceiveFieldBoundaryBuffers();
+  // SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+  // SetFieldBoundaries(pmb->pfield->b);
+  // +8x shearing box-specific functions
+
+  // - Replace all of these pbval->fn() calls with phbval->fn() or pfbval->fn()
+  // - Create a unique function for HydroBoundaryVariable to change:
+  // enum CCBoundaryType, AthenaArray<Real> coarse_buf, &src, &dst
+
+  // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
+  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
+  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w, HYDRO_PRIM);
+
+  // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
   void Initialize(void) override;
@@ -46,27 +77,25 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void StartReceivingAll(const Real time) override;
   void ClearBoundaryAll(void) override;
 
-  // BoundaryBuffer pure functions:
+  // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
                                   const NeighborBlock& nb) override;
-  void SendBoundaryBuffers(enum CCBoundaryType type) override;
-  bool ReceiveBoundaryBuffers(enum CCBoundaryType type) override;
-  void ReceiveAndSetBoundariesWithWait(enum CCBoundaryType type) override;
-  void SetBoundaries(enum CCBoundaryType type) override;
+  void SendBoundaryBuffers(void) override;
+  bool ReceiveBoundaryBuffers(void) override;
+  void ReceiveAndSetBoundariesWithWait(void) override;
+  void SetBoundaries(void) override;
   void SetBoundarySameLevel(int nl, int nu, Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
-  int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
-                                  AthenaArray<Real> &cbuf,
+  int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,  // coarse_buf
                                   const NeighborBlock& nb) override;
   int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
                                 const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
-                              AthenaArray<Real> &cbuf,
+  void SetBoundaryFromCoarser(int nl, int nu, Real *buf, // coarse_buf
                               const NeighborBlock& nb,
                               bool *flip) override;
-  void SetBoundaryFromFiner(int nl, int nu,
-                            Real *buf, const NeighborBlock& nb,
+  void SetBoundaryFromFiner(int nl, int nu, Real *buf,
+                            const NeighborBlock& nb,
                             bool *flip) override;
 
   void SendFluxCorrection(enum FluxCorrectionType type) override;
@@ -98,7 +127,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   //                const int i, const Real eps, const AthenaArray<Real> &U,
   //                AthenaArray<Real> &Flux);
 
-  // BoundaryPhysics pure functions:
+  // BoundaryPhysics:
   void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
                       int kl, int ku, int nu, int ngh) override;
@@ -147,7 +176,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard cell-centered and flux BV private variables
-  BoundaryData bd_hydro_, bd_flcor_;
+  BoundaryData bd_cc_, bd_cc_flcor_;
 
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];

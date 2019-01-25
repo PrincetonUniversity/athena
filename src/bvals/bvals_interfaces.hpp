@@ -168,23 +168,21 @@ class BoundaryBuffer {
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
   virtual int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
                                           const NeighborBlock& nb) = 0;
-  virtual void SendBoundaryBuffers(enum CCBoundaryType type) = 0;
-  virtual bool ReceiveBoundaryBuffers(enum CCBoundaryType type) = 0;
+  virtual void SendBoundaryBuffers(void) = 0;
+  virtual bool ReceiveBoundaryBuffers(void) = 0;
   // used only during problem initialization in mesh.cpp:
-  virtual void ReceiveAndSetBoundariesWithWait(enum CCBoundaryType type) = 0;
-  virtual void SetBoundaries(enum CCBoundaryType type) = 0;
+  virtual void ReceiveAndSetBoundariesWithWait(void) = 0;
+  virtual void SetBoundaries(void) = 0;
   virtual void SetBoundarySameLevel(int nl, int nu, Real *buf,
                                     const NeighborBlock& nb,
                                     bool *flip) = 0;
 
   // SMR/AMR-exclusive buffer management methods
   virtual int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
-                                          AthenaArray<Real> &cbuf,
                                           const NeighborBlock& nb) = 0;
   virtual int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
                                         const NeighborBlock& nb) = 0;
   virtual void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
-                                      AthenaArray<Real> &cbuf,
                                       const NeighborBlock& nb,
                                       bool *flip) = 0;
   virtual void SetBoundaryFromFiner(int nl, int nu, Real *buf,
