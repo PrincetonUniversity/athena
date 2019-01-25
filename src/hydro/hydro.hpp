@@ -15,7 +15,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../task_list/task_list.hpp"
+#include "../bvals/cc/hydro/bvals_hydro.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -35,7 +35,7 @@ class Hydro {
 
   // data
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
-  HydroBoundaryValues *phbval;
+  HydroBoundaryVariable *phbval;
 
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1

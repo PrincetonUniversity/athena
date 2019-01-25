@@ -15,8 +15,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/fc/bvals_fc.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -33,7 +33,7 @@ class Field {
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  FieldBoundaryValues *pfbval;
+  FaceCenteredBoundaryVariable *pfbval;
   FieldDiffusion *pfdif;
 
   // face-centered magnetic fields

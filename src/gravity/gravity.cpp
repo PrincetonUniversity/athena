@@ -17,7 +17,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../bvals/cc/bvals_cc.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -46,7 +46,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
     return;
   }
 
-  pgbval = new GravityBoundaryValues(pmy_block, input_bcs);
+  pgbval = new CellCenteredBoundaryVariable(pmy_block, input_bcs);
 
   // Allocate memory for gravitational potential, but only when needed.
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
