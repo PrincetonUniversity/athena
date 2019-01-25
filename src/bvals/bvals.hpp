@@ -146,7 +146,7 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   void CheckPolarBoundaries(void);
 
  private:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
   // Set in the BoundaryValues() constructor based on block_bcs = input_bcs:
   int nface_, nedge_;
   bool edge_flag_[12];
@@ -179,7 +179,8 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
   // int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
 
-  // temporary--- Added by @tomidakn on 2015-11-27
+  // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   friend class Mesh;
+  friend class BoundaryVariable;
 };
 #endif // BVALS_BVALS_HPP_

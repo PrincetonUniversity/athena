@@ -33,7 +33,7 @@ class Mesh;
 class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
-class GravityBoundaryValues;
+class BoundaryVariable;
 class TaskList;
 class TaskState;
 class Coordinates;
@@ -54,7 +54,7 @@ class TurbulenceDriver;
 class MeshBlock {
   friend class RestartOutput;
   friend class BoundaryValues;
-  friend class GravityBoundaryValues;
+  friend class BoundaryVariable;
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
@@ -143,8 +143,8 @@ class Mesh {
   friend class MeshBlock;
   friend class BoundaryBase;
   friend class BoundaryValues;
+  friend class BoundaryVariable;
   friend class MGBoundaryValues;
-  friend class GravityBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
