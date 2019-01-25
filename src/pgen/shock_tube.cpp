@@ -6,10 +6,8 @@
 //! \file shock_tube.cpp
 //  \brief Problem generator for shock tube problems.
 //
-// Problem generator for simple hydrogen EOS shock tube (1-D Riemann) problems.
-// Initializes plane-parallel shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D),
-// and along x3 (in 3D).
-//
+// Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
+// shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //========================================================================================
 
 // C headers
