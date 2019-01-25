@@ -40,13 +40,13 @@ static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
     Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
     AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
 */
-#pragma omp declare simd simdlen(SIMD_WIDTH)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(num_iterations,dd_vals,ee_vals,mm_vals,bb_vals,tt_vals,gamma_adi,k,j,prim,gamma_vals,pmag_vals) linear(i)
 static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArray<Real> &dd_vals,
 				       const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
 				       const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
 				       Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
 				       AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
-#pragma omp declare simd simdlen(SIMD_WIDTH)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(prim,gamma_adi,bb_cc,g, gi,k,j,cons,pco) linear(i)
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
