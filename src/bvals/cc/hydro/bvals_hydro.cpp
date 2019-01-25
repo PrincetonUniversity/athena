@@ -24,3 +24,29 @@ HydroBoundaryVariable::HydroBoundaryFunctions()
 HydroBoundaryVariable::~HydroBoundaryFunctions() {
 
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type)
+//  \brief Send boundary buffers of cell-centered variables
+
+// 3x + 1x calls: Send, ReceiveAndSet, Set + Receive shortened call
+void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type) {
+  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
+    pbd=&bd_cc_;
+    nl_=0, nu_=NHYDRO-1;
+    flip=flip_across_pole_hydro;
+    if (pmb->pmy_mesh->multilevel) {
+      if (type==HYDRO_CONS)
+        coarse_buf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
+      if (type==HYDRO_PRIM)
+        coarse_buf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
+    }
+  }
+
+  // Smaller switch used only in ReceiveBoundaryBuffers(void)
+  // if (type==HYDRO_CONS || type==HYDRO_PRIM) {
+  //   pbd=&bd_cc_;
+  // }
+
+  return;
+}

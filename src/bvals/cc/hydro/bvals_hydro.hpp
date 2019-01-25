@@ -37,6 +37,9 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
   enum HydroBoundaryType type;
   AthenaArray<Real> &coarse_buf;
 
+  // switch between Hydro class members "u" and "w"
+  void SelectCoarseBuffer(enum HydroBoundaryType type);
+
   // BoundaryPhysics: need to flip sign of velocity vectors:
   void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,

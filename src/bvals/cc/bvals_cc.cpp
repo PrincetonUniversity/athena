@@ -142,16 +142,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   int mylevel=pmb->loc.level;
   BoundaryData *pbd{}, *ptarget{};
 
-  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
-    pbd=&bd_hydro_;
-    nl=0, nu=NHYDRO-1;
-    if (pmb->pmy_mesh->multilevel) {
-      if (type==HYDRO_CONS)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
-      if (type==HYDRO_PRIM)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
-    }
-  }
+  // KGF: call switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -400,9 +391,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
   bool bflag=true;
   BoundaryData *pbd{};
 
-  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
-    pbd=&bd_hydro_;
-  }
+  // KGF: call short switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -436,21 +425,8 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 void CellCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
   bool *flip=nullptr;
-  AthenaArray<Real> cbuf;
-  int nl, nu;   // warning: uninitialized if type is not CONS nor PRIM
   BoundaryData *pbd{};
-
-  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
-    pbd=&bd_hydro_;
-    nl=0, nu=NHYDRO-1;
-    flip=flip_across_pole_hydro;
-    if (pmb->pmy_mesh->multilevel) {
-      if (type==HYDRO_CONS)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
-      if (type==HYDRO_PRIM)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
-    }
-  }
+  // KGF: call switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -464,7 +440,7 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
   }
 
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
-    PolarBoundarySingleAzimuthalBlock(dst, nl, nu);
+    PolarBoundarySingleAzimuthalBlock();
 
   return;
 }
@@ -478,17 +454,7 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   bool *flip=nullptr;
   BoundaryData *pbd{};
 
-  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
-    pbd=&bd_hydro_;
-    nl=0, nu=NHYDRO-1;
-    flip=flip_across_pole_hydro;
-    if (pmb->pmy_mesh->multilevel) {
-      if (type==HYDRO_CONS)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
-      if (type==HYDRO_PRIM)
-        cbuf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
-    }
-  }
+  // KGF: call switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -506,7 +472,7 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   }
 
   if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
-    PolarBoundarySingleAzimuthalBlock(nl_, nu_);
+    PolarBoundarySingleAzimuthalBlock();
 
   return;
 }
