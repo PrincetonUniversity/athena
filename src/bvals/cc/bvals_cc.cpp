@@ -144,16 +144,22 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     int ssize;
     if (nb.level==mylevel)
-      ssize=LoadBoundaryBufferSameLevel(var_cc, nl_, nu_, pbd->send[nb.bufid], nb);
+      // KGF: src/var_cc
+      // KGF: nl_, nu_
+      ssize=LoadBoundaryBufferSameLevel(pbd->send[nb.bufid], nb);
     else if (nb.level<mylevel)
-      ssize=LoadBoundaryBufferToCoarser(var_cc, nl_, nu_, pbd->send[nb.bufid],
-                                                    coarse_buf, nb);
+      // KGF: src/var_cc
+      // KGF: nl_, nu_
+      // KGF: coarse_buf
+      ssize=LoadBoundaryBufferToCoarser(pbd->send[nb.bufid], nb);
     else
-      ssize=LoadBoundaryBufferToFiner(var_cc, nl_, nu_, pbd->send[nb.bufid], nb);
+      // KGF: src/var_cc
+      // KGF: nl_, nu_
+      ssize=LoadBoundaryBufferToFiner(pbd->send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
       pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
@@ -177,8 +183,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
 //  \brief Set cell-centered boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
-                                                        const NeighborBlock& nb,
-                                                        bool *flip) {
+                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -196,7 +201,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
-      if (flip!=nullptr) sign =flip[n] ? -1.0 : 1.0;
+      if (flip_across_pole!=nullptr) sign =flip_across_pole[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -247,13 +252,12 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(,
-//                                        Real *buf, const NeighborBlock& nb, bool *flip)
+//! \fn void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered prolongation buffer received from a block on a coarser level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
-                                                          const NeighborBlock& nb,
-                                                          bool *flip) {
+                                                          const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
@@ -294,7 +298,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
-      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
+      if (flip_across_pole!=nullptr) sign = flip_across_pole[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -311,13 +315,12 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetBoundaryFromFiner(,
-//                                         Real *buf, const NeighborBlock& nb, bool *flip)
+//! \fn void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
+//                                                              const NeighborBlock& nb)
 //  \brief Set cell-centered boundary received from a block on a finer level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
-                                                        const NeighborBlock& nb,
-                                                        bool *flip) {
+                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
@@ -368,7 +371,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign=1.0;
-      if (flip!=nullptr) sign = flip[n] ? -1.0 : 1.0;
+      if (flip_across_pole!=nullptr) sign = flip_across_pole[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -393,8 +396,8 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 
   // KGF: call short switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     if (pbd->flag[nb.bufid]==BNDRY_ARRIVED) continue;
     if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) {// on the same process
@@ -424,22 +427,27 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 
 void CellCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
-  bool *flip=nullptr;
   BoundaryData *pbd{};
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
     if (nb.level==pmb->loc.level)
-      SetBoundarySameLevel(dst, nl_, nu_, pbd->recv[nb.bufid], nb, flip);
+      // KGF: dst
+      // KGF: nl_, nu_
+      SetBoundarySameLevel(pbd->recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetBoundaryFromCoarser(nl_, nu_, pbd->recv[nb.bufid], coarse_buf, nb, flip);
+      // KGF: nl_, nu_
+      // KGF: coarse_buf
+      SetBoundaryFromCoarser(pbd->recv[nb.bufid], nb);
     else
-      SetBoundaryFromFiner(dst, nl_, nu_, pbd->recv[nb.bufid], nb, flip);
+      // KGF: dst
+      // KGF: nl_, nu_
+      SetBoundaryFromFiner(pbd->recv[nb.bufid], nb);
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY || pbval->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -451,27 +459,32 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
 
 void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   MeshBlock *pmb=pmy_block_;
-  bool *flip=nullptr;
   BoundaryData *pbd{};
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
+  for (int n=0; n<pbval->nneighbor; n++) {
+    NeighborBlock& nb = pbval->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
       MPI_Wait(&(pbd->req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if (nb.level==pmb->loc.level)
-      SetBoundarySameLevel(dst, nl_, nu_, pbd->recv[nb.bufid], nb, flip);
+      // KGF: dst
+      // KGF: nl_, nu_
+      SetBoundarySameLevel(pbd->recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
-      SetBoundaryFromCoarser(nl_, nu_, pbd->recv[nb.bufid], coarse_buf, nb, flip);
+      // KGF: nl_, nu_
+      // KGF: coarse_buf
+      SetBoundaryFromCoarser(pbd->recv[nb.bufid], nb);
     else
-      SetBoundaryFromFiner(dst, nl_, nu_, pbd->recv[nb.bufid], nb, flip);
+      // KGF: dst
+      // KGF: nl_, nu_
+      SetBoundaryFromFiner(pbd->recv[nb.bufid], nb);
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY || pbval->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -485,34 +498,34 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval->azimuthal_shift_(k) = dst(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = azimuthal_shift_(k_shift);
+              dst(n,k,j,i) = pbval->azimuthal_shift_(k_shift);
             }
           }
         }
       }
     }
 
-    if (block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval->block_bcs[OUTER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval->azimuthal_shift_(k) = dst(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = azimuthal_shift_(k_shift);
+              dst(n,k,j,i) = pbval->azimuthal_shift_(k_shift);
             }
           }
         }
