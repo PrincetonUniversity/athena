@@ -3,24 +3,24 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hydro_bc.cpp
+//! \file bvals_hydro.cpp
 //  \brief implements boundary functions for Hydro variables in a derived class of
-//  the CellCenteredBoundaryFunctions abstract base class.
+//  the CellCenteredBoundaryVariable base class.
 
 // Athena++ headers
-#include "bvals.hpp"
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../../mesh/mesh.hpp"
+#include "../bvals_cc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \class HydroBoundaryFunctions
 
-HydroBoundaryFunctions::HydroBoundaryFunctions()
+HydroBoundaryVariable::HydroBoundaryFunctions()
 : CellCenteredBoundaryFunctions() {
 }
 
 // destructor
-HydroBoundaryFunctions::~HydroBoundaryFunctions() {
+HydroBoundaryVariable::~HydroBoundaryFunctions() {
 
 }
