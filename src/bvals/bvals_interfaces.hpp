@@ -31,6 +31,7 @@ class Hydro;
 class Field;
 class ParameterInput;
 class Coordinates;
+class BoundaryValues;
 struct RegionSize;
 struct FaceField;
 
@@ -166,26 +167,26 @@ class BoundaryBuffer {
   BoundaryBuffer() {}
   virtual ~BoundaryBuffer() {}
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
-  virtual int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
+  virtual int LoadBoundaryBufferSameLevel(Real *buf,
                                           const NeighborBlock& nb) = 0;
   virtual void SendBoundaryBuffers(void) = 0;
   virtual bool ReceiveBoundaryBuffers(void) = 0;
   // used only during problem initialization in mesh.cpp:
   virtual void ReceiveAndSetBoundariesWithWait(void) = 0;
   virtual void SetBoundaries(void) = 0;
-  virtual void SetBoundarySameLevel(int nl, int nu, Real *buf,
+  virtual void SetBoundarySameLevel(Real *buf,
                                     const NeighborBlock& nb,
                                     bool *flip) = 0;
 
   // SMR/AMR-exclusive buffer management methods
-  virtual int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
+  virtual int LoadBoundaryBufferToCoarser(Real *buf,
                                           const NeighborBlock& nb) = 0;
-  virtual int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
+  virtual int LoadBoundaryBufferToFiner(Real *buf,
                                         const NeighborBlock& nb) = 0;
-  virtual void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
+  virtual void SetBoundaryFromCoarser(Real *buf,
                                       const NeighborBlock& nb,
                                       bool *flip) = 0;
-  virtual void SetBoundaryFromFiner(int nl, int nu, Real *buf,
+  virtual void SetBoundaryFromFiner(Real *buf,
                                     const NeighborBlock& nb,
                                     bool *flip) = 0;
   // TODO(felker): handle the 6x unique Field-related flux correction functions
@@ -194,7 +195,7 @@ class BoundaryBuffer {
   virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) = 0;
 
   // optional extensions: spherical-polar-like coordinates, shearing box, etc.
-  virtual void PolarBoundarySingleAzimuthalBlock(int nl, int nu) = 0;
+  virtual void PolarBoundarySingleAzimuthalBlock(void) = 0;
 
   // compare to PolarBoundarySingleAzimuthalBlockField(),
   //                      PolarBoundarySingleAzimuthalBlockEMF()
@@ -279,6 +280,10 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   BoundaryVariable() : pnext_bvar(nullptr) {}
   virtual ~BoundaryVariable() {}
 
+ protected:
+  BoundaryValues *pbval;  // ptr to BoundaryValues containing this linked list
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
+ private:
   BoundaryVariable *pnext_bvar;   // ptr to next node in linked list of BoundaryVariable
 
   // protected:

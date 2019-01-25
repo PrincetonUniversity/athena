@@ -37,6 +37,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   ~FaceCenteredBoundaryVariable();
 
   FaceField &var_fc;
+  FaceField &src, &dst;
 
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
@@ -48,7 +49,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundaryAll(void) override;
 
   // BoundaryBuffer:
-  int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
+  int LoadBoundaryBufferSameLevel(Real *buf,
                                   const NeighborBlock& nb) override;
   // 1x LoadField*() don't use: int nl, int nu
   void SendBoundaryBuffers(void) override;
@@ -56,20 +57,19 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void ReceiveAndSetBoundariesWithWait(void) override;
   void SetBoundaries(void) override;
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
-  void SetBoundarySameLevel(int nl, int nu, Real *buf,
+  void SetBoundarySameLevel(Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
-  int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,
+  int LoadBoundaryBufferToCoarser(Real *buf,
                                   const NeighborBlock& nb) override;
   // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
   // needed for switching HYDRO_CONS and HYDRO_PRIM
-  int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
+  int LoadBoundaryBufferToFiner(Real *buf,
                                 const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(int nl, int nu, Real *buf,
+  void SetBoundaryFromCoarser(Real *buf,
                               const NeighborBlock& nb,
                               bool *flip) override;
-  void SetBoundaryFromFiner(int nl, int nu,
-                            Real *buf,
+  void SetBoundaryFromFiner(Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
   // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load), but also "bool flip"
@@ -77,10 +77,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
   // originally: SendEMFCorrection(void), ReceiveEMFCorrection(void)
 
-  void PolarBoundarySingleAzimuthalBlockField(FaceField &dst);
+  void PolarBoundarySingleAzimuthalBlock(void);
 
   // Face-centered/Field/EMF unique methods:
-  void PolarBoundaryAverageField(FaceField &dst); // formerly PolarAxisFieldAverage()
+  void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);

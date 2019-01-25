@@ -37,11 +37,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> &var_cc;
-
-  // Probably should pull these variables out of function signatures, since FaceCentered
-  // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
-  // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf
-  // int nl, nu;
+  AthenaArray<Real> &src, &dst;
+  AthenaArray<Real> &coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+  //   BoundaryData *pbd{}, *ptarget{};  // completely unused in FaceCentered functions
 
   // what about bool *flip? CC or Hydro-specific?
 
@@ -78,23 +76,23 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundaryAll(void) override;
 
   // BoundaryBuffer:
-  int LoadBoundaryBufferSameLevel(int nl, int nu, Real *buf,
+  int LoadBoundaryBufferSameLevel(Real *buf,
                                   const NeighborBlock& nb) override;
   void SendBoundaryBuffers(void) override;
   bool ReceiveBoundaryBuffers(void) override;
   void ReceiveAndSetBoundariesWithWait(void) override;
   void SetBoundaries(void) override;
-  void SetBoundarySameLevel(int nl, int nu, Real *buf,
+  void SetBoundarySameLevel(Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
-  int LoadBoundaryBufferToCoarser(int nl, int nu, Real *buf,  // coarse_buf
+  int LoadBoundaryBufferToCoarser(Real *buf,  // coarse_buf
                                   const NeighborBlock& nb) override;
-  int LoadBoundaryBufferToFiner(int nl, int nu, Real *buf,
+  int LoadBoundaryBufferToFiner(Real *buf,
                                 const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(int nl, int nu, Real *buf, // coarse_buf
+  void SetBoundaryFromCoarser(Real *buf, // coarse_buf
                               const NeighborBlock& nb,
                               bool *flip) override;
-  void SetBoundaryFromFiner(int nl, int nu, Real *buf,
+  void SetBoundaryFromFiner(Real *buf,
                             const NeighborBlock& nb,
                             bool *flip) override;
 
@@ -112,7 +110,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
   //                      PolarBoundarySingleAzimuthalBlockEMF()
   // what about PolarBoundaryAverageField()?
-  void PolarBoundarySingleAzimuthalBlock(int nl, int nu);
+  void PolarBoundarySingleAzimuthalBlock(void);
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -172,11 +170,20 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                          int il, int iu, int jl,
                          int ju, int kl, int ku, int nu, int ngh) override;
-  //protected:
+  // protected:
 
  private:
   // standard cell-centered and flux BV private variables
   BoundaryData bd_cc_, bd_cc_flcor_;
+
+  // Pulling these variables out of function signatures, since FaceCentered
+  // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
+  // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf)
+
+  // CellCenteredBoundaryVariable is assumed 4D
+  // (3D) nl=nu=0 for gravity
+  // nl=0, nu=NHYDRO-1 for Hydro
+  int nl_, nu_;
 
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
