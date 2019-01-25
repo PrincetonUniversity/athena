@@ -69,19 +69,19 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
-  void Initialize(void) override;
+  void Initialize() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;
   void StartReceivingAll(const Real time) override;
-  void ClearBoundaryAll(void) override;
+  void ClearBoundaryAll() override;
 
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf,
                                   const NeighborBlock& nb) override;
-  void SendBoundaryBuffers(void) override;
-  bool ReceiveBoundaryBuffers(void) override;
-  void ReceiveAndSetBoundariesWithWait(void) override;
-  void SetBoundaries(void) override;
+  void SendBoundaryBuffers() override;
+  bool ReceiveBoundaryBuffers() override;
+  void ReceiveAndSetBoundariesWithWait() override;
+  void SetBoundaries() override;
   // "bool *flip" is passed in 3x Set...From*(), computed by enum switch in wrapper
   // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
@@ -92,8 +92,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
 
-  void SendFluxCorrection(enum FluxCorrectionType type) override;
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
+  void SendFluxCorrection() override;
+  bool ReceiveFluxCorrection() override;
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // Cell-centered flux correction functions are much simpler than Field counterpart
@@ -105,8 +105,12 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
   //                      PolarBoundarySingleAzimuthalBlockEMF()
-  // what about PolarBoundaryAverageField()?
-  void PolarBoundarySingleAzimuthalBlock(void);
+  // what about PolarBoundaryAverageField()? -- make analog no-ops for cell-centered var:
+  // void PolarBoundaryAverage()
+  // and for EMF:
+  // void PolarBoundarySingleAzimuthalBlockFluxCorrection()
+  // void PolarBoundaryAverageFluxCorrection()
+  void PolarBoundarySingleAzimuthalBlock();
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);

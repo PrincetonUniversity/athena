@@ -148,14 +148,14 @@ class BoundaryCommunication {
 
   // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
   // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
-  virtual void Initialize(void) = 0; // setup MPI requests
+  virtual void Initialize() = 0; // setup MPI requests
   virtual void StartReceivingForInit(bool cons_and_field) = 0; // Call MPI_Start()
   virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
 
   // functions called only in task_list/ during timestepping
   // time: pmesh->time+dtstep, where dtstep is the delta t for current step
   virtual void StartReceivingAll(const Real time) = 0;
-  virtual void ClearBoundaryAll(void) = 0;
+  virtual void ClearBoundaryAll() = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -168,11 +168,11 @@ class BoundaryBuffer {
   virtual ~BoundaryBuffer() {}
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
   virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
-  virtual void SendBoundaryBuffers(void) = 0;
-  virtual bool ReceiveBoundaryBuffers(void) = 0;
+  virtual void SendBoundaryBuffers() = 0;
+  virtual bool ReceiveBoundaryBuffers() = 0;
   // used only during problem initialization in mesh.cpp:
-  virtual void ReceiveAndSetBoundariesWithWait(void) = 0;
-  virtual void SetBoundaries(void) = 0;
+  virtual void ReceiveAndSetBoundariesWithWait() = 0;
+  virtual void SetBoundaries() = 0;
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
 
   // SMR/AMR-exclusive buffer management methods
@@ -182,11 +182,11 @@ class BoundaryBuffer {
   virtual void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) = 0;
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
-  virtual void SendFluxCorrection(enum FluxCorrectionType type) = 0;
-  virtual bool ReceiveFluxCorrection(enum FluxCorrectionType type) = 0;
+  virtual void SendFluxCorrection() = 0;
+  virtual bool ReceiveFluxCorrection() = 0;
 
   // optional extensions: spherical-polar-like coordinates, shearing box, etc.
-  virtual void PolarBoundarySingleAzimuthalBlock(void) = 0;
+  virtual void PolarBoundarySingleAzimuthalBlock() = 0;
 
   // compare to PolarBoundarySingleAzimuthalBlockField(),
   //                      PolarBoundarySingleAzimuthalBlockEMF()

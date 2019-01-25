@@ -38,24 +38,27 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   FaceField &var_fc;
   FaceField &src, &dst;
+  // mimic new CellCenteredBoundaryVariable member &coarse_buf (originally passed as a
+  //function parameter as "cbuf"); Store reference to MeshRefinement "pmr->coarse_b_"
+  //FaceField &coarse_buf;
 
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
-  void Initialize(void) override;
+  void Initialize() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;
   void StartReceivingAll(const Real time) override;
-  void ClearBoundaryAll(void) override;
+  void ClearBoundaryAll() override;
 
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf,
                                   const NeighborBlock& nb) override;
   // 1x LoadField*() don't use: int nl, int nu
-  void SendBoundaryBuffers(void) override;
-  bool ReceiveBoundaryBuffers(void) override;
-  void ReceiveAndSetBoundariesWithWait(void) override;
-  void SetBoundaries(void) override;
+  void SendBoundaryBuffers() override;
+  bool ReceiveBoundaryBuffers() override;
+  void ReceiveAndSetBoundariesWithWait() override;
+  void SetBoundaries() override;
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
@@ -65,11 +68,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
   // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
-  void SendFluxCorrection(enum FluxCorrectionType type) override;
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type) override;
-  // originally: SendEMFCorrection(void), ReceiveEMFCorrection(void)
+  void SendFluxCorrection() override;
+  bool ReceiveFluxCorrection() override;
+  // originally: SendEMFCorrection(), ReceiveEMFCorrection()
 
-  void PolarBoundarySingleAzimuthalBlock(void);
+  void PolarBoundarySingleAzimuthalBlock();
 
   // Face-centered/Field/EMF unique methods:
   void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
@@ -82,9 +85,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
 
-  void ClearCoarseEMFBoundary(void);
-  void AverageEMFBoundary(void);
-  void PolarBoundarySingleAzimuthalBlockEMF(void);
+  void ClearCoarseEMFBoundary();
+  void AverageEMFBoundary();
+  void PolarBoundarySingleAzimuthalBlockEMF();
 
   // Shearingbox Field
   // void LoadFieldShearing(FaceField &src, Real *buf, int nb);
@@ -97,11 +100,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   //                     AthenaArray<Real> &Flux);
   // // Shearingbox EMF
   // void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
-  // void SendEMFShearingboxBoundaryCorrectionForInit(void);
-  // void SendEMFShearingboxBoundaryCorrection(void);
+  // void SendEMFShearingboxBoundaryCorrectionForInit();
+  // void SendEMFShearingboxBoundaryCorrection();
   // void SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
-  // bool ReceiveEMFShearingboxBoundaryCorrection(void);
-  // void RemapEMFShearingboxBoundary(void);
+  // bool ReceiveEMFShearingboxBoundaryCorrection();
+  // void RemapEMFShearingboxBoundary();
   // void ClearEMFShearing(EdgeField &work);
   // void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
   //                   const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
