@@ -34,7 +34,7 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
 
   // Hydro is a unique cell-centered variable because of the relationship between
   // HYDRO_CONS u and HYDRO_PRIM w.
-  enum CCBoundaryType type;
+  enum HydroBoundaryType type;
   AthenaArray<Real> &coarse_buf;
 
   // BoundaryPhysics: need to flip sign of velocity vectors:
