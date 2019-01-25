@@ -336,7 +336,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox1<0) ei++;
   }
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -362,7 +362,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox2<0) ej++;
   }
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -393,7 +393,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     else if (nb.ox3<0) ek++;
   }
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -453,7 +453,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -483,7 +483,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sj=pmb->cjs-cng, ej=pmb->cjs;
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -520,7 +520,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   else               sk=pmb->cks-cng, ek=pmb->cks;
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -592,7 +592,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -632,7 +632,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -684,7 +684,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
+    Real sign = filp_across_pole_[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
@@ -711,7 +711,6 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //  \brief receive the face-centered boundary data
 
 bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
-  MeshBlock *pmb=pmy_block_;
   bool bflag=true;
 
   for (int n=0; n<pbval->nneighbor; n++) {
@@ -749,15 +748,18 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
   for (int n=0; n<pbval->nneighbor; n++) {
     NeighborBlock& nb = pbval->neighbor[n];
     if (nb.level==pmb->loc.level)
-      SetBoundarySameLevel(dst, bd_fc_.recv[nb.bufid], nb);
+      // KGF: dst
+      SetBoundarySameLevel(bd_fc_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
       SetBoundaryFromCoarser(bd_fc_.recv[nb.bufid], nb);
     else
-      SetBoundaryFromFiner(dst, bd_fc_.recv[nb.bufid], nb);
+      // KGF: dst
+      SetBoundaryFromFiner(bd_fc_.recv[nb.bufid], nb);
     bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+      || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -779,7 +781,7 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
 #endif
     if (nb.level==pmb->loc.level)
       // KGF: dst
-      SetBoundarySameLevel(dst, bd_fc_.recv[nb.bufid], nb);
+      SetBoundarySameLevel(bd_fc_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
       SetBoundaryFromCoarser(bd_fc_.recv[nb.bufid], nb);
     else
@@ -788,7 +790,8 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
     bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+      || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }

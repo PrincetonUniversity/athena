@@ -38,8 +38,8 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(
-//                     Real *buf, const NeighborBlock& nb)
+//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the same level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
@@ -59,8 +59,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(,
-//                                                     Real *buf, const NeighborBlock& nb)
+//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the coarser level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
@@ -86,8 +86,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(,
-//                                                 Real *buf, const NeighborBlock& nb)
+//! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the finer level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
@@ -138,7 +138,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //  \brief Send boundary buffers of cell-centered variables
 
 void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
-  MeshBlock *pmb=pmy_block_, *pbl=nullptr;
+  MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
   BoundaryData *pbd{}, *ptarget{};
 
@@ -161,7 +161,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: nl_, nu_
       ssize=LoadBoundaryBufferToFiner(pbd->send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
-      pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
       // SendBoundaryBuffers().
       if (type==HYDRO_CONS || type==HYDRO_PRIM)
@@ -178,8 +178,8 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetBoundarySameLevel(,
-//                                               Real *buf, const NeighborBlock& nb)
+//! \fn void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
+//                                                              const NeighborBlock& nb)
 //  \brief Set cell-centered boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
@@ -201,7 +201,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
-      if (flip_across_pole!=nullptr) sign =flip_across_pole[n] ? -1.0 : 1.0;
+      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -298,7 +298,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
-      if (flip_across_pole!=nullptr) sign = flip_across_pole[n] ? -1.0 : 1.0;
+      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
@@ -371,7 +371,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign=1.0;
-      if (flip_across_pole!=nullptr) sign = flip_across_pole[n] ? -1.0 : 1.0;
+      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd

@@ -181,7 +181,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // nl=0, nu=NHYDRO-1 for Hydro
   int nl_, nu_;
 
-  bool *flip_across_pole;
+  bool *flip_across_pole_;
 
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
