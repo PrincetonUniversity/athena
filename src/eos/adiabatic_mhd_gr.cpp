@@ -699,7 +699,7 @@ static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArr
 
       // Step 4: Calculate Aitken accelerant and check for convergence
       Real rr = (pgas[2] - pgas[1]) / (pgas[1] - pgas[0]);  // (NH 7.1)
-      if (std::abs(rr) <=rr_max) {
+      if (std::abs(rr) < rr_max + tol) {
         pgas[0] = pgas[1] + (pgas[2] - pgas[1]) / (1.0 - rr);  // (NH 7.2)
         pgas[0] = std::max(pgas[0], pgas_min);
       }
@@ -708,8 +708,8 @@ static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArr
 
   // Step 3: Check for convergence
   bool success=true;
-  if (pgas[num_iterations%3] <= pgas_min or
-      std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) >= tol) {
+  if (pgas[num_iterations%3] < (pgas_min + tol) or
+      std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) > tol) {
     success = false;
   }
 
