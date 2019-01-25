@@ -26,6 +26,7 @@ class ParameterInput;
 class Coordinates;
 struct FaceField;
 class BoundaryValues;
+class FaceCenteredBoundaryVariable;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshRefinement
@@ -33,6 +34,7 @@ class BoundaryValues;
 
 class MeshRefinement {
   friend class BoundaryValues;
+  friend class FaceCenteredBoundaryVariable;
   friend class MeshBlock;
   friend class Mesh;
  public:
