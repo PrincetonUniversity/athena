@@ -234,13 +234,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // KGF: All of these function definitions will be moved to separate classes, and they
   // should be called like this automatically in the shared class via linked list of
   // variable classes:
-  InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
-  if (pmy_mesh_->multilevel==true) // SMR or AMR
-    InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
-  if (MAGNETIC_FIELDS_ENABLED) {
-    InitBoundaryData(bd_field_, BNDRY_FIELD);
-    InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
-  }
+  // InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
+  // if (pmy_mesh_->multilevel==true) // SMR or AMR
+  //   InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
+  // if (MAGNETIC_FIELDS_ENABLED) {
+  //   InitBoundaryData(bd_field_, BNDRY_FIELD);
+  //   InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
+  // }
   // end KGF: moving boundary buffer initialization to separate variable BC classes
 
   // KGF: begin special logic for handling emf in polar coordinates.
@@ -521,13 +521,13 @@ BoundaryValues::~BoundaryValues() {
 
   // KGF: similar to section in constructor, this can be automatically handled in separate
   // classes
-  DestroyBoundaryData(bd_hydro_);
-  if (pmy_mesh_->multilevel==true) // SMR or AMR
-    DestroyBoundaryData(bd_flcor_);
-  if (MAGNETIC_FIELDS_ENABLED) {
-    DestroyBoundaryData(bd_field_);
-    DestroyBoundaryData(bd_emfcor_);
-  }
+  // DestroyBoundaryData(bd_hydro_);
+  // if (pmy_mesh_->multilevel==true) // SMR or AMR
+  //   DestroyBoundaryData(bd_flcor_);
+  // if (MAGNETIC_FIELDS_ENABLED) {
+  //   DestroyBoundaryData(bd_field_);
+  //   DestroyBoundaryData(bd_emfcor_);
+  // }
   // end KGF
 
   // KGF: similar to section in constructor, special handling of emf in spherical polar
@@ -820,6 +820,9 @@ void BoundaryValues::DestroyBoundaryData(BoundaryData &bd) {
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Initialize MPI requests
 
+// KGF: called in Mesh::Initialize(), after CheckBoundary() and before
+// StartReceivingForInit(true)
+
 // TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 
 // KGF: unlike InitBoundaryData(), splitting this up into constituent derived class
@@ -896,7 +899,7 @@ void BoundaryValues::Initialize(void) {
       }
     }
   }
-  // end KGF: shared counting of neighbor MeshBlock coarse/same/refined
+  // end KGF: shared logic of counting of neighbor MeshBlock coarse/same/refined
 
 #ifdef MPI_PARALLEL
   int f2d=0, f3d=0;
@@ -933,6 +936,9 @@ void BoundaryValues::Initialize(void) {
       }
       ssize*=NHYDRO; rsize*=NHYDRO;
       // specify the offsets in the view point of the target block: flip ox? signs
+
+      // Initialize persistent communication requests attached to specific BoundaryData
+      // cell-centered hydro: bd_hydro_
       tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
       if (bd_hydro_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_hydro_.req_send[nb.bufid]);
@@ -944,7 +950,7 @@ void BoundaryValues::Initialize(void) {
       MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
 
-      // flux correction
+      // hydro flux correction: bd_flcor_
       if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
         if (nb.fid==0 || nb.fid==1)
@@ -1013,14 +1019,15 @@ void BoundaryValues::Initialize(void) {
                    *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
                    *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
           csize=c2f1+c2f2+c2f3;
-        }
-        if (nb.level==mylevel) // same
+        } // end of multilevel==true
+        if (nb.level==mylevel) // same refinement level
           ssize=size, rsize=size;
         else if (nb.level<mylevel) // coarser
           ssize=fsize, rsize=csize;
         else // finer
           ssize=csize, rsize=fsize;
 
+        // face-centered field: bd_field_
         tag=CreateBvalsMPITag(nb.lid, TAG_FIELD, nb.targetid);
         if (bd_field_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
           MPI_Request_free(&bd_field_.req_send[nb.bufid]);
@@ -1031,7 +1038,8 @@ void BoundaryValues::Initialize(void) {
           MPI_Request_free(&bd_field_.req_recv[nb.bufid]);
         MPI_Recv_init(bd_field_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_recv[nb.bufid]));
-        // EMF correction
+
+        // emf correction
         int f2csize;
         if (nb.type==NEIGHBOR_FACE) { // face
           if (pmb->block_size.nx3 > 1) { // 3D
@@ -1080,7 +1088,7 @@ void BoundaryValues::Initialize(void) {
         } else { // corner
           continue;
         }
-
+        // field flux (emf) correction: bd_emfcor_
         if (nb.level==mylevel) { // the same level
           if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE)
                                            && (edge_flag_[nb.eid]==true))) {
@@ -1110,9 +1118,9 @@ void BoundaryValues::Initialize(void) {
           MPI_Send_init(bd_emfcor_.send[nb.bufid],f2csize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&(bd_emfcor_.req_send[nb.bufid]));
         }
-      }
-    }
-  }
+      } // MAGNETIC_FIELDS_ENABLED
+    } // neighbor block is on separate MPI process
+  } // end loop over neighbors
 
   // Initialize polar neighbor communications to other ranks
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -1868,4 +1876,5 @@ void BoundaryValues::ProlongateBoundaries(
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
                                     fsi, fei, fsj, fej, fsk, fek);
   }
+  return;
 }

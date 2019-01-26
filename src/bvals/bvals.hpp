@@ -155,7 +155,9 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   int nface_, nedge_;
   bool edge_flag_[12];
   int nedge_fine_[12];
-  bool firsttime_;  // KGF: rename this
+  bool firsttime_;   // KGF: rename this. Used in only 2x functions:
+  // ReceiveEMFCorrection() and StartReceivingAll()
+
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered

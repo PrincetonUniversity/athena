@@ -37,6 +37,30 @@
 #include <mpi.h>
 #endif
 
+// constructor
+
+CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
+    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
+    : BoundaryVariable() {
+
+  InitBoundaryData(bd_cc_, type);
+  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
+    InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
+
+}
+
+// destructor
+
+CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
+  MeshBlock *pmb=pmy_block_;
+
+  // KGF: similar to section in constructor, this can be automatically handled in separate
+  // classes
+  DestroyBoundaryData(bd_cc_);
+  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
+    DestroyBoundaryData(bd_cc_flcor_);
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 //                                                                const NeighborBlock& nb)

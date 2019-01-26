@@ -44,8 +44,8 @@
 //                                                   const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the same level
 
-int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(Real *buf,
-                                                                 const NeighborBlock& nb) {
+int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(
+    Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;

@@ -37,6 +37,26 @@
 #include <mpi.h>
 #endif
 
+// constructor
+
+FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
+    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
+    : BoundaryVariable() {
+
+  InitBoundaryData(bd_fc_, type);
+  InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
+
+}
+
+// destructor
+
+FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
+  MeshBlock *pmb=pmy_block_;
+
+  DestroyBoundaryData(bd_fc_);
+  DestroyBoundaryData(bd_fc_flcor_);
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 //                                                               const NeighborBlock& nb)
