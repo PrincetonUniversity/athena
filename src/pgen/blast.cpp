@@ -424,8 +424,7 @@ int RefinementCondition(MeshBlock *pmb) {
         }
       }
     }
-  }
-  else if (pmb->block_size.nx2>1) {
+  } else if (pmb->block_size.nx2>1) {
     int k=pmb->ks;
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
