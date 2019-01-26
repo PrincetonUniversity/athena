@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
   int wtlim=0;
   int ncstart=0;
+  std::uint64_t mbcnt=0;
 
   //--- Step 1. --------------------------------------------------------------------------
   // Initialize MPI environment, if necessary
@@ -444,6 +445,7 @@ int main(int argc, char *argv[]) {
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
+    mbcnt += pmesh->nbtotal;
 
     if (pmesh->adaptive==true)
       pmesh->AdaptiveMeshRefinement(pinput);
@@ -540,15 +542,17 @@ int main(int argc, char *argv[]) {
     double omp_time = omp_get_wtime() - omp_start_time;;
 #endif
     clock_t tstop = clock();
-    float cpu_time = (tstop>tstart ? static_cast<float> (tstop-tstart) :
-                      1.0)/static_cast<float> (CLOCKS_PER_SEC);
-    std::int64_t zones = pmesh->GetTotalCells();
-    float zc_cpus = static_cast<float> (zones*(pmesh->ncycle-ncstart))/cpu_time;
+    double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
+                      1.0)/static_cast<double> (CLOCKS_PER_SEC);
+    std::uint64_t zonecycles = mbcnt*
+      static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
+    double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
-    std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
+    std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;
+    std::cout << "cpu time used  = " << cpu_time << std::endl;
     std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
-    float zc_omps = static_cast<float> (zones*(pmesh->ncycle-ncstart))/omp_time;
+    double zc_omps = static_cast<double> (zonecycles) / omp_time;
     std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
     std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif
