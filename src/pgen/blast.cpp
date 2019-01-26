@@ -417,9 +417,9 @@ int RefinementCondition(MeshBlock *pmb) {
     for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-          Real eps= sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
-                        +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i)))
-                        +SQR(0.5*(w(IPR,k+1,j,i)-w(IPR,k-1,j,i))))/w(IPR,k,j,i);
+          Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                              +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i)))
+                              +SQR(0.5*(w(IPR,k+1,j,i)-w(IPR,k-1,j,i))))/w(IPR,k,j,i);
           maxeps = std::max(maxeps, eps);
         }
       }
@@ -428,8 +428,8 @@ int RefinementCondition(MeshBlock *pmb) {
     int k=pmb->ks;
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-        Real eps= sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
-                      +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i))))/w(IPR,k,j,i);
+        Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                            +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i))))/w(IPR,k,j,i);
         maxeps = std::max(maxeps, eps);
       }
     }
