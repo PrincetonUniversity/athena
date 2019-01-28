@@ -76,8 +76,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundaryAll() override;
 
   // BoundaryBuffer:
-  int LoadBoundaryBufferSameLevel(Real *buf,
-                                  const NeighborBlock& nb) override;
+  int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   void SendBoundaryBuffers() override;
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
@@ -110,7 +109,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // and for EMF:
   // void PolarBoundarySingleAzimuthalBlockFluxCorrection()
   // void PolarBoundaryAverageFluxCorrection()
-  void PolarBoundarySingleAzimuthalBlock();
+  void PolarBoundarySingleAzimuthalBlock() override;
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
