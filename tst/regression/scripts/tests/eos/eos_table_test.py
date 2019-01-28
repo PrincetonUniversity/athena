@@ -127,7 +127,7 @@ def analyze():
                     analyze_status = False
                 diff = comparison.l1_diff(
                     x_ref, data_ref[var][loc], x_ascii, data_ascii[var][loc]) / norm
-                if diff > 1e-3 or np.isnan(diff):
+                if diff > 1e-6 or np.isnan(diff):
                     line = ['Eos ideal table test fail (ascii). var, err, gamma =',
                             var, diff, g]
                     print(' '.join(map(str, line)))
