@@ -61,7 +61,7 @@ class Multigrid {
 
   MGBoundaryValues *pmgbval;
   enum BoundaryType btype, btypef;
-  Multigrid *next, *prev;
+  Multigrid *next, *prev; // node links for doubly linked list
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -148,7 +148,8 @@ class MultigridDriver {
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
-  Multigrid *pmg_;
+  Multigrid *pmg_;       // pointer to head node of doubly linked list of Multgrid objects
+  // (not storing a reference to the tail node)
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;

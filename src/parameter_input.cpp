@@ -69,7 +69,8 @@ ParameterInput::ParameterInput() {
 #endif
 }
 
-// destructor - iterates through linked lists of blocks/lines and deletes each node
+// destructor- iterates through nested singly linked lists of blocks/lines and deletes
+// each node
 
 ParameterInput::~ParameterInput() {
   InputBlock *pib = pfirst_block;
@@ -103,9 +104,10 @@ InputBlock::~InputBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn  void ParameterInput::LoadFromStream(std::istream &is)
 //  \brief Load input parameters from a stream
-//  Input block names are allocated and stored in a linked list of InputBlocks.  Within
-//  each InputBlock the names, values, and comments of each parameter are allocated and
-//  stored in a linked list of InputLines.
+
+//  Input block names are allocated and stored in a singly linked list of InputBlocks.
+//  Within each InputBlock the names, values, and comments of each parameter are allocated
+//  and stored in a singly linked list of InputLines.
 
 void ParameterInput::LoadFromStream(std::istream &is) {
   std::string line, block_name, param_name, param_value, param_comment;
@@ -133,7 +135,7 @@ void ParameterInput::LoadFromStream(std::istream &is) {
         ATHENA_ERROR(msg);
       }
 
-      pib = FindOrAddBlock(block_name);  // find or add block to linked list
+      pib = FindOrAddBlock(block_name);  // find or add block to singly linked list
 
       if (pib == nullptr) {
         msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
@@ -207,7 +209,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name) {
   plast = pfirst_block;
   pib = pfirst_block;
 
-  // Search linked list of InputBlocks to see if name exists, return if found.
+  // Search singly linked list of InputBlocks to see if name exists, return if found.
   while (pib != nullptr) {
     if (name.compare(pib->block_name) == 0) return pib;
     plast = pib;
@@ -272,7 +274,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 //----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 //   std::string value, std::string comment)
-//  \brief add name/value/comment tuple to the InputLine linked list in block *pb.
+//  \brief add name/value/comment tuple to the InputLine singly linked list in block *pb.
 //  If a parameter with the same name already exists, the value and comment strings
 //  are replaced (overwritten).
 
@@ -280,8 +282,8 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
                                   std::string value, std::string comment) {
   InputLine *pl, *plast;
 
-  // Search linked list of InputLines to see if name exists.  This also sets *plast
-  // to point to last member of list
+  // Search singly linked list of InputLines to see if name exists.  This also sets *plast
+  // to point to the tail node (but not storing a pointer to the tail node in InputBlock)
   pl = pb->pline;
   plast = pb->pline;
   while (pl != nullptr) {
@@ -295,7 +297,7 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
     pl = pl->pnext;
   }
 
-  // Create new node in linked list if name does not already exist
+  // Create new node in singly linked list if name does not already exist
   pl = new InputLine;
   pl->param_name.assign(name);
   pl->param_value.assign(value);
@@ -340,7 +342,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
     name  = input_text.substr(slash_posn+1,(equal_posn - slash_posn - 1));
     value = input_text.substr(equal_posn+1,std::string::npos);
 
-    // get pointer to node with same block name in linked list of InputBlocks
+    // get pointer to node with same block name in singly linked list of InputBlocks
     pb = GetPtrToBlock(block);
     if (pb == nullptr) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
@@ -348,7 +350,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[]) {
       ATHENA_ERROR(msg);
     }
 
-    // get pointer to node with same parameter name in linked list of InputLines
+    // get pointer to node with same parameter name in singly linked list of InputLines
     pl = pb->GetPtrToLine(name);
     if (pl == nullptr) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
@@ -398,7 +400,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
 
   Lock();
 
-  // get pointer to node with same block name in linked list of InputBlocks
+  // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
@@ -407,7 +409,7 @@ int ParameterInput::GetInteger(std::string block, std::string name) {
     ATHENA_ERROR(msg);
   }
 
-  // get pointer to node with same parameter name in linked list of InputLines
+  // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
@@ -433,7 +435,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
 
   Lock();
 
-  // get pointer to node with same block name in linked list of InputBlocks
+  // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -442,7 +444,7 @@ Real ParameterInput::GetReal(std::string block, std::string name) {
     ATHENA_ERROR(msg);
   }
 
-  // get pointer to node with same parameter name in linked list of InputLines
+  // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -468,7 +470,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
 
   Lock();
 
-  // get pointer to node with same block name in linked list of InputBlocks
+  // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -477,7 +479,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
     ATHENA_ERROR(msg);
   }
 
-  // get pointer to node with same parameter name in linked list of InputLines
+  // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -514,7 +516,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
 
   Lock();
 
-  // get pointer to node with same block name in linked list of InputBlocks
+  // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -523,7 +525,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
     ATHENA_ERROR(msg);
   }
 
-  // get pointer to node with same parameter name in linked list of InputLines
+  // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl

@@ -124,7 +124,8 @@ MultigridDriver::~MultigridDriver() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
-//  \brief add a Multigrid object to the linked list
+//  \brief add a Multigrid object to the tail of the doubly linked list
+
 void MultigridDriver::AddMultigrid(Multigrid *nmg) {
   if (pmg_==nullptr) {
     pmg_=nmg;

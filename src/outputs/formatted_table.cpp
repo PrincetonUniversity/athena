@@ -53,7 +53,8 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
       if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to nodes in OutputData doubly linked list, then slice/sum if needed
+    // build doubly linked list of OutputData nodes (setting data ptrs to appropriate
+    // quantity on MeshBlock for each node), then slice/sum as needed
     LoadOutputData(pmb);
     if (TransformOutputData(pmb) == false) {
       ClearOutputData();  // required when LoadOutputData() is used.
