@@ -54,7 +54,7 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ju = pmb->cje;
     kl = pmb->cks;
     ku = pmb->cke;
-    ng = pmb->cnghost;
+    ng = NGHOST;
   } else {
     il = pmb->is;
     iu = pmb->ie;

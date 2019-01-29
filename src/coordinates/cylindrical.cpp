@@ -33,7 +33,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   if (coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
-    ng=pmb->cnghost;
+    ng=NGHOST;
   } else {
     il = pmb->is; jl = pmb->js; kl = pmb->ks;
     iu = pmb->ie; ju = pmb->je; ku = pmb->ke;

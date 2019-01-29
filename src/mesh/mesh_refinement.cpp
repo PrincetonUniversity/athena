@@ -55,11 +55,11 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
   // allocate prolongation buffer
-  int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
+  int ncc1=pmb->block_size.nx1/2+2*NGHOST;
   int ncc2=1;
-  if (pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*pmb->cnghost;
+  if (pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*NGHOST;
   int ncc3=1;
-  if (pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*pmb->cnghost;
+  if (pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*NGHOST;
   coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
   coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
 
@@ -698,16 +698,18 @@ void MeshRefinement::ProlongateSharedFieldX2(
       }
     }
   } else {
-    int fi=(si-pmb->cis)*2+pmb->is;
-    Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))
-               /(pcoarsec->x1s2(si)-pcoarsec->x1s2(si-1));
-    Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))
-               /(pcoarsec->x1s2(si+1)-pcoarsec->x1s2(si));
-    Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
-    fine(0,0,fi  )=fine(0,1,fi  )
-                  =coarse(0,0,si)-gxc*(pcoarsec->x1s2(si)-pco->x1s2(fi));
-    fine(0,0,fi+1)=fine(0,1,fi+1)
-                  =coarse(0,0,si)+gxc*(pco->x1s2(fi+1)-pcoarsec->x1s2(si));
+    for (int i=si; i<=ei; i++) {
+      int fi=(i-pmb->cis)*2+pmb->is;
+      Real gxm = (coarse(0,0,i)-coarse(0,0,i-1))
+                 /(pcoarsec->x1s2(i)-pcoarsec->x1s2(i-1));
+      Real gxp = (coarse(0,0,i+1)-coarse(0,0,i))
+                 /(pcoarsec->x1s2(i+1)-pcoarsec->x1s2(i));
+      Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
+      fine(0,0,fi  )=fine(0,1,fi  )
+                    =coarse(0,0,i)-gxc*(pcoarsec->x1s2(i)-pco->x1s2(fi));
+      fine(0,0,fi+1)=fine(0,1,fi+1)
+                    =coarse(0,0,i)+gxc*(pco->x1s2(fi+1)-pcoarsec->x1s2(i));
+    }
   }
   return;
 }
