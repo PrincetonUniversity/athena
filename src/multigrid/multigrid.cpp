@@ -44,8 +44,6 @@ Multigrid::Multigrid(
   rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
   rdy_=(size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
   rdz_=(size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
-  prev=nullptr;
-  next=nullptr;
 
   nlevel_=0;
   if (root_flag_ == true) {
@@ -120,9 +118,11 @@ Multigrid::Multigrid(
 //  \brief Multigrid destroctor
 
 Multigrid::~Multigrid() {
-  if (prev!=nullptr) prev->next=next;
-  if (next!=nullptr) next->prev=prev;
-
+  for (int l=0; l<nlevel_; l++) {
+    u_[l].DeleteAthenaArray();
+    src_[l].DeleteAthenaArray();
+    def_[l].DeleteAthenaArray();
+  }
   delete [] u_;
   delete [] src_;
   delete [] def_;

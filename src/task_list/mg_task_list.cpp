@@ -10,6 +10,8 @@
 
 // C++ headers
 #include <iostream>   // endl
+#include <iterator>
+#include <list>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -28,20 +30,19 @@ using namespace MultigridTaskNames; // NOLINT (build/namespace)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
 void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
-  Multigrid *pmg = pmd->pmg_;
+  auto pmg = pmd->pmg_;
   int nmg_left = pmd->GetNumMultigrids();
 
-  while (pmg != nullptr)  {
-    pmg->ts_.Reset(ntasks);
-    pmg=pmg->next;
+  for (auto pmg_it = pmg.begin(); pmg_it != pmg.end(); pmg_it++) {
+    (*pmg_it)->ts_.Reset(ntasks);
   }
 
   // cycle through all MeshBlocks and perform all tasks possible
   while (nmg_left > 0) {
     pmg = pmd->pmg_;
-    while (pmg != nullptr)  {
-      if (DoAllAvailableTasks(pmg, pmg->ts_) == TaskListStatus::complete) nmg_left--;
-      pmg=pmg->next;
+    for (auto pmg_it = pmg.begin(); pmg_it != pmg.end(); pmg_it++) {
+      if (DoAllAvailableTasks((*pmg_it), (*pmg_it)->ts_) == TaskListStatus::complete)
+        nmg_left--;
     }
   }
 

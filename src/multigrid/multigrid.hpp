@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <iostream>
+#include <list>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -119,7 +120,6 @@ class MultigridDriver {
  public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
   virtual ~MultigridDriver();
-  void AddMultigrid(Multigrid *nmg);
   void SubtractAverage(int type);
   void SetupMultigrid();
   void FillRootGridSource();
@@ -152,12 +152,12 @@ class MultigridDriver {
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
   MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
-  Multigrid *pmg_;       // pointer to head node of doubly linked list of Multgrid objects
-  // (not storing a reference to the tail node)
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;
   Real eps_;
+
+  std::list<Multigrid *> pmg_;
 
  private:
   MultigridTaskList *mgtlist_;

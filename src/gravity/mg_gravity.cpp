@@ -10,6 +10,8 @@
 
 // C++ headers
 #include <iostream>
+#include <iterator>
+#include <list>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -67,7 +69,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   lroot.lx1 = 0, lroot.lx2 = 0, lroot.lx3 = 0, lroot.level = 0;
   mgroot_ = new MGGravity(this, lroot, -1, -1, root_size, MGBoundary, pmy_mesh_->mesh_bcs,
                           true);
-  pmg_ = nullptr;
   // Multigrid *pfirst;
   int nbs = nslist_[Globals::my_rank];
   int nbe = nbs + nblist_[Globals::my_rank] - 1;
@@ -81,7 +82,8 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
                                  MGBoundary, block_bcs, false);
     nmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
-    AddMultigrid(nmg);
+
+    pmg_.push_back(nmg);
   }
 }
 
@@ -91,21 +93,19 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
 //  \brief load the data and solve
 
 void MGGravityDriver::Solve(int stage) {
-  Multigrid *pmggrav = pmg_;
-  AthenaArray<Real> in;
+  std::list<Multigrid *> pmggrav = pmg_;
 
   // Load the source
-  while (pmggrav != nullptr) {
-    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(pmggrav->gid_);
+  for (auto pmggrav_it = pmggrav.begin(); pmggrav_it != pmggrav.end(); pmggrav_it++) {
+    MeshBlock *pmb=pmy_mesh_->FindMeshBlock((*pmggrav_it)->gid_);
     if (pmb != nullptr) {
-      in.InitWithShallowCopy(pmb->phydro->u);
-      pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
+      AthenaArray<Real> &in = pmb->phydro->u;
+      (*pmggrav_it)->LoadSource(in, IDN, NGHOST, four_pi_G_);
       if (mode_ >= 2) // iterative mode - load initial guess
-        pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
+        (*pmggrav_it)->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
     //    else { // on another process
     //    }
-    pmggrav = pmggrav->next;
   }
 
   SetupMultigrid();
@@ -121,15 +121,14 @@ void MGGravityDriver::Solve(int stage) {
 
   // Return the result
   pmggrav = pmg_;
-  while (pmggrav != nullptr) {
-    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(pmggrav->gid_);
+  for (auto pmggrav_it = pmggrav.begin(); pmggrav_it != pmggrav.end(); pmggrav_it++) {
+    MeshBlock *pmb = pmy_mesh_->FindMeshBlock((*pmggrav_it)->gid_);
     if (pmb != nullptr) {
-      pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
+      (*pmggrav_it)->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho = mean_rho;
     }
     //    else { // on another process
     //    }
-    pmggrav = pmggrav->next;
   }
   return;
 }
