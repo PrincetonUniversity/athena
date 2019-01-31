@@ -26,20 +26,6 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
-/*
-#pragma omp declare simd simdlen(SIMD_WIDTH)
-static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
-    const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-    const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
-    Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-    AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
-#pragma omp declare simd simdlen(SIMD_WIDTH)
-static bool ConservedToPrimitiveNormalCleanup(const AthenaArray<Real> &dd_vals,
-    const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-    const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
-    Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-    AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
-*/
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(num_iterations,dd_vals,ee_vals,mm_vals,bb_vals,tt_vals,gamma_adi,k,j,prim,gamma_vals,pmag_vals) linear(i)
 static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArray<Real> &dd_vals,
 				       const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
@@ -190,11 +176,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Set primitives
-	/*
-        success_(i) = ConservedToPrimitiveNormalInitial(normal_dd_, normal_ee_,
-            normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
-            prim, normal_gamma_, pmag_);
-	*/
         success_(i) = ConservedToPrimitiveNormal(3, normal_dd_, normal_ee_,
 						 normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
 						 prim, normal_gamma_, pmag_);
@@ -206,11 +187,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Reapply iteration procedure in case convergence not attained (possibly slow)
         if (not success_(i)) {
-	  /*
-          success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
-              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
-              prim, normal_gamma_, pmag_);
-	  */
 	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
 						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
 						   prim, normal_gamma_, pmag_);
@@ -249,11 +225,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           normal_ee_(i) += wgas_add * SQR(normal_gamma_(i)) + pgas_add;
 
           // Recalculate primitives
-	  /*
-          success_(i) = ConservedToPrimitiveNormalCleanup(normal_dd_, normal_ee_,
-              normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i,
-              prim, normal_gamma_, pmag_);
-	  */
 	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
 						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
 						   prim, normal_gamma_, pmag_);
@@ -453,153 +424,7 @@ static void CalculateNormalConserved(const AthenaArray<Real> &cons,
   }
   return;
 }
-/*
-//----------------------------------------------------------------------------------------
-// Function for calculating primitives in normal observer frame: initial pass
-// Inputs:
-//   dd_vals: array of conserved densities
-//   ee_vals: array of conserved energies
-//   mm_vals: array of conserved momenta \mathcal{M}^2, M^i
-//   bb_vals: array of magnetic fields \mathcal{B}^2, B^i
-//   tt_vals: array of M_i B^i values
-//   gamma_adi: ratio of specific heats
-//   pgas_old: previous value of p_{gas} used to initialize iteration
-//   k,j,i: indices of cell
-// Outputs:
-//   returned value: true for successful convergence, false otherwise
-//   prim: all values set in given cell
-//   gamma_vals: normal-frame Lorentz factor set in given cell
-//   pmag_vals: magnetic pressure set in given cell
-// Notes:
-//   generalizes Newman & Hamlin 2014, SIAM J. Sci. Comput. 36(4) B661 (NH)
-//     like SR, but all 3-vector operations done with respect to g_{ij} rather than
-//         \eta_{ij}
-//   notation here largely follows (NH), so for example writing B^i for what is really
-//       \mathcal{B}^i
-//   symbols:
-//     tt: \mathcal{T}
-//     ee: E (NH: e)
-//     mm: M (NH: m)
-//     eee: \mathcal{E}
-//     ll: \mathcal{L}
-//     wgas: w_{gas} (NH: w)
-//     rr: \mathcal{R}
-//   same exact function as ConservedToPrimitiveNormalCleanup(), except this does 3
-//       iterations
 
-static bool ConservedToPrimitiveNormalInitial(const AthenaArray<Real> &dd_vals,
-    const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-    const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
-    Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-    AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
-
-  // Parameters
-  const int num_iterations = 3;
-  const Real tol = 1.0e-12;
-  const Real pgas_uniform_min = 1.0e-12;
-  const Real a_min = 1.0e-12;
-  const Real v_sq_max = 1.0 - 1.0e-12;
-  const Real rr_max = 1.0 - 1.0e-12;
-
-  // Extract conserved values
-  const Real &dd = dd_vals(i);
-  const Real &ee = ee_vals(i);
-  const Real &mm_sq = mm_vals(0,i);
-  const Real &mm1 = mm_vals(1,i);
-  const Real &mm2 = mm_vals(2,i);
-  const Real &mm3 = mm_vals(3,i);
-  const Real &bb_sq = bb_vals(0,i);
-  const Real &bb1 = bb_vals(1,i);
-  const Real &bb2 = bb_vals(2,i);
-  const Real &bb3 = bb_vals(3,i);
-  const Real &tt = tt_vals(i);
-
-  // Precompute function of adiabatic index
-  Real gamma_prime_inv = (gamma_adi-1.0) / gamma_adi;
-
-  // Calculate functions of conserved quantities
-  Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));                  // (NH 5.7)
-  d = std::max(d, 0.0);
-  Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
-  pgas_min = std::max(pgas_min, pgas_uniform_min);
-
-  // Iterate until convergence
-  Real pgas[3];
-  pgas[0] = std::max(pgas_old, pgas_min);
-  int n;
-  for (n = 0; n < num_iterations; ++n) {
-
-    // Iterate normally for 2 out of every 3 times
-    if (n%3 != 2) {
-
-      // Step 1: Calculate cubic coefficients
-      Real a = ee + pgas[n%3] + 0.5*bb_sq;  // (NH 5.7)
-      a = std::max(a, a_min);
-
-      // Step 2: Calculate correct root of cubic equation
-      Real phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
-      Real eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));  // (NH 5.11)
-      Real ll = eee - bb_sq;                                          // (NH 5.5)
-      Real v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll))
-        / SQR(ll * (bb_sq+ll));                                       // (NH 5.2)
-      v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
-      Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
-      Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-      pgas[(n+1)%3] = gamma_prime_inv * (ll/gamma_sq - dd/gamma);     // (NH 4.1)
-      pgas[(n+1)%3] = std::max(pgas[(n+1)%3], pgas_min);
-
-    // Every third iteration, apply Aitken acceleration instead
-    } else {
-
-      // Step 4: Calculate Aitken accelerant and check for convergence
-      Real rr = (pgas[2] - pgas[1]) / (pgas[1] - pgas[0]);  // (NH 7.1)
-      if (std::abs(rr) <=rr_max) {
-        pgas[0] = pgas[1] + (pgas[2] - pgas[1]) / (1.0 - rr);  // (NH 7.2)
-        pgas[0] = std::max(pgas[0], pgas_min);
-      }
-    }
-  }
-
-  // Step 3: Check for convergence
-  bool success=true;
-  if (pgas[num_iterations%3] <= pgas_min or
-      std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) >= tol) {
-    success = false;
-  }
-
-  // Step 5: Set primitives
-  prim(IPR,k,j,i) = pgas[(n+1)%3];
-  Real a = ee + prim(IPR,k,j,i) + 0.5*bb_sq;                      // (NH 5.7)
-  a = std::max(a, a_min);
-  Real phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
-  Real eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));  // (NH 5.11)
-  Real ll = eee - bb_sq;                                          // (NH 5.5)
-  Real v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll))
-      / SQR(ll * (bb_sq+ll));                                     // (NH 5.2)
-  v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
-  Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
-  Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-  prim(IDN,k,j,i) = dd/gamma;
-  Real ss = tt/ll;                                                // (NH 4.8)
-  Real eee_inv = 1.0/eee;
-  Real gamma_v1 = gamma * (mm1 + ss*bb1) * eee_inv;               // (NH 4.6, 5.5)
-  Real gamma_v2 = gamma * (mm2 + ss*bb2) * eee_inv;               // (NH 4.6, 5.5)
-  Real gamma_v3 = gamma * (mm3 + ss*bb3) * eee_inv;               // (NH 4.6, 5.5)
-  prim(IVX,k,j,i) = gamma_v1;                                     // (NH 3.3)
-  prim(IVY,k,j,i) = gamma_v2;                                     // (NH 3.3)
-  prim(IVZ,k,j,i) = gamma_v3;                                     // (NH 3.3)
-  if (not std::isfinite(prim(IPR,k,j,i))
-      or not std::isfinite(prim(IDN,k,j,i))
-      or not std::isfinite(prim(IVX,k,j,i))
-      or not std::isfinite(prim(IVY,k,j,i))
-      or not std::isfinite(prim(IVZ,k,j,i))) {
-    success = false;
-  }
-  gamma_vals(i) = gamma;
-  pmag_vals(i) = 0.5 * (bb_sq/gamma_sq + SQR(ss));                // (NH 3.7, 3.11)
-  return success;
-}
-*/
 //----------------------------------------------------------------------------------------
 // Function for calculating primitives in normal observer frame: cleanup passes
 // Inputs:
