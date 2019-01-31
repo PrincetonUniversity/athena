@@ -804,7 +804,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
     }
   } else {
     for (int i=si; i<=ei; i++) {
-      int fi=(si-pmb->cis)*2+pmb->is;
+      int fi=(i-pmb->cis)*2+pmb->is;
       Real gxm = (coarse(0,0,si)   - coarse(0,0,si-1)) / (pcoarsec->x1s3(si) -
                                                           pcoarsec->x1s3(si-1));
       Real gxp = (coarse(0,0,si+1) - coarse(0,0,si)) / (pcoarsec->x1s3(si+1) -
@@ -966,7 +966,7 @@ void MeshRefinement::ProlongateInternalField(
   } else {
     pco->Face1Area(0, 0, fsi, fei+1, sarea_x1_[0][0]);
     for (int i=si; i<=ei; i++) {
-      int fi=(si-pmb->cis)*2+pmb->is;
+      int fi=(i-pmb->cis)*2+pmb->is;
       Real ph=sarea_x1_[0][0](fi)*fine.x1f(0,0,fi);
       fine.x1f(0,0,fi+1)=ph/sarea_x1_[0][0](fi+1);
     }
