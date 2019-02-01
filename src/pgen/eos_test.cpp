@@ -74,16 +74,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i=0; i<ptable->nVar; i++) {
         std::cout << "var = " << i << std::endl;
         if (exp_table) {
-          for (int j=0; j<ptable->nRho; j++) {
-            for (int k=0; k<ptable->nEgas; k++) {
+          for (int j=0; j<ptable->nEgas; j++) {
+            for (int k=0; k<ptable->nRho; k++) {
               std::cout << std::pow((Real) 10, ptable->table.data(i,j,k)) << " ";
             }
             std::cout << '\n';
           }
           std::cout << '\n';
         } else {
-          for (int j=0; j<ptable->nRho; j++) {
-            for (int k=0; k<ptable->nEgas; k++) {
+          for (int j=0; j<ptable->nEgas; j++) {
+            for (int k=0; k<ptable->nRho; k++) {
               std::cout << ptable->table.data(i,j,k) << " ";
             }
             std::cout << '\n';
