@@ -805,15 +805,15 @@ void MeshRefinement::ProlongateSharedFieldX3(
   } else {
     for (int i=si; i<=ei; i++) {
       int fi=(i-pmb->cis)*2+pmb->is;
-      Real gxm = (coarse(0,0,si)   - coarse(0,0,si-1)) / (pcoarsec->x1s3(si) -
-                                                          pcoarsec->x1s3(si-1));
-      Real gxp = (coarse(0,0,si+1) - coarse(0,0,si)) / (pcoarsec->x1s3(si+1) -
-                                                        pcoarsec->x1s3(si));
+      Real gxm = (coarse(0,0,i)   - coarse(0,0,i-1))
+               / (pcoarsec->x1s3(i) - pcoarsec->x1s3(i-1));
+      Real gxp = (coarse(0,0,i+1) - coarse(0,0,i))
+               / (pcoarsec->x1s3(i+1) - pcoarsec->x1s3(i));
       Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       fine(0,0,fi  )=fine(1,0,fi  )
-                    =coarse(0,0,si)-gxc*(pcoarsec->x1s3(si)-pco->x1s3(fi));
+                    =coarse(0,0,i)-gxc*(pcoarsec->x1s3(i)-pco->x1s3(fi));
       fine(0,0,fi+1)=fine(1,0,fi+1)
-                    =coarse(0,0,si)+gxc*(pco->x1s3(fi+1)-pcoarsec->x1s3(si));
+                    =coarse(0,0,i)+gxc*(pco->x1s3(fi+1)-pcoarsec->x1s3(i));
     }
   }
   return;
