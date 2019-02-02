@@ -16,6 +16,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
@@ -384,7 +385,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -441,4 +442,3 @@ int RefinementCondition(MeshBlock *pmb) {
   if (maxeps < 0.25*threshold) return -1;
   return 0;
 }
-

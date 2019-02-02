@@ -12,7 +12,7 @@
 
 // C++ headers
 #include <algorithm>
-#include <cstdio>      // std::fwrite(), std::fclose(), std::fopen()
+#include <cstdio>      // fwrite(), fclose(), fopen(), fnprintf(), snprintf()
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>

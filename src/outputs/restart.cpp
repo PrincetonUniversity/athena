@@ -10,9 +10,10 @@
 
 // C++ headers
 #include <cstring>   // memcpy()
+#include <cstdio>    // snprintf()
 #include <fstream>
 #include <iomanip>
-#include <iostream>  // snprintf()
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>

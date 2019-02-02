@@ -7,7 +7,7 @@
 // C headers
 
 // C++ headers
-#include <cstdio>     // sprintf()
+#include <cstdio>     // snprintf()
 #include <cstring>    // strlen(), strncpy()
 #include <fstream>    // ofstream
 #include <iomanip>    // setfill(), setw()

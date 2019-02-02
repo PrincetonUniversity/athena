@@ -50,6 +50,15 @@ diffusion_viscous_diffusion_sts
     velocity field. Convergence of L1 norm of the error
     in v is tested. Expected 1st order conv. for STS.
 
+eos_eos_hdf5_table
+    Regression test for general EOS 1D Sod shock tube with HDF5 tables.
+
+eos_eos_riemann
+    Regression test for general EOS 1D Riemann problems.
+
+eos_eos_table_test
+    Regression test for general EOS 1D Sod shock tube with ASCII plain-text tables.
+
 gr_compile_kerr_schild
     Test script for checking that Kerr-Schild coordinates compile.
 
