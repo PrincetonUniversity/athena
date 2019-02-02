@@ -19,6 +19,7 @@
 #include "../athena.hpp"             // Real
 #include "../athena_arrays.hpp"      // AthenaArray
 #include "../utils/interp_table.hpp" // InterpTable2D
+#include "ascii_table_reader.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
