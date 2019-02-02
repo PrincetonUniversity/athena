@@ -9,8 +9,8 @@
 // C headers
 
 // C++ headers
-#include <cstring>   // memcpy()
 #include <cstdio>    // snprintf()
+#include <cstring>   // memcpy()
 #include <fstream>
 #include <iomanip>
 #include <iostream>
