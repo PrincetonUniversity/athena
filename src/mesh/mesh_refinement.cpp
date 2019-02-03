@@ -622,7 +622,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
     }
   } else { // 1D
     for (int i=si; i<=ei; i++) {
-      int fi=(si-pmb->cis)*2+pmb->is;
+      int fi=(i-pmb->cis)*2+pmb->is;
       fine(0,0,fi)=coarse(0,0,i);
     }
   }
