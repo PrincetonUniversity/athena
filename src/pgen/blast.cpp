@@ -16,6 +16,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
@@ -31,6 +32,18 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+
+Real threshold;
+
+int RefinementCondition(MeshBlock *pmb);
+
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive==true) {
+    EnrollUserRefinementCondition(RefinementCondition);
+    threshold=pin->GetReal("problem","thr");
+  }
+  return;
+}
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -372,7 +385,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -394,4 +407,38 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   pr.DeleteAthenaArray();
   return;
+}
+
+
+// refinement condition: check the pressure gradient
+int RefinementCondition(MeshBlock *pmb) {
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real maxeps=0.0;
+  if (pmb->block_size.nx3>1) {
+    for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
+      for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+        for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+          Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                              +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i)))
+                              +SQR(0.5*(w(IPR,k+1,j,i)-w(IPR,k-1,j,i))))/w(IPR,k,j,i);
+          maxeps = std::max(maxeps, eps);
+        }
+      }
+    }
+  } else if (pmb->block_size.nx2>1) {
+    int k=pmb->ks;
+    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+        Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                            +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i))))/w(IPR,k,j,i);
+        maxeps = std::max(maxeps, eps);
+      }
+    }
+  } else {
+    return 0;
+  }
+
+  if (maxeps > threshold) return 1;
+  if (maxeps < 0.25*threshold) return -1;
+  return 0;
 }

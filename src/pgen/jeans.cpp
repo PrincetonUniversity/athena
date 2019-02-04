@@ -16,6 +16,7 @@
 // C++ headers
 #include <algorithm>  // min, max
 #include <cmath>
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -263,7 +264,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);

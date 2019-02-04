@@ -30,7 +30,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
   if (coarse_flag==true) {
     is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
     ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
-    ng=pmb->cnghost;
+    ng=NGHOST;
   } else {
     is = pmb->is; js = pmb->js; ks = pmb->ks;
     ie = pmb->ie; je = pmb->je; ke = pmb->ke;

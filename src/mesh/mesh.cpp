@@ -2243,6 +2243,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
             if (pmb->block_size.nx3==1) {
               int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
+              if (pmb->block_size.nx2==1) je=js;
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
                   dst_b.x3f(pmb->ks+1, j, i)=dst_b.x3f(pmb->ks, j, i);

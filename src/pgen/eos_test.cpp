@@ -14,7 +14,6 @@
 
 // C++ headers
 #include <cmath>      // sqrt()
-#include <cstdio>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -161,7 +160,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-
   return;
 }
 

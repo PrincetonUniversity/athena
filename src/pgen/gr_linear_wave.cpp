@@ -11,7 +11,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), cbrt(), sin(), sqrt()
-#include <cstdio>     // fopen(), fprintf(), freopen()
+#include <cstdio>     // fopen(), freopen(), fprintf(), fclose()
 #include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -510,7 +510,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       // Open file
       pfile = std::fopen(filename.c_str(), "r");
       if (pfile != nullptr) {  // file exists
-        pfile = freopen(filename.c_str(), "a", pfile);
+        pfile = std::freopen(filename.c_str(), "a", pfile);
         if (pfile == nullptr) {
           msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
               << "Error output file could not be opened" << std::endl;

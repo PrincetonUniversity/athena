@@ -115,6 +115,8 @@ class MeshBlock {
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
   void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
+  int GetNumberOfMeshBlockCells(void) {
+    return block_size.nx1*block_size.nx2*block_size.nx3; }
 
  private:
   // data
