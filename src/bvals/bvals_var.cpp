@@ -48,18 +48,18 @@
 BoundaryVariable::BoundaryVariable(
     MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
     : BoundaryVariable() {
-  // be sure to add this new BoundaryVariable object as the last node in the linked list
-  // (or wherever)
+  // KGF: not sure of the value of passing around BoundaryType type anymore
+  InitBoundaryData(bd_var_, type);
+
+  // User must add this new BoundaryVariable object to the array in BoundaryValues
+  // Choosing to not auto-enroll this new object in the array via its constructor
 }
 
 // destructor
 
 BoundaryVariable::~BoundaryVariable() {
-  MeshBlock *pmb=pmy_block_;
-
+  // MeshBlock *pmb=pmy_block_;
   DestroyBoundaryData(bd_var_);
-  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
-    DestroyBoundaryData(bd_var_flcor_);
 }
 
 
@@ -70,7 +70,7 @@ BoundaryVariable::~BoundaryVariable() {
 void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
-  NeighborIndexes *ni=pbval->ni;
+  NeighborIndexes *ni=pbval_->ni;
 
   int f2d=0, f3d=0;
   int cng, cng1, cng2, cng3;
@@ -80,12 +80,12 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
   cng2=cng*f2d;
   cng3=cng*f3d;
   int size=0;
-  bd.nbmax=pbval->maxneighbor_;
+  bd.nbmax=pbval_->maxneighbor_;
   if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
-    for (bd.nbmax=0; pbval->ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
+    for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
   }
   if (type==BNDRY_EMFCOR) {
-    for (          ; pbval->ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
+    for (          ; pbval_->ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests

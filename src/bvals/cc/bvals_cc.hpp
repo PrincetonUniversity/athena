@@ -173,7 +173,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard cell-centered and flux BV private variables
-  BoundaryData bd_cc_, bd_cc_flcor_;
+  //BoundaryData bd_cc_; // KGF: currently declared in base BoundaryValues class
+  BoundaryData bd_cc_flcor_;
 
   // Pulling these variables out of function signatures, since FaceCentered
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to

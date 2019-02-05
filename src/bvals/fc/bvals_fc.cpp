@@ -42,18 +42,13 @@
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
     : BoundaryVariable() {
-
-  InitBoundaryData(bd_fc_, type);
   InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
-
 }
 
 // destructor
 
 FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   MeshBlock *pmb=pmy_block_;
-
-  DestroyBoundaryData(bd_fc_);
   DestroyBoundaryData(bd_fc_flcor_);
 }
 
@@ -300,28 +295,28 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     int ssize;
     if (nb.level==pmb->loc.level)
       // KGF: src
-      ssize=LoadBoundaryBufferSameLevel(bd_fc_.send[nb.bufid],nb);
+      ssize=LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid],nb);
     else if (nb.level<pmb->loc.level)
       // KGF: src
-      ssize=LoadBoundaryBufferToCoarser(bd_fc_.send[nb.bufid],nb);
+      ssize=LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid],nb);
     else
       // KGF: src
-      ssize=LoadBoundaryBufferToFiner(bd_fc_.send[nb.bufid], nb);
+      ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // find target buffer
-      std::memcpy(pbl->pbval->bd_fc_.recv[nb.targetid],
-                  bd_fc_.send[nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->bd_fc_.flag[nb.targetid]=BNDRY_ARRIVED;
+      std::memcpy(pbl->pbval_->bd_var_.recv[nb.targetid],
+                  bd_var_.send[nb.bufid], ssize*sizeof(Real));
+      pbl->pbval_->bd_var_.flag[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&(bd_fc_.req_send[nb.bufid]));
+      MPI_Start(&(bd_var_.req_send[nb.bufid]));
 #endif
   }
 
@@ -733,10 +728,10 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
   bool bflag=true;
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
-    if (bd_fc_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
-    if (bd_fc_.flag[nb.bufid]==BNDRY_WAITING) {
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
+    if (bd_var_.flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) { // on the same process
         bflag=false;
         continue;
@@ -745,12 +740,12 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
       else { // NOLINT // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&(bd_fc_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test)==false) {
           bflag=false;
           continue;
         }
-        bd_fc_.flag[nb.bufid] = BNDRY_ARRIVED;
+        bd_var_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
@@ -765,21 +760,21 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 void FaceCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.level==pmb->loc.level)
       // KGF: dst
-      SetBoundarySameLevel(bd_fc_.recv[nb.bufid], nb);
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
-      SetBoundaryFromCoarser(bd_fc_.recv[nb.bufid], nb);
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       // KGF: dst
-      SetBoundaryFromFiner(bd_fc_.recv[nb.bufid], nb);
-    bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY
-      || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY
+      || pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -793,25 +788,25 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
 void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   MeshBlock *pmb=pmy_block_;
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
-      MPI_Wait(&(bd_fc_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if (nb.level==pmb->loc.level)
       // KGF: dst
-      SetBoundarySameLevel(bd_fc_.recv[nb.bufid], nb);
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
-      SetBoundaryFromCoarser(bd_fc_.recv[nb.bufid], nb);
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       // KGF: dst
-      SetBoundaryFromFiner(bd_fc_.recv[nb.bufid], nb);
-    bd_fc_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY
-      || pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY
+      || pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -827,75 +822,75 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval->azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval->azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval->azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
     }
 
-    if (pbval->block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval->azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval->azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval->azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = dst.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = pbval->azimuthal_shift_(k_shift);
+            dst.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -918,7 +913,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
     kl -= NGHOST;
     ku += NGHOST;
   }
-  if (pbval->block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY) {
     int j = pmb->js;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
@@ -926,7 +921,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
       }
     }
   }
-  if (pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
     int j = pmb->je + 1;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {

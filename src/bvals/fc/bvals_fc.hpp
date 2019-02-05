@@ -158,7 +158,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard Field and emf BV private variables
-  BoundaryData bd_fc_, bd_fc_flcor_; // bd_emfcor_;
+  //BoundaryData bd_fc_; // KGF: currently declared in base BoundaryValues class
+  BoundaryData bd_fc_flcor_; // bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;

@@ -294,7 +294,8 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   // void ClearBoundaryAll() override;
 
  protected:
-  BoundaryValues *pbval;  // ptr to BoundaryValues containing this linked list
+  BoundaryData bd_var_; // bd_var_flcor_; --- delegated to optional in derived class
+  BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
   // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
   //Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs

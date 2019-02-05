@@ -42,21 +42,16 @@
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
     : BoundaryVariable() {
-
-  InitBoundaryData(bd_cc_, type);
   if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
-
 }
 
 // destructor
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   MeshBlock *pmb=pmy_block_;
-
   // KGF: similar to section in constructor, this can be automatically handled in separate
   // classes
-  DestroyBoundaryData(bd_cc_);
   if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
     DestroyBoundaryData(bd_cc_flcor_);
 }
@@ -168,8 +163,8 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     int ssize;
     if (nb.level==mylevel)
       // KGF: src/var_cc
@@ -189,7 +184,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
       // SendBoundaryBuffers().
       if (type==HYDRO_CONS || type==HYDRO_PRIM)
-        ptarget=&(pbl->pbval->bd_cc_);
+        ptarget=&(pbl->pbval_->bd_var_);
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
     }
@@ -420,8 +415,8 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 
   // KGF: call short switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     if (pbd->flag[nb.bufid]==BNDRY_ARRIVED) continue;
     if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) {// on the same process
@@ -454,8 +449,8 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
   BoundaryData *pbd{};
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.level==pmb->loc.level)
       // KGF: dst
       // KGF: nl_, nu_
@@ -471,7 +466,7 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY || pbval->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -487,8 +482,8 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
       MPI_Wait(&(pbd->req_recv[nb.bufid]),MPI_STATUS_IGNORE);
@@ -508,7 +503,7 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY || pbval->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -522,34 +517,34 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (pbval->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval->azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = dst(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = pbval->azimuthal_shift_(k_shift);
+              dst(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }
       }
     }
 
-    if (pbval->block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval->azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = dst(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = pbval->azimuthal_shift_(k_shift);
+              dst(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }
