@@ -4,7 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_var.cpp
-//  \brief constructor/destructor and utility functions for BoundaryValues class
+//  \brief constructor/destructor and default implementations for some functions in the
+//         abstract BoundaryVariable class
 
 // C headers
 
@@ -14,10 +15,10 @@
 // #include <cstdlib>
 // #include <cstring>    // std::memcpy
 // #include <iomanip>
-// #include <iostream>   // endl
+#include <iostream>   // endl
 // #include <limits>
-// #include <sstream>    // stringstream
-// #include <stdexcept>  // runtime_error
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
 // #include <string>     // c_str()
 
 // Athena++ headers
@@ -41,6 +42,27 @@
 #include <mpi.h>
 #endif
 
+
+// constructor
+
+BoundaryVariable::BoundaryVariable(
+    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
+    : BoundaryVariable() {
+  // be sure to add this new BoundaryVariable object as the last node in the linked list
+  // (or wherever)
+}
+
+// destructor
+
+BoundaryVariable::~BoundaryVariable() {
+  MeshBlock *pmb=pmy_block_;
+
+  DestroyBoundaryData(bd_var_);
+  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
+    DestroyBoundaryData(bd_var_flcor_);
+}
+
+
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 //  \brief Initialize BoundaryData structure
@@ -48,6 +70,8 @@
 void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
+  NeighborIndexes *ni=pbval->ni;
+
   int f2d=0, f3d=0;
   int cng, cng1, cng2, cng3;
   if (pmb->block_size.nx2 > 1) f2d=1;
@@ -90,10 +114,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
           size=std::max(size,c2f);
           size=std::max(size,f2c);
         }
-        size*=NHYDRO;
+        size*=NHYDRO; // KGF: need a generic BNDRY_CC counterpart
       }
         break;
-      case BNDRY_FIELD: {
+      case BNDRY_FC: {
         int size1=((ni[n].ox1==0) ? (pmb->block_size.nx1+1):NGHOST)
                   *((ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
                   *((ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);

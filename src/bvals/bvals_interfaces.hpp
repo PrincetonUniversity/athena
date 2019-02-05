@@ -276,33 +276,29 @@ class BoundaryPhysics {
 class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
-  BoundaryVariable() : pnext_bvar(nullptr) {}
-  virtual ~BoundaryVariable() {}
+  BoundaryVariable();
+  virtual ~BoundaryVariable();
 
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
   // the above 2x functions should probably be separated from the below 5x functions in
   // the BoundaryCommunication interface. Make them the constructor/destructor of the
-  // BoundaryData struct?
+  // BoundaryData struct? But the constructor accesses many data members of BoundaryValues
 
   // all MPI-related?
-  void Initialize() override;
-  void StartReceivingForInit(bool cons_and_field) override;
-  void ClearBoundaryForInit(bool cons_and_field) override;
-  void StartReceivingAll(const Real time) override;
-  void ClearBoundaryAll() override;
+  // void Initialize() override;
+  // void StartReceivingForInit(bool cons_and_field) override;
+  // void ClearBoundaryForInit(bool cons_and_field) override;
+  // void StartReceivingAll(const Real time) override;
+  // void ClearBoundaryAll() override;
 
  protected:
   BoundaryValues *pbval;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
-  // KGF: pmy_mesh_ protected member of BoundaryBase, pmy_block_ private in BoundaryValues
+  // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
   //Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
  private:
-  BoundaryVariable *pnext_bvar;   // ptr to next node in linked list of BoundaryVariable
-
-  // protected:
-  // private:
 };
 
 

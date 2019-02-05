@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <iostream>   // endl
 #include <limits>
+#include <list>       // forward_list, list
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -43,6 +44,8 @@
 
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
+
+// called in MeshBlock() constructor
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
                                ParameterInput *pin)
@@ -512,6 +515,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //       }
 //     }
 //   } // end KGF: shearing box in BoundaryValues constructor
+
 }
 
 // destructor
@@ -725,6 +729,11 @@ void BoundaryValues::Initialize(void) {
     }
   }
   // end KGF: shared logic of counting of neighbor MeshBlock coarse/same/refined
+
+  // KGF: (although the counting is for 2x BoundaryVariables private members that are only
+  // used for emf purposes in flux_correction_fc.cpp)
+  // num_north_polar_blocks_, num_south_polar_blocks_, nedge_, nface_ are calculated in
+  // BoundaryValues() constructor.
 
 #ifdef MPI_PARALLEL
   int f2d=0, f3d=0;
@@ -947,6 +956,7 @@ void BoundaryValues::Initialize(void) {
     } // neighbor block is on separate MPI process
   } // end loop over neighbors
 
+  // KGF: this polar section of Initialize() is specific to emf
   // Initialize polar neighbor communications to other ranks
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
@@ -1234,6 +1244,8 @@ void BoundaryValues::ClearBoundaryAll(void) {
       MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
         MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+
+
       if (MAGNETIC_FIELDS_ENABLED) {
         MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
@@ -1244,10 +1256,10 @@ void BoundaryValues::ClearBoundaryAll(void) {
                        || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
-      }
-    }
+      } // KGF: end MAGNETIC_FIELDS_ENABLED
+    } // KGF: end block on other MPI process
 #endif
-  }
+  } // KGF: end loop over nneighbor
 
   // Clear polar boundary communications
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -1267,7 +1279,8 @@ void BoundaryValues::ClearBoundaryAll(void) {
         MPI_Wait(&req_emf_south_send_[n], MPI_STATUS_IGNORE);
 #endif
     }
-  }
+  } // KGF: end MAGNETIC_FIELDS_ENABLED
+
   // KGF: begin shearing-box exclusive section of ClearBoundaryAll
   // clear shearingbox boundary communications
 //   if (SHEARING_BOX) {

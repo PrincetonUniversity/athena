@@ -11,6 +11,7 @@
 // C headers
 
 // C++ headers
+#include <list>     // list, forward_list
 #include <string>   // string
 
 // Athena++ headers
@@ -140,10 +141,14 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
                             FaceField &bfdst, AthenaArray<Real> &bcdst,
                             const Real time, const Real dt);
-  // called in Mesh::Initialize() after processing ParameterInput(), before
-  // pbval->Initialize() is called in this class
+  // The following 2x methods are unique to the BoundaryValues class, and serve only to
+  // check the user's configuration. Called in Mesh::Initialize() after processing
+  // ParameterInput(), before pbval->Initialize() is called in this class.
   void CheckBoundary(void);
   void CheckPolarBoundaries(void);
+
+  // doubly linked list of BoundaryVariable instances
+  std::list<BoundaryVariable> bvars;
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
@@ -155,16 +160,14 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   int nface_, nedge_;
   bool edge_flag_[12];
   int nedge_fine_[12];
-  bool firsttime_;   // KGF: rename this. Used in only 2x functions:
+  bool firsttime_;
+  // KGF: rename "firsttime_". The variable switch is used in only 2x functions:
   // ReceiveEMFCorrection() and StartReceivingAll()
-
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered
   // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
   AthenaArray<Real> azimuthal_shift_;
-
-  BoundaryVariable *pfirst_bvar_; // ptr to first BoundaryVariable instance in linked list
 
   BValFunc_t BoundaryFunction_[6];
 
