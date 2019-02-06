@@ -149,10 +149,11 @@ void Hydro::NewBlockTimeStep(void) {
 
   if (STS_ENABLED) {
     pmb->new_block_dt_=min_dt;
-    pmb->new_block_dt_STS_=min_dt_diff;
+    pmb->new_block_dt_diff_=min_dt_diff;
   } else {
     min_dt=std::min(min_dt, min_dt_diff);
     pmb->new_block_dt_=min_dt;
+    pmb->new_block_dt_diff_=min_dt;
   }
 
   return;

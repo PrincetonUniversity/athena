@@ -75,7 +75,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
   Real real_max = std::numeric_limits<Real>::max();
-  dt = dt_STS = (real_max*0.4);
+  dt = dt_diff = (real_max);
   muj = 0.0;
   nuj = 0.0;
   muj_tilde = 0.0;
@@ -1036,24 +1036,22 @@ void Mesh::OutputMeshStructure(int dim) {
 void Mesh::NewTimeStep(void) {
   MeshBlock *pmb = pblock;
 
-  dt_STS=dt=static_cast<Real>(2.0)*dt;
+  dt_diff=dt=static_cast<Real>(2.0)*dt;
 
   while (pmb != nullptr)  {
     dt = std::min(dt,pmb->new_block_dt_);
-    dt_STS  = std::min(dt_STS, pmb->new_block_dt_STS_);
+    dt_diff  = std::min(dt_diff, pmb->new_block_dt_diff_);
     pmb=pmb->next;
   }
 
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
   if (STS_ENABLED)
-    MPI_Allreduce(MPI_IN_PLACE,&dt_STS,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE,&dt_diff,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
 
   if (time < tlim && tlim-time < dt) // timestep would take us past desired endpoint
     dt = tlim-time;
-
-  dt_STS = std::min(dt, dt_STS);
 
   return;
 }
