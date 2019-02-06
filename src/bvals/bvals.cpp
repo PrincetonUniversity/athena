@@ -314,6 +314,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
        azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
   // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
+  // KGF: prevent reallocation of contiguous memory space for each of 3x current calls to
+  // std::vector<BoundaryVariable *>.push_back() for Hydro, Field, Gravity
+  bvars.reserve(3);
 
   // KGF: BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers

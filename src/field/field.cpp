@@ -27,6 +27,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   pfbval  = new FaceCenteredBoundaryVariable(pmy_block, BNDRY_FC, b);
+  pfbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pfbval);
 
   // Allocate memory for interface fields, but only when needed.

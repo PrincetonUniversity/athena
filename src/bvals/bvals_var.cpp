@@ -53,6 +53,9 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb, enum BoundaryType type) {
   pmy_mesh_ = pmb->pmy_mesh;
   btype_ = type;
 
+  // KGF: should we even initialize this unsigned integer type data member?
+  bvar_index = 0;
+
   // KGF: not sure of the value of passing around BoundaryType type anymore.
   // Tied to BoundaryVariable class object
   InitBoundaryData(bd_var_, type);

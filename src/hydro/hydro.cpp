@@ -31,6 +31,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
   phbval  = new HydroBoundaryVariable(pmy_block, BNDRY_HYDRO, u, HYDRO_CONS); // , w);
+  phbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(phbval);
 
   // Allocate memory for primitive/conserved variables
