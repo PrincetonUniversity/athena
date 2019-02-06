@@ -51,8 +51,8 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
   AthenaArray<Real> x1flux, x2flux, x3flux;
 
   // cache pointers to surface area arrays (BoundaryBase protected variable)
-  AthenaArray<Real> &sarea0=pbval->sarea_[0];
-  AthenaArray<Real> &sarea1=pbval->sarea_[1];
+  AthenaArray<Real> &sarea0=pbval_->sarea_[0];
+  AthenaArray<Real> &sarea1=pbval_->sarea_[1];
 
   // KGF: these new class data members should be set in the constructor
   // if (type==FLUX_HYDRO) {
@@ -62,8 +62,8 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
   //   x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
   // }
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level-1) {
       int p=0;
@@ -186,8 +186,8 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   //   x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
   // }
 
-  for (int n=0; n<pbval->nneighbor; n++) {
-    NeighborBlock& nb = pbval->neighbor[n];
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level+1) {
       if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;

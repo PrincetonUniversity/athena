@@ -33,8 +33,8 @@ HydroBoundaryVariable::~HydroBoundaryVariable() {
 //! \fn void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type)
 //  \brief Send boundary buffers of cell-centered variables
 
-// 3x calls to long switch for coarse buffer selection: Send, ReceiveAndSet, Set
-// +1x call to shortened "non-switch": Receive
+// 3x calls to long switch for coarse buffer selection: Send(), ReceiveAndSet(), Set()
+// +1x call to shortened "non-switch": Receive()
 void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType hydro_type) {
   if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
     nl_=0, nu_=NHYDRO-1;
