@@ -47,6 +47,12 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   dst.InitWithShallowCopy(var_cc);
   coarse_buf.InitWithShallowCopy(var_cc);
 
+  // KGF: CellCenteredBoundaryVariable should only be used with 3D or 4D AthenaArray
+  // For now, assume that full span of 4th dim of input AthenaArray should be used;
+  // get the index limits directly from the input AthenaArray
+  nl_=0;
+  nu_=var.GetDim4();
+
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
 }
