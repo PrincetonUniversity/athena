@@ -42,8 +42,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // KGF: considered moving variable to derived HydroBoundaryVariable class
   AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
 
-  //   BoundaryData *pbd{}, *ptarget{};  // completely unused in FaceCentered functions
-
   // what about bool *flip? CC or Hydro-specific?
 
   // Current Facade class BoundaryValues calls in time_integrator.cpp:

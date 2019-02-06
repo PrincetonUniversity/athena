@@ -305,7 +305,6 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     int ssize;
@@ -319,18 +318,13 @@ void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: src
       ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) { // on the same process
-      MeshBlock *pbl=pmy_mesh_->FindMeshBlock(nb.gid);
-      // find target buffer
-      std::memcpy(pbl->pbval_->bd_var_.recv[nb.targetid],
-                  bd_var_.send[nb.bufid], ssize*sizeof(Real));
-      pbl->pbval_->bd_var_.flag[nb.targetid]=BNDRY_ARRIVED;
+      CopyBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
     else // MPI
       MPI_Start(&(bd_var_.req_send[nb.bufid]));
 #endif
   }
-
   return;
 }
 

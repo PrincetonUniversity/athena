@@ -45,7 +45,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   var_cc.InitWithShallowCopy(var);
   src.InitWithShallowCopy(var_cc);
   dst.InitWithShallowCopy(var_cc);
-  coarse_buf.InitWithShallowCopy(var_hydro);
+  coarse_buf.InitWithShallowCopy(var_cc);
 
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
@@ -163,7 +163,6 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
-  BoundaryData *pbd{}, *ptarget{};
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
@@ -173,28 +172,26 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
     if (nb.level==mylevel)
       // KGF: src/var_cc
       // KGF: nl_, nu_
-      ssize=LoadBoundaryBufferSameLevel(pbd->send[nb.bufid], nb);
+      ssize=LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
     else if (nb.level<mylevel)
       // KGF: src/var_cc
       // KGF: nl_, nu_
       // KGF: coarse_buf
-      ssize=LoadBoundaryBufferToCoarser(pbd->send[nb.bufid], nb);
+      ssize=LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid], nb);
     else
       // KGF: src/var_cc
       // KGF: nl_, nu_
-      ssize=LoadBoundaryBufferToFiner(pbd->send[nb.bufid], nb);
+      ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
-      MeshBlock *pbl=pmy_mesh_->FindMeshBlock(nb.gid);
       // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
       // SendBoundaryBuffers().
-      if (type==HYDRO_CONS || type==HYDRO_PRIM)
-        ptarget=&(pbl->pbval_->bd_var_);
-      std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
-      ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
+      // if (type==HYDRO_CONS || type==HYDRO_PRIM)
+      //   ptarget=&(ptarget_block->pbval_->bd_var_);
+      CopyBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&(pbd->req_send[nb.bufid]));
+      MPI_Start(&(bd_var_.req_send[nb.bufid]));
 #endif
   }
   return;
@@ -414,14 +411,13 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 
 bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
   bool bflag=true;
-  BoundaryData *pbd{};
 
   // KGF: call short switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (pbd->flag[nb.bufid]==BNDRY_ARRIVED) continue;
-    if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+    if (bd_var_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
+    if (bd_var_.flag[nb.bufid]==BNDRY_WAITING) {
       if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
@@ -430,12 +426,12 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
       else { // NOLINT // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test)==false) {
           bflag=false;
           continue;
         }
-        pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+        bd_var_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
@@ -449,7 +445,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 
 void CellCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
-  BoundaryData *pbd{};
+
   // KGF: call switch over "enum HydroBoundaryType type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -457,16 +453,16 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
     if (nb.level==pmb->loc.level)
       // KGF: dst
       // KGF: nl_, nu_
-      SetBoundarySameLevel(pbd->recv[nb.bufid], nb);
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level) // this set only the prolongation buffer
       // KGF: nl_, nu_
       // KGF: coarse_buf
-      SetBoundaryFromCoarser(pbd->recv[nb.bufid], nb);
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       // KGF: dst
       // KGF: nl_, nu_
-      SetBoundaryFromFiner(pbd->recv[nb.bufid], nb);
-    pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY ||
@@ -482,7 +478,6 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
 
 void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   MeshBlock *pmb=pmy_block_;
-  BoundaryData *pbd{};
 
   // KGF: call switch over "enum HydroBoundaryType type"
 
@@ -490,21 +485,21 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
-      MPI_Wait(&(pbd->req_recv[nb.bufid]),MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if (nb.level==pmb->loc.level)
       // KGF: dst
       // KGF: nl_, nu_
-      SetBoundarySameLevel(pbd->recv[nb.bufid], nb);
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
     else if (nb.level<pmb->loc.level)
       // KGF: nl_, nu_
       // KGF: coarse_buf
-      SetBoundaryFromCoarser(pbd->recv[nb.bufid], nb);
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       // KGF: dst
       // KGF: nl_, nu_
-      SetBoundaryFromFiner(pbd->recv[nb.bufid], nb);
-    pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY
