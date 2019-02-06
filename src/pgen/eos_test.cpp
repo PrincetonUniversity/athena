@@ -114,7 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       zeros(i)=0.0;
       w2[i]=0.0;
     }
-    std::cout << "Input fluid parameters and retrive EOS parameters." << '\n'
+    std::cout << "Input fluid parameters and retrieve EOS parameters." << '\n'
               << "Non-positive inputs will exit loop." << '\n';
     std::cout << "Input density (mass/volume): ";
     std::cin >> rho;
