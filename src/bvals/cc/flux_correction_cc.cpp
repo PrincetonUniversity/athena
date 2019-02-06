@@ -47,9 +47,6 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
   BoundaryData *pbd{}, *ptarget{};
   pbd=&bd_cc_flcor_;
 
-  // KGF: make 3x (vector components) flux variables class members:
-  AthenaArray<Real> x1flux, x2flux, x3flux;
-
   // cache pointers to surface area arrays (BoundaryBase protected variable)
   AthenaArray<Real> &sarea0=pbval_->sarea_[0];
   AthenaArray<Real> &sarea1=pbval_->sarea_[1];
@@ -174,17 +171,6 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   bool bflag=true;
   BoundaryData *pbd{};
   pbd=&bd_cc_flcor_;
-
-  // KGF: make 3x (vector components) flux variables class members:
-  AthenaArray<Real> x1flux, x2flux, x3flux;
-
-  // KGF: these new class data members should be set in the constructor
-  // if (type==FLUX_HYDRO) {
-  //   nl_=0, nu_=NHYDRO-1;
-  //   x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
-  //   x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
-  //   x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
-  // }
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];

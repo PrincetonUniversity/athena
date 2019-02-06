@@ -40,13 +40,28 @@
 // constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
-    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var)
+    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var,
+    AthenaArray<Real> *var_flux)
     : BoundaryVariable(pmb, type) {
   var_cc.InitWithShallowCopy(var);
   src.InitWithShallowCopy(var_cc);
   dst.InitWithShallowCopy(var_cc);
 
-  //coarse_buf.InitWithShallowCopy(var_cc);
+  // KGF: uninitialized, for now. Relying on HydroBoundaryVariable:SelectCoarseBuffer() to
+  // set it to pmr-> cons or prim, when needed. Must set it directly for other
+  // CellCenteredBoundaryVarialbe objects
+  // coarse_buf.InitWithShallowCopy(var_cc);
+
+  // KGF: Taken from 2x functions in flux_correction_cc.cpp
+  x1flux.InitWithShallowCopy(var_flux[X1DIR]);
+  x2flux.InitWithShallowCopy(var_flux[X2DIR]);
+  x3flux.InitWithShallowCopy(var_flux[X3DIR]);
+  // if (type==FLUX_HYDRO) {
+  //   nl_=0, nu_=NHYDRO-1;
+  //   x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
+  //   x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
+  //   x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
+  // }
 
   // KGF: CellCenteredBoundaryVariable should only be used with 3D or 4D AthenaArray
   // For now, assume that full span of 4th dim of input AthenaArray should be used;

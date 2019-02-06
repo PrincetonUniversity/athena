@@ -34,13 +34,15 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   friend class Field;
  public:
   CellCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type,
-                               AthenaArray<Real> &var);
+                               AthenaArray<Real> &var, AthenaArray<Real> *var_flux);
   ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> var_cc;
   AthenaArray<Real> src, dst;
   // KGF: considered moving variable to derived HydroBoundaryVariable class
   AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+
+  AthenaArray<Real> x1flux, x2flux, x3flux;
 
   // what about bool *flip? CC or Hydro-specific? Assuming CC now, see protected: vars
 
