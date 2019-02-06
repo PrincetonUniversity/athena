@@ -39,7 +39,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   AthenaArray<Real> var_cc;
   AthenaArray<Real> src, dst;
-  AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+  // KGF: moved variable to derived HydroBoundaryVariable class, for now
+  //AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+
   //   BoundaryData *pbd{}, *ptarget{};  // completely unused in FaceCentered functions
 
   // what about bool *flip? CC or Hydro-specific?
@@ -170,7 +172,13 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                          int il, int iu, int jl,
                          int ju, int kl, int ku, int nu, int ngh) override;
-  // protected:
+
+ protected:
+  // CellCenteredBoundaryVariable is assumed 4D
+  // (3D) nl=nu=0 for gravity
+  // nl=0, nu=NHYDRO-1 for Hydro
+  int nl_, nu_;
+  bool *flip_across_pole_;
 
  private:
   // standard cell-centered and flux BV private variables
@@ -180,13 +188,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Pulling these variables out of function signatures, since FaceCentered
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
   // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf)
-
-  // CellCenteredBoundaryVariable is assumed 4D
-  // (3D) nl=nu=0 for gravity
-  // nl=0, nu=NHYDRO-1 for Hydro
-  int nl_, nu_;
-
-  bool *flip_across_pole_;
 
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];

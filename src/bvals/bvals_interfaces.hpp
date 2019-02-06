@@ -300,6 +300,7 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   // KGF: clean up mixed/duplicated locations of pointers to mesh/ classes
   // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
   Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
+
  private:
 };
 

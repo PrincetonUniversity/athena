@@ -12,16 +12,21 @@
 #include "../../../athena_arrays.hpp"
 #include "../../../mesh/mesh.hpp"
 #include "../bvals_cc.hpp"
+#include "bvals_hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \class HydroBoundaryFunctions
 
-HydroBoundaryVariable::HydroBoundaryFunctions()
-: CellCenteredBoundaryFunctions() {
+HydroBoundaryVariable::HydroBoundaryVariable(
+    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &cons,
+    enum HydroBoundaryType hydro_type)
+    // AthenaArray<Real> &prim)
+    : CellCenteredBoundaryVariable(pmb, type, cons) {
+  hydro_type_=hydro_type;
 }
 
 // destructor
-HydroBoundaryVariable::~HydroBoundaryFunctions() {
+HydroBoundaryVariable::~HydroBoundaryVariable() {
 
 }
 
@@ -30,23 +35,24 @@ HydroBoundaryVariable::~HydroBoundaryFunctions() {
 //  \brief Send boundary buffers of cell-centered variables
 
 // 3x + 1x calls: Send, ReceiveAndSet, Set + Receive shortened call
-void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type) {
-  if (type==HYDRO_CONS || type==HYDRO_PRIM) {
-    pbd=&bd_cc_;
+void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType hydro_type) {
+  if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
+    pbd=&bd_var_;
     nl_=0, nu_=NHYDRO-1;
-    flip=flip_across_pole_hydro;
-    if (pmb->pmy_mesh->multilevel) {
-      if (type==HYDRO_CONS)
-        coarse_buf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
-      if (type==HYDRO_PRIM)
-        coarse_buf.InitWithShallowCopy(pmb->pmr->coarse_prim_);
+    flip_across_pole_=flip_across_pole_hydro;
+    if (pmy_mesh_->multilevel) {
+      if (hydro_type==HYDRO_CONS)
+        coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_cons_);
+      if (hydro_type==HYDRO_PRIM)
+        coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_prim_);
     }
   }
 
   // Smaller switch used only in ReceiveBoundaryBuffers(void)
-  // if (type==HYDRO_CONS || type==HYDRO_PRIM) {
+  // if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
   //   pbd=&bd_cc_;
   // }
+  hydro_type_ = hydro_type;
 
   return;
 }

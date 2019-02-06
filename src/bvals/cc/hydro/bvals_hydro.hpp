@@ -25,22 +25,17 @@
 
 class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
  public:
-  HydroBoundaryVariable();
+  HydroBoundaryVariable(MeshBlock *pmb, enum BoundaryType type,
+                        AthenaArray<Real> &cons, enum HydroBoundaryType hydro_type);
+                                                // AthenaArray<Real> &prim);
   ~HydroBoundaryVariable();
 
-  // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
-  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w, HYDRO_PRIM);
-
-  // Hydro is a unique cell-centered variable because of the relationship between
-  // HYDRO_CONS u and HYDRO_PRIM w.
-  enum HydroBoundaryType type;
-  AthenaArray<Real> &coarse_buf;
+  AthenaArray<Real> coarse_buf;
 
   // switch between Hydro class members "u" and "w"
-  void SelectCoarseBuffer(enum HydroBoundaryType type);
+  void SelectCoarseBuffer(enum HydroBoundaryType hydro_type);
 
-  // BoundaryPhysics: need to flip sign of velocity vectors:
+  // BoundaryPhysics: need to flip sign of velocity vectors for Reflect*()
   void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
                       int kl, int ku, int nu, int ngh) override;
@@ -60,7 +55,14 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
                       int il, int iu, int jl, int ju,
                       int kl, int ku, int nu, int ngh) override;
   //protected:
-  //private:
+ private:
+  // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
+  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
+  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w, HYDRO_PRIM);
+
+  // Hydro is a unique cell-centered variable because of the relationship between
+  // HYDRO_CONS u and HYDRO_PRIM w.
+  enum HydroBoundaryType hydro_type_;
 };
 
 #endif // BVALS_CC_HYDRO_BVALS_HYDRO_HPP_
