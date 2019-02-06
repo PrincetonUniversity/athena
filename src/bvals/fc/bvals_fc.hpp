@@ -33,13 +33,13 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   friend class Hydro;
   friend class Field;
  public:
-  FaceCenteredBoundaryVariable();
+  FaceCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type, FaceField &var);
   ~FaceCenteredBoundaryVariable();
 
-  FaceField &var_fc;
-  FaceField &src, &dst;
+  FaceField var_fc;
+  FaceField src, dst;
   // mimic new CellCenteredBoundaryVariable member &coarse_buf (originally passed as a
-  //function parameter as "cbuf"); Store reference to MeshRefinement "pmr->coarse_b_"
+  // function parameter as "cbuf"); Store reference to MeshRefinement "pmr->coarse_b_"
   //FaceField &coarse_buf;
 
   // BoundaryCommunication:

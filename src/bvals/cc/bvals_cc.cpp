@@ -40,9 +40,15 @@
 // constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
-    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
-    : BoundaryVariable() {
-  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
+    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var)
+    : BoundaryVariable(pmb, type) {
+
+  var_cc.InitWithShallowCopy(var);
+  src.InitWithShallowCopy(var_cc);
+  dst.InitWithShallowCopy(var_cc);
+  coarse_buf.InitWithShallowCopy(var_cc);
+
+  if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
 }
 
@@ -52,7 +58,7 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   MeshBlock *pmb=pmy_block_;
   // KGF: similar to section in constructor, this can be automatically handled in separate
   // classes
-  if (pmb->pmy_mesh->multilevel==true) // SMR or AMR
+  if (pmy_mesh_->multilevel==true) // SMR or AMR
     DestroyBoundaryData(bd_cc_flcor_);
 }
 

@@ -40,15 +40,26 @@
 // constructor
 
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
-    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
-    : BoundaryVariable() {
+    MeshBlock *pmb, enum BoundaryType type, FaceField &var)
+    : BoundaryVariable(pmb, type) {
+  // Is there no better way to copy a reference to a FaceField in a class data member?
+  var_fc.x1f.InitWithShallowCopy(var.x1f);
+  var_fc.x2f.InitWithShallowCopy(var.x2f);
+  var_fc.x3f.InitWithShallowCopy(var.x3f);
+  src.x1f.InitWithShallowCopy(var_fc.x1f);
+  src.x2f.InitWithShallowCopy(var_fc.x2f);
+  src.x3f.InitWithShallowCopy(var_fc.x3f);
+  dst.x1f.InitWithShallowCopy(var_fc.x1f);
+  dst.x2f.InitWithShallowCopy(var_fc.x2f);
+  dst.x3f.InitWithShallowCopy(var_fc.x3f);
+
   InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
 }
 
 // destructor
 
 FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
-  MeshBlock *pmb=pmy_block_;
+  //MeshBlock *pmb=pmy_block_;
   DestroyBoundaryData(bd_fc_flcor_);
 }
 

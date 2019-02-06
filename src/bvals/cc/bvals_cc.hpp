@@ -33,12 +33,13 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   friend class Hydro;
   friend class Field;
  public:
-  CellCenteredBoundaryVariable();
+  CellCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type,
+                               AthenaArray<Real> &var);
   ~CellCenteredBoundaryVariable();
 
-  AthenaArray<Real> &var_cc;
-  AthenaArray<Real> &src, &dst;
-  AthenaArray<Real> &coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+  AthenaArray<Real> var_cc;
+  AthenaArray<Real> src, dst;
+  AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
   //   BoundaryData *pbd{}, *ptarget{};  // completely unused in FaceCentered functions
 
   // what about bool *flip? CC or Hydro-specific?
