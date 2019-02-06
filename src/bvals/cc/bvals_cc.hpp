@@ -39,8 +39,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   AthenaArray<Real> var_cc;
   AthenaArray<Real> src, dst;
-  // KGF: moved variable to derived HydroBoundaryVariable class, for now
-  //AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
+  // KGF: considered moving variable to derived HydroBoundaryVariable class
+  AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
 
   //   BoundaryData *pbd{}, *ptarget{};  // completely unused in FaceCentered functions
 

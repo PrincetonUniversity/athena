@@ -85,7 +85,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
@@ -99,7 +99,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox2==0) sj=pmb->js,          ej=pmb->je+1;
   else if (nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
   else               sj=pmb->js+1,        ej=pmb->js+NGHOST;
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
@@ -113,7 +113,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox3==0) sk=pmb->ks,          ek=pmb->ke+1;
   else if (nb.ox3>0)  sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else               sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
@@ -319,7 +319,7 @@ void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: src
       ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) { // on the same process
-      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      MeshBlock *pbl=pmy_mesh_->FindMeshBlock(nb.gid);
       // find target buffer
       std::memcpy(pbl->pbval_->bd_var_.recv[nb.targetid],
                   bd_var_.send[nb.bufid], ssize*sizeof(Real));
@@ -357,7 +357,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox1>0) si--;
     else if (nb.ox1<0) ei++;
   }
@@ -383,7 +383,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox2>0)  sj=pmb->je+2,       ej=pmb->je+NGHOST+1;
   else               sj=pmb->js-NGHOST,  ej=pmb->js-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox2>0) sj--;
     else if (nb.ox2<0) ej++;
   }
@@ -414,7 +414,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox3>0)  sk=pmb->ke+2,       ek=pmb->ke+NGHOST+1;
   else               sk=pmb->ks-NGHOST,  ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if (nb.ox3>0) sk--;
     else if (nb.ox3<0) ek++;
   }
@@ -831,7 +831,7 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
 
 void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
-  if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
     if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;

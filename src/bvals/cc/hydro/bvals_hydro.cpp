@@ -18,10 +18,10 @@
 //! \class HydroBoundaryFunctions
 
 HydroBoundaryVariable::HydroBoundaryVariable(
-    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &cons,
+    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var_hydro,
     enum HydroBoundaryType hydro_type)
     // AthenaArray<Real> &prim)
-    : CellCenteredBoundaryVariable(pmb, type, cons) {
+    : CellCenteredBoundaryVariable(pmb, type, var_hydro) {
   hydro_type_=hydro_type;
 }
 

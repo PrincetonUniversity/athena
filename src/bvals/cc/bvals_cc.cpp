@@ -42,11 +42,10 @@
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var)
     : BoundaryVariable(pmb, type) {
-
   var_cc.InitWithShallowCopy(var);
   src.InitWithShallowCopy(var_cc);
   dst.InitWithShallowCopy(var_cc);
-  coarse_buf.InitWithShallowCopy(var_cc);
+  coarse_buf.InitWithShallowCopy(var_hydro);
 
   if (pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
@@ -55,7 +54,6 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 // destructor
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
-  MeshBlock *pmb=pmy_block_;
   // KGF: similar to section in constructor, this can be automatically handled in separate
   // classes
   if (pmy_mesh_->multilevel==true) // SMR or AMR
@@ -186,7 +184,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: nl_, nu_
       ssize=LoadBoundaryBufferToFiner(pbd->send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
-      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      MeshBlock *pbl=pmy_mesh_->FindMeshBlock(nb.gid);
       // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
       // SendBoundaryBuffers().
       if (type==HYDRO_CONS || type==HYDRO_PRIM)
@@ -241,9 +239,8 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
   // if (SHEARING_BOX) {
   //   if (ShBoxCoord_==2) {
-  //     Mesh *pmy_mesh = pmb->pmy_mesh;
-  //     int level = pmb->loc.level - pmy_mesh->root_level;
-  //     std::int64_t nrbx1 = pmy_mesh->nrbx1*(1L << level);
+  //     int level = pmb->loc.level - pmy_mesh_->root_level;
+  //     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
   //     Real qomL = qshear_*Omega_0_*x1size_;
   //     if ((pmb->loc.lx1==0) && (nb.ox1<0)) {
   //       for (int k=sk; k<=ek; ++k) {
@@ -472,7 +469,8 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY ||
+      pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -509,7 +507,8 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY
+      || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -521,7 +520,7 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
   MeshBlock *pmb=pmy_block_;
-  if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
     if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;

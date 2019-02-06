@@ -30,8 +30,6 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
                                                 // AthenaArray<Real> &prim);
   ~HydroBoundaryVariable();
 
-  AthenaArray<Real> coarse_buf;
-
   // switch between Hydro class members "u" and "w"
   void SelectCoarseBuffer(enum HydroBoundaryType hydro_type);
 
