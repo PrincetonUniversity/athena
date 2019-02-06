@@ -13,7 +13,7 @@
 // #include <algorithm>  // min
 // #include <cmath>
 // #include <cstdlib>
-// #include <cstring>    // std::memcpy
+#include <cstring>    // std::memcpy
 // #include <iomanip>
 #include <iostream>   // endl
 // #include <limits>
@@ -51,6 +51,7 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb, enum BoundaryType type) {
   pmy_block_ = pmb;
   pbval_ = pmb->pbval;
   pmy_mesh_ = pmb->pmy_mesh;
+  btype_ = type;
 
   // KGF: not sure of the value of passing around BoundaryType type anymore.
   // Tied to BoundaryVariable class object
@@ -231,6 +232,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd)
 //  \brief Destroy BoundaryData structure
+
 void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
   for (int n=0; n<bd.nbmax; n++) {
     delete [] bd.send[n];
@@ -242,4 +244,30 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
       MPI_Request_free(&bd.req_recv[n]);
 #endif
   }
+}
+
+
+// KGF: used in BoundaryVariable::SendBoundaryBuffer() calls when the destination
+  // neighbor block is on the same MPI rank as the sending MeshBlcok. So std::memcpy()
+  // call requires pointer to "void *dst" corresponding to bd_var_.recv[nb.targetid]
+  // in separate BoundaryVariable object in separate vector in separate BoundaryValues
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd)
+//  \brief Destroy BoundaryData structure
+
+void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_);
+  // KGF: hardcoded assumptions that bvar_index is always up-to-date, and that the same
+  // vector elements and ordering exist for all MeshBlocks/BoundaryValues objects
+
+  std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
+              ssize*sizeof(Real));
+  // finally, set the BoundaryStatus flag on the destination buffer
+  ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
+  return;
 }

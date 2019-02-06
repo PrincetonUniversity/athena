@@ -11,8 +11,8 @@
 // C headers
 
 // C++ headers
-#include <vector>
 #include <string>   // string
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"

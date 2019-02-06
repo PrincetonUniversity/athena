@@ -13,6 +13,7 @@
 
 // C++ headers
 #include <string>   // string
+#include <vector>   // vector
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -279,6 +280,9 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   BoundaryVariable(MeshBlock *pmb, enum BoundaryType type);
   virtual ~BoundaryVariable();
 
+  // KGF: this is usuallly the std::size_t unsigned integer type
+  std::vector<BoundaryVariable *>::size_type bvar_index;
+
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
   void DestroyBoundaryData(BoundaryData &bd) override;
@@ -295,12 +299,14 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
 
  protected:
   BoundaryData bd_var_; // bd_var_flcor_; --- delegated to optional in derived class
+  enum BoundaryType btype_;
   BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
   // KGF: clean up mixed/duplicated locations of pointers to mesh/ classes
   // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
   Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
 
+  void CopyBufferSameProcess(NeighborBlock& nb, int ssize);
  private:
 };
 
