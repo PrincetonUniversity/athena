@@ -16,10 +16,10 @@
 #include <iomanip>
 #include <iostream>   // endl
 #include <limits>
-#include <list>       // forward_list, list
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"

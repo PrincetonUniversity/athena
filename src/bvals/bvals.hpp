@@ -11,7 +11,7 @@
 // C headers
 
 // C++ headers
-#include <list>     // list, forward_list
+#include <vector>
 #include <string>   // string
 
 // Athena++ headers
@@ -147,8 +147,10 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   void CheckBoundary(void);
   void CheckPolarBoundaries(void);
 
-  // doubly linked list of BoundaryVariable instances
-  std::list<BoundaryVariable> bvars;
+  // doubly linked list of references to BoundaryVariable instances
+  std::vector<BoundaryVariable *> bvars;  // (num_bvars)
+
+
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
