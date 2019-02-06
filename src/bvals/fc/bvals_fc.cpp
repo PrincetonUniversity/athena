@@ -40,7 +40,7 @@
 // constructor
 
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
-    MeshBlock *pmb, enum BoundaryType type, FaceField &var)
+    MeshBlock *pmb, enum BoundaryType type, FaceField &var, EdgeField &var_flux)
     : BoundaryVariable(pmb, type) {
   // Is there no better way to copy a reference to a FaceField in a class data member?
   var_fc.x1f.InitWithShallowCopy(var.x1f);
@@ -52,6 +52,14 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   dst.x1f.InitWithShallowCopy(var_fc.x1f);
   dst.x2f.InitWithShallowCopy(var_fc.x2f);
   dst.x3f.InitWithShallowCopy(var_fc.x3f);
+
+  e1.InitWithShallowCopy(var_flux.x1e);
+  e2.InitWithShallowCopy(var_flux.x2e);
+  e3.InitWithShallowCopy(var_flux.x3e);
+  // KGF: Taken from 2x functions in flux_correction_fc.cpp
+  // AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  // AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  // AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
 }

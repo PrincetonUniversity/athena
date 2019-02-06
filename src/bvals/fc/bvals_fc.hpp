@@ -33,7 +33,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   friend class Hydro;
   friend class Field;
  public:
-  FaceCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type, FaceField &var);
+  FaceCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type, FaceField &var,
+                               EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
   FaceField var_fc;
@@ -41,6 +42,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // mimic new CellCenteredBoundaryVariable member &coarse_buf (originally passed as a
   // function parameter as "cbuf"); Store reference to MeshRefinement "pmr->coarse_b_"
   //FaceField &coarse_buf;
+
+  // KGF: rename/change to single "EdgeField var_fc_flux"?
+  AthenaArray<Real> e1;
+  AthenaArray<Real> e2;
+  AthenaArray<Real> e3;
 
   // BoundaryCommunication:
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;

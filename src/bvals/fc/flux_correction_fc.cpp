@@ -47,9 +47,6 @@
 int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(
     Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
-  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   // KGF: shearing box:
   // Real qomL = qshear_*Omega_0_*x1size_;
@@ -276,9 +273,6 @@ int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferToCoarser(
     Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
-  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   // use the surface area aray as the edge length array
   AthenaArray<Real> &le1=pbval_->sarea_[0];
   AthenaArray<Real> &le2=pbval_->sarea_[1];
