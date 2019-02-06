@@ -11,6 +11,7 @@
 // C++ headers
 #include <algorithm>
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -27,7 +28,10 @@
 
 Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
-  phbval  = new HydroBoundaryVariable(pmy_block, input_bcs, pin);
+
+  // KGF: made HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
+  phbval  = new HydroBoundaryVariable(pmy_block, BNDRY_HYDRO, u, w);
+  pmb->pbval->bvars.push_back(phbval);
 
   // Allocate memory for primitive/conserved variables
   int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);

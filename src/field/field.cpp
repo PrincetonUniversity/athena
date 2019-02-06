@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -24,7 +25,9 @@
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
-  pfbval  = new BoundaryValues(pmy_block, input_bcs, pin);
+
+  pfbval  = new FaceCenteredBoundaryVariable(pmy_block, BNDRY_FC, b);
+  pmb->pbval->bvars.push_back(pfbval);
 
   // Allocate memory for interface fields, but only when needed.
   if (MAGNETIC_FIELDS_ENABLED) {
