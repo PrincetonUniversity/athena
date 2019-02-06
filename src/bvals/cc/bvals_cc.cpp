@@ -45,7 +45,8 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   var_cc.InitWithShallowCopy(var);
   src.InitWithShallowCopy(var_cc);
   dst.InitWithShallowCopy(var_cc);
-  coarse_buf.InitWithShallowCopy(var_cc);
+
+  //coarse_buf.InitWithShallowCopy(var_cc);
 
   // KGF: CellCenteredBoundaryVariable should only be used with 3D or 4D AthenaArray
   // For now, assume that full span of 4th dim of input AthenaArray should be used;
@@ -166,6 +167,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers(void)
 //  \brief Send boundary buffers of cell-centered variables
 
+// KGF: (AthenaArray<Real> &dst, enum CCBoundaryType type)
 void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;

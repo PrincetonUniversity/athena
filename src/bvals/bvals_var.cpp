@@ -250,14 +250,15 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
 }
 
 
-// KGF: used in BoundaryVariable::SendBoundaryBuffer() calls when the destination
-  // neighbor block is on the same MPI rank as the sending MeshBlcok. So std::memcpy()
-  // call requires pointer to "void *dst" corresponding to bd_var_.recv[nb.targetid]
-  // in separate BoundaryVariable object in separate vector in separate BoundaryValues
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd)
-//  \brief Destroy BoundaryData structure
+//! \fn void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize)
+//  \brief
+//  Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
+//  destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
+//  std::memcpy() call requires pointer to "void *dst" corresponding to
+//  bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
+//  separate BoundaryValues
 
 void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
