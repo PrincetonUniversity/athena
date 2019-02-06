@@ -45,10 +45,15 @@
 
 // constructor
 
-BoundaryVariable::BoundaryVariable(
-    MeshBlock *pmb, BoundaryValues *pbval, enum BoundaryType type)
-    : BoundaryVariable() {
-  // KGF: not sure of the value of passing around BoundaryType type anymore
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb, enum BoundaryType type) {
+  // KGF: what is the point of cyclically setting class member pmy_block_=pmb, then:
+  // MeshBlock *pmb=pmy_block_;
+  pmy_block_ = pmb;
+  pbval_ = pmb->pbval;
+  pmy_mesh_ = pmb->pmy_mesh;
+
+  // KGF: not sure of the value of passing around BoundaryType type anymore.
+  // Tied to BoundaryVariable class object
   InitBoundaryData(bd_var_, type);
 
   // User must add this new BoundaryVariable object to the array in BoundaryValues
@@ -58,7 +63,6 @@ BoundaryVariable::BoundaryVariable(
 // destructor
 
 BoundaryVariable::~BoundaryVariable() {
-  // MeshBlock *pmb=pmy_block_;
   DestroyBoundaryData(bd_var_);
 }
 

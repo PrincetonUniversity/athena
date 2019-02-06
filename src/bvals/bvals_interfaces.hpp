@@ -276,7 +276,7 @@ class BoundaryPhysics {
 class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
-  BoundaryVariable();
+  BoundaryVariable(MeshBlock *pmb, enum BoundaryType type);
   virtual ~BoundaryVariable();
 
   // BoundaryCommunication:
@@ -297,8 +297,9 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   BoundaryData bd_var_; // bd_var_flcor_; --- delegated to optional in derived class
   BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
+  // KGF: clean up mixed/duplicated locations of pointers to mesh/ classes
   // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
-  //Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
+  Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
  private:
 };
 
