@@ -425,8 +425,8 @@ int main(int argc, char *argv[]) {
     if (STS_ENABLED) {
       // compute nstages for this STS
       Real my_dt = pmesh->dt;
-      Real dt_p  = pmesh->dt_parabolic;
-      pststlist->nstages = static_cast<int>(0.5*(-1.+std::sqrt(1.+8.*my_dt/dt_p))) + 1;
+      Real dt_sts  = pmesh->dt_STS;
+      pststlist->nstages = static_cast<int>(0.5*(-1.+std::sqrt(1.+8.*my_dt/dt_sts))) + 1;
 
       // super-time-step
       for (int stage=1; stage<=pststlist->nstages; ++stage)

@@ -34,10 +34,10 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// \!fn Real Hydro::NewBlockTimeStep(void)
+// \!fn void Hydro::NewBlockTimeStep(void)
 // \brief calculate the minimum timestep within a MeshBlock
 
-Real Hydro::NewBlockTimeStep(void) {
+void Hydro::NewBlockTimeStep(void) {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -58,8 +58,7 @@ Real Hydro::NewBlockTimeStep(void) {
 
   Real real_max = std::numeric_limits<Real>::max();
   Real min_dt = (real_max);
-  Real min_dt_hyperbolic = (real_max);
-  Real min_dt_parabolic  = (real_max);
+  Real min_dt_diff  = (real_max);
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -126,37 +125,35 @@ Real Hydro::NewBlockTimeStep(void) {
     }
   }
 
-  min_dt_hyperbolic = min_dt*pmb->pmy_mesh->cfl_number;
-
   // calculate the timestep limited by the diffusion process
   if (phdif->hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
     phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
-    min_dt = std::min(min_dt,mindt_vis);
-    min_dt = std::min(min_dt,mindt_cnd);
+    min_dt_diff = std::min(min_dt_diff,mindt_vis);
+    min_dt_diff = std::min(min_dt_diff,mindt_cnd);
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
       pmb->pfield->pfdif->field_diffusion_defined) {
     Real mindt_oa, mindt_h;
     pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);
-    min_dt = std::min(min_dt,mindt_oa);
-    min_dt = std::min(min_dt,mindt_h);
+    min_dt_diff = std::min(min_dt_diff,mindt_oa);
+    min_dt_diff = std::min(min_dt_diff,mindt_h);
   } // field diffusion
 
-  if ((phdif->hydro_diffusion_defined) ||
-      (MAGNETIC_FIELDS_ENABLED &&
-       pmb->pfield->pfdif->field_diffusion_defined))
-    min_dt_parabolic  = min_dt*pmb->pmy_mesh->cfl_number;
-
   min_dt *= pmb->pmy_mesh->cfl_number;
+  min_dt_diff *= pmb->pmy_mesh->cfl_number;
 
-  if (UserTimeStep_!=nullptr) {
+  if (UserTimeStep_!=nullptr)
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
+
+  if (STS_ENABLED) {
+    pmb->new_block_dt_=min_dt;
+    pmb->new_block_dt_STS_=min_dt_diff;
+  } else {
+    min_dt=std::min(min_dt, min_dt_diff);
+    pmb->new_block_dt_=min_dt;
   }
 
-  pmb->new_block_dt=min_dt;
-  pmb->new_block_dt_hyperbolic=min_dt_hyperbolic;
-  pmb->new_block_dt_parabolic =min_dt_parabolic;
-  return min_dt;
+  return;
 }
