@@ -15,6 +15,7 @@
 #include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>   // endl
+#include <iterator>
 #include <limits>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -449,7 +450,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //       }
 //     }
 //   } // end KGF: shearing box in BoundaryValues constructor
-
 }
 
 // destructor
@@ -943,20 +943,33 @@ void BoundaryValues::CheckBoundary(void) {
 //  \brief initiate MPI_Irecv for initialization
 
 void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
-#ifdef MPI_PARALLEL
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
-    if (nb.rank!=Globals::my_rank) {
-      if (cons_and_field) {  // normal case
-        MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-        if (MAGNETIC_FIELDS_ENABLED)
-          MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-      } else { // must be primitive initialization
-        MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-      }
-    }
+  // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
+// #ifdef MPI_PARALLEL
+//   for (int n=0; n<nneighbor; n++) {
+//     NeighborBlock& nb = neighbor[n];
+//     if (nb.rank != Globals::my_rank) {
+//       if (cons_and_field) {  // normal case
+//         for (std::list<Multigrid *>::iterator bvars_it = bvars.begin();
+//              bvars_it != bvars.end();
+//              ++bvars_it) {
+//         MPI_Start(&(bvars_it->bd_var_.req_recv[nb.bufid]));
+//         //MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
+//         // if (MAGNETIC_FIELDS_ENABLED)
+//         //   MPI_Start(&(bd_field_.req_recv[nb.bufid]));
+//         }
+//       } else { // must be primitive initialization
+//         // KGF: assuming 1st vector element corresponds to HydroBoundaryVariable obj
+//         MPI_Start(&(bvars[0].bd_var_.req_recv[nb.bufid]));
+//         //MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
+//       }
+//     }
+//   }
+// #endif
+  // KGF: approach #2
+  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+    bvars_it->StartReceivingForInit(cons_and_field);
   }
-#endif
+
   // KGF: begin shearing-box exclusive section of StartReceivingForInit
   // find send_block_id and recv_block_id;
   // if (SHEARING_BOX) {
@@ -974,42 +987,27 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 
 void BoundaryValues::StartReceivingAll(const Real time) {
   firsttime_=true;
-#ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_block_;
-  int mylevel=pmb->loc.level;
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
-    if (nb.rank!=Globals::my_rank) {
-      MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-      if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
-        MPI_Start(&(bd_flcor_.req_recv[nb.bufid]));
-      if (MAGNETIC_FIELDS_ENABLED) {
-        MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-        if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
-          if ((nb.level>mylevel) ||
-              ((nb.level==mylevel) && ((nb.type==NEIGHBOR_FACE)
-                                       || ((nb.type==NEIGHBOR_EDGE)
-                                           && (edge_flag_[nb.eid]==true)))))
-            MPI_Start(&(bd_emfcor_.req_recv[nb.bufid]));
-        }
-      }
-    }
+
+  // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
+// #ifdef MPI_PARALLEL
+//   MeshBlock *pmb=pmy_block_;
+//   int mylevel=pmb->loc.level;
+//   for (int n=0; n<nneighbor; n++) {
+//     NeighborBlock& nb = neighbor[n];
+//     if (nb.rank!=Globals::my_rank) {
+//       for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+//         bvars_it->StartReceivingAll(time);
+//       }
+//     }
+//   }
+// #endif
+
+  // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
+  // independent loops over nneighbor
+  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+    bvars_it->StartReceivingAll(time);
   }
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = polar_neighbor_north[n];
-      if (nb.rank != Globals::my_rank) {
-        MPI_Start(&req_emf_north_recv_[n]);
-      }
-    }
-    for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = polar_neighbor_south[n];
-      if (nb.rank != Globals::my_rank) {
-        MPI_Start(&req_emf_south_recv_[n]);
-      }
-    }
-  }
-#endif
+
   // KGF: begin shearing-box exclusive section of StartReceivingAll
   // find send_block_id and recv_block_id; post non-blocking recv
 //   if (SHEARING_BOX) {
@@ -1079,26 +1077,8 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
-    bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
-    if (MAGNETIC_FIELDS_ENABLED)
-      bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-    if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-      bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-    if (nb.rank!=Globals::my_rank) {
-      if (cons_and_field) {  // normal case
-        // Wait for Isend
-        MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        if (MAGNETIC_FIELDS_ENABLED)
-          MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      } else {  // must be primitive initialization
-        if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-          MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      }
-    }
-#endif
+  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+    bvars_it->ClearBoundaryForInit(cons_and_field);
   }
   return;
 }
@@ -1109,60 +1089,9 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
 //  \brief clean up the boundary flags after each loop
 
 void BoundaryValues::ClearBoundaryAll(void) {
-  // Clear non-polar boundary communications
-  for (int n=0; n<nneighbor; n++) {
-    NeighborBlock& nb = neighbor[n];
-    bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
-    if (nb.type==NEIGHBOR_FACE)
-      bd_flcor_.flag[nb.bufid] = BNDRY_WAITING;
-    if (MAGNETIC_FIELDS_ENABLED) {
-      bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-      if ((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
-        bd_emfcor_.flag[nb.bufid] = BNDRY_WAITING;
-    }
-#ifdef MPI_PARALLEL
-    MeshBlock *pmb=pmy_block_;
-    if (nb.rank!=Globals::my_rank) {
-      // Wait for Isend
-      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-
-
-      if (MAGNETIC_FIELDS_ENABLED) {
-        MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
-          if (nb.level < pmb->loc.level)
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-          else if ((nb.level==pmb->loc.level)
-                   && ((nb.type==NEIGHBOR_FACE)
-                       || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
-            MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        }
-      } // KGF: end MAGNETIC_FIELDS_ENABLED
-    } // KGF: end block on other MPI process
-#endif
-  } // KGF: end loop over nneighbor
-
-  // Clear polar boundary communications
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      emf_north_flag_[n] = BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-      PolarNeighborBlock &nb = polar_neighbor_north[n];
-      if (nb.rank != Globals::my_rank)
-        MPI_Wait(&req_emf_north_send_[n], MPI_STATUS_IGNORE);
-#endif
-    }
-    for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      emf_south_flag_[n] = BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-      PolarNeighborBlock &nb = polar_neighbor_south[n];
-      if (nb.rank != Globals::my_rank)
-        MPI_Wait(&req_emf_south_send_[n], MPI_STATUS_IGNORE);
-#endif
-    }
-  } // KGF: end MAGNETIC_FIELDS_ENABLED
+  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+    bvars_it->ClearBoundaryAll();
+  }
 
   // KGF: begin shearing-box exclusive section of ClearBoundaryAll
   // clear shearingbox boundary communications

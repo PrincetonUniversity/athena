@@ -578,3 +578,90 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
   }
   return;
 }
+
+// ------- KGF: move to a separate file?
+
+void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
+#ifdef MPI_PARALLEL
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.rank != Globals::my_rank) {
+      MPI_Start(&(bd_var_.req_recv[nb.bufid]));
+    }
+  }
+#endif
+  return;
+}
+
+// KGF: approach #1: called inside #ifdef MPI_PARALLEL and loop:
+// for (int n=0; n<nneighbor; n++) {
+
+// -- unable to access nb without passing as function parameter
+// void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+//   MPI_Start(&(bd_var_.req_recv[nb.bufid]));
+//   if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
+//     MPI_Start(&(bd_cc_flcor_.req_recv[nb.bufid]));
+//   return;
+// }
+
+// KGF: approach #2: separate loops over nneighbor (make loop over bvar vector the
+// outermost loop)
+// --- performance penalty?
+// --- redundant source code (could encapsulate loop over nneighbor, passing nb down to
+// BoundaryVariable instances?)
+void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_block_;
+  int mylevel=pmb->loc.level;
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.rank!=Globals::my_rank) {
+      MPI_Start(&(bd_var_.req_recv[nb.bufid]));
+      if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
+        MPI_Start(&(bd_cc_flcor_.req_recv[nb.bufid]));
+    }
+  }
+#endif
+  return;
+}
+
+void CellCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+    if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
+      bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    if (nb.rank!=Globals::my_rank) {
+      if (cons_and_field) {  // normal case
+        // Wait for Isend
+        MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      } else {  // must be primitive initialization
+        if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
+          MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      }
+    }
+#endif
+  }
+  return;
+}
+
+void CellCenteredBoundaryVariable::ClearBoundaryAll(void) {
+    // Clear non-polar boundary communications
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+    if (nb.type==NEIGHBOR_FACE)
+      bd_cc_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    MeshBlock *pmb=pmy_block_;
+    if (nb.rank!=Globals::my_rank) {
+      // Wait for Isend
+      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
+        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+    } // KGF: end block on other MPI process
+#endif
+  } // KGF: end loop over nneighbor
+  return;
+}

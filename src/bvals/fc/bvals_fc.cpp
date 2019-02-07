@@ -1038,3 +1038,111 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
   }
   return;
 }
+
+// ------- KGF: move to a separate file?
+
+void FaceCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
+#ifdef MPI_PARALLEL
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.rank != Globals::my_rank) {
+      if (cons_and_field) {  // normal case
+        MPI_Start(&(bd_var_.req_recv[nb.bufid]));
+      }
+    }
+  }
+#endif
+  return;
+}
+
+void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_block_;
+  int mylevel=pmb->loc.level;
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.rank!=Globals::my_rank) {
+      MPI_Start(&(bd_field_.req_recv[nb.bufid]));
+      if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+        if ((nb.level>mylevel) ||
+            ((nb.level==mylevel) && ((nb.type==NEIGHBOR_FACE)
+                                     || ((nb.type==NEIGHBOR_EDGE)
+                                         && (edge_flag_[nb.eid]==true)))))
+          MPI_Start(&(bd_emfcor_.req_recv[nb.bufid]));
+      }
+    }
+  }
+
+  for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+      const PolarNeighborBlock &nb = polar_neighbor_north[n];
+      if (nb.rank != Globals::my_rank) {
+        MPI_Start(&req_emf_north_recv_[n]);
+      }
+    }
+    for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+      const PolarNeighborBlock &nb = polar_neighbor_south[n];
+      if (nb.rank != Globals::my_rank) {
+        MPI_Start(&req_emf_south_recv_[n]);
+      }
+    }
+#endif
+  return;
+}
+
+void FaceCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    if (nb.rank!=Globals::my_rank) {
+      if (cons_and_field) {  // normal case
+        MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      }
+    }
+#endif
+  }
+  return;
+}
+
+void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
+    // Clear non-polar boundary communications
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+    if ((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
+      bd_fc_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    MeshBlock *pmb=pmy_block_;
+    if (nb.rank!=Globals::my_rank) {
+      // Wait for Isend
+      MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+        if (nb.level < pmb->loc.level)
+          MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+        else if ((nb.level==pmb->loc.level)
+                 && ((nb.type==NEIGHBOR_FACE)
+                     || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
+          MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      }
+    } // KGF: end block on other MPI process
+#endif
+  } // KGF: end loop over pbval_->nneighbor
+  // Clear polar boundary communications
+  for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+    emf_north_flag_[n] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    PolarNeighborBlock &nb = polar_neighbor_north[n];
+    if (nb.rank != Globals::my_rank)
+        MPI_Wait(&req_emf_north_send_[n], MPI_STATUS_IGNORE);
+#endif
+  }
+  for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+    emf_south_flag_[n] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+    PolarNeighborBlock &nb = polar_neighbor_south[n];
+    if (nb.rank != Globals::my_rank)
+      MPI_Wait(&req_emf_south_send_[n], MPI_STATUS_IGNORE);
+#endif
+  }
+  return;
+}

@@ -150,8 +150,6 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // doubly linked list of references to BoundaryVariable instances
   std::vector<BoundaryVariable *> bvars;  // (num_bvars)
 
-
-
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
   // Set in the BoundaryValues() constructor based on block_bcs = input_bcs:
