@@ -59,6 +59,7 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb, enum BoundaryType type) {
   // KGF: not sure of the value of passing around BoundaryType type anymore.
   // Tied to BoundaryVariable class object
   InitBoundaryData(bd_var_, type);
+  pbd_var_flcor_=nullptr;
 
   // User must add this new BoundaryVariable object to the array in BoundaryValues
   // Choosing to not auto-enroll this new object in the array via its constructor
@@ -252,15 +253,16 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize)
+//! \fn void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize)
 //  \brief
+
 //  Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
 //  destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
 //  std::memcpy() call requires pointer to "void *dst" corresponding to
 //  bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
 //  separate BoundaryValues
 
-void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize) {
+void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
@@ -272,6 +274,18 @@ void BoundaryVariable::CopyBufferSameProcess(NeighborBlock& nb, int ssize) {
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
+  ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
+  return;
+}
+
+void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  BoundaryData *ptarget_bdata = ptarget_block->pbval->bvars[bvar_index]->pbd_var_flcor_;
+  std::memcpy(ptarget_bdata->recv[nb.targetid], pbd_var_flcor_->send[nb.bufid],
+              ssize*sizeof(Real));
   ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
   return;
 }

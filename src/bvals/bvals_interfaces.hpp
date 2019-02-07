@@ -298,7 +298,8 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   // void ClearBoundaryAll() override;
 
  protected:
-  BoundaryData bd_var_; // bd_var_flcor_; --- delegated to optional in derived class
+  BoundaryData bd_var_;
+  BoundaryData *pbd_var_flcor_;  // (optional) delegated to constructor in derived class
   enum BoundaryType btype_;
   BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
@@ -306,7 +307,8 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
   Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
 
-  void CopyBufferSameProcess(NeighborBlock& nb, int ssize);
+  void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
+  void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
  private:
 };
 
