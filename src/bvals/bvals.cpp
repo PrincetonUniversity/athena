@@ -234,76 +234,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   }
   // end KGF: shared logic of setting boundary functions and counting spherical blocks
 
-  // KGF: All of these function definitions will be moved to separate classes, and they
-  // should be called like this automatically in the shared class via linked list of
-  // variable classes:
-  // InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
-  // if (pmy_mesh_->multilevel==true) // SMR or AMR
-  //   InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
-  // if (MAGNETIC_FIELDS_ENABLED) {
-  //   InitBoundaryData(bd_field_, BNDRY_FIELD);
-  //   InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
-  // }
-  // end KGF: moving boundary buffer initialization to separate variable BC classes
-
-  // KGF: begin special logic for handling emf in polar coordinates.
-  // averaging of radial emf along polar axis added by C. White on 2018-01-28 (f00ae05)
-
-  // KGF: move emf spherical polar buffers to FieldBoundaryFunctions, but steps depend on
-  // shared BoundaryValues for num_north_polar_blocks_
-
-  if (num_north_polar_blocks_ > 0) {
-    emf_north_send_ = new Real *[num_north_polar_blocks_];
-    emf_north_recv_ = new Real *[num_north_polar_blocks_];
-    emf_north_flag_ = new enum BoundaryStatus[num_north_polar_blocks_];
-#ifdef MPI_PARALLEL
-    req_emf_north_send_ = new MPI_Request[num_north_polar_blocks_];
-    req_emf_north_recv_ = new MPI_Request[num_north_polar_blocks_];
-#endif
-    for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      emf_north_send_[n] = nullptr;
-      emf_north_recv_[n] = nullptr;
-      emf_north_flag_[n] = BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-      req_emf_north_send_[n] = MPI_REQUEST_NULL;
-      req_emf_north_recv_[n] = MPI_REQUEST_NULL;
-#endif
-    }
-  }
-  if (num_south_polar_blocks_ > 0) {
-    emf_south_send_ = new Real *[num_south_polar_blocks_];
-    emf_south_recv_ = new Real *[num_south_polar_blocks_];
-    emf_south_flag_ = new enum BoundaryStatus[num_south_polar_blocks_];
-#ifdef MPI_PARALLEL
-    req_emf_south_send_ = new MPI_Request[num_south_polar_blocks_];
-    req_emf_south_recv_ = new MPI_Request[num_south_polar_blocks_];
-#endif
-    for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      emf_south_send_[n] = nullptr;
-      emf_south_recv_[n] = nullptr;
-      emf_south_flag_[n] = BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-      req_emf_south_send_[n] = MPI_REQUEST_NULL;
-      req_emf_south_recv_[n] = MPI_REQUEST_NULL;
-#endif
-    }
-  }
-
-  // Allocate buffers for polar neighbor communication
-  if (MAGNETIC_FIELDS_ENABLED) {
-    if (num_north_polar_blocks_ > 0) {
-      for (int n = 0; n < num_north_polar_blocks_; ++n) {
-        emf_north_send_[n] = new Real[pmb->block_size.nx1];
-        emf_north_recv_[n] = new Real[pmb->block_size.nx1];
-      }
-    }
-    if (num_south_polar_blocks_ > 0) {
-      for (int n = 0; n < num_south_polar_blocks_; ++n) {
-        emf_south_send_[n] = new Real[pmb->block_size.nx1];
-        emf_south_recv_[n] = new Real[pmb->block_size.nx1];
-      }
-    }
-  }
+  //
 
   // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
   // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
@@ -526,60 +457,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb=pmy_block_;
 
-  // KGF: similar to section in constructor, this can be automatically handled in separate
-  // classes
-  // DestroyBoundaryData(bd_hydro_);
-  // if (pmy_mesh_->multilevel==true) // SMR or AMR
-  //   DestroyBoundaryData(bd_flcor_);
-  // if (MAGNETIC_FIELDS_ENABLED) {
-  //   DestroyBoundaryData(bd_field_);
-  //   DestroyBoundaryData(bd_emfcor_);
-  // }
-  // end KGF
-
-  // KGF: similar to section in constructor, special handling of emf in spherical polar
-  // coordinates only
-  if (MAGNETIC_FIELDS_ENABLED) {
-    if (num_north_polar_blocks_ > 0) {
-      for (int n = 0; n < num_north_polar_blocks_; ++n) {
-        delete[] emf_north_send_[n];
-        delete[] emf_north_recv_[n];
-#ifdef MPI_PARALLEL
-        if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_emf_north_send_[n]);
-        if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_emf_north_recv_[n]);
-#endif
-      }
-      delete[] emf_north_send_;
-      delete[] emf_north_recv_;
-      delete[] emf_north_flag_;
-#ifdef MPI_PARALLEL
-      delete[] req_emf_north_send_;
-      delete[] req_emf_north_recv_;
-#endif
-    }
-    if (num_south_polar_blocks_ > 0) {
-      for (int n = 0; n < num_south_polar_blocks_; ++n) {
-        delete[] emf_south_send_[n];
-        delete[] emf_south_recv_[n];
-#ifdef MPI_PARALLEL
-        if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_emf_south_send_[n]);
-        if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
-          MPI_Request_free(&req_emf_south_recv_[n]);
-#endif
-      }
-      delete[] emf_south_send_;
-      delete[] emf_south_recv_;
-      delete[] emf_south_flag_;
-#ifdef MPI_PARALLEL
-      delete[] req_emf_south_send_;
-      delete[] req_emf_south_recv_;
-#endif
-    }
-  }
   // KGF: edge-case of single block across pole in MHD spherical polar coordinates
+  // Note, this conditional is outside "if MAGNETIC_FIELDS_ENABLED" in master (also
+  // true for its counterpart in constructor). Probably should be inside.
   if (pmb->loc.level == pmy_mesh_->root_level &&
       pmy_mesh_->nrbx3 == 1 &&
       (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||

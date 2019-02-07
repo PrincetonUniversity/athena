@@ -63,6 +63,58 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 
   InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
   pbd_var_flcor_ = &(bd_fc_flcor_);
+
+  // KGF: was not in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master
+  if (pbval_->num_north_polar_blocks_ > 0) {
+    emf_north_send_ = new Real *[pbval_->num_north_polar_blocks_];
+    emf_north_recv_ = new Real *[pbval_->num_north_polar_blocks_];
+    emf_north_flag_ = new enum BoundaryStatus[pbval_->num_north_polar_blocks_];
+#ifdef MPI_PARALLEL
+    req_emf_north_send_ = new MPI_Request[pbval_->num_north_polar_blocks_];
+    req_emf_north_recv_ = new MPI_Request[pbval_->num_north_polar_blocks_];
+#endif
+    for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+      emf_north_send_[n] = nullptr;
+      emf_north_recv_[n] = nullptr;
+      emf_north_flag_[n] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+      req_emf_north_send_[n] = MPI_REQUEST_NULL;
+      req_emf_north_recv_[n] = MPI_REQUEST_NULL;
+#endif
+    }
+  }
+  if (pbval_->num_south_polar_blocks_ > 0) {
+    emf_south_send_ = new Real *[pbval_->num_south_polar_blocks_];
+    emf_south_recv_ = new Real *[pbval_->num_south_polar_blocks_];
+    emf_south_flag_ = new enum BoundaryStatus[pbval_->num_south_polar_blocks_];
+#ifdef MPI_PARALLEL
+    req_emf_south_send_ = new MPI_Request[pbval_->num_south_polar_blocks_];
+    req_emf_south_recv_ = new MPI_Request[pbval_->num_south_polar_blocks_];
+#endif
+    for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+      emf_south_send_[n] = nullptr;
+      emf_south_recv_[n] = nullptr;
+      emf_south_flag_[n] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+      req_emf_south_send_[n] = MPI_REQUEST_NULL;
+      req_emf_south_recv_[n] = MPI_REQUEST_NULL;
+#endif
+    }
+  }
+
+  // Allocate buffers for polar neighbor communication
+  if (pbval_->num_north_polar_blocks_ > 0) {
+    for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+      emf_north_send_[n] = new Real[pmb->block_size.nx1];
+      emf_north_recv_[n] = new Real[pmb->block_size.nx1];
+    }
+  }
+  if (pbval_->num_south_polar_blocks_ > 0) {
+    for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+      emf_south_send_[n] = new Real[pmb->block_size.nx1];
+      emf_south_recv_[n] = new Real[pmb->block_size.nx1];
+    }
+  }
 }
 
 // destructor
@@ -70,6 +122,47 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   //MeshBlock *pmb=pmy_block_;
   DestroyBoundaryData(bd_fc_flcor_);
+
+  // KGF: the following is in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master, but
+  // only the emf_south/north_send/recv_[] etc. variables are conditionally allocated
+  if (pbval_->num_north_polar_blocks_ > 0) {
+    for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+      delete[] emf_north_send_[n];
+      delete[] emf_north_recv_[n];
+#ifdef MPI_PARALLEL
+      if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_emf_north_send_[n]);
+      if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_emf_north_recv_[n]);
+#endif
+    }
+    delete[] emf_north_send_;
+    delete[] emf_north_recv_;
+    delete[] emf_north_flag_;
+#ifdef MPI_PARALLEL
+    delete[] req_emf_north_send_;
+    delete[] req_emf_north_recv_;
+#endif
+  }
+  if (pbval_->num_south_polar_blocks_ > 0) {
+    for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+      delete[] emf_south_send_[n];
+      delete[] emf_south_recv_[n];
+#ifdef MPI_PARALLEL
+      if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_emf_south_send_[n]);
+      if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_emf_south_recv_[n]);
+#endif
+    }
+    delete[] emf_south_send_;
+    delete[] emf_south_recv_;
+    delete[] emf_south_flag_;
+#ifdef MPI_PARALLEL
+    delete[] req_emf_south_send_;
+    delete[] req_emf_south_recv_;
+#endif
+  }
 }
 
 //----------------------------------------------------------------------------------------
