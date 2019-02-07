@@ -19,14 +19,14 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../globals.hpp"
-#include "../mesh/mesh.hpp"
-#include "../multigrid/multigrid.hpp"
-#include "../parameter_input.hpp"
-#include "../utils/buffer_utils.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../../coordinates/coordinates.hpp"
+#include "../../../globals.hpp"
+#include "../../../mesh/mesh.hpp"
+#include "../../../multigrid/multigrid.hpp"
+#include "../../../parameter_input.hpp"
+#include "../../../utils/buffer_utils.hpp"
 #include "bvals_mg.hpp"
 
 // MPI header
