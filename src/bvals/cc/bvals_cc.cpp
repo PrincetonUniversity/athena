@@ -581,6 +581,86 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
 
 // ------- KGF: move to a separate file?
 
+void CellCenteredBoundaryVariable::Initialize(void) {
+  MeshBlock* pmb=pmy_block_;
+  int &mylevel=pmb->loc.level;
+
+#ifdef MPI_PARALLEL
+  int f2d=0, f3d=0;
+  int cng, cng1, cng2, cng3;
+  if (pmb->block_size.nx2 > 1) f2d=1;
+  if (pmb->block_size.nx3 > 1) f3d=1;
+  cng  = cng1 =pmb->cnghost;
+  cng2 = cng*f2d;
+  cng3 = cng*f3d;
+  int ssize, rsize;
+  int tag;
+  // Initialize non-polar neighbor communications to other ranks
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.rank!=Globals::my_rank) {
+      if (nb.level==mylevel) { // same
+        ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
+              *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
+              *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
+      } else if (nb.level<mylevel) { // coarser
+        ssize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+              *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+              *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+        rsize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng1)
+              *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng2)
+              *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng3);
+      } else { // finer
+        ssize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng1)
+              *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng2)
+              *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng3);
+        rsize=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+              *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+              *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+      }
+      ssize*=NHYDRO; rsize*=NHYDRO;
+      // specify the offsets in the view point of the target block: flip ox? signs
+
+      // Initialize persistent communication requests attached to specific BoundaryData
+      // cell-centered hydro: bd_hydro_
+      tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
+      if (bd_hydro_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&bd_hydro_.req_send[nb.bufid]);
+      MPI_Send_init(bd_hydro_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send[nb.bufid]));
+      tag=CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
+      if (bd_hydro_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&bd_hydro_.req_recv[nb.bufid]);
+      MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
+
+      // hydro flux correction: bd_flcor_
+      if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
+        int size;
+        if (nb.fid==0 || nb.fid==1)
+          size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
+        else if (nb.fid==2 || nb.fid==3)
+          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
+        else // (nb.fid==4 || nb.fid==5)
+          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
+        size*=NHYDRO;
+        if (nb.level<mylevel) { // send to coarser
+          tag=CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
+          if (bd_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_flcor_.req_send[nb.bufid]);
+          MPI_Send_init(bd_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_send[nb.bufid]));
+        } else if (nb.level>mylevel) { // receive from finer
+          tag=CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
+          if (bd_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_flcor_.req_recv[nb.bufid]);
+          MPI_Recv_init(bd_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_recv[nb.bufid]));
+        }
+      }
+  return;
+}
+
 void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 #ifdef MPI_PARALLEL
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -609,6 +689,9 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 // --- performance penalty?
 // --- redundant source code (could encapsulate loop over nneighbor, passing nb down to
 // BoundaryVariable instances?)
+
+// Are there any shared implemenations worth placing as the default inherited virtual
+// function in BoundaryVariable
 void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
@@ -628,6 +711,7 @@ void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
 void CellCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
+    // KGF: probably can eliminate GR+AMR conditionals in this implementation
     bd_var_.flag[nb.bufid] = BNDRY_WAITING;
     if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
       bd_var_.flag[nb.bufid] = BNDRY_WAITING;
