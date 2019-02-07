@@ -543,6 +543,33 @@ int FaceCenteredBoundaryVariable::LoadEMFBoundaryPolarBuffer(
   return count;
 }
 
+// KGF: helper function for below SendFluxCorrection()
+void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
+    const PolarNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  // KGF: do we need to typecast from generic "BoundaryVariable *" ?
+  FaceCenteredBoundaryVariable *ptarget_pfbval =
+      static_cast<FaceCenteredBoundaryVariable *>(
+          ptarget_block->pbval->bvars[bvar_index]);
+  Real *target_buf, *send_buf;
+  enum BoundaryStatus target_flag;
+  if (is_north) {
+    target_buf= ptarget_pfbval->emf_north_recv_[pmy_block_->loc.lx3];
+    send_buf = emf_north_send_[polar_block_index];
+    target_flag = ptarget_pfbval->emf_north_flag_[pmy_block_->loc.lx3];
+  } else {
+    target_buf= ptarget_pfbval->emf_south_recv_[pmy_block_->loc.lx3];
+    send_buf = emf_south_send_[polar_block_index];
+    target_flag = ptarget_pfbval->emf_south_flag_[pmy_block_->loc.lx3];
+  }
+  std::memcpy(target_buf, send_buf, ssize*sizeof(Real));
+  target_flag = BNDRY_ARRIVED;
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SendEMFCorrection()
 //  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if
@@ -567,11 +594,11 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     } else {
       continue;
     }
-    if (nb.rank==Globals::my_rank) { // on the same node
-      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->bd_emfcor_.recv[nb.targetid],
-                  bd_fc_flcor_.send[nb.bufid], p*sizeof(Real));
-      pbl->pbval->bd_emfcor_.flag[nb.targetid]=BNDRY_ARRIVED;
+    if (nb.rank==Globals::my_rank) { // on the same MPI rank
+      CopyFluxCorrectionBufferSameProcess(nb, p);
+      // KGF: double check
+      // std::memcpy(pbl->pbval->bd_emfcor_.recv[nb.targetid],
+      //             bd_fc_flcor_.send[nb.bufid], p*sizeof(Real));
     }
 #ifdef MPI_PARALLEL
     else
@@ -583,11 +610,13 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
     int count = LoadEMFBoundaryPolarBuffer(emf_north_send_[n], nb);
-    if (nb.rank == Globals::my_rank) { // on the same node
-      MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->emf_north_recv_[pmb->loc.lx3],
-                  emf_north_send_[n], count * sizeof(Real));
-      pbl->pbval->emf_north_flag_[pmb->loc.lx3] = BNDRY_ARRIVED;
+    if (nb.rank == Globals::my_rank) { // on the same MPI rank
+      CopyPolarBufferSameProcess(nb, count, n, true);
+      // KGF: check this
+      // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      // std::memcpy(pbl->pbval->emf_north_recv_[pmb->loc.lx3],
+      //             emf_north_send_[n], count * sizeof(Real));
+      // pbl->pbval->emf_north_flag_[pmb->loc.lx3] = BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else
@@ -598,10 +627,12 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
     int count = LoadEMFBoundaryPolarBuffer(emf_south_send_[n], nb);
     if (nb.rank == Globals::my_rank) { // on the same node
-      MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->emf_south_recv_[pmb->loc.lx3],
-                  emf_south_send_[n], count * sizeof(Real));
-      pbl->pbval->emf_south_flag_[pmb->loc.lx3] = BNDRY_ARRIVED;
+      CopyPolarBufferSameProcess(nb, count, n, false);
+      // KGF: check this
+      // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      // std::memcpy(pbl->pbval->emf_south_recv_[pmb->loc.lx3],
+      //             emf_south_send_[n], count * sizeof(Real));
+      // pbl->pbval->emf_south_flag_[pmb->loc.lx3] = BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else
@@ -840,11 +871,13 @@ void FaceCenteredBoundaryVariable::SetEMFBoundarySameLevel(Real *buf,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
+//! \fn void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf,
+//                                                                const NeighborBlock& nb)
 //  \brief Add up the EMF received from a block on the finer level
 //         Later they will be divided in the AverageEMFBoundary function
 
-void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb) {
+void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf,
+                                                           const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;

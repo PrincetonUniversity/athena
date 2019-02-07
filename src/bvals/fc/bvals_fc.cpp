@@ -62,6 +62,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   // AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
+  pbd_var_flcor_ = &(bd_fc_flcor_);
 }
 
 // destructor

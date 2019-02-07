@@ -180,6 +180,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif
 
+  void CopyPolarBufferSameProcess(const PolarNeighborBlock& nb, int ssize,
+                                  int polar_block_index, bool is_north);
   // Shearingbox Field
   //   enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
   //   FaceField shboxvar_inner_field_, shboxvar_outer_field_;
