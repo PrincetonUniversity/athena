@@ -623,18 +623,18 @@ void CellCenteredBoundaryVariable::Initialize(void) {
 
       // Initialize persistent communication requests attached to specific BoundaryData
       // cell-centered hydro: bd_hydro_
-      tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
-      if (bd_hydro_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&bd_hydro_.req_send[nb.bufid]);
-      MPI_Send_init(bd_hydro_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send[nb.bufid]));
-      tag=CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
-      if (bd_hydro_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&bd_hydro_.req_recv[nb.bufid]);
-      MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
+      tag=pbval_->CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
+      if (bd_var_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&bd_var_.req_send[nb.bufid]);
+      MPI_Send_init(bd_var_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_send[nb.bufid]));
+      tag=pbval_->CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
+      if (bd_var_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
+      MPI_Recv_init(bd_var_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_recv[nb.bufid]));
 
-      // hydro flux correction: bd_flcor_
+      // hydro flux correction: bd_cc_flcor_
       if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
         if (nb.fid==0 || nb.fid==1)
@@ -645,19 +645,22 @@ void CellCenteredBoundaryVariable::Initialize(void) {
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size*=NHYDRO;
         if (nb.level<mylevel) { // send to coarser
-          tag=CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
-          if (bd_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_flcor_.req_send[nb.bufid]);
-          MPI_Send_init(bd_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_send[nb.bufid]));
+          tag=pbval_->CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
+          if (bd_cc_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_cc_flcor_.req_send[nb.bufid]);
+          MPI_Send_init(bd_cc_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_cc_flcor_.req_send[nb.bufid]));
         } else if (nb.level>mylevel) { // receive from finer
-          tag=CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
-          if (bd_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_recv[nb.bufid]));
+          tag=pbval_->CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
+          if (bd_cc_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_cc_flcor_.req_recv[nb.bufid]);
+          MPI_Recv_init(bd_cc_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_cc_flcor_.req_recv[nb.bufid]));
         }
       }
+    }
+  }
+#endif
   return;
 }
 
@@ -741,9 +744,9 @@ void CellCenteredBoundaryVariable::ClearBoundaryAll(void) {
     MeshBlock *pmb=pmy_block_;
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
-      MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+        MPI_Wait(&(bd_cc_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
     } // KGF: end block on other MPI process
 #endif
   } // KGF: end loop over nneighbor
