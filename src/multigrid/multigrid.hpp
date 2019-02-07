@@ -16,7 +16,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_mg.hpp"
+#include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
