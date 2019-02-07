@@ -69,8 +69,10 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   nl_=0;
   nu_=var.GetDim4();
 
-  if (pmy_mesh_->multilevel==true) // SMR or AMR
+  if (pmy_mesh_->multilevel==true) { // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
+    pbd_var_flcor_ = &(bd_cc_flcor_);
+  }
 }
 
 // destructor
@@ -210,7 +212,7 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // SendBoundaryBuffers().
       // if (type==HYDRO_CONS || type==HYDRO_PRIM)
       //   ptarget=&(ptarget_block->pbval_->bd_var_);
-      CopyBufferSameProcess(nb, ssize);
+      CopyVariableBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
     else // MPI

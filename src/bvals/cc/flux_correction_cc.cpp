@@ -42,29 +42,19 @@
 //  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void CellCenteredBoundaryVariable::SendFluxCorrection() {
-  MeshBlock *pmb=pmy_block_, *pbl;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
-  BoundaryData *pbd{}, *ptarget{};
-  pbd=&bd_cc_flcor_;
 
   // cache pointers to surface area arrays (BoundaryBase protected variable)
   AthenaArray<Real> &sarea0=pbval_->sarea_[0];
   AthenaArray<Real> &sarea1=pbval_->sarea_[1];
-
-  // KGF: these new class data members should be set in the constructor
-  // if (type==FLUX_HYDRO) {
-  //   nl_=0, nu_=NHYDRO-1;
-  //   x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
-  //   x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
-  //   x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
-  // }
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level-1) {
       int p=0;
-      Real *sbuf=pbd->send[nb.bufid];
+      Real *sbuf=bd_cc_flcor_.send[nb.bufid];
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
@@ -146,15 +136,12 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
         }
       }
       if (nb.rank==Globals::my_rank) { // on the same node
-        pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-        if (type==FLUX_HYDRO)
-          ptarget=&(pbl->pbval->bd_flcor_);
-        std::memcpy(ptarget->recv[nb.targetid], sbuf, p*sizeof(Real));
-        ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
+        // KGF: above, src "sbuf = &(bd_cc_flcor_.send[nb.bufid]);"
+        CopyFluxCorrectionBufferSameProcess(nb, p);
       }
 #ifdef MPI_PARALLEL
       else
-        MPI_Start(&(pbd->req_send[nb.bufid]));
+        MPI_Start(&(bd_cc_flcor_.req_send[nb.bufid]));
 #endif
     }
   }
@@ -169,15 +156,13 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
-  BoundaryData *pbd{};
-  pbd=&bd_cc_flcor_;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level+1) {
-      if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+      if (bd_cc_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+      if (bd_cc_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
@@ -186,18 +171,18 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
         else { // NOLINT
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+          MPI_Test(&(bd_cc_flcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
           if (static_cast<bool>(test)==false) {
             bflag=false;
             continue;
           }
-          pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+          bd_cc_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
         }
 #endif
       }
       // boundary arrived; apply flux correction
       int p=0;
-      Real *rbuf=pbd->recv[nb.bufid];
+      Real *rbuf=bd_cc_flcor_.recv[nb.bufid];
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int il=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
         int jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
@@ -238,7 +223,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
           }
         }
       }
-      pbd->flag[nb.bufid] = BNDRY_COMPLETED;
+      bd_cc_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
     }
   }
   return bflag;
