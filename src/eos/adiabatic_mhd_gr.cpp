@@ -176,9 +176,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Set primitives
-        success_(i) = ConservedToPrimitiveNormal(3, normal_dd_, normal_ee_,
-						 normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
-						 prim, normal_gamma_, pmag_);
+        success_(i) = ConservedToPrimitiveNormal(3, normal_dd_, normal_ee_, normal_mm_,
+            normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i, prim,
+            normal_gamma_, pmag_);
       }
 
       // Pass 2: Cleanup (most cells should be skipped)
@@ -187,9 +187,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Reapply iteration procedure in case convergence not attained (possibly slow)
         if (not success_(i)) {
-	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
-						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
-						   prim, normal_gamma_, pmag_);
+          success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_, normal_mm_,
+              normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i), k, j, i, prim,
+              normal_gamma_, pmag_);
 
         }
       }
@@ -225,9 +225,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           normal_ee_(i) += wgas_add * SQR(normal_gamma_(i)) + pgas_add;
 
           // Recalculate primitives
-	  success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_,
-						   normal_mm_, normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i,
-						   prim, normal_gamma_, pmag_);
+          success_(i) = ConservedToPrimitiveNormal(10, normal_dd_, normal_ee_, normal_mm_,
+              normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i), k, j, i, prim,
+              normal_gamma_, pmag_);
 
           // Handle failures
           if (not success_(i)) {
@@ -465,7 +465,6 @@ static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArr
 				       AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
 
   // Parameters
-  //const int num_iterations = 7;
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
   const Real a_min = 1.0e-12;
@@ -497,8 +496,7 @@ static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArr
   // Iterate until convergence
   Real pgas[3];
   pgas[0] = std::max(pgas_old, pgas_min);
-  int n;
-  for (n = 0; n < num_iterations; ++n) {
+  for (int n = 0; n < num_iterations; ++n) {
 
     // Iterate normally for 2 out of every 3 times
     if (n%3 != 2) {
@@ -533,13 +531,13 @@ static bool ConservedToPrimitiveNormal(const int num_iterations, const AthenaArr
 
   // Step 3: Check for convergence
   bool success=true;
-  if (pgas[num_iterations%3] < (pgas_min + tol) or
+  if (pgas[num_iterations%3] < pgas_min or
       std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) > tol) {
     success = false;
   }
 
   // Step 5: Set primitives
-  prim(IPR,k,j,i) = pgas[(n+1)%3];
+  prim(IPR,k,j,i) = pgas[num_iterations%3];
   Real a = ee + prim(IPR,k,j,i) + 0.5*bb_sq;                      // (NH 5.7)
   a = std::max(a, a_min);
   Real phi = std::acos(1.0/a * std::sqrt(27.0*d/(4.0*a)));        // (NH 5.10)
