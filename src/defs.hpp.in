@@ -27,6 +27,9 @@
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 
+// Equation of state
+#define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
+
 // use general EOS framework default=0 (false).
 #define GENERAL_EOS @GENERAL_EOS@
 
