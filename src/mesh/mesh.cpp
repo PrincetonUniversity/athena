@@ -75,9 +75,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
   time = start_time;
   Real real_max = std::numeric_limits<Real>::max();
-  dt            = (real_max*0.4);
-  dt_hyperbolic = (real_max*0.4);
-  dt_parabolic  = (real_max*0.4);
+  dt = dt_diff = (real_max);
   muj = 0.0;
   nuj = 0.0;
   muj_tilde = 0.0;
@@ -1037,31 +1035,24 @@ void Mesh::OutputMeshStructure(int dim) {
 
 void Mesh::NewTimeStep(void) {
   MeshBlock *pmb = pblock;
-  Real min_dt=pmb->new_block_dt;
-  Real min_dt_hyperbolic=pmb->new_block_dt_hyperbolic;
-  Real min_dt_parabolic =pmb->new_block_dt_parabolic;
-  pmb=pmb->next;
+
+  dt_diff=dt=static_cast<Real>(2.0)*dt;
+
   while (pmb != nullptr)  {
-    min_dt=std::min(min_dt,pmb->new_block_dt);
-    min_dt_hyperbolic = std::min(min_dt_hyperbolic, pmb->new_block_dt_hyperbolic);
-    min_dt_parabolic  = std::min(min_dt_parabolic , pmb->new_block_dt_parabolic );
+    dt = std::min(dt,pmb->new_block_dt_);
+    dt_diff  = std::min(dt_diff, pmb->new_block_dt_diff_);
     pmb=pmb->next;
   }
-#ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(MPI_IN_PLACE,&min_dt_hyperbolic,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(MPI_IN_PLACE,&min_dt_parabolic, 1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
-#endif
-  dt_hyperbolic=min_dt_hyperbolic;
-  dt_parabolic =min_dt_parabolic;
-  if (STS_ENABLED)
-    dt=std::min(dt_hyperbolic,static_cast<Real>(2.0)*dt);
-  else
-    dt=std::min(min_dt,static_cast<Real>(2.0)*dt);
 
-  if (time < tlim && tlim-time < dt) {  // timestep would take us past desired endpoint
+#ifdef MPI_PARALLEL
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+  if (STS_ENABLED)
+    MPI_Allreduce(MPI_IN_PLACE,&dt_diff,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+#endif
+
+  if (time < tlim && tlim-time < dt) // timestep would take us past desired endpoint
     dt = tlim-time;
-  }
+
   return;
 }
 

@@ -121,9 +121,7 @@ class MeshBlock {
  private:
   // data
   Real cost;
-  Real new_block_dt;
-  Real new_block_dt_hyperbolic;
-  Real new_block_dt_parabolic;
+  Real new_block_dt_, new_block_dt_diff_;
   TaskState tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
@@ -178,7 +176,7 @@ class Mesh {
   // data
   RegionSize mesh_size;
   enum BoundaryFlag mesh_bcs[6];
-  Real start_time, tlim, cfl_number, time, dt, dt_parabolic, dt_hyperbolic;
+  Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
   int nbtotal, nbnew, nbdel;
