@@ -841,9 +841,9 @@ void MeshRefinement::ProlongateInternalField(
         pco->Face2Area(fk,   fj,   fsi, fei,   sarea_x2_[0][0]);
         pco->Face2Area(fk,   fj+1, fsi, fei,   sarea_x2_[0][1]);
         pco->Face2Area(fk,   fj+2, fsi, fei,   sarea_x2_[0][2]);
-        pco->Face2Area(fk,   fj,   fsi, fei,   sarea_x2_[1][0]);
-        pco->Face2Area(fk,   fj+1, fsi, fei,   sarea_x2_[1][1]);
-        pco->Face2Area(fk,   fj+2, fsi, fei,   sarea_x2_[1][2]);
+        pco->Face2Area(fk+1, fj,   fsi, fei,   sarea_x2_[1][0]);
+        pco->Face2Area(fk+1, fj+1, fsi, fei,   sarea_x2_[1][1]);
+        pco->Face2Area(fk+1, fj+2, fsi, fei,   sarea_x2_[1][2]);
         pco->Face3Area(fk,   fj,   fsi, fei,   sarea_x3_[0][0]);
         pco->Face3Area(fk,   fj+1, fsi, fei,   sarea_x3_[0][1]);
         pco->Face3Area(fk+1, fj,   fsi, fei,   sarea_x3_[1][0]);
