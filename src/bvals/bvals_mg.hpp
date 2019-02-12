@@ -32,14 +32,14 @@ class Coordinates;
 
 //! \struct MGBoundaryData
 //  \brief structure storing multigrid boundary information
-typedef struct MGBoundaryData {
+struct MGBoundaryData {
   int nbmax;
   enum BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
 #endif
-} MGBoundaryData;
+};
 
 //----------------------------------------------------------------------------------------
 //! \class MGBoundaryValues

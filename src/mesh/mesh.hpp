@@ -237,17 +237,17 @@ class Mesh {
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
 
   // functions
-  MeshGenFunc_t MeshGenerator_[3];
-  SrcTermFunc_t UserSourceTerm_;
-  BValFunc_t BoundaryFunction_[6];
-  AMRFlagFunc_t AMRFlag_;
-  TimeStepFunc_t UserTimeStep_;
-  HistoryOutputFunc_t *user_history_func_;
-  MetricFunc_t UserMetric_;
-  ViscosityCoeff_t ViscosityCoeff_;
-  ConductionCoeff_t ConductionCoeff_;
-  FieldDiffusionCoeff_t FieldDiffusivity_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
+  MeshGenFunc MeshGenerator_[3];
+  SrcTermFunc UserSourceTerm_;
+  BValFunc BoundaryFunction_[6];
+  AMRFlagFunc AMRFlag_;
+  TimeStepFunc UserTimeStep_;
+  HistoryOutputFunc *user_history_func_;
+  MetricFunc UserMetric_;
+  ViscosityCoeffFunc ViscosityCoeff_;
+  ConductionCoeffFunc ConductionCoeff_;
+  FieldDiffusionCoeffFunc FieldDiffusivity_;
+  MGBoundaryFunc MGBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -256,18 +256,18 @@ class Mesh {
 
   // methods in ../pgen
   void InitUserMeshData(ParameterInput *pin);
-  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
-  void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
-  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
-  void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
-  void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
+  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc my_func);
+  void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
+  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg);
+  void EnrollUserExplicitSourceFunction(SrcTermFunc my_func);
+  void EnrollUserTimeStepFunction(TimeStepFunc my_func);
   void AllocateUserHistoryOutput(int n);
-  void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
-  void EnrollUserMetric(MetricFunc_t my_func);
-  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
-  void EnrollConductionCoefficient(ConductionCoeff_t my_func);
-  void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);
+  void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name);
+  void EnrollUserMetric(MetricFunc my_func);
+  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
+  void EnrollConductionCoefficient(ConductionCoeffFunc my_func);
+  void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }

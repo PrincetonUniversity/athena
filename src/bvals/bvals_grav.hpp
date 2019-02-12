@@ -32,14 +32,14 @@ class Coordinates;
 
 //! \struct GravityBoundaryData
 //  \brief structure storing multigrid boundary information
-typedef struct GravityBoundaryData {
+struct GravityBoundaryData {
   int nbmax;
   enum BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
 #endif
-} GravityBoundaryData;
+};
 
 //----------------------------------------------------------------------------------------
 //! \class GravityBoundaryValues

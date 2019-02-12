@@ -514,8 +514,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   MeshBlock *pfirst{};
-  IOWrapperSize_t *offset{};
-  IOWrapperSize_t datasize, listsize, headeroffset;
+  IOWrapperSizeT *offset{};
+  IOWrapperSizeT datasize, listsize, headeroffset;
 
   // mesh test
   if (mesh_test>0) Globals::nranks=mesh_test;
@@ -556,8 +556,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   headeroffset=resfile.GetPosition();
   // read the restart file
   // the file is already open and the pointer is set to after <par_end>
-  IOWrapperSize_t headersize = sizeof(int)*3+sizeof(Real)*2
-                               + sizeof(RegionSize)+sizeof(IOWrapperSize_t);
+  IOWrapperSizeT headersize = sizeof(int)*3+sizeof(Real)*2
+                               + sizeof(RegionSize)+sizeof(IOWrapperSizeT);
   char *headerdata = new char[headersize];
   if (Globals::my_rank==0) { // the master process reads the header data
     if (resfile.Read(headerdata,1,headersize)!=headersize) {
@@ -570,7 +570,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // then broadcast the header data
   MPI_Bcast(headerdata, headersize, MPI_BYTE, 0, MPI_COMM_WORLD);
 #endif
-  IOWrapperSize_t hdos = 0;
+  IOWrapperSizeT hdos = 0;
   std::memcpy(&nbtotal, &(headerdata[hdos]), sizeof(int));
   hdos+=sizeof(int);
   std::memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
@@ -584,8 +584,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   hdos+=sizeof(Real);
   std::memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
   hdos+=sizeof(int);
-  std::memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
-  hdos+=sizeof(IOWrapperSize_t);
+  std::memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSizeT));
+  hdos+=sizeof(IOWrapperSizeT);
 
   delete [] headerdata;
 
@@ -595,7 +595,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   // initialize
   loclist=new LogicalLocation[nbtotal];
-  offset=new IOWrapperSize_t[nbtotal];
+  offset=new IOWrapperSizeT[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
   nslist=new int[Globals::nranks];
@@ -670,7 +670,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   InitUserMeshData(pin);
 
   // read user Mesh data
-  IOWrapperSize_t udsize = 0;
+  IOWrapperSizeT udsize = 0;
   for (int n=0; n<nint_user_mesh_data_; n++)
     udsize+=iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_mesh_data_; n++)
@@ -689,7 +689,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     MPI_Bcast(userdata, udsize, MPI_BYTE, 0, MPI_COMM_WORLD);
 #endif
 
-    IOWrapperSize_t udoffset=0;
+    IOWrapperSizeT udoffset=0;
     for (int n=0; n<nint_user_mesh_data_; n++) {
       std::memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
                   iuser_mesh_data[n].GetSizeInBytes());
@@ -804,7 +804,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     ATHENA_ERROR(msg);
   }
   for (int i=nbs; i<=nbe; i++) {
-    // Match fixed-width integer precision of IOWrapperSize_t datasize
+    // Match fixed-width integer precision of IOWrapperSizeT datasize
     std::uint64_t buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
@@ -1057,10 +1057,10 @@ void Mesh::NewTimeStep(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
+//! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc) {
+void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1078,20 +1078,20 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
+//! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
 
-void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag) {
+void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
   if (adaptive==true)
     AMRFlag_=amrflag;
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc_t my_mg)
+//! \fn void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc my_mg)
 //  \brief Enroll a user-defined function for Mesh generation
 
-void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg) {
+void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg) {
   std::stringstream msg;
   if (dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
@@ -1122,19 +1122,19 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
+//! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func)
 //  \brief Enroll a user-defined source function
 
-void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func) {
+void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func) {
   UserSourceTerm_ = my_func;
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+//! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func)
 //  \brief Enroll a user-defined time step function
 
-void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func) {
+void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func) {
   UserTimeStep_ = my_func;
   return;
 }
@@ -1146,16 +1146,16 @@ void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func) {
 void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
-  user_history_func_ = new HistoryOutputFunc_t[n];
+  user_history_func_ = new HistoryOutputFunc[n];
   for (int i=0; i<n; i++) user_history_func_[i] = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func,
+//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func,
 //                                         const char *name)
 //  \brief Enroll a user-defined history output function and set its name
 
-void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name) {
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name) {
   std::stringstream msg;
   if (i>=nuser_history_output_) {
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
@@ -1168,37 +1168,37 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const cha
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMetric(MetricFunc_t my_func)
+//! \fn void Mesh::EnrollUserMetric(MetricFunc my_func)
 //  \brief Enroll a user-defined metric for arbitrary GR coordinates
 
-void Mesh::EnrollUserMetric(MetricFunc_t my_func) {
+void Mesh::EnrollUserMetric(MetricFunc my_func) {
   UserMetric_ = my_func;
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func)
+//! \fn void Mesh::EnrollViscosityCoefficient(ViscosityCoeff my_func)
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
-void Mesh::EnrollViscosityCoefficient(ViscosityCoeff_t my_func) {
+void Mesh::EnrollViscosityCoefficient(ViscosityCoeffFunc my_func) {
   ViscosityCoeff_ = my_func;
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func)
+//! \fn void Mesh::EnrollConductionCoefficient(ConductionCoeff my_func)
 //  \brief Enroll a user-defined thermal conduction function
 
-void Mesh::EnrollConductionCoefficient(ConductionCoeff_t my_func) {
+void Mesh::EnrollConductionCoefficient(ConductionCoeffFunc my_func) {
   ConductionCoeff_ = my_func;
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func)
+//! \fn void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff my_func)
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
-void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func) {
+void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
   FieldDiffusivity_ = my_func;
   return;
 }
@@ -1236,10 +1236,10 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
-//                                              MGBoundaryFunc_t my_bc)
+//                                              MGBoundaryFunc my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc) {
+void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl

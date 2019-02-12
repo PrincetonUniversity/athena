@@ -43,7 +43,7 @@ RestartOutput::RestartOutput(OutputParameters oparams)
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
   MeshBlock *pmb;
   IOWrapper resfile;
-  IOWrapperSize_t listsize, headeroffset, datasize;
+  IOWrapperSizeT listsize, headeroffset, datasize;
 
   // create single output filename:"file_basename"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
@@ -77,14 +77,14 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   std::string sbuf=ost.str();
 
   // calculate the header size
-  IOWrapperSize_t udsize=0;
+  IOWrapperSizeT udsize=0;
   for (int n=0; n<pm->nint_user_mesh_data_; n++)
     udsize+=pm->iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize+=pm->ruser_mesh_data[n].GetSizeInBytes();
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
-               +2*sizeof(Real)+sizeof(IOWrapperSize_t)+udsize;
+               +2*sizeof(Real)+sizeof(IOWrapperSizeT)+udsize;
   // the size of an element of the ID list
   listsize=sizeof(LogicalLocation)+sizeof(Real);
   // the size of each MeshBlock
@@ -105,12 +105,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     resfile.Write(&(pm->time), sizeof(Real), 1);
     resfile.Write(&(pm->dt), sizeof(Real), 1);
     resfile.Write(&(pm->ncycle), sizeof(int), 1);
-    resfile.Write(&(datasize), sizeof(IOWrapperSize_t), 1);
+    resfile.Write(&(datasize), sizeof(IOWrapperSizeT), 1);
 
     // collect and write user Mesh data
     if (udsize!=0) {
       char *ud = new char[udsize];
-      IOWrapperSize_t udoffset = 0;
+      IOWrapperSizeT udoffset = 0;
       for (int n=0; n<pm->nint_user_mesh_data_; n++) {
         std::memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
                     pm->iuser_mesh_data[n].GetSizeInBytes());
@@ -142,7 +142,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   }
 
   // write the ID list collectively
-  IOWrapperSize_t myoffset=headeroffset+listsize*myns;
+  IOWrapperSizeT myoffset=headeroffset+listsize*myns;
   resfile.Write_at_all(idlist,listsize,mynb,myoffset);
 
   // deallocate the idlist array
