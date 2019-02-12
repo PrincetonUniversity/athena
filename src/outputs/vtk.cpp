@@ -32,7 +32,7 @@
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
 // legacy format requires data to be stored as big-endian.
 
-int IsBigEndian(void) {
+int IsBigEndian() {
   std::int32_t n = 1;
   // careful! although int -> char * -> int round-trip conversion is safe,
   // an arbitrary char* may not be converted to int*

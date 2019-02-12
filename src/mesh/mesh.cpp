@@ -1029,11 +1029,11 @@ void Mesh::OutputMeshStructure(int dim) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::NewTimeStep(void)
+// \!fn void Mesh::NewTimeStep()
 // \brief function that loops over all MeshBlocks and find new timestep
 //        this assumes that phydro->NewBlockTimeStep is already called
 
-void Mesh::NewTimeStep(void) {
+void Mesh::NewTimeStep() {
   MeshBlock *pmb = pblock;
 
   dt_diff=dt=static_cast<Real>(2.0)*dt;

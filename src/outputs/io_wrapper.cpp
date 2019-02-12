@@ -158,10 +158,10 @@ std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSizeT size,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void IOWrapper::Close(void)
+//! \fn void IOWrapper::Close()
 //  \brief wrapper for {MPI_File_close} versus {std::fclose}
 
-int IOWrapper::Close(void) {
+int IOWrapper::Close() {
 #ifdef MPI_PARALLEL
   return MPI_File_close(&fh_);
 #else
@@ -182,10 +182,10 @@ int IOWrapper::Seek(IOWrapperSizeT offset) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn IOWrapperSizeT IOWrapper::GetPosition(void)
+//! \fn IOWrapperSizeT IOWrapper::GetPosition()
 //  \brief wrapper for {MPI_File_get_position} versus {ftell}
 
-IOWrapperSizeT IOWrapper::GetPosition(void) {
+IOWrapperSizeT IOWrapper::GetPosition() {
 #ifdef MPI_PARALLEL
   MPI_Offset position;
   MPI_File_get_position(fh_,&position);

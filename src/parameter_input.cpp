@@ -844,9 +844,9 @@ InputLine* InputBlock::GetPtrToLine(std::string name) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::Lock(void)
+//! \fn void ParameterInput::Lock()
 //  \brief Lock ParameterInput for reading and writing
-void ParameterInput::Lock(void) {
+void ParameterInput::Lock() {
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&lock_);
 #endif
@@ -854,9 +854,9 @@ void ParameterInput::Lock(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::Unlock(void)
+//! \fn void ParameterInput::Unlock()
 //  \brief Unlock ParameterInput for reading and writing
-void ParameterInput::Unlock(void) {
+void ParameterInput::Unlock() {
 #ifdef OPENMP_PARALLEL
   omp_unset_lock(&lock_);
 #endif

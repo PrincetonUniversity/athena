@@ -60,7 +60,7 @@ class MeshRefinement {
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateInternalField(FaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
-  void CheckRefinementCondition(void);
+  void CheckRefinementCondition();
 
  private:
   // data

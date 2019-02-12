@@ -110,12 +110,12 @@ class MeshBlock {
   MeshBlock *prev, *next;
 
   // functions
-  std::size_t GetBlockSizeInBytes(void);
+  std::size_t GetBlockSizeInBytes();
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void UserWorkInLoop(void); // in ../pgen
+  void UserWorkInLoop(); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
   void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
-  int GetNumberOfMeshBlockCells(void) {
+  int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
 
  private:
@@ -198,7 +198,7 @@ class Mesh {
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
-  void NewTimeStep(void);
+  void NewTimeStep();
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);

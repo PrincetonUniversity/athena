@@ -89,7 +89,7 @@ class AthenaFFTIndex{
   void PermuteProc(int npermute);
   void RemapAxis(int dir);
   void RemapProc(int dir);
-  void PrintIndex(void);
+  void PrintIndex();
 
   friend class FFTDriver;
   friend class FFTBlock;
@@ -137,11 +137,11 @@ class FFTBlock {
                             AthenaFFTComplex *data,
                             enum AthenaFFTDirection dir);
 
-  void ExecuteForward(void) {Execute(fplan_);}
-  void ExecuteBackward(void) {Execute(bplan_);}
+  void ExecuteForward() {Execute(fplan_);}
+  void ExecuteBackward() {Execute(bplan_);}
 
   void PrintSource(int in);
-  void PrintNormFactor(void) {std::cout << norm_factor_ << std::endl;}
+  void PrintNormFactor() {std::cout << norm_factor_ << std::endl;}
 
   void SetNormFactor(Real norm) { norm_factor_=norm;}
 
@@ -187,7 +187,7 @@ class FFTDriver {
   void QuickCreatePlan();
   void InitializeFFTBlock(bool set_norm);
   // small functions
-  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; }
+  int GetNumFFTBlocks() { return nblist_[Globals::my_rank]; }
 
   friend class FFTBlock;
   friend class Mesh;

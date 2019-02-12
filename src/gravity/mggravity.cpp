@@ -160,10 +160,10 @@ void MGGravity::Smooth(int color) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateDefect(void)
+//! \fn void MGGravity::CalculateDefect()
 //  \brief calculate the residual
 
-void MGGravity::CalculateDefect(void) {
+void MGGravity::CalculateDefect() {
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];

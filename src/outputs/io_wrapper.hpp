@@ -45,9 +45,9 @@ class IOWrapper {
   std::size_t Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
   std::size_t Write_at_all(const void *buf, IOWrapperSizeT size,
                            IOWrapperSizeT cnt, IOWrapperSizeT offset);
-  int Close(void);
+  int Close();
   int Seek(IOWrapperSizeT offset);
-  IOWrapperSizeT GetPosition(void);
+  IOWrapperSizeT GetPosition();
 
  private:
   IOWrapperFile fh_;

@@ -56,11 +56,11 @@ void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 //========================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief Function called once every time step for user-defined work.
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::UserWorkInLoop(void) {
+void __attribute__((weak)) MeshBlock::UserWorkInLoop() {
   // do nothing
   return;
 }

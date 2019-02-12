@@ -171,10 +171,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 
 //======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // nothing to do
   return;
 }

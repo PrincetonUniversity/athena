@@ -110,7 +110,7 @@ class ParameterInput {
   omp_lock_t lock_;
 #endif
 
-  void Lock(void);
-  void Unlock(void);
+  void Lock();
+  void Unlock();
 };
 #endif // PARAMETER_INPUT_HPP_

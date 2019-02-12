@@ -48,7 +48,7 @@ class Hydro {
   HydroDiffusion *phdif;
 
   // functions
-  void NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
+  void NewBlockTimeStep();    // computes new timestep on a MeshBlock
   void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
                     AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
@@ -64,8 +64,8 @@ class Hydro {
       AthenaArray<Real> &ey, AthenaArray<Real> &ez,
       AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
-  void AddGravityFlux(void);
-  void AddGravityFluxWithGflx(void);
+  void AddGravityFlux();
+  void AddGravityFluxWithGflx();
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
 
  private:

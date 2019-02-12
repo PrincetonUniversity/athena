@@ -15,10 +15,10 @@
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void ShowConfig(void)
+//! \fn void ShowConfig()
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void) {
+void ShowConfig() {
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;

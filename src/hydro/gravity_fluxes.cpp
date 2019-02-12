@@ -17,10 +17,10 @@
 #include "hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void Hydro::AddGravityFlux(void)
+//! \fn void Hydro::AddGravityFlux()
 //  \brief Add gravity flux using new potential directly
 
-void Hydro::AddGravityFlux(void) {
+void Hydro::AddGravityFlux() {
   MeshBlock *pmb=pmy_block;
   Coordinates *pco=pmb->pcoord;
   Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
@@ -122,11 +122,11 @@ void Hydro::AddGravityFlux(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Hydro::AddGravityFluxWithGflx(void)
+//! \fn void Hydro::AddGravityFluxWithGflx()
 //  \brief Adds gravity flux to hydro flux using pre-calculated gflx.
 //         Implemented for one poisson solver call. (old Athena style)
 
-void Hydro::AddGravityFluxWithGflx(void) {
+void Hydro::AddGravityFluxWithGflx() {
   MeshBlock *pmb=pmy_block;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
