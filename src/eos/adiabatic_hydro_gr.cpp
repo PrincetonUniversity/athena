@@ -291,61 +291,6 @@ void EquationOfState::PrimitiveToConserved(
   return;
 }
 
-namespace {
-
-//----------------------------------------------------------------------------------------
-// Function for converting primitives to conserved variables in a single cell
-// Inputs:
-//   prim: 3D array of primitives
-//   gamma_adi: ratio of specific heats
-//   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,i: indices of cell
-//   pco: pointer to Coordinates
-// Outputs:
-//   cons: conserved variables set in desired cell
-
-void PrimitiveToConservedSingle(
-    const AthenaArray<Real> &prim, Real gamma_adi,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int i,
-    AthenaArray<Real> &cons, Coordinates *pco) {
-  // Extract primitives
-  const Real &rho = prim(IDN,k,j,i);
-  const Real &pgas = prim(IPR,k,j,i);
-  const Real &uu1 = prim(IVX,k,j,i);
-  const Real &uu2 = prim(IVY,k,j,i);
-  const Real &uu3 = prim(IVZ,k,j,i);
-
-  // Calculate 4-velocity
-  Real alpha = std::sqrt(-1.0/gi(I00,i));
-  Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-             + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-             + g(I33,i)*uu3*uu3;
-  Real gamma = std::sqrt(1.0 + tmp);
-  Real u0 = gamma/alpha;
-  Real u1 = uu1 - alpha * gamma * gi(I01,i);
-  Real u2 = uu2 - alpha * gamma * gi(I02,i);
-  Real u3 = uu3 - alpha * gamma * gi(I03,i);
-  Real u_0, u_1, u_2, u_3;
-  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-
-  // Extract conserved quantities
-  Real &rho_u0 = cons(IDN,k,j,i);
-  Real &t0_0 = cons(IEN,k,j,i);
-  Real &t0_1 = cons(IM1,k,j,i);
-  Real &t0_2 = cons(IM2,k,j,i);
-  Real &t0_3 = cons(IM3,k,j,i);
-
-  // Set conserved quantities
-  Real wgas = rho + gamma_adi/(gamma_adi-1.0) * pgas;
-  rho_u0 = rho * u0;
-  t0_0 = wgas * u0 * u_0 + pgas;
-  t0_1 = wgas * u0 * u_1;
-  t0_2 = wgas * u0 * u_2;
-  t0_3 = wgas * u0 * u_3;
-  return;
-}
-
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic sound speeds
 // Inputs:
@@ -414,6 +359,61 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
     *plambda_plus = root_2;
     *plambda_minus = root_1;
   }
+  return;
+}
+
+namespace {
+
+//----------------------------------------------------------------------------------------
+// Function for converting primitives to conserved variables in a single cell
+// Inputs:
+//   prim: 3D array of primitives
+//   gamma_adi: ratio of specific heats
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   k,j,i: indices of cell
+//   pco: pointer to Coordinates
+// Outputs:
+//   cons: conserved variables set in desired cell
+
+void PrimitiveToConservedSingle(
+    const AthenaArray<Real> &prim, Real gamma_adi,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+    int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco) {
+  // Extract primitives
+  const Real &rho = prim(IDN,k,j,i);
+  const Real &pgas = prim(IPR,k,j,i);
+  const Real &uu1 = prim(IVX,k,j,i);
+  const Real &uu2 = prim(IVY,k,j,i);
+  const Real &uu3 = prim(IVZ,k,j,i);
+
+  // Calculate 4-velocity
+  Real alpha = std::sqrt(-1.0/gi(I00,i));
+  Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+             + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+             + g(I33,i)*uu3*uu3;
+  Real gamma = std::sqrt(1.0 + tmp);
+  Real u0 = gamma/alpha;
+  Real u1 = uu1 - alpha * gamma * gi(I01,i);
+  Real u2 = uu2 - alpha * gamma * gi(I02,i);
+  Real u3 = uu3 - alpha * gamma * gi(I03,i);
+  Real u_0, u_1, u_2, u_3;
+  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+  // Extract conserved quantities
+  Real &rho_u0 = cons(IDN,k,j,i);
+  Real &t0_0 = cons(IEN,k,j,i);
+  Real &t0_1 = cons(IM1,k,j,i);
+  Real &t0_2 = cons(IM2,k,j,i);
+  Real &t0_3 = cons(IM3,k,j,i);
+
+  // Set conserved quantities
+  Real wgas = rho + gamma_adi/(gamma_adi-1.0) * pgas;
+  rho_u0 = rho * u0;
+  t0_0 = wgas * u0 * u_0 + pgas;
+  t0_1 = wgas * u0 * u_1;
+  t0_2 = wgas * u0 * u_2;
+  t0_3 = wgas * u0 * u_3;
   return;
 }
 
