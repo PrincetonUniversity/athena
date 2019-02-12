@@ -40,11 +40,13 @@ int IsBigEndian() {
   return (*ep == 0); // Returns 1 (true) on a big endian machine
 }
 
-static inline void Swap4Bytes(void *vdat) {
+namespace {
+inline void Swap4Bytes(void *vdat) {
   char tmp, *dat = static_cast<char *>(vdat);
   tmp = dat[0];  dat[0] = dat[3];  dat[3] = tmp;
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // VTKOutput constructor

@@ -23,14 +23,16 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "eos.hpp"
 
+namespace {
 // Declarations
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i,
     AthenaArray<Real> &cons, Coordinates *pco);
-static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
-static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
+Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
+Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -289,6 +291,8 @@ void EquationOfState::PrimitiveToConserved(
   return;
 }
 
+namespace {
+
 //----------------------------------------------------------------------------------------
 // Function for converting primitives to conserved variables in a single cell
 // Inputs:
@@ -300,7 +304,7 @@ void EquationOfState::PrimitiveToConserved(
 // Outputs:
 //   cons: conserved variables set in desired cell
 
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i,
@@ -427,7 +431,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
+Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq / (w_guess*w_guess);        // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real pgas = (gamma_adi-1.0)/gamma_adi
@@ -448,7 +452,7 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_ad
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
+Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq/SQR(w_guess);                             // (N 28)
   Real gamma_sq = 1.0/(1.0-v_norm_sq);
   Real gamma_4 = SQR(gamma_sq);
@@ -458,6 +462,7 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
                   * (gamma_sq + (0.5*d*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
   return -1.0 + dpgas_dw;
 }
+} // namespace
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,

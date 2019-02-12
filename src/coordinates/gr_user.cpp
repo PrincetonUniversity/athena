@@ -21,14 +21,16 @@
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
+namespace {
 // Declarations
-static Real Determinant(const AthenaArray<Real> &g);
-static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
+Real Determinant(const AthenaArray<Real> &g);
+Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
                         Real a31, Real a32, Real a33);
-static Real Determinant(Real a11, Real a12, Real a21, Real a22);
-static void CalculateTransformation(
+Real Determinant(Real a11, Real a12, Real a21, Real a22);
+void CalculateTransformation(
     const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // GRUser Constructor
@@ -1782,6 +1784,7 @@ void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, i
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Functions for calculating determinant
 // Inputs:
@@ -1791,7 +1794,7 @@ void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, i
 // Outputs:
 //   returned value: determinant
 
-static Real Determinant(const AthenaArray<Real> &g) {
+Real Determinant(const AthenaArray<Real> &g) {
   const Real &a11 = g(I00);
   const Real &a12 = g(I01);
   const Real &a13 = g(I02);
@@ -1815,7 +1818,7 @@ static Real Determinant(const AthenaArray<Real> &g) {
   return det;
 }
 
-static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
+Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
                         Real a31, Real a32, Real a33) {
   Real det = a11 * Determinant(a22, a23, a32, a33)
              - a12 * Determinant(a21, a23, a31, a33)
@@ -1823,7 +1826,7 @@ static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a
   return det;
 }
 
-static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
+Real Determinant(Real a11, Real a12, Real a21, Real a22) {
   return a11 * a22 - a12 * a21;
 }
 
@@ -1835,7 +1838,7 @@ static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
 // Outputs:
 //   transformation: array of transformation coefficients
 
-static void CalculateTransformation(
+void CalculateTransformation(
     const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation) {
   // Prepare indices
@@ -1901,3 +1904,4 @@ static void CalculateTransformation(
   transformation(1,T33) = 1.0/cc;
   return;
 }
+} // namespace

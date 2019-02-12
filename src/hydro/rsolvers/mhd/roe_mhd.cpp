@@ -26,13 +26,15 @@
 #include "../../../eos/eos.hpp"
 #include "../../hydro.hpp"
 
+namespace {
 // prototype for functions to compute inner product with eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
                     const Real du[], const Real wli[], Real flx[], Real eigenvalues[],
                     int &flag);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem fns
-static Real gm1, iso_cs;
+Real gm1, iso_cs;
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
