@@ -34,12 +34,17 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
-static void VelProfileCyl(const Real rad, const Real phi, const Real z,
+namespace {
+void VelProfileCyl(const Real rad, const Real phi, const Real z,
                           Real &v1, Real &v2, Real &v3);
-static Real A3(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A1(const Real x1, const Real x2, const Real x3);
+Real A3(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A1(const Real x1, const Real x2, const Real x3);
+
+// problem parameters which are global variables with internal linkage
+Real vy0, rho0, isocs2, gamma_gas;
+Real xc, yc, zc, beta, b0;
+} // namespace
 
 // User-defined boundary conditions along inner/outer edges (not poles)
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
@@ -57,9 +62,6 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Face
 
 int RefinementCondition(MeshBlock *pmb);
 
-// problem parameters which are useful to make global to this file
-static Real vy0, rho0, isocs2, gamma_gas;
-static Real xc, yc, zc, beta, b0;
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -298,10 +300,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //! \f transforms uniform velocity in x-directin in spherical polar coords
 
-static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
+void VelProfileCyl(const Real x1, const Real x2, const Real x3,
                           Real &v1, Real &v2, Real &v3) {
   v1 = vy0*std::sin(x2)*std::sin(x3);
   v2 = vy0*std::cos(x2)*std::sin(x3);
@@ -312,7 +315,7 @@ static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
 //----------------------------------------------------------------------------------------
 //! \f compute 3-compnent of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real a3=0.0;
   return a3;
 }
@@ -320,7 +323,7 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 2-compnent of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
@@ -340,7 +343,7 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 1-compnent of vector potential
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
@@ -356,6 +359,7 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
   a1=az*std::cos(x2);
   return a1;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopInnerX1
@@ -583,4 +587,3 @@ int RefinementCondition(MeshBlock *pmb) {
   if (maxb < 0.1*b0) return -1;
   return 0;
 }
-

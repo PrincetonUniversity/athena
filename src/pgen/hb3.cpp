@@ -54,15 +54,21 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ShBoxCoord, ipert,ifield; // initial pattern
-static Real beta, B0, pres;
-static Real gm1, iso_cs;
-static Real x1size, x2size, x3size;
-static Real Omega_0, qshear;
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ShBoxCoord, ipert,ifield; // initial pattern
+Real beta, B0;
+Real gm1, iso_cs;
+Real x1size, x2size, x3size;
+Real Omega_0, qshear;
+
+Real hst_BxBy(MeshBlock *pmb, int iout);
+} // namespace
+
+// TODO(felker): shouldn't this have internal linkage?
 AthenaArray<Real> volume; // 1D array of volumes
 
-static Real hst_BxBy(MeshBlock *pmb, int iout);
+
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
@@ -238,7 +244,8 @@ void MeshBlock::UserWorkInLoop() {
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
+namespace {
+Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -254,3 +261,4 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 
   return bxby;
 }
+} // namespace

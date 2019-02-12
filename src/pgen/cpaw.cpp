@@ -40,18 +40,19 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
+namespace {
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
-static Real ang_2, ang_3; // Rotation angles about the y and z' axis
-static Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
-static Real lambda, k_par; // Wavelength, 2*PI/wavelength
+Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
+Real ang_2, ang_3; // Rotation angles about the y and z' axis
+Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
+Real lambda, k_par; // Wavelength, 2*PI/wavelength
 
 // functions to compute vector potential to initialize the solution
-static Real A1(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A3(const Real x1, const Real x2, const Real x3);
-
+Real A1(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A3(const Real x1, const Real x2, const Real x3);
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -368,12 +369,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
-//! \fn static Real A1(const Real x1,const Real x2,const Real x3)
+//! \fn Real A1(const Real x1,const Real x2,const Real x3)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
@@ -383,10 +385,10 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A2(const Real x1,const Real x2,const Real x3)
+//! \fn Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
@@ -396,13 +398,14 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3(const Real x1,const Real x2,const Real x3)
+//! \fn Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return Az*cos_a2;
 }
+} // namespace

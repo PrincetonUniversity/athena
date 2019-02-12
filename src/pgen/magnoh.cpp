@@ -46,10 +46,12 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-static Real gm1;
-static Real alpha, beta, rho0, P0, pcoeff, vr, perturb, mphi;
-static Real bphi0, bz;
-// static Real nu_iso, eta_ohm;
+namespace {
+Real gm1;
+Real alpha, beta, rho0, P0, pcoeff, vr, perturb, mphi;
+Real bphi0, bz;
+// Real nu_iso, eta_ohm;
+} // namespace
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"

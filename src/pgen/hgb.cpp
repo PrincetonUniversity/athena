@@ -64,12 +64,17 @@
 #error "This problem generator requires shearing box"
 #endif
 
-Real Lx,Ly,Lz; // root grid size, global to share with output functions
+// TODO(felker): shouldn't these have internal linkage?
+Real Lx, Ly, Lz; // root grid size, global to share with output functions
+
+namespace {
 // TODO(felker): iout is unused in all 3x of these functions
-static Real hst_BxBy(MeshBlock *pmb, int iout);
-static Real hst_dVxVy(MeshBlock *pmb, int iout);
-static Real hst_dBy(MeshBlock *pmb, int iout);
-static Real Omega_0,qshear;
+Real hst_BxBy(MeshBlock *pmb, int iout);
+Real hst_dVxVy(MeshBlock *pmb, int iout);
+Real hst_dBy(MeshBlock *pmb, int iout);
+Real Omega_0,qshear;
+} // namespace
+
 // ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(3);
@@ -382,8 +387,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
+Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -405,7 +411,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
   return bxby;
 }
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout) {
+Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -429,7 +435,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   return dvxvy;
 }
 
-static Real hst_dBy(MeshBlock *pmb, int iout) {
+Real hst_dBy(MeshBlock *pmb, int iout) {
   Real dby=0;
   Real fkx, fky, fkz; // Fourier kx, ky
   Real x1,x2,x3;
@@ -457,6 +463,6 @@ static Real hst_dBy(MeshBlock *pmb, int iout) {
     }
   }
   volume.DeleteAthenaArray();
-
   return dby;
 }
+} // namespace

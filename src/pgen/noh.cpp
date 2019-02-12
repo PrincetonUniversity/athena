@@ -42,7 +42,9 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // made global to share with BC functions
-static Real gmma, gmma1;
+namespace {
+Real gmma, gmma1;
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

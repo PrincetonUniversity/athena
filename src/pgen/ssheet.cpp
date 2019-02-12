@@ -36,13 +36,14 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ipert; // initial pattern
-static Real gm1,iso_cs;
-static Real x1size,x2size,x3size;
-static Real Omega_0,qshear;
-static int shboxcoord;
-AthenaArray<Real> volume; // 1D array of volumes
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ipert; // initial pattern
+Real gm1,iso_cs;
+Real x1size,x2size,x3size;
+Real Omega_0,qshear;
+int shboxcoord;
+} // namespace
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
