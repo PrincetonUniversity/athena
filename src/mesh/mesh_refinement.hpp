@@ -72,7 +72,7 @@ class MeshRefinement {
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
 
   // functions
-  AMRFlagFunc_t AMRFlag_;
+  AMRFlagFunc AMRFlag_;
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_

@@ -15,13 +15,11 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
 class HydroDiffusion;
-struct IntegratorWeight;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -96,7 +94,7 @@ class Hydro {
   AthenaArray<Real> wl3d_, wr3d_;
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
-  TimeStepFunc_t UserTimeStep_;
+  TimeStepFunc UserTimeStep_;
 
   Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };

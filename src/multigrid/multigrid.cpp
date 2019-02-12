@@ -25,13 +25,13 @@
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid,
 //                           int ilid, int invar, int nghost, RegionSize isize,
-//                           MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs,
+//                           MGBoundaryFunc *MGBoundary, enum BoundaryFlag *input_bcs,
 //                           bool root);
 //  \brief Multigrid constructor
 
 Multigrid::Multigrid(
     MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-    int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+    int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
     enum BoundaryFlag *input_bcs, bool root) {
   pmy_driver_=pmd;
   loc_=iloc;

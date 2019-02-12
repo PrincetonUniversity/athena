@@ -65,7 +65,7 @@ class GravityBoundaryValues : public BoundaryBase {
 
  private:
   MeshBlock *pmy_block_;
-  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
+  GravityBoundaryFunc GravityBoundaryFunction_[6];
   GravityBoundaryData bd_gravity_;
 };
 

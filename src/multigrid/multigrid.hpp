@@ -55,7 +55,7 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 class Multigrid {
  public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-            int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
             enum BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
@@ -113,7 +113,7 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
+  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
   virtual ~MultigridDriver();
   void AddMultigrid(Multigrid *nmg);
   void SubtractAverage(int type);
@@ -146,7 +146,7 @@ class MultigridDriver {
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
+  MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
   Multigrid *pmg_;
   Multigrid *mgroot_;

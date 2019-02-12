@@ -329,7 +329,7 @@ class BoundaryValues : public BoundaryBase {
   MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif
 
-  BValFunc_t BoundaryFunction_[6];
+  BValFunc BoundaryFunction_[6];
 
   void CheckPolarBoundaries(void);
 

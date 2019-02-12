@@ -48,7 +48,7 @@ struct MGBoundaryData {
 class MGBoundaryValues : public BoundaryBase {
  public:
   MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
-                   MGBoundaryFunc_t *MGBoundary);
+                   MGBoundaryFunc *MGBoundary);
   ~MGBoundaryValues();
 
   void InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type);
@@ -70,7 +70,7 @@ class MGBoundaryValues : public BoundaryBase {
 
  private:
   Multigrid *pmy_mg_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
+  MGBoundaryFunc MGBoundaryFunction_[6];
   MGBoundaryData bd_mggrav_;
 
 #ifdef MPI_PARALLEL

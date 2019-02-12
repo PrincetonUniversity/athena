@@ -29,7 +29,7 @@ class Multigrid;
 class MGGravity : public Multigrid {
  public:
   MGGravity(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-            RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            RegionSize isize, MGBoundaryFunc *MGBoundary,
             enum BoundaryFlag *input_bcs, bool root)
       : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
@@ -47,7 +47,7 @@ class MGGravity : public Multigrid {
 
 class MGGravityDriver : public MultigridDriver{
  public:
-  MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
+  MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, ParameterInput *pin);
   ~MGGravityDriver() {}
   void Solve(int stage) final;
   // void SolveCoarsestGrid(void) final;

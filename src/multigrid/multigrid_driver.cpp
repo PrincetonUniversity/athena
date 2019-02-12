@@ -31,7 +31,7 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar) {
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) {
   pmy_mesh_=pm;
   nvar_=invar;
   eps_=-1.0;
