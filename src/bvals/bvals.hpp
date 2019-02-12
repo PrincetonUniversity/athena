@@ -56,7 +56,7 @@ static bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-typedef struct NeighborBlock {
+struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
   enum NeighborType type;
   enum BoundaryFace fid;
@@ -68,40 +68,40 @@ typedef struct NeighborBlock {
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
-} NeighborBlock;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct PolarNeighborBlock
 //  \brief Struct for describing neighbors around pole at same radius and polar angle
 
-typedef struct PolarNeighborBlock {
+struct PolarNeighborBlock {
   int rank;    // MPI rank of neighbor
   int lid;     // local ID of neighbor
   int gid;     // global ID of neighbor
   bool north;  // flag that is true for North pole and false for South pole
-} PolarNeighborBlock;
+};
 
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
-typedef struct NeighborIndexes {
+struct NeighborIndexes {
   int ox1, ox2, ox3, fi1, fi2;
   enum NeighborType type;
   NeighborIndexes() {
     ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
     type=NEIGHBOR_NONE;
   }
-} NeighborIndexes;
+};
 
 //! \struct BoundaryData
 //  \brief structure storing boundary information
-typedef struct BoundaryData {
+struct BoundaryData {
   int nbmax;
   enum BoundaryStatus flag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
 #endif
-} BoundaryData;
+};
 
 
 //---------------------- prototypes for all BC functions ---------------------------------
@@ -156,11 +156,11 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 std::string GetBoundaryString(enum BoundaryFlag input_flag);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
-typedef struct ShearingBoundaryBlock {
+struct ShearingBoundaryBlock {
   int *igidlist, *ilidlist, *irnklist, *ilevlist;
   int *ogidlist, *olidlist, *ornklist, *olevlist;
   bool inner, outer; // inner=true if inner blocks
-} ShearingBoundaryBlock;
+};
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase

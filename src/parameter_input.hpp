@@ -32,12 +32,12 @@
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
 
-typedef struct InputLine {
+struct InputLine {
   std::string param_name;
   std::string param_value;    // value of the parameter is stored as a string!
   std::string param_comment;
   struct InputLine *pnext;    // pointer to the next node
-} InputLine;
+};
 
 //----------------------------------------------------------------------------------------
 //! \class InputBlock

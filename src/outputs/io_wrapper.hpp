@@ -18,12 +18,12 @@
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-typedef MPI_File IOWrapperFile;
+using  IOWrapperFile = MPI_File;
 #else
-typedef FILE * IOWrapperFile;
+using  IOWrapperFile = FILE*;
 #endif
 
-typedef std::uint64_t IOWrapperSize_t;
+using IOWrapperSize_t = std::uint64_t;
 enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {

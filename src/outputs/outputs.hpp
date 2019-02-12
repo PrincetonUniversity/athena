@@ -31,7 +31,7 @@ class Coordinates;
 //! \struct OutputParameters
 //  \brief  container for parameters read from <output> block in the input file
 
-typedef struct OutputParameters {
+struct OutputParameters {
   int block_number;
   std::string block_name;
   std::string file_basename;
@@ -52,20 +52,20 @@ typedef struct OutputParameters {
                        output_sumx1(false), output_sumx2(false), output_sumx3(false),
                        include_ghost_zones(false), cartesian_vector(false),
                        islice(0), jslice(0), kslice(0) {}
-} OutputParameters;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputData
 //  \brief container for output data and metadata; used as node in linked list
 
-typedef struct OutputData {
+struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
 
   OutputData() : pnext(nullptr),  pprev(nullptr) {}
-} OutputData;
+};
 
 //----------------------------------------------------------------------------------------
 //  \brief abstract base class for different output types (modes).  Each OutputType

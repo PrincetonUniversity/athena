@@ -24,9 +24,9 @@
 
 // container to store (density, momentum, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver
-typedef struct Cons1D {
-  Real d,mx,my,mz,by,bz;
-} Cons1D;
+struct Cons1D {
+  Real d, mx, my, mz, by, bz;
+};
 
 #define SMALL_NUMBER 1.0e-8
 
