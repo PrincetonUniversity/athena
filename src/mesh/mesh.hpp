@@ -111,12 +111,9 @@ class MeshBlock {
 
   // functions
   std::size_t GetBlockSizeInBytes();
-  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void UserWorkInLoop(); // in ../pgen
-  void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
-  void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
 
  private:
   // data
@@ -131,7 +128,11 @@ class MeshBlock {
   void AllocateUserOutputVariables(int n);
   void SetUserOutputVariableName(int n, const char *name);
 
-  void ProblemGenerator(ParameterInput *pin); // in ../pgen
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void ProblemGenerator(ParameterInput *pin);
+  void UserWorkInLoop();
+  void InitUserMeshBlockData(ParameterInput *pin);
+  void UserWorkBeforeOutput(ParameterInput *pin);
 };
 
 //----------------------------------------------------------------------------------------
@@ -203,7 +204,6 @@ class Mesh {
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
-  void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
  private:
   // data
@@ -254,8 +254,11 @@ class Mesh {
   void OutputMeshStructure(int dim);
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
-  // methods in ../pgen
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
+  void UserWorkAfterLoop(ParameterInput *pin);
+
+  // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc my_func);
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg);
