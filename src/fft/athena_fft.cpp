@@ -560,9 +560,6 @@ AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc) {
   SetLocalIndex();
 }
 
-AthenaFFTIndex::~AthenaFFTIndex() {
-}
-
 void AthenaFFTIndex::SetLocalIndex() {
   for (int i=0; i<3; i++) {
     nx[i] = Nx[i]/np[i];

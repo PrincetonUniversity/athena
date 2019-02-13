@@ -67,10 +67,9 @@ class TurbulenceDriver;
 
 class AthenaFFTIndex{
  public:
-  AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
-  ~AthenaFFTIndex();
-
   explicit AthenaFFTIndex(const AthenaFFTIndex *psrc);
+  AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
+
   // mesh size
   Real Lx[3];
   int Nx[3];

@@ -18,9 +18,6 @@
 #include "../coordinates/coordinates.hpp" // Coordinates
 #include "interp_table.hpp"
 
-// A do nothing constructor
-InterpTable2D::InterpTable2D() {}
-
 // A contructor that setts the size of the table with number of variables nvar
 // and dimensions nx2 x nx1 (interpolated dimensions)
 InterpTable2D::InterpTable2D(const int nvar, const int nx2, const int nx1) {
