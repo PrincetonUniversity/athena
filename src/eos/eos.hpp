@@ -31,7 +31,6 @@ class EquationOfState {
   friend class Hydro;
  public:
   EquationOfState(MeshBlock *pmb, ParameterInput *pin);
-  ~EquationOfState();
 
   void ConservedToPrimitive(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
@@ -146,7 +145,7 @@ class EquationOfState {
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   // don't use implicit destructor definition
-  ~EquationOfState();
+  ~EquationOfState();  // may cause error in future if used with GR
   Real GetGamma();
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
