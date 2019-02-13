@@ -140,12 +140,8 @@ class EquationOfState {
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
-  void PrepEOS(ParameterInput *pin);
-  void CleanEOS();
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
-  // don't use implicit destructor definition
-  ~EquationOfState();  // may cause error in future if used with GR
   Real GetGamma();
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
