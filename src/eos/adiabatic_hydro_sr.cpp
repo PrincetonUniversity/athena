@@ -38,11 +38,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {}
-
-//----------------------------------------------------------------------------------------
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities

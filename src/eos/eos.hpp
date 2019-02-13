@@ -101,6 +101,8 @@ class EquationOfState {
   void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
                                 Real *, Real *) {return;}
 #else  // GR: Newtonian defined as no-op
+  // don't use implicit destructor definition
+  ~EquationOfState();
   Real SoundSpeed(const Real[]) {return 0.0;}
   Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
   void ApplyPrimitiveConservedFloors(
@@ -143,6 +145,8 @@ class EquationOfState {
   void CleanEOS();
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
+  // don't use implicit destructor definition
+  ~EquationOfState();
   Real GetGamma();
 #else // not EOS_TABLE_ENABLED
   Real GetGamma() const {return gamma_;}
