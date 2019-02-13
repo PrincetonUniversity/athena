@@ -73,7 +73,8 @@ class TaskList {
   friend class SuperTimeStepTaskList;
  public:
   explicit TaskList(Mesh *pm);
-  virtual ~TaskList();
+  // rule of five:
+  virtual ~TaskList() = default;
 
   // data
   int ntasks;     // number of tasks in this list

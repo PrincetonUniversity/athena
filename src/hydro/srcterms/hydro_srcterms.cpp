@@ -69,11 +69,6 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   if (UserSourceTerm != nullptr) hydro_sourceterms_defined = true;
 }
 
-// destructor
-
-HydroSourceTerms::~HydroSourceTerms() {
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::AddHydroSourceTerms
 //  \brief Adds source terms to conserved variables

@@ -27,7 +27,6 @@ class ParameterInput;
 class HydroSourceTerms {
  public:
   HydroSourceTerms(Hydro *phyd, ParameterInput *pin);
-  ~HydroSourceTerms();
 
   // accessors
   Real GetGM() const {return gm_;}
