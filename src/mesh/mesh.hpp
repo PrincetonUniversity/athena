@@ -115,6 +115,10 @@ class MeshBlock {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
 
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
+  void UserWorkInLoop();                          // called in TimeIntegratorTaskList
+
  private:
   // data
   Real cost;
@@ -130,9 +134,7 @@ class MeshBlock {
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
-  void UserWorkInLoop();
   void InitUserMeshBlockData(ParameterInput *pin);
-  void UserWorkBeforeOutput(ParameterInput *pin);
 };
 
 //----------------------------------------------------------------------------------------
@@ -205,6 +207,9 @@ class Mesh {
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
 
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+
  private:
   // data
   int root_level, max_level, current_level;
@@ -256,7 +261,6 @@ class Mesh {
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
-  void UserWorkAfterLoop(ParameterInput *pin);
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc my_func);
