@@ -73,11 +73,22 @@ struct OutputData {
 
 class OutputType {
  public:
+  // mark single parameter constructors as "explicit" to prevent them from acting as
+  // implicit conversion functions, e.g. f(OutputType arg), prevent f(anOutputParameters)
   explicit OutputType(OutputParameters oparams);
-  virtual ~OutputType();
+
+  // rule of five:
+  virtual ~OutputType() = default;
+  // copy constructor and assignment operator (pnext_type, pfirst_data, etc. are shallow
+  // copied)
+  OutputType(const OutputType& copy_other) = default;
+  OutputType& operator=(const OutputType& copy_other) = default;
+  // move constructor and assignment operator
+  OutputType(OutputType&&) = default;
+  OutputType& operator=(OutputType&&) = default;
 
   // data
-  int out_is,out_ie,out_js,out_je,out_ks,out_ke;  // OutputData array start/end indices
+  int out_is, out_ie, out_js, out_je, out_ks, out_ke;  // OutputData array start/end index
   OutputParameters output_params; // control data read from <output> block
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 

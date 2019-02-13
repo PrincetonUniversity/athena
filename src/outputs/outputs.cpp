@@ -82,11 +82,6 @@ OutputType::OutputType(OutputParameters oparams) {
   plast_data_ = nullptr;  // Initialize end   of linked list of OutputData's to nullptr
 }
 
-// destructor
-
-OutputType::~OutputType() {
-}
-
 //----------------------------------------------------------------------------------------
 // Outputs constructor
 
