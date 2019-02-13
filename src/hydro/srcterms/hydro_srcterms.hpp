@@ -27,7 +27,6 @@ class ParameterInput;
 class HydroSourceTerms {
  public:
   HydroSourceTerms(Hydro *phyd, ParameterInput *pin);
-  ~HydroSourceTerms();
 
   // accessors
   Real GetGM() const {return gm_;}
@@ -53,8 +52,8 @@ class HydroSourceTerms {
 
   void SelfGravity(const Real dt, const AthenaArray<Real> *flx,
                    const AthenaArray<Real> &p, AthenaArray<Real> &c);
-  void EnrollSrcTermFunction(SrcTermFunc_t my_func);
-  SrcTermFunc_t UserSourceTerm;
+  void EnrollSrcTermFunction(SrcTermFunc my_func);
+  SrcTermFunc UserSourceTerm;
 
  private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms

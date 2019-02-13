@@ -975,10 +975,10 @@ void MeshRefinement::ProlongateInternalField(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MeshRefinement::CheckRefinementCondition(void)
+//! \fn void MeshRefinement::CheckRefinementCondition()
 //  \brief Check refinement criteria
 
-void MeshRefinement::CheckRefinementCondition(void) {
+void MeshRefinement::CheckRefinementCondition() {
   MeshBlock *pmb=pmy_block_;
   int ret=0, aret=-1;
   refine_flag_=0;

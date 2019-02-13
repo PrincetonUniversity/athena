@@ -61,8 +61,10 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
+namespace {
 // made global to share with BC functions
-static Real grav_acc;
+Real grav_acc;
+} // namespace
 
 int RefinementCondition(MeshBlock *pmb);
 

@@ -31,7 +31,6 @@ class EquationOfState {
   friend class Hydro;
  public:
   EquationOfState(MeshBlock *pmb, ParameterInput *pin);
-  ~EquationOfState();
 
   void ConservedToPrimitive(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
@@ -101,6 +100,8 @@ class EquationOfState {
   void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
                                 Real *, Real *) {return;}
 #else  // GR: Newtonian defined as no-op
+  // don't use implicit destructor definition
+  ~EquationOfState();
   Real SoundSpeed(const Real[]) {return 0.0;}
   Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
   void ApplyPrimitiveConservedFloors(
@@ -139,8 +140,6 @@ class EquationOfState {
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
-  void PrepEOS(ParameterInput *pin);
-  void CleanEOS();
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   Real GetGamma();

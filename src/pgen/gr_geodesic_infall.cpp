@@ -36,9 +36,11 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+namespace {
 // TODO(felker): can the 4x copies of this function in pgen/ files be shared?
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -141,6 +143,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -150,7 +153,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
@@ -160,3 +163,4 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
   }
   return;
 }
+} // namespace

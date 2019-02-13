@@ -86,8 +86,8 @@ class HydroDiffusion {
   AthenaArray<Real> nu_tot_,kappa_tot_;
 
   // functions pointer to calculate spatial dependent coefficients
-  ViscosityCoeff_t CalcViscCoeff_;
-  ConductionCoeff_t CalcCondCoeff_;
+  ViscosityCoeffFunc CalcViscCoeff_;
+  ConductionCoeffFunc CalcCondCoeff_;
 
   // auxiliary functions to calculate viscous flux
   void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);

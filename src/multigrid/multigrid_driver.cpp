@@ -31,7 +31,7 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar) {
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) {
   pmy_mesh_=pm;
   nvar_=invar;
   eps_=-1.0;
@@ -138,10 +138,10 @@ void MultigridDriver::AddMultigrid(Multigrid *nmg) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetupMultigrid(void)
+//! \fn void MultigridDriver::SetupMultigrid()
 //  \brief initialize the source assuming that the source terms are already loaded
 
-void MultigridDriver::SetupMultigrid(void) {
+void MultigridDriver::SetupMultigrid() {
   Multigrid *pmg=pmg_;
 
   nrootlevel_=mgroot_->GetNumberOfLevels();
@@ -202,10 +202,10 @@ void MultigridDriver::SubtractAverage(int type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::FillRootGridSource(void)
+//! \fn void MultigridDriver::FillRootGridSource()
 //  \brief collect the coarsest data and fill the root grid
 
-void MultigridDriver::FillRootGridSource(void) {
+void MultigridDriver::FillRootGridSource() {
   Multigrid *pmg=pmg_;
   while (pmg!=nullptr) {
     for (int v=0; v<nvar_; v++)
@@ -233,10 +233,10 @@ void MultigridDriver::FillRootGridSource(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::FMGProlongate(void)
+//! \fn void MultigridDriver::FMGProlongate()
 //  \brief Prolongation for FMG Cycle
 
-void MultigridDriver::FMGProlongate(void) {
+void MultigridDriver::FMGProlongate() {
   int flag=0;
   if (current_level_==nrootlevel_-1) {
     TransferFromRootToBlocks();
@@ -255,10 +255,10 @@ void MultigridDriver::FMGProlongate(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::TransferFromRootToBlocks(void)
+//! \fn void MultigridDriver::TransferFromRootToBlocks()
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
-void MultigridDriver::TransferFromRootToBlocks(void) {
+void MultigridDriver::TransferFromRootToBlocks() {
   Multigrid *pmg=pmg_;
   AthenaArray<Real> &src=mgroot_->GetCurrentData();
   mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -371,10 +371,10 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveFMGCycle(void)
+//! \fn void MultigridDriver::SolveFMGCycle()
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
-void MultigridDriver::SolveFMGCycle(void) {
+void MultigridDriver::SolveFMGCycle() {
   for (int lev=0; lev<ntotallevel_; lev++) {
     if (mode_==0)
       SolveVCycle(1, 1);
@@ -389,10 +389,10 @@ void MultigridDriver::SolveFMGCycle(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveIterative(void)
+//! \fn void MultigridDriver::SolveIterative()
 //  \brief Solve iteratively until the convergence is achieved
 
-void MultigridDriver::SolveIterative(void) {
+void MultigridDriver::SolveIterative() {
   Real def=eps_+1e-10;
   int niter=0;
   std::cout << std::scientific;
@@ -427,10 +427,10 @@ void MultigridDriver::SolveIterative(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveCoarsestGrid(void)
+//! \fn void MultigridDriver::SolveCoarsestGrid()
 //  \brief Solve the coarsest root grid
 
-void MultigridDriver::SolveCoarsestGrid(void) {
+void MultigridDriver::SolveCoarsestGrid() {
   Mesh *pm=pmy_mesh_;
   int ni = (std::max(pm->nrbx1, std::max(pm->nrbx2, pm->nrbx3))
             >> (nrootlevel_-1));

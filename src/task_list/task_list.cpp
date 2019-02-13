@@ -32,11 +32,6 @@ TaskList::TaskList(Mesh *pm) {
   nstages = 0;
 }
 
-// destructor
-
-TaskList::~TaskList() {
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be

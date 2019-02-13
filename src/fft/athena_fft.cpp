@@ -560,9 +560,6 @@ AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc) {
   SetLocalIndex();
 }
 
-AthenaFFTIndex::~AthenaFFTIndex() {
-}
-
 void AthenaFFTIndex::SetLocalIndex() {
   for (int i=0; i<3; i++) {
     nx[i] = Nx[i]/np[i];
@@ -633,7 +630,7 @@ void AthenaFFTIndex::RemapProc(int dir) {
   RemapArray_(ip,ploc,dir);
 }
 
-void AthenaFFTIndex::PrintIndex(void) {
+void AthenaFFTIndex::PrintIndex() {
   std::cout << "Lx:" << Lx[0] << " "  << Lx[1] << " " << Lx[2] << std::endl
             << "Nx:" << Nx[0] << " "  << Nx[1] << " " << Nx[2] << std::endl
             << "np:" << np[0] << " "  << np[1] << " " << np[2] << std::endl

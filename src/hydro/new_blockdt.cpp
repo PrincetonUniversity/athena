@@ -34,10 +34,10 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// \!fn void Hydro::NewBlockTimeStep(void)
+// \!fn void Hydro::NewBlockTimeStep()
 // \brief calculate the minimum timestep within a MeshBlock
 
-void Hydro::NewBlockTimeStep(void) {
+void Hydro::NewBlockTimeStep() {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

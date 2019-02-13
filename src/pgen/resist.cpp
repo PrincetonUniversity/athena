@@ -31,8 +31,9 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
-static Real amp, x0, t0, eta;
-static int iprob;
+namespace {
+Real x0, t0;
+} // namespace
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -40,7 +41,7 @@ static int iprob;
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real gm1 = peos->GetGamma() - 1.0;
+  //Real gm1 = peos->GetGamma() - 1.0;
 
   // Read initial conditions, diffusion coefficients (if needed)
   Real etaO = pin->GetOrAddReal("problem","eta_ohm",0.03);

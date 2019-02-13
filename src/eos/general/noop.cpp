@@ -47,17 +47,3 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   ATHENA_ERROR(msg);
   return -1.0;
 }
-void EquationOfState::PrepEOS(ParameterInput *pin) {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  ATHENA_ERROR(msg);
-  return;
-}
-void EquationOfState::CleanEOS() {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::CleanEOS()" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  ATHENA_ERROR(msg);
-  return;
-}

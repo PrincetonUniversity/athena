@@ -68,14 +68,15 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
                          FaceField &b, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-static Real hst_BxBy(MeshBlock *pmb, int iout);
-static Real hst_dVxVy(MeshBlock *pmb, int iout);
+namespace {
+Real hst_BxBy(MeshBlock *pmb, int iout);
+Real hst_dVxVy(MeshBlock *pmb, int iout);
 
-static Real Omega_0,qshear;
+Real Omega_0,qshear;
 
 // Apply a density floor - useful for large |z| regions
-static Real dfloor,pfloor;
-
+Real dfloor,pfloor;
+} // namespace
 
 //====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -338,7 +339,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   return;
 }
 
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -548,8 +549,9 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
   return;
 }
 
+namespace {
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
+Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -572,7 +574,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 }
 
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout) {
+Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy=0.0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -595,3 +597,4 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout) {
   volume.DeleteAthenaArray();
   return dvxvy;
 }
+} // namespace
