@@ -107,7 +107,6 @@ class OutputType {
 class HistoryOutput : public OutputType {
  public:
   explicit HistoryOutput(OutputParameters oparams);
-  ~HistoryOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -118,7 +117,6 @@ class HistoryOutput : public OutputType {
 class FormattedTableOutput : public OutputType {
  public:
   explicit FormattedTableOutput(OutputParameters oparams);
-  ~FormattedTableOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -129,7 +127,6 @@ class FormattedTableOutput : public OutputType {
 class VTKOutput : public OutputType {
  public:
   explicit VTKOutput(OutputParameters oparams);
-  ~VTKOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -140,7 +137,6 @@ class VTKOutput : public OutputType {
 class RestartOutput : public OutputType {
  public:
   explicit RestartOutput(OutputParameters oparams);
-  ~RestartOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -153,7 +149,6 @@ class ATHDF5Output : public OutputType {
  public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams);
-  ~ATHDF5Output() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
