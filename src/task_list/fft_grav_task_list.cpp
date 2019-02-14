@@ -16,7 +16,7 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../bvals/cc/fft_grav/bvals_fft_grav.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"

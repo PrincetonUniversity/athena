@@ -19,18 +19,18 @@
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../globals.hpp"
-#include "../gravity/gravity.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
-#include "../parameter_input.hpp"
-#include "../utils/buffer_utils.hpp"
-#include "bvals_grav.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../../coordinates/coordinates.hpp"
+#include "../../../eos/eos.hpp"
+#include "../../../field/field.hpp"
+#include "../../../globals.hpp"
+#include "../../../gravity/gravity.hpp"
+#include "../../../hydro/hydro.hpp"
+#include "../../../mesh/mesh.hpp"
+#include "../../../parameter_input.hpp"
+#include "../../../utils/buffer_utils.hpp"
+#include "bvals_fft_grav.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

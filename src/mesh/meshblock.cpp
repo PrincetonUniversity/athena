@@ -22,7 +22,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "../bvals/cc/fft_grav/bvals_fft_grav.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"

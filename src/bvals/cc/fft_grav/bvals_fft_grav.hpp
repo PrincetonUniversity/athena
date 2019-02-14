@@ -14,9 +14,9 @@
 #include <string>   // string
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "bvals.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../bvals.hpp"
 
 // MPI headers
 #ifdef MPI_PARALLEL
