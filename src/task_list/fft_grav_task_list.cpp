@@ -48,7 +48,8 @@ FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id, std::uint64_t dep) {
+void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id,
+                                                       std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
@@ -86,8 +87,8 @@ void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id, std::ui
 
 
 void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  pmb->pgbval->StartReceivingFFTGravity();
-
+  // KGF
+  //pmb->pgrav->pgbval->StartReceivingFFTGravity();
   return;
 }
 
@@ -100,26 +101,29 @@ void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
 enum TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb,
                                                                   int stage) {
-  pmb->pgbval->ClearBoundaryFFTGravity();
+  // KGF
+  //pmb->pgrav->pgbval->ClearBoundary();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb,
                                                                  int stage) {
-  if (pmb->pgrav->pgbval->SendFFTGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TASK_FAIL;
+  pmb->pgrav->pgbval->SendBoundaryBuffers();
+  // if (pmb->pgrav->pgbval->SendBoundaryBuffers() == false)
+  //   return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
 enum TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
                                                                     int stage) {
-  if (pmb->pgrav->pgbval->ReceiveFFTGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+  if (pmb->pgrav->pgbval->ReceiveBoundaryBuffers() == false)
     return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
 enum TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb,
                                                            int stage) {
-  pmb->pgrav->pgbval->ApplyPhysicalBoundaries();
+  // KGF
+  //pmb->pgrav->pgbval->ApplyPhysicalBoundaries();
   return TASK_NEXT;
 }
