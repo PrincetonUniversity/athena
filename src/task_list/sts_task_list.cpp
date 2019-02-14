@@ -495,8 +495,7 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
-    pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-                                   pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+    pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {
     return TASK_FAIL;
   }

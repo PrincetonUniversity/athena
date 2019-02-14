@@ -137,12 +137,10 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // functions unique to BoundaryValues. these do not exist in individual BoundaryVariable
 
   // these typically define a coupled interaction of these boundary variables
-  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-                               FaceField &bfdst, AthenaArray<Real> &bcdst,
-                               const Real time, const Real dt);
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-                            FaceField &bfdst, AthenaArray<Real> &bcdst,
-                            const Real time, const Real dt);
+  // KGF: will need to access AthenaArray<Real> &bcdst = pfield->bcc
+  void ApplyPhysicalBoundaries(const Real time, const Real dt);
+  void ProlongateBoundaries(const Real time, const Real dt);
+
   // The following 2x methods are unique to the BoundaryValues class, and serve only to
   // check the user's configuration. Called in Mesh::Initialize() after processing
   // ParameterInput(), before pbval->Initialize() is called in this class.

@@ -1488,8 +1488,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
         if (multilevel==true)
-          pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                      time, 0.0);
+          pbval->ProlongateBoundaries(time, 0.0);
 
         int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
         if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
@@ -1524,8 +1523,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
         // --------------------------
         // end fourth-order EOS
-        pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
-                                       time, 0.0);
+        pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
 
       // Calc initial diffusion coefficients
