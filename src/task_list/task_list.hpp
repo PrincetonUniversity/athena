@@ -81,9 +81,11 @@ class TaskList {
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
+ protected:
+  Task task_list_[64];
+
  private:
   Mesh* pmy_mesh_;
-  struct Task task_list_[64];
   virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
