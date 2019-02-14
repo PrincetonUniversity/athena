@@ -26,6 +26,12 @@ EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
+	     $(wildcard src/bvals/cc/*.cpp) \
+	     $(wildcard src/bvals/cc/fft_grav/*.cpp) \
+	     $(wildcard src/bvals/cc/hydro/*.cpp) \
+	     $(wildcard src/bvals/cc/mg/*.cpp) \
+	     $(wildcard src/bvals/fc/*.cpp) \
+	     $(wildcard src/bvals/utils/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/general/$(GENERAL_EOS_FILE) \
 	     src/eos/$(EOS_FILE) \
