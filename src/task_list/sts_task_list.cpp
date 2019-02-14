@@ -88,39 +88,39 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
   // Now assemble list of tasks for each stage of SuperTimeStep integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     // calculate hydro/field diffusive fluxes
-    AddSuperTimeStepTask(DIFFUSE_HYD,NONE);
+    AddTask(DIFFUSE_HYD,NONE);
     if (MAGNETIC_FIELDS_ENABLED)
-      AddSuperTimeStepTask(DIFFUSE_FLD,NONE);
+      AddTask(DIFFUSE_FLD,NONE);
     // compute hydro fluxes, integrate hydro variables
     if (MAGNETIC_FIELDS_ENABLED)
-      AddSuperTimeStepTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
+      AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
     else
-      AddSuperTimeStepTask(CALC_HYDFLX,DIFFUSE_HYD);
-    AddSuperTimeStepTask(INT_HYD, CALC_HYDFLX);
-    AddSuperTimeStepTask(SEND_HYD,INT_HYD);
-    AddSuperTimeStepTask(RECV_HYD,NONE);
-    AddSuperTimeStepTask(SETB_HYD,(RECV_HYD|INT_HYD));
+      AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+    AddTask(INT_HYD, CALC_HYDFLX);
+    AddTask(SEND_HYD,INT_HYD);
+    AddTask(RECV_HYD,NONE);
+    AddTask(SETB_HYD,(RECV_HYD|INT_HYD));
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      AddSuperTimeStepTask(CALC_FLDFLX,CALC_HYDFLX);
-      AddSuperTimeStepTask(SEND_FLDFLX,CALC_FLDFLX);
-      AddSuperTimeStepTask(RECV_FLDFLX,SEND_FLDFLX);
-      AddSuperTimeStepTask(INT_FLD,RECV_FLDFLX);
-      AddSuperTimeStepTask(SEND_FLD,INT_FLD);
-      AddSuperTimeStepTask(RECV_FLD,NONE);
-      AddSuperTimeStepTask(SETB_FLD,(RECV_FLD|INT_FLD));
+      AddTask(CALC_FLDFLX,CALC_HYDFLX);
+      AddTask(SEND_FLDFLX,CALC_FLDFLX);
+      AddTask(RECV_FLDFLX,SEND_FLDFLX);
+      AddTask(INT_FLD,RECV_FLDFLX);
+      AddTask(SEND_FLD,INT_FLD);
+      AddTask(RECV_FLD,NONE);
+      AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
     }
 
     // compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) // MHD
-      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+      AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
     else  // HYDRO
-      AddSuperTimeStepTask(CON2PRIM,(SETB_HYD));
+      AddTask(CON2PRIM,(SETB_HYD));
 
     // everything else
-    AddSuperTimeStepTask(PHY_BVAL,CON2PRIM);
-    AddSuperTimeStepTask(CLEAR_ALLBND,PHY_BVAL);
+    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(CLEAR_ALLBND,PHY_BVAL);
   } // end of using namespace block
 }
 
@@ -128,7 +128,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
 //  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
 //  ntask.
 
-void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t dep) {
+void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
@@ -222,7 +222,7 @@ void SuperTimeStepTaskList::AddSuperTimeStepTask(std::uint64_t id, std::uint64_t
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddSuperTimeStepTask" << std::endl
+      msg << "### FATAL ERROR in AddTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       ATHENA_ERROR(msg);
   }

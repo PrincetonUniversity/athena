@@ -87,7 +87,7 @@ friend class SuperTimeStepTaskList;
  private:
   Mesh* pmy_mesh_;
   struct Task task_list_[64];
-
+  virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
@@ -104,8 +104,6 @@ class TimeIntegratorTaskList : public TaskList {
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
   struct IntegratorWeight stage_wghts[MAX_NSTAGE];
-
-  void AddTimeIntegratorTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
   enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
@@ -153,6 +151,7 @@ class TimeIntegratorTaskList : public TaskList {
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
  private:
+  void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
@@ -164,8 +163,6 @@ class SuperTimeStepTaskList : public TaskList {
  public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm);
   ~SuperTimeStepTaskList() {}
-
-  void AddSuperTimeStepTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
   enum TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
@@ -197,6 +194,7 @@ class SuperTimeStepTaskList : public TaskList {
   enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
+  void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 

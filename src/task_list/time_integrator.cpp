@@ -223,88 +223,88 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // Now assemble list of tasks for each stage of time integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     // calculate hydro/field diffusive fluxes
-    AddTimeIntegratorTask(DIFFUSE_HYD,NONE);
+    AddTask(DIFFUSE_HYD,NONE);
     if (MAGNETIC_FIELDS_ENABLED)
-      AddTimeIntegratorTask(DIFFUSE_FLD,DIFFUSE_HYD);
+      AddTask(DIFFUSE_FLD,DIFFUSE_HYD);
     // compute hydro fluxes, integrate hydro variables
     if (MAGNETIC_FIELDS_ENABLED)
-      AddTimeIntegratorTask(CALC_HYDFLX,DIFFUSE_FLD);
+      AddTask(CALC_HYDFLX,DIFFUSE_FLD);
     else
-      AddTimeIntegratorTask(CALC_HYDFLX,DIFFUSE_HYD);
+      AddTask(CALC_HYDFLX,DIFFUSE_HYD);
     if (pm->multilevel==true) { // SMR or AMR
-      AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
-      AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
-      AddTimeIntegratorTask(INT_HYD,RECV_HYDFLX);
+      AddTask(SEND_HYDFLX,CALC_HYDFLX);
+      AddTask(RECV_HYDFLX,CALC_HYDFLX);
+      AddTask(INT_HYD,RECV_HYDFLX);
     } else {
-      AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
+      AddTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
-    AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
-    AddTimeIntegratorTask(RECV_HYD,NONE);
-    AddTimeIntegratorTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
+    AddTask(SRCTERM_HYD,INT_HYD);
+    AddTask(SEND_HYD,SRCTERM_HYD);
+    AddTask(RECV_HYD,NONE);
+    AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
     if (SHEARING_BOX) { // Shearingbox BC for Hydro
-      AddTimeIntegratorTask(SEND_HYDSH,SETB_HYD);
-      AddTimeIntegratorTask(RECV_HYDSH,SETB_HYD);
+      AddTask(SEND_HYDSH,SETB_HYD);
+      AddTask(RECV_HYDSH,SETB_HYD);
     }
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-      AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
-      AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
+      AddTask(CALC_FLDFLX,CALC_HYDFLX);
+      AddTask(SEND_FLDFLX,CALC_FLDFLX);
+      AddTask(RECV_FLDFLX,SEND_FLDFLX);
       if (SHEARING_BOX) {// Shearingbox BC for EMF
-        AddTimeIntegratorTask(SEND_EMFSH,RECV_FLDFLX);
-        AddTimeIntegratorTask(RECV_EMFSH,RECV_FLDFLX);
-        AddTimeIntegratorTask(RMAP_EMFSH,RECV_EMFSH);
-        AddTimeIntegratorTask(INT_FLD,RMAP_EMFSH);
+        AddTask(SEND_EMFSH,RECV_FLDFLX);
+        AddTask(RECV_EMFSH,RECV_FLDFLX);
+        AddTask(RMAP_EMFSH,RECV_EMFSH);
+        AddTask(INT_FLD,RMAP_EMFSH);
       } else {
-        AddTimeIntegratorTask(INT_FLD,RECV_FLDFLX);
+        AddTask(INT_FLD,RECV_FLDFLX);
       }
 
-      AddTimeIntegratorTask(SEND_FLD,INT_FLD);
-      AddTimeIntegratorTask(RECV_FLD,NONE);
-      AddTimeIntegratorTask(SETB_FLD,(RECV_FLD|INT_FLD));
+      AddTask(SEND_FLD,INT_FLD);
+      AddTask(RECV_FLD,NONE);
+      AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
       if (SHEARING_BOX) { // Shearingbox BC for Bfield
-        AddTimeIntegratorTask(SEND_FLDSH,SETB_FLD);
-        AddTimeIntegratorTask(RECV_FLDSH,SETB_FLD);
+        AddTask(SEND_FLDSH,SETB_FLD);
+        AddTask(RECV_FLDSH,SETB_FLD);
       }
     }
 
     // prolongate, compute new primitives
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       if (pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
-        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+        AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
+        AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTimeIntegratorTask(CON2PRIM,(SETB_HYD|SETB_FLD|
+          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|
                                           RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
         } else {
-          AddTimeIntegratorTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
         }
       }
     } else {  // HYDRO
       if (pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG,(SEND_HYD|SETB_HYD));
-        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+        AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+        AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTimeIntegratorTask(CON2PRIM,(SETB_HYD|RECV_HYDSH));
+          AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH));
         } else {
-          AddTimeIntegratorTask(CON2PRIM,(SETB_HYD));
+          AddTask(CON2PRIM,(SETB_HYD));
         }
       }
     }
 
     // everything else
-    AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-    AddTimeIntegratorTask(USERWORK,PHY_BVAL);
-    AddTimeIntegratorTask(NEW_DT,USERWORK);
+    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(USERWORK,PHY_BVAL);
+    AddTask(NEW_DT,USERWORK);
     if (pm->adaptive==true) {
-      AddTimeIntegratorTask(AMR_FLAG,USERWORK);
-      AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
+      AddTask(AMR_FLAG,USERWORK);
+      AddTask(CLEAR_ALLBND,AMR_FLAG);
     } else {
-      AddTimeIntegratorTask(CLEAR_ALLBND,NEW_DT);
+      AddTask(CLEAR_ALLBND,NEW_DT);
     }
   } // end of using namespace block
 }
@@ -313,7 +313,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
 //  ntask.
 
-void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64_t dep) {
+void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
@@ -487,7 +487,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(std::uint64_t id, std::uint64
 
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
+      msg << "### FATAL ERROR in AddTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       ATHENA_ERROR(msg);
   }
