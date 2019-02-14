@@ -235,10 +235,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   }
   // end KGF: shared logic of setting boundary functions and counting spherical blocks
 
-  //
-
   // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
   // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
+  // KGF: shouldn't this only be allocated for MHD?
   if (pmb->loc.level == pmy_mesh_->root_level &&
      pmy_mesh_->nrbx3 == 1 &&
      (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
@@ -619,7 +618,7 @@ void BoundaryValues::Initialize(void) {
   // BoundaryValues() constructor.
 
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    bvars_it->Initialize();
+    (*bvars_it)->Initialize();
   }
 
 
@@ -715,7 +714,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 // #endif
   // KGF: approach #2
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    bvars_it->StartReceivingForInit(cons_and_field);
+    (*bvars_it)->StartReceivingForInit(cons_and_field);
   }
 
   // KGF: begin shearing-box exclusive section of StartReceivingForInit
@@ -753,7 +752,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
   // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
   // independent loops over nneighbor
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    bvars_it->StartReceivingAll(time);
+    (*bvars_it)->StartReceivingAll(time);
   }
 
   // KGF: begin shearing-box exclusive section of StartReceivingAll
@@ -826,7 +825,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    bvars_it->ClearBoundaryForInit(cons_and_field);
+    (*bvars_it)->ClearBoundaryForInit(cons_and_field);
   }
   return;
 }
@@ -838,7 +837,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
 
 void BoundaryValues::ClearBoundaryAll(void) {
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    bvars_it->ClearBoundaryAll();
+    (*bvars_it)->ClearBoundaryAll();
   }
 
   // KGF: begin shearing-box exclusive section of ClearBoundaryAll

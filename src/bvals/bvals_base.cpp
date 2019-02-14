@@ -79,9 +79,12 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     maxneighbor_=BufferID(dim, pmy_mesh_->multilevel);
     called_=true;
   }
-
+  // copy/set in class the input 6x BoundaryFlag for this local MeshBlock boundaries
   for (int i=0; i<6; i++)
     block_bcs[i]=input_bcs[i];
+
+  // count blocks around azimuth at each pole and setup structs for their neighbor info
+  // KGF: small structs--- is there actually any unique metadata tracked there?
   if (block_bcs[INNER_X2] == POLAR_BNDRY
       || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh_->root_level;
