@@ -38,22 +38,22 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
   // BoundaryPhysics: need to flip sign of velocity vectors for Reflect*()
   void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                       int il, int iu, int jl, int ju,
-                      int kl, int ku, int nu, int ngh) override;
+                      int kl, int ku, int ngh) override;
   //protected:
  private:
   // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
