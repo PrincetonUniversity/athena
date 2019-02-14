@@ -39,11 +39,11 @@ class MultigridDriver;
 
 //----------------------------------------------------------------------------------------
 //! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
-//                                         MGBoundaryFunc_t *MGBoundary)
+//                                         MGBoundaryFunc *MGBoundary)
 //  \brief Constructor of the MGBoundaryValues class
 
 MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
-                                   MGBoundaryFunc_t *MGBoundary)
+                                   MGBoundaryFunc *MGBoundary)
     : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs) {
   pmy_mg_=pmg;
 #ifdef MPI_PARALLEL

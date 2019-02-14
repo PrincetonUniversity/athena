@@ -15,18 +15,14 @@
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void ShowConfig(void)
+//! \fn void ShowConfig()
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void) {
+void ShowConfig() {
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;
-  if (NON_BAROTROPIC_EOS) {
-    std::cout<<"  Equation of state:          adiabatic" << std::endl;
-  } else {
-    std::cout<<"  Equation of state:          isothermal" << std::endl;
-  }
+  std::cout<<"  Equation of state:          " << EQUATION_OF_STATE << std::endl;
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
 
   if (SHEARING_BOX) {

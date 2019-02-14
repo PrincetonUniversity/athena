@@ -11,7 +11,7 @@
 // C headers
 
 // C++ headers
-#include <cstdio>
+#include <cstdio>      // fwrite(), fclose(), fopen(), fnprintf(), snprintf()
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>

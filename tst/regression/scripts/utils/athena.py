@@ -54,7 +54,7 @@ def make(clean_first=True, obj_only=False):
             stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
-            subprocess.check_call(make_command, stdout=stdout_f)
+            subprocess.check_call(make_command)  # , stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))

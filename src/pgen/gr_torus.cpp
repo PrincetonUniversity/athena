@@ -42,48 +42,51 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                     FaceField &bb, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+
+namespace {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi);
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
                             Real theta, Real phi,
                             Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-static Real CalculateLFromRPeak(Real r);
-static Real CalculateRPeakFromL(Real l_target);
-static Real LogHAux(Real r, Real sin_theta);
-static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3);
-static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
+Real CalculateLFromRPeak(Real r);
+Real CalculateRPeakFromL(Real l_target);
+Real LogHAux(Real r, Real sin_theta);
+void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3);
+void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
                                            Real *pu1, Real *pu2, Real *pu3);
-static Real CalculateBetaMin();
-static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
+Real CalculateBetaMin();
+bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
                           Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta);
-static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
+bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
                                Real theta_m, Real theta_c, Real theta_p,
                                Real a_cm, Real a_cp, Real a_mc, Real a_pc,
                                Real *pbeta);
-static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
+Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
                                       Real phi);
 
 // Global variables
-static Real m, a;                                  // black hole parameters
-static Real gamma_adi, k_adi;                      // hydro parameters
-static Real r_edge, r_peak, l, rho_max;            // fixed torus parameters
-static Real psi, sin_psi, cos_psi;                 // tilt parameters
-static Real log_h_edge, log_h_peak;                // calculated torus parameters
-static Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
-static Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
-static b_configs field_config;                     // type of magnetic field
-static Real potential_cutoff;                      // sets region of torus to magnetize
-static Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
-static Real beta_min;                              // min ratio of gas to mag pressure
-static int sample_n_r, sample_n_theta;             // number of cells in 2D sample grid
-static int sample_n_phi;                           // number of cells in 3D sample grid
-static Real sample_r_rat;                          // sample grid geometric spacing ratio
-static Real sample_cutoff;                         // density cutoff for sample grid
-static Real x1_min, x1_max, x2_min, x2_max;        // 2D limits in chosen coordinates
-static Real x3_min, x3_max;                        // 3D limits in chosen coordinates
-static Real r_min, r_max, theta_min, theta_max;    // limits in r,theta for 2D samples
-static Real phi_min, phi_max;                      // limits in phi for 3D samples
-static Real pert_amp, pert_kr, pert_kz;            // parameters for initial perturbations
+Real m, a;                                  // black hole parameters
+Real gamma_adi, k_adi;                      // hydro parameters
+Real r_edge, r_peak, l, rho_max;            // fixed torus parameters
+Real psi, sin_psi, cos_psi;                 // tilt parameters
+Real log_h_edge, log_h_peak;                // calculated torus parameters
+Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
+Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
+b_configs field_config;                     // type of magnetic field
+Real potential_cutoff;                      // sets region of torus to magnetize
+Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
+Real beta_min;                              // min ratio of gas to mag pressure
+int sample_n_r, sample_n_theta;             // number of cells in 2D sample grid
+int sample_n_phi;                           // number of cells in 3D sample grid
+Real sample_r_rat;                          // sample grid geometric spacing ratio
+Real sample_cutoff;                         // density cutoff for sample grid
+Real x1_min, x1_max, x2_min, x2_max;        // 2D limits in chosen coordinates
+Real x3_min, x3_max;                        // 3D limits in chosen coordinates
+Real r_min, r_max, theta_min, theta_max;    // limits in r,theta for 2D samples
+Real phi_min, phi_max;                      // limits in phi for 3D samples
+Real pert_amp, pert_kr, pert_kz;            // parameters for initial perturbations
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -1427,6 +1430,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -1436,7 +1440,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
                                          Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
@@ -1457,7 +1461,7 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
                             Real theta, Real phi,
                             Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
@@ -1491,7 +1495,7 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   assumes corotation
 //   see CalculateRPeakFromL()
 
-static Real CalculateLFromRPeak(Real r) {
+Real CalculateLFromRPeak(Real r) {
   Real num = SQR(SQR(r)) + SQR(a*r) - 2.0*m*SQR(a)*r - a*(SQR(r)-SQR(a))*std::sqrt(m*r);
   Real denom = SQR(r) - 3.0*m*r + 2.0*a*std::sqrt(m*r);
   return 1.0/r * std::sqrt(m/r) * num/denom;
@@ -1514,7 +1518,7 @@ static Real CalculateLFromRPeak(Real r) {
 //   returns NAN in case of failure (e.g. root not bracketed)
 //   see CalculateLFromRPeak()
 
-static Real CalculateRPeakFromL(Real l_target) {
+Real CalculateRPeakFromL(Real l_target) {
   // Parameters
   const Real tol_r = 1.0e-10;      // absolute tolerance on abscissa r_peak
   const Real tol_l = 1.0e-10;      // absolute tolerance on ordinate l
@@ -1561,7 +1565,7 @@ static Real CalculateRPeakFromL(Real l_target) {
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //   implements first half of (FM 3.6)
 
-static Real LogHAux(Real r, Real sin_theta) {
+Real LogHAux(Real r, Real sin_theta) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1591,7 +1595,7 @@ static Real LogHAux(Real r, Real sin_theta) {
 //   The formula for u^3 as a function of u_{(\phi)} is tedious to derive, but this
 //       matches the formula used in Harm (init.c).
 
-static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3) {
+void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3) {
   Real sin_sq_theta = SQR(sin_theta);
   Real cos_sq_theta = 1.0 - sin_sq_theta;
   Real delta = SQR(r) - 2.0*m*r + SQR(a);                    // \Delta
@@ -1631,7 +1635,7 @@ static void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu
 //   next calculates velocity at that point in untilted case
 //   finally transforms that velocity into coordinates in which torus is tilted
 
-static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
+void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
                                            Real *pu1, Real *pu2, Real *pu3) {
   // Calculate corresponding location
   Real sin_theta = std::sin(theta);
@@ -1696,7 +1700,7 @@ static void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *p
 //   grid is not necessarily the same as used for the problem proper
 //   calculation is done entirely in Boyer-Lindquist coordinates
 
-static Real CalculateBetaMin() {
+Real CalculateBetaMin() {
   // Prepare container to hold minimum
   Real beta_min_actual = std::numeric_limits<Real>::max();
 
@@ -1763,7 +1767,7 @@ static Real CalculateBetaMin() {
 // Notes:
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
-static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
+bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
                           Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta) {
   // Assemble arrays of points
   Real r_vals[7], theta_vals[7], phi_vals[7];
@@ -1901,7 +1905,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
 // Notes:
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
-static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
+bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
                                Real theta_m, Real theta_c, Real theta_p,
                                Real a_cm, Real a_cp, Real a_mc, Real a_pc,
                                Real *pbeta) {
@@ -1948,7 +1952,7 @@ static bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
 // Outputs:
 //   returned value: magnetic pressure
 
-static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
+Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
                                       Real phi) {
   // Calculate Boyer-Lindquist metric
   Real sin_theta = std::sin(theta);
@@ -1991,3 +1995,4 @@ static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real
               + g_30*b3*b0 + g_31*b3*b1 + g_32*b3*b2 + g_33*b3*b3;
   return 0.5*b_sq;
 }
+} // namespace

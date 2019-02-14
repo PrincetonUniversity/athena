@@ -163,7 +163,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input) {
   std::stringstream par, msg;
   const int bufsize=4096;
   char *buf=new char[bufsize];
-  IOWrapperSize_t header=0, ret, loc;
+  IOWrapperSizeT header=0, ret, loc;
 
   // search <par_end> or EOF.
   do {
@@ -171,7 +171,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input) {
       ret=input.Read(buf, sizeof(char), bufsize);
 #ifdef MPI_PARALLEL
     // then broadcasts it
-    MPI_Bcast(&ret, sizeof(IOWrapperSize_t), MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&ret, sizeof(IOWrapperSizeT), MPI_BYTE, 0, MPI_COMM_WORLD);
     MPI_Bcast(buf, ret, MPI_BYTE, 0, MPI_COMM_WORLD);
 #endif
     par.write(buf,ret); // add the buffer into the stream
@@ -846,9 +846,9 @@ InputLine* InputBlock::GetPtrToLine(std::string name) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::Lock(void)
+//! \fn void ParameterInput::Lock()
 //  \brief Lock ParameterInput for reading and writing
-void ParameterInput::Lock(void) {
+void ParameterInput::Lock() {
 #ifdef OPENMP_PARALLEL
   omp_set_lock(&lock_);
 #endif
@@ -856,9 +856,9 @@ void ParameterInput::Lock(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ParameterInput::Unlock(void)
+//! \fn void ParameterInput::Unlock()
 //  \brief Unlock ParameterInput for reading and writing
-void ParameterInput::Unlock(void) {
+void ParameterInput::Unlock() {
 #ifdef OPENMP_PARALLEL
   omp_unset_lock(&lock_);
 #endif

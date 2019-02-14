@@ -28,10 +28,12 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
+namespace {
 // Make radius of jet and jet variables global so they can be accessed by BC functions
-static Real r_amb,d_amb,p_amb,vx_amb,vy_amb,vz_amb,bx_amb,by_amb,bz_amb;
-static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
-static Real gm1,x2_0,x3_0;
+Real r_amb, d_amb, p_amb, vx_amb, vy_amb, vz_amb, bx_amb, by_amb, bz_amb;
+Real r_jet, d_jet, p_jet, vx_jet, vy_jet, vz_jet, bx_jet, by_jet, bz_jet;
+Real gm1, x2_0, x3_0;
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

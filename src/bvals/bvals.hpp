@@ -169,7 +169,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
   AthenaArray<Real> azimuthal_shift_;
 
-  BValFunc_t BoundaryFunction_[6];
+  BValFunc BoundaryFunction_[6];
 
   // Shearingbox (shared with Field and Hydro)
   // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.

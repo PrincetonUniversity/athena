@@ -31,11 +31,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", std::sqrt(1024*(float_min)));
 }
 
-// destructor
-
-EquationOfState::~EquationOfState() {
-}
-
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //           const AthenaArray<Real> &prim_old, const FaceField &b,

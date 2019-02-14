@@ -21,7 +21,6 @@ class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
 class HydroDiffusion;
-struct IntegratorWeight;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -52,7 +51,7 @@ class Hydro {
   HydroDiffusion *phdif;
 
   // functions
-  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
+  void NewBlockTimeStep();    // computes new timestep on a MeshBlock
   void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
                     AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
@@ -68,8 +67,8 @@ class Hydro {
       AthenaArray<Real> &ey, AthenaArray<Real> &ez,
       AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
-  void AddGravityFlux(void);
-  void AddGravityFluxWithGflx(void);
+  void AddGravityFlux();
+  void AddGravityFluxWithGflx();
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
 
  private:
@@ -98,7 +97,7 @@ class Hydro {
   AthenaArray<Real> wl3d_, wr3d_;
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
-  TimeStepFunc_t UserTimeStep_;
+  TimeStepFunc UserTimeStep_;
 
   Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };

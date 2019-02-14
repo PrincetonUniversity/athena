@@ -19,7 +19,7 @@
 
 class InterpTable2D {
  public:
-  InterpTable2D();
+  InterpTable2D() = default;
   InterpTable2D(const int nvar, const int nx2, const int nx1);
   ~InterpTable2D();
   void SetSize(const int nvar, const int nx2, const int nx1);

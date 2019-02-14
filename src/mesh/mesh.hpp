@@ -111,18 +111,19 @@ class MeshBlock {
   MeshBlock *prev, *next;
 
   // functions
-  std::size_t GetBlockSizeInBytes(void);
+  std::size_t GetBlockSizeInBytes();
+  int GetNumberOfMeshBlockCells() {
+    return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void UserWorkInLoop(void); // in ../pgen
-  void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
-  void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
+
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
+  void UserWorkInLoop();                          // called in TimeIntegratorTaskList
 
  private:
   // data
   Real cost;
-  Real new_block_dt;
-  Real new_block_dt_hyperbolic;
-  Real new_block_dt_parabolic;
+  Real new_block_dt_, new_block_dt_diff_;
   TaskState tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
@@ -132,7 +133,9 @@ class MeshBlock {
   void AllocateUserOutputVariables(int n);
   void SetUserOutputVariableName(int n, const char *name);
 
-  void ProblemGenerator(ParameterInput *pin); // in ../pgen
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void ProblemGenerator(ParameterInput *pin);
+  void InitUserMeshBlockData(ParameterInput *pin);
 };
 
 //----------------------------------------------------------------------------------------
@@ -178,7 +181,7 @@ class Mesh {
   // data
   RegionSize mesh_size;
   enum BoundaryFlag mesh_bcs[6];
-  Real start_time, tlim, cfl_number, time, dt, dt_parabolic, dt_hyperbolic;
+  Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
   int nbtotal, nbnew, nbdel;
@@ -200,12 +203,14 @@ class Mesh {
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
-  void NewTimeStep(void);
+  void NewTimeStep();
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
-  void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
+
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
 
  private:
   // data
@@ -239,37 +244,39 @@ class Mesh {
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
 
   // functions
-  MeshGenFunc_t MeshGenerator_[3];
-  SrcTermFunc_t UserSourceTerm_;
-  BValFunc_t BoundaryFunction_[6];
-  AMRFlagFunc_t AMRFlag_;
-  TimeStepFunc_t UserTimeStep_;
-  HistoryOutputFunc_t *user_history_func_;
-  MetricFunc_t UserMetric_;
-  ViscosityCoeff_t ViscosityCoeff_;
-  ConductionCoeff_t ConductionCoeff_;
-  FieldDiffusionCoeff_t FieldDiffusivity_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
+  MeshGenFunc MeshGenerator_[3];
+  SrcTermFunc UserSourceTerm_;
+  BValFunc BoundaryFunction_[6];
+  AMRFlagFunc AMRFlag_;
+  TimeStepFunc UserTimeStep_;
+  HistoryOutputFunc *user_history_func_;
+  MetricFunc UserMetric_;
+  ViscosityCoeffFunc ViscosityCoeff_;
+  ConductionCoeffFunc ConductionCoeff_;
+  FieldDiffusionCoeffFunc FieldDiffusivity_;
+  MGBoundaryFunc MGBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
-  // methods in ../pgen
+  // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
-  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
-  void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
-  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
-  void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
-  void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
+
+  // often used (not defined) in prob file in ../pgen/
+  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc my_func);
+  void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
+  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg);
+  void EnrollUserExplicitSourceFunction(SrcTermFunc my_func);
+  void EnrollUserTimeStepFunction(TimeStepFunc my_func);
   void AllocateUserHistoryOutput(int n);
-  void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
-  void EnrollUserMetric(MetricFunc_t my_func);
-  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
-  void EnrollViscosityCoefficient(ViscosityCoeff_t my_func);
-  void EnrollConductionCoefficient(ConductionCoeff_t my_func);
-  void EnrollFieldDiffusivity(FieldDiffusionCoeff_t my_func);
+  void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name);
+  void EnrollUserMetric(MetricFunc my_func);
+  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
+  void EnrollConductionCoefficient(ConductionCoeffFunc my_func);
+  void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }

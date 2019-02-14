@@ -23,6 +23,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../defs.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
@@ -30,7 +31,7 @@
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
-Real vflow;
+Real vflow, threshold;
 int RefinementCondition(MeshBlock *pmb);
 
 //----------------------------------------------------------------------------------------
@@ -40,16 +41,17 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  if (adaptive==true)
+  if (adaptive==true) {
+    threshold = pin->GetReal("problem","thr");
     EnrollUserRefinementCondition(RefinementCondition);
+  }
   vflow = pin->GetReal("problem","vflow");
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Problem Generator for the Kelvin-Helmholz test
+//  \brief Problem Generator for the Kelvin-Helmholtz test
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::int64_t iseed = -1 - gid;
@@ -128,14 +130,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (iprob == 2) {
     // Read/set problem parameters
-    Real amp = pin->GetReal("problem","amp");
+    Real amp = pin->GetReal("problem", "amp");
     Real a = 0.02;
     Real sigma = 0.2;
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IDN,k,j,i) = 1.0;
-          phydro->u(IM1,k,j,i) = vflow*tanh((pcoord->x2v(j))/a);
+          phydro->u(IM1,k,j,i) = vflow*std::tanh((pcoord->x2v(j))/a);
           phydro->u(IM2,k,j,i) = amp*std::cos(TWO_PI*pcoord->x1v(i))
                                  *std::exp(-(SQR(pcoord->x2v(j)))/SQR(sigma));
           phydro->u(IM3,k,j,i) = 0.0;
@@ -196,8 +198,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          phydro->u(IDN,k,j,i) = 0.505 + 0.495*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
-          phydro->u(IM1,k,j,i) = vflow*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+          phydro->u(IDN,k,j,i) = 0.505 + 0.495
+                                 *std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+          phydro->u(IM1,k,j,i) = vflow*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
           phydro->u(IM2,k,j,i) =
               amp*vflow*std::sin(TWO_PI*pcoord->x1v(i))
               *std::exp(-((std::fabs(pcoord->x2v(j))-0.5)
@@ -252,33 +255,95 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //--- iprob=4.  "Lecoanet" test, resolved shear layers with tanh() profiles for velocity
-  // and constant density located at y = +/- 0.5, single mode perturbation.
+  // and density located at z1=0.5, z2=1.5 two-mode perturbation for fully periodic BCs
 
+  // To promote symmetry of FP errors about midplanes, rescale z' = z - 1. ; x' = x - 0.5
+  // so that domain x1 = [-0.5, 0.5] and x2 = [-1.0, 1.0] is centered about origin
   if (iprob == 4) {
     // Read/set problem parameters
     Real amp = pin->GetReal("problem","amp");
+    // unstratified problem is the default
+    Real drho_rho0 = pin->GetOrAddReal("problem", "drho_rho0", 0.0);
+    Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
+    // Initial condition's reflect-and-shift symmetry, x1-> x1 + 1/2, x2-> -x2
+    // is preserved in new coordinates; hence, the same flow is solved twice in this prob.
+    Real z1 = -0.5;  // z1' = z1 - 1.0
+    Real z2 = 0.5;   // z2' = z2 - 1.0
+
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          phydro->u(IDN,k,j,i) = 1.0;
-          phydro->u(IM1,k,j,i) = vflow*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
-          phydro->u(IM2,k,j,i) =
-              amp*std::sin(TWO_PI*pcoord->x1v(i))
-              *std::exp(-((std::fabs(pcoord->x2v(j))-0.5)
-                          *(std::fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
-          if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
+          // Lecoanet (2016) equation 8a)
+          Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j)-z1)/a) -
+                                           std::tanh((pcoord->x2v(j)-z2)/a));
+          phydro->u(IDN,k,j,i) = dens;
+
+          Real v1 = vflow*(std::tanh((pcoord->x2v(j)-z1)/a)
+                           - std::tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
+          // Currently, the midpoint approx. is applied in the momenta and energy calc
+          phydro->u(IM1,k,j,i) = v1*dens;
+
+          // NOTE ON FLOATING-POINT SHIFT SYMMETRY IN X1:
+          // There is no scaling + translation coordinate transformation that would
+          // naturally preserve this symmetry when calculating x1 coordinates in
+          // floating-point representation. Need to correct for the asymmetry of FP error
+          // by modifying the operands.  Centering the domain on x1=0.0 ensures reflective
+          // symmetry, x1' -> -x1 NOT shift symmetry, x1' -> x1 + 0.5 (harder guarantee)
+
+          // For example, consider a cell in the right half of the dom ain with x1v > 0.0,
+          // so that shift symmetry should hold w/ another cell's x1v'= -0.5 + x1v < 0.0
+
+          // ISSUE: sin(2*pi*(-0.5+x1v)) != -sin(2*pi*x1v) in floating-point calculations
+          // The primary FP issues are twofold: 1) different rounding errors in x1v, x1v'
+          // and 2) IEEE-754 merely "recommends" that sin(), cos(), etc. functions are
+          // correctly rounded. Note, glibc library doesn't provide correctly-rounded fns
+
+          // 1) Since x1min = -0.5 can be perfectly represented in binary as -2^{-1}:
+          // double(x1v')= double(double(-0.5) + double(x1v)) = double(-0.5 + double(x1v))
+          // Even if x1v is also a dyadic rational -> has exact finite FP representation:
+          // x1v'= double(-0.5 + double(x1v)) = double(-0.5 + x1v) ?= (-0.5 + x1v) exactly
+
+          // Sterbenz's Lemma does not hold for any nx1>4, so cannot guarantee exactness.
+          // However, for most nx1 = power of two, the calculation of ALL cell center
+          // positions x1v will be exact. For nx1 != 2^n, differences are easily observed.
+
+          // 2) Even if the rounding error of x1v (and hence x1v') is zero, the exact
+          // periodicity of trigonometric functions (even after range reduction of input
+          // to [-pi/4, pi/4], e.g.) is NOT guaranteed:
+          // sin(2*pi*(-0.5+x1v)) = sin(-pi + 2*pi*x1v) != -sin(2*pi*x1v)
+
+          // WORKAROUND: Averge inexact sin() with -sin() sample on opposite x1-half of
+          // domain The assumption of periodic domain with x1min=-0.5 and x1max=0.5 is
+          // hardcoded here (v2 is the only quantity in the IC with x1 dependence)
+
+          Real ave_sine = std::sin(TWO_PI*pcoord->x1v(i));
+          if (pcoord->x1v(i) > 0.0) {
+            ave_sine -= std::sin(TWO_PI*(-0.5+pcoord->x1v(i)));
+          } else {
+            ave_sine -= std::sin(TWO_PI*(0.5+pcoord->x1v(i)));
+          }
+          ave_sine /= 2.0;
+
+          // translated x1= x - 1/2 relative to Lecoanet (2016) shifts sine function by pi
+          // (half-period) and introduces U_z sign change:
+          Real v2 = -amp*ave_sine
+                    *(std::exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
+                      std::exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c), modified
+          phydro->u(IM2,k,j,i) = v2*dens;
+
           phydro->u(IM3,k,j,i) = 0.0;
           if (NON_BAROTROPIC_EOS) {
-            phydro->u(IEN,k,j,i) =
-                10.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
-                                SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+            phydro->u(IEN,k,j,i) = P0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i))
+                                                 + SQR(phydro->u(IM2,k,j,i))
+                                                 + SQR(phydro->u(IM3,k,j,i)) )
+                                   /phydro->u(IDN,k,j,i);
           }
+          // TODO(kfelker): add equation 8e) for color concentration of passive scalar
         }
       }
     }
-
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
       Real b0 = pin->GetReal("problem","b0");
@@ -286,7 +351,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
           }
         }
       }
@@ -316,6 +381,73 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
+  //--- iprob=5. Uniform stream with density ratio "drat" located in region -1/4<y<1/4
+  // moving at (-vflow) seperated by two resolved slip-surfaces from background medium
+  // with d=1 moving at (+vflow), with m=2 perturbation, for the AMR test.
+
+  if (iprob == 5) {
+    // Read problem parameters
+    Real a = pin->GetReal("problem","a");
+    Real sigma = pin->GetReal("problem","sigma");
+    Real drat = pin->GetReal("problem","drat");
+    Real amp = pin->GetReal("problem","amp");
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real w=(std::tanh((std::fabs(pcoord->x2v(j))-0.25)/a)+1.0)*0.5;
+          phydro->u(IDN,k,j,i) = w+(1.0-w)*drat;
+          phydro->u(IM1,k,j,i) = w*vflow-(1.0-w)*vflow*drat;
+          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*amp
+                                 * std::sin(2.0*TWO_PI*pcoord->x1v(i))
+                                 * std::exp(-SQR(std::fabs(pcoord->x2v(j))-0.25)
+                                            /(sigma*sigma));
+          phydro->u(IM3,k,j,i) = 0.0;
+          // Pressure scaled to give a sound speed of 1 with gamma=1.4
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN,k,j,i) =
+                2.5/gm1 + 0.25*(SQR(phydro->u(IM1,k,j,i)) +
+                                SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+          }
+        }
+      }
+    }
+
+    // initialize uniform interface B
+    if (MAGNETIC_FIELDS_ENABLED) {
+      Real b0 = pin->GetReal("problem","b0");
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = b0;
+          }
+        }
+      }
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = 0.0;
+          }
+        }
+      }
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
+      if (NON_BAROTROPIC_EOS) {
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+            }
+          }
+        }
+      }
+    }
+  }
+
   return;
 }
 
@@ -325,15 +457,16 @@ int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real vgmax=0.0;
   for (int k=pmb->ks; k<=pmb->ke; k++) {
-    for (int j=pmb->js; j<=pmb->je; j++) {
-      for (int i=pmb->is; i<=pmb->ie; i++) {
-        Real vgy=std::fabs(w(IVY,k,j,i+1)-w(IVY,k,j,i-1))*0.5;
-        Real vgx=std::fabs(w(IVX,k,j+1,i)-w(IVX,k,j-1,i))*0.5;
-        if (vgy > vgmax) vgmax=vgy;
-        if (vgx > vgmax) vgmax=vgx;
+    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+        Real vgy = std::fabs(w(IVY,k,j,i+1) - w(IVY,k,j,i-1))*0.5;
+        Real vgx = std::fabs(w(IVX,k,j+1,i) - w(IVX,k,j-1,i))*0.5;
+        Real vg  = std::sqrt(vgx*vgx+vgy*vgy);
+        if (vg > vgmax) vgmax=vg;
       }
     }
   }
-  if (vgmax > 0.01) return 1;
-  return -1;
+  if (vgmax > threshold) return 1;
+  if (vgmax < 0.5*threshold) return -1;
+  return 0;
 }

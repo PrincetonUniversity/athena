@@ -358,6 +358,7 @@ definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['
 # --eos=[name] argument
 definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
+definitions['EQUATION_OF_STATE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
 definitions['GENERAL_EOS'] = '0'
 makefile_options['GENERAL_EOS_FILE'] = 'noop'

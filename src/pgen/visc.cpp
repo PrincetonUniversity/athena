@@ -33,9 +33,12 @@
 #include "../parameter_input.hpp"
 
 // problem parameters which are useful to make global to this file
-static Real v0, t0;
-static Real nuiso, gm0;
-static int iprob;
+namespace {
+Real v0, t0;
+Real nuiso, gm0;
+int iprob;
+} // namespace
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
@@ -61,8 +64,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //Real rad, phi, z;
   Real v1=0.0, v2=0.0, v3=0.0;
-  Real d0 = 1.0, p0=1.0, x0=0.0;
-  Real x1, x2, x3;
+  Real d0 = 1.0, x0=0.0; // p0=1.0;
+  Real x1, x2, x3; // x2 and x3 are set but unused
   Real rad,z,phi,theta;
 
   //  Initialize density and momenta in Cartesian grids
@@ -148,6 +151,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         << "viscous iprob has to be either 0 or 1" << std::endl;
     ATHENA_ERROR(msg);
   }
-
   return;
 }

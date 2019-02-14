@@ -31,7 +31,7 @@ class Coordinates;
 //! \struct OutputParameters
 //  \brief  container for parameters read from <output> block in the input file
 
-typedef struct OutputParameters {
+struct OutputParameters {
   int block_number;
   std::string block_name;
   std::string file_basename;
@@ -52,13 +52,13 @@ typedef struct OutputParameters {
                        output_sumx1(false), output_sumx2(false), output_sumx3(false),
                        include_ghost_zones(false), cartesian_vector(false),
                        islice(0), jslice(0), kslice(0) {}
-} OutputParameters;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputData
 //  \brief container for output data and metadata; node in nested doubly linked list
 
-typedef struct OutputData {
+struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
@@ -66,7 +66,7 @@ typedef struct OutputData {
   struct OutputData *pnext, *pprev;
 
   OutputData() : pnext(nullptr),  pprev(nullptr) {}
-} OutputData;
+};
 
 //----------------------------------------------------------------------------------------
 //  \brief abstract base class for different output types (modes/formats). Each OutputType
@@ -74,11 +74,22 @@ typedef struct OutputData {
 
 class OutputType {
  public:
+  // mark single parameter constructors as "explicit" to prevent them from acting as
+  // implicit conversion functions, e.g. f(OutputType arg), prevent f(anOutputParameters)
   explicit OutputType(OutputParameters oparams);
-  virtual ~OutputType();
+
+  // rule of five:
+  virtual ~OutputType() = default;
+  // copy constructor and assignment operator (pnext_type, pfirst_data, etc. are shallow
+  // copied)
+  OutputType(const OutputType& copy_other) = default;
+  OutputType& operator=(const OutputType& copy_other) = default;
+  // move constructor and assignment operator
+  OutputType(OutputType&&) = default;
+  OutputType& operator=(OutputType&&) = default;
 
   // data
-  int out_is,out_ie,out_js,out_je,out_ks,out_ke;  // OutputData array start/end indices
+  int out_is, out_ie, out_js, out_je, out_ks, out_ke;  // OutputData array start/end index
   OutputParameters output_params; // control data read from <output> block
   OutputType *pnext_type;         // ptr to next node in singly linked list of OutputTypes
 
@@ -109,7 +120,6 @@ class OutputType {
 class HistoryOutput : public OutputType {
  public:
   explicit HistoryOutput(OutputParameters oparams);
-  ~HistoryOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -120,7 +130,6 @@ class HistoryOutput : public OutputType {
 class FormattedTableOutput : public OutputType {
  public:
   explicit FormattedTableOutput(OutputParameters oparams);
-  ~FormattedTableOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -131,7 +140,6 @@ class FormattedTableOutput : public OutputType {
 class VTKOutput : public OutputType {
  public:
   explicit VTKOutput(OutputParameters oparams);
-  ~VTKOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -142,7 +150,6 @@ class VTKOutput : public OutputType {
 class RestartOutput : public OutputType {
  public:
   explicit RestartOutput(OutputParameters oparams);
-  ~RestartOutput() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 };
 
@@ -155,7 +162,6 @@ class ATHDF5Output : public OutputType {
  public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams);
-  ~ATHDF5Output() {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 

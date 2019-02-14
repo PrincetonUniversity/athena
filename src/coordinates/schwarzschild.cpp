@@ -48,7 +48,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ju = pmb->cje;
     kl = pmb->cks;
     ku = pmb->cke;
-    ng = pmb->cnghost;
+    ng = NGHOST;
   } else {
     il = pmb->is;
     iu = pmb->ie;
@@ -1287,7 +1287,7 @@ void Schwarzschild::FluxToGlobal1(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_x = alpha;
     const Real m2_y = 1.0/r;
     const Real m3_z = 1.0 / (r * abs_sin_theta);
@@ -1300,7 +1300,7 @@ void Schwarzschild::FluxToGlobal1(
     const Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_x*m0_t*txt;
+    Real t10 = m1_x*m0_tm*txt;
     Real t11 = m1_x*m1_x*txx;
     Real t12 = m1_x*m2_y*txy;
     Real t13 = m1_x*m3_z*txz;
@@ -1370,7 +1370,7 @@ void Schwarzschild::FluxToGlobal2(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_z = alpha;
     const Real m2_x = 1.0/r;
     const Real m3_y = 1.0 / (r * abs_sin_theta);
@@ -1383,7 +1383,7 @@ void Schwarzschild::FluxToGlobal2(
     const Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
-    Real t20 = m2_x*m0_t*txt;
+    Real t20 = m2_x*m0_tm*txt;
     Real t21 = m2_x*m1_z*txz;
     Real t22 = m2_x*m2_x*txx;
     Real t23 = m2_x*m3_y*txy;
@@ -1453,7 +1453,7 @@ void Schwarzschild::FluxToGlobal3(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_y = alpha;
     const Real m2_z = 1.0/r;
     const Real m3_x = 1.0 / (r * abs_sin_theta);
@@ -1466,7 +1466,7 @@ void Schwarzschild::FluxToGlobal3(
     const Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
-    Real t30 = m3_x*m0_t*txt;
+    Real t30 = m3_x*m0_tm*txt;
     Real t31 = m3_x*m1_y*txy;
     Real t32 = m3_x*m2_z*txz;
     Real t33 = m3_x*m3_x*txx;

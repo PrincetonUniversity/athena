@@ -115,11 +115,13 @@ void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   AthenaArray<Real> *pratios = nullptr;
   if (read_ratios) pratios = &peos_table->EosRatios;
+  // If read_ratios then EosRatios.NewAthenaArray is called in ASCIITableLoader
   ASCIITableLoader(fn.c_str(), peos_table->table, pratios);
   peos_table->table.GetSize(peos_table->nVar, peos_table->nEgas, peos_table->nRho);
   peos_table->table.GetX2lim(peos_table->logEgasMin, peos_table->logEgasMax);
   peos_table->table.GetX1lim(peos_table->logRhoMin, peos_table->logRhoMax);
   if (!read_ratios) {
+    peos_table->EosRatios.NewAthenaArray(peos_table->nVar);
     for (int i=0; i<peos_table->nVar; ++i) peos_table->EosRatios(i) = 1.0;
   }
 }

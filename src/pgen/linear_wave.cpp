@@ -16,6 +16,7 @@
 // C++ headers
 #include <algorithm>  // min, max
 #include <cmath>      // sqrt()
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -37,28 +38,30 @@
 #include <mpi.h>
 #endif
 
+namespace {
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
-static int wave_flag;
-static Real ang_2, ang_3; // Rotation angles about the y and z' axis
-static bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
-static Real sin_a2, cos_a2, sin_a3, cos_a3;
-static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
-static Real gam,gm1,iso_cs,vflow;
-static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
+Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
+int wave_flag;
+Real ang_2, ang_3; // Rotation angles about the y and z' axis
+bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
+Real sin_a2, cos_a2, sin_a3, cos_a3;
+Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
+Real gam,gm1,iso_cs,vflow;
+Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 
 // functions to compute vector potential to initialize the solution
-static Real A1(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A3(const Real x1, const Real x2, const Real x3);
+Real A1(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A3(const Real x1, const Real x2, const Real x3);
 
 // function to compute eigenvectors of linear waves
-static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
+void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
                         const Real h, const Real b1, const Real b2, const Real b3,
                         const Real x, const Real y, Real eigenvalues[(NWAVE)],
                         Real right_eigenmatrix[(NWAVE)][(NWAVE)],
                         Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+} // namespace
 
 // AMR refinement condition
 int RefinementCondition(MeshBlock *pmb);
@@ -380,7 +383,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -579,16 +582,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
-//! \fn static Real A1(const Real x1,const Real x2,const Real x3)
+//! \fn Real A1(const Real x1,const Real x2,const Real x3)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
@@ -598,10 +601,10 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A2(const Real x1,const Real x2,const Real x3)
+//! \fn Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
@@ -611,10 +614,10 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3(const Real x1,const Real x2,const Real x3)
+//! \fn Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
@@ -623,10 +626,10 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static void Eigensystem()
+//! \fn void Eigensystem()
 //  \brief computes eigenvectors of linear waves
 
-static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
+void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
                         const Real h, const Real b1, const Real b2, const Real b3,
                         const Real x, const Real y, Real eigenvalues[(NWAVE)],
                         Real right_eigenmatrix[(NWAVE)][(NWAVE)],
@@ -1159,7 +1162,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
     }
   }
 }
-
+} // namespace
 
 // refinement condition: density curvature
 int RefinementCondition(MeshBlock *pmb) {

@@ -83,11 +83,6 @@ OutputType::OutputType(OutputParameters oparams) {
   plast_data_ = nullptr;  // Initialize tail node to nullptr
 }
 
-// destructor
-
-OutputType::~OutputType() {
-}
-
 //----------------------------------------------------------------------------------------
 // Outputs constructor
 

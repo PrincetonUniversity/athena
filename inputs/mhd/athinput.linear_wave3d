@@ -1,5 +1,5 @@
 <comment>
-problem   = linear wave convergence
+problem   = 3D MHD linear wave convergence
 reference =
 configure = -b --prob=linear_wave
 

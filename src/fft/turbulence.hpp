@@ -32,8 +32,8 @@ class TurbulenceDriver : public FFTDriver{
  public:
   TurbulenceDriver(Mesh *pm, ParameterInput *pin);
   ~TurbulenceDriver();
-  void Driving(void);
-  void Generate(void);
+  void Driving();
+  void Generate();
   void PowerSpectrum(AthenaFFTComplex *amp);
   void Perturb(Real dt);
   std::int64_t GetKcomp(int idx, int disp, int Nx);

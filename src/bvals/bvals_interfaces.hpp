@@ -59,7 +59,7 @@ const bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-typedef struct NeighborBlock {
+struct NeighborBlock {
   int rank, level;
   int gid, lid;
   int ox1, ox2, ox3;
@@ -75,22 +75,22 @@ typedef struct NeighborBlock {
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
-} NeighborBlock;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct PolarNeighborBlock
 //  \brief Struct for describing neighbors around pole at same radius and polar angle
 
-typedef struct PolarNeighborBlock {
+struct PolarNeighborBlock {
   int rank;    // MPI rank of neighbor
   int lid;     // local ID of neighbor
   int gid;     // global ID of neighbor
   bool north;  // flag that is true for North pole and false for South pole
-} PolarNeighborBlock;
+};
 
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
-typedef struct NeighborIndexes {
+struct NeighborIndexes {
   int ox1, ox2, ox3; // 3-vector of integer offsets of indices, {-1, 0, +1}
   int fi1, fi2; // 2-vector for identifying refined neighbors, {0, 1}
   enum NeighborType type;
@@ -98,13 +98,13 @@ typedef struct NeighborIndexes {
     ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
     type=NEIGHBOR_NONE;
   }
-} NeighborIndexes;
+};
 
 //! \struct BoundaryData
 //  \brief structure storing boundary information
 // TODO(felker): rename/be more specific--- what kind of data/info?
 // one for each type of "enum BoundaryType" corresponding to BoundaryVariable
-typedef struct BoundaryData {
+struct BoundaryData {
   int nbmax;  // actual maximum number of neighboring MeshBlocks (at most 56)
   enum BoundaryStatus flag[56];
   // "static int bufid[56]" corresponds to these (for all BoundaryData instances per
@@ -113,11 +113,11 @@ typedef struct BoundaryData {
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
 #endif
-} BoundaryData;
+};
 
 // KGF: shearing box
 // Struct for describing blocks which touched the shearing-periodic boundaries
-// typedef struct ShearingBoundaryBlock {
+// struct ShearingBoundaryBlock {
 //   int *igidlist, *ilidlist, *irnklist, *ilevlist;
 //   int *ogidlist, *olidlist, *ornklist, *olevlist;
 //   bool inner, outer; // inner=true if inner blocks

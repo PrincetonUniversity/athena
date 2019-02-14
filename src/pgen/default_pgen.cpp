@@ -9,6 +9,16 @@
 //
 // The attribute "weak" is used to ensure the loader selects the user-defined version of
 // functions rather than the default version given here.
+//
+// The attribute "alias" may be used with the "weak" functions (in non-defining
+// declarations) in order to have them refer to common no-operation function definition in
+// the same translation unit. Target function must be specified by mangled name unless C
+// linkage is specified.
+//
+// This functionality is not in either the C nor the C++ standard. These GNU extensions
+// are largely supported by LLVM, Intel, IBM, but may affect portability for some
+// architecutres and compilers. In such cases, simply define all 6 of the below class
+// functions in every pgen/*.cpp file (without any function attributes).
 
 // C headers
 
@@ -19,6 +29,8 @@
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+
+// 2x members of Mesh class:
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -31,6 +43,18 @@ void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
   // do nothing
   return;
 }
+
+//========================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief Function called after main loop is finished for user-defined work.
+//========================================================================================
+
+void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin) {
+  // do nothing
+  return;
+}
+
+// 4x members of MeshBlock class:
 
 //========================================================================================
 //! \fn void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
@@ -56,11 +80,11 @@ void __attribute__((weak)) MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 //========================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief Function called once every time step for user-defined work.
 //========================================================================================
 
-void __attribute__((weak)) MeshBlock::UserWorkInLoop(void) {
+void __attribute__((weak)) MeshBlock::UserWorkInLoop() {
   // do nothing
   return;
 }
@@ -71,16 +95,6 @@ void __attribute__((weak)) MeshBlock::UserWorkInLoop(void) {
 //========================================================================================
 
 void __attribute__((weak)) MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-  // do nothing
-  return;
-}
-
-//========================================================================================
-//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief Function called after main loop is finished for user-defined work.
-//========================================================================================
-
-void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // do nothing
   return;
 }
