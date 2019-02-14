@@ -828,12 +828,12 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage
 }
 enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
+  ret=false; // KGF
   if (stage <= nstages) {
     // ret=pmb->phydro->phbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
     return TASK_FAIL;
   }
-
   if (ret==true) {
     return TASK_SUCCESS;
   } else {
@@ -850,6 +850,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage
 }
 enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) {
   bool ret;
+  ret=false; // KGF
   if (stage <= nstages) {
     // ret=pmb->pfield->pfbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
   } else {
@@ -871,6 +872,8 @@ enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int stag
   // } else {
   //   return TASK_FAIL;
   // }
+
+  return TASK_FAIL; // KGF
 }
 enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage) {
   // pmb->pfield->pfbval->RemapEMFShearingboxBoundary();
