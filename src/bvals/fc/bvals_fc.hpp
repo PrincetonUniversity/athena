@@ -173,7 +173,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   // original bvals_fc.cpp functions never took "bool *flip" as a function parameter
   // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
-  bool *flip_across_pole_;
+  const bool *flip_across_pole_;
 
 #ifdef MPI_PARALLEL
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
