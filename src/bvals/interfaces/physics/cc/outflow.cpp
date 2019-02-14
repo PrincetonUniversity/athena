@@ -13,139 +13,138 @@
 #include "bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
-void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=nl; i<=nu; ++i) {
-        arr_cc(n,k,j,il-i) = arr_cc(n,k,j,il);
+        for (int i=0; i<=ngh; ++i) {
+          var_cc(n,k,j,il-i) = var_cc(n,k,j,il);
+        }
       }
-    }}
+    }
   }
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
-void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=nl; i<=nu; ++i) {
-        arr_cc(n,k,j,iu+i) = arr_cc(n,k,j,iu);
+        for (int i=0; i<=ngh; ++i) {
+          var_cc(n,k,j,iu+i) = var_cc(n,k,j,iu);
+        }
       }
-    }}
+    }
   }
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
-void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=nl; j<=nu; ++j) {
+      for (int j=0; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        arr_cc(n,k,jl-j,i) = arr_cc(n,k,jl,i);
-      }
-    }}
+        for (int i=il; i<=iu; ++i) {
+          var_cc(n,k,jl-j,i) = var_cc(n,k,jl,i);
+        }
+      }}
   }
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
-void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
-    for (int j=nl; j<=nu; ++j) {
+      for (int j=0; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        arr_cc(n,k,ju+j,i) = arr_cc(n,k,ju,i);
+        for (int i=il; i<=iu; ++i) {
+          var_cc(n,k,ju+j,i) = var_cc(n,k,ju,i);
+        }
       }
-    }}
+    }
   }
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
-void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=nl; k<=nu; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+  for (int n=0; n<=nu_; ++n) {
+    for (int k=0; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        arr_cc(n,kl-k,j,i) = arr_cc(n,kl,j,i);
+        for (int i=il; i<=iu; ++i) {
+          var_cc(n,kl-k,j,i) = var_cc(n,kl,j,i);
+        }
       }
-    }}
+    }
   }
-
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+//! \fn void CellCenteredBoundaryVariable::OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
 //                          AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-//                          int kl, int ku, int nl, int nu) {
+//                          int kl, int ku, int ngh) {
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
-void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+void CellCenteredBoundaryVariable::OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                     AthenaArray<Real> &arr_cc, int il, int iu, int jl, int ju,
-                    int kl, int ku, int nl, int nu) {
+                    int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=nl; k<=nu; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+  for (int n=0; n<=nu_; ++n) {
+    for (int k=0; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        arr_cc(n,ku+k,j,i) = arr_cc(n,ku,j,i);
+        for (int i=il; i<=iu; ++i) {
+          var_cc(n,ku+k,j,i) = var_cc(n,ku,j,i);
+        }
       }
-    }}
+    }
   }
-
   return;
 }

@@ -17,52 +17,38 @@
 #include "bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowInnerX1(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
-void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+void FaceCenteredBoundaryVariable::OutflowInnerX1(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          prim(n,k,j,il-i) = prim(n,k,j,il);
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x1f(k,j,(il-i)) = var_fc.x1f(k,j,il);
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x1f(k,j,(il-i)) = b.x1f(k,j,il);
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x2f(k,j,(il-i)) = var_fc.x2f(k,j,il);
       }
     }
-
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju+1; ++j) {
+  }
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x2f(k,j,(il-i)) = b.x2f(k,j,il);
-        }
-      }
-    }
-
-    for (int k=kl; k<=ku+1; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x3f(k,j,(il-i)) = b.x3f(k,j,il);
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x3f(k,j,(il-i)) = var_fc.x3f(k,j,il);
       }
     }
   }
@@ -70,52 +56,38 @@ void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowOuterX1(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
-void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+void FaceCenteredBoundaryVariable::OutflowOuterX1(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          prim(n,k,j,iu+i) = prim(n,k,j,iu);
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x1f(k,j,(iu+i+1)) = var_fc.x1f(k,j,(iu+1));
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x1f(k,j,(iu+i+1)) = b.x1f(k,j,(iu+1));
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x2f(k,j,(iu+i)) = var_fc.x2f(k,j,iu);
       }
     }
-
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju+1; ++j) {
+  }
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x2f(k,j,(iu+i)) = b.x2f(k,j,iu);
-        }
-      }
-    }
-
-    for (int k=kl; k<=ku+1; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=1; i<=ngh; ++i) {
-          b.x3f(k,j,(iu+i)) = b.x3f(k,j,iu);
-        }
+      for (int i=1; i<=ngh; ++i) {
+        var_fc.x3f(k,j,(iu+i)) = var_fc.x3f(k,j,iu);
       }
     }
   }
@@ -123,52 +95,38 @@ void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowInnerX2(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
-void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+void FaceCenteredBoundaryVariable::OutflowInnerX2(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          prim(n,k,jl-j,i) = prim(n,k,jl,i);
-        }
+      for (int i=il; i<=iu+1; ++i) {
+        var_fc.x1f(k,(jl-j),i) = var_fc.x1f(k,jl,i);
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu+1; ++i) {
-          b.x1f(k,(jl-j),i) = b.x1f(k,jl,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x2f(k,(jl-j),i) = var_fc.x2f(k,jl,i);
       }
     }
-
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+  }
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x2f(k,(jl-j),i) = b.x2f(k,jl,i);
-        }
-      }
-    }
-
-    for (int k=kl; k<=ku+1; ++k) {
-      for (int j=1; j<=ngh; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x3f(k,(jl-j),i) = b.x3f(k,jl,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x3f(k,(jl-j),i) = var_fc.x3f(k,jl,i);
       }
     }
   }
@@ -176,52 +134,38 @@ void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowOuterX2(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
-void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+void FaceCenteredBoundaryVariable::OutflowOuterX2(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          prim(n,k,ju+j,i) = prim(n,k,ju,i);
-        }
+      for (int i=il; i<=iu+1; ++i) {
+        var_fc.x1f(k,(ju+j  ),i) = var_fc.x1f(k,(ju  ),i);
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu+1; ++i) {
-          b.x1f(k,(ju+j  ),i) = b.x1f(k,(ju  ),i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x2f(k,(ju+j+1),i) = var_fc.x2f(k,(ju+1),i);
       }
     }
-
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=1; j<=ngh; ++j) {
+  }
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x2f(k,(ju+j+1),i) = b.x2f(k,(ju+1),i);
-        }
-      }
-    }
-
-    for (int k=kl; k<=ku+1; ++k) {
-      for (int j=1; j<=ngh; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x3f(k,(ju+j  ),i) = b.x3f(k,(ju  ),i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x3f(k,(ju+j  ),i) = var_fc.x3f(k,(ju  ),i);
       }
     }
   }
@@ -229,52 +173,38 @@ void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowInnerX3(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
-void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+void FaceCenteredBoundaryVariable::OutflowInnerX3(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          prim(n,kl-k,j,i) = prim(n,kl,j,i);
-        }
+      for (int i=il; i<=iu+1; ++i) {
+        var_fc.x1f((kl-k),j,i) = var_fc.x1f(kl,j,i);
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu+1; ++i) {
-          b.x1f((kl-k),j,i) = b.x1f(kl,j,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x2f((kl-k),j,i) = var_fc.x2f(kl,j,i);
       }
     }
-
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju+1; ++j) {
+  }
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x2f((kl-k),j,i) = b.x2f(kl,j,i);
-        }
-      }
-    }
-
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x3f((kl-k),j,i) = b.x3f(kl,j,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x3f((kl-k),j,i) = var_fc.x3f(kl,j,i);
       }
     }
   }
@@ -282,52 +212,38 @@ void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void FaceCenteredBoundaryVariable::OutflowOuterX3(
+//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
-void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+void FaceCenteredBoundaryVariable::OutflowOuterX3(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &b, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  // copy face-centered magnetic fields into ghost zones
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          prim(n,ku+k,j,i) = prim(n,ku,j,i);
-        }
+      for (int i=il; i<=iu+1; ++i) {
+        var_fc.x1f((ku+k  ),j,i) = var_fc.x1f((ku  ),j,i);
       }
     }
   }
-
-  // copy face-centered magnetic fields into ghost zones
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu+1; ++i) {
-          b.x1f((ku+k  ),j,i) = b.x1f((ku  ),j,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x2f((ku+k  ),j,i) = var_fc.x2f((ku  ),j,i);
       }
     }
-
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
+  }
+  for (int k=1; k<=ngh; ++k) {
+    for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x2f((ku+k  ),j,i) = b.x2f((ku  ),j,i);
-        }
-      }
-    }
-
-    for (int k=1; k<=ngh; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          b.x3f((ku+k+1),j,i) = b.x3f((ku+1),j,i);
-        }
+      for (int i=il; i<=iu; ++i) {
+        var_fc.x3f((ku+k+1),j,i) = var_fc.x3f((ku+1),j,i);
       }
     }
   }

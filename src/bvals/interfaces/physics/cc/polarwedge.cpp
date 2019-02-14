@@ -17,12 +17,12 @@
 #include "bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, inner x2 boundary
 
-void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
                        FaceField &b, Real time, Real dt,
                        int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
@@ -81,12 +81,14 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
+//                        MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                        FaceField &b, const Real time, const Real dt,
 //                        int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, outer x2 boundary
 
-void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                        FaceField &b, Real time, Real dt,
                        int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2

@@ -13,12 +13,12 @@
 #include "bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::ReflectInnerX1(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
-void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectInnerX1(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v1
@@ -73,12 +73,12 @@ void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::ReflectOuterX1(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
-void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectOuterX1(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v1
@@ -133,12 +133,12 @@ void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflecInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void ReflecInnerX2(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
-void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectInnerX2(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v2
@@ -193,12 +193,12 @@ void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::ReflectOuterX2(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
-void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectOuterX2(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v2
@@ -253,12 +253,12 @@ void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::ReflectInnerX3(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
-void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectInnerX3(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v3
@@ -313,12 +313,12 @@ void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//! \fn void CellCenteredBoundaryVariable::ReflectOuterX3(
 //                         FaceField &b, const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
-void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+void CellCenteredBoundaryVariable::ReflectOuterX3(
                     FaceField &b, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu) {
   // copy hydro variables into ghost zones, reflecting v3
