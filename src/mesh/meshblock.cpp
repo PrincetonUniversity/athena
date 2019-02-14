@@ -273,7 +273,6 @@ MeshBlock::~MeshBlock() {
   if (next!=nullptr) next->prev=prev;
 
   delete pcoord;
-  delete pbval;
   delete precon;
   if (pmy_mesh->multilevel == true) delete pmr;
 
@@ -282,6 +281,8 @@ MeshBlock::~MeshBlock() {
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
 
+  // KGF: BoundaryValues must be destructed AFTER all BoundaryVariable objects
+  delete pbval;
   // delete user output variables array
   if (nuser_out_var > 0) {
     user_out_var.DeleteAthenaArray();
