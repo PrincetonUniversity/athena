@@ -213,48 +213,49 @@ class BoundaryPhysics {
   // base class. E.g. "BoundaryArray *dst = phydro->w" in the class constructor
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
 
   virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
   virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
-                              int kl, int ku, int nu, int ngh) = 0;
+                              int kl, int ku, int ngh) = 0;
 
   virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh) = 0;
+                                 int ju, int kl, int ku, int ngh) = 0;
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  int il, int iu, int jl,
-                                 int ju, int kl, int ku, int nu, int ngh) = 0;
+                                 int ju, int kl, int ku, int ngh) = 0;
+  //virtual void ApplyUserDefinedBoundary
 };
 
 //----------------------------------------------------------------------------------------
@@ -278,7 +279,7 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
   BoundaryVariable(MeshBlock *pmb, enum BoundaryType type);
-  virtual ~BoundaryVariable();
+  virtual ~BoundaryVariable(); // calls DestroyBoundaryData(bd_var_)
 
   // KGF: this is usuallly the std::size_t unsigned integer type
   std::vector<BoundaryVariable *>::size_type bvar_index;
