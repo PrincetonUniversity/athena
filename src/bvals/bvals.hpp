@@ -113,7 +113,8 @@ class BoundaryBase {
 // BoundaryInterface (as in "centralized interface for interacting with
 //        BoundaryVariables", but this conflicts with "OO interfaces" and
 
-class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
+class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
+                       public BoundaryCommunication {
  public:
   BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
@@ -122,8 +123,9 @@ class BoundaryValues : public BoundaryBase, public BoundaryCommunication {
   // BoundaryCommunication parent class:
 
   // called in BoundaryValues() constructor/destructor:
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) final;
-  void DestroyBoundaryData(BoundaryData &bd) final;
+  // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) final;
+  // void DestroyBoundaryData(BoundaryData &bd) final;
+
   // called before time-stepper:
   void Initialize(void) final; // setup MPI requests
   void StartReceivingForInit(bool cons_and_field) final;

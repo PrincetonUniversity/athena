@@ -139,13 +139,13 @@ typedef struct BoundaryData {
 //    alternative name ideas: BoundaryMemory, BoundaryMPI,
 class BoundaryCommunication {
  public:
-  // allocate
   BoundaryCommunication() {}
   virtual ~BoundaryCommunication() {}
 
+  // KGF: move 2x *BoundaryData() fns out of this interface
   // functions called exclusively in the constructor/destructor of same class instance
-  virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) = 0;
-  virtual void DestroyBoundaryData(BoundaryData &bd) = 0;
+  // virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) = 0;
+  // virtual void DestroyBoundaryData(BoundaryData &bd) = 0;
 
   // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
   // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
@@ -284,8 +284,9 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   std::vector<BoundaryVariable *>::size_type bvar_index;
 
   // BoundaryCommunication:
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
-  void DestroyBoundaryData(BoundaryData &bd) override;
+  // KGF: remove override
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type); // override;
+  void DestroyBoundaryData(BoundaryData &bd); // override;
   // the above 2x functions should probably be separated from the below 5x functions in
   // the BoundaryCommunication interface. Make them the constructor/destructor of the
   // BoundaryData struct? But the constructor accesses many data members of BoundaryValues
