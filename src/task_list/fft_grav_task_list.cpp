@@ -35,21 +35,19 @@ FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm
   // Now assemble list of tasks for each stage of time integrator
   {using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
-    AddFFTGravitySolverTask(SEND_GRAV_BND,NONE);
-    AddFFTGravitySolverTask(RECV_GRAV_BND,NONE);
-    AddFFTGravitySolverTask(GRAV_PHYS_BND,SEND_GRAV_BND|RECV_GRAV_BND);
-    AddFFTGravitySolverTask(CLEAR_GRAV, GRAV_PHYS_BND);
+    AddTask(SEND_GRAV_BND,NONE);
+    AddTask(RECV_GRAV_BND,NONE);
+    AddTask(GRAV_PHYS_BND,SEND_GRAV_BND|RECV_GRAV_BND);
+    AddTask(CLEAR_GRAV, GRAV_PHYS_BND);
   } // end of using namespace block
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id,
-//                                                       std::uint64_t dep)
+//! \fn void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id,
-                                                       std::uint64_t dep) {
+void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
@@ -77,7 +75,7 @@ void FFTGravitySolverTaskList::AddFFTGravitySolverTask(std::uint64_t id,
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddFFTGravitySolverTask" << std::endl
+      msg << "### FATAL ERROR in FFTGravitySolverTaskList::AddTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       ATHENA_ERROR(msg);
   }

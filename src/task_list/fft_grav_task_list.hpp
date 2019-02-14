@@ -30,16 +30,15 @@ class FFTGravitySolverTaskList : public TaskList {
   FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm);
   ~FFTGravitySolverTaskList() {}
 
-  void AddFFTGravitySolverTask(std::uint64_t id, std::uint64_t dep);
-
   // functions
+  // KGF: consider renaming these 4x tasks
   enum TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus SendFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus ReceiveFFTGravityBoundary(MeshBlock *pmb, int stage);
-
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 
  private:
+  void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
