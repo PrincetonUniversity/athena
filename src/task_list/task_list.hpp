@@ -68,9 +68,6 @@ class TaskState {
 //  \brief data and function definitions for task list base class
 
 class TaskList {
-friend class TimeIntegratorTaskList;
-friend class FFTGravitySolverTaskList;
-friend class SuperTimeStepTaskList;
  public:
   explicit TaskList(Mesh *pm);
   // rule of five:
