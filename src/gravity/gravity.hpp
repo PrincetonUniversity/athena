@@ -18,6 +18,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/cc/bvals_cc.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -33,7 +34,10 @@ class Gravity {
   ~Gravity();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  GravityBoundaryValues *pgbval;
+
+  //GravityBoundaryVariable *pgbval;
+  // KGF: temporary workaround:
+  CellCenteredBoundaryVariable *pgbval;
 
   AthenaArray<Real> phi;  // gravitational potential
   Real gconst, four_pi_G;

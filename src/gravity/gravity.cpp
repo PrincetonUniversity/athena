@@ -47,9 +47,11 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
     return;
   }
 
-  pgbval = new GravityBoundaryVariable(pmy_block, BNDRY_CC, phi);
-  pgbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(pgbval);
+  // pgbval = new GravityBoundaryVariable(pmy_block, BNDRY_CC, phi);
+  // KGF: temporary workaround:
+  //pgbval = new CellCenteredBoundaryVariable(pmy_block, BNDRY_CC, phi, nullptr);
+  // pgbval->bvar_index = pmb->pbval->bvars.size();
+  // pmb->pbval->bvars.push_back(pgbval);
 
   // Allocate memory for gravitational potential, but only when needed.
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
@@ -65,5 +67,5 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 Gravity::~Gravity() {
   phi.DeleteAthenaArray();
 
-  delete pgbval;
+  //delete pgbval;
 }
