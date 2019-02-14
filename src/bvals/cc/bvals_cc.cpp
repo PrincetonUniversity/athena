@@ -67,7 +67,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // For now, assume that full span of 4th dim of input AthenaArray should be used;
   // get the index limits directly from the input AthenaArray
   nl_=0;
-  nu_=var.GetDim4();
+  nu_=var.GetDim4() - 1;
 
   if (pmy_mesh_->multilevel==true) { // SMR or AMR
     InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
