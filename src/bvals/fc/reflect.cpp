@@ -11,21 +11,21 @@
 // C++ headers
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "bvals.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh/mesh.hpp"
+#include "bvals_fc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX1(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, const Real time, const Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX1(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b1
   for (int k=kl; k<=ku; ++k) {
@@ -59,14 +59,14 @@ void FaceCenteredBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX1(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, const Real time, const Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX1(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b1
   for (int k=kl; k<=ku; ++k) {
@@ -100,14 +100,14 @@ void FaceCenteredBoundaryVariable::ReflectOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX2(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, const Real time, const Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX2(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   for (int k=kl; k<=ku; ++k) {
@@ -139,13 +139,13 @@ void FaceCenteredBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX2(
-//                         FaceField &b, const Real time, const Real dt,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX2(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   for (int k=kl; k<=ku; ++k) {
@@ -177,13 +177,13 @@ void FaceCenteredBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX3(
-//                         FaceField &b, const Real time, const Real dt,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX3(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   for (int k=1; k<=ngh; ++k) {
@@ -215,14 +215,14 @@ void FaceCenteredBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX3(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, const Real time, const Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         const Real time, const Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX3(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   for (int k=1; k<=ngh; ++k) {

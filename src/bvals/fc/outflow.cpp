@@ -11,21 +11,21 @@
 // C++ headers
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "bvals.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh/mesh.hpp"
+#include "bvals_fc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX1(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX1(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
@@ -57,14 +57,14 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX1(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX1(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
@@ -96,14 +96,14 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX2(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX2(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
@@ -135,14 +135,14 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX2(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX2(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
@@ -174,14 +174,14 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX3(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX3(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=1; k<=ngh; ++k) {
@@ -213,14 +213,14 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX3(
-//                         MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                         FaceField &b, Real time, Real dt,
+//                         MeshBlock *pmb, Coordinates *pco,
+//                         Real time, Real dt,
 //                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX3(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-    FaceField &b, Real time, Real dt,
+    MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=1; k<=ngh; ++k) {
