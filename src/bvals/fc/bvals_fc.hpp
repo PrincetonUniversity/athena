@@ -78,7 +78,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
   // originally: SendEMFCorrection(), ReceiveEMFCorrection()
 
-  void PolarBoundarySingleAzimuthalBlock();
+  void PolarBoundarySingleAzimuthalBlock() override;
 
   // Face-centered/Field/EMF unique methods:
   void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
