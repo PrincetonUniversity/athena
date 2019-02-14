@@ -26,10 +26,6 @@
 Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
-  pfbval  = new FaceCenteredBoundaryVariable(pmy_block, BNDRY_FC, b, e);
-  pfbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(pfbval);
-
   // Allocate memory for interface fields, but only when needed.
   if (MAGNETIC_FIELDS_ENABLED) {
     int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
@@ -86,7 +82,11 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     }
     // ptr to diffusion object
     pfdif = new FieldDiffusion(pmb,pin);
-  }
+
+    pfbval  = new FaceCenteredBoundaryVariable(pmy_block, BNDRY_FC, b, e);
+    pfbval->bvar_index = pmb->pbval->bvars.size();
+    pmb->pbval->bvars.push_back(pfbval);
+  } // end (MAGNETIC_FIELDS_ENABLED)
 }
 
 // destructor

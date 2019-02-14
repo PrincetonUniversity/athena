@@ -29,11 +29,6 @@
 Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
-  // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
-  phbval  = new HydroBoundaryVariable(pmy_block, BNDRY_HYDRO, u, flux, HYDRO_CONS);
-  phbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(phbval);
-
   // Allocate memory for primitive/conserved variables
   int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
@@ -61,6 +56,12 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     flux[X2DIR].NewAthenaArray(NHYDRO, ncells3, ncells2+1, ncells1);
   if (pmy_block->block_size.nx3 > 1)
     flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
+
+  // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
+  // (must come after u is actually allocated)
+  phbval  = new HydroBoundaryVariable(pmy_block, BNDRY_HYDRO, u, flux, HYDRO_CONS);
+  phbval->bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(phbval);
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(ncells1);
