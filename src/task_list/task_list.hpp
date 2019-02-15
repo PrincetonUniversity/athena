@@ -102,7 +102,6 @@ class TimeIntegratorTaskList : public TaskList {
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   // functions
   enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
@@ -150,6 +149,8 @@ class TimeIntegratorTaskList : public TaskList {
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
  private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
   void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
@@ -177,6 +178,7 @@ class SuperTimeStepTaskList : public TaskList {
   //enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
+  // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:
   TimeIntegratorTaskList *ptlist_;
   void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
