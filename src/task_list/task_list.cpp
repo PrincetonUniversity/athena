@@ -26,11 +26,7 @@
 //----------------------------------------------------------------------------------------
 // TaskList constructor
 
-TaskList::TaskList(Mesh *pm) {
-  pmy_mesh_=pm;
-  ntasks = 0;
-  nstages = 0;
-}
+TaskList::TaskList(Mesh *pm) : ntasks(0), nstages(0), task_list_{}, pmy_mesh_(pm) {}
 
 //----------------------------------------------------------------------------------------
 //! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
