@@ -14,8 +14,6 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "./task_list.hpp"
 
 // forward declarations
