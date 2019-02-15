@@ -24,10 +24,14 @@ template<typename T>
 class AthenaArray {
  public:
   AthenaArray();
+  // rule of five:
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
   __attribute__((nothrow)) AthenaArray(const AthenaArray<T>& t);
   __attribute__((nothrow)) AthenaArray<T> &operator= (const AthenaArray<T> &t);
+  // define move constructor and overload assignment operator to transfer ownership
+  __attribute__((nothrow)) AthenaArray(AthenaArray<T>&& t);
+  __attribute__((nothrow)) AthenaArray<T> &operator= (AthenaArray<T> &&t);
 
   // public functions to allocate/deallocate memory for 1D-5D data
   __attribute__((nothrow)) void NewAthenaArray(int nx1);
@@ -94,7 +98,7 @@ class AthenaArray {
   bool scopy_;  // true if shallow copy (prevents source from being deleted)
 };
 
-//constructor
+// default constructor
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
@@ -127,7 +131,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
   }
 }
 
-// assignment operator (does a deep copy).  Does not allocate memory for destination.
+// copy assignment operator (does a deep copy). Does not allocate memory for destination.
 // THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
 
 template<typename T>
@@ -139,6 +143,60 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
     }
     scopy_=false;
+  }
+  return *this;
+}
+
+// move constructor
+template<typename T>
+__attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
+  nx1_ = src.nx1_;
+  nx2_ = src.nx2_;
+  nx3_ = src.nx3_;
+  nx4_ = src.nx4_;
+  nx5_ = src.nx5_;
+  if (src.pdata_) {
+    // && !src.scopy_) {  // (if forbidden to move shallow copies)
+    // scopy_ = false;
+
+    // Allowing src shallow-copy AthenaArray to serve as move constructor argument
+    scopy_ = src.scopy_;
+    pdata_ = src.pdata_;
+    // remove ownership of data from src to prevent it from free'ing the resources
+    src.pdata_ = nullptr;
+    src.scopy_ = true;
+    src.nx1_= 0;
+    src.nx2_= 0;
+    src.nx3_= 0;
+    src.nx4_= 0;
+    src.nx5_= 0;
+  }
+}
+
+// move assignment operator
+template<typename T>
+__attribute__((nothrow))
+AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
+  if (this != &src) {
+    // free the target AthenaArray to prepare to receive src pdata_
+    DeleteAthenaArray();
+    if (src.pdata_) {
+      nx1_ = src.nx1_;
+      nx2_ = src.nx2_;
+      nx3_ = src.nx3_;
+      nx4_ = src.nx4_;
+      nx5_ = src.nx5_;
+      scopy_ = src.scopy_;
+      pdata_ = src.pdata_;
+
+      src.pdata_ = nullptr;
+      src.scopy_ = true;
+      src.nx1_= 0;
+      src.nx2_= 0;
+      src.nx3_= 0;
+      src.nx4_= 0;
+      src.nx5_= 0;
+    }
   }
   return *this;
 }
