@@ -222,12 +222,12 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroDiffusion_STS);
+          (&TimeIntegratorTaskList::HydroDiffusion);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::FieldDiffusion_STS);
+          (&TimeIntegratorTaskList::FieldDiffusion);
       break;
     default:
       std::stringstream msg;
