@@ -49,8 +49,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real> e3;
 
   // BoundaryCommunication:
-  // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) override;
-  // void DestroyBoundaryData(BoundaryData &bd) override;
   void Initialize() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;

@@ -142,11 +142,6 @@ class BoundaryCommunication {
   BoundaryCommunication() {}
   virtual ~BoundaryCommunication() {}
 
-  // KGF: move 2x *BoundaryData() fns out of this interface
-  // functions called exclusively in the constructor/destructor of same class instance
-  // virtual void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) = 0;
-  // virtual void DestroyBoundaryData(BoundaryData &bd) = 0;
-
   // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
   // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
   virtual void Initialize() = 0; // setup MPI requests
@@ -271,7 +266,7 @@ class BoundaryPhysics {
 // could be eliminated, in favor of having the CellCenteredBoundaryVariable and
 // FaceCenteredBoundaryVariable derived classes directly inheriting from the 3x interface
 // classes. But then, won't be able to treat instances of those two classes as equivalent
-// BoundaryVariable instances in a linked list...
+// BoundaryVariable instances in a linked list (subtyping polymorphism)...
 
 // BoundaryVariable will only provide default implementations of some member functions in
 // the BoundaryCommunication interface.
@@ -285,19 +280,15 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   std::vector<BoundaryVariable *>::size_type bvar_index;
 
   // BoundaryCommunication:
-  // KGF: remove override
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type); // override;
-  void DestroyBoundaryData(BoundaryData &bd); // override;
-  // the above 2x functions should probably be separated from the below 5x functions in
-  // the BoundaryCommunication interface. Make them the constructor/destructor of the
-  // BoundaryData struct? But the constructor accesses many data members of BoundaryValues
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  void DestroyBoundaryData(BoundaryData &bd);
+  // The above 2x functions should probably be defined outside this abstract class. Could
+  // split them both up and define in the concrete derived classes, like the rest of the
+  // BoundaryCommunication interface. However, the BoundaryValues class (which realizes
+  // the BoundaryCommunication interface) does not need these 2x functions.
 
-  // all MPI-related?
-  // void Initialize() override;
-  // void StartReceivingForInit(bool cons_and_field) override;
-  // void ClearBoundaryForInit(bool cons_and_field) override;
-  // void StartReceivingAll(const Real time) override;
-  // void ClearBoundaryAll() override;
+  // Or, make them the constructor/destructor of the
+  // BoundaryData struct? But InitBoundaryData must access many data members of BValues
 
  protected:
   BoundaryData bd_var_;
@@ -313,7 +304,5 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
  private:
 };
-
-
 
 #endif // BVALS_BVALS_INTERFACES_HPP_
