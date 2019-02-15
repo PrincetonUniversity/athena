@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
   //--- Step 5. --------------------------------------------------------------------------
   // Construct and initialize TaskList
 
-  TaskList *ptlist;
+  TimeIntegratorTaskList *ptlist;
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif
-      pststlist = new SuperTimeStepTaskList(pinput, pmesh);
+      pststlist = new SuperTimeStepTaskList(pinput, pmesh, ptlist);
 #ifdef ENABLE_EXCEPTIONS
     }
     catch(std::bad_alloc& ba) {

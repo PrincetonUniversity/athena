@@ -160,7 +160,7 @@ class TimeIntegratorTaskList : public TaskList {
 
 class SuperTimeStepTaskList : public TaskList {
  public:
-  SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm);
+  SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
   ~SuperTimeStepTaskList() {}
 
   // functions
@@ -193,6 +193,7 @@ class SuperTimeStepTaskList : public TaskList {
   enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
+  TimeIntegratorTaskList *ptlist_;
   void AddTask(std::uint64_t id, std::uint64_t dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
