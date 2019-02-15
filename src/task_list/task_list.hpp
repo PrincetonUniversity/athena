@@ -164,33 +164,17 @@ class SuperTimeStepTaskList : public TaskList {
   ~SuperTimeStepTaskList() {}
 
   // functions
-  enum TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
 
   enum TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
   enum TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus EMFCorrectSend_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus EMFCorrectReceive_STS(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
   enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
   enum TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus CalcDiffusivity_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSend_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSend_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus HydroReceive_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldReceive_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus HydroSetBoundaries_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSetBoundaries_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+  //enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
   TimeIntegratorTaskList *ptlist_;

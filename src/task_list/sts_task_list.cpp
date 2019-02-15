@@ -138,8 +138,9 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::ClearAllBoundary_STS);
+          (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
+
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -150,17 +151,19 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::CalculateEMF_STS);
       break;
+
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::EMFCorrectSend_STS);
+          (&TimeIntegratorTaskList::EMFCorrectSend);
       break;
 
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::EMFCorrectReceive_STS);
+          (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
+
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -171,46 +174,51 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::FieldIntegrate_STS);
       break;
+
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroSend_STS);
+          (&TimeIntegratorTaskList::HydroSend);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::FieldSend_STS);
+          (&TimeIntegratorTaskList::FieldSend);
       break;
+
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroReceive_STS);
+          (&TimeIntegratorTaskList::HydroReceive);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::FieldReceive_STS);
+          (&TimeIntegratorTaskList::FieldReceive);
       break;
+
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroSetBoundaries_STS);
+          (&TimeIntegratorTaskList::HydroSetBoundaries);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::FieldSetBoundaries_STS);
+          (&TimeIntegratorTaskList::FieldSetBoundaries);
       break;
+
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::Primitives_STS);
+          (&TimeIntegratorTaskList::Primitives);
       break;
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::PhysicalBoundary_STS);
+          (&TimeIntegratorTaskList::PhysicalBoundary);
       break;
+
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -253,14 +261,6 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to end MPI communication
-
-enum TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int stage) {
-  pmb->pbval->ClearBoundaryAll();
-  return TASK_SUCCESS;
-}
-
-//----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
 enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int stage) {
@@ -280,25 +280,6 @@ enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stag
     return TASK_NEXT;
   }
   return TASK_FAIL;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions to communicate fluxes between MeshBlocks for flux correction with AMR
-
-enum TaskStatus SuperTimeStepTaskList::EMFCorrectSend_STS(MeshBlock *pmb, int stage) {
-  pmb->pfield->pfbval->SendFluxCorrection();
-  return TASK_SUCCESS;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions to receive fluxes between MeshBlocks
-
-enum TaskStatus SuperTimeStepTaskList::EMFCorrectReceive_STS(MeshBlock *pmb, int stage) {
-  if (pmb->pfield->pfbval->ReceiveFluxCorrection() == true) {
-    return TASK_NEXT;
-  } else {
-    return TASK_FAIL;
-  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -350,6 +331,9 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
   return TASK_FAIL;
 }
 
+// Implementations of 2x Diffusion functions are the same as in TimeIntegratorTaskList,
+// except the latter have "if (!STS_ENABLED)" since their operations are mutually
+// exclusive.
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes
 
@@ -384,126 +368,20 @@ enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int st
   return TASK_NEXT;
 }
 
-//----------------------------------------------------------------------------------------
-// Functions to communicate conserved variables between MeshBlocks
+// enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage){
+//   Hydro *phydro=pmb->phydro;
+//   Field *pfield=pmb->pfield;
+//   BoundaryValues *pbval=pmb->pbval;
 
-enum TaskStatus SuperTimeStepTaskList::HydroSend_STS(MeshBlock *pmb, int stage) {
-  if (stage <= nstages) {
-    pmb->phydro->phbval->SelectCoarseBuffer(HYDRO_CONS);
-    // KGF: (pmb->phydro->u, HYDRO_CONS); where u was bound to &dst
-    pmb->phydro->phbval->SendBoundaryBuffers();
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
-}
+//   if (stage <= nstages) {
+//     // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
+//     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
+//     // Real t_end_stage = pmb->pmy_mesh->time;
+//     // Real dt = pmb->pmy_mesh->dt;
+//     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+//   } else {
+//     return TASK_FAIL;
+//   }
 
-enum TaskStatus SuperTimeStepTaskList::FieldSend_STS(MeshBlock *pmb, int stage) {
-  if (stage <= nstages) {
-    pmb->pfield->pfbval->SendBoundaryBuffers();
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions to receive conserved variables between MeshBlocks
-
-enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stage) {
-  bool ret;
-  if (stage <= nstages) {
-    ret=pmb->phydro->phbval->ReceiveBoundaryBuffers();
-  } else {
-    return TASK_FAIL;
-  }
-
-  if (ret==true) {
-    return TASK_SUCCESS;
-  } else {
-    return TASK_FAIL;
-  }
-}
-
-enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stage) {
-  bool ret;
-  if (stage <= nstages) {
-    ret=pmb->pfield->pfbval->ReceiveBoundaryBuffers();
-  } else {
-    return TASK_FAIL;
-  }
-
-  if (ret==true) {
-    return TASK_SUCCESS;
-  } else {
-    return TASK_FAIL;
-  }
-}
-
-enum TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
-                                                              int stage) {
-  if (stage <= nstages) {
-    pmb->phydro->phbval->SelectCoarseBuffer(HYDRO_CONS);
-    // KGF: (pmb->phydro->u, HYDRO_CONS); where u was bound to &dst
-    pmb->phydro->phbval->SetBoundaries();
-    return TASK_SUCCESS;
-  }
-  return TASK_FAIL;
-}
-
-enum TaskStatus SuperTimeStepTaskList::FieldSetBoundaries_STS(MeshBlock *pmb, int stage) {
-  if (stage <= nstages) {
-    pmb->pfield->pfbval->SetBoundaries();
-    return TASK_SUCCESS;
-  }
-  return TASK_FAIL;
-}
-
-//--------------------------------------------------------------------------------------
-// Functions for everything else
-
-enum TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
-  int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-  if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
-  if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
-  if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
-  if (pbval->nblevel[1][2][1] != -1) ju+=NGHOST;
-  if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
-  if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
-
-  if (stage <= nstages) {
-    // At beginning of this task, phydro->w contains previous stage's W(U) output
-    // and phydro->w1 is used as a register to store the current stage's output.
-    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
-                                    phydro->w1, pfield->bcc, pmb->pcoord,
-                                    il, iu, jl, ju, kl, ku);
-    // swap AthenaArray data pointers so that w now contains the updated w_out
-    phydro->w.SwapAthenaArray(phydro->w1);
-
-  } else {
-    return TASK_FAIL;
-  }
-
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
-
-  if (stage <= nstages) {
-    // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
-    //                 operator-split RKL1 STS? For now, disable time-dep BCs.
-    // Real t_end_stage = pmb->pmy_mesh->time;
-    // Real dt = pmb->pmy_mesh->dt;
-    pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
-  } else {
-    return TASK_FAIL;
-  }
-
-  return TASK_SUCCESS;
-}
+//   return TASK_SUCCESS;
+// }
