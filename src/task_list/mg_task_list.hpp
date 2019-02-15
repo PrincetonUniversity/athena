@@ -42,7 +42,8 @@ struct MGTask {
 
 class MultigridTaskList {
  public:
-  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {}
+  explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
+                                                     task_list_{} {}
   ~MultigridTaskList() {}
 
   // data
@@ -52,7 +53,6 @@ class MultigridTaskList {
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
   void ClearTaskList() {ntasks=0;}
-  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
   enum TaskStatus StartReceive(Multigrid *pmg);
@@ -77,6 +77,8 @@ class MultigridTaskList {
  private:
   MultigridDriver* pmy_mgdriver_;
   MGTask task_list_[64];
+
+  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 };
 
 //----------------------------------------------------------------------------------------
