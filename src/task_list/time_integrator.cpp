@@ -223,14 +223,18 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // Now assemble list of tasks for each stage of time integrator
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     // calculate hydro/field diffusive fluxes
-    AddTask(DIFFUSE_HYD,NONE);
-    if (MAGNETIC_FIELDS_ENABLED)
-      AddTask(DIFFUSE_FLD,DIFFUSE_HYD);
-    // compute hydro fluxes, integrate hydro variables
-    if (MAGNETIC_FIELDS_ENABLED)
-      AddTask(CALC_HYDFLX,DIFFUSE_FLD);
-    else
-      AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+    if (!STS_ENABLED) {
+      AddTask(DIFFUSE_HYD,NONE);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        AddTask(DIFFUSE_FLD,DIFFUSE_HYD);
+        // compute hydro fluxes, integrate hydro variables
+        AddTask(CALC_HYDFLX,DIFFUSE_FLD);
+      } else {
+        AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+      }
+    } else { // STS enabled:
+      AddTask(CALC_HYDFLX,NONE);
+    }
     if (pm->multilevel==true) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -716,8 +720,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage
   if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
 
   if (stage <= nstages) {
-    if (!STS_ENABLED)
-      ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TASK_FAIL;
   }
@@ -734,8 +737,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage
   if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
 
   if (stage <= nstages) {
-    if (!STS_ENABLED)
-      pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+    pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
     return TASK_FAIL;
   }

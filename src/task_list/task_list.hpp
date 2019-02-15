@@ -165,15 +165,11 @@ class SuperTimeStepTaskList : public TaskList {
   ~SuperTimeStepTaskList() {}
 
   // functions
-
   enum TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
   enum TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
 
   enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
   enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
-
-  enum TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
 
   //enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 

@@ -327,45 +327,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
     pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
     return TASK_NEXT;
   }
-
   return TASK_FAIL;
-}
-
-// Implementations of 2x Diffusion functions are the same as in TimeIntegratorTaskList,
-// except the latter have "if (!STS_ENABLED)" since their operations are mutually
-// exclusive.
-//----------------------------------------------------------------------------------------
-// Functions to calculate hydro diffusion fluxes
-
-enum TaskStatus SuperTimeStepTaskList::HydroDiffusion_STS(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
-
-  // return if there are no diffusion to be added
-  if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
-
-  if (stage <= nstages) {
-    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_NEXT;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions to calculate diffusion EMF
-
-enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int stage) {
-  Field *pf=pmb->pfield;
-
-  // return if there are no diffusion to be added
-  if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
-
-  if (stage <= nstages) {
-    pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_NEXT;
 }
 
 // enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage){
