@@ -63,7 +63,7 @@ struct OutputData {
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   // ptrs to previous and next nodes in doubly linked list:
-  struct OutputData *pnext, *pprev;
+  OutputData *pnext, *pprev;
 
   OutputData() : pnext(nullptr),  pprev(nullptr) {}
 };

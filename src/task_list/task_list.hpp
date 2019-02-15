@@ -102,7 +102,7 @@ class TimeIntegratorTaskList : public TaskList {
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  struct IntegratorWeight stage_wghts[MAX_NSTAGE];
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   // functions
   enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);

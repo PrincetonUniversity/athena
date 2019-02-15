@@ -76,7 +76,7 @@ class MultigridTaskList {
 
  private:
   MultigridDriver* pmy_mgdriver_;
-  struct MGTask task_list_[64];
+  MGTask task_list_[64];
 };
 
 //----------------------------------------------------------------------------------------
