@@ -216,7 +216,7 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::PhysicalBoundary);
+          (&SuperTimeStepTaskList::PhysicalBoundary_STS);
       break;
 
     case (DIFFUSE_HYD):
