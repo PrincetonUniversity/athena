@@ -545,10 +545,10 @@ BoundaryValues::~BoundaryValues() {
 // KGF: called in Mesh::Initialize(), after CheckBoundary() and before
 // StartReceivingForInit(true)
 
-// TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 
-// KGF: unlike InitBoundaryData(), splitting this up into constituent derived class
-// methods will be painful
+// KGF: setup persistent MPI requests
+
+// TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int &mylevel=pmb->loc.level;
@@ -928,11 +928,11 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   Hydro *ph = pmb->phydro;
 
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
-  Field *pf;
-  if (MAGNETIC_FIELDS_ENABLED)
+  Field *pf = nullptr;
+  if (MAGNETIC_FIELDS_ENABLED) {
     pf=pmb->pfield;
     pfbvar = reinterpret_cast<FaceCenteredBoundaryVariable *>(bvars[1]);
-
+  }
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (BoundaryFunction_[INNER_X1] != nullptr) {
     switch(block_bcs[INNER_X1]) {

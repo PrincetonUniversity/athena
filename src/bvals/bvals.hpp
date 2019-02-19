@@ -30,12 +30,9 @@
 class Mesh;
 class MeshBlock;
 class MeshBlockTree;
-class Hydro;
-class Field;
 class ParameterInput;
 class Coordinates;
 struct RegionSize;
-struct FaceField;
 
 // functions to return boundary flag given input string, and vice versa
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
