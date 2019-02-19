@@ -216,7 +216,7 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
           static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::PhysicalBoundary);
+          (&SuperTimeStepTaskList::PhysicalBoundary);
       break;
 
     case (DIFFUSE_HYD):
@@ -330,20 +330,20 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
   return TASK_FAIL;
 }
 
-// enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage){
-//   Hydro *phydro=pmb->phydro;
-//   Field *pfield=pmb->pfield;
-//   BoundaryValues *pbval=pmb->pbval;
+enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage){
+  Hydro *phydro=pmb->phydro;
+  Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
 
-//   if (stage <= nstages) {
-//     // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
-//     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
-//     // Real t_end_stage = pmb->pmy_mesh->time;
-//     // Real dt = pmb->pmy_mesh->dt;
-//     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
-//   } else {
-//     return TASK_FAIL;
-//   }
+  if (stage <= nstages) {
+    // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
+    //                 operator-split RKL1 STS? For now, disable time-dep BCs.
+    // Real t_end_stage = pmb->pmy_mesh->time;
+    // Real dt = pmb->pmy_mesh->dt;
+    pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+  } else {
+    return TASK_FAIL;
+  }
 
-//   return TASK_SUCCESS;
-// }
+  return TASK_SUCCESS;
+}

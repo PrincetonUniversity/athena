@@ -171,7 +171,7 @@ class SuperTimeStepTaskList : public TaskList {
   enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
   enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
 
-  //enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
   // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:
