@@ -171,7 +171,7 @@ void FFTDriver::InitializeFFTBlock(bool set_norm) {
   if (set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 
-void FFTDriver::QuickCreatePlan(void) {
+void FFTDriver::QuickCreatePlan() {
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
 

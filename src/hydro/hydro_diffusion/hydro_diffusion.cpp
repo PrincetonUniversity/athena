@@ -62,6 +62,8 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 
   // Check if thermal conduction.
+  kappa_iso = 0.0;
+  kappa_aniso = 0.0;
   if (NON_BAROTROPIC_EOS) {
     kappa_iso  = pin->GetOrAddReal("problem","kappa_iso",0.0); // iso thermal conduction
     kappa_aniso  = pin->GetOrAddReal("problem","kappa_aniso",0.0); // aniso conduction
@@ -139,7 +141,6 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
   if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearHydroFlux(cndflx);
   if (kappa_iso > 0.0) ThermalFlux_iso(prim, cons, cndflx);
   if (kappa_aniso > 0.0) ThermalFlux_aniso(prim, cons, cndflx);
-
 
   return;
 }

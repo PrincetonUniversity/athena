@@ -61,7 +61,10 @@ def analyze():
     print('[Resistive Diffusion STS]: Convergence order = {}'.format(conv))
 
     flag = True
-    if conv > -0.99:
+    if not np.isfinite(conv):
+        print('[Resistive Diffusion STS]: NaN encountered.')
+        flag = False
+    elif conv > -0.99:
         print('[Resistive Diffusion STS]: Scheme NOT Converging at ~1st order.')
         flag = False
     else:

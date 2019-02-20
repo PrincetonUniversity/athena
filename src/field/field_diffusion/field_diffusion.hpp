@@ -76,7 +76,7 @@ class FieldDiffusion {
   EdgeField jedge_;       // curl of B
   //EdgeField eh1_,eh2_,eh3_; // scratch arrays for the Hall integrator
 
-  FieldDiffusionCoeff_t CalcMagDiffCoeff_; // calculate magnetic diffusivities
+  FieldDiffusionCoeffFunc CalcMagDiffCoeff_; // calculate magnetic diffusivities
 
   AthenaArray<Real> face_area_,face_area_p1_,edge_length_,edge_length_m1_,cell_volume_;
   AthenaArray<Real> dx1_,dx2_,dx3_,len_;

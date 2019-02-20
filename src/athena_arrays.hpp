@@ -40,7 +40,7 @@ class AthenaArray {
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
-  void ZeroClear(void);
+  void ZeroClear();
 
   // functions to get array dimensions
   int GetDim1() const { return nx1_; }
@@ -322,7 +322,7 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
 //  \brief  fill the array with zero
 
 template<typename T>
-void AthenaArray<T>::ZeroClear(void) {
+void AthenaArray<T>::ZeroClear() {
   std::memset(pdata_, 0, GetSizeInBytes());
 }
 

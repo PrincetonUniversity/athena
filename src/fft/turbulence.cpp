@@ -79,10 +79,10 @@ TurbulenceDriver::~TurbulenceDriver() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::Driving(void)
+//! \fn void TurbulenceDriver::Driving()
 //  \brief Generate and Perturb the velocity field
 
-void TurbulenceDriver::Driving(void) {
+void TurbulenceDriver::Driving() {
   Mesh *pm=pmy_mesh_;
   bool new_perturb = false;
 
@@ -118,7 +118,7 @@ void TurbulenceDriver::Driving(void) {
 //! \fn void TurbulenceDriver::Generate()
 //  \brief Generate velocity pertubation.
 
-void TurbulenceDriver::Generate(void) {
+void TurbulenceDriver::Generate() {
   Mesh *pm=pmy_mesh_;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTPlan *plan = pfb->bplan_;

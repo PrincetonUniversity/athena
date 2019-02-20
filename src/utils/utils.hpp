@@ -29,12 +29,12 @@ const int nsignal = 3;
 static volatile int signalflag[nsignal];
 const int ITERM = 0, IINT = 1, IALRM = 2;
 static sigset_t mask;
-void SignalHandlerInit(void);
-int CheckSignalFlags(void);
+void SignalHandlerInit();
+int CheckSignalFlags();
 int GetSignalFlag(int s);
 void SetSignalFlag(int s);
 void SetWallTimeAlarm(int t);
-void CancelWallTimeAlarm(void);
+void CancelWallTimeAlarm();
 } // namespace SignalHandler
 
 #endif // UTILS_UTILS_HPP_

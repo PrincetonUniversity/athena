@@ -18,14 +18,14 @@
 #include "athena_arrays.hpp"
 #include "defs.hpp"
 
-// typedefs that allow code to run with either floats or doubles
+// primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
-typedef float Real;
+using Real = float;
 #ifdef MPI_PARALLEL
 #define MPI_ATHENA_REAL MPI_FLOAT
 #endif
 #else
-typedef double Real;
+using Real = double;
 #ifdef MPI_PARALLEL
 #define MPI_ATHENA_REAL MPI_DOUBLE
 #endif
@@ -44,10 +44,10 @@ typedef double Real;
 
 #define CACHELINE_BYTES 64
 
+// forward declarations needed for function pointer type aliases
 class MeshBlock;
 class Coordinates;
 class ParameterInput;
-struct RegionSize;
 class HydroDiffusion;
 class FieldDiffusion;
 
@@ -55,7 +55,7 @@ class FieldDiffusion;
 //! \struct LogicalLocation
 //  \brief stores logical location and level of MeshBlock
 
-typedef struct LogicalLocation {
+struct LogicalLocation {
   // These values can exceed the range of std::int32_t even if the root grid has only a
   // single MeshBlock if >30 levels of AMR are used, since the corresponding max index =
   // 1*2^31 > INT_MAX = 2^31 -1 for most 32-bit signed integer type impelementations
@@ -74,35 +74,35 @@ typedef struct LogicalLocation {
   static bool Greater(const LogicalLocation & left, const LogicalLocation &right) {
     return left.level > right.level;
   }
-} LogicalLocation;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh or a MeshBlock
 
-typedef struct RegionSize {
+struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
   Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
   // the size of the root grid or a MeshBlock should not exceed std::int32_t limits
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
-} RegionSize;
+};
 
 //---------------------------------------------------------------------------------------
 //! \struct FaceField
 //  \brief container for face-centered fields
 
-typedef struct FaceField {
+struct FaceField {
   AthenaArray<Real> x1f,x2f,x3f;
-} FaceField;
+};
 
 //----------------------------------------------------------------------------------------
 //! \struct EdgeField
 //  \brief container for edge-centered fields
 
-typedef struct EdgeField {
+struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
-} EdgeField;
+};
 
 //----------------------------------------------------------------------------------------
 // enums used everywhere
@@ -138,36 +138,41 @@ enum FluxCorrectionType {FLUX_HYDRO=0};
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
 
-typedef void (*BValFunc_t)(
+using BValFunc = void (*)(
     MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
     Real time, Real dt,
     int is, int ie, int js, int je, int ks, int ke, int ngh);
-typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
-typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
-typedef void (*SrcTermFunc_t)(
+using AMRFlagFunc = int (*)(MeshBlock *pmb);
+using MeshGenFunc = Real (*)(Real x, RegionSize rs);
+using SrcTermFunc = void (*)(
     MeshBlock *pmb, const Real time, const Real dt,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
-typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
-typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
-typedef void (*MetricFunc_t)(
+using TimeStepFunc = Real (*)(MeshBlock *pmb);
+using HistoryOutputFunc = Real (*)(MeshBlock *pmb, int iout);
+using MetricFunc = void (*)(
     Real x1, Real x2, Real x3, ParameterInput *pin,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv,
     AthenaArray<Real> &dg_dx1, AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
-typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, int nvar,
-                                 int is, int ie, int js, int je, int ks, int ke, int ngh,
-                                 Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-typedef void (*GravityBoundaryFunc_t)(MeshBlock *pmb, Coordinates *pco,
-                                      AthenaArray<Real> &dst, Real time, Real dt,
-                                      int is, int ie, int js, int je, int ks, int ke);
-typedef void (*ViscosityCoeff_t)(HydroDiffusion *phdif, MeshBlock *pmb,
-                                 const  AthenaArray<Real> &w, const AthenaArray<Real> &bc,
-                                 int is, int ie, int js, int je, int ks, int ke);
-typedef void (*ConductionCoeff_t)(HydroDiffusion *phdif, MeshBlock *pmb,
-                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bc,
-                                  int is, int ie, int js, int je, int ks, int ke);
-typedef void (*FieldDiffusionCoeff_t)(FieldDiffusion *pfdif, MeshBlock *pmb,
-                                      const AthenaArray<Real> &w,
-                                      const AthenaArray<Real> &bmag,
-                                      int is, int ie, int js, int je, int ks, int ke);
+using MGBoundaryFunc = void (*)(
+    AthenaArray<Real> &dst,Real time, int nvar,
+    int is, int ie, int js, int je, int ks, int ke, int ngh,
+    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+using GravityBoundaryFunc = void (*)(
+    MeshBlock *pmb, Coordinates *pco,
+    AthenaArray<Real> &dst, Real time, Real dt,
+    int is, int ie, int js, int je, int ks, int ke);
+using ViscosityCoeffFunc = void (*)(
+    HydroDiffusion *phdif, MeshBlock *pmb,
+    const  AthenaArray<Real> &w, const AthenaArray<Real> &bc,
+    int is, int ie, int js, int je, int ks, int ke);
+using ConductionCoeffFunc = void (*)(
+    HydroDiffusion *phdif, MeshBlock *pmb,
+    const AthenaArray<Real> &w, const AthenaArray<Real> &bc,
+    int is, int ie, int js, int je, int ks, int ke);
+using FieldDiffusionCoeffFunc = void (*)(
+    FieldDiffusion *pfdif, MeshBlock *pmb,
+    const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bmag,
+    int is, int ie, int js, int je, int ks, int ke);
 
 #endif // ATHENA_HPP_

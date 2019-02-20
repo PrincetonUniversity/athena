@@ -61,13 +61,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
     }
   }
   gamma_ = 0.0; // Not actually used
-  PrepEOS(pin);
-}
-
-// destructor
-
-EquationOfState::~EquationOfState() {
-  CleanEOS();
 }
 
 //----------------------------------------------------------------------------------------

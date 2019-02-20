@@ -33,11 +33,11 @@
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
 //                                   ParameterInput *pin)
 //  \brief MGGravityDriver constructor
 
-MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
                                  ParameterInput *pin)
     : MultigridDriver(pm, MGBoundary, 1) {
   four_pi_G_=pmy_mesh_->four_pi_G_;
@@ -160,10 +160,10 @@ void MGGravity::Smooth(int color) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateDefect(void)
+//! \fn void MGGravity::CalculateDefect()
 //  \brief calculate the residual
 
-void MGGravity::CalculateDefect(void) {
+void MGGravity::CalculateDefect() {
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];

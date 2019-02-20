@@ -1606,8 +1606,8 @@ void KerrSchild::FluxToGlobal1(
     const Real &my_2 = trans_face1_ji3_(j,i);
     const Real &mz_1 = trans_face1_ji7_(j,i);
     const Real &mz_3 = trans_face1_ji4_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -mx_0/(mt_0*mx_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -mx_0/(mt_0*mx_1);
     Real m1_x = 1.0/mx_1;
     Real m2_y = 1.0/my_2;
     Real m3_x = -mz_1/(mx_1*mz_3);
@@ -1626,10 +1626,10 @@ void KerrSchild::FluxToGlobal1(
     Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_t*m0_t*ttt + m1_x*m0_t*txt;
-    Real t11 = m1_t*m1_t*ttt + m1_t*m1_x*ttx + m1_x*m1_t*txt + m1_x*m1_x*txx;
-    Real t12 = m1_t*m2_y*tty + m1_x*m2_y*txy;
-    Real t13 = m1_t*m3_x*ttx + m1_t*m3_z*ttz + m1_x*m3_x*txx + m1_x*m3_z*txz;
+    Real t10 = m1_tm*m0_tm*ttt + m1_x*m0_tm*txt;
+    Real t11 = m1_tm*m1_tm*ttt + m1_tm*m1_x*ttx + m1_x*m1_tm*txt + m1_x*m1_x*txx;
+    Real t12 = m1_tm*m2_y*tty + m1_x*m2_y*txy;
+    Real t13 = m1_tm*m3_x*ttx + m1_tm*m3_z*ttz + m1_x*m3_x*txx + m1_x*m3_z*txz;
 
     // Extract metric coefficients
     const Real &g_00 = g_(I00,i);
@@ -1651,7 +1651,7 @@ void KerrSchild::FluxToGlobal1(
     Real &t1_3 = flux(IM3,k,j,i);
 
     // Set fluxes
-    d1 = m1_t*dt + m1_x*dx;
+    d1 = m1_tm*dt + m1_x*dx;
     t1_0 = g_00*t10 + g_01*t11 + g_03*t13;
     t1_1 = g_10*t10 + g_11*t11 + g_13*t13;
     t1_2 = g_22*t12;
@@ -1664,8 +1664,8 @@ void KerrSchild::FluxToGlobal1(
       Real fzt = cons(IBZ,i);
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f21 = m2_y*m1_t*fyt + m2_y*m1_x*fyx;
-      Real f31 = m3_x*m1_t*fxt + m3_z*m1_t*fzt + m3_z*m1_x*fzx;
+      Real f21 = m2_y*m1_tm*fyt + m2_y*m1_x*fyx;
+      Real f31 = m3_x*m1_tm*fxt + m3_z*m1_tm*fzt + m3_z*m1_x*fzx;
       ey(k,j,i) = -f21;
       ez(k,j,i) = f31;
     }
@@ -1708,8 +1708,8 @@ void KerrSchild::FluxToGlobal2(
     const Real &mz_0 = trans_face2_ji5_(j,i);
     const Real &mz_1 = trans_face2_ji2_(j,i);
     const Real &mz_3 = trans_face2_ji6_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -mz_0/(mt_0*mz_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -mz_0/(mt_0*mz_1);
     Real m1_y = -mz_3/(mz_1*my_3);
     Real m1_z = 1.0/mz_1;
     Real m2_x = 1.0/mx_2;
@@ -1728,8 +1728,8 @@ void KerrSchild::FluxToGlobal2(
     Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
-    Real t20 = m2_x*m0_t*txt;
-    Real t21 = m2_x*m1_t*txt + m2_x*m1_y*txy + m2_x*m1_z*txz;
+    Real t20 = m2_x*m0_tm*txt;
+    Real t21 = m2_x*m1_tm*txt + m2_x*m1_y*txy + m2_x*m1_z*txz;
     Real t22 = m2_x*m2_x*txx;
     Real t23 = m2_x*m3_y*txy;
 
@@ -1765,7 +1765,7 @@ void KerrSchild::FluxToGlobal2(
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
       Real f32 = m3_y*m2_x*fyx;
-      Real f12 = m1_t*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
+      Real f12 = m1_tm*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
       ey(k,j,i) = -f32;
       ez(k,j,i) = f12;
     }
@@ -1808,8 +1808,8 @@ void KerrSchild::FluxToGlobal3(
     const Real &my_1 = trans_face3_ji2_(j,i);
     const Real &my_3 = trans_face3_ji6_(j,i);
     const Real &mz_2 = trans_face3_ji3_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -my_0/(mt_0*my_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -my_0/(mt_0*my_1);
     Real m1_x = -my_3/(my_1*mx_3);
     Real m1_y = 1.0/my_1;
     Real m2_z = 1.0/mz_2;
@@ -1828,8 +1828,8 @@ void KerrSchild::FluxToGlobal3(
     Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
-    Real t30 = m3_x*m0_t*txt;
-    Real t31 = m3_x*m1_t*txt + m3_x*m1_x*txx + m3_x*m1_y*txy;
+    Real t30 = m3_x*m0_tm*txt;
+    Real t31 = m3_x*m1_tm*txt + m3_x*m1_x*txx + m3_x*m1_y*txy;
     Real t32 = m3_x*m2_z*txz;
     Real t33 = m3_x*m3_x*txx;
 
@@ -1864,7 +1864,7 @@ void KerrSchild::FluxToGlobal3(
       Real ftx = -bbx(i);
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f13 = m1_t*m3_x*ftx + m1_y*m3_x*fyx;
+      Real f13 = m1_tm*m3_x*ftx + m1_y*m3_x*fyx;
       Real f23 = m2_z*m3_x*fzx;
       ey(k,j,i) = -f13;
       ez(k,j,i) = f23;

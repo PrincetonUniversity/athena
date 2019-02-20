@@ -51,7 +51,7 @@ class MultigridTaskList {
   // functions
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
-  void ClearTaskList(void) {ntasks=0;}
+  void ClearTaskList() {ntasks=0;}
   void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 
   // functions

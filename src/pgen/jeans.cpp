@@ -46,14 +46,14 @@
 #error "This problem generator does not support magnetic fields"
 #endif
 
+namespace {
 // with functions A1,2,3 which compute vector potentials
-static Real ang_2, ang_3; // Rotation angles about the y and z' axis
-static Real sin_a2, cos_a2, sin_a3, cos_a3;
-static Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
-static Real cs2,gam,gm1,omega,omega2, gconst;
-static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
-static Real d0,p0,v0,u0,w0,va,b0;
-
+Real ang_2, ang_3; // Rotation angles about the y and z' axis
+Real sin_a2, cos_a2, sin_a3, cos_a3;
+Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
+Real cs2, gam, gm1, omega, omega2, gconst;
+Real d0, p0, v0, u0, w0, va, b0;
+} // namespace
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real x1size = mesh_size.x1max - mesh_size.x1min;

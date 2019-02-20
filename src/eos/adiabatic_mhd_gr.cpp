@@ -23,22 +23,24 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "eos.hpp"
 
+namespace {
 // Declarations
-static void CalculateNormalConserved(
+void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
-static bool ConservedToPrimitiveNormal(
+bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
     const AthenaArray<Real> &tt_vals,
     Real gamma_adi, Real pgas_old,
     int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag);
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -288,6 +290,37 @@ void EquationOfState::ConservedToPrimitive(
 }
 
 //----------------------------------------------------------------------------------------
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: primitives
+//   bb_cc: cell-centered magnetic field
+//   pco: pointer to Coordinates
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
+// Outputs:
+//   cons: conserved variables
+// Notes:
+//   single-cell function exists for other purposes; call made to that function rather
+//       than having duplicate code
+
+void EquationOfState::PrimitiveToConserved(
+    const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      pco->CellMetric(k, j, il, iu, g_, g_inv_);
+      //#pragma omp simd // fn is too long to inline
+      for (int i=il; i<=iu; ++i) {
+        PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
+      }
+    }
+  }
+  return;
+}
+
+namespace {
+
+//----------------------------------------------------------------------------------------
 // Function for casting quantities into normal observer frame
 // Inputs:
 //   cons: conserved quantities rho u^0, T^0_\mu
@@ -309,7 +342,7 @@ void EquationOfState::ConservedToPrimitive(
 //     bbb: \mathcal{B}
 //     tt: \mathcal{T}
 
-static void CalculateNormalConserved(
+void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu,
@@ -419,7 +452,7 @@ static void CalculateNormalConserved(
 //     wgas: w_{gas} (NH: w)
 //     rr: \mathcal{R}
 
-static bool ConservedToPrimitiveNormal(
+bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
     const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old,
@@ -542,35 +575,6 @@ static bool ConservedToPrimitiveNormal(
 }
 
 //----------------------------------------------------------------------------------------
-// Function for converting all primitives to conserved variables
-// Inputs:
-//   prim: primitives
-//   bb_cc: cell-centered magnetic field
-//   pco: pointer to Coordinates
-//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
-// Outputs:
-//   cons: conserved variables
-// Notes:
-//   single-cell function exists for other purposes; call made to that function rather
-//       than having duplicate code
-
-void EquationOfState::PrimitiveToConserved(
-    const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
-    int il, int iu, int jl, int ju, int kl, int ku) {
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-      pco->CellMetric(k, j, il, iu, g_, g_inv_);
-      //#pragma omp simd // fn is too long to inline
-      for (int i=il; i<=iu; ++i) {
-        PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, cons, pco);
-      }
-    }
-  }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for converting primitives to conserved variables in a single cell
 // Inputs:
 //   prim: 3D array of primitives
@@ -582,7 +586,7 @@ void EquationOfState::PrimitiveToConserved(
 // Outputs:
 //   cons: conserved variables set in desired cell
 
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
@@ -639,6 +643,7 @@ static void PrimitiveToConservedSingle(
   t0_3 = wtot * u0 * u_3 - b0 * b_3;
   return;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds

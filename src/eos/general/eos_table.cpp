@@ -58,14 +58,3 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
                   ptable->table.interpolate(3, std::log10(hint*ptable->hUnit),
                                             std::log10(rho*ptable->rhoUnit))) * hint;
 }
-//----------------------------------------------------------------------------------------
-//! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
-//  \brief Read data and initialize interpolated table.
-void EquationOfState::PrepEOS(ParameterInput *pin) {
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void EquationOfState::CleanEOS()
-//  \brief Clear memory/objects used to store EOS data
-void EquationOfState::CleanEOS() {
-}

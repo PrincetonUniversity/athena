@@ -21,14 +21,16 @@
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
+namespace {
 // Declarations
-static Real Determinant(const AthenaArray<Real> &g);
-static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
+Real Determinant(const AthenaArray<Real> &g);
+Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
                         Real a31, Real a32, Real a33);
-static Real Determinant(Real a11, Real a12, Real a21, Real a22);
-static void CalculateTransformation(
+Real Determinant(Real a11, Real a12, Real a21, Real a22);
+void CalculateTransformation(
     const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // GRUser Constructor
@@ -1400,13 +1402,13 @@ void GRUser::FluxToGlobal1(
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
-    const Real &m0_t = trans_face1_kji_(0,T00,k,j,i);
-    const Real &m1_t = trans_face1_kji_(0,T10,k,j,i);
+    const Real &m0_tm = trans_face1_kji_(0,T00,k,j,i);
+    const Real &m1_tm = trans_face1_kji_(0,T10,k,j,i);
     const Real &m1_x = trans_face1_kji_(0,T11,k,j,i);
-    const Real &m2_t = trans_face1_kji_(0,T20,k,j,i);
+    const Real &m2_tm = trans_face1_kji_(0,T20,k,j,i);
     const Real &m2_x = trans_face1_kji_(0,T21,k,j,i);
     const Real &m2_y = trans_face1_kji_(0,T22,k,j,i);
-    const Real &m3_t = trans_face1_kji_(0,T30,k,j,i);
+    const Real &m3_tm = trans_face1_kji_(0,T30,k,j,i);
     const Real &m3_x = trans_face1_kji_(0,T31,k,j,i);
     const Real &m3_y = trans_face1_kji_(0,T32,k,j,i);
     const Real &m3_z = trans_face1_kji_(0,T33,k,j,i);
@@ -1424,14 +1426,14 @@ void GRUser::FluxToGlobal1(
     Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_t * (m0_t*ttt)
-               + m1_x * (m0_t*txt);
-    Real t11 = m1_t * (m1_t*ttt + m1_x*ttx)
-               + m1_x * (m1_t*txt + m1_x*txx);
-    Real t12 = m1_t * (m2_t*ttt + m2_x*ttx + m2_y*tty)
-               + m1_x * (m2_t*txt + m2_x*txx + m2_y*txy);
-    Real t13 = m1_t * (m3_t*ttt + m3_x*ttx + m3_y*tty + m3_z*ttz)
-               + m1_x * (m3_t*txt + m3_x*txx + m3_y*txy + m3_z*txz);
+    Real t10 = m1_tm * (m0_tm*ttt)
+               + m1_x * (m0_tm*txt);
+    Real t11 = m1_tm * (m1_tm*ttt + m1_x*ttx)
+               + m1_x * (m1_tm*txt + m1_x*txx);
+    Real t12 = m1_tm * (m2_tm*ttt + m2_x*ttx + m2_y*tty)
+               + m1_x * (m2_tm*txt + m2_x*txx + m2_y*txy);
+    Real t13 = m1_tm * (m3_tm*ttt + m3_x*ttx + m3_y*tty + m3_z*ttz)
+               + m1_x * (m3_tm*txt + m3_x*txx + m3_y*txy + m3_z*txz);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face1_kji_(0,I00,k,j,i);
@@ -1459,7 +1461,7 @@ void GRUser::FluxToGlobal1(
     Real &t1_3 = flux(IM3,k,j,i);
 
     // Set fluxes
-    j1 = m1_t*jt + m1_x*jx;
+    j1 = m1_tm*jt + m1_x*jx;
     t1_0 = g_00*t10 + g_01*t11 + g_02*t12 + g_03*t13;
     t1_1 = g_10*t10 + g_11*t11 + g_12*t12 + g_13*t13;
     t1_2 = g_20*t10 + g_21*t11 + g_22*t12 + g_23*t13;
@@ -1475,10 +1477,10 @@ void GRUser::FluxToGlobal1(
       Real fxx = 0.0;
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f21 = m1_t * (m2_t*ftt + m2_x*fxt + m2_y*fyt)
-                 + m1_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx);
-      Real f31 = m1_t * (m3_t*ftt + m3_x*fxt + m3_y*fyt + m3_z*fzt)
-                 + m1_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx + m3_z*fzx);
+      Real f21 = m1_tm * (m2_tm*ftt + m2_x*fxt + m2_y*fyt)
+                 + m1_x * (m2_tm*ftx + m2_x*fxx + m2_y*fyx);
+      Real f31 = m1_tm * (m3_tm*ftt + m3_x*fxt + m3_y*fyt + m3_z*fzt)
+                 + m1_x * (m3_tm*ftx + m3_x*fxx + m3_y*fyx + m3_z*fzx);
       ey(k,j,i) = -f21;
       ez(k,j,i) = f31;
     }
@@ -1512,14 +1514,14 @@ void GRUser::FluxToGlobal2(
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
-    const Real &m0_t = trans_face2_kji_(0,T00,k,j,i);
-    const Real &m1_t = trans_face2_kji_(0,T30,k,j,i);
+    const Real &m0_tm = trans_face2_kji_(0,T00,k,j,i);
+    const Real &m1_tm = trans_face2_kji_(0,T30,k,j,i);
     const Real &m1_x = trans_face2_kji_(0,T31,k,j,i);
     const Real &m1_y = trans_face2_kji_(0,T32,k,j,i);
     const Real &m1_z = trans_face2_kji_(0,T33,k,j,i);
-    const Real &m2_t = trans_face2_kji_(0,T10,k,j,i);
+    const Real &m2_tm = trans_face2_kji_(0,T10,k,j,i);
     const Real &m2_x = trans_face2_kji_(0,T11,k,j,i);
-    const Real &m3_t = trans_face2_kji_(0,T20,k,j,i);
+    const Real &m3_tm = trans_face2_kji_(0,T20,k,j,i);
     const Real &m3_x = trans_face2_kji_(0,T21,k,j,i);
     const Real &m3_y = trans_face2_kji_(0,T22,k,j,i);
 
@@ -1536,14 +1538,14 @@ void GRUser::FluxToGlobal2(
     Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
-    Real t20 = m2_t * (m0_t*ttt)
-               + m2_x * (m0_t*txt);
-    Real t21 = m2_t * (m1_t*ttt + m1_x*ttx + m1_y*tty + m1_z*ttz)
-               + m2_x * (m1_t*txt + m1_x*txx + m1_y*txy + m1_z*txz);
-    Real t22 = m2_t * (m2_t*ttt + m2_x*ttx)
-               + m2_x * (m2_t*txt + m2_x*txx);
-    Real t23 = m2_t * (m3_t*ttt + m3_x*ttx + m3_y*tty)
-               + m2_x * (m3_t*txt + m3_x*txx + m3_y*txy);
+    Real t20 = m2_tm * (m0_tm*ttt)
+               + m2_x * (m0_tm*txt);
+    Real t21 = m2_tm * (m1_tm*ttt + m1_x*ttx + m1_y*tty + m1_z*ttz)
+               + m2_x * (m1_tm*txt + m1_x*txx + m1_y*txy + m1_z*txz);
+    Real t22 = m2_tm * (m2_tm*ttt + m2_x*ttx)
+               + m2_x * (m2_tm*txt + m2_x*txx);
+    Real t23 = m2_tm * (m3_tm*ttt + m3_x*ttx + m3_y*tty)
+               + m2_x * (m3_tm*txt + m3_x*txx + m3_y*txy);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face2_kji_(0,I00,k,j,i);
@@ -1571,7 +1573,7 @@ void GRUser::FluxToGlobal2(
     Real &t2_3 = flux(IM3,k,j,i);
 
     // Set fluxes
-    j2 = m2_t*jt + m2_x*jx;
+    j2 = m2_tm*jt + m2_x*jx;
     t2_0 = g_00*t20 + g_01*t21 + g_02*t22 + g_03*t23;
     t2_1 = g_10*t20 + g_11*t21 + g_12*t22 + g_13*t23;
     t2_2 = g_20*t20 + g_21*t21 + g_22*t22 + g_23*t23;
@@ -1587,10 +1589,10 @@ void GRUser::FluxToGlobal2(
       Real fxx = 0.0;
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f32 = m2_t * (m3_t*ftt + m3_x*fxt + m3_y*fyt)
-                 + m2_x * (m3_t*ftx + m3_x*fxx + m3_y*fyx);
-      Real f12 = m2_t * (m1_t*ftt + m1_x*fxt + m1_y*fyt + m1_z*fzt)
-                 + m2_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx + m1_z*fzx);
+      Real f32 = m2_tm * (m3_tm*ftt + m3_x*fxt + m3_y*fyt)
+                 + m2_x * (m3_tm*ftx + m3_x*fxx + m3_y*fyx);
+      Real f12 = m2_tm * (m1_tm*ftt + m1_x*fxt + m1_y*fyt + m1_z*fzt)
+                 + m2_x * (m1_tm*ftx + m1_x*fxx + m1_y*fyx + m1_z*fzx);
       ey(k,j,i) = -f32;
       ez(k,j,i) = f12;
     }
@@ -1624,15 +1626,15 @@ void GRUser::FluxToGlobal3(
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Extract transformation coefficients
-    const Real &m0_t = trans_face3_kji_(0,T00,k,j,i);
-    const Real &m1_t = trans_face3_kji_(0,T20,k,j,i);
+    const Real &m0_tm = trans_face3_kji_(0,T00,k,j,i);
+    const Real &m1_tm = trans_face3_kji_(0,T20,k,j,i);
     const Real &m1_x = trans_face3_kji_(0,T21,k,j,i);
     const Real &m1_y = trans_face3_kji_(0,T22,k,j,i);
-    const Real &m2_t = trans_face3_kji_(0,T30,k,j,i);
+    const Real &m2_tm = trans_face3_kji_(0,T30,k,j,i);
     const Real &m2_x = trans_face3_kji_(0,T31,k,j,i);
     const Real &m2_y = trans_face3_kji_(0,T32,k,j,i);
     const Real &m2_z = trans_face3_kji_(0,T33,k,j,i);
-    const Real &m3_t = trans_face3_kji_(0,T10,k,j,i);
+    const Real &m3_tm = trans_face3_kji_(0,T10,k,j,i);
     const Real &m3_x = trans_face3_kji_(0,T11,k,j,i);
 
     // Extract local conserved quantities and fluxes
@@ -1648,14 +1650,14 @@ void GRUser::FluxToGlobal3(
     Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
-    Real t30 = m3_t * (m0_t*ttt)
-               + m3_x * (m0_t*txt);
-    Real t31 = m3_t * (m1_t*ttt + m1_x*ttx + m1_y*tty)
-               + m3_x * (m1_t*txt + m1_x*txx + m1_y*txy);
-    Real t32 = m3_t * (m2_t*ttt + m2_x*ttx + m2_y*tty + m2_z*ttz)
-               + m3_x * (m2_t*txt + m2_x*txx + m2_y*txy + m2_z*txz);
-    Real t33 = m3_t * (m3_t*ttt + m3_x*ttx)
-               + m3_x * (m3_t*txt + m3_x*txx);
+    Real t30 = m3_tm * (m0_tm*ttt)
+               + m3_x * (m0_tm*txt);
+    Real t31 = m3_tm * (m1_tm*ttt + m1_x*ttx + m1_y*tty)
+               + m3_x * (m1_tm*txt + m1_x*txx + m1_y*txy);
+    Real t32 = m3_tm * (m2_tm*ttt + m2_x*ttx + m2_y*tty + m2_z*ttz)
+               + m3_x * (m2_tm*txt + m2_x*txx + m2_y*txy + m2_z*txz);
+    Real t33 = m3_tm * (m3_tm*ttt + m3_x*ttx)
+               + m3_x * (m3_tm*txt + m3_x*txx);
 
     // Extract metric coefficients
     const Real &g_00 = metric_face3_kji_(0,I00,k,j,i);
@@ -1683,7 +1685,7 @@ void GRUser::FluxToGlobal3(
     Real &t3_3 = flux(IM3,k,j,i);
 
     // Set fluxes
-    j3 = m3_t*jt + m3_x*jx;
+    j3 = m3_tm*jt + m3_x*jx;
     t3_0 = g_00*t30 + g_01*t31 + g_02*t32 + g_03*t33;
     t3_1 = g_10*t30 + g_11*t31 + g_12*t32 + g_13*t33;
     t3_2 = g_20*t30 + g_21*t31 + g_22*t32 + g_23*t33;
@@ -1699,10 +1701,10 @@ void GRUser::FluxToGlobal3(
       Real fxx = 0.0;
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f13 = m3_t * (m1_t*ftt + m1_x*fxt + m1_y*fyt)
-                 + m3_x * (m1_t*ftx + m1_x*fxx + m1_y*fyx);
-      Real f23 = m3_t * (m2_t*ftt + m2_x*fxt + m2_y*fyt + m2_z*fzt)
-                 + m3_x * (m2_t*ftx + m2_x*fxx + m2_y*fyx + m2_z*fzx);
+      Real f13 = m3_tm * (m1_tm*ftt + m1_x*fxt + m1_y*fyt)
+                 + m3_x * (m1_tm*ftx + m1_x*fxx + m1_y*fyx);
+      Real f23 = m3_tm * (m2_tm*ftt + m2_x*fxt + m2_y*fyt + m2_z*fzt)
+                 + m3_x * (m2_tm*ftx + m2_x*fxx + m2_y*fyx + m2_z*fzx);
       ey(k,j,i) = -f13;
       ez(k,j,i) = f23;
     }
@@ -1782,6 +1784,7 @@ void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, i
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Functions for calculating determinant
 // Inputs:
@@ -1791,7 +1794,7 @@ void GRUser::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, i
 // Outputs:
 //   returned value: determinant
 
-static Real Determinant(const AthenaArray<Real> &g) {
+Real Determinant(const AthenaArray<Real> &g) {
   const Real &a11 = g(I00);
   const Real &a12 = g(I01);
   const Real &a13 = g(I02);
@@ -1815,7 +1818,7 @@ static Real Determinant(const AthenaArray<Real> &g) {
   return det;
 }
 
-static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
+Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
                         Real a31, Real a32, Real a33) {
   Real det = a11 * Determinant(a22, a23, a32, a33)
              - a12 * Determinant(a21, a23, a31, a33)
@@ -1823,7 +1826,7 @@ static Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a
   return det;
 }
 
-static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
+Real Determinant(Real a11, Real a12, Real a21, Real a22) {
   return a11 * a22 - a12 * a21;
 }
 
@@ -1835,7 +1838,7 @@ static Real Determinant(Real a11, Real a12, Real a21, Real a22) {
 // Outputs:
 //   transformation: array of transformation coefficients
 
-static void CalculateTransformation(
+void CalculateTransformation(
     const AthenaArray<Real> &g,
     const AthenaArray<Real> &g_inv, int face, AthenaArray<Real> &transformation) {
   // Prepare indices
@@ -1901,3 +1904,4 @@ static void CalculateTransformation(
   transformation(1,T33) = 1.0/cc;
   return;
 }
+} // namespace

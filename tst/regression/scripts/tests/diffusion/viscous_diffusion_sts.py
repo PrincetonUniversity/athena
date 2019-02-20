@@ -61,7 +61,10 @@ def analyze():
     print('[Viscous Diffusion STS]: Convergence order = {}'.format(conv))
 
     flag = True
-    if conv > -0.99:
+    if not np.isfinite(conv):
+        print('[Viscous Diffusion STS]: NaN encountered.')
+        flag = False
+    elif conv > -0.99:
         print('[Viscous Diffusion STS]: Scheme NOT Converging at ~1st order.')
         flag = False
     else:

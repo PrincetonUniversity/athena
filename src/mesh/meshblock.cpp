@@ -379,10 +379,10 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn std::size_t MeshBlock::GetBlockSizeInBytes(void)
+//! \fn std::size_t MeshBlock::GetBlockSizeInBytes()
 //  \brief Calculate the block data size required for restart.
 
-std::size_t MeshBlock::GetBlockSizeInBytes(void) {
+std::size_t MeshBlock::GetBlockSizeInBytes() {
   std::size_t size;
 
   size=phydro->u.GetSizeInBytes();

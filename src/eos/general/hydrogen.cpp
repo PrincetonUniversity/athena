@@ -164,17 +164,3 @@ Real EquationOfState::SimpleAsq(Real rho, Real pres) {
   Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return asq_(rho, T);
 }
-
-//----------------------------------------------------------------------------------------
-//! \fn void EquationOfState::PrepEOS(ParameterInput *pin)
-//  \brief No-op initialize.
-void EquationOfState::PrepEOS(ParameterInput *pin) {
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void EquationOfState::CleanEOS()
-//  \brief No-op clean up.
-void EquationOfState::CleanEOS() {
-  return;
-}
