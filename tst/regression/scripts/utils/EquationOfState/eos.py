@@ -105,7 +105,10 @@ class SimpleHydrogen(EOS):
         def f(y):  # function to find root of
             return self.p_of_rho_T(rho, y) / p - 1.
 
-        T, r = brentq(f, .1 * t1, t1, **brent_opt)  # find root
+        try:
+            T, r = brentq(f, .1 * t1, t1, **brent_opt)  # find root
+        except ValueError:
+            T, r = brentq(f, .05 * t1, 2 * t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
         return T

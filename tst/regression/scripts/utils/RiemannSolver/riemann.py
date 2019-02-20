@@ -6,6 +6,15 @@ from scripts.utils.EquationOfState.eos import parse_eos
 from . import brent_opt, ode_opt
 
 
+def sanitize_lbl(label):
+    """sanitize_lbl(label): Makes labels latex friendly."""
+    import re
+    out = label.split('$')
+    for i in range(0, len(out), 2):
+        out[i] = re.sub('_', '\_', out[i])
+    return '$'.join(out)
+
+
 class StateVector(object):
     """Fluid state vector."""
 
@@ -104,7 +113,14 @@ class StateVector(object):
         try:
             out = getattr(self, item)
         except AttributeError:
-            return self[self._alt_names[item]]
+            try:
+                item = self._alt_names[item]
+            except KeyError as err:
+                try:
+                    return self.eos_eval(item)
+                except AttributeError:
+                    raise err
+            return self[item]
         try:
             return out()
         except TypeError:
@@ -117,6 +133,10 @@ class StateVector(object):
         if self.T is not None:
             msg += ', temp: {0:.3g}'.format(self.T)
         print(msg)
+
+    def eos_eval(self, func):
+        indep = self[self.eos.indep]
+        return getattr(self.eos, func)(self.rho, indep)
 
     def __repr__(self):
         data = np.array([self.rho, self.p, self.u, self.T], dtype=np.float64)
@@ -334,12 +354,14 @@ class RiemannSol(object):
             # Should not get here
             return None
 
-    def data_array(self, xi):
+    def data_array(self, xi, add_var=None):
         """Returns an array of state data corresponding to the specified array of
         characteristics."""
         xi = np.atleast_1d(xi)
         states = self.get_state(xi)
         names = ['xi', 'dens', 'press', 'vel1']
+        if add_var is not None:
+            names += add_var
         out = {n: np.array([w[n] for w in states], np.float64) for n in names[1:]}
         out['xi'] = xi
         for i in names[1:]:
@@ -349,7 +371,7 @@ class RiemannSol(object):
         return out
 
     def plot_sol(self, var=None, xi_min=None, xi_max=None, nsimp=100, speeds=True,
-                 fig=True, ax=None, popt=None, discont=True, lbls=True, t=1):
+                 fig=True, ax=None, popt=None, discont=True, lbls=True, t=1, norm=None):
         """Plot solution to Riemann problem.
 
         Keyword arguments:
@@ -373,6 +395,8 @@ class RiemannSol(object):
         if var is None:
             var = ['rho', 'p', 'u']
         var = np.atleast_1d(var)
+        if norm is None:
+            norm = [1 for i in var]
         if fig is True and ax is None:
             fig = plt.figure()
 
@@ -384,11 +408,15 @@ class RiemannSol(object):
                 axs = [plt.subplot(n, 1, i + 1) for i in range(n)]
             for i, v in enumerate(var):
                 ax = axs[i]
-                self.plot_sol(v, xi_min=xi_min, xi_max=xi_max,
-                              nsimp=nsimp, speeds=speeds, ax=ax, popt=popt)
+                self.plot_sol(v, xi_min=xi_min, xi_max=xi_max, nsimp=nsimp, speeds=speeds,
+                              ax=ax, popt=popt, norm=norm[i], lbls=lbls)
             return axs
         else:
             var = var[0]
+            try:
+                norm = norm[0]
+            except TypeError:
+                pass
             if ax is None:
                 ax = plt.gca()
             plt.sca(ax)
@@ -426,9 +454,9 @@ class RiemannSol(object):
             y.extend([self.right[var]] * 2)
             x = np.array(x)
             y = np.array(y)
-            plt.plot(x * t, y, **popt)
+            plt.plot(x * t, y * norm, **popt)
             if lbls:
-                plt.ylabel(var)
+                plt.ylabel(sanitize_lbl(var))
             plt.xlim(xi_min * t, xi_max * t)
             if speeds:
                 waves = [i['speed'][0] for i in ws]
