@@ -5,6 +5,7 @@
 # linearwave_errors.dat)
 
 # Modules
+import numpy as np
 import scripts.utils.athena as athena
 
 
@@ -63,13 +64,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = np.loadtxt(filename)
 
     # Check absolute error and convergence rate lower bounds of all waves
     # Asymptotic second-order convergence should have ratio <= 0.25 in below calculations

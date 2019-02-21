@@ -89,13 +89,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = np.loadtxt(filename)
 
     for ((torder, xorder), err_tol, rate_tol) in zip(solvers, error_tols, rate_tols):
         # effectively list.pop() range of rows for this solver configuration

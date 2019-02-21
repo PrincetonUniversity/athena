@@ -6,6 +6,7 @@
 
 # Modules
 import os
+import numpy as np
 import scripts.utils.athena as athena
 
 
@@ -82,13 +83,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/jeans-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = np.loadtxt(filename)
 
     print(data[0][4], data[1][4])
     print(data[2][4], data[3][4], data[4][4])
