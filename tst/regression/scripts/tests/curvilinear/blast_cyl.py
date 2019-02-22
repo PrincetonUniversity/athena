@@ -23,7 +23,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/blastwave-shape.dat'
-    data = np.loadtxt(filename)
+    data = np.loadtxt(filename, ndmin=2)
 
     # check blast is spherical
     if data[0][3] > 1.0:
