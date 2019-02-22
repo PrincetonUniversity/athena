@@ -31,7 +31,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = np.loadtxt(filename)
+    data = np.loadtxt(filename, ndmin=2)
 
     analyze_status = True
     if data[0][4] > 2.0e-8:
