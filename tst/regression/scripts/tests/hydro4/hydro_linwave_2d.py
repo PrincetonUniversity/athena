@@ -85,7 +85,8 @@ def analyze():
     for ((torder, xorder), err_tol, rate_tol) in zip(solvers, error_tols, rate_tols):
         # effectively list.pop() range of rows for this solver configuration
         solver_results = np.array(data[0:nrows_per_solver])
-        del data[0:nrows_per_solver]
+        data = np.delete(data, np.s_[0:nrows_per_solver], 0)
+
         print(err_tol[0], err_tol[1])
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------

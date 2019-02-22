@@ -79,7 +79,9 @@ def analyze():
     for (torder, xorder) in solvers:
         # effectively list.pop() range of rows for this solver configuration
         solver_results = np.array(data[0:nrows_per_solver])
-        del data[0:nrows_per_solver]
+        # del data[0:nrows_per_solver]
+
+        data = np.delete(data, np.s_[0:nrows_per_solver], 0)
 
         # print('{} + {}'.format(torder.upper(), xorder))
         # L-going sound wave: Ncycle, RMS-L1, d_L1, E_L1, d_max, E_max
