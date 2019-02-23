@@ -74,7 +74,7 @@ def analyze():
 
     # Read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     # Check errors
     status = True

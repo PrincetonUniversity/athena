@@ -74,7 +74,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     for (torder, xorder) in solvers:
         # effectively list.pop() range of rows for this solver configuration

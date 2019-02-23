@@ -6,7 +6,10 @@
 
 # Modules
 import scripts.utils.athena as athena
-import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++
@@ -31,7 +34,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = np.loadtxt(filename, ndmin=2)
+    data = athena_read.error_dat(filename)
 
     analyze_status = True
     if data[0][4] > 2.0e-8:

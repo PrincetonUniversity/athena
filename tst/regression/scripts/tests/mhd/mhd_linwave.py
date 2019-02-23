@@ -66,7 +66,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     # check largest maximum error scaled to RMS is within bounds at each highest res
     if data[1][13] > 8.0:

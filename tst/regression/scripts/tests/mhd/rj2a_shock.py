@@ -77,7 +77,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/shock-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     # check Ncycles same for each direction
     if data[1][3] != data[3][3]:

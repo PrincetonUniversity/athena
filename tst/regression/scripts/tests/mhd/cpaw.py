@@ -44,7 +44,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/cpaw-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     print(data[0][4])
     print(data[1][4])

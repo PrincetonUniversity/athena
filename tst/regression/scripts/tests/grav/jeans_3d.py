@@ -83,7 +83,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/jeans-errors.dat'
-    data = np.loadtxt(filename)
+    data = athena_read.error_dat(filename)
 
     print(data[0][4], data[1][4])
     print(data[2][4], data[3][4], data[4][4])
