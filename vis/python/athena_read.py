@@ -26,10 +26,12 @@ def check_nan(data):
 
 # ========================================================================================
 
-def error_dat(filename):
+def error_dat(filename, **kwargs):
     """Wrapper to np.loadtxt() for applying optional checks used in regression tests"""
     data = np.loadtxt(filename,
-                      ndmin=2)  # prevent NumPy from squeezing singleton dimensions
+                      dtype=np.float64,
+                      ndmin=2,  # prevent NumPy from squeezing singleton dimensions
+                      **kwargs)
     if check_nan_flag:
         check_nan(data)
     return data
