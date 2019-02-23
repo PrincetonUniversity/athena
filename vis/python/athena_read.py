@@ -96,8 +96,9 @@ def hst(filename, raw=False):
                         data[key] = np.concatenate((val[:branch_index], val[n:]))
                     branches_removed = False
                     break
-    if check_nan_flag:
-        check_nan(data)
+        if check_nan_flag:
+            for key, val in data.items():
+                check_nan(val)
     return data
 
 
