@@ -80,7 +80,7 @@ def hst(filename, raw=False):
                 data[name].append(float(val))
 
     # Finalize data
-    for key, val in data.iteritems():
+    for key, val in data.items():
         data[key] = np.array(val)
     if not raw:
         if data_names[0] != 'time':
@@ -92,7 +92,7 @@ def hst(filename, raw=False):
             for n in range(1, len(data['time'])):
                 if data['time'][n] <= data['time'][n-1]:
                     branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
-                    for key, val in data.iteritems():
+                    for key, val in data.items():
                         data[key] = np.concatenate((val[:branch_index], val[n:]))
                     branches_removed = False
                     break
