@@ -149,10 +149,14 @@ def analyze():
     # Finally, we test that the relative errors in the two quantities are no more than 1%.
     # If they are, we "return False" at the very end of the function and file; otherwise
     # we "return True". NumPy provides a way of checking if the error is NaN, which also
-    # indicates something went wrong. This check can be enabled automatically in the
-    # athena_read.py functions by setting "athena_read.check_nan_flag=True" as done
-    # above. The main test script will record the result and delete both
-    # tst/regression/bin/ and obj/ folders before proceeding on to the next test.
+    # indicates something went wrong. The same check can (and should) be enabled
+    # automatically at the point of reading the input files via the athena_read.py
+    # functions by setting "athena_read.check_nan_flag=True" (as done at the top of this
+    # file). Regression test authors should keep in mind the caveats of floating-point
+    # calculations and perform multiple checks for NaNs when necessary.
+
+    # The main test script will record the result and delete both tst/regression/bin/ and
+    # obj/ folders before proceeding on to the next test.
     analyze_status = True
     if error_rel_e > 0.01 or np.isnan(error_rel_e):
         analyze_status = False

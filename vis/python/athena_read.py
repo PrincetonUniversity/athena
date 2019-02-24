@@ -40,7 +40,11 @@ def error_dat(filename, **kwargs):
 # ========================================================================================
 
 def hst(filename, raw=False):
-    """Read .hst files and return dict of 1D arrays."""
+    """Read .hst files and return dict of 1D arrays.
+
+    Keyword arguments:
+    raw -- if True, do not prune file to remove stale data from prev runs (default False)
+    """
 
     # Read data
     with open(filename, 'r') as data_file:
@@ -105,7 +109,11 @@ def hst(filename, raw=False):
 # ========================================================================================
 
 def tab(filename, raw=False, dimensions=None):
-    """Read .tab files and return dict or array."""
+    """Read .tab files and return dict or array.
+
+    Keyword arguments:
+    raw -- if True, do not parse the header to figure out key names (default False)
+    """
 
     # Check for valid number of dimensions
     if raw and not (dimensions == 1 or dimensions == 2 or dimensions == 3):
@@ -323,7 +331,12 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
           x1_max=None, x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None,
           vol_params=None, face_func_1=None, face_func_2=None, face_func_3=None,
           center_func_1=None, center_func_2=None, center_func_3=None, num_ghost=0):
-    """Read .athdf files and populate dict of arrays of data."""
+    """Read .athdf files and populate dict of arrays of data.
+
+
+    Keyword arguments:
+    raw -- if True, do not merge MeshBlocks into a single array (default False)
+    """
 
     # Load HDF5 reader
     import h5py
