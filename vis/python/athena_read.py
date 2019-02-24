@@ -12,15 +12,43 @@ from io import open  # Consistent binary I/O from Python 2 and 3
 # Other Python modules
 import numpy as np
 
+check_nan_flag = False
+
+
+# ========================================================================================
+
+def check_nan(data):
+    """Check input NumPy array for the presence of any NaN entries"""
+    if np.isnan(data).any():
+        raise FloatingPointError("NaN encountered")
+    return
+
+
+# ========================================================================================
+
+def error_dat(filename, **kwargs):
+    """Wrapper to np.loadtxt() for applying optional checks used in regression tests"""
+    data = np.loadtxt(filename,
+                      dtype=np.float64,
+                      ndmin=2,  # prevent NumPy from squeezing singleton dimensions
+                      **kwargs)
+    if check_nan_flag:
+        check_nan(data)
+    return data
+
 
 # ========================================================================================
 
 def hst(filename, raw=False):
-    """Read .hst files and return dict of 1D arrays."""
+    """Read .hst files and return dict of 1D arrays.
+
+
+    Keyword arguments:
+    raw -- if True, do not prune file to remove stale data from prev runs (default False)
+    """
 
     # Read data
     with open(filename, 'r') as data_file:
-
         # Find header
         header_found = False
         multiple_headers = False
@@ -57,7 +85,7 @@ def hst(filename, raw=False):
                 data[name].append(float(val))
 
     # Finalize data
-    for key, val in data.iteritems():
+    for key, val in data.items():
         data[key] = np.array(val)
     if not raw:
         if data_names[0] != 'time':
@@ -69,17 +97,25 @@ def hst(filename, raw=False):
             for n in range(1, len(data['time'])):
                 if data['time'][n] <= data['time'][n-1]:
                     branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
-                    for key, val in data.iteritems():
+                    for key, val in data.items():
                         data[key] = np.concatenate((val[:branch_index], val[n:]))
                     branches_removed = False
                     break
+        if check_nan_flag:
+            for key, val in data.items():
+                check_nan(val)
     return data
 
 
 # ========================================================================================
 
 def tab(filename, raw=False, dimensions=None):
-    """Read .tab files and return dict or array."""
+    """Read .tab files and return dict or array.
+
+
+    Keyword arguments:
+    raw -- if True, do not parse the header to figure out key names (default False)
+    """
 
     # Check for valid number of dimensions
     if raw and not (dimensions == 1 or dimensions == 2 or dimensions == 3):
@@ -117,7 +153,6 @@ def tab(filename, raw=False, dimensions=None):
     with open(filename, 'r') as data_file:
         first_line = True
         for line in data_file:
-
             # Skip comments
             if line.split()[0][0] == '#':
                 continue
@@ -162,9 +197,13 @@ def tab(filename, raw=False, dimensions=None):
 
     # Finalize data
     if raw:
+        if check_nan_flag:
+            check_nan(data_array)
         return data_array
     else:
         for n, heading in enumerate(headings):
+            if check_nan_flag:
+                check_nan(data_array[n, ...])
             data_dict[heading] = data_array[n, ...]
         return data_dict
 
@@ -276,6 +315,14 @@ def vtk(filename):
             current_index = read_cell_vectors()
             continue
         raise AthenaError('File not formatted as expected')
+
+    if check_nan_flag:
+        check_nan(x_faces)
+        check_nan(y_faces)
+        check_nan(z_faces)
+        for key, val in data.items():
+            check_nan(val)
+
     return x_faces, y_faces, z_faces, data
 
 
@@ -286,17 +333,20 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
           x1_max=None, x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None,
           vol_params=None, face_func_1=None, face_func_2=None, face_func_3=None,
           center_func_1=None, center_func_2=None, center_func_3=None, num_ghost=0):
-    """Read .athdf files and populate dict of arrays of data."""
+    """Read .athdf files and populate dict of arrays of data.
+
+
+    Keyword arguments:
+    raw -- if True, do not merge MeshBlocks into a single array (default False)
+    """
 
     # Load HDF5 reader
     import h5py
 
     # Handle request for raw data
     if raw:
-
         # Open file
         with h5py.File(filename, 'r') as f:
-
             # Store file-level attributes
             data = {}
             for key in f.attrs:
@@ -329,6 +379,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 for variable_index, variable_name in enumerate(variable_names_local):
                     data[variable_name] = f[dataset_name][variable_index, ...]
 
+        if check_nan_flag:
+            for key, val in data.items():
+                if key in variable_names:
+                    check_nan(val)
         # Return dictionary containing raw data
         return data
 
@@ -341,7 +395,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
     # Open file
     with h5py.File(filename, 'r') as f:
-
         # Extract size information
         max_level = f.attrs['MaxLevel']
         if level is None:
@@ -453,7 +506,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 def center_func_2(xm, xp):
                     return 0.5 * (xm+xp)
             elif coord == 'spherical_polar':
-
                 def center_func_2(xm, xp):
                     sm = np.sin(xm)
                     cm = np.cos(xm)
@@ -672,14 +724,12 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
         # Go through blocks in data file
         for block_num in range(num_blocks):
-
             # Extract location information
             block_level = levels[block_num]
             block_location = logical_locations[block_num, :]
 
             # Prolongate coarse data and copy same-level data
             if block_level <= level:
-
                 # Calculate scale (number of copies per dimension)
                 s = 2 ** (level - block_level)
 
@@ -729,7 +779,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
             # Restrict fine data
             else:
-
                 # Calculate scale
                 s = 2 ** (block_level - level)
 
@@ -772,7 +821,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
                 # Apply subsampling
                 if subsample:
-
                     # Calculate fine-level offsets (nearest cell at or below center)
                     o1 = s/2 - 1 if nx1 > 1 else 0
                     o2 = s/2 - 1 if nx2 > 1 else 0
@@ -788,7 +836,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
                 # Apply fast (uniform Cartesian) restriction
                 elif fast_restrict:
-
                     # Calculate fine-level offsets
                     io_vals = range(s) if nx1 > 1 else (0,)
                     jo_vals = range(s) if nx2 > 1 else (0,)
@@ -810,7 +857,6 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
                 # Apply exact (volume-weighted) restriction
                 else:
-
                     # Calculate sets of indices
                     i_s_vals = range(il_s, iu_s)
                     j_s_vals = range(jl_s, ju_s)
@@ -890,6 +936,11 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                                         data[q][k, j, i] /= vol
 
     # Return dictionary containing requested data arrays
+    if check_nan_flag:
+        for key, val in data.items():
+            if key in quantities:
+                check_nan(val)
+
     return data
 
 

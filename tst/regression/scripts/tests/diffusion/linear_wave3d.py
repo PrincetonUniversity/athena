@@ -8,6 +8,7 @@ import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):

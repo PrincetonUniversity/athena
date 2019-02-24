@@ -5,6 +5,10 @@
 # Modules
 import scripts.utils.athena as athena
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):
@@ -38,9 +42,8 @@ def analyze():
     l1ERROR = []
 
     for n in res:
-        x1v, v2 = np.loadtxt("bin/visc"+str(n)+".block0.out2.00001.tab",
-                             usecols=(1, 2), dtype=float,
-                             unpack=True, comments='#')
+        x1v, v2 = athena_read.tab("bin/visc"+str(n)+".block0.out2.00001.tab", raw=True,
+                                  dimensions=1)
 
         # initial conditions
         v0 = 1.e-6
@@ -60,10 +63,7 @@ def analyze():
     print('[Viscous Diffusion Explicit]: Convergence order = {}'.format(conv))
 
     flag = True
-    if not np.isfinite(conv):
-        print('[Viscous Diffusion Explicit]: NaN encountered.')
-        flag = False
-    elif conv > -1.99:
+    if conv > -1.99:
         print('[Viscous Diffusion Explicit]: Scheme NOT Converging at ~2nd order.')
         flag = False
     else:

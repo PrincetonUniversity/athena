@@ -5,6 +5,10 @@
 # Modules
 import scripts.utils.athena as athena
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):
@@ -39,9 +43,8 @@ def analyze():
     l1ERROR = []
 
     for n in res:
-        x1v, bcc2 = np.loadtxt("bin/res"+str(n)+".block0.out2.00001.tab",
-                               usecols=(1, 2), dtype=float,
-                               unpack=True, comments='#')
+        x1v, bcc2 = athena_read.tab("bin/res"+str(n)+".block0.out2.00001.tab", raw=True,
+                                    dimensions=1)
 
         # initial conditions
         amp = 1.e-6
@@ -61,10 +64,7 @@ def analyze():
     print('[Resistive Diffusion STS]: Convergence order = {}'.format(conv))
 
     flag = True
-    if not np.isfinite(conv):
-        print('[Resistive Diffusion STS]: NaN encountered.')
-        flag = False
-    elif conv > -0.99:
+    if conv > -0.99:
         print('[Resistive Diffusion STS]: Scheme NOT Converging at ~1st order.')
         flag = False
     else:
