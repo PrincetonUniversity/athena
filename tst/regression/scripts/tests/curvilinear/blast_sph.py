@@ -26,7 +26,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/blastwave-shape.dat'
-    data = athena_read.error_dat(filename, ndmin=2)
+    data = athena_read.error_dat(filename)
 
     # check blast is spherical
     if data[0][3] > 1.0:
