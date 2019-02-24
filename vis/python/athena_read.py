@@ -934,7 +934,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
     # Return dictionary containing requested data arrays
     if check_nan_flag:
         for key, val in data.items():
-            check_nan(val)
+            if key in quantities:
+                check_nan(val)
 
     return data
 
