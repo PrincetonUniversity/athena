@@ -379,6 +379,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 for variable_index, variable_name in enumerate(variable_names_local):
                     data[variable_name] = f[dataset_name][variable_index, ...]
 
+        if check_nan_flag:
+            for key, val in data.items():
+                if key in variable_names:
+                    check_nan(val)
         # Return dictionary containing raw data
         return data
 
