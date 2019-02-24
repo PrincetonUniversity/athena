@@ -9,6 +9,7 @@ sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
 
+
 # Prepare Athena++
 def prepare(**kwargs):
     athena.configure('g',

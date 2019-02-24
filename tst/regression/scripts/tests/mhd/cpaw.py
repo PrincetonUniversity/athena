@@ -5,8 +5,11 @@
 # linearwave_errors.dat)
 
 # Modules
-import numpy as np
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++

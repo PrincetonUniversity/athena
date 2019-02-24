@@ -7,6 +7,11 @@
 # Modules
 import scripts.utils.athena as athena
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
+
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('vl2', '2'), ('rk3', '4c'), ('ssprk5_4', '4')]

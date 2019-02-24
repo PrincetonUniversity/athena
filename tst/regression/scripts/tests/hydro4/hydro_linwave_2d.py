@@ -9,6 +9,10 @@
 import scripts.utils.athena as athena
 from math import log
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('vl2', '2c'), ('vl2', '3'), ('rk2', '3c'),

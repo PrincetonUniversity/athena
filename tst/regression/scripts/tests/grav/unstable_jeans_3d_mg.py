@@ -3,11 +3,14 @@
 # Runs a linear convergence test checks L1 errors (which
 # are computed by the executable automatically and stored in the temporary file
 # jeans-errors.dat)
-# Roughly 15 second test
 
 # Modules
 import numpy as np
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++
