@@ -42,6 +42,7 @@ def error_dat(filename, **kwargs):
 def hst(filename, raw=False):
     """Read .hst files and return dict of 1D arrays.
 
+
     Keyword arguments:
     raw -- if True, do not prune file to remove stale data from prev runs (default False)
     """
@@ -110,6 +111,7 @@ def hst(filename, raw=False):
 
 def tab(filename, raw=False, dimensions=None):
     """Read .tab files and return dict or array.
+
 
     Keyword arguments:
     raw -- if True, do not parse the header to figure out key names (default False)
