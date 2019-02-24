@@ -3,6 +3,10 @@
 # Modules
 import numpy as np
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):
@@ -42,21 +46,18 @@ def analyze():
     pres = rho0 * cs**2
     vol = 1.0 * np.pi * 1.0
     index = -500
-    dtype_array = np.dtype([('me1', 'f8'), ('me2', 'f8'), ('me3', 'f8'),
-                            ('stress', 'f8')])
-    col_indices = (9, 10, 11, 12)
 
     fname = 'data/mhd_mri_3d.hst'
-    a = np.loadtxt(fname, dtype=dtype_array, skiprows=2, usecols=col_indices)
-    me = (a['me1'] + a['me2'] + a['me3'])
-    ref_stress = np.average(a['stress'][index:] / vol / pres)
+    a = athena_read.hst(fname)
+    me = (a['1-ME'] + a['2-ME'] + a['3-ME'])
+    ref_stress = np.average(a['-BxBy'][index:] / vol / pres)
     ref_me = np.average(me[index:] / vol / pres)
     ref_ratio = ref_me / ref_stress
 
     fname = 'bin/HGB.hst'
-    b = np.loadtxt(fname, dtype=dtype_array, skiprows=2, usecols=col_indices)
-    me = (b['me1'] + b['me2'] + b['me3'])
-    new_stress = np.average(b['stress'][index:] / vol / pres)
+    b = athena_read.hst(fname)
+    me = (b['1-ME'] + b['2-ME'] + b['3-ME'])
+    new_stress = np.average(b['-BxBy'][index:] / vol / pres)
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
