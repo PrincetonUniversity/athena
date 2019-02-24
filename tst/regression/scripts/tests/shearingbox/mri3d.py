@@ -50,14 +50,14 @@ def analyze():
     fname = 'data/mhd_mri_3d.hst'
     a = athena_read.hst(fname)
     me = (a['1-ME'] + a['2-ME'] + a['3-ME'])
-    ref_stress = np.average(a['<-BxBy>'][index:] / vol / pres)
+    ref_stress = np.average(a['-BxBy'][index:] / vol / pres)
     ref_me = np.average(me[index:] / vol / pres)
     ref_ratio = ref_me / ref_stress
 
     fname = 'bin/HGB.hst'
     b = athena_read.hst(fname)
     me = (b['1-ME'] + b['2-ME'] + b['3-ME'])
-    new_stress = np.average(b['<-BxBy>'][index:] / vol / pres)
+    new_stress = np.average(b['-BxBy'][index:] / vol / pres)
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
