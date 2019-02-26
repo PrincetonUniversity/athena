@@ -1514,6 +1514,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
         // --------------------------
         // end fourth-order EOS
+        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w, HYDRO_PRIM);
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
 
