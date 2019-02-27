@@ -60,7 +60,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = 0.0; // Not actually used
+  gamma_ = pin->GetOrAddReal("hydro","gamma", 2.);
 }
 
 //----------------------------------------------------------------------------------------
