@@ -19,18 +19,11 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
-#include <limits>
 #include <sstream>
-#include <stdexcept> // std::invalid_argument
-#include <string>
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../field/field.hpp"
-#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
