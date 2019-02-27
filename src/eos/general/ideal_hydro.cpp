@@ -34,22 +34,22 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return gas pressure
-Real EquationOfState::SimplePres(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   return (gamma_ - 1.) * egas;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return internal energy density
-Real EquationOfState::SimpleEgas(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   return pres / (gamma_ - 1.);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return adiabatic sound speed squared
-Real EquationOfState::SimpleAsq(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return gamma_ * pres / rho;
 }
