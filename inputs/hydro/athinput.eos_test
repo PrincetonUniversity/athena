@@ -1,20 +1,20 @@
 <comment>
-problem   = eos_test (Equation of state test/debug)
+problem   = Testing and debugging the compiled EOS to ensure correct behavior.
 configure = --prob=eos_test
 
 <job>
-problem_id  = eos       # problem ID: basename of output filenames
+problem_id  = eos_test  # problem ID: basename of output filenames
 
 <time>
 cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim        = 0        # cycle limit
-tlim        = 0     # time limit
+nlim        = 0         # cycle limit
+tlim        = 0         # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
-nx1         = 16       # Number of zones in X1-direction
+nx1         = 16        # Number of zones in X1-direction
 x1min       = -0.5      # minimum value of X1
 x1max       = 0.5       # maximum value of X1
 ix1_bc      = outflow   # Inner-X1 boundary condition flag
