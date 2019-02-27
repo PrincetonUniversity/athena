@@ -44,7 +44,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Print EOS info
   std::cout << "Equation of state (EOS) diagnostics:" << '\n';
   if (GENERAL_EOS) {
-    std::cout << "General EOS enabled." << '\n';
+    std::cout << "General EOS enabled with " << EQUATION_OF_STATE << '\n';
     if (EOS_TABLE_ENABLED) {
       // Print table info
       std::cout << "Using table '" << pin->GetString("hydro", "eos_file_name") << "'.\n";
