@@ -13,8 +13,7 @@
 // Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 // Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 // Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
-// void EquationOfState::PrepEOS(ParameterInput *pin);
-// void EquationOfState::CleanEOS();
+
 
 // C headers
 
