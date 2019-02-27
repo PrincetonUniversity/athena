@@ -10,20 +10,8 @@
 // C headers
 
 // C++ headers
-#include <algorithm>
-#include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
-#include <limits>
-#include <sstream>
-#include <stdexcept> // std::invalid_argument
 
 // Athena++ headers
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../../field/field.hpp"
-#include "../../parameter_input.hpp"
 #include "../eos.hpp"
 
 //----------------------------------------------------------------------------------------
