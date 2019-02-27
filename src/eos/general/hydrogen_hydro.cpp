@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
 //! \file hydrogen_hydro.cpp
-//  \brief implements functions in class EquationOfState for an EOS lookup table
+//  \brief implements functions in class EquationOfState for simple hydrogen EOS
 //======================================================================================
 
 // C headers
