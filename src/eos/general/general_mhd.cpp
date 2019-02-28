@@ -3,9 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file general_hydro.cpp
-//  \brief implements most but not all of the functions in class EquationOfState
-//         for general EOS hydrodynamics`
+//! \file general_mhd.cpp
+//  \brief (NOT YET IMPLEMENTED) implements most but not all of the functions in class
+// EquationOfState for general EOS MHD
 
 // These functions MUST be implemented in an additional file.
 //
@@ -19,18 +19,11 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
-#include <limits>
 #include <sstream>
-#include <stdexcept> // std::invalid_argument
-#include <string>
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../field/field.hpp"
-#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
@@ -38,6 +31,11 @@
 // EquationOfState constructor
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
+  std::stringstream msg;
+  msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
+      << "General EOS with MHD is not yet implemented." << std::endl;
+  ATHENA_ERROR(msg);
+
   pmy_block_ = pmb;
   ptable = pmb->pmy_mesh->peos_table;
   Real float_min = std::numeric_limits<float>::min();
@@ -98,13 +96,18 @@ void EquationOfState::ConservedToPrimitive(
         w_vy = u_m2*di;
         w_vz = u_m3*di;
 
+        const Real& bcc1 = bcc(IB1,k,j,i);
+        const Real& bcc2 = bcc(IB2,k,j,i);
+        const Real& bcc3 = bcc(IB3,k,j,i);
+
+        Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
         Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
 
         // apply pressure/energy floor, correct total energy
-        u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
+        u_e = (u_e - ke - pb > energy_floor_) ?  u_e : energy_floor_ + ke + pb;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
-        w_p = PresFromRhoEg(u_d, u_e - ke);
+        w_p = PresFromRhoEg(u_d, u_e - ke - pb);
       }
     }
   }
@@ -142,12 +145,17 @@ void EquationOfState::PrimitiveToConserved(
         const Real& w_vz = prim(IVZ,k,j,i);
         const Real& w_p  = prim(IPR,k,j,i);
 
+        const Real& bcc1 = bc(IB1,k,j,i);
+        const Real& bcc2 = bc(IB2,k,j,i);
+        const Real& bcc3 = bc(IB3,k,j,i);
+
         u_d = w_d;
         u_m1 = w_vx*w_d;
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
         // cellwise conversion
-        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
+                                              + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
       }
     }
   }
@@ -161,6 +169,19 @@ void EquationOfState::PrimitiveToConserved(
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(AsqFromRhoP(prim[IDN], prim[IPR]));
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
+// \brief returns fast magnetosonic speed given vector of primitive variables
+// Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
+Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
+  Real asq = AsqFromRhoP(prim[IDN], prim[IPR]) * prim[IDN]; // Actually rho*asq
+  Real vaxsq = bx*bx;
+  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
+  Real qsq = vaxsq + ct2 + asq;
+  Real tmp = vaxsq + ct2 - asq;
+  return std::sqrt(0.5*(qsq + std::sqrt(tmp*tmp + 4.0*asq*ct2))/prim[IDN]);
 }
 
 //---------------------------------------------------------------------------------------
@@ -192,14 +213,18 @@ void EquationOfState::ApplyPrimitiveConservedFloors(
 
   Real& u_d  = cons(IDN,k,j,i);
   Real& u_e  = cons(IEN,k,j,i);
+  const Real& bcc1 = bcc(IB1,k,j,i);
+  const Real& bcc2 = bcc(IB2,k,j,i);
+  const Real& bcc3 = bcc(IB3,k,j,i);
   // apply (prim) density floor, without changing momentum or energy
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
   // ensure cons density matches
   u_d = w_d;
 
+  Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
   Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i)) + SQR(prim(IVZ,k,j,i)));
   // apply pressure floor, correct total energy
-  u_e = (w_p > energy_floor_) ? u_e : energy_floor_ + e_k;
+  u_e = (w_p > energy_floor_) ? u_e : energy_floor_ + e_k + pb;
   w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
 
   return;

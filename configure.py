@@ -90,7 +90,7 @@ parser.add_argument(
 parser.add_argument('--eos',
                     default='adiabatic',
                     choices=['adiabatic', 'isothermal', 'general/eos_table',
-                             'general/hydrogen'],
+                             'general/hydrogen', 'general/ideal'],
                     help='select equation of state')
 
 # --flux=[name] argument
@@ -378,9 +378,10 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
-    makefile_options['EOS_FILE'] += '_mhd'
     if definitions['GENERAL_EOS'] != '0':
         makefile_options['GENERAL_EOS_FILE'] += '_mhd'
+    else:
+        makefile_options['EOS_FILE'] += '_mhd'
     definitions['NFIELD_VARIABLES'] = '3'
     makefile_options['RSOLVER_DIR'] = 'mhd/'
     if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
@@ -393,9 +394,10 @@ if args['b']:
         definitions['NWAVE_VALUE'] = '7'
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
-    makefile_options['EOS_FILE'] += '_hydro'
     if definitions['GENERAL_EOS'] != '0':
         makefile_options['GENERAL_EOS_FILE'] += '_hydro'
+    else:
+        makefile_options['EOS_FILE'] += '_hydro'
     definitions['NFIELD_VARIABLES'] = '0'
     makefile_options['RSOLVER_DIR'] = 'hydro/'
     if args['eos'] == 'isothermal':
