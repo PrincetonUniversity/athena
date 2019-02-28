@@ -1,5 +1,5 @@
 """
-Regression test for general EOS 1D Sod shock tube with ASCII plain-text tables.
+Regression test for 1D Sod shock tube camparing different general EOS implementations.
 """
 
 # Modules
