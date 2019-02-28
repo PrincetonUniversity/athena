@@ -1,5 +1,5 @@
 """
-Regression test for 1D Sod shock tube camparing different general EOS implementations.
+Regression test for 1D Sod shock tube comparing different general EOS implementations.
 """
 
 # Modules
