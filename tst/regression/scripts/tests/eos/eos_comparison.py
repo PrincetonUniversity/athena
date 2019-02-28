@@ -151,7 +151,7 @@ def analyze():
                         x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
                     if diff > tolerances[j] or np.isnan(diff):
                         line = 'Eos ideal table test fail ({0:}). var, err, gamma ='
-                        print(' '.join(map([line.format(lbl[j]), var, diff, g])))
+                        print(' '.join(map([line.format(lbls[j]), var, diff, g])))
                         analyze_status = False
 
     tol = .004
