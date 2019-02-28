@@ -903,7 +903,6 @@ void BoundaryValues::ClearBoundaryAll(void) {
 //  \brief Apply all the physical boundary conditions for both hydro and field
 
 void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
-
   // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
   // FaceField &bfdst, AthenaArray<Real> &bcdst,
   // const Real time, const Real dt) {
@@ -923,16 +922,18 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (BoundaryFunction_[OUTER_X3]==nullptr && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS
-  CellCenteredBoundaryVariable *phbvar =
-      reinterpret_cast<CellCenteredBoundaryVariable *>(bvars[0]);
+  // downcast BoundaryVariable pointers to known derived class pointer types:
+  HydroBoundaryVariable *phbvar =
+      dynamic_cast<HydroBoundaryVariable *>(bvars[0]);
   Hydro *ph = pmb->phydro;
 
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf=pmb->pfield;
-    pfbvar = reinterpret_cast<FaceCenteredBoundaryVariable *>(bvars[1]);
+    pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars[1]);
   }
+
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (BoundaryFunction_[INNER_X1] != nullptr) {
     switch(block_bcs[INNER_X1]) {
@@ -1139,7 +1140,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
   }
-
   return;
 }
 
