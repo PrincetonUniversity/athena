@@ -921,7 +921,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (BoundaryFunction_[INNER_X3]==nullptr && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
   if (BoundaryFunction_[OUTER_X3]==nullptr && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
-  // KGF: temporarily hardcode Hydro and Field access for coupling in EOS
+  // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
+  // to user-defined boundary function stored in function pointer array
   // downcast BoundaryVariable pointers to known derived class pointer types:
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars[0]);
@@ -1150,277 +1151,321 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 //  \brief Prolongate the level boundary using the coarse data
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
-  // MeshBlock *pmb=pmy_block_;
-  // MeshRefinement *pmr=pmb->pmr;
-  // std::int64_t &lx1=pmb->loc.lx1;
-  // std::int64_t &lx2=pmb->loc.lx2;
-  // std::int64_t &lx3=pmb->loc.lx3;
-  // int &mylevel=pmb->loc.level;
+  MeshBlock *pmb=pmy_block_;
+  MeshRefinement *pmr=pmb->pmr;
+  std::int64_t &lx1=pmb->loc.lx1;
+  std::int64_t &lx2=pmb->loc.lx2;
+  std::int64_t &lx3=pmb->loc.lx3;
+  int &mylevel=pmb->loc.level;
 
-  // for (int n=0; n<nneighbor; n++) {
-  //   NeighborBlock& nb = neighbor[n];
-  //   if (nb.level >= mylevel) continue;
-  //   // fill the required ghost-ghost zone
-  //   int nis, nie, njs, nje, nks, nke;
-  //   nis=std::max(nb.ox1-1,-1);
-  //   nie=std::min(nb.ox1+1,1);
-  //   if (pmb->block_size.nx2==1) {
-  //     njs=0;
-  //     nje=0;
-  //   } else {
-  //     njs=std::max(nb.ox2-1,-1);
-  //     nje=std::min(nb.ox2+1,1);
-  //   }
+  // KGF: temporarily hardcode Hydro and Field array access for coupling in
+  // PrimitiveToConserved() call, and in individual Prolongate*(), Restrict*() calls
 
-  //   if (pmb->block_size.nx3==1) {
-  //     nks=0;
-  //     nke=0;
-  //   } else {
-  //     nks=std::max(nb.ox3-1,-1);
-  //     nke=std::min(nb.ox3+1,1);
-  //   }
+  // This function, BoundaryValues::ProlongateBoundaries(), is called 2x in src/:
+  // In Mesh::Initialize() and in TimeIntegratorTaskList::Prolongation()
+  // Both calls pass the following first 4x arguments:
+  // phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
 
-  //   for (int nk=nks; nk<=nke; nk++) {
-  //     for (int nj=njs; nj<=nje; nj++) {
-  //       for (int ni=nis; ni<=nie; ni++) {
-  //         int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
-  //         // skip myself or coarse levels; only the same level must be restricted
-  //         if (ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
+  // Corresponding to:
+  // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+  // FaceField &bfdst, AthenaArray<Real> &bcdst,
 
-  //         // this neighbor block is on the same level
-  //         // and needs to be restricted for prolongation
-  //         int ris, rie, rjs, rje, rks, rke;
-  //         if (ni==0) {
-  //           ris=pmb->cis;
-  //           rie=pmb->cie;
-  //           if (nb.ox1==1) {
-  //             ris=pmb->cie;
-  //           } else if (nb.ox1==-1) {
-  //             rie=pmb->cis;
-  //           }
-  //         } else if (ni== 1) {
-  //           ris=pmb->cie+1, rie=pmb->cie+1;
-  //         } else { //(ni==-1)
-  //           ris=pmb->cis-1, rie=pmb->cis-1;
-  //         }
-  //         if (nj==0) {
-  //           rjs=pmb->cjs, rje=pmb->cje;
-  //           if (nb.ox2==1) rjs=pmb->cje;
-  //           else if (nb.ox2==-1) rje=pmb->cjs;
-  //         } else if (nj== 1) {
-  //           rjs=pmb->cje+1, rje=pmb->cje+1;
-  //         } else { //(nj==-1)
-  //           rjs=pmb->cjs-1, rje=pmb->cjs-1;
-  //         }
-  //         if (nk==0) {
-  //           rks=pmb->cks, rke=pmb->cke;
-  //           if (nb.ox3==1) rks=pmb->cke;
-  //           else if (nb.ox3==-1) rke=pmb->cks;
-  //         } else if (nk== 1) {
-  //           rks=pmb->cke+1, rke=pmb->cke+1;
-  //         } else { //(nk==-1)
-  //           rks=pmb->cks-1, rke=pmb->cks-1;
-  //         }
+  // downcast BoundaryVariable pointers to known derived class pointer types:
+  HydroBoundaryVariable *phbvar =
+      dynamic_cast<HydroBoundaryVariable *>(bvars[0]);
+  Hydro *ph = pmb->phydro;
 
-  //         pmb->pmr->RestrictCellCenteredValues(cdst, pmr->coarse_cons_, 0, NHYDRO-1,
-  //                                              ris, rie, rjs, rje, rks, rke);
-  //         if (GENERAL_RELATIVITY)
-  //           pmb->pmr->RestrictCellCenteredValues(pdst, pmr->coarse_prim_, 0, NHYDRO-1,
-  //                                                ris, rie, rjs, rje, rks, rke);
-  //         if (MAGNETIC_FIELDS_ENABLED) {
-  //           int rs=ris, re=rie+1;
-  //           if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
-  //           if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
-  //           pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
-  //                                rke);
-  //           if (pmb->block_size.nx2 > 1) {
-  //             rs=rjs, re=rje+1;
-  //             if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
-  //             if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
-  //             pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
-  //                                  rke);
-  //           } else { // 1D
-  //             pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
-  //                                  rke);
-  //             for (int i=ris; i<=rie; i++)
-  //               pmr->coarse_b_.x2f(rks,rjs+1,i)=pmr->coarse_b_.x2f(rks,rjs,i);
-  //           }
-  //           if (pmb->block_size.nx3 > 1) {
-  //             rs=rks, re=rke+1;
-  //             if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
-  //             if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
-  //             pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
-  //                                  re);
-  //           } else { // 1D or 2D
-  //             pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks,
-  //                                  rke);
-  //             for (int j=rjs; j<=rje; j++) {
-  //               for (int i=ris; i<=rie; i++)
-  //                 pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
+  FaceCenteredBoundaryVariable *pfbvar = nullptr;
+  Field *pf = nullptr;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    pf=pmb->pfield;
+    pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars[1]);
+  }
 
-  //   // calculate the loop limits for the ghost zones
-  //   int cn = pmb->cnghost-1;
-  //   int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
-  //   if (nb.ox1==0) {
-  //     si=pmb->cis, ei=pmb->cie;
-  //     if ((lx1 & 1LL)==0LL) ei+=cn;
-  //     else             si-=cn;
-  //   } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
-  //   else              si=pmb->cis-cn, ei=pmb->cis-1;
-  //   if (nb.ox2==0) {
-  //     sj=pmb->cjs, ej=pmb->cje;
-  //     if (pmb->block_size.nx2 > 1) {
-  //       if ((lx2 & 1LL)==0LL) ej+=cn;
-  //       else             sj-=cn;
-  //     }
-  //   } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
-  //   else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
-  //   if (nb.ox3==0) {
-  //     sk=pmb->cks, ek=pmb->cke;
-  //     if (pmb->block_size.nx3 > 1) {
-  //       if ((lx3 & 1LL)==0LL) ek+=cn;
-  //       else             sk-=cn;
-  //     }
-  //   } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
-  //   else              sk=pmb->cks-cn, ek=pmb->cks-1;
+  // KGF: Unlike BoundaryValues::ApplyPhysicalBoundaries(), this function does nothing for
+  // non-Hydro and non-Field associated BoundaryVaraible objects pointed to in bvar vector
+  // Needs an iterator loop over the vector, and some function(s) like
+  // MeshRefinement::ProlongateSharedFieldX1()
+  // to automatically be associated with generic FaceCenteredBoundaryVariable instead of
+  // being contained in an external class and manually called
 
-  //   // convert the ghost zone and ghost-ghost zones into primitive variables
-  //   // this includes cell-centered field calculation
-  //   int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
-  //   if (nb.ox1==0) {
-  //     if (nblevel[1][1][0]!=-1) f1m=1;
-  //     if (nblevel[1][1][2]!=-1) f1p=1;
-  //   } else {
-  //     f1m=1;
-  //     f1p=1;
-  //   }
-  //   if (pmb->block_size.nx2>1) {
-  //     if (nb.ox2==0) {
-  //       if (nblevel[1][0][1]!=-1) f2m=1;
-  //       if (nblevel[1][2][1]!=-1) f2p=1;
-  //     } else {
-  //       f2m=1;
-  //       f2p=1;
-  //     }
-  //   }
-  //   if (pmb->block_size.nx3>1) {
-  //     if (nb.ox3==0) {
-  //       if (nblevel[0][1][1]!=-1) f3m=1;
-  //       if (nblevel[2][1][1]!=-1) f3p=1;
-  //     } else {
-  //       f3m=1;
-  //       f3p=1;
-  //     }
-  //   }
+  for (int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
+    if (nb.level >= mylevel) continue;
+    // fill the required ghost-ghost zone
+    int nis, nie, njs, nje, nks, nke;
+    nis=std::max(nb.ox1-1,-1);
+    nie=std::min(nb.ox1+1,1);
+    if (pmb->block_size.nx2==1) {
+      njs=0;
+      nje=0;
+    } else {
+      njs=std::max(nb.ox2-1,-1);
+      nje=std::min(nb.ox2+1,1);
+    }
 
-  //   pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, pmr->coarse_prim_,
-  //                                   pmr->coarse_bcc_, pmr->pcoarsec,
-  //                                   si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+    if (pmb->block_size.nx3==1) {
+      nks=0;
+      nke=0;
+    } else {
+      nks=std::max(nb.ox3-1,-1);
+      nke=std::min(nb.ox3+1,1);
+    }
 
-  //   // Apply physical boundaries
-  //   if (nb.ox1==0) {
-  //     if (BoundaryFunction_[INNER_X1]!=nullptr) {
-  //       BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-  //                                   sj, ej, sk, ek, 1);
-  //     }
-  //     if (BoundaryFunction_[OUTER_X1]!=nullptr) {
-  //       BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-  //                                   sj, ej, sk, ek, 1);
-  //     }
-  //   }
-  //   if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
-  //     if (BoundaryFunction_[INNER_X2]!=nullptr) {
-  //       BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-  //                                   sk, ek, 1);
-  //     }
-  //     if (BoundaryFunction_[OUTER_X2]!=nullptr) {
-  //       BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-  //                                   sk, ek, 1);
-  //     }
-  //   }
-  //   if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
-  //     if (BoundaryFunction_[INNER_X3]!=nullptr) {
-  //       BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, si, ei, sj, ej,
-  //                                   pmb->cks, pmb->cke, 1);
-  //     }
-  //     if (BoundaryFunction_[OUTER_X3]!=nullptr) {
-  //       BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-  //                                   pmr->coarse_b_, time, dt, si, ei, sj, ej,
-  //                                   pmb->cks, pmb->cke, 1);
-  //     }
-  //   }
+    for (int nk=nks; nk<=nke; nk++) {
+      for (int nj=njs; nj<=nje; nj++) {
+        for (int ni=nis; ni<=nie; ni++) {
+          int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+          // skip myself or coarse levels; only the same level must be restricted
+          if (ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
-  //   // now that the ghost-ghost zones are filled
-  //   // calculate the loop limits for the finer grid
-  //   fsi=(si-pmb->cis)*2+pmb->is;
-  //   fei=(ei-pmb->cis)*2+pmb->is+1;
-  //   if (pmb->block_size.nx2 > 1) {
-  //     fsj=(sj-pmb->cjs)*2+pmb->js;
-  //     fej=(ej-pmb->cjs)*2+pmb->js+1;
-  //   } else {
-  //     fsj=pmb->js;
-  //     fej=pmb->je;
-  //   }
-  //   if (pmb->block_size.nx3 > 1) {
-  //     fsk=(sk-pmb->cks)*2+pmb->ks;
-  //     fek=(ek-pmb->cks)*2+pmb->ks+1;
-  //   } else {
-  //     fsk=pmb->ks;
-  //     fek=pmb->ke;
-  //   }
-  //   // prolongate hydro variables using primitive
-  //   pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, pdst, 0, NHYDRO-1,
-  //                                     si, ei, sj, ej, sk, ek);
-  //   // prolongate magnetic fields
-  //   if (MAGNETIC_FIELDS_ENABLED) {
-  //     int il, iu, jl, ju, kl, ku;
-  //     il=si, iu=ei+1;
-  //     if ((nb.ox1>=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
-  //     if ((nb.ox1<=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
-  //     if (pmb->block_size.nx2 > 1) {
-  //       jl=sj, ju=ej+1;
-  //       if ((nb.ox2>=0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
-  //       if ((nb.ox2<=0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
-  //     } else {
-  //       jl=sj;
-  //       ju=ej;
-  //     }
-  //     if (pmb->block_size.nx3 > 1) {
-  //       kl=sk, ku=ek+1;
-  //       if ((nb.ox3>=0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
-  //       if ((nb.ox3<=0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
-  //     } else {
-  //       kl=sk;
-  //       ku=ek;
-  //     }
+          // this neighbor block is on the same level
+          // and needs to be restricted for prolongation
+          int ris, rie, rjs, rje, rks, rke;
+          if (ni==0) {
+            ris=pmb->cis;
+            rie=pmb->cie;
+            if (nb.ox1==1) {
+              ris=pmb->cie;
+            } else if (nb.ox1==-1) {
+              rie=pmb->cis;
+            }
+          } else if (ni== 1) {
+            ris=pmb->cie+1, rie=pmb->cie+1;
+          } else { //(ni==-1)
+            ris=pmb->cis-1, rie=pmb->cis-1;
+          }
+          if (nj==0) {
+            rjs=pmb->cjs, rje=pmb->cje;
+            if (nb.ox2==1) rjs=pmb->cje;
+            else if (nb.ox2==-1) rje=pmb->cjs;
+          } else if (nj== 1) {
+            rjs=pmb->cje+1, rje=pmb->cje+1;
+          } else { //(nj==-1)
+            rjs=pmb->cjs-1, rje=pmb->cjs-1;
+          }
+          if (nk==0) {
+            rks=pmb->cks, rke=pmb->cke;
+            if (nb.ox3==1) rks=pmb->cke;
+            else if (nb.ox3==-1) rke=pmb->cks;
+          } else if (nk== 1) {
+            rks=pmb->cke+1, rke=pmb->cke+1;
+          } else { //(nk==-1)
+            rks=pmb->cks-1, rke=pmb->cks-1;
+          }
 
-  //     // step 1. calculate x1 outer surface fields and slopes
-  //     pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, bfdst.x1f, il, iu, sj, ej, sk, ek);
-  //     // step 2. calculate x2 outer surface fields and slopes
-  //     pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, bfdst.x2f, si, ei, jl, ju, sk, ek);
-  //     // step 3. calculate x3 outer surface fields and slopes
-  //     pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, bfdst.x3f, si, ei, sj, ej, kl, ku);
-  //     // step 4. calculate the internal finer fields using the Toth & Roe method
-  //     pmr->ProlongateInternalField(bfdst, si, ei, sj, ej, sk, ek);
-  //     // Field prolongation completed, calculate cell centered fields
-  //     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pmb->pcoord,
-  //                                             fsi, fei, fsj, fej, fsk, fek);
-  //   }
-  //   // calculate conservative variables
-  //   pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
-  //                                   fsi, fei, fsj, fej, fsk, fek);
-  // }
-  // return;
+          pmb->pmr->RestrictCellCenteredValues(ph->u, pmr->coarse_cons_, 0, NHYDRO-1,
+                                               ris, rie, rjs, rje, rks, rke);
+          if (GENERAL_RELATIVITY)
+            pmb->pmr->RestrictCellCenteredValues(ph->w, pmr->coarse_prim_, 0, NHYDRO-1,
+                                                 ris, rie, rjs, rje, rks, rke);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            int rs=ris, re=rie+1;
+            if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
+            if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+            pmr->RestrictFieldX1(pf->b.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
+                                 rke);
+            if (pmb->block_size.nx2 > 1) {
+              rs=rjs, re=rje+1;
+              if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
+              if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+              pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
+                                   rke);
+            } else { // 1D
+              pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
+                                   rke);
+              for (int i=ris; i<=rie; i++)
+                pmr->coarse_b_.x2f(rks,rjs+1,i)=pmr->coarse_b_.x2f(rks,rjs,i);
+            }
+            if (pmb->block_size.nx3 > 1) {
+              rs=rks, re=rke+1;
+              if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
+              if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+              pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
+                                   re);
+            } else { // 1D or 2D
+              pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks,
+                                   rke);
+              for (int j=rjs; j<=rje; j++) {
+                for (int i=ris; i<=rie; i++)
+                  pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // calculate the loop limits for the ghost zones
+    int cn = pmb->cnghost-1;
+    int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
+    if (nb.ox1==0) {
+      si=pmb->cis, ei=pmb->cie;
+      if ((lx1 & 1LL)==0LL) ei+=cn;
+      else             si-=cn;
+    } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
+    else              si=pmb->cis-cn, ei=pmb->cis-1;
+    if (nb.ox2==0) {
+      sj=pmb->cjs, ej=pmb->cje;
+      if (pmb->block_size.nx2 > 1) {
+        if ((lx2 & 1LL)==0LL) ej+=cn;
+        else             sj-=cn;
+      }
+    } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
+    else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
+    if (nb.ox3==0) {
+      sk=pmb->cks, ek=pmb->cke;
+      if (pmb->block_size.nx3 > 1) {
+        if ((lx3 & 1LL)==0LL) ek+=cn;
+        else             sk-=cn;
+      }
+    } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
+    else              sk=pmb->cks-cn, ek=pmb->cks-1;
+
+    // convert the ghost zone and ghost-ghost zones into primitive variables
+    // this includes cell-centered field calculation
+    int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
+    if (nb.ox1==0) {
+      if (nblevel[1][1][0]!=-1) f1m=1;
+      if (nblevel[1][1][2]!=-1) f1p=1;
+    } else {
+      f1m=1;
+      f1p=1;
+    }
+    if (pmb->block_size.nx2>1) {
+      if (nb.ox2==0) {
+        if (nblevel[1][0][1]!=-1) f2m=1;
+        if (nblevel[1][2][1]!=-1) f2p=1;
+      } else {
+        f2m=1;
+        f2p=1;
+      }
+    }
+    if (pmb->block_size.nx3>1) {
+      if (nb.ox3==0) {
+        if (nblevel[0][1][1]!=-1) f3m=1;
+        if (nblevel[2][1][1]!=-1) f3p=1;
+      } else {
+        f3m=1;
+        f3p=1;
+      }
+    }
+
+    pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
+                                    pmr->coarse_b_, pmr->coarse_prim_,
+                                    pmr->coarse_bcc_, pmr->pcoarsec,
+                                    si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+    // KGF: here is another TODO generalization of this manual coupling between the
+    // MeshRefinement class and BoundaryVariable class objects. This will only work for
+    // user-defined boundary functions and periodic boundary conditions, right now.
+
+    // KGF: need to duplicate the BoundaryValues::ApplyPhysicalBoundaries() code with
+    // switch statements + loop over BoundaryVariable iterator
+    // + ADD swap statements for coarse_prim_ and coarse_b_ before calling each
+    // BoundaryVariable's function from  BoundaryPhysics. (no method exists for
+    // FaceCenteredBoundaryVariable class, unlike HydroBoundaryVariable)-- should
+    // probably call the swap routines before the switch statements
+
+    // + ADD swap statements back to the previous var_cc, var_fc pointers after calling
+    // the functions.
+
+    // Apply physical boundaries
+    if (nb.ox1==0) {
+      if (BoundaryFunction_[INNER_X1]!=nullptr) {
+        BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
+                                    sj, ej, sk, ek, 1);
+      }
+      if (BoundaryFunction_[OUTER_X1]!=nullptr) {
+        BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
+                                    sj, ej, sk, ek, 1);
+      }
+    }
+    if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
+      if (BoundaryFunction_[INNER_X2]!=nullptr) {
+        BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
+                                    sk, ek, 1);
+      }
+      if (BoundaryFunction_[OUTER_X2]!=nullptr) {
+        BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
+                                    sk, ek, 1);
+      }
+    }
+    if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
+      if (BoundaryFunction_[INNER_X3]!=nullptr) {
+        BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
+                                    pmb->cks, pmb->cke, 1);
+      }
+      if (BoundaryFunction_[OUTER_X3]!=nullptr) {
+        BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
+                                    pmb->cks, pmb->cke, 1);
+      }
+    }
+
+    // now that the ghost-ghost zones are filled
+    // calculate the loop limits for the finer grid
+    fsi=(si-pmb->cis)*2+pmb->is;
+    fei=(ei-pmb->cis)*2+pmb->is+1;
+    if (pmb->block_size.nx2 > 1) {
+      fsj=(sj-pmb->cjs)*2+pmb->js;
+      fej=(ej-pmb->cjs)*2+pmb->js+1;
+    } else {
+      fsj=pmb->js;
+      fej=pmb->je;
+    }
+    if (pmb->block_size.nx3 > 1) {
+      fsk=(sk-pmb->cks)*2+pmb->ks;
+      fek=(ek-pmb->cks)*2+pmb->ks+1;
+    } else {
+      fsk=pmb->ks;
+      fek=pmb->ke;
+    }
+    // prolongate hydro variables using primitive
+    pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, ph->w, 0, NHYDRO-1,
+                                      si, ei, sj, ej, sk, ek);
+    // prolongate magnetic fields
+    if (MAGNETIC_FIELDS_ENABLED) {
+      int il, iu, jl, ju, kl, ku;
+      il=si, iu=ei+1;
+      if ((nb.ox1>=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
+      if ((nb.ox1<=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
+      if (pmb->block_size.nx2 > 1) {
+        jl=sj, ju=ej+1;
+        if ((nb.ox2>=0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
+        if ((nb.ox2<=0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
+      } else {
+        jl=sj;
+        ju=ej;
+      }
+      if (pmb->block_size.nx3 > 1) {
+        kl=sk, ku=ek+1;
+        if ((nb.ox3>=0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
+        if ((nb.ox3<=0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
+      } else {
+        kl=sk;
+        ku=ek;
+      }
+
+      // step 1. calculate x1 outer surface fields and slopes
+      pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pf->b.x1f, il, iu, sj, ej, sk, ek);
+      // step 2. calculate x2 outer surface fields and slopes
+      pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pf->b.x2f, si, ei, jl, ju, sk, ek);
+      // step 3. calculate x3 outer surface fields and slopes
+      pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pf->b.x3f, si, ei, sj, ej, kl, ku);
+      // step 4. calculate the internal finer fields using the Toth & Roe method
+      pmr->ProlongateInternalField(pf->b, si, ei, sj, ej, sk, ek);
+      // Field prolongation completed, calculate cell centered fields
+      pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
+                                              fsi, fei, fsj, fej, fsk, fek);
+    }
+    // calculate conservative variables
+    pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
+                                    fsi, fei, fsj, fej, fsk, fek);
+  }
+  return;
 }
