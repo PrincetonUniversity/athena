@@ -144,7 +144,7 @@ class BoundaryCommunication {
 
   // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
   // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
-  virtual void Initialize() = 0; // setup MPI requests
+  virtual void Initialize() = 0; // setup persistent MPI requests
   virtual void StartReceivingForInit(bool cons_and_field) = 0; // Call MPI_Start()
   virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
 

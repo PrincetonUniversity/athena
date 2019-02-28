@@ -7,6 +7,10 @@
 //  \brief implements boundary functions for Hydro variables in a derived class of
 //  the CellCenteredBoundaryVariable base class.
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"

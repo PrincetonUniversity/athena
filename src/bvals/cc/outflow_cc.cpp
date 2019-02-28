@@ -79,7 +79,8 @@ void CellCenteredBoundaryVariable::OutflowInnerX2(
         for (int i=il; i<=iu; ++i) {
           var_cc(n,k,jl-j,i) = var_cc(n,k,jl,i);
         }
-      }}
+      }
+    }
   }
   return;
 }

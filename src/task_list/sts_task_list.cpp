@@ -330,11 +330,9 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
   return TASK_FAIL;
 }
 
-enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage){
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
 
+enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
+  BoundaryValues *pbval=pmb->pbval;
   if (stage <= nstages) {
     // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
