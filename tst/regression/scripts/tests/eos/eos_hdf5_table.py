@@ -9,7 +9,7 @@ import os
 from shutil import move
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
-from .eos_table_test import mk_ideal, write_H
+from .eos_comparison import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
