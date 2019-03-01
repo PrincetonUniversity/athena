@@ -46,12 +46,12 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   var_fc.x1f.InitWithShallowCopy(var.x1f);
   var_fc.x2f.InitWithShallowCopy(var.x2f);
   var_fc.x3f.InitWithShallowCopy(var.x3f);
-  src.x1f.InitWithShallowCopy(var_fc.x1f);
-  src.x2f.InitWithShallowCopy(var_fc.x2f);
-  src.x3f.InitWithShallowCopy(var_fc.x3f);
-  dst.x1f.InitWithShallowCopy(var_fc.x1f);
-  dst.x2f.InitWithShallowCopy(var_fc.x2f);
-  dst.x3f.InitWithShallowCopy(var_fc.x3f);
+  // src.x1f.InitWithShallowCopy(var_fc.x1f);
+  // src.x2f.InitWithShallowCopy(var_fc.x2f);
+  // src.x3f.InitWithShallowCopy(var_fc.x3f);
+  // dst.x1f.InitWithShallowCopy(var_fc.x1f);
+  // dst.x2f.InitWithShallowCopy(var_fc.x2f);
+  // dst.x3f.InitWithShallowCopy(var_fc.x3f);
 
   e1.InitWithShallowCopy(var_flux.x1e);
   e2.InitWithShallowCopy(var_flux.x2e);
@@ -191,7 +191,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
-  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1==0)      si=pmb->is,          ei=pmb->ie;
@@ -205,7 +205,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
-  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2==0)      sj=pmb->js,          ej=pmb->je;
@@ -219,7 +219,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
-  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -252,7 +252,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
-  pmr->RestrictFieldX1(src.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
+  pmr->RestrictFieldX1(var_fc.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
   BufferUtility::Pack3DData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
@@ -267,7 +267,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
-  pmr->RestrictFieldX2(src.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
+  pmr->RestrictFieldX2(var_fc.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx2==1) { // 1D
     for (int i=si; i<=ei; i++)
       pmr->coarse_b_.x2f(sk,sj+1,i)=pmr->coarse_b_.x2f(sk,sj,i);
@@ -286,7 +286,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
-  pmr->RestrictFieldX3(src.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
+  pmr->RestrictFieldX3(var_fc.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; j++) {
       for (int i=si; i<=ei; i++)
@@ -344,7 +344,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox3>0) { sk=pmb->ke-cn, ek=pmb->ke;}
   else              sk=pmb->ks,    ek=pmb->ks+cn;
-  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1==0) {
@@ -366,7 +366,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox2>0) { sj=pmb->je+1-pmb->cnghost, ej=pmb->je+1;}
   else              sj=pmb->js,                ej=pmb->js+pmb->cnghost;
-  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2==0) {
@@ -396,7 +396,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox3>0) { sk=pmb->ke+1-pmb->cnghost, ek=pmb->ke+1;}
   else              sk=pmb->ks,                ek=pmb->ks+pmb->cnghost;
-  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::Pack3DData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -463,11 +463,11 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x1f(k,j,i) = sign*buf[p++];
+          var_fc.x1f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -489,16 +489,16 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x2f(k,j,i) = sign*buf[p++];
+          var_fc.x2f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2==1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
-      dst.x2f(sk,sj+1,i) = dst.x2f(sk,sj,i);
+      var_fc.x2f(sk,sj+1,i) = var_fc.x2f(sk,sj,i);
   }
 
   // bx3
@@ -520,17 +520,17 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x3f(k,j,i) = sign*buf[p++];
+          var_fc.x3f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
-        dst.x3f(sk+1,j,i) = dst.x3f(sk,j,i);
+        var_fc.x3f(sk+1,j,i) = var_fc.x3f(sk,j,i);
     }
   }
 
@@ -719,11 +719,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x1f(k,j,i) = sign*buf[p++];
+          var_fc.x1f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -759,16 +759,16 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x2f(k,j,i) = sign*buf[p++];
+          var_fc.x2f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2==1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
-      dst.x2f(sk,sj+1,i) = dst.x2f(sk,sj,i);
+      var_fc.x2f(sk,sj+1,i) = var_fc.x2f(sk,sj,i);
   }
 
   // bx3
@@ -811,17 +811,17 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          dst.x3f(k,j,i) = sign*buf[p++];
+          var_fc.x3f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack3DData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
-        dst.x3f(sk+1,j,i) = dst.x3f(sk,j,i);
+        var_fc.x3f(sk+1,j,i) = var_fc.x3f(sk,j,i);
     }
   }
 
@@ -934,33 +934,33 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -971,33 +971,33 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval_->azimuthal_shift_(k) = dst.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = var_fc.x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            var_fc.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -1024,7 +1024,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
     int j = pmb->js;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
-        dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
+        var_fc.x2f(k,j,i) = 0.5 * (var_fc.x2f(k,j-1,i) + var_fc.x2f(k,j+1,i));
       }
     }
   }
@@ -1032,7 +1032,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
     int j = pmb->je + 1;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
-        dst.x2f(k,j,i) = 0.5 * (dst.x2f(k,j-1,i) + dst.x2f(k,j+1,i));
+        var_fc.x2f(k,j,i) = 0.5 * (var_fc.x2f(k,j-1,i) + var_fc.x2f(k,j+1,i));
       }
     }
   }

@@ -44,8 +44,8 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     AthenaArray<Real> *var_flux)
     : BoundaryVariable(pmb, type) {
   var_cc.InitWithShallowCopy(var);
-  src.InitWithShallowCopy(var_cc);
-  dst.InitWithShallowCopy(var_cc);
+  // src.InitWithShallowCopy(var_cc);
+  // dst.InitWithShallowCopy(var_cc);
 
   // KGF: uninitialized, for now. Relying on HydroBoundaryVariable:SelectCoarseBuffer() to
   // set it to pmr-> cons or prim, when needed. Must set it directly for other

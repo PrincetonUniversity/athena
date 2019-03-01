@@ -38,9 +38,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   ~FaceCenteredBoundaryVariable();
 
   FaceField var_fc;
-  FaceField src, dst;
-  // mimic new CellCenteredBoundaryVariable member &coarse_buf (originally passed as a
-  // function parameter as "cbuf"); Store reference to MeshRefinement "pmr->coarse_b_"
+  // KGF: TODO mimic new CellCenteredBoundaryVariable member &coarse_buf (originally
+  // passed as a function parameter as "cbuf"); Store reference to MeshRefinement
+  // "pmr->coarse_b_"
   //FaceField &coarse_buf;
 
   // KGF: rename/change to single "EdgeField var_fc_flux"?
