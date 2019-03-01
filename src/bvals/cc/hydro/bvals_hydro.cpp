@@ -74,8 +74,8 @@ void HydroBoundaryVariable::SwapHydroQuantity(AthenaArray<Real> &var_hydro,
                                               enum HydroBoundaryType hydro_type) {
   var_cc.InitWithShallowCopy(var_hydro);
   // KGF: src and dst are completely useless as-is, since they always mirror var_cc
-  src.InitWithShallowCopy(var_cc);
-  dst.InitWithShallowCopy(var_cc);
+  // src.InitWithShallowCopy(var_cc);
+  // dst.InitWithShallowCopy(var_cc);
 
   SelectCoarseBuffer(hydro_type);
   return;
