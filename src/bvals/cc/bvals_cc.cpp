@@ -251,12 +251,12 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
           for (int i=si; i<=ei; ++i)
-            dst(n,k,j,i) = sign * buf[p++];
+            var_cc(n,k,j,i) = sign * buf[p++];
         }
       }
     }
   } else {
-    BufferUtility::Unpack4DData(buf, dst, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack4DData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
   // if (SHEARING_BOX) {
@@ -420,12 +420,12 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
           for (int i=si; i<=ei; ++i)
-            dst(n,k,j,i) = sign * buf[p++];
+            var_cc(n,k,j,i) = sign * buf[p++];
         }
       }
     }
   } else {
-    BufferUtility::Unpack4DData(buf, dst, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::Unpack4DData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   return;
 }
@@ -548,11 +548,11 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval_->azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = var_cc(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
+              var_cc(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }
@@ -565,11 +565,11 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval_->azimuthal_shift_(k) = dst(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = var_cc(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              dst(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
+              var_cc(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }
