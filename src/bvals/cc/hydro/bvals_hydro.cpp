@@ -28,6 +28,9 @@ HydroBoundaryVariable::HydroBoundaryVariable(
     // AthenaArray<Real> &prim)
     : CellCenteredBoundaryVariable(pmb, type, var_hydro, var_flux) {
   hydro_type_=hydro_type;
+  // nl_=0, nu_=NHYDRO-1; // inferred in parent class constructor
+  flip_across_pole_=flip_across_pole_hydro;
+  SelectCoarseBuffer(hydro_type_);
 }
 
 // destructor
@@ -43,8 +46,6 @@ HydroBoundaryVariable::~HydroBoundaryVariable() {
 void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType hydro_type) {
   // KGF: currently always true:
   if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
-    nl_=0, nu_=NHYDRO-1;
-    flip_across_pole_=flip_across_pole_hydro;
     if (pmy_mesh_->multilevel) {
       if (hydro_type==HYDRO_CONS)
         coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_cons_);
