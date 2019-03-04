@@ -250,10 +250,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
   // KGF: shouldn't this only be allocated for MHD?
   if (pmb->loc.level == pmy_mesh_->root_level &&
-     pmy_mesh_->nrbx3 == 1 &&
-     (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
-      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
-       azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
+      pmy_mesh_->nrbx3 == 1 &&
+      (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
+       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+    azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
   // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
   // KGF: prevent reallocation of contiguous memory space for each of 3x current calls to
@@ -943,7 +943,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
           (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
-      break;
+        break;
       case OUTFLOW_BNDRY:
         for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
           (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
@@ -1016,7 +1016,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         case POLAR_BNDRY_WEDGE:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
+                                           pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case USER_BNDRY: // user-enrolled BCs
@@ -1053,7 +1053,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         case POLAR_BNDRY_WEDGE:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
+                                           pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case USER_BNDRY: // user-enrolled BCs
@@ -1079,27 +1079,26 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
     if (BoundaryFunction_[INNER_X3] != nullptr) {
-    switch(block_bcs[INNER_X3]) {
-      case REFLECTING_BNDRY:
-        for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-          (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, bis, bie,
+      switch(block_bcs[INNER_X3]) {
+        case REFLECTING_BNDRY:
+          for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+            (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, bis, bie,
+                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
+          }
+          break;
+        case OUTFLOW_BNDRY:
+          for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+            (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, bis, bie,
+                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
+          }
+          break;
+        case USER_BNDRY: // user-enrolled BCs
+          BoundaryFunction_[INNER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
                                       bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        }
-      break;
-      case OUTFLOW_BNDRY:
-        for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-          (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, bis, bie,
-                                      bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        }
-        break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
-                                    bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        break;
-      default:
-        break;
-    }
-
+          break;
+        default:
+          break;
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, bjs, bje,
@@ -1111,27 +1110,26 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
     if (BoundaryFunction_[OUTER_X3] != nullptr) {
-    switch(block_bcs[OUTER_X3]) {
-      case REFLECTING_BNDRY:
-        for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-          (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, bis, bie,
+      switch(block_bcs[OUTER_X3]) {
+        case REFLECTING_BNDRY:
+          for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+            (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, bis, bie,
+                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
+          }
+          break;
+        case OUTFLOW_BNDRY:
+          for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+            (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, bis, bie,
+                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
+          }
+          break;
+        case USER_BNDRY: // user-enrolled BCs
+          BoundaryFunction_[OUTER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
                                       bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        }
-        break;
-      case OUTFLOW_BNDRY:
-        for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-          (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, bis, bie,
-                                      bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        }
-        break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
-                                    bjs, bje, pmb->ks, pmb->ke, NGHOST);
-        break;
-      default:
-        break;
-    }
-
+          break;
+        default:
+          break;
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, bjs, bje,
@@ -1368,42 +1366,170 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // + ADD swap statements back to the previous var_cc, var_fc pointers after calling
     // the functions.
+    Coordinates *pco=pmb->pcoord;
+    phbvar->var_cc.InitWithShallowCopy(pmr->coarse_prim_);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pfbvar->var_fc.x1f.InitWithShallowCopy(pmr->coarse_b_.x1f);
+      pfbvar->var_fc.x2f.InitWithShallowCopy(pmr->coarse_b_.x2f);
+      pfbvar->var_fc.x3f.InitWithShallowCopy(pmr->coarse_b_.x3f);
+    }
 
     // Apply physical boundaries
     if (nb.ox1==0) {
       if (BoundaryFunction_[INNER_X1]!=nullptr) {
-        BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
+        switch(block_bcs[INNER_X1]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
+                                          sj, ej, sk, ek, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
+                                          sj, ej, sk, ek, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+            BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
+                                        sj, ej, sk, ek, 1);
+            break;
+          default:
+            break;
+        }
       }
       if (BoundaryFunction_[OUTER_X1]!=nullptr) {
-        BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
+        switch(block_bcs[OUTER_X1]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
+                                          sj, ej, sk, ek, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
+                                          sj, ej, sk, ek, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+            BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
+                                        sj, ej, sk, ek, 1);
+            break;
+          default:
+            break;
+        }
       }
     }
     if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
       if (BoundaryFunction_[INNER_X2]!=nullptr) {
-        BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
+        switch(block_bcs[INNER_X2]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, si, ei,
+                                          pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, si, ei,
+                                          pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case POLAR_BNDRY_WEDGE:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, si, ei,
+                                             pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+            BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, si, ei,
+                                        pmb->cjs, pmb->cje, sk, ek, 1);
+            break;
+          default:
+            break;
+        }
       }
       if (BoundaryFunction_[OUTER_X2]!=nullptr) {
-        BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
+        switch(block_bcs[OUTER_X2]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, si, ei,
+                                          pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, si, ei,
+                                          pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case POLAR_BNDRY_WEDGE:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, si, ei,
+                                             pmb->cjs, pmb->cje, sk, ek, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+            BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, si, ei,
+                                        pmb->cjs, pmb->cje, sk, ek, 1);
+            break;
+          default:
+            break;
+        }
       }
     }
     if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
       if (BoundaryFunction_[INNER_X3]!=nullptr) {
-        BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+        switch(block_bcs[INNER_X3]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, si, ei,
+                                          sj, ej, pmb->cks, pmb->cke, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, si, ei,
+                                          sj, ej, pmb->cks, pmb->cke, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+            BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, si, ei, sj, ej,
+                                        pmb->cks, pmb->cke, 1);
+            break;
+          default:
+            break;
+        }
       }
       if (BoundaryFunction_[OUTER_X3]!=nullptr) {
-        BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+        switch(block_bcs[OUTER_X3]) {
+          case REFLECTING_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, si, ei,
+                                          sj, ej, pmb->cks, pmb->cke, 1);
+            }
+            break;
+          case OUTFLOW_BNDRY:
+            for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
+              (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, si, ei,
+                                          sj, ej, pmb->cks, pmb->cke, 1);
+            }
+            break;
+          case USER_BNDRY: // user-enrolled BCs
+
+            BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                                        pmr->coarse_b_, time, dt, si, ei, sj, ej,
+                                        pmb->cks, pmb->cke, 1);
+            break;
+          default:
+            break;
+        }
       }
     }
 
@@ -1466,6 +1592,13 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // calculate conservative variables
     pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
                                     fsi, fei, fsj, fej, fsk, fek);
+    // KGF: (temp workaround) swap BoundaryVariable references back from MeshRefinement
+    phbvar->var_cc.InitWithShallowCopy(ph->w);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pfbvar->var_fc.x1f.InitWithShallowCopy(pf->b.x1f);
+      pfbvar->var_fc.x2f.InitWithShallowCopy(pf->b.x2f);
+      pfbvar->var_fc.x3f.InitWithShallowCopy(pf->b.x3f);
+    }
   }
   return;
 }

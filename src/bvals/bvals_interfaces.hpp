@@ -162,13 +162,14 @@ class BoundaryBuffer {
  public:
   BoundaryBuffer() {}
   virtual ~BoundaryBuffer() {}
+
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
   virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
-  virtual void SendBoundaryBuffers() = 0;
-  virtual bool ReceiveBoundaryBuffers() = 0;
-  // used only during problem initialization in mesh.cpp:
-  virtual void ReceiveAndSetBoundariesWithWait() = 0;
-  virtual void SetBoundaries() = 0;
+  virtual void SendBoundaryBuffers() = 0; // client-facing
+  virtual bool ReceiveBoundaryBuffers() = 0; // client-facing
+  // this next fn is used only during problem initialization in mesh.cpp:
+  virtual void ReceiveAndSetBoundariesWithWait() = 0; // client-facing
+  virtual void SetBoundaries() = 0; // client-facing
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
 
   // SMR/AMR-exclusive buffer management methods
