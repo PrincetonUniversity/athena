@@ -74,7 +74,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   flip_across_pole_=nullptr;
 
   if (pmy_mesh_->multilevel==true) { // SMR or AMR
-    InitBoundaryData(bd_cc_flcor_, BNDRY_FLCOR);
+    InitBoundaryData(bd_cc_flcor_, BNDRY_CC_FLCOR);
     pbd_var_flcor_ = &(bd_cc_flcor_);
   }
 }

@@ -90,10 +90,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
   cng3=cng*f3d;
   int size=0;
   bd.nbmax=pbval_->maxneighbor_;
-  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
+  if (type==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
     for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
   }
-  if (type==BNDRY_EMFCOR) {
+  if (type==BNDRY_FC_FLCOR) {
     for (          ; pbval_->ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
@@ -109,7 +109,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
     // Allocate buffers
     // calculate the buffer size
     switch(type) {
-      case BNDRY_HYDRO: {
+      case BNDRY_CC: {
         size=((ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
              *((ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
              *((ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
@@ -179,7 +179,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
         }
       }
         break;
-      case BNDRY_FLCOR: {
+      case BNDRY_CC_FLCOR: {
         if (ni[n].ox1!=0)
           size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
         if (ni[n].ox2!=0)
@@ -188,7 +188,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
       }
         break;
-      case BNDRY_EMFCOR: {
+      case BNDRY_FC_FLCOR: {
         if (ni[n].type==NEIGHBOR_FACE) {
           if (pmb->block_size.nx3>1) { // 3D
             if (ni[n].ox1!=0)

@@ -61,7 +61,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   // AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   // AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
-  InitBoundaryData(bd_fc_flcor_, BNDRY_EMFCOR);
+  InitBoundaryData(bd_fc_flcor_, BNDRY_FC_FLCOR);
   pbd_var_flcor_ = &(bd_fc_flcor_);
 
   // KGF: was not in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master
