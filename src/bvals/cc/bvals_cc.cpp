@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>    // memcpy()
@@ -40,9 +41,8 @@
 // constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
-    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var,
-    AthenaArray<Real> *var_flux)
-    : BoundaryVariable(pmb, type) {
+    MeshBlock *pmb, AthenaArray<Real> &var, AthenaArray<Real> *var_flux)
+    : BoundaryVariable(pmb) {
   var_cc.InitWithShallowCopy(var);
   // src.InitWithShallowCopy(var_cc);
   // dst.InitWithShallowCopy(var_cc);
@@ -73,10 +73,13 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   //coarse_buf=;  // unitialized AthenaArray
   flip_across_pole_=nullptr;
 
+  InitBoundaryData(bd_var_, BNDRY_CC);
   if (pmy_mesh_->multilevel==true) { // SMR or AMR
-    InitBoundaryData(bd_cc_flcor_, BNDRY_CC_FLCOR);
-    pbd_var_flcor_ = &(bd_cc_flcor_);
+    InitBoundaryData(bd_var_flcor_, BNDRY_CC_FLCOR);
+    // KGF: if storing pointer instead of BoundaryData in BoundaryVariable base class:
+    // pbd_var_flcor_ = &(bd_var_flcor_);
   }
+  std::cout << "In CCBVar constructor..." << std::endl;
 }
 
 // destructor
@@ -84,8 +87,47 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   // KGF: similar to section in constructor, this can be automatically handled in separate
   // classes
+  DestroyBoundaryData(bd_var_);
   if (pmy_mesh_->multilevel==true) // SMR or AMR
-    DestroyBoundaryData(bd_cc_flcor_);
+    DestroyBoundaryData(bd_var_flcor_);
+}
+
+int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
+                                                            int cng) {
+  MeshBlock *pmb=pmy_block_;
+  int cng1, cng2, cng3;
+  cng1=cng;
+  cng2=cng*(pmb->block_size.nx2 > 1 ? 1 : 0);
+  cng3=cng*(pmb->block_size.nx3 > 1 ? 1 : 0);
+
+  int size=((ni.ox1==0)?pmb->block_size.nx1:NGHOST)
+           *((ni.ox2==0)?pmb->block_size.nx2:NGHOST)
+           *((ni.ox3==0)?pmb->block_size.nx3:NGHOST);
+  if (pmy_mesh_->multilevel) {
+    int f2c=((ni.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+            *((ni.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+            *((ni.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+    int c2f=((ni.ox1==0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
+            *((ni.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+            *((ni.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+    size=std::max(size,c2f);
+    size=std::max(size,f2c);
+  }
+  size*=nu_;
+  return size;
+}
+
+int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
+    const NeighborIndexes& ni, int cng) {
+  MeshBlock *pmb=pmy_block_;
+  int size=0;
+  if (ni.ox1!=0)
+    size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*nu_;
+  if (ni.ox2!=0)
+    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*nu_;
+  if (ni.ox3!=0)
+    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*nu_;
+  return size;
 }
 
 //----------------------------------------------------------------------------------------
@@ -638,7 +680,7 @@ void CellCenteredBoundaryVariable::Initialize(void) {
       MPI_Recv_init(bd_var_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_recv[nb.bufid]));
 
-      // hydro flux correction: bd_cc_flcor_
+      // hydro flux correction: bd_var_flcor_
       if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
         if (nb.fid==0 || nb.fid==1)
@@ -650,16 +692,16 @@ void CellCenteredBoundaryVariable::Initialize(void) {
         size*=NHYDRO;
         if (nb.level<mylevel) { // send to coarser
           tag=pbval_->CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
-          if (bd_cc_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_cc_flcor_.req_send[nb.bufid]);
-          MPI_Send_init(bd_cc_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_cc_flcor_.req_send[nb.bufid]));
+          if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+          MPI_Send_init(bd_var_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_send[nb.bufid]));
         } else if (nb.level>mylevel) { // receive from finer
           tag=pbval_->CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
-          if (bd_cc_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_cc_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_cc_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_cc_flcor_.req_recv[nb.bufid]));
+          if (bd_var_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
+            MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_recv[nb.bufid]));
         }
       }
     }
@@ -687,7 +729,7 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 // void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
 //   MPI_Start(&(bd_var_.req_recv[nb.bufid]));
 //   if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
-//     MPI_Start(&(bd_cc_flcor_.req_recv[nb.bufid]));
+//     MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
 //   return;
 // }
 
@@ -708,7 +750,7 @@ void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
     if (nb.rank!=Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
       if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
-        MPI_Start(&(bd_cc_flcor_.req_recv[nb.bufid]));
+        MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
     }
   }
 #endif
@@ -743,14 +785,14 @@ void CellCenteredBoundaryVariable::ClearBoundaryAll(void) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BNDRY_WAITING;
     if (nb.type==NEIGHBOR_FACE)
-      bd_cc_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+      bd_var_flcor_.flag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     MeshBlock *pmb=pmy_block_;
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_cc_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+        MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
     } // KGF: end block on other MPI process
 #endif
   } // KGF: end loop over nneighbor

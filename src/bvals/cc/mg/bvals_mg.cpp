@@ -81,9 +81,12 @@ MGBoundaryValues::~MGBoundaryValues() {
 void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type) {
   int size = 0;
   bd.nbmax=maxneighbor_;
+  // KGF: unlike "normal" InitBoundaryData(), there is no need for cng, ... , f3d
+
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
+    // KGF: only difference between MGBoundaryData and BoundaryData:
     bd.sflag[n]=BNDRY_WAITING;
     bd.send[n]=nullptr;
     bd.recv[n]=nullptr;

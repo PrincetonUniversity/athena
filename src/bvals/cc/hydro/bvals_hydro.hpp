@@ -25,11 +25,11 @@
 
 class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
  public:
-  HydroBoundaryVariable(MeshBlock *pmb, enum BoundaryType type,
+  HydroBoundaryVariable(MeshBlock *pmb,
                         AthenaArray<Real> &var_hydro, AthenaArray<Real> *var_flux,
                         enum HydroBoundaryType hydro_type);
                                                 // AthenaArray<Real> &prim);
-  ~HydroBoundaryVariable();
+  virtual ~HydroBoundaryVariable() = default;
 
   // switch between Hydro class members "u" and "w" (or "u" and "u1", ...)
   void SwapHydroQuantity(AthenaArray<Real> &var_hydro, enum HydroBoundaryType hydro_type);

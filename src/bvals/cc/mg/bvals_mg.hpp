@@ -34,6 +34,7 @@ class Coordinates;
 //  \brief structure storing multigrid boundary information
 struct MGBoundaryData {
   int nbmax;
+  // KGF: the addition of sflag is the only change relative to BoundaryData
   enum BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL

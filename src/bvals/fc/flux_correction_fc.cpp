@@ -585,12 +585,12 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     if (nb.level==pmb->loc.level) {
       if ((nb.type==NEIGHBOR_FACE)
           || ((nb.type==NEIGHBOR_EDGE) && (pbval_->edge_flag_[nb.eid]==true))) {
-        p=LoadEMFBoundaryBufferSameLevel(bd_fc_flcor_.send[nb.bufid], nb);
+        p=LoadEMFBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
       } else {
         continue;
       }
     } else if (nb.level==pmb->loc.level-1) {
-      p=LoadEMFBoundaryBufferToCoarser(bd_fc_flcor_.send[nb.bufid], nb);
+      p=LoadEMFBoundaryBufferToCoarser(bd_var_flcor_.send[nb.bufid], nb);
     } else {
       continue;
     }
@@ -598,11 +598,11 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
       CopyFluxCorrectionBufferSameProcess(nb, p);
       // KGF: double check
       // std::memcpy(pbl->pbval->bd_emfcor_.recv[nb.targetid],
-      //             bd_fc_flcor_.send[nb.bufid], p*sizeof(Real));
+      //             bd_var_flcor_.send[nb.bufid], p*sizeof(Real));
     }
 #ifdef MPI_PARALLEL
     else
-      MPI_Start(&(bd_fc_flcor_.req_send[nb.bufid]));
+      MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
   }
 
@@ -1536,8 +1536,8 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
       if (nb.level!=pmb->loc.level) continue;
       if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) &&
                                        (pbval_->edge_flag_[nb.eid]==true))) {
-        if (bd_fc_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-        if (bd_fc_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
+        if (bd_var_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+        if (bd_var_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
           if (nb.rank==Globals::my_rank) { // on the same process
             flag=false;
             continue;
@@ -1547,18 +1547,18 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                        MPI_STATUS_IGNORE);
-            MPI_Test(&(bd_fc_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
+            MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
             if (static_cast<bool>(test)==false) {
               flag=false;
               continue;
             }
-            bd_fc_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+            bd_var_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
           }
 #endif
         }
         // boundary arrived; apply EMF correction
-        SetEMFBoundarySameLevel(bd_fc_flcor_.recv[nb.bufid], nb);
-        bd_fc_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
+        SetEMFBoundarySameLevel(bd_var_flcor_.recv[nb.bufid], nb);
+        bd_var_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
       }
     }
     if (flag==false) return flag;
@@ -1573,8 +1573,8 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
       NeighborBlock& nb = pbval_->neighbor[n];
       if (nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
       if (nb.level!=pmb->loc.level+1) continue;
-      if (bd_fc_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if (bd_fc_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
+      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
         if (nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
@@ -1584,18 +1584,18 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&(bd_fc_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
+          MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test)==false) {
             flag=false;
             continue;
           }
-          bd_fc_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+          bd_var_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
         }
 #endif
       }
       // boundary arrived; apply EMF correction
-      SetEMFBoundaryFromFiner(bd_fc_flcor_.recv[nb.bufid], nb);
-      bd_fc_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
+      SetEMFBoundaryFromFiner(bd_var_flcor_.recv[nb.bufid], nb);
+      bd_var_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
     }
   }
 

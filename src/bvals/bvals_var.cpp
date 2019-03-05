@@ -45,32 +45,40 @@
 
 // constructor
 
-BoundaryVariable::BoundaryVariable(MeshBlock *pmb, enum BoundaryType type) {
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
   // KGF: what is the point of cyclically setting class member pmy_block_=pmb, then:
   // MeshBlock *pmb=pmy_block_;
   pmy_block_ = pmb;
   pbval_ = pmb->pbval;
   pmy_mesh_ = pmb->pmy_mesh;
-  btype_ = type;
+
+  // btype_ = type;
 
   // KGF: should we even initialize this unsigned integer type data member?
   bvar_index = 0;
 
   // KGF: not sure of the value of passing around BoundaryType type anymore.
-  // Tied to BoundaryVariable class object
-  InitBoundaryData(bd_var_, type);
-  pbd_var_flcor_=nullptr;
+  // Currently, it is always tied to the BoundaryVariable subclass type
+
+  // Need to access both BoundaryData in generic BoundaryVariable::Copy*SameProcess()
+  // KGF: option 1: storing bd_var_, bd_var_cc_ in Base class, not initializing them
+
+  // KGF option 2: only store references to BoundaryData object
+  // pbd_var_=nullptr;
+  // pbd_var_flcor_=nullptr;
+
+  // KGF option 3: initialize somewhat-generic bd_var_ in Base class, store ptr to
+  // somewhat-optional flux-correction BoundaryData (unused for unrefined Hydro)
+  // InitBoundaryData(bd_var_, type);   // call DestroyBoundaryData in Base dtor
+  // pbd_var_flcor_=nullptr;
 
   // User must add this new BoundaryVariable object to the array in BoundaryValues
   // Choosing to not auto-enroll this new object in the array via its constructor
 }
 
 // destructor
-
-BoundaryVariable::~BoundaryVariable() {
-  DestroyBoundaryData(bd_var_);
-}
-
+// BoundaryVariable::~BoundaryVariable() {
+// }
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
@@ -78,18 +86,14 @@ BoundaryVariable::~BoundaryVariable() {
 
 void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
   MeshBlock *pmb=pmy_block_;
-  bool multilevel=pmy_mesh_->multilevel;
   NeighborIndexes *ni=pbval_->ni;
-
-  int f2d=0, f3d=0;
-  int cng, cng1, cng2, cng3;
-  if (pmb->block_size.nx2 > 1) f2d=1;
-  if (pmb->block_size.nx3 > 1) f3d=1;
-  cng=cng1=pmb->cnghost;
-  cng2=cng*f2d;
-  cng3=cng*f3d;
+  int cng = pmb->cnghost;
   int size=0;
+
   bd.nbmax=pbval_->maxneighbor_;
+  // KGF: what is happening in the next two conditionals??
+  // they are preventing the elimination of "enum BoundaryType type" function parameter in
+  // favor of a simpler boolean switch
   if (type==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
     for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
   }
@@ -105,128 +109,24 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
     bd.req_send[n]=MPI_REQUEST_NULL;
     bd.req_recv[n]=MPI_REQUEST_NULL;
 #endif
-
-    // Allocate buffers
-    // calculate the buffer size
-    switch(type) {
-      case BNDRY_CC: {
-        size=((ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
-             *((ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
-             *((ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
-        if (multilevel) {
-          int f2c=((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                  *((ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                  *((ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-          int c2f=((ni[n].ox1==0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
-                  *((ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-                  *((ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-          size=std::max(size,c2f);
-          size=std::max(size,f2c);
-        }
-        size*=NHYDRO; // KGF: need a generic BNDRY_CC counterpart
-      }
-        break;
-      case BNDRY_FC: {
-        int size1=((ni[n].ox1==0) ? (pmb->block_size.nx1+1):NGHOST)
-                  *((ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
-                  *((ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);
-        int size2=((ni[n].ox1==0) ? (pmb->block_size.nx1):NGHOST)
-                  *((ni[n].ox2==0) ? (pmb->block_size.nx2+f2d):NGHOST)
-                  *((ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);
-        int size3=((ni[n].ox1==0) ? (pmb->block_size.nx1):NGHOST)
-                  *((ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
-                  *((ni[n].ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
-        size=size1+size2+size3;
-        if (multilevel) {
-          if (ni[n].type!=NEIGHBOR_FACE) {
-            if (ni[n].ox1!=0) size1=size1/NGHOST*(NGHOST+1);
-            if (ni[n].ox2!=0) size2=size2/NGHOST*(NGHOST+1);
-            if (ni[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
-          }
-          size=size1+size2+size3;
-          int f2c1=((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
-                   *((ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                   *((ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c2=((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                   *((ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+f2d)
-                     : NGHOST)
-                   *((ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-          int f2c3=((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                   *((ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                   *((ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d)
-                     : NGHOST);
-          if (ni[n].type!=NEIGHBOR_FACE) {
-            if (ni[n].ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
-            if (ni[n].ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
-            if (ni[n].ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
-          }
-          int fsize=f2c1+f2c2+f2c3;
-          int c2f1=
-              ((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
-              *((ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
-              *((ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-          int c2f2=
-              ((ni[n].ox1==0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
-              *((ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
-              *((ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-          int c2f3=
-              ((ni[n].ox1==0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
-              *((ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-              *((ni[n].ox3==0) ?
-                ((pmb->block_size.nx3+1)/2+cng3+f3d) : cng+1);
-          int csize=c2f1+c2f2+c2f3;
-          size=std::max(size,std::max(csize,fsize));
-        }
-      }
-        break;
-      case BNDRY_CC_FLCOR: {
-        if (ni[n].ox1!=0)
-          size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
-        if (ni[n].ox2!=0)
-          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
-        if (ni[n].ox3!=0)
-          size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
-      }
-        break;
-      case BNDRY_FC_FLCOR: {
-        if (ni[n].type==NEIGHBOR_FACE) {
-          if (pmb->block_size.nx3>1) { // 3D
-            if (ni[n].ox1!=0)
-              size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
-                   +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-            else if (ni[n].ox2!=0)
-              size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
-                   +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
-            else
-              size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
-                   +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
-          } else if (pmb->block_size.nx2>1) { // 2D
-            if (ni[n].ox1!=0)
-              size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
-            else
-              size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
-          } else { // 1D
-            size=2;
-          }
-        } else if (ni[n].type==NEIGHBOR_EDGE) {
-          if (pmb->block_size.nx3>1) { // 3D
-            if (ni[n].ox3==0) size=pmb->block_size.nx3;
-            if (ni[n].ox2==0) size=pmb->block_size.nx2;
-            if (ni[n].ox1==0) size=pmb->block_size.nx1;
-          } else if (pmb->block_size.nx2>1) {
-            size=1;
-          }
-        }
-      }
-        break;
-      default: {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in InitBoundaryData" << std::endl
-            << "Invalid boundary type is specified." << std::endl;
-        ATHENA_ERROR(msg);
-      }
-        break;
+    // Allocate buffers, calculating the buffer size (variable vs. flux correction)
+    if (type ==BNDRY_CC || type==BNDRY_FC) {
+      size = this->ComputeVariableBufferSize(ni[n], cng);
+    } else if (type ==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
+      size = this->ComputeFluxCorrectionBufferSize(ni[n], cng);
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in InitBoundaryData" << std::endl
+          << "Invalid boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
     }
+    // KGF: original switch statement dependencies on local variableS:
+    // switch(type) { // local variables as input: ni[n],
+    //case BNDRY_CC: {  // local variables as input: cng, ..., cng3
+    //case BNDRY_FC: { // local variables as input: cng, ..., cng3, f2d, f3d
+    //case BNDRY_CC_FLCOR: { // local variables as input: NONE
+    //case BNDRY_FC_FLCOR: { // local variables as input: NONE
+
     bd.send[n]=new Real[size];
     bd.recv[n]=new Real[size];
   }
@@ -283,8 +183,8 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   // 1) which MeshBlock?
   MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  BoundaryData *ptarget_bdata = ptarget_block->pbval->bvars[bvar_index]->pbd_var_flcor_;
-  std::memcpy(ptarget_bdata->recv[nb.targetid], pbd_var_flcor_->send[nb.bufid],
+  BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
+  std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
   ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
   return;

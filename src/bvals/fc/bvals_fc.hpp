@@ -33,8 +33,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   friend class Hydro;
   friend class Field;
  public:
-  FaceCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type, FaceField &var,
-                               EdgeField &var_flux);
+  FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField &var, EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
   FaceField var_fc;
@@ -47,6 +46,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real> e1;
   AthenaArray<Real> e2;
   AthenaArray<Real> e3;
+
+  // BoundaryVariable:
+  int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
+  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
 
   // BoundaryCommunication:
   void Initialize() override;
@@ -162,8 +165,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard Field and emf BV private variables
-  //BoundaryData bd_fc_; // KGF: currently declared in base BoundaryValues class
-  BoundaryData bd_fc_flcor_; // bd_emfcor_;
+  // KGF: currently declared in base BoundaryValues class:
+  //BoundaryData bd_fc_;
+  //BoundaryData bd_fc_flcor_; // bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;

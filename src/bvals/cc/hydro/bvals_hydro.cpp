@@ -22,11 +22,11 @@
 //! \class HydroBoundaryFunctions
 
 HydroBoundaryVariable::HydroBoundaryVariable(
-    MeshBlock *pmb, enum BoundaryType type, AthenaArray<Real> &var_hydro,
+    MeshBlock *pmb, AthenaArray<Real> &var_hydro,
     AthenaArray<Real> *var_flux,
     enum HydroBoundaryType hydro_type)
     // AthenaArray<Real> &prim)
-    : CellCenteredBoundaryVariable(pmb, type, var_hydro, var_flux) {
+    : CellCenteredBoundaryVariable(pmb, var_hydro, var_flux) {
   hydro_type_=hydro_type;
   // nl_=0, nu_=NHYDRO-1; // inferred in parent class constructor
   flip_across_pole_=flip_across_pole_hydro;
@@ -34,8 +34,8 @@ HydroBoundaryVariable::HydroBoundaryVariable(
 }
 
 // destructor
-HydroBoundaryVariable::~HydroBoundaryVariable() {
-}
+// HydroBoundaryVariable::~HydroBoundaryVariable() {
+// }
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type)

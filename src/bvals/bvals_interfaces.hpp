@@ -274,27 +274,25 @@ class BoundaryPhysics {
 class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
-  BoundaryVariable(MeshBlock *pmb, enum BoundaryType type);
-  virtual ~BoundaryVariable(); // calls DestroyBoundaryData(bd_var_)
+  explicit BoundaryVariable(MeshBlock *pmb);  // , enum BoundaryType type);
+  virtual ~BoundaryVariable() = default; // used to call DestroyBoundaryData(bd_var_)
 
   // KGF: this is usuallly the std::size_t unsigned integer type
   std::vector<BoundaryVariable *>::size_type bvar_index;
 
-  // BoundaryCommunication:
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
-  void DestroyBoundaryData(BoundaryData &bd);
-  // The above 2x functions should probably be defined outside this abstract class. Could
-  // split them both up and define in the concrete derived classes, like the rest of the
-  // BoundaryCommunication interface. However, the BoundaryValues class (which realizes
-  // the BoundaryCommunication interface) does not need these 2x functions.
-
-  // Or, make them the constructor/destructor of the
-  // BoundaryData struct? But InitBoundaryData must access many data members of BValues
+  virtual int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) = 0;
+  virtual int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) = 0;
 
  protected:
-  BoundaryData bd_var_;
-  BoundaryData *pbd_var_flcor_;  // (optional) delegated to constructor in derived class
-  enum BoundaryType btype_;
+  // KGF option 1:
+  // deferred initialization of full BoundaryData objects in derived class destructor
+  BoundaryData bd_var_, bd_var_flcor_;
+
+  // KGF option 2:
+  // BoundaryData *pbd_var_;
+  // BoundaryData *pbd_var_flcor_;  // (make optional? not used for unrefined Hydro)
+  // enum BoundaryType btype_;
+
   BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
   // KGF: clean up mixed/duplicated locations of pointers to mesh/ classes
@@ -303,6 +301,21 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
 
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
+
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  void DestroyBoundaryData(BoundaryData &bd);
+
+  // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  // void DestroyBoundaryData(BoundaryData &bd);
+  // (originally were virtual functions and a part of the BoundaryCommunication interface)
+  // The above 2x functions should probably be defined outside this abstract class. Could
+  // split them both up and define in the concrete derived classes, like the rest of the
+  // BoundaryCommunication interface. However, the BoundaryValues class (which realizes
+  // the BoundaryCommunication interface) does not need these 2x functions.
+
+  // Or, make them the constructor/destructor of the
+  // BoundaryData struct? But InitBoundaryData must access many data members of BValues
+
  private:
 };
 

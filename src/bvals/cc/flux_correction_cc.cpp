@@ -54,7 +54,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level-1) {
       int p=0;
-      Real *sbuf=bd_cc_flcor_.send[nb.bufid];
+      Real *sbuf=bd_var_flcor_.send[nb.bufid];
       // x1 direction
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
@@ -136,12 +136,12 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
         }
       }
       if (nb.rank==Globals::my_rank) { // on the same node
-        // KGF: above, src "sbuf = &(bd_cc_flcor_.send[nb.bufid]);"
+        // KGF: above, src "sbuf = &(bd_var_flcor_.send[nb.bufid]);"
         CopyFluxCorrectionBufferSameProcess(nb, p);
       }
 #ifdef MPI_PARALLEL
       else
-        MPI_Start(&(bd_cc_flcor_.req_send[nb.bufid]));
+        MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
     }
   }
@@ -161,8 +161,8 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.type!=NEIGHBOR_FACE) break;
     if (nb.level==pmb->loc.level+1) {
-      if (bd_cc_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if (bd_cc_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
+      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
@@ -171,18 +171,18 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
         else { // NOLINT
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&(bd_cc_flcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+          MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
           if (static_cast<bool>(test)==false) {
             bflag=false;
             continue;
           }
-          bd_cc_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+          bd_var_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
         }
 #endif
       }
       // boundary arrived; apply flux correction
       int p=0;
-      Real *rbuf=bd_cc_flcor_.recv[nb.bufid];
+      Real *rbuf=bd_var_flcor_.recv[nb.bufid];
       if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int il=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
         int jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
@@ -223,7 +223,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
           }
         }
       }
-      bd_cc_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
+      bd_var_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
     }
   }
   return bflag;

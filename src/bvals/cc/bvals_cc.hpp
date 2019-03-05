@@ -33,7 +33,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   friend class Hydro;
   friend class Field;
  public:
-  CellCenteredBoundaryVariable(MeshBlock *pmb, enum BoundaryType type,
+  CellCenteredBoundaryVariable(MeshBlock *pmb,
                                AthenaArray<Real> &var, AthenaArray<Real> *var_flux);
   ~CellCenteredBoundaryVariable();
 
@@ -69,6 +69,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
   // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
   // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w, HYDRO_PRIM);
+
+  // BoundaryVariable:
+  int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
+  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
 
   // BoundaryCommunication:
   void Initialize() override;
@@ -181,8 +185,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
  private:
   // standard cell-centered and flux BV private variables
-  //BoundaryData bd_cc_; // KGF: currently declared in base BoundaryValues class
-  BoundaryData bd_cc_flcor_;
+  // KGF: currently declared in base BoundaryValues class
+  //BoundaryData bd_cc_;
+  //BoundaryData bd_cc_flcor_;
 
   // Pulling these variables out of function signatures, since FaceCentered
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
