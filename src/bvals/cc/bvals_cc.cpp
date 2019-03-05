@@ -13,10 +13,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>    // memcpy()
-#include <iomanip>
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
@@ -66,6 +62,10 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // KGF: CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
   // For now, assume that full span of 4th dim of input AthenaArray should be used;
   // get the index limits directly from the input AthenaArray
+
+  // Loops over generic cc arrays are inclusive of upper limit in 4D, e.g. nl_<=n<=nu_
+  // Outside of bvals/, loops over the 4th dimension are typically exclusive:
+  // e.g. in calculate_fluxes.cpp, loops are n<NWAVE or n<NHYDRO
   nl_=0;
   nu_=var.GetDim4() - 1;
 
@@ -79,7 +79,6 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     // KGF: if storing pointer instead of BoundaryData in BoundaryVariable base class:
     // pbd_var_flcor_ = &(bd_var_flcor_);
   }
-  std::cout << "In CCBVar constructor..." << std::endl;
 }
 
 // destructor
@@ -113,7 +112,7 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
     size=std::max(size,c2f);
     size=std::max(size,f2c);
   }
-  size*=nu_;
+  size*=nu_+1;
   return size;
 }
 
