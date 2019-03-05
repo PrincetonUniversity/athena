@@ -121,11 +121,11 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
   MeshBlock *pmb=pmy_block_;
   int size=0;
   if (ni.ox1!=0)
-    size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*nu_;
+    size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
   if (ni.ox2!=0)
-    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*nu_;
+    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
   if (ni.ox3!=0)
-    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*nu_;
+    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*(nu_+1);
   return size;
 }
 
