@@ -48,10 +48,12 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // CellCenteredBoundaryVarialbe objects
   // coarse_buf.InitWithShallowCopy(var_cc);
 
+  if (var_flux) { // allow nullptr to be passed for non-AMR/SMR variables w/o seg-faulting
+    x1flux.InitWithShallowCopy(var_flux[X1DIR]);
+    x2flux.InitWithShallowCopy(var_flux[X2DIR]);
+    x3flux.InitWithShallowCopy(var_flux[X3DIR]);
+  }
   // KGF: Taken from 2x functions in flux_correction_cc.cpp
-  x1flux.InitWithShallowCopy(var_flux[X1DIR]);
-  x2flux.InitWithShallowCopy(var_flux[X2DIR]);
-  x3flux.InitWithShallowCopy(var_flux[X3DIR]);
   // if (type==FLUX_HYDRO) {
   //   nl_=0, nu_=NHYDRO-1;
   //   x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
