@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
   int wtlim=0;
-  int ncstart=0;
+  int ncstart=0;  // KGF: set, but unused variable
   std::uint64_t mbcnt=0;
 
   //--- Step 1. --------------------------------------------------------------------------

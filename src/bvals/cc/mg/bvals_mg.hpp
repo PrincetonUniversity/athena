@@ -1,5 +1,5 @@
-#ifndef BVALS_BVALS_MG_HPP_
-#define BVALS_BVALS_MG_HPP_
+#ifndef BVALS_CC_MG_BVALS_MG_HPP_
+#define BVALS_CC_MG_BVALS_MG_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -81,4 +81,4 @@ class MGBoundaryValues : public BoundaryBase {
   friend class Multigrid;
 };
 
-#endif // BVALS_BVALS_MG_HPP_
+#endif // BVALS_CC_MG_BVALS_MG_HPP_

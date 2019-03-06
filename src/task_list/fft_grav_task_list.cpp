@@ -16,7 +16,6 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../bvals/cc/fft_grav/bvals_fft_grav.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
@@ -83,32 +82,26 @@ void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   return;
 }
 
-
 void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  // KGF
-  //pmb->pgrav->pgbval->StartReceivingFFTGravity();
+  // KGF: BoundaryValues wrapper version called in time_integrator.cpp
+  // KGF: what is "time" parameter ever used for in this function?
+  // ANSWER: shearing box capabilities, only. Remove this function parameter.
+  Real time=0;
+  pmb->pgrav->pgbval->StartReceivingAll(time);
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn
-//  \brief
-
-//----------------------------------------------------------------------------------------
-// Functions to start/end MPI communication
-
 enum TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb,
                                                                   int stage) {
-  // KGF
-  //pmb->pgrav->pgbval->ClearBoundary();
+  // KGF: BoundaryValues wrapper version called in time_integrator.cpp
+  pmb->pgrav->pgbval->ClearBoundaryAll();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb,
                                                                  int stage) {
+  // KGF: BoundaryBuffer version does not return bool (copied Multigrid implementation)
   pmb->pgrav->pgbval->SendBoundaryBuffers();
-  // if (pmb->pgrav->pgbval->SendBoundaryBuffers() == false)
-  //   return TASK_FAIL;
   return TASK_SUCCESS;
 }
 
@@ -121,7 +114,32 @@ enum TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *p
 
 enum TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb,
                                                            int stage) {
-  // KGF
-  //pmb->pgrav->pgbval->ApplyPhysicalBoundaries();
+  // KGF: FFT self-gravity can only handle periodic boundary conditions
+
+  // KGF: because Gravity() currently does not add the pointer:
+  // pgbval = new CellCenteredBoundaryVariable(pmy_block, phi, nullptr);
+  // to the BoundaryValues::bvars std::vector, it will probably be safe from:
+  //
+  // 1) dereferencing the nullptr corresponding to the non-existent fluxes when SMR/AMR is
+  // used an automatically tries to ProlongateBoundaries()
+  // 2) applying the inherited implementations of BoundaryPhysics functions
+  // CellCenteredBoundaryVariable::Outflow...*(), etc.
+  // 3) generally messing up the variable's own BoundaryData MPI requests and buffers
+
+  // through unnecessary initialization in Mesh::Initialize() and coupling to the
+  // time_integrator.cpp main task list's BoundaryValues function calls
+
+  // KGF: DOES FFT SELF-GRAVITY ACTUALLY NEED "enum BoundaryStatus flag[56]" that was
+  // copied from Multigrid's unique "struct MGBoundaryData"?
+
+  // Need to trap errors and incompatibilitis with FFT self-gravity when:
+  // 1) any boundary codition runtime flag is non-periodic
+  // 2) SMR/AMR is used at all (although we could safely use it only for MHD variables and
+  // prevent mesh refinement operations from automatically being applied to gravity phi,
+  // in the future)
+
+  // KGF: should this be moved to FFTGravity() (currently default ctor) in
+  // gravity/fft_gravity.hpp? What exactly is the Gravity class's shared role between FFT
+  // and Multigrid??
   return TASK_NEXT;
 }
