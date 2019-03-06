@@ -251,8 +251,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTask(RECV_HYDSH,SETB_HYD);
     }
 
-    // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      // compute MHD fluxes, integrate field
       AddTask(CALC_FLDFLX,CALC_HYDFLX);
       AddTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTask(RECV_FLDFLX,SEND_FLDFLX);
@@ -272,10 +272,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
         AddTask(SEND_FLDSH,SETB_FLD);
         AddTask(RECV_FLDSH,SETB_FLD);
       }
-    }
 
-    // prolongate, compute new primitives
-    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      // prolongate, compute new primitives
       if (pm->multilevel==true) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
         AddTask(CON2PRIM,PROLONG);
@@ -288,6 +286,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
         }
       }
     } else {  // HYDRO
+      // prolongate, compute new primitives
       if (pm->multilevel==true) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD));
         AddTask(CON2PRIM,PROLONG);
