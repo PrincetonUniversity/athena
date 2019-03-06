@@ -171,6 +171,10 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
   // KGF: hardcoded assumptions that bvar_index is always up-to-date, and that the same
   // vector elements and ordering exist for all MeshBlocks/BoundaryValues objects
 
+  // KGF: add check that bvar_index is initialized and valid. E.g. the mistake I made with
+  // FFT self-gravity for which pgbval was never added to bvars, and bvar_index was unset,
+  // breaking this function
+
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer

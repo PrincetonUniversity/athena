@@ -60,6 +60,10 @@ class Multigrid {
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
+  // KGF: Both btype=BNDRY_MGGRAV and btypef=BNDRY_MGGRAVF (face neighbors only)
+  // are passed to comm function calls in mg_task_list.cpp
+  // Only BNDRY_MGGRAV is handled in a case in InitBoundaryData(). Passed directly
+  // (not through btype) in MGBoundaryValues() ctor
   enum BoundaryType btype, btypef;
   Multigrid *next, *prev; // node links for doubly linked list
 
