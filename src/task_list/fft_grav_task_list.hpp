@@ -35,6 +35,7 @@ class FFTGravitySolverTaskList : public TaskList {
   enum TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus SendFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus ReceiveFFTGravityBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus SetFFTGravityBoundary(MeshBlock *pmb, int stage);
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 
  private:
@@ -51,6 +52,7 @@ const std::uint64_t CLEAR_GRAV=1ULL<<0;
 
 const std::uint64_t SEND_GRAV_BND=1ULL<<1;
 const std::uint64_t RECV_GRAV_BND=1ULL<<2;
-const std::uint64_t GRAV_PHYS_BND=1ULL<<3;
+const std::uint64_t SETB_GRAV_BND=1ULL<<3;
+const std::uint64_t GRAV_PHYS_BND=1ULL<<4;
 }
 #endif // TASK_LIST_FFT_GRAV_TASK_LIST_HPP_
