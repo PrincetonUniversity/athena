@@ -12,11 +12,9 @@
 
 // C++ headers
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../bvals.hpp"
-#include "../../bvals_interfaces.hpp"
 #include "../bvals_cc.hpp"
 
 //----------------------------------------------------------------------------------------

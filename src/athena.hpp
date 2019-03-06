@@ -104,6 +104,11 @@ struct EdgeField {
   AthenaArray<Real> x1e, x2e, x3e;
 };
 
+// KGF: possible alternative to runtime-polymorphism based on templating and overloading:
+// struct Hydro {
+//   AthenaArray<Real> u, w;
+// };
+
 //----------------------------------------------------------------------------------------
 // enums used everywhere
 
@@ -129,8 +134,8 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
                      TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8,
                      TAG_FLDFLX_POLE=9, TAG_GRAVITY=11, TAG_MGGRAV=12,
                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
-// KGF: what exactly are these used for? Only in InitBoundaryData(), except for 2x MG*
-// Except for the 2x MG* enums, these will become unnessary w/ the new class inheritance
+// KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
+// Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 enum BoundaryType {BNDRY_CC=0, BNDRY_FC=1, BNDRY_CC_FLCOR=2, BNDRY_FC_FLCOR=3,
                    BNDRY_MGGRAV=4, BNDRY_MGGRAVF=5};
 enum HydroBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
@@ -157,10 +162,11 @@ using MGBoundaryFunc = void (*)(
     AthenaArray<Real> &dst,Real time, int nvar,
     int is, int ie, int js, int je, int ks, int ke, int ngh,
     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-using GravityBoundaryFunc = void (*)(
-    MeshBlock *pmb, Coordinates *pco,
-    AthenaArray<Real> &dst, Real time, Real dt,
-    int is, int ie, int js, int je, int ks, int ke);
+// KGF: unused in pgen/, no EnrollUserGravBoundaryFunction() in Mesh class
+// using GravityBoundaryFunc = void (*)(
+//     MeshBlock *pmb, Coordinates *pco,
+//     AthenaArray<Real> &dst, Real time, Real dt,
+//     int is, int ie, int js, int je, int ks, int ke);
 using ViscosityCoeffFunc = void (*)(
     HydroDiffusion *phdif, MeshBlock *pmb,
     const  AthenaArray<Real> &w, const AthenaArray<Real> &bc,
