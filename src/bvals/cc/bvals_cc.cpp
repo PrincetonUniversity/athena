@@ -665,7 +665,7 @@ void CellCenteredBoundaryVariable::Initialize(void) {
               *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
               *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
       }
-      ssize*=NHYDRO; rsize*=NHYDRO;
+      ssize*=(nu_+1); rsize*=(nu_+1);
       // specify the offsets in the view point of the target block: flip ox? signs
 
       // Initialize persistent communication requests attached to specific BoundaryData
@@ -690,7 +690,7 @@ void CellCenteredBoundaryVariable::Initialize(void) {
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
         else // (nb.fid==4 || nb.fid==5)
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
-        size*=NHYDRO;
+        size*=(nu_+1);
         if (nb.level<mylevel) { // send to coarser
           tag=pbval_->CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
           if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
