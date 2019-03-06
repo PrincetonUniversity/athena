@@ -44,7 +44,7 @@ class FFTGravityDriver : public FFTDriver{
  public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
   ~FFTGravityDriver();
-  void Solve(int stage, int mode); // unlike MultigridDriver::Solve(), not inherited
+  void Solve(int stage, int mode); // KGF: unlike MultigridDriver::Solve(), not inherited
 
  private:
   Real four_pi_G_;
