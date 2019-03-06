@@ -130,10 +130,19 @@ enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
-enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
-                     TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8,
-                     TAG_FLDFLX_POLE=9, TAG_GRAVITY=11, TAG_MGGRAV=12,
-                     TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
+// enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1,
+//                      TAG_RAD=2, // unused on rad0 branch
+//                    TAG_CHEM=3, // chemistry: renamed to TAG_SPECIES; add TAG_SIXRAY=16
+//                      TAG_HYDFLX=4, TAG_FLDFLX=5,
+//                      TAG_RADFLX=6, // unused on rad0 branch
+//                      TAG_CHMFLX=7, // unused on chemistry branch
+//                      TAG_AMR=8,  // Mesh::CreateAMRMPITag() for load balancing
+//                      TAG_FLDFLX_POLE=9, // tricky; only used in
+//                                         // BoundaryValues::Initialize() for emf
+//                      TAG_GRAVITY=11, // FFT self-gravity
+//                      TAG_MGGRAV=12,  // phys=TAG_MGGRAV; in bvals_mg.cpp
+//                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
+
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 enum BoundaryType {BNDRY_CC=0, BNDRY_FC=1, BNDRY_CC_FLCOR=2, BNDRY_FC_FLCOR=3,
