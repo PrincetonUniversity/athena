@@ -25,12 +25,6 @@ void ShowConfig() {
   std::cout<<"  Equation of state:          " << EQUATION_OF_STATE << std::endl;
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
 
-  if (SHEARING_BOX) {
-    std::cout<<"  ShearingBox BCs:            ON" << std::endl;
-  } else {
-    std::cout<<"  ShearingBox BCs:            OFF" << std::endl;
-  }
-
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self Gravity:               FFT" << std::endl;
   } else if (SELF_GRAVITY_ENABLED == 2) {
@@ -38,7 +32,11 @@ void ShowConfig() {
   } else {
     std::cout<<"  Self Gravity:               OFF" << std::endl;
   }
-
+  if (SHEARING_BOX) {
+    std::cout<<"  ShearingBox BCs:            ON" << std::endl;
+  } else {
+    std::cout<<"  ShearingBox BCs:            OFF" << std::endl;
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
@@ -88,5 +86,8 @@ void ShowConfig() {
   std::cout<<"  HDF5 Output:                OFF" << std::endl;
 #endif
 
+  std::cout<<"  Compiler:                   " << COMPILED_WITH << std::endl;
+  std::cout<<"  Compilation command:        " << COMPILER_COMMAND
+           << COMPILED_WITH_OPTIONS << std::endl;
   return;
 }
