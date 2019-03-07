@@ -397,6 +397,8 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
+  // KGF: missing step 8
+
   //=== Step 9. === START OF MAIN INTEGRATION LOOP =======================================
   // For performance, there is no error handler protecting this step (except outputs)
 
