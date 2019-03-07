@@ -76,10 +76,16 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   flip_across_pole_=nullptr;
 
   InitBoundaryData(bd_var_, BNDRY_CC);
+#ifdef MPI_PARALLEL
+  cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+#endif
   if (pmy_mesh_->multilevel==true) { // SMR or AMR
     InitBoundaryData(bd_var_flcor_, BNDRY_CC_FLCOR);
     // KGF: if storing pointer instead of BoundaryData in BoundaryVariable base class:
     // pbd_var_flcor_ = &(bd_var_flcor_);
+#ifdef MPI_PARALLEL
+    cc_flx_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+#endif
   }
 }
 
@@ -670,12 +676,12 @@ void CellCenteredBoundaryVariable::Initialize(void) {
 
       // Initialize persistent communication requests attached to specific BoundaryData
       // cell-centered hydro: bd_hydro_
-      tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, TAG_HYDRO);
+      tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_phys_id_);
       if (bd_var_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
       MPI_Send_init(bd_var_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_send[nb.bufid]));
-      tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, TAG_HYDRO);
+      tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_phys_id_);
       if (bd_var_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_var_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
@@ -692,13 +698,13 @@ void CellCenteredBoundaryVariable::Initialize(void) {
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size*=(nu_+1);
         if (nb.level<mylevel) { // send to coarser
-          tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, TAG_HYDFLX);
+          tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_var_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_send[nb.bufid]));
         } else if (nb.level>mylevel) { // receive from finer
-          tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, TAG_HYDFLX);
+          tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_var_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,

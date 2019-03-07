@@ -178,6 +178,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   const bool *flip_across_pole_;
 
 #ifdef MPI_PARALLEL
+  int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
   MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif

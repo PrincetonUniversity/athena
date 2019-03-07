@@ -193,6 +193,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
   // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf)
 
+#ifdef MPI_PARALLEL
+  int cc_phys_id_, cc_flx_phys_id_;
+#endif
+
   // Shearingbox Hydro
   //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
   //   // working arrays of remapped quantities

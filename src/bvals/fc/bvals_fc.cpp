@@ -65,6 +65,14 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   InitBoundaryData(bd_var_, BNDRY_FC);
   InitBoundaryData(bd_var_flcor_, BNDRY_FC_FLCOR);
   // pbd_var_flcor_ = &(bd_fc_flcor_);
+#ifdef MPI_PARALLEL
+  fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);
+  fc_flx_phys_id_ = fc_phys_id_ + 1;
+  if (pbval_->num_north_polar_blocks_ > 0
+      || pbval_->num_south_polar_blocks_ > 0) {
+    fc_flx_pole_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+  }
+#endif
 
   // KGF: was not in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master
   if (pbval_->num_north_polar_blocks_ > 0) {
@@ -1215,12 +1223,12 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
         ssize=csize, rsize=fsize;
 
       // face-centered field: bd_var_
-      tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, TAG_FIELD);
+      tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_phys_id_);
       if (bd_var_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
       MPI_Send_init(bd_var_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_send[nb.bufid]));
-      tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, TAG_FIELD);
+      tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_phys_id_);
       if (bd_var_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_var_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
@@ -1279,12 +1287,12 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
       if (nb.level==mylevel) { // the same level
         if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE)
                                          && (pbval_->edge_flag_[nb.eid]==true))) {
-          tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, TAG_FLDFLX);
+          tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_var_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_send[nb.bufid]));
-          tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, TAG_FLDFLX);
+          tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_var_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
@@ -1292,14 +1300,14 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
         }
       }
       if (nb.level>mylevel) { // finer neighbor
-        tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, TAG_FLDFLX);
+        tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
         if (bd_var_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
           MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
         MPI_Recv_init(bd_var_flcor_.recv[nb.bufid],f2csize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_recv[nb.bufid]));
       }
       if (nb.level<mylevel) { // coarser neighbor
-        tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, TAG_FLDFLX);
+        tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_flx_phys_id_);
         if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
           MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
         MPI_Send_init(bd_var_flcor_.send[nb.bufid],f2csize,MPI_ATHENA_REAL,
@@ -1312,12 +1320,12 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
     if (nb.rank != Globals::my_rank) {
-      tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, TAG_FLDFLX_POLE);
+      tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_emf_north_send_[n]);
       MPI_Send_init(emf_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                     nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[n]);
-      tag = pbval_->CreateBvalsMPITag(pmb->lid, n, TAG_FLDFLX_POLE);
+      tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
       if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_emf_north_recv_[n]);
       MPI_Recv_init(emf_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -1327,12 +1335,12 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
     if (nb.rank != Globals::my_rank) {
-      tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, TAG_FLDFLX_POLE);
+      tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_emf_south_send_[n]);
       MPI_Send_init(emf_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                     nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[n]);
-      tag = pbval_->CreateBvalsMPITag(pmb->lid, n, TAG_FLDFLX_POLE);
+      tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
       if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
         MPI_Request_free(&req_emf_south_recv_[n]);
       MPI_Recv_init(emf_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,

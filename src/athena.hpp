@@ -143,6 +143,9 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 //                      TAG_MGGRAV=12,  // phys=TAG_MGGRAV; in bvals_mg.cpp
 //                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
 
+// KGF: temporary workaround for Multigrid
+#define TAG_MGGRAV 12
+
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 enum BoundaryType {BNDRY_CC=0, BNDRY_FC=1, BNDRY_CC_FLCOR=2, BNDRY_FC_FLCOR=3,
