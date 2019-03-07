@@ -115,25 +115,25 @@ def analyze():
         print(
             "Linear wave error between 2 and 1 cores too large for MG gravity",
             data[3][4],
-            data[0][4])
+            data[2][4])
         return False
     if abs(data[4][4]-data[2][4]) > 5.0e-4:
         print(
             "Linear wave error between 4 and 1 cores too large for MG gravity",
             data[4][4],
-            data[0][4])
+            data[2][4])
         return False
     if abs(data[6][4]-data[5][4]) > 5.0e-4:
         print(
             "Linear wave error between 2 and 1 cores too large for FFT gravity",
             data[6][4],
-            data[1][4])
+            data[5][4])
         return False
     if abs(data[7][4]-data[5][4]) > 5.0e-4:
         print(
             "Linear wave error between 4 and 1 cores too large for FFT gravity",
             data[7][4],
-            data[1][4])
+            data[5][4])
         return False
 
     return True
