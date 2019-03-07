@@ -1611,7 +1611,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
 int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
   // KGF: add check that input, output are positive, obey <= 31= MAX_NUM_PHYS
-  int start_id = bvar_next_phys_id_;
-  bvar_next_phys_id_ += num_phys;
+  int start_id = bvars_next_phys_id_;
+  bvars_next_phys_id_ += num_phys;
   return start_id;
 }
