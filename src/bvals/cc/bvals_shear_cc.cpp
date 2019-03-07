@@ -239,7 +239,7 @@
 //           pbl->pbval->shbox_inner_hydro_flag_[n]=BNDRY_ARRIVED;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_HYDRO, n);
+//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, TAG_SHBOX_HYDRO);
 //           MPI_Isend(send_innerbuf_hydro_[n],send_innersize_hydro_[n]*ssize,
 //                     MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_innersend_hydro_[n]);
@@ -302,8 +302,8 @@
 //           pbl->pbval->shbox_outer_hydro_flag_[n]=BNDRY_ARRIVED;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_HYDRO,
-//                         n+offset); //bufid for outer(inner): 2(0) and 3(1)
+//           int tag=CreateBvalsMPITag(send_outer_lid_[n],
+//                         n+offset, TAG_SHBOX_HYDRO); //bufid for outer(inner): 2(0) and 3(1)
 //           MPI_Isend(send_outerbuf_hydro_[n],send_outersize_hydro_[n]*ssize,
 //                     MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_outersend_hydro_[n]);

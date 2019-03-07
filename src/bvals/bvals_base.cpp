@@ -283,7 +283,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
+//! \fn int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys)
 //  \brief calculate an MPI tag for Bval communications
 //  MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
 
@@ -323,7 +323,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 // to uniquely determine the result of the "|" bitwise operation based on the values of
 // the operands (independent of representations).
 
-int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid) {
+int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys) {
   return (lid<<11) | (bufid<<5) | phys;
 }
 

@@ -79,7 +79,7 @@ class BoundaryBase {
   enum BoundaryFlag block_bcs[6];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
-  static int CreateBvalsMPITag(int lid, int phys, int bufid);
+  static int CreateBvalsMPITag(int lid, int bufid, int phys);
   static int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
   static int BufferID(int dim, bool multilevel);
   static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);

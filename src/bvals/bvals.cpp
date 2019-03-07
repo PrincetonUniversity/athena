@@ -781,18 +781,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 //         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
 //                           (recv_inner_rank_[n]!=-1)) {
 //           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
+//           tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_HYDRO);
 //           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
 //                     recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_innerrecv_hydro_[n]);
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             size = recv_innersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n);
+//             tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_FIELD);
 //             MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
 //                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_innerrecv_field_[n]);
 //             size = recv_innersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n);
+//             tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_EMF);
 //             MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
 //                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_innerrecv_emf_[n]);
@@ -807,18 +807,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 //         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
 //                           (recv_outer_rank_[n]!=-1)) {
 //           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n+offset);
+//           tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_HYDRO);
 //           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
 //                     recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_outerrecv_hydro_[n]);
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             size = recv_outersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n+offset);
+//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_FIELD);
 //             MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
 //                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_outerrecv_field_[n]);
 //             size = recv_outersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n+offset);
+//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_EMF);
 //             MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
 //                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_outerrecv_emf_[n]);

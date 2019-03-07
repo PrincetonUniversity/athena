@@ -247,7 +247,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type) {
         else if (nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;
       }
       size*=nvar;
-      int tag = CreateBvalsMPITag(pmy_mg_->lid_, phys, nb.bufid);
+      int tag = CreateBvalsMPITag(pmy_mg_->lid_, nb.bufid, phys);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
                 mgcomm_, &(pbd->req_recv[nb.bufid]));
     }
@@ -356,7 +356,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     }
 #ifdef MPI_PARALLEL
     else { // NOLINT
-      int tag=CreateBvalsMPITag(nb.lid, phys, nb.targetid);
+      int tag=CreateBvalsMPITag(nb.lid, nb.targetid, phys);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 mgcomm_, &(pbd->req_send[nb.bufid]));
     }

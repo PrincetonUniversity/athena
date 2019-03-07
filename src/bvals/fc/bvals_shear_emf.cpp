@@ -160,7 +160,7 @@
 //           pbl->pbval->shbox_inner_emf_flag_[n]=BNDRY_ARRIVED;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_EMF, n);
+//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, TAG_SHBOX_EMF);
 //           MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],
 //                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
 //                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
@@ -196,8 +196,7 @@
 //           pbl->pbval->shbox_outer_emf_flag_[n]=BNDRY_ARRIVED;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_EMF,
-//                                     n+offset);
+//           int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, TAG_SHBOX_EMF);
 //           MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],
 //                     MPI_ATHENA_REAL, send_outer_rank_[n], tag,
 //                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);

@@ -210,7 +210,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           pbl->pbval->shbox_inner_field_flag_[n]=BNDRY_ARRIVED;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_FIELD, n); // bufid = n
+          int tag=CreateBvalsMPITag(send_inner_lid_[n], n, TAG_SHBOX_FIELD); // bufid = n
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
 #endif
@@ -294,8 +294,8 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           pbl->pbval->shbox_outer_field_flag_[n]=BNDRY_ARRIVED;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          //bufid for outer(inner): 2(0) and 3(1)
-          int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_FIELD, n+offset);
+          // bufid for outer(inner): 2(0) and 3(1)
+          int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, TAG_SHBOX_FIELD);
           MPI_Isend(send_outerbuf_field_[n],send_outersize_field_[n],MPI_ATHENA_REAL,
                     send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
 #endif
