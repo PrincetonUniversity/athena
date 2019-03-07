@@ -56,7 +56,7 @@ eos_eos_hdf5_table
 eos_eos_riemann
     Regression test for general EOS 1D Riemann problems.
 
-eos_eos_table_test
+eos_eos_comparison
     Regression test for general EOS 1D Sod shock tube with ASCII plain-text tables.
 
 gr_compile_kerr_schild

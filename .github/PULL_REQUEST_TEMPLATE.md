@@ -10,7 +10,7 @@
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
 
-Pleas review the [`CONTRIBUTING.md`](../blob/master/CONTRIBUTING.md) file for detailed guidelines.
+Please review the [`CONTRIBUTING.md`](../blob/master/CONTRIBUTING.md) file for detailed guidelines.
 
 ## Description
 <!--- Describe your changes in detail -->

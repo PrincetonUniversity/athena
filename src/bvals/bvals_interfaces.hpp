@@ -59,7 +59,7 @@ const bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-struct NeighborBlock {
+struct NeighborBlock { // not aggregate nor POD type
   int rank, level;
   int gid, lid;
   int ox1, ox2, ox3;
@@ -81,7 +81,7 @@ struct NeighborBlock {
 //! \struct PolarNeighborBlock
 //  \brief Struct for describing neighbors around pole at same radius and polar angle
 
-struct PolarNeighborBlock {
+struct PolarNeighborBlock { // aggregate and POD
   int rank;    // MPI rank of neighbor
   int lid;     // local ID of neighbor
   int gid;     // global ID of neighbor
@@ -90,21 +90,33 @@ struct PolarNeighborBlock {
 
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
-struct NeighborIndexes {
+struct NeighborIndexes { // aggregate and POD
   int ox1, ox2, ox3; // 3-vector of integer offsets of indices, {-1, 0, +1}
   int fi1, fi2; // 2-vector for identifying refined neighbors, {0, 1}
   enum NeighborType type;
-  NeighborIndexes() {
-    ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-    type=NEIGHBOR_NONE;
-  }
+  // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
+  // NeighborIndexes() {
+  //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
+  //   type=NEIGHBOR_NONE;
+  // }
+
+  // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
+  // NeighborIndexes is a trivial type. Combined with standard layout --> POD. Advantages:
+
+  // No user-provided ctor: value initialization first performs zero initialization (then
+  // default initialization if ctor is non-trivial)
+
+  // Aggregate type: supports aggregate initialization {}
+
+  // POD type: safely copy objects via memcpy, no memory padding in the beginning of
+  // object, C portability, supports static initialization
 };
 
 //! \struct BoundaryData
 //  \brief structure storing boundary information
 // TODO(felker): rename/be more specific--- what kind of data/info?
 // one for each type of "enum BoundaryType" corresponding to BoundaryVariable
-struct BoundaryData {
+struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
   int nbmax;  // actual maximum number of neighboring MeshBlocks (at most 56)
   enum BoundaryStatus flag[56];
   // "static int bufid[56]" corresponds to these (for all BoundaryData instances per
