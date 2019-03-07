@@ -262,9 +262,42 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 //----------------------------------------------------------------------------------------
 //! \fn unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
 //  \brief calculate an MPI tag for Bval communications
-// tag = local id of destination (20) + bufid(6) + physics(5)
+//  MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
 
-unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid) {
+//  E.g. "lid" component of bitfield contains at least 4 bits (16-bit signed integer tag)
+//  0111 1111 1111 1111 = 32,767 in two's complement representation
+//  0 (lid:) 111 1 (bufid:) 111 111 (phys:) 1 1111
+//  For a 32-bit signed integer tag, the "lid" component of bitfield occupies 20 bits
+
+//  TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
+
+//  Note, the MPI standard requires signed integer tag, with MPI_TAG_UB>= 2^15-1 = 32,767
+//  (inclusive)
+
+//  Typically, MPI implementations set MPI_TAG_UB=INT_MAX for the system's data model
+//  ILP32, LLP64, LP64 have 32-bit "int", INT_MAX= 2^31 - 1 = 2,147,483,647
+//  LP32 has 16-bit "int",
+//  Cray MPI Library accomades MPI_TAG_UB=2^21 - 1 = 2,097,151
+//  Negative tags are explicitly forbidden by the MPI standard.
+// ---------------------------
+// KGF: The below procedure of generating unsigned integer bitfields from signed integer
+//  types and converting output to signed integer tags (required by MPI) is tricky and may
+//  lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB)
+
+//  << "left shift operator" (not genuine bitwise operator) has undefined behavior for
+//  negative operands. Otherwise, multiply first operand by 2^x, x= second operand
+
+// | "bitwise OR" operates on the bitwise representation of the operands, which for signed
+// integers are system dependent. Also, the operands' types may be implicitly promoted,
+// resulting in new representations versus what was expected with the original integer
+// types.
+
+// After type promotion, only unsigned integer types are guaranteed by the C/C++ standards
+// to uniquely determine the result of the "|" bitwise operation based on the values of
+// the operands (independent of representations).
+
+unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys,
+                                             int bufid) {
   return (lid<<11) | (bufid<<5) | phys;
 }
 

@@ -25,8 +25,8 @@
 #endif
 
 // forward declarations
-// TODO(felker): how many  of these foward declarations are needed now? can
-// bvals_interfaces.hpp suffice?
+// TODO(felker): how many of these foward declarations are actually needed now?
+// Can #include "./bvals_interfaces.hpp" suffice?
 class Mesh;
 class MeshBlock;
 class MeshBlockTree;
