@@ -2491,10 +2491,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
+//! \fn int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 //  \brief calculate an MPI tag for AMR block transfer
-// tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)
+// tag = local id of destination (remaining bits) + ox1(1 bit) + ox2(1 bit) + ox3(1 bit)
+//       + physics(5 bits)
 
-unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
-  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | TAG_AMR;
+// See comments on BoundaryBase::CreateBvalsMPITag()
+
+int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
+  // KGF: former "enum Athena_MPI_Tag" TAG_AMR=8 redefined to 0
+  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | 0;
 }

@@ -260,6 +260,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // std::vector<BoundaryVariable *>.push_back() for Hydro, Field, Gravity
   bvars.reserve(3);
 
+  // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
+  bvars_next_tag_ = 1;
+
   // KGF: BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers
 //   if (SHEARING_BOX) {
@@ -923,7 +926,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
   // to user-defined boundary function stored in function pointer array
+
   // downcast BoundaryVariable pointers to known derived class pointer types:
+  // RTTI via dynamic_cast
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars[0]);
   Hydro *ph = pmb->phydro;
@@ -1169,6 +1174,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   // FaceField &bfdst, AthenaArray<Real> &bcdst,
 
   // downcast BoundaryVariable pointers to known derived class pointer types:
+  // RTTI via dynamic_cast
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars[0]);
   Hydro *ph = pmb->phydro;

@@ -205,7 +205,7 @@ class Mesh {
                                  enum BoundaryFlag *block_bcs);
   void NewTimeStep();
   void AdaptiveMeshRefinement(ParameterInput *pin);
-  unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
+  int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
 

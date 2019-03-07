@@ -134,12 +134,31 @@ BoundaryBase::~BoundaryBase() {
 //                                                       int fi1, int fi2)
 //  \brief calculate a buffer identifier
 
-unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
-                                          int fi1, int fi2) {
+// See comments on BoundaryBase::CreateBvalsMPITag()
+
+int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
   // KGF: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
-  unsigned int ux1=(unsigned)(ox1+1);
-  unsigned int ux2=(unsigned)(ox2+1);
-  unsigned int ux3=(unsigned)(ox3+1);
+
+  // C-style cast: unnecessary due to implicit conversion (coercion)
+  // unsigned int ux1= (unsigned) (ox1+1);
+  // unsigned int ux2= (unsigned) (ox2+1);
+  // unsigned int ux3= (unsigned) (ox3+1);
+
+  // C++ functional cast expression: equivalent to C-style cast
+  // unsigned int ux1= unsigned int(ox1+1);
+  // unsigned int ux2= unsigned int(ox2+1);
+  // unsigned int ux3= unsigned int(ox3+1);
+
+  // C++-style cast: compile-time checking, easier to search, express programmer intent
+  // unsigned int ux1=static_cast<unsigned>(ox1+1);
+  // unsigned int ux2=static_cast<unsigned>(ox2+1);
+  // unsigned int ux3=static_cast<unsigned>(ox3+1);
+
+  // KGF: should proably omit any casts (C++-style or C-style)
+  int ux1 = (ox1+1);
+  int ux2 = (ox2+1);
+  int ux3 = (ox3+1);
+
   return (ux1<<6) | (ux2<<4) | (ux3<<2) | (fi1<<1) | fi2;
 }
 
@@ -264,9 +283,12 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
+//! \fn int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid)
 //  \brief calculate an MPI tag for Bval communications
 //  MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
+
+//  where the number of bits corresponds to the unsigned integer binary representation,
+//  even though larger signed integer types are used to compute the bitfield.
 
 //  E.g. "lid" component of bitfield contains at least 4 bits (16-bit signed integer tag)
 //  0111 1111 1111 1111 = 32,767 in two's complement representation
@@ -274,6 +296,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 //  For a 32-bit signed integer tag, the "lid" component of bitfield occupies 20 bits
 
 //  TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
+//  TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
 
 //  Note, the MPI standard requires signed integer tag, with MPI_TAG_UB>= 2^15-1 = 32,767
 //  (inclusive)
@@ -289,7 +312,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 //  lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB)
 
 //  << "left shift operator" (not genuine bitwise operator) has undefined behavior for
-//  negative operands. Otherwise, multiply first operand by 2^x, x= second operand
+//  negative operands. Otherwise, multiply first operand by 2^x, where x=second operand
 
 // | "bitwise OR" operates on the bitwise representation of the operands, which for signed
 // integers are system dependent. Also, the operands' types may be implicitly promoted,
@@ -300,8 +323,7 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 // to uniquely determine the result of the "|" bitwise operation based on the values of
 // the operands (independent of representations).
 
-unsigned int BoundaryBase::CreateBvalsMPITag(int lid, int phys,
-                                             int bufid) {
+int BoundaryBase::CreateBvalsMPITag(int lid, int phys, int bufid) {
   return (lid<<11) | (bufid<<5) | phys;
 }
 

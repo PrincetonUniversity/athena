@@ -79,8 +79,8 @@ class BoundaryBase {
   enum BoundaryFlag block_bcs[6];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
-  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
-  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+  static int CreateBvalsMPITag(int lid, int phys, int bufid);
+  static int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
   static int BufferID(int dim, bool multilevel);
   static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
 
@@ -165,6 +165,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered
   // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
   AthenaArray<Real> azimuthal_shift_;
+
+  // Store signed, but positive, integer corresponding to the next unused value to be used
+  // as unique tag ID for a BoundaryVariable object's MPI communication (formerly "enum
+  // Athena_MPI_Tag"). 5 bits of unsigned integer representation are currently reserved
+  // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
+  int bvars_next_tag_;
 
   BValFunc BoundaryFunction_[6];
 
