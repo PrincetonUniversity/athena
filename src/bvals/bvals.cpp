@@ -261,7 +261,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   bvars.reserve(3);
 
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
-  bvars_next_tag_ = 1;
+  bvars_next_phys_id_ = 1;
 
   // KGF: BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers
@@ -1607,4 +1607,11 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     }
   }
   return;
+}
+
+int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
+  // KGF: add check that input, output are positive, obey <= 31= MAX_NUM_PHYS
+  int start_id = bvar_next_phys_id_;
+  bvar_next_phys_id_ += num_phys;
+  return start_id;
 }

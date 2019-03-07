@@ -297,6 +297,8 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 //  TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
 //  TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
+//  TODO(felker) Store # of bits for each bitfield component in preprocessor macros
+//               TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
 
 //  Note, the MPI standard requires signed integer tag, with MPI_TAG_UB>= 2^15-1 = 32,767
 //  (inclusive)

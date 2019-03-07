@@ -145,7 +145,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void CheckPolarBoundaries(void);
 
   // doubly linked list of references to BoundaryVariable instances
-  std::vector<BoundaryVariable *> bvars;  // (num_bvars)
+  std::vector<BoundaryVariable *> bvars;  // preallocate (num_bvars)?
+  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects
+  int ReserveTagVariableIDs(int num_phys);
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
@@ -167,10 +169,10 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   AthenaArray<Real> azimuthal_shift_;
 
   // Store signed, but positive, integer corresponding to the next unused value to be used
-  // as unique tag ID for a BoundaryVariable object's MPI communication (formerly "enum
+  // as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
   // Athena_MPI_Tag"). 5 bits of unsigned integer representation are currently reserved
   // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
-  int bvars_next_tag_;
+  int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
 
   BValFunc BoundaryFunction_[6];
 
