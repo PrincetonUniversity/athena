@@ -34,17 +34,17 @@ struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace : char {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
-                          INNER_X3=4, OUTER_X3=5};
+enum BoundaryFace : char {FACE_UNDEF=-1, INNER_X1, OUTER_X1, INNER_X2, OUTER_X2,
+                          INNER_X3, OUTER_X3};
 
 // identifiers for boundary conditions
-enum BoundaryFlag : char {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1,
-                          OUTFLOW_BNDRY=2, USER_BNDRY=3, PERIODIC_BNDRY=4,
-                          POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6, SHEAR_PERIODIC_BNDRY=7};
+enum BoundaryFlag : char {BLOCK_BNDRY=-1, BNDRY_UNDEF, REFLECTING_BNDRY,
+                          OUTFLOW_BNDRY, USER_BNDRY, PERIODIC_BNDRY,
+                          POLAR_BNDRY, POLAR_BNDRY_WEDGE, SHEAR_PERIODIC_BNDRY};
 
 // identifiers for types of neighbor blocks
-enum NeighborType : char {NEIGHBOR_NONE=0, NEIGHBOR_FACE=1, NEIGHBOR_EDGE=2,
-                          NEIGHBOR_CORNER=3};
+enum NeighborType : char {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE,
+                          NEIGHBOR_CORNER};
 
 // identifiers for status of MPI boundary communications
 enum BoundaryStatus : char {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};

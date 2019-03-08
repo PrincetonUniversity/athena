@@ -32,7 +32,7 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
                      const AthenaArray<Real> &bc,
                      int is, int ie, int js, int je, int ks, int ke);
 
-enum {ISO=0, ANI=1};
+enum {ISO, ANI};
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro

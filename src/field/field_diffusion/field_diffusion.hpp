@@ -31,7 +31,7 @@ void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<R
                       const int ks, const int ke);
 
 // array indices for magnetic diffusivities
-enum {I_O=0, I_H=1, I_A=2};
+enum {I_O, I_H, I_A};
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
