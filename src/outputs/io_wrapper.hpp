@@ -24,7 +24,6 @@ using  IOWrapperFile = FILE*;
 #endif
 
 using IOWrapperSizeT = std::uint64_t;
-enum class ReadWriteMode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {
  public:
@@ -35,6 +34,10 @@ class IOWrapper {
   IOWrapper() {fh_=nullptr;}
 #endif
   ~IOWrapper() {}
+  // nested type definition of strongly typed/scoped enum in class definition
+  enum class ReadWriteMode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
+  // TODO(felker): rename 2x enumerators to drop IO_WRAPPER now that it is nested + scoped
+  //               and update Open() calls in restart.cpp and main.cpp
 
   // wrapper functions for basic I/O tasks
   int Open(const char* fname, enum ReadWriteMode rw);
