@@ -24,7 +24,7 @@ using  IOWrapperFile = FILE*;
 #endif
 
 using IOWrapperSizeT = std::uint64_t;
-enum class rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
+enum class ReadWriteMode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {
  public:
@@ -37,7 +37,7 @@ class IOWrapper {
   ~IOWrapper() {}
 
   // wrapper functions for basic I/O tasks
-  int Open(const char* fname, enum rwmode rw);
+  int Open(const char* fname, enum ReadWriteMode rw);
   std::size_t Read(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
   std::size_t Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
   std::size_t Read_at_all(void *buf, IOWrapperSizeT size,
