@@ -35,7 +35,7 @@
 #endif
 
 // Declarations
-enum class b_configs {vertical, normal, renorm};
+enum class MagneticFieldConfigs {vertical, normal, renorm};
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
@@ -73,7 +73,7 @@ Real psi, sin_psi, cos_psi;                 // tilt parameters
 Real log_h_edge, log_h_peak;                // calculated torus parameters
 Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
 Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
-b_configs field_config;                     // type of magnetic field
+MagneticFieldConfigs field_config;                     // type of magnetic field
 Real potential_cutoff;                      // sets region of torus to magnetize
 Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
 Real beta_min;                              // min ratio of gas to mag pressure
@@ -112,11 +112,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::string field_config_str = pin->GetString("problem",
                                                   "field_config");
     if (field_config_str == "vertical") {
-      field_config = vertical;
+      field_config = MagneticFieldConfigs::vertical;
     } else if (field_config_str == "normal") {
-      field_config = normal;
+      field_config = MagneticFieldConfigs::normal;
     } else if (field_config_str == "renorm") {
-      field_config = renorm;
+      field_config = MagneticFieldConfigs::renorm;
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Problem Generator\n"
@@ -125,7 +125,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
 
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       potential_cutoff = pin->GetReal("problem", "potential_cutoff");
       potential_r_pow = pin->GetReal("problem", "potential_r_pow");
       potential_rho_pow = pin->GetReal("problem", "potential_rho_pow");
@@ -352,7 +352,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     AthenaArray<Real> a_phi_edges, a_phi_cells;
     AthenaArray<Real> a_theta_0, a_theta_1, a_theta_2, a_theta_3;
     AthenaArray<Real> a_phi_0, a_phi_1, a_phi_2, a_phi_3;
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       if (psi == 0.0) {
         a_phi_edges.NewAthenaArray(ju+2, iu+2);
         a_phi_cells.NewAthenaArray(ju+1, iu+1);
@@ -370,7 +370,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real normalization;
 
     // Calculate vector potential in normal case
-    if (field_config == normal) {
+    if (field_config == MagneticFieldConfigs::normal) {
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
         for (int j=jl; j<=ju+1; ++j) {
@@ -505,7 +505,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
       // Calculate vector potential in renormalized case
-    } else if (field_config == renorm) {
+    } else if (field_config == MagneticFieldConfigs::renorm) {
       // Check that this is not a tilted disk
       if (psi != 0.0) {
         std::stringstream msg;
@@ -854,7 +854,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       bbr_theta_faces.DeleteAthenaArray();
 
       // Calculate normalization in vertical case
-    } else if (field_config == vertical) {
+    } else if (field_config == MagneticFieldConfigs::vertical) {
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
         normalization = 0.0;
@@ -871,7 +871,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Set magnetic fields according to vector potential in vertical case
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       // Set B^1
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -1231,7 +1231,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Free vector potential arrays
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       if (psi == 0.0) {
         a_phi_edges.DeleteAthenaArray();
         a_phi_cells.DeleteAthenaArray();
@@ -1798,14 +1798,14 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
       Real vary = y;
       Real varz = sin_psi * x + cos_psi * z;
       sin_vartheta_vals[p] = std::sqrt(SQR(varx) + SQR(vary));
-      if (field_config == vertical) {
+      if (field_config == MagneticFieldConfigs::vertical) {
         break;
       }
       cos_vartheta_vals[p] = varz;
       varphi = std::atan2(vary, varx);
     } else {
       sin_vartheta_vals[p] = std::abs(sin_theta_vals[p]);
-      if (field_config == vertical) {
+      if (field_config == MagneticFieldConfigs::vertical) {
         break;
       }
       cos_vartheta_vals[p] = cos_theta_vals[p];
@@ -1825,7 +1825,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
     if (log_h_vals[p] < 0.0) {
       return false;
     }
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       break;
     }
   }
@@ -1842,7 +1842,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
     if (p == 0) {
       pgas = pgas_over_rho * rho;
     }
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       break;
     }
     Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
@@ -1855,7 +1855,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
 
   // Account for tilt
   Real a_theta_vals[7], a_phi_vals[7];
-  if (field_config != vertical) {
+  if (field_config != MagneticFieldConfigs::vertical) {
     for (int p = 0; p < 7; ++p) {
       if (psi != 0.0) {
         Real dvarphi_dtheta = -sin_psi * sin_phi_vals[p] / SQR(sin_vartheta_vals[p]);
@@ -1874,7 +1874,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
   // Calculate cell-centered 3-magnetic field
   Real det = (SQR(r_c) + SQR(a) * SQR(cos_theta_vals[0])) * std::abs(sin_theta_vals[0]);
   Real bb1, bb2, bb3;
-  if (field_config != vertical) {
+  if (field_config != MagneticFieldConfigs::vertical) {
     bb1 = 1.0/det * ((a_phi_vals[4]-a_phi_vals[3]) / (theta_p-theta_m)
                      - (a_theta_vals[6]-a_theta_vals[5]) / (phi_p-phi_m));
     bb2 = -1.0/det * (a_phi_vals[2]-a_phi_vals[1]) / (r_p-r_m);
