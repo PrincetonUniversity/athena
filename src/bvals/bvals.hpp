@@ -34,20 +34,20 @@ struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace : char {FACE_UNDEF=-1, INNER_X1, OUTER_X1, INNER_X2, OUTER_X2,
-                          INNER_X3, OUTER_X3};
+enum class BoundaryFace : char {FACE_UNDEF=-1, INNER_X1, OUTER_X1, INNER_X2, OUTER_X2,
+                                INNER_X3, OUTER_X3};
 
 // identifiers for boundary conditions
-enum BoundaryFlag : char {BLOCK_BNDRY=-1, BNDRY_UNDEF, REFLECTING_BNDRY,
-                          OUTFLOW_BNDRY, USER_BNDRY, PERIODIC_BNDRY,
-                          POLAR_BNDRY, POLAR_BNDRY_WEDGE, SHEAR_PERIODIC_BNDRY};
+enum class BoundaryFlag : char {BLOCK_BNDRY=-1, BNDRY_UNDEF, REFLECTING_BNDRY,
+                                OUTFLOW_BNDRY, USER_BNDRY, PERIODIC_BNDRY,
+                                POLAR_BNDRY, POLAR_BNDRY_WEDGE, SHEAR_PERIODIC_BNDRY};
 
 // identifiers for types of neighbor blocks
-enum NeighborType : char {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE,
-                          NEIGHBOR_CORNER};
+enum class NeighborType : char {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE,
+                                NEIGHBOR_CORNER};
 
 // identifiers for status of MPI boundary communications
-enum BoundaryStatus : char {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
+enum class BoundaryStatus : char {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
 
 // flags to mark which variables are reversed across polar boundary
 static bool flip_across_pole_hydro[] = {false, false, true, true, false};

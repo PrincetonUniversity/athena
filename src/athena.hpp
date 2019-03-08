@@ -130,18 +130,18 @@ enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 // strongly-typed / scoped enums with explicit underlying type specification (C++11)
 
 // needed for arrays dimensioned over grid directions
-enum CoordinateDirection : char {X1DIR, X2DIR, X3DIR};
+enum class CoordinateDirection : char {X1DIR, X2DIR, X3DIR};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
-enum Athena_MPI_Tag : char {TAG_HYDRO, TAG_FIELD, TAG_RAD, TAG_CHEM, TAG_HYDFLX,
-                            TAG_FLDFLX, TAG_RADFLX, TAG_CHMFLX, TAG_AMR,
-                            TAG_FLDFLX_POLE, TAG_GRAVITY, TAG_MGGRAV,
-                            TAG_SHBOX_HYDRO, TAG_SHBOX_FIELD, TAG_SHBOX_EMF};
+enum class Athena_MPI_Tag : char {TAG_HYDRO, TAG_FIELD, TAG_RAD, TAG_CHEM, TAG_HYDFLX,
+                                  TAG_FLDFLX, TAG_RADFLX, TAG_CHMFLX, TAG_AMR,
+                                  TAG_FLDFLX_POLE, TAG_GRAVITY, TAG_MGGRAV,
+                                  TAG_SHBOX_HYDRO, TAG_SHBOX_FIELD, TAG_SHBOX_EMF};
 
-enum BoundaryType : char {BNDRY_HYDRO, BNDRY_FIELD, BNDRY_GRAVITY, BNDRY_MGGRAV,
-                          BNDRY_MGGRAVF, BNDRY_FLCOR, BNDRY_EMFCOR};
-enum CCBoundaryType : char {HYDRO_CONS, HYDRO_PRIM};
-enum FluxCorrectionType : char {FLUX_HYDRO};
+enum class BoundaryType : char {BNDRY_HYDRO, BNDRY_FIELD, BNDRY_GRAVITY, BNDRY_MGGRAV,
+                                BNDRY_MGGRAVF, BNDRY_FLCOR, BNDRY_EMFCOR};
+enum class CCBoundaryType : char {HYDRO_CONS, HYDRO_PRIM};
+enum class FluxCorrectionType : char {FLUX_HYDRO};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
