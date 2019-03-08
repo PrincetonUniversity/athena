@@ -3,35 +3,27 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file general_hydro.cpp
-//  \brief implements most but not all of the functions in class EquationOfState
-//         for general EOS hydrodynamics`
+//! \file general_mhd.cpp
+//  \brief (NOT YET IMPLEMENTED) implements most but not all of the functions in class
+// EquationOfState for general EOS MHD
 
 // These functions MUST be implemented in an additional file.
 //
 // Real EquationOfState::RiemannAsq(Real rho, Real hint)
-// Real EquationOfState::SimplePres(Real rho, Real egas)
-// Real EquationOfState::SimpleEgas(Real rho, Real pres)
-// Real EquationOfState::SimpleAsq(Real rho, Real pres)
-// void EquationOfState::PrepEOS(ParameterInput *pin);
-// void EquationOfState::CleanEOS();
+// Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
+// Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
+// Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+
 
 // C headers
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
-#include <limits>
 #include <sstream>
-#include <stdexcept> // std::invalid_argument
-#include <string>
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../field/field.hpp"
-#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
@@ -60,14 +52,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = 0.0; // Not actually used
-  PrepEOS(pin);
-}
-
-// destructor
-
-EquationOfState::~EquationOfState() {
-  CleanEOS();
+  gamma_ = pin->GetOrAddReal("hydro","gamma", 2.);
 }
 
 //----------------------------------------------------------------------------------------
@@ -117,7 +102,7 @@ void EquationOfState::ConservedToPrimitive(
         u_e = (u_e - ke - pb > energy_floor_) ?  u_e : energy_floor_ + ke + pb;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
-        w_p = SimplePres(u_d, u_e - ke - pb);
+        w_p = PresFromRhoEg(u_d, u_e - ke - pb);
       }
     }
   }
@@ -164,8 +149,8 @@ void EquationOfState::PrimitiveToConserved(
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
         // cellwise conversion
-        u_e = SimpleEgas(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
-                                            + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
+                                              + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
       }
     }
   }
@@ -178,7 +163,7 @@ void EquationOfState::PrimitiveToConserved(
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
-  return std::sqrt(SimpleAsq(prim[IDN], prim[IPR]));
+  return std::sqrt(AsqFromRhoP(prim[IDN], prim[IPR]));
 }
 
 //----------------------------------------------------------------------------------------
@@ -186,7 +171,7 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
-  Real asq = SimpleAsq(prim[IDN], prim[IPR]) * prim[IDN]; // Actually rho*asq
+  Real asq = AsqFromRhoP(prim[IDN], prim[IPR]) * prim[IDN]; // Actually rho*asq
   Real vaxsq = bx*bx;
   Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
   Real qsq = vaxsq + ct2 + asq;

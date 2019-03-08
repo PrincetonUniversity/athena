@@ -98,7 +98,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 4.0/std::sqrt(4.0*PI);
             bz = 2.0/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.0);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.0);
             } else {
               e0 = 1.0/gm1;
             }
@@ -111,7 +111,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 5.3452/std::sqrt(4.0*PI);
             bz = 2.6726/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.5844);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.5844);
             } else {
               e0 = 1.5844/gm1;
             }
@@ -124,7 +124,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 5.7083/std::sqrt(4.0*PI);
             bz = 1.7689/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.5844);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.5844);
             } else {
               e0 = 1.5844/gm1;
             }
@@ -137,7 +137,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 5.0074/std::sqrt(4.0*PI);
             bz = 1.5517/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.9317);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.9317);
             } else {
               e0 = 1.9317/gm1;
             }
@@ -158,7 +158,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 5.5713/std::sqrt(4.0*PI);
             bz = 1.7264/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.6558);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.6558);
             } else {
               e0 = 1.6558/gm1;
             }
@@ -171,7 +171,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 5.0987/std::sqrt(4.0*PI);
             bz = 2.8326/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 1.6558);
+              e0 = pmb->peos->EgasFromRhoP(d0, 1.6558);
             } else {
               e0 = 1.6558/gm1;
             }
@@ -184,7 +184,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             by = 3.6/std::sqrt(4.0*PI);
             bz = 2.0/std::sqrt(4.0*PI);
             if (GENERAL_EOS) {
-              e0 = pmb->peos->SimpleEgas(d0, 0.95);
+              e0 = pmb->peos->EgasFromRhoP(d0, 0.95);
             } else {
               e0 = 0.95/gm1;
             }
@@ -381,7 +381,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wl[IDN], wl[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wl[IDN], wl[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wl[IPR]/(peos->GetGamma() - 1.0);
                 }
@@ -395,7 +395,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wr[IDN], wr[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wr[IDN], wr[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wr[IPR]/(peos->GetGamma() - 1.0);
                 }
@@ -419,7 +419,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wl[IDN], wl[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wl[IDN], wl[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wl[IPR]/(peos->GetGamma() - 1.0);
                 }
@@ -435,7 +435,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wr[IDN], wr[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wr[IDN], wr[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wr[IPR]/(peos->GetGamma() - 1.0);
                 }
@@ -460,7 +460,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wl[IDN], wl[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wl[IDN], wl[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wl[IPR]/(peos->GetGamma() - 1.0);
                 }
@@ -478,7 +478,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               phydro->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
               if (NON_BAROTROPIC_EOS) {
                 if (GENERAL_EOS) {
-                  phydro->u(IEN,k,j,i) = peos->SimpleEgas(wr[IDN], wr[IPR]);
+                  phydro->u(IEN,k,j,i) = peos->EgasFromRhoP(wr[IDN], wr[IPR]);
                 } else {
                   phydro->u(IEN,k,j,i) = wr[IPR]/(peos->GetGamma() - 1.0);
                 }

@@ -1810,12 +1810,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         for (std::int64_t k=0; k<=lk; k++) {
           for (std::int64_t j=0; j<=lj; j++) {
             for (std::int64_t i=0; i<=1; i++) {
-              if ((lderef[n].lx1+i)==lderef[r].lx1
-                  && (lderef[n].lx2+j)==lderef[r].lx2
-                  && (lderef[n].lx3+k)==lderef[r].lx3
-                  &&  lderef[n].level ==lderef[r].level)
-                rr++;
-              r++;
+              if (r < tnderef) {
+                if ((lderef[n].lx1+i)==lderef[r].lx1
+                    && (lderef[n].lx2+j)==lderef[r].lx2
+                    && (lderef[n].lx3+k)==lderef[r].lx3
+                    &&  lderef[n].level ==lderef[r].level)
+                  rr++;
+                r++;
+              }
             }
           }
         }

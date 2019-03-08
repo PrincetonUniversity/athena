@@ -10,11 +10,10 @@
 // These functions MUST be implemented in an additional file.
 //
 // Real EquationOfState::RiemannAsq(Real rho, Real hint)
-// Real EquationOfState::SimplePres(Real rho, Real egas)
-// Real EquationOfState::SimpleEgas(Real rho, Real pres)
-// Real EquationOfState::SimpleAsq(Real rho, Real pres)
-// void EquationOfState::PrepEOS(ParameterInput *pin);
-// void EquationOfState::CleanEOS();
+// Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
+// Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
+// Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+
 
 // C headers
 
@@ -60,7 +59,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = 0.0; // Not actually used
+  gamma_ = pin->GetOrAddReal("hydro","gamma", 2.);
 }
 
 //----------------------------------------------------------------------------------------
@@ -105,7 +104,7 @@ void EquationOfState::ConservedToPrimitive(
         u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
-        w_p = SimplePres(u_d, u_e - ke);
+        w_p = PresFromRhoEg(u_d, u_e - ke);
       }
     }
   }
@@ -148,7 +147,7 @@ void EquationOfState::PrimitiveToConserved(
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
         // cellwise conversion
-        u_e = SimpleEgas(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
       }
     }
   }
@@ -161,7 +160,7 @@ void EquationOfState::PrimitiveToConserved(
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
-  return std::sqrt(SimpleAsq(prim[IDN], prim[IPR]));
+  return std::sqrt(AsqFromRhoP(prim[IDN], prim[IPR]));
 }
 
 //---------------------------------------------------------------------------------------

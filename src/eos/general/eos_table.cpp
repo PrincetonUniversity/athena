@@ -29,23 +29,23 @@
 void EosTestLoop(EquationOfState *peos);
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return interpolated gas pressure
-Real EquationOfState::SimplePres(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   return ptable->GetEosData(0, egas, rho) * egas;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return interpolated internal energy density
-Real EquationOfState::SimpleEgas(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   return ptable->GetEosData(1, pres, rho) * pres;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return interpolated adiabatic sound speed squared
-Real EquationOfState::SimpleAsq(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return ptable->GetEosData(2, pres, rho) * pres / rho;
 }
 

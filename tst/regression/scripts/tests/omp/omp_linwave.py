@@ -7,6 +7,10 @@
 # Modules
 import os
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++ w/wo OpenMP
@@ -47,13 +51,7 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
     print(data[0][4], data[1][4], data[2][4], data[3][4])
 

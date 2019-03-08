@@ -9,6 +9,10 @@
 import scripts.utils.athena as athena
 from math import log
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('vl2', '2c'), ('vl2', '3'), ('rk2', '3c'),
@@ -80,18 +84,13 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
     for ((torder, xorder), err_tol, rate_tol) in zip(solvers, error_tols, rate_tols):
         # effectively list.pop() range of rows for this solver configuration
         solver_results = np.array(data[0:nrows_per_solver])
-        del data[0:nrows_per_solver]
+        data = np.delete(data, np.s_[0:nrows_per_solver], 0)
+
         print(err_tol[0], err_tol[1])
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------

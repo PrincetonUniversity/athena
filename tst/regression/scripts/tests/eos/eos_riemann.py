@@ -3,13 +3,13 @@ Regression test for general EOS 1D Riemann problems.
 """
 
 # Modules
-import sys                                     # standard Python module to change path
-import scripts.utils.athena as athena          # utilities for running Athena++
-import scripts.utils.comparison as comparison  # more utilities explicitly for testing
+import sys
+import scripts.utils.athena as athena
+import scripts.utils.comparison as comparison
 from scripts.utils.RiemannSolver.riemann import riemann_problem
-sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read  # noqa                     # utilities for reading Athena++ data
-
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 _tests = [[1e-07, 0.00, 0.150, 1.25e-8, 0., 0.062, .25],
           [4e-06, 0.00, 0.120, 4e-08, 0.00, 0.019, 0.3],

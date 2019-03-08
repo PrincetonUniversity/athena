@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
 //! \file hydrogen_hydro.cpp
-//  \brief implements functions in class EquationOfState for an EOS lookup table
+//  \brief implements functions in class EquationOfState for simple hydrogen EOS
 //======================================================================================
 
 // C headers
@@ -139,27 +139,27 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimplePres(Real rho, Real egas)
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return gas pressure
-Real EquationOfState::SimplePres(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   Real es = egas / rho;
   Real T = invert(*e_of_rho_T, rho, egas, std::max(es-1.,.1*es)/3.,my_1pe*2.*es/3.);
   return P_of_rho_T(rho, T);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleEgas(Real rho, Real pres)
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return internal energy density
-Real EquationOfState::SimpleEgas(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   Real ps = pres / rho;
   Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return e_of_rho_T(rho, T);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::SimpleAsq(Real rho, Real pres)
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return adiabatic sound speed squared
-Real EquationOfState::SimpleAsq(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   Real ps = pres / rho;
   Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
   return asq_(rho, T);
