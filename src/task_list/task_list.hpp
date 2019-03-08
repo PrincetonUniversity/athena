@@ -24,8 +24,8 @@ class TaskList;
 class GravitySolverTaskList;
 
 // return codes for functions working on individual Tasks and TaskList
-enum class TaskStatus : char {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
-enum class TaskListStatus : char {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
+enum class TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
+enum class TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
 //----------------------------------------------------------------------------------------
 //! \struct IntegratorWeight

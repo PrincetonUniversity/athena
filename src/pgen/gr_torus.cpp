@@ -35,7 +35,7 @@
 #endif
 
 // Declarations
-enum class b_configs : char {vertical, normal, renorm};
+enum class b_configs {vertical, normal, renorm};
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
