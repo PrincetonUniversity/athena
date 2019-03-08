@@ -172,8 +172,10 @@ void FFTDriver::InitializeFFTBlock(bool set_norm) {
 }
 
 void FFTDriver::QuickCreatePlan() {
-  pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
-  pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
+  pmy_fb->fplan_ = pmy_fb->QuickCreatePlan(
+      pmy_fb->in_, FFTBlock::AthenaFFTDirection::AthenaFFTForward);
+  pmy_fb->bplan_ = pmy_fb->QuickCreatePlan(
+      pmy_fb->in_, FFTBlock::AthenaFFTDirection::AthenaFFTBackward);
 
   return;
 }
