@@ -20,6 +20,7 @@
 // C++ headers
 #include <cmath>   // sqrt()
 #include <sstream>
+#include <limits>
 
 // Athena++ headers
 #include "../../athena.hpp"
