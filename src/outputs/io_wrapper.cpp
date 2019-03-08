@@ -28,7 +28,7 @@
 int IOWrapper::Open(const char* fname, enum ReadWriteMode rw) {
   std::stringstream msg;
 
-  if (rw==IO_WRAPPER_READ_MODE) {
+  if (rw==ReadWriteMode::IO_WRAPPER_READ_MODE) {
 #ifdef MPI_PARALLEL
     // NOLINTNEXTLINE
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh_)
@@ -43,7 +43,7 @@ int IOWrapper::Open(const char* fname, enum ReadWriteMode rw) {
         return false;
       }
 
-  } else if (rw==IO_WRAPPER_WRITE_MODE) {
+  } else if (rw==ReadWriteMode::IO_WRAPPER_WRITE_MODE) {
 #ifdef MPI_PARALLEL
     MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
     // NOLINTNEXTLINE
