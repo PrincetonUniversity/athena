@@ -24,7 +24,7 @@ using  IOWrapperFile = FILE*;
 #endif
 
 using IOWrapperSizeT = std::uint64_t;
-enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
+enum rwmode : char {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {
  public:

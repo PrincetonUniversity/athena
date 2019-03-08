@@ -29,7 +29,7 @@
 #endif // MPI_PARALLEL
 #endif
 
-enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
+enum AthenaFFTDirection : char { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
 
 #ifdef FFT
 typedef fftw_complex AthenaFFTComplex;

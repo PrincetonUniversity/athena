@@ -106,6 +106,12 @@ struct EdgeField {
 
 //----------------------------------------------------------------------------------------
 // enums used everywhere
+// TODO(felker): C++ Core Guidelines Enum.5: Don’t use ALL_CAPS for enumerators
+// (avoid clashes with preprocessor macros)
+// TODO(felker): C++ Core Guidelines Enum.6: Avoid unnamed enumerations
+// either use "constexpr int idn=0;" or name a scoped enum type with underlying "char"
+
+// anonymous enums
 
 // array indices for conserved: density, momemtum, total energy, face-centered field
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
@@ -121,19 +127,21 @@ enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 
+// strongly-typed / scoped enums with explicit underlying type specification (C++11)
+
 // needed for arrays dimensioned over grid directions
-enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
+enum CoordinateDirection : char {X1DIR=0, X2DIR=1, X3DIR=2};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
-enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
+enum Athena_MPI_Tag : char {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
                      TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8,
                      TAG_FLDFLX_POLE=9, TAG_GRAVITY=11, TAG_MGGRAV=12,
                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
 
-enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
+enum BoundaryType : char {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
                    BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};
-enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
-enum FluxCorrectionType {FLUX_HYDRO=0};
+enum CCBoundaryType : char {HYDRO_CONS=0, HYDRO_PRIM=1};
+enum FluxCorrectionType : char {FLUX_HYDRO=0};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
