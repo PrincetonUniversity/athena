@@ -34,20 +34,20 @@ struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
-enum class BoundaryFace {FACE_UNDEF=-1, INNER_X1, OUTER_X1, INNER_X2, OUTER_X2,
-                                INNER_X3, OUTER_X3};
+enum class BoundaryFace {face_undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
+                         inner_x3, outer_x3};
 
 // identifiers for boundary conditions
-enum class BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF, REFLECTING_BNDRY,
-                                OUTFLOW_BNDRY, USER_BNDRY, PERIODIC_BNDRY,
-                                POLAR_BNDRY, POLAR_BNDRY_WEDGE, SHEAR_PERIODIC_BNDRY};
+enum class BoundaryFlag {block=-1, undef, reflecting,
+                         outflow, user, periodic,
+                         polar, polar_wedge, shear_periodic};
 
 // identifiers for types of neighbor blocks
-enum class NeighborType {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE,
-                                NEIGHBOR_CORNER};
+enum class NeighborType {neighbor_none, neighbor_face, neighbor_edge,
+                         neighbor_corner};
 
 // identifiers for status of MPI boundary communications
-enum class BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
+enum class BoundaryStatus {waiting, arrived, completed};
 
 // flags to mark which variables are reversed across polar boundary
 static bool flip_across_pole_hydro[] = {false, false, true, true, false};
