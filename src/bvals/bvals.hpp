@@ -48,8 +48,8 @@ enum class NeighborType {none, face, edge, corner};
 enum class BoundaryStatus {waiting, arrived, completed};
 
 // flags to mark which variables are reversed across polar boundary
-static bool flip_across_pole_hydro[] = {false, false, true, true, false};
-static bool flip_across_pole_field[] = {false, true, true};
+static constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false};
+static constexpr const bool flip_across_pole_field[] = {false, true, true};
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
