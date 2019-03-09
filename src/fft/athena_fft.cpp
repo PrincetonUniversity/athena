@@ -232,7 +232,7 @@ void FFTBlock::ApplyKernel(int mode) {
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
                                          enum AthenaFFTDirection dir) {
   int nfast,nmid,nslow;
-  if (dir == AthenaFFTDirection::AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     nfast = f_in_->Nx[0]; nmid = f_in_->Nx[1]; nslow = f_in_->Nx[2];
   } else {
     nfast = b_in_->Nx[0]; nmid = b_in_->Nx[1]; nslow = b_in_->Nx[2];
@@ -253,7 +253,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
   plan = new AthenaFFTPlan;
   plan->dir = dir;
   plan->dim = dim_;
-  if (dir == AthenaFFTDirection::AthenaFFTForward)
+  if (dir == AthenaFFTDirection::forward)
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
   else
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -277,7 +277,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
-  if (dir == AthenaFFTDirection::AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     plan->dir = FFTW_FORWARD;
     plan->plan2d = fft_2d_create_plan(MPI_COMM_WORLD,nfast,nslow,
                                       f_in_->is[0],f_in_->ie[0],
@@ -301,7 +301,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->plan3d=nullptr;
   plan->plan=nullptr;
 #else // MPI_PARALLEL
-  if (dir == AthenaFFTDirection::AthenaFFTForward)
+  if (dir == AthenaFFTDirection::forward)
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   else
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);
@@ -329,7 +329,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 #ifdef MPI_PARALLEL
   int nbuf;
   int ois[3], oie[3];
-  if (dir == AthenaFFTDirection::AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     for (int l=0; l<dim_; l++) {
       ois[l]=f_out_->is[(l+(dim_-permute1_)) % dim_];
       oie[l]=f_out_->ie[(l+(dim_-permute1_)) % dim_];
@@ -361,7 +361,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
   plan->plan2d=nullptr;
   plan->plan=nullptr;
 #else // MPI_PARALLEL
-  if (dir == AthenaFFTDirection::AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   } else {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);

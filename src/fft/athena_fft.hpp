@@ -125,8 +125,7 @@ class FFTBlock {
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
                AthenaFFTComplex *out_data);
 
-  // KGF: rename enumerators now that type is scoped
-  enum class AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
+  enum class AthenaFFTDirection {forward=-1, backward=1};
 
   AthenaFFTPlan *QuickCreatePlan(AthenaFFTComplex *data,enum AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(int nfast, AthenaFFTComplex *data,
