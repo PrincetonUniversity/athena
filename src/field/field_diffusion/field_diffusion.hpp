@@ -25,13 +25,11 @@ class Coordinates;
 
 class FieldDiffusion;
 
+// currently must be free function for compatibility with user-defined fn via fn pointers
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                       const AthenaArray<Real> &bmag,
                       const int is, const int ie, const int js, const int je,
                       const int ks, const int ke);
-
-// array indices for magnetic diffusivities
-enum {I_O, I_H, I_A};
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
@@ -51,6 +49,17 @@ class FieldDiffusion {
 
   AthenaArray<Real> jfx,jfy,jfz; // interface current density (for the HLL Riemann solver)
   AthenaArray<Real> jcc;     // cell-centered current density (for the integrator)
+
+  // array indices for magnetic diffusion types
+  // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
+  enum DiffType {ohmic, hall, ambipolar};
+  // TODO(felker) Unlike HydroDiffusion::DiffType, not using optional "unscoped enum name"
+  // qualifier when referencing the enumerators in other files. Be consistent
+
+  // alternative to unscoped (possibly anonymous) enum for int constants:
+  // static constexpr int n_ohmic = 0;
+  // static constexpr int n_hall = 1;
+  // static constexpr int n_ambi = 2;
 
   // functions
   void CalcFieldDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
