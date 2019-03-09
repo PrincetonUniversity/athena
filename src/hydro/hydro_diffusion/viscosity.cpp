@@ -53,7 +53,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
       FaceXdy(k,j,is,ie+1,prim,fy_);
       FaceXdz(k,j,is,ie+1,prim,fz_);
       for (int i=is; i<=ie+1; ++i) {
-        nu1  = 0.5*(nu(DiffType::iso,k,j,i)   + nu(DiffType::iso,k,j,i-1));
+        nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)   + nu(DiffProcess::iso,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j,i-1));
         flx1 = -denf*nu1*(fx_(i) + nuiso2*0.5*(divv_(k,j,i) + divv_(k,j,i-1)));
         flx2 = -denf*nu1*fy_(i);
@@ -86,7 +86,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceYdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for (int i=il; i<=iu; i++) {
-          nu1  = 0.5*(nu(DiffType::iso,k,j,i)    + nu(DiffType::iso,k,j-1,i));
+          nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)    + nu(DiffProcess::iso,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j-1,i)+ prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*(fy_(i) + nuiso2*0.5*(divv_(k,j-1,i) + divv_(k,j,i)));
@@ -108,7 +108,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
     FaceYdz(ks,js,is,ie,prim,fz_);
     // store fluxes
     for (int i=il; i<=iu; i++) {
-      nu1  = nu(DiffType::iso,ks,js,i);
+      nu1  = nu(DiffProcess::iso,ks,js,i);
       denf = prim(IDN,ks,js,i);
       flx1 = -denf*nu1*fx_(i);
       flx2 = -denf*nu1*(fy_(i) + nuiso2*divv_(ks,js,i));
@@ -147,7 +147,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
         FaceZdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for (int i=il; i<=iu; i++) {
-          nu1  = 0.5*(nu(DiffType::iso,k,j,i)     + nu(DiffType::iso,k-1,j,i));
+          nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)     + nu(DiffProcess::iso,k-1,j,i));
           denf = 0.5*(prim(IDN,k-1,j,i) + prim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*fy_(i);
@@ -170,7 +170,7 @@ void HydroDiffusion::ViscousFlux_iso(const AthenaArray<Real> &prim,
       FaceZdz(ks,j,is,ie,prim,fz_);
       // store fluxes
       for (int i=il; i<=iu; i++) {
-        nu1 = nu(DiffType::iso,ks,j,i);
+        nu1 = nu(DiffProcess::iso,ks,j,i);
         denf = prim(IDN,ks,j,i);
         flx1 = -denf*nu1*fx_(i);
         flx2 = -denf*nu1*fy_(i);
@@ -486,7 +486,7 @@ void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Rea
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->nu(HydroDiffusion::DiffType::iso,k,j,i) = phdif->nu_iso;
+          phdif->nu(HydroDiffusion::DiffProcess::iso,k,j,i) = phdif->nu_iso;
       }
     }
   }
@@ -495,7 +495,7 @@ void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Rea
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->nu(HydroDiffusion::DiffType::aniso,k,j,i) = phdif->nu_aniso;
+          phdif->nu(HydroDiffusion::DiffProcess::aniso,k,j,i) = phdif->nu_aniso;
       }
     }
   }

@@ -50,9 +50,9 @@ class HydroDiffusion {
   AthenaArray<Real> cndflx[3]; // thermal stress tensor
   AthenaArray<Real> kappa; // conduction array
 
-  // array indices for hydro diffusion (conduction & viscosity) types: directionality
+  // array indices for hydro diffusion (conduction & viscosity) variants: directionality
   // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
-  enum DiffType {iso, aniso};
+  enum DiffProcess {iso, aniso};
 
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,

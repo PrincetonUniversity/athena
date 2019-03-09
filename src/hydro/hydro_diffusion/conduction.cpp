@@ -45,7 +45,7 @@ void HydroDiffusion::ThermalFlux_iso(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        kappaf = 0.5*(kappa(DiffType::iso,k,j,i)+kappa(DiffType::iso,k,j,i-1));
+        kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i)+kappa(DiffProcess::iso,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
         dTdx = (prim(IPR,k,j,i)/prim(IDN,k,j,i) - prim(IPR,k,j,i-1)/
                 prim(IDN,k,j,i-1))/pco_->dx1v(i-1);
@@ -67,7 +67,7 @@ void HydroDiffusion::ThermalFlux_iso(
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          kappaf = 0.5*(kappa(DiffType::iso,k,j,i)+kappa(DiffType::iso,k,j-1,i));
+          kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i)+kappa(DiffProcess::iso,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j-1,i));
           dTdy = (prim(IPR,k,j,i)/prim(IDN,k,j,i)-prim(IPR,k,j-1,i)/
                   prim(IDN,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1);
@@ -90,7 +90,7 @@ void HydroDiffusion::ThermalFlux_iso(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          kappaf = 0.5*(kappa(DiffType::iso,k,j,i)+kappa(DiffType::iso,k-1,j,i));
+          kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i)+kappa(DiffProcess::iso,k-1,j,i));
           denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k-1,j,i));
           dTdz = (prim(IPR,k,j,i)/prim(IDN,k,j,i)-prim(IPR,k-1,j,i)/
                   prim(IDN,k-1,j,i))/pco_->dx3v(k-1)/pco_->h31v(i)/pco_->h32v(j);
@@ -125,7 +125,7 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->kappa(HydroDiffusion::DiffType::iso,k,j,i) = phdif->kappa_iso;
+          phdif->kappa(HydroDiffusion::DiffProcess::iso,k,j,i) = phdif->kappa_iso;
       }
     }
   }
@@ -134,7 +134,7 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i)
-          phdif->kappa(HydroDiffusion::DiffType::aniso,k,j,i) = phdif->kappa_aniso;
+          phdif->kappa(HydroDiffusion::DiffProcess::aniso,k,j,i) = phdif->kappa_aniso;
       }
     }
   }
