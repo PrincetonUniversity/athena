@@ -34,17 +34,15 @@ struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
-enum class BoundaryFace {face_undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
+enum class BoundaryFace {undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
                          inner_x3, outer_x3};
 
 // identifiers for boundary conditions
-enum class BoundaryFlag {block=-1, undef, reflecting,
-                         outflow, user, periodic,
+enum class BoundaryFlag {block=-1, undef, reflecting, outflow, user, periodic,
                          polar, polar_wedge, shear_periodic};
 
 // identifiers for types of neighbor blocks
-enum class NeighborType {neighbor_none, neighbor_face, neighbor_edge,
-                         neighbor_corner};
+enum class NeighborType {none, face, edge, corner};
 
 // identifiers for status of MPI boundary communications
 enum class BoundaryStatus {waiting, arrived, completed};
@@ -65,7 +63,8 @@ struct NeighborBlock { // not aggregate nor POD type
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
                     fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
-                    type(NEIGHBOR_NONE), fid(FACE_UNDEF), polar(false), shear(false) {}
+                    type(NeighborType::none), fid(BoundaryFace::undef), polar(false),
+                    shear(false) {}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
@@ -90,7 +89,7 @@ struct NeighborIndexes { // aggregate and POD
   // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
   // NeighborIndexes() {
   //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-  //   type=NEIGHBOR_NONE;
+  //   type=NeighborType::none;
   // }
 
   // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
