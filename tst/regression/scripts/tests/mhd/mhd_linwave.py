@@ -68,13 +68,19 @@ def run(**kwargs):
                          'problem/compute_error=true']
             athena.run('mhd/athinput.linear_wave3d', arguments)
         # L/R-going fast wave
-        for w in (0, 6):
-            arguments = ['time/ncycle_out=100',
-                         'problem/wave_flag=' + repr(w),
-                         'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=true']
-            athena.run('mhd/athinput.linear_wave3d', arguments)
+        w = 0
+        arguments = ['time/ncycle_out=100',
+                     'problem/wave_flag=' + repr(w),
+                     'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=true']
+        athena.run('mhd/athinput.linear_wave3d', arguments)
+        w = 6
+        arguments = ['time/ncycle_out=100',
+                     'problem/wave_flag=' + repr(w),
+                     'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=true']
+        athena.run('mhd/athinput.linear_wave3d', arguments, lcov_test_suffix=flux)
         # clear object directory
         os.system('rm -rf obj')
+    return 'skip_lcov'
 
 
 # Analyze outputs
