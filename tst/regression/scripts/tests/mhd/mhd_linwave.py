@@ -8,7 +8,7 @@
 import scripts.utils.athena as athena
 import sys
 import os
-from shutil import move, copy2
+from shutil import move
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
@@ -95,9 +95,8 @@ def analyze():
             analyze_status = False
         # check error in M1 for Alfven wave since density constant
         if data[3][15]/data[3][6] > 8.0:
-            print(flux_str +
-                "maximum relative error in L-going Alfven wave too large",
-                data[3][15]/data[3][6])
+            print(flux_str + "maximum relative error in L-going Alfven wave too large",
+                  data[3][15]/data[3][6])
         if data[5][13] > 8.0:
             print(flux_str + "maximum relative error in L-going slow wave too large",
                   data[5][13])
@@ -138,7 +137,8 @@ def analyze():
 
         # check error identical for waves in each direction
         if data[8][4] != data[9][4]:
-            print(flux_str + "error in L/R-going fast waves not equal", data[8][4], data[9][4])
+            print(flux_str + "error in L/R-going fast waves not equal",
+                  data[8][4], data[9][4])
             analyze_status = False
 
     return analyze_status
