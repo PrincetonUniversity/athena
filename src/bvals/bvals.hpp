@@ -33,6 +33,7 @@ class Coordinates;
 struct RegionSize;
 struct FaceField;
 
+// TODO(felker): nest these enum definitions inside bvals/ classes, when possible.
 // identifiers for all 6 faces of a MeshBlock
 enum class BoundaryFace {undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
                          inner_x3, outer_x3};
