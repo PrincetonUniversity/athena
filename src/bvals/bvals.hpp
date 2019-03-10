@@ -41,8 +41,8 @@ enum class BoundaryFace {undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
 enum class BoundaryFlag {block=-1, undef, reflecting, outflow, user, periodic,
                          polar, polar_wedge, shear_periodic};
 
-// identifiers for types of neighbor blocks
-enum class NeighborType {none, face, edge, corner};
+// identifiers for types of neighbor blocks (connectivity with current MeshBlock)
+enum class NeighborConnect {none, face, edge, corner}; // degenerate/shared part of block
 
 // identifiers for status of MPI boundary communications
 enum class BoundaryStatus {waiting, arrived, completed};
@@ -57,16 +57,16 @@ static constexpr const bool flip_across_pole_field[] = {false, true, true};
 
 struct NeighborBlock { // not aggregate nor POD type
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
-  enum NeighborType type;
+  enum NeighborConnect type;
   enum BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
                     fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
-                    type(NeighborType::none), fid(BoundaryFace::undef), polar(false),
+                    type(NeighborConnect::none), fid(BoundaryFace::undef), polar(false),
                     shear(false) {}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, enum NeighborType itype, int ibid, int itargetid,
+                   int iox3, enum NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
 };
 
@@ -81,15 +81,15 @@ struct PolarNeighborBlock { // aggregate and POD
   bool north;  // flag that is true for North pole and false for South pole
 };
 
-//! \struct NeighborType
+//! \struct NeighborIndexes
 //  \brief data to describe MeshBlock neighbors
 struct NeighborIndexes { // aggregate and POD
   int ox1, ox2, ox3, fi1, fi2;
-  enum NeighborType type;
+  enum NeighborConnect type;
   // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
   // NeighborIndexes() {
   //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-  //   type=NeighborType::none;
+  //   type=NeighborConnect::none;
   // }
 
   // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
