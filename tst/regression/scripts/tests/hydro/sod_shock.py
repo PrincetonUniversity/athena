@@ -84,8 +84,8 @@ def analyze():
                     for i, xd in enumerate(_xdirs[1:]):
                         cycles = data[row][3], data[row + (i + 1) * len(_nxs)][3]
                         if cycles[0] != cycles[1]:
-                            msg = "Ncycles in x{0:} not equal to Ncycles in x{1:}"
-                            print(flux_str + msg.format(xdir, xd), *cycles)
+                            msg = "Ncycles in x{0:}/x{1:} not equal {2:} {3:}"
+                            print(flux_str + msg.format(xdir, xd, *cycles))
                             analyze_status = False
                 # check convergence
                 if nx > _nxs[0]:
