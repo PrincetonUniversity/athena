@@ -59,6 +59,7 @@ def run(**kwargs):
                 athena.run('mhd/athinput.rj2a', [i + '=' + args[i] for i in args],
                            lcov_test_suffix=flux)
         os.system('rm -rf obj')
+    return 'skip_lcov'
 
 
 # Analyze outputs
