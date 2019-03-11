@@ -210,7 +210,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           pbl->pbval->shbox_inner_field_flag_[n]=BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-           // bufid = n
+          // bufid = n
           int tag = CreateBvalsMPITag(send_inner_lid_[n], AthenaTagMPI::shbox_field, n);
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);

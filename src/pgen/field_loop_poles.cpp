@@ -36,7 +36,7 @@
 
 namespace {
 void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3);
+                   Real &v1, Real &v2, Real &v3);
 Real A3(const Real x1, const Real x2, const Real x3);
 Real A2(const Real x1, const Real x2, const Real x3);
 Real A1(const Real x1, const Real x2, const Real x3);
@@ -305,7 +305,7 @@ namespace {
 //! \f transforms uniform velocity in x-directin in spherical polar coords
 
 void VelProfileCyl(const Real x1, const Real x2, const Real x3,
-                          Real &v1, Real &v2, Real &v3) {
+                   Real &v1, Real &v2, Real &v3) {
   v1 = vy0*std::sin(x2)*std::sin(x3);
   v2 = vy0*std::cos(x2)*std::sin(x3);
   v3 = vy0*std::cos(x3);

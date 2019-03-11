@@ -33,7 +33,7 @@ bool BoundaryBase::called_;
 int BoundaryBase::maxneighbor_;
 // array types: each element is zero-initialized
 NeighborIndexes BoundaryBase::ni[56]; // struct type: zero-initializes each non-static
-                                      // data member (all scalar types, in this case)
+// data member (all scalar types, in this case)
 int BoundaryBase::bufid[56];
 
 //----------------------------------------------------------------------------------------

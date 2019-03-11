@@ -38,13 +38,13 @@
 namespace {
 // Declarations
 void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz);
+                             Real *px, Real *py, Real *pz);
 void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 Real QuadraticRoot(Real a1, Real a0, bool greater_root);
 Real CubicRootReal(Real a2, Real a1, Real a0);
 void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-                         Real *px3, Real *px4);
+                  Real *px3, Real *px4);
 
 // Global variables
 Real amp;                     // amplitude of wave
@@ -874,7 +874,7 @@ namespace {
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz) {
+                             Real *px, Real *py, Real *pz) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
@@ -896,7 +896,7 @@ void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
@@ -992,7 +992,7 @@ Real CubicRootReal(Real a2, Real a1, Real a0) {
 //   similar function to those in adiabatic_mhd_sr.cpp and adiabatic_mhd_gr.cpp
 
 void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
-                         Real *px3, Real *px4) {
+                  Real *px3, Real *px4) {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*SQR(a3);
   Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);

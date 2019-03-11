@@ -136,35 +136,34 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
 
   // Apply boundary function on inner-x1
   if (GravityBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-    GravityBoundaryFunction_[BoundaryFace::inner_x1](pmb, pco, dst, time, dt,
-                                       pmb->is, pmb->ie, bjs, bje, bks, bke);
+    GravityBoundaryFunction_[BoundaryFace::inner_x1](
+        pmb, pco, dst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke);
   // Apply boundary function on outer-x1
   if (GravityBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-    GravityBoundaryFunction_[BoundaryFace::outer_x1](pmb, pco, dst, time, dt,
-                                       pmb->is, pmb->ie, bjs, bje, bks, bke);
+    GravityBoundaryFunction_[BoundaryFace::outer_x1](
+        pmb, pco, dst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke);
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
     // Apply boundary function on inner-x2
     if (GravityBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-      GravityBoundaryFunction_[BoundaryFace::inner_x2](pmb, pco, dst, time, dt,
-                                         bis, bie, pmb->js, pmb->je, bks, bke);
+      GravityBoundaryFunction_[BoundaryFace::inner_x2](
+          pmb, pco, dst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke);
     // Apply boundary function on outer-x2
     if (GravityBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-      GravityBoundaryFunction_[BoundaryFace::outer_x2](pmb, pco, dst, time, dt,
-                                         bis, bie, pmb->js, pmb->je, bks, bke);
+      GravityBoundaryFunction_[BoundaryFace::outer_x2](
+          pmb, pco, dst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke);
   }
 
   if (pmb->block_size.nx3>1) { // 3D
     // Apply boundary function on inner-x3
     if (GravityBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-      GravityBoundaryFunction_[BoundaryFace::inner_x3](pmb, pco, dst, time, dt,
-                                         bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      GravityBoundaryFunction_[BoundaryFace::inner_x3](
+          pmb, pco, dst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke);
     // Apply boundary function on outer-x3
     if (GravityBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-      GravityBoundaryFunction_[BoundaryFace::outer_x3](pmb, pco, dst, time, dt,
-                                         bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      GravityBoundaryFunction_[BoundaryFace::outer_x3](
+          pmb, pco, dst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
-
   return;
 }
 

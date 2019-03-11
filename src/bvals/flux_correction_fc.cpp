@@ -1489,7 +1489,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
       if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
       if (nb.level!=pmb->loc.level) continue;
       if ((nb.type == NeighborConnect::face) || ((nb.type == NeighborConnect::edge) &&
-                                       (edge_flag_[nb.eid] == true))) {
+                                                 (edge_flag_[nb.eid] == true))) {
         if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
         if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
           if (nb.rank == Globals::my_rank) { // on the same process

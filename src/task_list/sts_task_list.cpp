@@ -437,7 +437,7 @@ TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
-                                                              int stage) {
+                                                         int stage) {
   if (stage <= nstages) {
     pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, CCBoundaryQuantity::cons);
     return TaskStatus::success;

@@ -1072,7 +1072,7 @@ void BoundaryValues::Initialize(void) {
 
         if (nb.level==mylevel) { // the same level
           if ((nb.type==NeighborConnect::face) || ((nb.type==NeighborConnect::edge)
-                                           && (edge_flag_[nb.eid]==true))) {
+                                                   && (edge_flag_[nb.eid]==true))) {
             tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx, nb.targetid);
             if (bd_emfcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
               MPI_Request_free(&bd_emfcor_.req_send[nb.bufid]);
@@ -1491,8 +1491,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
       && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   // Apply boundary function on inner-x1
   if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
-    BoundaryFunction_[BoundaryFace::inner_x1](pmb, pco, pdst, bfdst, time, dt,
-                                pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
+    BoundaryFunction_[BoundaryFace::inner_x1](
+        pmb, pco, pdst, bfdst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                               pmb->is-NGHOST, pmb->is-1,
@@ -1504,8 +1504,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
 
   // Apply boundary function on outer-x1
   if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
-    BoundaryFunction_[BoundaryFace::outer_x1](pmb, pco, pdst, bfdst, time, dt,
-                                pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
+    BoundaryFunction_[BoundaryFace::outer_x1](
+        pmb, pco, pdst, bfdst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                               pmb->ie+1, pmb->ie+NGHOST,
@@ -1518,8 +1518,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
   if (pmb->block_size.nx2>1) { // 2D or 3D
     // Apply boundary function on inner-x2
     if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
-      BoundaryFunction_[BoundaryFace::inner_x2](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+      BoundaryFunction_[BoundaryFace::inner_x2](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, pmb->js-NGHOST, pmb->js-1,
@@ -1531,8 +1531,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
 
     // Apply boundary function on outer-x2
     if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
-      BoundaryFunction_[BoundaryFace::outer_x2](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+      BoundaryFunction_[BoundaryFace::outer_x2](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, pmb->je+1, pmb->je+NGHOST,
@@ -1549,8 +1549,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
 
     // Apply boundary function on inner-x3
     if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
-      BoundaryFunction_[BoundaryFace::inner_x3](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
+      BoundaryFunction_[BoundaryFace::inner_x3](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, bjs, bje,
@@ -1562,8 +1562,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(
 
     // Apply boundary function on outer-x3
     if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
-      BoundaryFunction_[BoundaryFace::outer_x3](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
+      BoundaryFunction_[BoundaryFace::outer_x3](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, bjs, bje,
@@ -1764,38 +1764,38 @@ void BoundaryValues::ProlongateBoundaries(
     // Apply physical boundaries
     if (nb.ox1 == 0) {
       if (BoundaryFunction_[BoundaryFace::inner_x1]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::inner_x1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
+        BoundaryFunction_[BoundaryFace::inner_x1](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
       }
       if (BoundaryFunction_[BoundaryFace::outer_x1]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::outer_x1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
+        BoundaryFunction_[BoundaryFace::outer_x1](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
       }
     }
     if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
       if (BoundaryFunction_[BoundaryFace::inner_x2]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::inner_x2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
+        BoundaryFunction_[BoundaryFace::inner_x2](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
       }
       if (BoundaryFunction_[BoundaryFace::outer_x2]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::outer_x2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
+        BoundaryFunction_[BoundaryFace::outer_x2](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
       }
     }
     if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
       if (BoundaryFunction_[BoundaryFace::inner_x3]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::inner_x3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+        BoundaryFunction_[BoundaryFace::inner_x3](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, sj, ej, pmb->cks, pmb->cke, 1);
       }
       if (BoundaryFunction_[BoundaryFace::outer_x3]!=nullptr) {
-        BoundaryFunction_[BoundaryFace::outer_x3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+        BoundaryFunction_[BoundaryFace::outer_x3](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, sj, ej, pmb->cks, pmb->cke, 1);
       }
     }
 

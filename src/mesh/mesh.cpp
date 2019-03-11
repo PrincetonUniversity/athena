@@ -569,7 +569,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // read the restart file
   // the file is already open and the pointer is set to after <par_end>
   IOWrapperSizeT headersize = sizeof(int)*3+sizeof(Real)*2
-                               + sizeof(RegionSize)+sizeof(IOWrapperSizeT);
+                              + sizeof(RegionSize)+sizeof(IOWrapperSizeT);
   char *headerdata = new char[headersize];
   if (Globals::my_rank==0) { // the master process reads the header data
     if (resfile.Read(headerdata, 1, headersize)!=headersize) {

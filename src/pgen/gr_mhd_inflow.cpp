@@ -38,12 +38,12 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 namespace {
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
+                                  Real *ptheta, Real *pphi);
 void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
 
 // Global variables
 Real m;                           // mass M of black hole
@@ -253,7 +253,7 @@ namespace {
 //   conversion is trivial in all currently implemented coordinate systems
 
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
@@ -274,8 +274,8 @@ void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -301,7 +301,7 @@ void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
 //   pbt,pbr,pbphi: values set to interpolated b^\mu in Boyer-Lindquist coordinates
 
 void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
   // Find location in interpolation table
   int n;
   Real fraction = 0.0;

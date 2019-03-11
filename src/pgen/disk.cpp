@@ -191,7 +191,7 @@ Real PoverR(const Real rad, const Real phi, const Real z) {
 //! \f  computes rotational velocity in cylindrical coordinates
 
 void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3) {
+                   Real &v1, Real &v2, Real &v3) {
   Real p_over_r = PoverR(rad, phi, z);
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/std::sqrt(rad*rad+z*z);

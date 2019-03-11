@@ -23,26 +23,26 @@
 namespace {
 // Declarations
 void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-                             const int il, const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &lambdas_p_l,
-                             AthenaArray<Real> &lambdas_m_l,
-                             AthenaArray<Real> &lambdas_p_r,
-                             AthenaArray<Real> &lambdas_m_r,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime);
+               Real gamma_prime);
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime);
+                    Real gamma_prime);
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu, const AthenaArray<Real> &bb,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux,
-                                AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                         const int il, const int iu, const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -114,16 +114,16 @@ namespace {
 //   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 
 void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-                             const int il, const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &lambdas_p_l,
-                             AthenaArray<Real> &lambdas_m_l,
-                             AthenaArray<Real> &lambdas_p_r,
-                             AthenaArray<Real> &lambdas_m_r,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Parameters
   const Real p_transition = 0.01;     // value delineating intial pressure regimes
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
@@ -943,7 +943,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 //   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime) {
+               Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -972,7 +972,7 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 //   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime) {
+                    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -1009,12 +1009,12 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
 //   same function as in hlle_mhd_rel.cpp
 
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu,
-                                const AthenaArray<Real> &bb,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux,
-                                AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                         const int il, const int iu,
+                         const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();

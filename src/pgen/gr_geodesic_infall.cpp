@@ -39,7 +39,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 namespace {
 // TODO(felker): can the 4x copies of this function in pgen/ files be shared?
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
+                                  Real *ptheta, Real *pphi);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ namespace {
 //   conversion is trivial in all currently implemented coordinate systems
 
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
