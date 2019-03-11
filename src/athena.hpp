@@ -148,8 +148,8 @@ enum CoordinateDirection {X1DIR, X2DIR, X3DIR};
 //------------------
 // needed wherever MPI communications are used.  Must be < 32 and unique
 enum AthenaTagMPI : int {hydro, field, rad, chem, hydflx, fldflx, radflx, chmflx,
-                               amr, fldflx_pole, gravity, mggrav,
-                               shbox_hydro, shbox_field, shbox_emf};
+                         amr, fldflx_pole, gravity, mggrav,
+                         shbox_hydro, shbox_field, shbox_emf};
 
 enum class BoundaryQuantity {hydro, field, gravity, mggrav, mggravf, flcor, emfcor};
 enum class CCBoundaryQuantity {cons, prim};

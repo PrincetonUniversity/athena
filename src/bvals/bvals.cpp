@@ -1108,12 +1108,12 @@ void BoundaryValues::Initialize(void) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank) {
-        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_POLE, pmb->loc.lx3);
+        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_pole, pmb->loc.lx3);
         if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_north_send_[n]);
         MPI_Send_init(emf_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                       nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[n]);
-        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_POLE, n);
+        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_pole, n);
         if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_north_recv_[n]);
         MPI_Recv_init(emf_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -1123,12 +1123,12 @@ void BoundaryValues::Initialize(void) {
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = polar_neighbor_south[n];
       if (nb.rank != Globals::my_rank) {
-        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_POLE, pmb->loc.lx3);
+        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_pole, pmb->loc.lx3);
         if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_south_send_[n]);
         MPI_Send_init(emf_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                       nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[n]);
-        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_POLE, n);
+        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_pole, n);
         if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_south_recv_[n]);
         MPI_Recv_init(emf_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
