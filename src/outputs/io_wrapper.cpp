@@ -22,13 +22,13 @@
 #include "io_wrapper.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Open(const char* fname, ReadWriteMode rw)
+//! \fn int IOWrapper::Open(const char* fname, FileMode rw)
 //  \brief wrapper for {MPI_File_open} versus {std::fopen} including error check
 
-int IOWrapper::Open(const char* fname, ReadWriteMode rw) {
+int IOWrapper::Open(const char* fname, FileMode rw) {
   std::stringstream msg;
 
-  if (rw==ReadWriteMode::IO_WRAPPER_READ_MODE) {
+  if (rw == FileMode::read) {
 #ifdef MPI_PARALLEL
     // NOLINTNEXTLINE
     if (MPI_File_open(comm_,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh_)
@@ -43,7 +43,7 @@ int IOWrapper::Open(const char* fname, ReadWriteMode rw) {
         return false;
       }
 
-  } else if (rw==ReadWriteMode::IO_WRAPPER_WRITE_MODE) {
+  } else if (rw == FileMode::write) {
 #ifdef MPI_PARALLEL
     MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
     // NOLINTNEXTLINE
