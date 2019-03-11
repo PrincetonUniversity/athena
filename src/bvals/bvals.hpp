@@ -36,10 +36,10 @@ struct FaceField;
 // TODO(felker): nest these enum definitions inside bvals/ classes, when possible.
 
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace {undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
-                   inner_x3, outer_x3};
+enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
+                   inner_x3=4, outer_x3=5};
 // TODO(felker): BoundaryFace must be unscoped enum, for now. Its enumerators are used as
-// int to index regular arrays (not AthenaArrays).
+// int to index regular arrays (not AthenaArrays). Hence enumerator values are specified.
 
 // identifiers for boundary conditions
 enum class BoundaryFlag {block=-1, undef, reflect, outflow, user, periodic,

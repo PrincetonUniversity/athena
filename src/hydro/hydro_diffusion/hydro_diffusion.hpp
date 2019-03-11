@@ -52,7 +52,7 @@ class HydroDiffusion {
 
   // array indices for hydro diffusion (conduction & viscosity) variants: directionality
   // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
-  enum DiffProcess {iso, aniso};
+  enum DiffProcess {iso=0, aniso=1};
 
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,
