@@ -320,7 +320,7 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_ad > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(MagneticDiffusivity::ambipolar,k,j,i);
+          eta_t(i) += etaB(DiffProcess::ambipolar,k,j,i);
         }
       }
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
