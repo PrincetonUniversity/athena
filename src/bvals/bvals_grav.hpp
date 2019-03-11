@@ -34,7 +34,7 @@ class Coordinates;
 //  \brief structure storing multigrid boundary information
 struct GravityBoundaryData {
   int nbmax;
-  enum BoundaryStatus flag[56], sflag[56];
+  BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
@@ -47,7 +47,7 @@ struct GravityBoundaryData {
 
 class GravityBoundaryValues : public BoundaryBase {
  public:
-  GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
+  GravityBoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs);
   ~GravityBoundaryValues();
 
   void InitBoundaryData(GravityBoundaryData &bd);

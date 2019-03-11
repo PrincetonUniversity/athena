@@ -33,14 +33,14 @@ TaskList::TaskList(Mesh *pm) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
+//! \fn TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
+TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
                                                   TaskState &ts) {
   int skip=0;
-  enum TaskStatus ret;
+  TaskStatus ret;
   if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {

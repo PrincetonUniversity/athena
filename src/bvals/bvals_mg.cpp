@@ -38,11 +38,11 @@ class Multigrid;
 class MultigridDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+//! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
 //                                         MGBoundaryFunc *MGBoundary)
 //  \brief Constructor of the MGBoundaryValues class
 
-MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
                                    MGBoundaryFunc *MGBoundary)
     : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs) {
   pmy_mg_=pmg;
@@ -75,10 +75,10 @@ MGBoundaryValues::~MGBoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd,
-//                                              enum BoundaryQuantity type)
+//                                              BoundaryQuantity type)
 //  \brief Initialize MGBoundaryData structure
 
-void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryQuantity type) {
+void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, BoundaryQuantity type) {
   int size = 0;
   bd.nbmax=maxneighbor_;
   for (int n=0; n<bd.nbmax; n++) {
@@ -199,10 +199,10 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryQuantity type)
+//! \fn void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type)
 //  \brief initiate MPI_Irecv for multigrid
 
-void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryQuantity type) {
+void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
   bool faceonly=false;
 #ifdef MPI_PARALLEL
   int mylevel=loc.level;
@@ -257,10 +257,10 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryQuantity typ
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryQuantity type)
+//! \fn void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type)
 //  \brief clean up the boundary flags after each loop for multigrid
 
-void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryQuantity type) {
+void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
   bool faceonly=false;
   MGBoundaryData *pbd{};
 
@@ -308,11 +308,11 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-//                                                  int nc, enum BoundaryQuantity type)
+//                                                  int nc, BoundaryQuantity type)
 //  \brief Send boundary buffers
 
 bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                                    int nc, enum BoundaryQuantity type) {
+                                                    int nc, BoundaryQuantity type) {
   int mylevel=loc.level;
   int nvar, ngh;
   int phys;  // used only in MPI calculations
@@ -395,12 +395,12 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-//                                                     int nc, enum BoundaryQuantity type)
+//                                                     int nc, BoundaryQuantity type)
 //  \brief receive the boundary data
 
 bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
                                                        int nc,
-                                                       enum BoundaryQuantity type) {
+                                                       BoundaryQuantity type) {
   bool bflag=true, faceonly=false;
   int nvar, ngh;
   MGBoundaryData *pbd{};

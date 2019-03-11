@@ -136,10 +136,10 @@ int BoundaryValues::LoadCellCenteredBoundaryBufferToFiner(
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-//                                                           enum CCBoundaryQuantity type)
+//                                                           CCBoundaryQuantity type)
 //  \brief Send boundary buffers of cell-centered variables
 void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-                                                     enum CCBoundaryQuantity type) {
+                                                     CCBoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_, *pbl=nullptr;
   int mylevel=pmb->loc.level;
   int ns, ne;
@@ -399,10 +399,10 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(
-//                           enum CCBoundaryQuantity type)
+//                           CCBoundaryQuantity type)
 //  \brief receive the cell-centered boundary data
 
-bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryQuantity type) {
+bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(CCBoundaryQuantity type) {
   bool bflag=true;
   AthenaArray<Real> cbuf;
   BoundaryData *pbd{};
@@ -438,11 +438,11 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryQuantity 
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
-//                                                     enum CCBoundaryQuantity type)
+//                                                     CCBoundaryQuantity type)
 //  \brief set the cell-centered boundary data
 
 void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
-                                               enum CCBoundaryQuantity type) {
+                                               CCBoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_;
   const bool *flip=nullptr;
   AthenaArray<Real> cbuf;
@@ -481,11 +481,11 @@ void BoundaryValues::SetCellCenteredBoundaries(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveAndSetCellCenteredBoundariesWithWait
-//                                 (AthenaArray<Real> &dst, enum CCBoundaryQuantity type)
+//                                 (AthenaArray<Real> &dst, CCBoundaryQuantity type)
 //  \brief receive and set the cell-centered boundary data for initialization
 
 void BoundaryValues::ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
-                                                                 enum CCBoundaryQuantity
+                                                                 CCBoundaryQuantity
                                                                  type) {
   MeshBlock *pmb=pmy_block_;
   const bool *flip=nullptr;

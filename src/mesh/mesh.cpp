@@ -61,7 +61,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
-  enum BoundaryFlag block_bcs[6];
+  BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
   int dim;
 
@@ -518,7 +518,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   std::stringstream msg;
   RegionSize block_size;
-  enum BoundaryFlag block_bcs[6];
+  BoundaryFlag block_bcs[6];
   MeshBlock *pfirst{};
   IOWrapperSizeT *offset{};
   IOWrapperSizeT datasize, listsize, headeroffset;
@@ -897,7 +897,7 @@ Mesh::~Mesh() {
 
 void Mesh::OutputMeshStructure(int dim) {
   RegionSize block_size;
-  enum BoundaryFlag block_bcs[6];
+  BoundaryFlag block_bcs[6];
   FILE *fp = nullptr;
 
   // open 'mesh_structure.dat' file
@@ -1069,10 +1069,10 @@ void Mesh::NewTimeStep() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro my_bc)
+//! \fn void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValHydro my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc my_bc) {
+void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1100,10 +1100,10 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc my_mg)
+//! \fn void Mesh::EnrollUserMeshGenerator(CoordinateDirection,MeshGenFunc my_mg)
 //  \brief Enroll a user-defined function for Mesh generation
 
-void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg) {
+void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
   std::stringstream msg;
   if (dir<0 || dir>=3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
@@ -1247,11 +1247,11 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
+//! \fn void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir
 //                                              MGBoundaryFunc my_bc)
 //  \brief Enroll a user-defined boundary function
 
-void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc my_bc) {
+void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
   if (dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1643,11 +1643,11 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc,
-//                 RegionSize &block_size, enum BundaryFlag *block_bcs)
+//                 RegionSize &block_size, BundaryFlag *block_bcs)
 // \brief Set the physical part of a block_size structure and block boundary conditions
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
-                                     enum BoundaryFlag *block_bcs) {
+                                     BoundaryFlag *block_bcs) {
   std::int64_t &lx1=loc.lx1;
   std::int64_t &lx2=loc.lx2;
   std::int64_t &lx3=loc.lx3;
@@ -2172,7 +2172,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       pmb->gid=n;
       pmb->lid=n-nbs;
     } else {
-      enum BoundaryFlag block_bcs[6];
+      BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);

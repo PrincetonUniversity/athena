@@ -44,7 +44,7 @@
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
-BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
+BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
@@ -256,7 +256,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
     emf_north_recv_ = new Real *[num_north_polar_blocks_];
-    emf_north_flag_ = new enum BoundaryStatus[num_north_polar_blocks_];
+    emf_north_flag_ = new BoundaryStatus[num_north_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_north_send_ = new MPI_Request[num_north_polar_blocks_];
     req_emf_north_recv_ = new MPI_Request[num_north_polar_blocks_];
@@ -274,7 +274,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (num_south_polar_blocks_ > 0) {
     emf_south_send_ = new Real *[num_south_polar_blocks_];
     emf_south_recv_ = new Real *[num_south_polar_blocks_];
-    emf_south_flag_ = new enum BoundaryStatus[num_south_polar_blocks_];
+    emf_south_flag_ = new BoundaryStatus[num_south_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_south_send_ = new MPI_Request[num_south_polar_blocks_];
     req_emf_south_recv_ = new MPI_Request[num_south_polar_blocks_];
@@ -635,10 +635,10 @@ BoundaryValues::~BoundaryValues() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd,enum BoundaryQuantity type)
+//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd,BoundaryQuantity type)
 //  \brief Initialize BoundaryData structure
 
-void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryQuantity type) {
+void BoundaryValues::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
   int f2d=0, f3d=0;

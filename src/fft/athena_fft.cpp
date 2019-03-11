@@ -226,11 +226,11 @@ void FFTBlock::ApplyKernel(int mode) {
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
-//                                                enum AthenaFFTDirection dir)
+//                                                AthenaFFTDirection dir)
 //  \brief initialize FFT plan using mesh information
 
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
-                                         enum AthenaFFTDirection dir) {
+                                         AthenaFFTDirection dir) {
   int nfast,nmid,nslow;
   if (dir == AthenaFFTDirection::forward) {
     nfast = f_in_->Nx[0]; nmid = f_in_->Nx[1]; nslow = f_in_->Nx[2];
@@ -244,10 +244,10 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 1D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 #ifdef FFT
   plan = new AthenaFFTPlan;
@@ -264,11 +264,11 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //                                           AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 2D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                     AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
@@ -314,12 +314,12 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 //                                           AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 3D FFT
 
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                     AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT

@@ -22,10 +22,10 @@
 #include "io_wrapper.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Open(const char* fname, enum ReadWriteMode rw)
+//! \fn int IOWrapper::Open(const char* fname, ReadWriteMode rw)
 //  \brief wrapper for {MPI_File_open} versus {std::fopen} including error check
 
-int IOWrapper::Open(const char* fname, enum ReadWriteMode rw) {
+int IOWrapper::Open(const char* fname, ReadWriteMode rw) {
   std::stringstream msg;
 
   if (rw==ReadWriteMode::IO_WRAPPER_READ_MODE) {

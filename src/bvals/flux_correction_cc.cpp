@@ -37,10 +37,10 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionQuantity type)
+//! \fn void BoundaryValues::SendFluxCorrection(FluxCorrectionQuantity type)
 //  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
-void BoundaryValues::SendFluxCorrection(enum FluxCorrectionQuantity type) {
+void BoundaryValues::SendFluxCorrection(FluxCorrectionQuantity type) {
   MeshBlock *pmb=pmy_block_, *pbl;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
@@ -159,10 +159,10 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionQuantity type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionQuantity type)
+//! \fn bool BoundaryValues::ReceiveFluxCorrection(FluxCorrectionQuantity type)
 //  \brief Receive and apply the surface flux from the finer neighbor(s)
 
-bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionQuantity type) {
+bool BoundaryValues::ReceiveFluxCorrection(FluxCorrectionQuantity type) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   bool bflag=true;

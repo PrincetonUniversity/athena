@@ -40,7 +40,7 @@ class IOWrapper {
   //               and update Open() calls in restart.cpp and main.cpp
 
   // wrapper functions for basic I/O tasks
-  int Open(const char* fname, enum ReadWriteMode rw);
+  int Open(const char* fname, ReadWriteMode rw);
   std::size_t Read(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
   std::size_t Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
   std::size_t Read_at_all(void *buf, IOWrapperSizeT size,

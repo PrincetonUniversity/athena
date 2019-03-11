@@ -21,7 +21,7 @@
 //! \fn GetBoundaryFlag(std::string input_string)
 //  \brief Parses input string to return integer flag specifying boundary condition
 
-enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
+BoundaryFlag GetBoundaryFlag(std::string input_string) {
   if (input_string == "reflecting") {
     return BoundaryFlag::reflect;
   } else if (input_string == "outflow") {
@@ -48,12 +48,12 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn GetBoundaryString(enum BoundaryFlag input_flag)
+//! \fn GetBoundaryString(BoundaryFlag input_flag)
 //  \brief Parses enumerated type BoundaryFlag internal integer representation to return
 //  string describing the boundary condition. Used for diagnostics. Inverse of
 //  GetBoundaryFlag()
 
-std::string GetBoundaryString(enum BoundaryFlag input_flag) {
+std::string GetBoundaryString(BoundaryFlag input_flag) {
   if (input_flag == BoundaryFlag::reflect) {
     return "reflecting";
   } else if (input_flag == BoundaryFlag::outflow) {

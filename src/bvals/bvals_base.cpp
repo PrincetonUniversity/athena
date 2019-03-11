@@ -38,14 +38,14 @@ int BoundaryBase::bufid[56];
 
 //----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
-//                          int iox1, int iox2, int iox3, enum NeighborConnect itype,
+//                          int iox1, int iox2, int iox3, NeighborConnect itype,
 //                          int ibid, int itargetid, int ifi1=0, int ifi2=0,
 //                          bool ipolar=false)
 // \brief Set neighbor information
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
                                 int iox1, int iox2, int iox3,
-                                enum NeighborConnect itype, int ibid, int itargetid,
+                                NeighborConnect itype, int ibid, int itargetid,
                                 bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
   type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
@@ -69,10 +69,10 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-//                                 enum BoundaryFlag *input_bcs)
+//                                 BoundaryFlag *input_bcs)
 //  \brief constructor of BoundaryBase
 BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-                           enum BoundaryFlag *input_bcs) {
+                           BoundaryFlag *input_bcs) {
   loc=iloc;
   block_size_=isize;
   pmy_mesh_=pm;

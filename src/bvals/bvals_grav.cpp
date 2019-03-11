@@ -42,10 +42,10 @@ class FFTDriver;
 
 //----------------------------------------------------------------------------------------
 //! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb,
-//                                                   enum BoundaryFlag *input_bcs)
+//                                                   BoundaryFlag *input_bcs)
 //  \brief Constructor of the GravityBoundaryValues class
 
-GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++) {
