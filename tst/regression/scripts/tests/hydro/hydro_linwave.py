@@ -91,7 +91,7 @@ def analyze():
         data = all_data[i]
         flux_str = 'With flux "{0:}": '.format(flux)
         # Check absolute error and convergence rate lower bounds of all waves
-        # Asymptotic second-order convergence should have ratio <= 0.25 in below calculations
+        # Asymptotic second-order convergence should have ratio <= 0.25 below
         if data[1][4] > {'hlle': 4.3e-8}.get(flux, 3.7e-8):
             print(flux_str + "error in L-going sound wave too large", data[1][4])
             analyze_status = False
