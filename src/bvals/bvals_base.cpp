@@ -26,11 +26,15 @@
 #include "../utils/buffer_utils.hpp"
 #include "bvals.hpp"
 
-// forward declaration of static members of this class
-NeighborIndexes BoundaryBase::ni[56];
-int BoundaryBase::bufid[56];
-bool BoundaryBase::called_ = false;
+// required definitions of static data members of BoundaryBase outside class definition
+// (zero-initialization is performed for all static storage duration variables)
+// scalar types: integral constant 0 is explicitly converted to type
+bool BoundaryBase::called_;
 int BoundaryBase::maxneighbor_;
+// array types: each element is zero-initialized
+NeighborIndexes BoundaryBase::ni[56]; // struct type: zero-initializes each non-static
+                                      // data member (all scalar types, in this case)
+int BoundaryBase::bufid[56];
 
 //----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,

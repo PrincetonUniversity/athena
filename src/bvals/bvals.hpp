@@ -56,7 +56,7 @@ static bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-struct NeighborBlock {
+struct NeighborBlock { // not aggregate nor POD type
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
   enum NeighborType type;
   enum BoundaryFace fid;
@@ -74,7 +74,7 @@ struct NeighborBlock {
 //! \struct PolarNeighborBlock
 //  \brief Struct for describing neighbors around pole at same radius and polar angle
 
-struct PolarNeighborBlock {
+struct PolarNeighborBlock { // aggregate and POD
   int rank;    // MPI rank of neighbor
   int lid;     // local ID of neighbor
   int gid;     // global ID of neighbor
@@ -83,18 +83,30 @@ struct PolarNeighborBlock {
 
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
-struct NeighborIndexes {
+struct NeighborIndexes { // aggregate and POD
   int ox1, ox2, ox3, fi1, fi2;
   enum NeighborType type;
-  NeighborIndexes() {
-    ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-    type=NEIGHBOR_NONE;
-  }
+  // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
+  // NeighborIndexes() {
+  //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
+  //   type=NEIGHBOR_NONE;
+  // }
+
+  // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
+  // NeighborIndexes is a trivial type. Combined with standard layout --> POD. Advantages:
+
+  // No user-provided ctor: value initialization first performs zero initialization (then
+  // default initialization if ctor is non-trivial)
+
+  // Aggregate type: supports aggregate initialization {}
+
+  // POD type: safely copy objects via memcpy, no memory padding in the beginning of
+  // object, C portability, supports static initialization
 };
 
 //! \struct BoundaryData
 //  \brief structure storing boundary information
-struct BoundaryData {
+struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
   int nbmax;
   enum BoundaryStatus flag[56];
   Real *send[56], *recv[56];
