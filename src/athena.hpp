@@ -147,7 +147,7 @@ enum CoordinateDirection {X1DIR, X2DIR, X3DIR};
 // strongly typed / scoped enums (C++11):
 //------------------
 // needed wherever MPI communications are used.  Must be < 32 and unique
-enum class AthenaTagMPI : int {hydro, field, rad, chem, hydflx, fldflx, radflx, chmflx,
+enum AthenaTagMPI : int {hydro, field, rad, chem, hydflx, fldflx, radflx, chmflx,
                                amr, fldflx_pole, gravity, mggrav,
                                shbox_hydro, shbox_field, shbox_emf};
 

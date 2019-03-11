@@ -321,7 +321,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
-    phys=AthenaTagMPI::mggrav;
+    phys = AthenaTagMPI::mggrav;
   }
   if (type==BoundaryQuantity::mggravf)
     faceonly=true;
@@ -353,7 +353,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     }
 #ifdef MPI_PARALLEL
     else { // NOLINT
-      int tag=CreateBvalsMPITag(nb.lid, phys, nb.targetid);
+      int tag = CreateBvalsMPITag(nb.lid, phys, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 mgcomm_, &(pbd->req_send[nb.bufid]));
     }
