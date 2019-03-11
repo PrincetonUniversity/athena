@@ -73,7 +73,7 @@ std::string GetBoundaryString(enum BoundaryFlag input_flag) {
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryString" << std::endl
-        << "Input enum BoundaryFlag=" << input_flag << "\n"
+        << "Input enum class BoundaryFlag=" << static_cast<int>(input_flag) << "\n"
         << "is an invalid boundary type" << std::endl;
     ATHENA_ERROR(msg);
   }
