@@ -23,20 +23,11 @@ class MeshBlock;
 class TaskList;
 class GravitySolverTaskList;
 
-// return codes for functions working on individual Tasks and TaskList
+// TODO(felker): these 4x declarations can be nested in TaskList if MGTaskList is derived
+
+// constants = return codes for functions working on individual Tasks and TaskList
 enum class TaskStatus {fail, success, next};
 enum class TaskListStatus {running, stuck, complete, nothing_to_do};
-
-//----------------------------------------------------------------------------------------
-//! \struct IntegratorWeight
-//  \brief weights used in time integrator tasks
-
-struct IntegratorWeight {
-  // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
-  Real delta; // low-storage coefficients to avoid double F() evaluation per substage
-  Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
-  Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
-};
 
 //----------------------------------------------------------------------------------------
 //! \struct Task
@@ -99,6 +90,17 @@ class TimeIntegratorTaskList : public TaskList {
  public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   ~TimeIntegratorTaskList() {}
+
+  //--------------------------------------------------------------------------------------
+  //! \struct IntegratorWeight
+  //  \brief weights used in time integrator tasks
+
+  struct IntegratorWeight {
+    // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+    Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+  };
 
   // data
   std::string integrator;
