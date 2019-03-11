@@ -18,6 +18,10 @@ _exec = os.path.join('bin', 'athena')
 
 # Prepare Athena++
 def prepare(**kwargs):
+    for i in athena.global_config_args:
+        tmp = i.split('=')
+        if tmp[0] == '--flux' and len(tmp) == 2:
+            _fluxes = [tmp[1]]
     for flux in _fluxes:
         athena.configure('b',
                          prob='linear_wave',
