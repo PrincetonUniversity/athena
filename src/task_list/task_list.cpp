@@ -24,21 +24,12 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// TaskList constructor
-
-TaskList::TaskList(Mesh *pm) {
-  pmy_mesh_=pm;
-  ntasks = 0;
-  nstages = 0;
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
 TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
-                                                  TaskState &ts) {
+                                             TaskState &ts) {
   int skip=0;
   TaskStatus ret;
   if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;

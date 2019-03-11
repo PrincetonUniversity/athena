@@ -30,8 +30,7 @@
 //----------------------------------------------------------------------------------------
 //  GravitySolverTaskList constructor
 
-GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-    : TaskList(pm) {
+GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables

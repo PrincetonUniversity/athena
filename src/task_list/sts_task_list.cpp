@@ -37,8 +37,7 @@
 //----------------------------------------------------------------------------------------
 //  SuperTimeStepTaskList constructor
 
-SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm)
-    : TaskList(pm) {
+SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED &&
       !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&

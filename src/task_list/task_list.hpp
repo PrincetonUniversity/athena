@@ -58,11 +58,7 @@ struct TaskState { // aggregate and POD
 //  \brief data and function definitions for task list base class
 
 class TaskList {
-  friend class TimeIntegratorTaskList;
-  friend class GravitySolverTaskList;
-  friend class SuperTimeStepTaskList;
  public:
-  explicit TaskList(Mesh *pm);
   // rule of five:
   virtual ~TaskList() = default;
 
@@ -74,10 +70,9 @@ class TaskList {
   TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
- private:
-  Mesh* pmy_mesh_;
+ protected:
   Task task_list_[64];
-
+ private:
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
