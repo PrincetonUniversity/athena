@@ -76,7 +76,7 @@ class TaskList {
 
  private:
   Mesh* pmy_mesh_;
-  struct Task task_list_[64];
+  Task task_list_[64];
 
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
@@ -104,7 +104,6 @@ class TimeIntegratorTaskList : public TaskList {
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  struct IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   void AddTimeIntegratorTask(std::uint64_t id, std::uint64_t dep);
 
@@ -154,6 +153,8 @@ class TimeIntegratorTaskList : public TaskList {
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
  private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 

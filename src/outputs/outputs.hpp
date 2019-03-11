@@ -62,7 +62,7 @@ struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
-  struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
+  OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
 
   OutputData() : pnext(nullptr),  pprev(nullptr) {}
 };
