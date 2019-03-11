@@ -251,7 +251,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
   AthenaFFTPlan *plan = nullptr;
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
   if (dir == AthenaFFTDirection::forward)
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -273,7 +273,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
@@ -324,7 +324,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
