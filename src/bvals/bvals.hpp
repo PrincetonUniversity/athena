@@ -52,8 +52,8 @@ enum class NeighborConnect {none, face, edge, corner}; // degenerate/shared part
 enum class BoundaryStatus {waiting, arrived, completed};
 
 // flags to mark which variables are reversed across polar boundary
-static constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false};
-static constexpr const bool flip_across_pole_field[] = {false, true, true};
+constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false};
+constexpr const bool flip_across_pole_field[] = {false, true, true};
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
@@ -250,12 +250,14 @@ class BoundaryValues : public BoundaryBase {
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
                                        enum CCBoundaryQuantity type);
   void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
+                                        Real *buf, const NeighborBlock& nb,
+                                        const bool *flip);
   void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
                                           AthenaArray<Real> &cbuf,
-                                          const NeighborBlock& nb, bool *flip);
+                                          const NeighborBlock& nb, const bool *flip);
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
+                                        Real *buf, const NeighborBlock& nb,
+                                        const bool *flip);
   bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryQuantity type);
   void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryQuantity type);
   void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
