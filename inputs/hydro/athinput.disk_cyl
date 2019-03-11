@@ -1,5 +1,5 @@
 <comment>
-problem   = Kerlerian disk in cylindrical coordinates
+problem   = Keplerian disk in cylindrical coordinates
 reference = 
 configure = --prob=disk --coord=cylindrical
 
@@ -33,7 +33,7 @@ x1rat       = 1.009          # non-uniform grid ratio
 
 nx2         = 4              # Number of zones in X2-direction
 x2min       = 0.             # minimum value of X2
-x2max       = 6.28318530718  # maximum value of X2
+x2max       = 6.2831853071795862   # maximum value of X2
 ix2_bc      = periodic       # Inner-X2 boundary condition flag
 ox2_bc      = periodic       # Outer-X2 boundary condition flag
 

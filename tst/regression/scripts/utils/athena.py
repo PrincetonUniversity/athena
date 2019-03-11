@@ -11,6 +11,8 @@ saved_filenames = ['src/defs.hpp', 'Makefile']
 saved_files = []
 global_config_args = []
 global_run_args = []
+global_test_name = None
+global_coverage_cmd = None
 global_silent = False
 
 
@@ -25,6 +27,8 @@ def configure(*args, **kwargs):
         for key, val in kwargs.items():
             if val:
                 configure_command.append('--{0}={1}'.format(key, val))
+        if global_coverage_cmd is not None:
+            configure_command.append('-coverage')
         try:
             subprocess.check_call(configure_command + global_config_args)
         except subprocess.CalledProcessError as err:
@@ -43,14 +47,14 @@ def make(clean_first=True, obj_only=False):
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         if obj_only:
-            make_command = ['make', '-j', 'objs', exe_dir, obj_dir]
+            make_command = ['make', '-j8', 'objs', exe_dir, obj_dir]
         else:
-            make_command = ['make', '-j', exe_dir, obj_dir]
+            make_command = ['make', '-j8', exe_dir, obj_dir]
         try:
             stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
-            subprocess.check_call(make_command, stdout=stdout_f)
+            subprocess.check_call(make_command)  # , stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -62,7 +66,7 @@ def make(clean_first=True, obj_only=False):
 
 
 # Functions for running Athena++
-def run(input_filename, arguments):
+def run(input_filename, arguments, lcov_test_suffix=None):
     current_dir = os.getcwd()
     os.chdir('bin')
     try:
@@ -74,6 +78,11 @@ def run(input_filename, arguments):
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
+        else:
+            os.chdir(current_dir)
+            # (optional) if execution completes without error, and a lcov_test_suffix is
+            # explicitly passed, process Lcov tracefile immediately after run_command
+            analyze_code_coverage(global_test_name, lcov_test_suffix)
     finally:
         os.chdir(current_dir)
 
@@ -92,7 +101,8 @@ def restart(input_filename, arguments):
         os.chdir(current_dir)
 
 
-def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments):
+def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
+           lcov_test_suffix=None):
     current_dir = os.getcwd()
     os.chdir('bin')
     try:
@@ -106,6 +116,11 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments):
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
+        else:
+            os.chdir(current_dir)
+            # (optional) if execution completes without error, and a lcov_test_suffix is
+            # explicitly passed, process Lcov tracefile immediately after run_command
+            analyze_code_coverage(global_test_name, lcov_test_suffix)
     finally:
         os.chdir(current_dir)
 
@@ -131,6 +146,31 @@ def restore_files():
         else:
             with open(rel_path_to_file, 'w') as current_file:
                 current_file.write(saved_file)
+
+
+# Function for analyzing code coverage after athena.run() or athena.mpirun()
+def analyze_code_coverage(test_name, lcov_test_suffix=None):
+    # Only run Lcov if a string is passed to optional lcov_test_suffix argument (most
+    # regression tests only need to run Lcov ONCE after test.analyze() is complete).
+
+    # Regression tests with multiple athena.make() calls and binaries require that Lcov is
+    # executed in test.run() after intermediate athena.mpi/run() calls, before the test is
+    # complete. Test author must ensure that the obj/ directory contains the
+    # correct/matching files when athena.run() is called with lcov_test_suffix=string
+    if (lcov_test_suffix is not None and global_coverage_cmd is not None):
+        # Empty string --> use base test name for output file
+        if lcov_test_suffix == '':
+            lcov_test_name = global_test_name
+        # Append nonempty string suffix to base test name with an underscore
+        else:
+            lcov_test_name = '_'.join([global_test_name, lcov_test_suffix])
+        # For now, assumes Lcov flags for adding test-dependent info (name, output file):
+        test_lcov_cmd = (
+            global_coverage_cmd
+            + ' --test-name {0} -output-file {0}.info'.format(lcov_test_name)
+        )
+        # is this usage of os.system() safe?
+        os.system(test_lcov_cmd)
 
 
 # General exception class for these functions

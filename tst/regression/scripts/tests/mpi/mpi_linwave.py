@@ -7,6 +7,10 @@
 # Modules
 import os
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++ w/wo MPI
@@ -15,6 +19,7 @@ def prepare(**kwargs):
                      flux='hlld', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_mpi')
+    os.system('mv obj obj_mpi')
 
     athena.configure('b', prob='linear_wave', coord='cartesian', flux='hlld', **kwargs)
     athena.make()
@@ -30,41 +35,40 @@ def run(**kwargs):
                  'meshblock/nx2=8',
                  'meshblock/nx3=8',
                  'output2/dt=-1', 'time/tlim=2.0', 'problem/compute_error=true']
-    athena.run('mhd/athinput.linear_wave3d', arguments)
+    athena.run('mhd/athinput.linear_wave3d', arguments, lcov_test_suffix='serial')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_mpi obj')
     os.system('mv bin/athena_mpi bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 1,
                   'mhd/athinput.linear_wave3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 2,
                   'mhd/athinput.linear_wave3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'], 4,
-                  'mhd/athinput.linear_wave3d', arguments)
+                  'mhd/athinput.linear_wave3d', arguments, lcov_test_suffix='mpi')
+    return 'skip_lcov'
 
 
 # Analyze outputs
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
     print(data[0][4], data[1][4], data[2][4], data[3][4])
 
-    # check errors between runs w/wo MPI and different numbers of cores
+    # check errors between runs w/wo MPI and different numbers of ranks
     if data[0][4] != data[1][4]:
-        print("Linear wave error with one core w/wo MPI not identical",
+        print("Linear wave error from serial calculation vs. MPI w/ 1 rank not identical",
               data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 2 and 1 cores too large", data[2][4], data[0][4])
+        print("Linear wave error differences between 2 ranks vs. serial is too large",
+              data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error between 4 and 1 cores too large", data[2][4], data[0][4])
+        print("Linear wave error differences between 4 ranks vs. serial is too large",
+              data[3][4], data[0][4])
         return False
 
     return True

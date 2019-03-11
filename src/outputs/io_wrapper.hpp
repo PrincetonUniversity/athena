@@ -9,44 +9,47 @@
 //  \brief defines a set of small wrapper functions for MPI versus Serial Output.
 
 // C headers
-#include <stdio.h>
+
+// C++ headers
+#include <cstdio>
 
 // Athena++ headers
 #include "../athena.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-typedef MPI_File IOWrapperFile;
+using  IOWrapperFile = MPI_File;
 #else
-typedef FILE * IOWrapperFile;
+using  IOWrapperFile = FILE*;
 #endif
 
-typedef uint64_t IOWrapperSize_t;
+using IOWrapperSizeT = std::uint64_t;
 enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper {
-public:
+ public:
 #ifdef MPI_PARALLEL
-  IOWrapper() {comm_=MPI_COMM_WORLD;}
+  IOWrapper() : fh_(nullptr), comm_(MPI_COMM_WORLD) {}
   void SetCommunicator(MPI_Comm scomm) { comm_=scomm;}
 #else
-  IOWrapper() {}
+  IOWrapper() {fh_=nullptr;}
 #endif
   ~IOWrapper() {}
 
   // wrapper functions for basic I/O tasks
   int Open(const char* fname, enum rwmode rw);
-  size_t Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  size_t Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  size_t Read_at_all(void *buf, IOWrapperSize_t size,
-                  IOWrapperSize_t count, IOWrapperSize_t offset);
-  size_t Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
-  size_t Write_at_all(const void *buf, IOWrapperSize_t size,
-                   IOWrapperSize_t cnt, IOWrapperSize_t offset);
-  int Close(void);
-  int Seek(IOWrapperSize_t offset);
-  IOWrapperSize_t GetPosition(void);
-private:
+  std::size_t Read(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
+  std::size_t Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
+  std::size_t Read_at_all(void *buf, IOWrapperSizeT size,
+                          IOWrapperSizeT count, IOWrapperSizeT offset);
+  std::size_t Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT count);
+  std::size_t Write_at_all(const void *buf, IOWrapperSizeT size,
+                           IOWrapperSizeT cnt, IOWrapperSizeT offset);
+  int Close();
+  int Seek(IOWrapperSizeT offset);
+  IOWrapperSizeT GetPosition();
+
+ private:
   IOWrapperFile fh_;
 #ifdef MPI_PARALLEL
   MPI_Comm comm_;

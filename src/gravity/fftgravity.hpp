@@ -9,7 +9,11 @@
 //! \file fftgravity.hpp
 //  \brief defines FFTGravity class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../fft/athena_fft.hpp"
@@ -25,12 +29,12 @@ class GravitySolverTaskList;
 //  \brief FFT gravity solver for each block
 
 class FFTGravity : public FFTBlock {
-public:
+ public:
   FFTGravity(FFTDriver *pfd, LogicalLocation iloc, int igid,
-           RegionSize msize, RegionSize bsize)
-  : FFTBlock(pfd, iloc, igid, msize, bsize) {}
+             RegionSize msize, RegionSize bsize)
+      : FFTBlock(pfd, iloc, igid, msize, bsize) {}
   ~FFTGravity() {}
-  void ApplyKernel(int mode);
+  void ApplyKernel(int mode) final;
 };
 
 
@@ -38,12 +42,12 @@ public:
 //  \brief FFT gravity solver
 
 class FFTGravityDriver : public FFTDriver{
-public:
+ public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
   ~FFTGravityDriver();
-  void Solve(int step, int mode);
+  void Solve(int stage, int mode); // unlike MultigridDriver::Solve(), not inherited
 
-private:
+ private:
   Real four_pi_G_;
   GravitySolverTaskList *gtlist_;
 };

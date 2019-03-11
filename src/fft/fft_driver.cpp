@@ -6,18 +6,20 @@
 //! \file fft_driver.cpp
 //  \brief implementation of functions in class FFTDriver
 
-// C/C++ headers
+// C headers
+
+// C++ headers
+#include <cmath>
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "athena_fft.hpp"
 
@@ -36,7 +38,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 
@@ -66,17 +68,17 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   int ns = nslist_[Globals::my_rank];
   int ne = ns+nblist_[Globals::my_rank];
 
-  int64_t &lx1min = pm->loclist[ns].lx1;
-  int64_t &lx2min = pm->loclist[ns].lx2;
-  int64_t &lx3min = pm->loclist[ns].lx3;
-  int64_t lx1max = lx1min;
-  int64_t lx2max = lx2min;
-  int64_t lx3max = lx3min;
+  std::int64_t &lx1min = pm->loclist[ns].lx1;
+  std::int64_t &lx2min = pm->loclist[ns].lx2;
+  std::int64_t &lx3min = pm->loclist[ns].lx3;
+  std::int64_t lx1max = lx1min;
+  std::int64_t lx2max = lx2min;
+  std::int64_t lx3max = lx3min;
 
   for (int n=ns; n<ne; n++) {
-    int64_t &lx1 = pm->loclist[n].lx1;
-    int64_t &lx2 = pm->loclist[n].lx2;
-    int64_t &lx3 = pm->loclist[n].lx3;
+    std::int64_t &lx1 = pm->loclist[n].lx1;
+    std::int64_t &lx2 = pm->loclist[n].lx2;
+    std::int64_t &lx3 = pm->loclist[n].lx3;
     lx1min = lx1min<lx1?lx1min:lx1;
     lx2min = lx2min<lx2?lx2min:lx2;
     lx3min = lx3min<lx3?lx3min:lx3;
@@ -84,7 +86,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     lx2max = lx2max>lx2?lx2min:lx2;
     lx3max = lx3max>lx3?lx3min:lx3;
   }
-
+  // KGF: possible underflow from std::int64_t
   int nbx1 = static_cast<int>(lx1max-lx1min+1);
   int nbx2 = static_cast<int>(lx2max-lx2min+1);
   int nbx3 = static_cast<int>(lx3max-lx3min+1);
@@ -97,7 +99,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
         << nmb << " MeshBlocks will be loaded to the FFT block."  << std::endl
         << "Number of FFT blocks " << pm->nbtotal/nmb << " are not matched with "
         << "Number of processors " << nranks_ << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 
@@ -112,9 +114,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1 = static_cast<int>(pm->nrbx1/nbx1);
-  npx2 = static_cast<int>(pm->nrbx2/nbx2);
-  npx3 = static_cast<int>(pm->nrbx3/nbx3);
+  npx1 = pm->nrbx1/nbx1;
+  npx2 = pm->nrbx2/nbx2;
+  npx3 = pm->nrbx3/nbx3;
 
   fft_mesh_size_=pm->mesh_size;
 
@@ -151,7 +153,6 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     pdim_++;
   }
 #endif
-
 }
 
 // destructor
@@ -170,8 +171,7 @@ void FFTDriver::InitializeFFTBlock(bool set_norm) {
   if (set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 
-void FFTDriver::QuickCreatePlan(void) {
-
+void FFTDriver::QuickCreatePlan() {
   pmy_fb->fplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTForward);
   pmy_fb->bplan_=pmy_fb->QuickCreatePlan(pmy_fb->in_,AthenaFFTBackward);
 

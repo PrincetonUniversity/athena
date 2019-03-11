@@ -7,19 +7,20 @@
 //  \brief Implements functions for going between primitive and conserved variables in
 //  special-relativistic hydrodynamics, as well as for computing wavespeeds.
 
+// C headers
+
 // C++ headers
 #include <cmath>   // atan2(), cbrt(), cos(), sqrt()
-#include <cfloat>  // FLT_MIN
+#include <limits>
 
 // Athena++ headers
-#include "eos.hpp"
 #include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField
 #include "../mesh/mesh.hpp"                // MeshBlock
-
+#include "../parameter_input.hpp"          // ParameterInput
+#include "eos.hpp"
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -30,15 +31,11 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(FLT_MIN)) );
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(FLT_MIN)) );
+  Real float_min = std::numeric_limits<float>::min();
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)) );
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)) );
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
-
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
@@ -65,7 +62,7 @@ EquationOfState::~EquationOfState() {}
 //          c3 = c1^3 + c2^2
 //     4) find real root of new cubic:
 //          if c3 >= 0, y0 = (c2 + sqrt(c3))^(1/3) + (c2 - sqrt(c3))^(1/3)
-//          otherwise use y0 = 2 (c2^2 + c3)^(1/6) cos((1/3) atan2(sqrt(-c2), c3))
+//          otherwise use y0 = 2 (c2^2 + c3)^(1/6) std::cos((1/3) atan2(sqrt(-c2), c3))
 //          formulas are equivalent except for implicit assumptions about branch cuts
 //     5) find real root of original (resolvent) cubic:
 //          x0 = y0 - b2/3
@@ -75,10 +72,10 @@ EquationOfState::~EquationOfState() {}
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
 
-void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu, int jl, int ju, int kl,
-  int ku) {
+void EquationOfState::ConservedToPrimitive(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Parameters
   const Real max_velocity = std::sqrt(1.0 - 1.0/SQR(gamma_max_));
 
@@ -98,7 +95,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract conserved quantities
         Real d = cons_copy(IDN,k,j,i);
         Real e = cons_copy(IEN,k,j,i);
@@ -146,7 +142,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           y0 = std::cbrt(c2 + std::sqrt(c3)) + std::cbrt(c2 - std::sqrt(c3));
         } else {
           y0 = 2.0 * std::cbrt(SQR(c2) + c3)
-            * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
+               * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
         }
 
         // Step 5: Find real root of original (resolvent) cubic:
@@ -198,7 +194,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         prim_copy(IVX,k,j,i) = vx;
         prim_copy(IVY,k,j,i) = vy;
         prim_copy(IVZ,k,j,i) = vz;
-
       }
     }
   }
@@ -218,9 +213,10 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
 
-void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int il,
-     int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::PrimitiveToConserved(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+    AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_prime = gamma_/(gamma_-1.0);
 
@@ -229,7 +225,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-
         // Extract primitives
         Real rho = prim(IDN,k,j,i);
         Real pgas = prim(IPR,k,j,i);
@@ -256,7 +251,6 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         cons(IM1,k,j,i) = m1;
         cons(IM2,k,j,i) = m2;
         cons(IM3,k,j,i) = m3;
-
       }
     }
   }
@@ -295,8 +289,8 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_l
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
-  Real& w_d  = prim(IDN,k,j,i);
-  Real& w_p  = prim(IPR,k,j,i);
+  Real& w_d  = prim(IDN,i);
+  Real& w_p  = prim(IPR,i);
 
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;

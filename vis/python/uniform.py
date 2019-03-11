@@ -1,10 +1,10 @@
+#! /usr/bin/env python
+
 """
 Read .athdf data files and write new ones as single block at constant refinement
 level.
 
 Note: Requires h5py.
-
-Note: Only works for 3D data.
 """
 
 # Python standard modules
@@ -43,10 +43,8 @@ def main(**kwargs):
     for n in file_nums_local:
 
         # Determine filenames
-        input_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['input_filename'], kwargs['output_num'], n)
-        output_filename = '{0}.out{1}.{2:05d}.athdf'\
-            .format(kwargs['output_filename'], kwargs['output_num'], n)
+        input_filename = '{0}.{1:05d}.athdf'.format(kwargs['input_filename'], n)
+        output_filename = '{0}.{1:05d}.athdf'.format(kwargs['output_filename'], n)
         output_dir, output_base = os.path.split(output_filename)
 
         # Read attributes and data
@@ -63,9 +61,9 @@ def main(**kwargs):
                                  level=level, subsample=subsample)
 
         # Determine new grid size
-        nx1 = attrs['RootGridSize'][0] * 2**level
-        nx2 = attrs['RootGridSize'][1] * 2**level
-        nx3 = attrs['RootGridSize'][2] * 2**level
+        nx1 = attrs['RootGridSize'][0] * 2**level if attrs['MeshBlockSize'][0] > 1 else 1
+        nx2 = attrs['RootGridSize'][1] * 2**level if attrs['MeshBlockSize'][1] > 1 else 1
+        nx3 = attrs['RootGridSize'][2] * 2**level if attrs['MeshBlockSize'][2] > 1 else 1
 
         # Create new HDF5 file
         with h5py.File(output_filename, 'w') as f:
@@ -97,10 +95,8 @@ def main(**kwargs):
 
             # Write datasets
             f.create_dataset('Levels', data=[0], dtype='>i4')
-            f.create_dataset(
-                'LogicalLocations', data=[
-                    0, 0, 0], dtype='>i8', shape=(
-                    1, 3))
+            f.create_dataset('LogicalLocations', data=[0, 0, 0], dtype='>i8',
+                             shape=(1, 3))
             f.create_dataset('x1f', data=data['x1f'], dtype='>f4', shape=(1, nx1 + 1))
             f.create_dataset('x2f', data=data['x2f'], dtype='>f4', shape=(1, nx2 + 1))
             f.create_dataset('x3f', data=data['x3f'], dtype='>f4', shape=(1, nx3 + 1))
@@ -110,9 +106,8 @@ def main(**kwargs):
             var_offset = 0
             for dataset_name, num_vars in zip(
                     f.attrs['DatasetNames'], f.attrs['NumVariables']):
-                f.create_dataset(
-                    dataset_name, dtype='>f4', shape=(
-                        num_vars, 1, nx3, nx2, nx1))
+                f.create_dataset(dataset_name, dtype='>f4',
+                                 shape=(num_vars, 1, nx3, nx2, nx1))
                 for var_num in range(num_vars):
                     variable_name = f.attrs['VariableNames'][var_num + var_offset]
                     f[dataset_name][var_num, 0, :, :, :] = data[variable_name]
@@ -127,18 +122,18 @@ def main(**kwargs):
                 f.write('<Domain>\n')
                 f.write('<Grid Name="Mesh" GridType="Collection">\n')
                 f.write('  <Grid Name="MeshBlock0" GridType="Uniform">\n')
-                f.write(('    <Topology TopologyType="3DRectMesh"' +
-                         ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1, nx2+1,
-                                                                       nx1+1))
+                f.write(('    <Topology TopologyType="3DRectMesh"'
+                         + ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1, nx2+1,
+                                                                         nx1+1))
                 f.write('    <Geometry GeometryType="VXVYVZ">\n')
                 for nx, xf_string in zip((nx1, nx2, nx3), ('x1f', 'x2f', 'x3f')):
                     f.write(
-                        '      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'.format(nx + 1)) # noqa
+                        '      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'.format(nx + 1))  # noqa
                     f.write(('        <DataItem Dimensions="3 2" NumberType="Int">'
                              + ' 0 0 1 1 1 {0} </DataItem>\n').format(nx + 1))
                     f.write(
                         ('        <DataItem Dimensions="1 {0}" Format="HDF">'
-                         + ' {1}:/{2} </DataItem>\n').format(nx + 1, output_base, xf_string)) # noqa
+                         + ' {1}:/{2} </DataItem>\n').format(nx + 1, output_base, xf_string))  # noqa
                     f.write('      </DataItem>\n')
                 f.write('    </Geometry>\n')
                 if kwargs['quantities'] is None:
@@ -154,15 +149,15 @@ def main(**kwargs):
                     for var_num in range(num_vars):
                         variable_name = variable_names[var_num + var_offset]
                         f.write(
-                            '    <Attribute Name="{0}" Center="Cell">\n'.format(variable_name)) # noqa
+                            '    <Attribute Name="{0}" Center="Cell">\n'.format(variable_name))  # noqa
                         f.write(
-                            '      <DataItem ItemType="HyperSlab" Dimensions="{0} {1} {2}">\n' .format(nx3, nx2, nx1)) # noqa
+                            '      <DataItem ItemType="HyperSlab" Dimensions="{0} {1} {2}">\n' .format(nx3, nx2, nx1))  # noqa
                         f.write(('        <DataItem Dimensions="3 5" NumberType="Int">'
                                  + ' {0} 0 0 0 0 1 1 1 1 1 1 1 {1} {2} {3} </DataItem>\n')
                                 .format(var_num, nx3, nx2, nx1))
                         f.write(
-                            ('        <DataItem Dimensions="{0} 1 {1} {2} {3}" Format="HDF">' # noqa
-                             + ' {4}:/{5} </DataItem>\n') .format(num_vars, nx3, nx2, nx1, output_base, dataset_name)) # noqa
+                            ('        <DataItem Dimensions="{0} 1 {1} {2} {3}" Format="HDF">'  # noqa
+                             + ' {4}:/{5} </DataItem>\n') .format(num_vars, nx3, nx2, nx1, output_base, dataset_name))  # noqa
                         f.write('      </DataItem>\n')
                         f.write('    </Attribute>\n')
                     var_offset += num_vars
@@ -181,9 +176,6 @@ if __name__ == '__main__':
     parser.add_argument('output_filename',
                         type=str,
                         help='base name of new files to be saved, including directory')
-    parser.add_argument('output_num',
-                        type=int,
-                        help='number of output to convert')
     parser.add_argument('start',
                         type=int,
                         help='first file number to be converted')

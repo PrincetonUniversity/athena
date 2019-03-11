@@ -1,6 +1,7 @@
 <comment>
 problem   = SR hydro shocktube problem 1
 reference = Mignone & Bodo 2005, MNRAS 364 126
+configure = --prob=gr_shock_tube -s --coord=cartesian
 
 <job>
 problem_id = hydro_shock_rel_1

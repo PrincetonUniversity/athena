@@ -24,7 +24,8 @@ def main(**kwargs):
         import matplotlib
         matplotlib.use('agg')
     import matplotlib.pyplot as plt
-    # from mpl_toolkits.mplot3d import Axes3D
+    # not used explicitly, but required for 3D projections
+    from mpl_toolkits.mplot3d import Axes3D  # noqa
 
     # Read and plot block edges
     fig = plt.figure()

@@ -8,6 +8,7 @@ import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read                            # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):
@@ -47,7 +48,7 @@ def analyze():
     rate = 2.0*0.04/15.0*ksqr
 
     basename = 'bin/DecayLinWave.block0.out2.'
-    nframe = 101
+    nframe = 100
     dumprate = 0.03
     max_vy = np.zeros(nframe)
     tt = np.zeros(nframe)

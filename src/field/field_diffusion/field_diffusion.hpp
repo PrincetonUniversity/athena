@@ -9,7 +9,11 @@
 //  \brief defines class FieldDiffusion
 //  Contains data and functions that implement the diffusion processes
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 
@@ -22,7 +26,9 @@ class Coordinates;
 class FieldDiffusion;
 
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
-     const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
+                      const AthenaArray<Real> &bmag,
+                      const int is, const int ie, const int js, const int je,
+                      const int ks, const int ke);
 
 // array indices for magnetic diffusivities
 enum {I_O=0, I_H=1, I_A=2};
@@ -31,7 +37,7 @@ enum {I_O=0, I_H=1, I_A=2};
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class FieldDiffusion {
-public:
+ public:
   FieldDiffusion(MeshBlock *pmb, ParameterInput *pin);
   ~FieldDiffusion();
 
@@ -65,12 +71,12 @@ public:
   // functions for energy flux
   void PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bcc);
 
-private:
+ private:
   AthenaArray<Real> bmag_; // B field strength
   EdgeField jedge_;       // curl of B
   //EdgeField eh1_,eh2_,eh3_; // scratch arrays for the Hall integrator
 
-  FieldDiffusionCoeff_t CalcMagDiffCoeff_; // calculate magnetic diffusivities
+  FieldDiffusionCoeffFunc CalcMagDiffCoeff_; // calculate magnetic diffusivities
 
   AthenaArray<Real> face_area_,face_area_p1_,edge_length_,edge_length_m1_,cell_volume_;
   AthenaArray<Real> dx1_,dx2_,dx3_,len_;

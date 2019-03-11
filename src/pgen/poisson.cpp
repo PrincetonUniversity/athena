@@ -5,7 +5,8 @@
 //========================================================================================
 //! \file poisson.cpp
 //  \brief Problem generator to test Poisson's solver
-//
+
+// C headers
 
 // C++ headers
 #include <algorithm>
@@ -14,7 +15,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -61,7 +62,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x0=0.0, y0=0.0, z0=0.0;
   Real x, y, z;
   Real r, r2;
-  Real den, phia;
+  Real den(0.0), phia(0.0);
   RegionSize &mesh_size = pmy_mesh->mesh_size;
 
   Real x1size = mesh_size.x1max - mesh_size.x1min;
@@ -79,56 +80,57 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (mesh_size.nx3 > 1) dim=3;
 
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-  for (int i=is; i<=ie; ++i) {
-    x = pcoord->x1v(i);
-    y = pcoord->x2v(j);
-    z = pcoord->x3v(k);
-    r2 = SQR(x - x0);
-    if (dim > 1) r2 += SQR(y - y0);
-    if (dim > 2) r2 += SQR(z - z0);
-    if (iprob == 1) {
-      den = std::sin(2*PI*x/x1size);
-      if (dim > 1) den *= std::sin(2*PI*y/x2size);
-      if (dim > 2) den *= std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
-      phia = SQR(2*PI/x1size);
-      if (dim > 1) phia += SQR(2*PI/x2size);
-      if (dim > 2) phia += SQR(2*PI/x3size);
-      phia = -den*four_pi_G/phia;
-      den+=2.0;
-    } else if (iprob == 2) {
-      Real M = pin->GetOrAddReal("problem","M",1.0);
-      Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-      Real da = 3.0*M/(4*PI*a0*a0*a0);
-      den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
-      phia = - gconst*M/std::sqrt(r2+SQR(a0));
-    } else if (iprob == 3) {
-      Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-      den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
-      phia = four_pi_G*exp(-a0*r2);
-    }
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        x = pcoord->x1v(i);
+        y = pcoord->x2v(j);
+        z = pcoord->x3v(k);
+        r2 = SQR(x - x0);
+        if (dim > 1) r2 += SQR(y - y0);
+        if (dim > 2) r2 += SQR(z - z0);
+        if (iprob == 1) {
+          den = std::sin(TWO_PI*x/x1size);
+          if (dim > 1) den *= std::sin(TWO_PI*y/x2size);
+          if (dim > 2) den *= std::sin(TWO_PI*z/x3size); // dkx=2*PI/Nx
+          phia = SQR(TWO_PI/x1size);
+          if (dim > 1) phia += SQR(TWO_PI/x2size);
+          if (dim > 2) phia += SQR(TWO_PI/x3size);
+          phia = -den*four_pi_G/phia;
+          den+=2.0;
+        } else if (iprob == 2) {
+          Real M = pin->GetOrAddReal("problem","M",1.0);
+          Real a0 = pin->GetOrAddReal("problem","a0",1.0);
+          Real da = 3.0*M/(4*PI*a0*a0*a0);
+          den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
+          phia = - gconst*M/std::sqrt(r2+SQR(a0));
+        } else if (iprob == 3) {
+          Real a0 = pin->GetOrAddReal("problem","a0",1.0);
+          den = (4.0*SQR(a0)*r2-6.0*a0)*std::exp(-a0*r2);
+          phia = four_pi_G*std::exp(-a0*r2);
+        }
 
-    if (nlim > 0) {
-      phydro->u(IDN,k,j,i) = den;
-      phydro->u(IM1,k,j,i) = 0.0;
-      phydro->u(IM2,k,j,i) = 0.0;
-      phydro->u(IM3,k,j,i) = 0.0;
-    } else {
-      phydro->u(IDN,k,j,i) = den;
-      phydro->u(IM1,k,j,i) = den;
-      phydro->u(IM2,k,j,i) = phia;
-      phydro->u(IM3,k,j,i) = 0.0;
+        if (nlim > 0) {
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) = 0.0;
+          phydro->u(IM3,k,j,i) = 0.0;
+        } else {
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = den;
+          phydro->u(IM2,k,j,i) = phia;
+          phydro->u(IM3,k,j,i) = 0.0;
+        }
+      }
     }
-  }}}
-
+  }
 }
 
 //========================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief Function called once every time step for user-defined work.
 //========================================================================================
 
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // do nothing
   return;
 }
@@ -149,7 +151,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   if (SELF_GRAVITY_ENABLED) {
     if (nlim == 0) {
-// timing measure after loop
+      // timing measure after loop
       int ncycle = pin->GetInteger("problem","ncycle");
       if (Globals::my_rank == 0) {
         std::cout << "=====================================================" << std::endl;
@@ -164,7 +166,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       for (int n=0; n < ncycle; n++) {
         pmb=pblock;
-        while(pmb!=NULL) {
+        while (pmb!=nullptr) {
           std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
           pmb=pmb->next;
         }
@@ -177,11 +179,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
       clock_t tstop = clock();
       float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
-          static_cast<Real>(CLOCKS_PER_SEC);
-      int64_t zones = GetTotalCells();
-      int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
-      float zc_cpus = static_cast<Real>(mb_zones*ncycle)/cpu_time;
-      float zc_cpus2 = static_cast<Real>(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
+                       static_cast<Real>(CLOCKS_PER_SEC);
+      std::int64_t zones = GetTotalCells();
+      std::int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
+      double zc_cpus = static_cast<double>(mb_zones*ncycle)/cpu_time;
+      double zc_cpus2 =
+          static_cast<double>(mb_zones
+                              *static_cast<double>(std::log2(mb_zones))
+                              *ncycle)/cpu_time;
 
       if (Globals::my_rank == 0) {
         std::cout << "Timing Possison Solver                               " << std::endl;
@@ -211,16 +216,18 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       Real err1=0.0,err2=0.0,maxphi=0.0;
       pmb=pblock;
-      while(pmb!=NULL) {
+      while (pmb!=nullptr) {
         Hydro *phydro = pmb->phydro;
         Gravity *pgrav = pmb->pgrav;
         for (int k=ks; k<=ke; ++k) {
-        for (int j=js; j<=je; ++j) {
-        for (int i=is; i<=ie; ++i) {
-          err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
-//          err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
-          maxphi=std::max(pgrav->phi(k,j,i),maxphi);
-        }}} // for-loop
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+              err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
+              //          err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
+              maxphi=std::max(pgrav->phi(k,j,i),maxphi);
+            }
+          }
+        }
         pmb=pmb->next;
       }
 #ifdef MPI_PARALLEL
@@ -235,13 +242,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       Real x2size = mesh_size.x2max - mesh_size.x2min;
       Real x3size = mesh_size.x3max - mesh_size.x3min;
       Real four_pi_G = pin->GetReal("problem","four_pi_G");
-      Real phiamp = SQR(2*PI/x1size);
-      phiamp += SQR(2*PI/x2size);
-      phiamp += SQR(2*PI/x3size);
+      Real phiamp = SQR(TWO_PI/x1size);
+      phiamp += SQR(TWO_PI/x2size);
+      phiamp += SQR(TWO_PI/x3size);
       phiamp = 1.0*four_pi_G/phiamp;
 
       if (Globals::my_rank == 0) {
-        std::cout << std::setprecision(15) << std::scientific;
+        std::cout << std::scientific
+                  << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);
         std::cout << "=====================================================" << std::endl;
         std::cout << "L1 : " << err1 <<" MaxPhi: " << maxphi
                   << " Amp: " << phiamp << std::endl;

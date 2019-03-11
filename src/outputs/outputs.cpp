@@ -48,10 +48,11 @@
 //========================================================================================
 
 // C headers
-#include <stdio.h>
-#include <stdlib.h>
 
-// C/C++ headers
+// C++ headers
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>    // strcmp
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -74,23 +75,18 @@
 
 OutputType::OutputType(OutputParameters oparams) {
   output_params = oparams;
-  pnext_type = NULL;   // Terminate this node in linked list with NULL ptr
+  pnext_type = nullptr;   // Terminate this node in linked list with nullptr
 
   num_vars_ = 0;
-  pfirst_data_ = NULL; // Initialize start of linked list of OutputData's to NULL
-  plast_data_ = NULL;  // Initialize end   of linked list of OutputData's to NULL
-}
-
-// destructor
-
-OutputType::~OutputType() {
+  pfirst_data_ = nullptr; // Initialize start of linked list of OutputData's to nullptr
+  plast_data_ = nullptr;  // Initialize end   of linked list of OutputData's to nullptr
 }
 
 //----------------------------------------------------------------------------------------
 // Outputs constructor
 
 Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
-  pfirst_type_ = NULL;
+  pfirst_type_ = nullptr;
   std::stringstream msg;
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_type;
@@ -99,7 +95,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
   // loop over input block names.  Find those that start with "output", read parameters,
   // and construct linked list of OutputTypes.
-  while (pib != NULL) {
+  while (pib != nullptr) {
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
@@ -113,12 +109,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
       op.dt = pin->GetReal(op.block_name,"dt");
 
       if (op.dt > 0.0) {  // only add output if dt>0
-
         // set file number, basename, id, and format
         op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
         op.file_basename = pin->GetString("job","problem_id");
         char define_id[10];
-        sprintf(define_id,"out%d",op.block_number);  // default id="outN"
+        std::snprintf(define_id, sizeof(define_id),
+                      "out%d", op.block_number);  // default id="outN"
         op.file_id = pin->GetOrAddString(op.block_name,"id",define_id);
         op.file_type = pin->GetString(op.block_name,"file_type");
 
@@ -132,7 +128,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x1=" << x1 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -145,7 +141,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x2=" << x2 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -158,7 +154,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x3=" << x3 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
+            ATHENA_ERROR(msg);
           }
         }
 
@@ -168,28 +164,29 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x1-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         op.output_sumx2 = pin->GetOrAddBoolean(op.block_name,"x2_sum",false);
         if ((op.output_slicex2) && (op.output_sumx2)) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x2-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
         op.output_sumx3 = pin->GetOrAddBoolean(op.block_name,"x3_sum",false);
         if ((op.output_slicex3) && (op.output_sumx3)) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Cannot request both slice and sum along x3-direction"
               << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
 
         // read ghost cell option
         op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name,"ghost_zones",false);
 
         // read ghost cell option
-        if (COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
+            std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
           op.cartesian_vector=pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
                                                    false);
         else
@@ -221,17 +218,17 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Executable not configured for HDF5 outputs, but HDF5 file format "
               << "is requested in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
 #endif
         } else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Unrecognized file format = '" << op.file_type
               << "' in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          ATHENA_ERROR(msg);
         }
 
         // Add type as node in linked list
-        if (pfirst_type_ == NULL) {
+        if (pfirst_type_ == nullptr) {
           pfirst_type_ = pnew_type;
         } else {
           plast->pnext_type = pnew_type;
@@ -247,18 +244,18 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
     msg << "### FATAL ERROR in Outputs constructor" << std::endl
         << "More than one history or restart output block detected in input file"
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Move restarts to the end of the OutputType list, so file counters for other
   // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
-  while(pot!=NULL) {
+  while (pot!=nullptr) {
     if (pot->output_params.file_type.compare("rst")==0) {
       prst=pot;
       found=1;
-      if (pot->pnext_type==NULL) found=2;
+      if (pot->pnext_type==nullptr) found=2;
       break;
     }
     pos++;
@@ -274,9 +271,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         pot=pot->pnext_type;
       pot->pnext_type=prst->pnext_type; // remove it
     }
-    while(pot->pnext_type!=NULL)
+    while (pot->pnext_type!=nullptr)
       pot=pot->pnext_type; // find the end
-    prst->pnext_type=NULL;
+    prst->pnext_type=nullptr;
     pot->pnext_type=prst;
   }
   // if found==2, do nothing; it's already at the end of the list
@@ -286,7 +283,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
 Outputs::~Outputs() {
   OutputType *ptype = pfirst_type_;
-  while(ptype != NULL) {
+  while (ptype != nullptr) {
     OutputType *ptype_old = ptype;
     ptype = ptype->pnext_type;
     delete ptype_old;
@@ -541,11 +538,10 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
   if (output_params.variable.compare(0, 3, "uov") == 0
-   || output_params.variable.compare(0, 12, "user_out_var") == 0) {
+      || output_params.variable.compare(0, 12, "user_out_var") == 0) {
     int iv, ns=0, ne=pmb->nuser_out_var-1;
     if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
       if (iv>=0 && iv<pmb->nuser_out_var)
@@ -561,7 +557,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->name=pmb->user_out_var_names_[n];
       } else {
         char vn[16];
-        sprintf(vn, "user_out_var%d", n);
+        std::snprintf(vn, sizeof(vn), "user_out_var%d", n);
         pod->name = vn;
       }
       pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
@@ -589,7 +585,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
         << "Output variable '" << output_params.variable << "' not implemented"
         << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   return;
@@ -600,7 +596,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 //  \brief
 
 void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
-  if (pfirst_data_ == NULL) {
+  if (pfirst_data_ == nullptr) {
     pfirst_data_ = pnew_data;
   } else {
     pnew_data->pprev = plast_data_;
@@ -616,7 +612,7 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
 void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
   if (pold == pfirst_data_) {
     pfirst_data_ = pnew;
-    if (pold->pnext != NULL) {    // there is another node in the list
+    if (pold->pnext != nullptr) {    // there is another node in the list
       pnew->pnext = pold->pnext;
       pnew->pnext->pprev = pnew;
     } else {                      // there is only one node in the list
@@ -641,13 +637,13 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
 
 void OutputType::ClearOutputData() {
   OutputData *pdata = pfirst_data_;
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     OutputData *pdata_old = pdata;
     pdata = pdata->pnext;
     delete pdata_old;
   }
-  pfirst_data_ = NULL;
-  plast_data_  = NULL;
+  pfirst_data_ = nullptr;
+  plast_data_  = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
@@ -657,7 +653,7 @@ void OutputType::ClearOutputData() {
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
-  while (ptype != NULL) {
+  while (ptype != nullptr) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
@@ -708,7 +704,7 @@ bool OutputType::TransformOutputData(MeshBlock *pmb) {
 //  \brief perform data slicing and update the data list
 
 bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
-  int islice, jslice, kslice;
+  int islice(0), jslice(0), kslice(0);
 
   // Compute i,j,k indices of slice; check if in range of data in this block
   if (dim == 1) {
@@ -756,7 +752,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     pnew = new OutputData;
     pnew->type = pdata->type;
     pnew->name = pdata->name;
@@ -769,27 +765,30 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n) {
-      for (int j=out_js; j<=out_je; ++j) {
-        for (int i=out_is; i<=out_ie; ++i) {
-          pnew->data(n,0,j,i) = pdata->data(n,kslice,j,i);
+        for (int j=out_js; j<=out_je; ++j) {
+          for (int i=out_is; i<=out_ie; ++i) {
+            pnew->data(n,0,j,i) = pdata->data(n,kslice,j,i);
+          }
         }
-      }}
+      }
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n) {
-      for (int k=out_ks; k<=out_ke; ++k) {
-        for (int i=out_is; i<=out_ie; ++i) {
-          pnew->data(n,k,0,i) = pdata->data(n,k,jslice,i);
+        for (int k=out_ks; k<=out_ke; ++k) {
+          for (int i=out_is; i<=out_ie; ++i) {
+            pnew->data(n,k,0,i) = pdata->data(n,k,jslice,i);
+          }
         }
-      }}
+      }
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n) {
-      for (int k=out_ks; k<=out_ke; ++k) {
-        for (int j=out_js; j<=out_je; ++j) {
-          pnew->data(n,k,j,0) = pdata->data(n,k,j,islice);
+        for (int k=out_ks; k<=out_ke; ++k) {
+          for (int j=out_js; j<=out_je; ++j) {
+            pnew->data(n,k,j,0) = pdata->data(n,k,j,islice);
+          }
         }
-      }}
+      }
     }
 
     ReplaceOutputDataNode(pdata,pnew);
@@ -822,7 +821,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
-  while (pdata != NULL) {
+  while (pdata != nullptr) {
     pnew = new OutputData;
     pnew->type = pdata->type;
     pnew->name = pdata->name;
@@ -835,30 +834,36 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n) {
-      for (int k=out_ks; k<=out_ke; ++k) {
-      for (int j=out_js; j<=out_je; ++j) {
-        for (int i=out_is; i<=out_ie; ++i) {
-          pnew->data(n,0,j,i) += pdata->data(n,k,j,i);
+        for (int k=out_ks; k<=out_ke; ++k) {
+          for (int j=out_js; j<=out_je; ++j) {
+            for (int i=out_is; i<=out_ie; ++i) {
+              pnew->data(n,0,j,i) += pdata->data(n,k,j,i);
+            }
+          }
         }
-      }}}
+      }
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n) {
-      for (int k=out_ks; k<=out_ke; ++k) {
-      for (int j=out_js; j<=out_je; ++j) {
-        for (int i=out_is; i<=out_ie; ++i) {
-          pnew->data(n,k,0,i) += pdata->data(n,k,j,i);
+        for (int k=out_ks; k<=out_ke; ++k) {
+          for (int j=out_js; j<=out_je; ++j) {
+            for (int i=out_is; i<=out_ie; ++i) {
+              pnew->data(n,k,0,i) += pdata->data(n,k,j,i);
+            }
+          }
         }
-      }}}
+      }
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n) {
-      for (int k=out_ks; k<=out_ke; ++k) {
-      for (int j=out_js; j<=out_je; ++j) {
-        for (int i=out_is; i<=out_ie; ++i) {
-          pnew->data(n,k,j,0) += pdata->data(n,k,j,i);
+        for (int k=out_ks; k<=out_ke; ++k) {
+          for (int j=out_js; j<=out_je; ++j) {
+            for (int i=out_is; i<=out_ie; ++i) {
+              pnew->data(n,k,j,0) += pdata->data(n,k,j,i);
+            }
+          }
         }
-      }}}
+      }
     }
 
     ReplaceOutputDataNode(pdata,pnew);
@@ -889,14 +894,14 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
 void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                           Coordinates *pco) {
   Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
-  if (COORDINATE_SYSTEM == "spherical_polar") {
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     if (out_ks==out_ke) { // 2D
       for (int k=out_ks; k<=out_ke; k++) {
         for (int j=out_js; j<=out_je; j++) {
-          n1x=sin(pco->x2v(j));
-          n1z=cos(pco->x2v(j));
-          n2x=cos(pco->x2v(j));
-          n2z=-sin(pco->x2v(j));
+          n1x=std::sin(pco->x2v(j));
+          n1z=std::cos(pco->x2v(j));
+          n2x=std::cos(pco->x2v(j));
+          n2z=-std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
             dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
             dst(1,k,j,i)=src(2,k,j,i);
@@ -906,16 +911,16 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
       }
     } else { // 3D
       for (int k=out_ks; k<=out_ke; k++) {
-        n3x=-sin(pco->x3v(k));
-        n3y=cos(pco->x3v(k));
+        n3x=-std::sin(pco->x3v(k));
+        n3y=std::cos(pco->x3v(k));
         n3z=0.0;
         for (int j=out_js; j<=out_je; j++) {
-          n1x=sin(pco->x2v(j))*cos(pco->x3v(k));
-          n1y=sin(pco->x2v(j))*sin(pco->x3v(k));
-          n1z=cos(pco->x2v(j));
-          n2x=cos(pco->x2v(j))*cos(pco->x3v(k));
-          n2y=cos(pco->x2v(j))*sin(pco->x3v(k));
-          n2z=-sin(pco->x2v(j));
+          n1x=std::sin(pco->x2v(j))*std::cos(pco->x3v(k));
+          n1y=std::sin(pco->x2v(j))*std::sin(pco->x3v(k));
+          n1z=std::cos(pco->x2v(j));
+          n2x=std::cos(pco->x2v(j))*std::cos(pco->x3v(k));
+          n2y=std::cos(pco->x2v(j))*std::sin(pco->x3v(k));
+          n2z=-std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
             dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
             dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
@@ -925,13 +930,13 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
       }
     }
   }
-  if (COORDINATE_SYSTEM == "cylindrical") {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     for (int k=out_ks; k<=out_ke; k++) {
       for (int j=out_js; j<=out_je; j++) {
-        n1x=cos(pco->x2v(j));
-        n1y=sin(pco->x2v(j));
-        n2x=-sin(pco->x2v(j));
-        n2y=cos(pco->x2v(j));
+        n1x=std::cos(pco->x2v(j));
+        n1y=std::sin(pco->x2v(j));
+        n2x=-std::sin(pco->x2v(j));
+        n2y=std::cos(pco->x2v(j));
         for (int i=out_is; i<=out_ie; i++) {
           dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
           dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y;

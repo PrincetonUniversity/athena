@@ -7,6 +7,10 @@
 # Modules
 import os
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++
@@ -16,12 +20,14 @@ def prepare(**kwargs):
                      grav='fft', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_mpi_fft')
+    os.system('mv obj obj_mpi_fft')
 
     athena.configure('mpi',
                      prob='jeans',
                      grav='mg', **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_mpi_mg')
+    os.system('mv obj obj_mpi_mg')
 
     athena.configure('fft',
                      prob='jeans',
@@ -29,6 +35,7 @@ def prepare(**kwargs):
                      **kwargs)
     athena.make()
     os.system('mv bin/athena bin/athena_fft')
+    os.system('mv obj obj_fft')
 
     athena.configure(prob='jeans',
                      grav='mg',
@@ -44,39 +51,42 @@ def run(**kwargs):
                  'meshblock/nx2=16',
                  'meshblock/nx3=16',
                  'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
-    athena.run('hydro/athinput.jeans_3d', arguments)
+    athena.run('hydro/athinput.jeans_3d', arguments, lcov_test_suffix='mg')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_fft obj')
     os.system('mv bin/athena_fft bin/athena')
-    athena.run('hydro/athinput.jeans_3d', arguments)
+    athena.run('hydro/athinput.jeans_3d', arguments, lcov_test_suffix='fft')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_mpi_mg obj')
     os.system('mv bin/athena_mpi_mg bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   1, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   2, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
-                  4, 'hydro/athinput.jeans_3d', arguments)
+                  4, 'hydro/athinput.jeans_3d', arguments,
+                  lcov_test_suffix='mpi_mg')
 
+    os.system('rm -rf obj')
+    os.system('mv obj_mpi_fft obj')
     os.system('mv bin/athena_mpi_fft bin/athena')
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   1, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
                   2, 'hydro/athinput.jeans_3d', arguments)
     athena.mpirun(kwargs['mpirun_cmd'], kwargs['mpirun_opts'],
-                  4, 'hydro/athinput.jeans_3d', arguments)
+                  4, 'hydro/athinput.jeans_3d', arguments,
+                  lcov_test_suffix='mpi_fft')
+    return 'skip_lcov'
 
 
 # Analyze outputs
 def analyze():
     # read data from error file
     filename = 'bin/jeans-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
     print(data[0][4], data[1][4])
     print(data[2][4], data[3][4], data[4][4])

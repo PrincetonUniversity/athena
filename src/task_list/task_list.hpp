@@ -8,8 +8,11 @@
 //!   \file task_list.hpp
 //    \brief provides functionality to control dynamic execution using tasks
 
-#include <stdint.h>
-#include <string>
+// C headers
+
+// C++ headers
+#include <cstdint>      // std::uint64_t
+#include <string>       // std::string
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -40,50 +43,52 @@ struct IntegratorWeight {
 //  \brief data and function pointer for an individual Task
 
 struct Task {
-  uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
-  uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
+  std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
-
 
 //---------------------------------------------------------------------------------------
 //! \class TaskState
 //  \brief container for task states
 
 class TaskState {
-  public:
-  uint64_t finished_tasks;
+ public:
+  std::uint64_t finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
     indx_first_task = 0;
     num_tasks_left = ntasks;
-    finished_tasks = 0LL;
+    finished_tasks = 0ULL;
   }
 };
-
 
 //----------------------------------------------------------------------------------------
 //! \class TaskList
 //  \brief data and function definitions for task list base class
 
 class TaskList {
-friend class TimeIntegratorTaskList;
-friend class GravitySolverTaskList;
-public:
+  friend class TimeIntegratorTaskList;
+  friend class GravitySolverTaskList;
+  friend class SuperTimeStepTaskList;
+ public:
   explicit TaskList(Mesh *pm);
-  virtual ~TaskList();
+  // rule of five:
+  virtual ~TaskList() = default;
 
   // data
   int ntasks;     // number of tasks in this list
-  int nsub_steps; // number of times task list should be repeated per full time step
+  int nstages;    // number of times the tasklist is repeated per each full timestep
 
   // functions
-  enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts);
-  void DoTaskListOneSubstep(Mesh *pmesh, int step);
+  enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
+  void DoTaskListOneStage(Mesh *pmesh, int stage);
 
-private:
+ private:
   Mesh* pmy_mesh_;
   struct Task task_list_[64];
+
+  virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -91,145 +96,174 @@ private:
 //  \brief data and function definitions for TimeIntegratorTaskList derived class
 
 class TimeIntegratorTaskList : public TaskList {
-public:
+ public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   ~TimeIntegratorTaskList() {}
 
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  struct IntegratorWeight step_wghts[MAX_NSTEP];
+  struct IntegratorWeight stage_wghts[MAX_NSTAGE];
 
-  void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
+  void AddTimeIntegratorTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
-  enum TaskStatus StartAllReceive(MeshBlock *pmb, int step);
-  enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int step);
+  enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
 
-  enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step);
-  enum TaskStatus CalculateEMF(MeshBlock *pmb, int step);
+  enum TaskStatus CalculateFluxes(MeshBlock *pmb, int stage);
+  enum TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
 
-  enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int step);
-  enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int step);
+  enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
+  enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
 
-  enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int step);
-  enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int step);
+  enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroIntegrate(MeshBlock *pmb, int step);
-  enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step);
+  enum TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldIntegrate(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step);
+  enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroDiffusion(MeshBlock *pmb, int step);
-  enum TaskStatus FieldDiffusion(MeshBlock *pmb, int step);
-  enum TaskStatus CalcDiffusivity(MeshBlock *pmb, int step);
+  enum TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
+  enum TaskStatus CalcDiffusivity(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSend(MeshBlock *pmb, int step);
-  enum TaskStatus FieldSend(MeshBlock *pmb, int step);
+  enum TaskStatus HydroSend(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldSend(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroReceive(MeshBlock *pmb, int step);
-  enum TaskStatus FieldReceive(MeshBlock *pmb, int step);
+  enum TaskStatus HydroReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldReceive(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroShearSend(MeshBlock *pmb, int step);
-  enum TaskStatus HydroShearReceive(MeshBlock *pmb, int step);
-  enum TaskStatus FieldShearSend(MeshBlock *pmb, int step);
-  enum TaskStatus FieldShearReceive(MeshBlock *pmb, int step);
-  enum TaskStatus EMFShearSend(MeshBlock *pmb, int step);
-  enum TaskStatus EMFShearReceive(MeshBlock *pmb, int step);
-  enum TaskStatus EMFShearRemap(MeshBlock *pmb, int step);
+  enum TaskStatus HydroSetBoundaries(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldSetBoundaries(MeshBlock *pmb, int stage);
 
-  enum TaskStatus Prolongation(MeshBlock *pmb, int step);
-  enum TaskStatus Primitives(MeshBlock *pmb, int step);
-  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step);
-  enum TaskStatus UserWork(MeshBlock *pmb, int step);
-  enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step);
-  enum TaskStatus CheckRefinement(MeshBlock *pmb, int step);
+  enum TaskStatus HydroShearSend(MeshBlock *pmb, int stage);
+  enum TaskStatus HydroShearReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldShearSend(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldShearReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus EMFShearSend(MeshBlock *pmb, int stage);
+  enum TaskStatus EMFShearReceive(MeshBlock *pmb, int stage);
+  enum TaskStatus EMFShearRemap(MeshBlock *pmb, int stage);
 
-  enum TaskStatus GravSend(MeshBlock *pmb, int step);
-  enum TaskStatus GravReceive(MeshBlock *pmb, int step);
-  enum TaskStatus GravSolve(MeshBlock *pmb, int step);
-  enum TaskStatus GravFluxCorrection(MeshBlock *pmb, int step);
+  enum TaskStatus Prolongation(MeshBlock *pmb, int stage);
+  enum TaskStatus Primitives(MeshBlock *pmb, int stage);
+  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
+  enum TaskStatus UserWork(MeshBlock *pmb, int stage);
+  enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
+  enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  enum TaskStatus StartupIntegrator(MeshBlock *pmb, int step);
-  enum TaskStatus UpdateTimeStep(MeshBlock *pmb, int step);
+ private:
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
+//----------------------------------------------------------------------------------------
+//! \class SuperTimeStepTaskList
+//  \brief data and function definitions for SuperTimeStepTaskList derived class
+
+class SuperTimeStepTaskList : public TaskList {
+ public:
+  SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm);
+  ~SuperTimeStepTaskList() {}
+
+  void AddSuperTimeStepTask(std::uint64_t id, std::uint64_t dep);
+
+  // functions
+  enum TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus EMFCorrectSend_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus EMFCorrectReceive_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus CalcDiffusivity_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroSend_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldSend_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroReceive_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldReceive_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus HydroSetBoundaries_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus FieldSetBoundaries_STS(MeshBlock *pmb, int stage);
+
+  enum TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
+  enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+
+ private:
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
+};
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID  each hydro task.
+// 64-bit integers with "1" in different bit positions used to ID each hydro task.
 
 namespace HydroIntegratorTaskNames {
-  const uint64_t NONE=0;
-  const uint64_t START_ALLRECV=1LL<<0;
-  const uint64_t CLEAR_ALLBND=1LL<<1;
+const std::uint64_t NONE          = 0ULL;
+const std::uint64_t CLEAR_ALLBND  = 1ULL<<1;
 
-  const uint64_t CALC_HYDFLX=1LL<<2;
-  const uint64_t CALC_FLDFLX=1LL<<3;
-  const uint64_t CALC_RADFLX=1LL<<4;
-  const uint64_t CALC_CHMFLX=1LL<<5;
+const std::uint64_t CALC_HYDFLX = 1ULL<<2;
+const std::uint64_t CALC_FLDFLX = 1ULL<<3;
+const std::uint64_t CALC_RADFLX = 1ULL<<4;
+const std::uint64_t CALC_CHMFLX = 1ULL<<5;
 
-  const uint64_t ADD_VISCFLX=1LL<<6;
-  const uint64_t ADD_HEATFLX=1LL<<7;
-  const uint64_t ADD_OHMFLX=1LL<<8;
-  const uint64_t ADD_ADFLX=1LL<<9;
-  const uint64_t ADD_HALLFLX=1LL<<10;
+const std::uint64_t SEND_HYDFLX = 1ULL<<6;
+const std::uint64_t SEND_FLDFLX = 1ULL<<7;
+const std::uint64_t SEND_RADFLX = 1ULL<<8;
+const std::uint64_t SEND_CHMFLX = 1ULL<<9;
 
-  const uint64_t SEND_HYDFLX=1LL<<11;
-  const uint64_t SEND_FLDFLX=1LL<<12;
-  const uint64_t SEND_RADFLX=1LL<<13;
-  const uint64_t SEND_CHMFLX=1LL<<14;
+const std::uint64_t RECV_HYDFLX = 1ULL<<10;
+const std::uint64_t RECV_FLDFLX = 1ULL<<11;
+const std::uint64_t RECV_RADFLX = 1ULL<<12;
+const std::uint64_t RECV_CHMFLX = 1ULL<<13;
 
-  const uint64_t RECV_HYDFLX=1LL<<15;
-  const uint64_t RECV_FLDFLX=1LL<<16;
-  const uint64_t RECV_RADFLX=1LL<<17;
-  const uint64_t RECV_CHMFLX=1LL<<18;
+const std::uint64_t SRCTERM_HYD = 1ULL<<14;
+const std::uint64_t SRCTERM_FLD = 1ULL<<15;
+const std::uint64_t SRCTERM_RAD = 1ULL<<16;
+const std::uint64_t SRCTERM_CHM = 1ULL<<17;
 
-  const uint64_t SRCTERM_HYD=1LL<<19;
-  const uint64_t SRCTERM_FLD=1LL<<20;
-  const uint64_t SRCTERM_RAD=1LL<<21;
-  const uint64_t SRCTERM_CHM=1LL<<22;
+const std::uint64_t INT_HYD = 1ULL<<18;
+const std::uint64_t INT_FLD = 1ULL<<19;
+const std::uint64_t INT_RAD = 1ULL<<20;
+const std::uint64_t INT_CHM = 1ULL<<21;
 
-  const uint64_t INT_HYD=1LL<<23;
-  const uint64_t INT_FLD=1LL<<24;
-  const uint64_t INT_RAD=1LL<<25;
-  const uint64_t INT_CHM=1LL<<26;
+const std::uint64_t SEND_HYD = 1ULL<<22;
+const std::uint64_t SEND_FLD = 1ULL<<23;
+const std::uint64_t SEND_RAD = 1ULL<<24;
+const std::uint64_t SEND_CHM = 1ULL<<25;
 
-  const uint64_t SEND_HYD=1LL<<27;
-  const uint64_t SEND_FLD=1LL<<28;
-  const uint64_t SEND_RAD=1LL<<29;
-  const uint64_t SEND_CHM=1LL<<30;
+const std::uint64_t RECV_HYD = 1ULL<<26;
+const std::uint64_t RECV_FLD = 1ULL<<27;
+const std::uint64_t RECV_RAD = 1ULL<<28;
+const std::uint64_t RECV_CHM = 1ULL<<29;
 
-  const uint64_t RECV_HYD=1LL<<31;
-  const uint64_t RECV_FLD=1LL<<32;
-  const uint64_t RECV_RAD=1LL<<33;
-  const uint64_t RECV_CHM=1LL<<34;
+const std::uint64_t SETB_HYD = 1ULL<<30;
+const std::uint64_t SETB_FLD = 1ULL<<31;
+const std::uint64_t SETB_RAD = 1ULL<<32;
+const std::uint64_t SETB_CHM = 1ULL<<33;
 
-  const uint64_t PROLONG =1LL<<35;
-  const uint64_t CON2PRIM=1LL<<36;
-  const uint64_t PHY_BVAL=1LL<<37;
-  const uint64_t USERWORK=1LL<<38;
-  const uint64_t NEW_DT  =1LL<<39;
-  const uint64_t AMR_FLAG=1LL<<40;
+const std::uint64_t PROLONG  = 1ULL<<34;
+const std::uint64_t CON2PRIM = 1ULL<<35;
+const std::uint64_t PHY_BVAL = 1ULL<<36;
+const std::uint64_t USERWORK = 1ULL<<37;
+const std::uint64_t NEW_DT   = 1ULL<<38;
+const std::uint64_t AMR_FLAG = 1ULL<<39;
 
-  const uint64_t SOLV_GRAV=1LL<<41;
-  const uint64_t SEND_GRAV=1LL<<42;
-  const uint64_t RECV_GRAV=1LL<<43;
-  const uint64_t CORR_GFLX=1LL<<44;
+const std::uint64_t SEND_HYDSH = 1ULL<<40;
+const std::uint64_t SEND_EMFSH = 1ULL<<41;
+const std::uint64_t SEND_FLDSH = 1ULL<<42;
+const std::uint64_t RECV_HYDSH = 1ULL<<43;
+const std::uint64_t RECV_EMFSH = 1ULL<<44;
+const std::uint64_t RECV_FLDSH = 1ULL<<45;
+const std::uint64_t RMAP_EMFSH = 1ULL<<46;
 
-  const uint64_t STARTUP_INT=1LL<<45;
-  const uint64_t UPDATE_DT  =1LL<<46;
-
-  const uint64_t SEND_HYDSH=1LL<<47;
-  const uint64_t SEND_EMFSH=1LL<<48;
-  const uint64_t SEND_FLDSH=1LL<<49;
-  const uint64_t RECV_HYDSH=1LL<<50;
-  const uint64_t RECV_EMFSH=1LL<<51;
-  const uint64_t RECV_FLDSH=1LL<<52;
-  const uint64_t RMAP_EMFSH=1LL<<53;
-
-  const uint64_t DIFFUSE_HYD=1LL<<54;
-  const uint64_t DIFFUSE_FLD=1LL<<55;
-  const uint64_t CALC_DIFFUSIVITY=1LL<<56;
-}; // namespace HydroIntegratorTaskNames
-
+const std::uint64_t DIFFUSE_HYD      = 1ULL<<47;
+const std::uint64_t DIFFUSE_FLD      = 1ULL<<48;
+const std::uint64_t CALC_DIFFUSIVITY = 1ULL<<49;
+} // namespace HydroIntegratorTaskNames
 #endif // TASK_LIST_TASK_LIST_HPP_

@@ -9,7 +9,11 @@
 //! \file mggravity.hpp
 //  \brief defines MGGravity class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../multigrid/multigrid.hpp"
@@ -23,17 +27,17 @@ class Multigrid;
 //  \brief Multigrid gravity solver for each block
 
 class MGGravity : public Multigrid {
-public:
+ public:
   MGGravity(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-            RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            RegionSize isize, MGBoundaryFunc *MGBoundary,
             enum BoundaryFlag *input_bcs, bool root)
-   : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
+      : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
   ~MGGravity() {}
-  void Smooth(int color);
-  void CalculateDefect(void);
+  void Smooth(int color) final;
+  void CalculateDefect() final;
 
-private:
+ private:
   const Real omega_;
 };
 
@@ -42,12 +46,12 @@ private:
 //  \brief Multigrid gravity solver
 
 class MGGravityDriver : public MultigridDriver{
-public:
-  MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
+ public:
+  MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, ParameterInput *pin);
   ~MGGravityDriver() {}
-  void Solve(int step);
-
-private:
+  void Solve(int stage) final;
+  // void SolveCoarsestGrid() final;
+ private:
   Real four_pi_G_;
 };
 

@@ -6,18 +6,20 @@
 //! \file flux_correction_cc.cpp
 //  \brief functions that perform flux correction for CELL_CENTERED variables
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>
 #include <cstdlib>
-#include <cstring>    // memcpy
+#include <cstring>    // std::memcpy
 #include <iomanip>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -36,14 +38,14 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
-//  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
+//  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_, *pbl;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   int ns, ne;
-  BoundaryData *pbd, *ptarget;
+  BoundaryData *pbd{}, *ptarget{};
 
   if (type==FLUX_HYDRO) {
     ns=0, ne=NHYDRO-1;
@@ -72,9 +74,9 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
                 Real app=pco->GetFace1Area(k+1, j+1, i);
                 Real tarea=amm+amp+apm+app;
                 sbuf[p++]= (x1flux(nn, k  , j  , i)*amm
-                           +x1flux(nn, k  , j+1, i)*amp
-                           +x1flux(nn, k+1, j  , i)*apm
-                           +x1flux(nn, k+1, j+1, i)*app)/tarea;
+                            +x1flux(nn, k  , j+1, i)*amp
+                            +x1flux(nn, k+1, j  , i)*apm
+                            +x1flux(nn, k+1, j+1, i)*app)/tarea;
               }
             }
           }
@@ -86,7 +88,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
               Real ap=pco->GetFace1Area(k, j+1, i);
               Real tarea=am+ap;
               sbuf[p++]=(x1flux(nn, k, j  , i)*am
-                        +x1flux(nn, k, j+1, i)*ap)/tarea;
+                         +x1flux(nn, k, j+1, i)*ap)/tarea;
             }
           }
         } else { // 1D
@@ -96,7 +98,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
         }
         // x2 direction
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
-        int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
+        int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid & 1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=ns; nn<=ne; nn++) {
             for (int k=pmb->ks; k<=pmb->ke; k+=2) {
@@ -105,9 +107,9 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
               for (int i=pmb->is; i<=pmb->ie; i+=2) {
                 Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
                 sbuf[p++]=(x2flux(nn, k  , j, i  )*sarea_[0](i  )
-                          +x2flux(nn, k  , j, i+1)*sarea_[0](i+1)
-                          +x2flux(nn, k+1, j, i  )*sarea_[1](i  )
-                          +x2flux(nn, k+1, j, i+1)*sarea_[1](i+1))/tarea;
+                           +x2flux(nn, k  , j, i+1)*sarea_[0](i+1)
+                           +x2flux(nn, k+1, j, i  )*sarea_[1](i  )
+                           +x2flux(nn, k+1, j, i+1)*sarea_[1](i+1))/tarea;
               }
             }
           }
@@ -118,13 +120,13 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
             for (int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1);
               sbuf[p++]=(x2flux(nn, k, j, i  )*sarea_[0](i  )
-                        +x2flux(nn, k, j, i+1)*sarea_[0](i+1))/tarea;
+                         +x2flux(nn, k, j, i+1)*sarea_[0](i+1))/tarea;
             }
           }
         }
         // x3 direction - 3D only
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
-        int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
+        int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid & 1);
         for (int nn=ns; nn<=ne; nn++) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
             pco->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
@@ -132,9 +134,9 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
             for (int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
               sbuf[p++]=(x3flux(nn, k, j  , i  )*sarea_[0](i  )
-                        +x3flux(nn, k, j  , i+1)*sarea_[0](i+1)
-                        +x3flux(nn, k, j+1, i  )*sarea_[1](i  )
-                        +x3flux(nn, k, j+1, i+1)*sarea_[1](i+1))/tarea;
+                         +x3flux(nn, k, j  , i+1)*sarea_[0](i+1)
+                         +x3flux(nn, k, j+1, i  )*sarea_[1](i  )
+                         +x3flux(nn, k, j+1, i+1)*sarea_[1](i+1))/tarea;
             }
           }
         }
@@ -158,14 +160,14 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
-//  \brief Receive and apply the surace flux from the finer neighbor(s)
+//  \brief Receive and apply the surface flux from the finer neighbor(s)
 
 bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   bool bflag=true;
   int ns, ne;
-  BoundaryData *pbd;
+  BoundaryData *pbd{};
 
   if (type==FLUX_HYDRO) {
     pbd=&bd_flcor_;
@@ -184,8 +186,9 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
+        }
 #ifdef MPI_PARALLEL
-        } else { // MPI boundary
+        else { // NOLINT
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&(pbd->req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
@@ -194,8 +197,6 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
             continue;
           }
           pbd->flag[nb.bufid] = BNDRY_ARRIVED;
-        }
-#else
         }
 #endif
       }
@@ -216,7 +217,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
           }
         }
       } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
-        int js=pmb->js+(pmb->je-pmb->js)*(nb.fid&1)+(nb.fid&1);
+        int js=pmb->js+(pmb->je-pmb->js)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
         else          is+=pmb->block_size.nx1/2;
@@ -229,7 +230,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
           }
         }
       } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
-        int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid&1)+(nb.fid&1);
+        int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
         else          is+=pmb->block_size.nx1/2;
@@ -246,6 +247,5 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
       pbd->flag[nb.bufid] = BNDRY_COMPLETED;
     }
   }
-
   return bflag;
 }

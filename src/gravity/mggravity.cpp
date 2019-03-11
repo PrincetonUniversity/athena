@@ -6,75 +6,75 @@
 //! \file mggravity.cpp
 //  \brief create multigrid solver for gravity
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../parameter_input.hpp"
+#include "gravity.hpp"
+#include "mggravity.hpp"
+
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-// Athena++ headers
-#include "mggravity.hpp"
-#include "gravity.hpp"
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
-#include "../multigrid/multigrid.hpp"
-#include "../globals.hpp"
-
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
 //                                   ParameterInput *pin)
 //  \brief MGGravityDriver constructor
 
-MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
                                  ParameterInput *pin)
     : MultigridDriver(pm, MGBoundary, 1) {
   four_pi_G_=pmy_mesh_->four_pi_G_;
   eps_=pmy_mesh_->grav_eps_;
   if (four_pi_G_==0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   if (mode_>=2 && eps_<0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Convergence threshold must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitatyThreshold for the iterative mode." << std::endl
         << "Set the threshold = 0.0 for automatic convergence control." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   // Allocate multigrid objects
   RegionSize root_size=pmy_mesh_->mesh_size;
-  // int64_t nrbxi are unlikely to exceed int32_t limits when Multigrid is used
-  root_size.nx1 = static_cast<int>(pmy_mesh_->nrbx1);
-  root_size.nx2 = static_cast<int>(pmy_mesh_->nrbx2);
-  root_size.nx3 = static_cast<int>(pmy_mesh_->nrbx3);
+  root_size.nx1 = pmy_mesh_->nrbx1;
+  root_size.nx2 = pmy_mesh_->nrbx2;
+  root_size.nx3 = pmy_mesh_->nrbx3;
   LogicalLocation lroot;
   lroot.lx1=0, lroot.lx2=0, lroot.lx3=0, lroot.level=0;
   mgroot_= new MGGravity(this,lroot,-1,-1,root_size,MGBoundary,pmy_mesh_->mesh_bcs,true);
-  pmg_=NULL;
+  pmg_=nullptr;
   // Multigrid *pfirst;
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   RegionSize block_size;
-  // nrbx* are int64_t
-  block_size.nx1 = static_cast<int>(pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1);
-  block_size.nx2 = static_cast<int>(pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2);
-  block_size.nx3 = static_cast<int>(pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3);
-  for (int i=nbs;i<=nbe;i++) {
+  block_size.nx1 = pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
+  block_size.nx2 = pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
+  block_size.nx3 = pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
+  for (int i=nbs; i<=nbe; i++) {
     enum BoundaryFlag block_bcs[6];
     pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
     Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
@@ -86,43 +86,48 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::Solve(int step)
+//! \fn void MGGravityDriver::Solve(int stage)
 //  \brief load the data and solve
 
-void MGGravityDriver::Solve(int step) {
+void MGGravityDriver::Solve(int stage) {
   Multigrid *pmggrav=pmg_;
   AthenaArray<Real> in;
 
   // Load the source
-  while(pmggrav!=NULL) {
+  while (pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb!=NULL) {
+    if (pmb!=nullptr) {
       in.InitWithShallowCopy(pmb->phydro->u);
       pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
       if (mode_>=2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
     pmggrav=pmggrav->next;
   }
 
   SetupMultigrid();
   Real mean_rho=0.0;
-  if (fperiodic_) mean_rho=last_ave_/four_pi_G_;
-  if (mode_<=1) SolveFMGCycle();
-  else SolveIterative();
+  if (fperiodic_)
+    mean_rho=last_ave_/four_pi_G_;
+
+  if (mode_<=1) {
+    SolveFMGCycle();
+  } else {
+    SolveIterative();
+  }
 
   // Return the result
   pmggrav=pmg_;
-  while(pmggrav!=NULL) {
+  while (pmggrav!=nullptr) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb!=NULL) {
+    if (pmb!=nullptr) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
       pmb->pgrav->grav_mean_rho=mean_rho;
     }
-//    else { // on another process
-//    }
+    //    else { // on another process
+    //    }
     pmggrav=pmggrav->next;
   }
   return;
@@ -146,7 +151,7 @@ void MGGravity::Smooth(int color) {
     for (int j=js; j<=je; j++) {
       for (int i=is+c; i<=ie; i+=2)
         u(0,k,j,i)-=((6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
-                     -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
+                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
       c^=1;
     }
     c^=1;
@@ -155,10 +160,10 @@ void MGGravity::Smooth(int color) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateDefect(void)
+//! \fn void MGGravity::CalculateDefect()
 //  \brief calculate the residual
 
-void MGGravity::CalculateDefect(void) {
+void MGGravity::CalculateDefect() {
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];
@@ -172,7 +177,7 @@ void MGGravity::CalculateDefect(void) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
-                         -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
+                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
       }
     }
   }

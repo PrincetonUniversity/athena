@@ -16,14 +16,16 @@
 //  \brief Adds source terms due to local shearingbox approximation
 //======================================================================================
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../hydro.hpp"
-
-// this class header
 #include "hydro_srcterms.hpp"
 
 //--------------------------------------------------------------------------------------
@@ -51,19 +53,19 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
 
-// 1) S_M = -rho*grad(Phi); S_E = -rho*v*grad(Phi)
-//    dM1/dt = 2q\rho\Omega^2 x
-//    dE /dt = 2q\Omega^2 (\rho v_x)
-// 2) Coriolis forces:
-//    dM1/dt = 2\Omega(\rho v_y)
-//    dM2/dt = -2\Omega(\rho v_x)
+  // 1) S_M = -rho*grad(Phi); S_E = -rho*v*grad(Phi)
+  //    dM1/dt = 2q\rho\Omega^2 x
+  //    dE /dt = 2q\Omega^2 (\rho v_x)
+  // 2) Coriolis forces:
+  //    dM1/dt = 2\Omega(\rho v_y)
+  //    dM2/dt = -2\Omega(\rho v_x)
   if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den = prim(IDN,k,j,i);
           cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i)
-                                +2.0*Omega_0_*den*prim(IVY,k,j,i));
+                                 +2.0*Omega_0_*den*prim(IVY,k,j,i));
           cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
           if (NON_BAROTROPIC_EOS) {
             phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
@@ -71,28 +73,29 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
             phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
             cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
                                    flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
-                                   /pmb->pcoord->dx1v(i);
-          }
-        }
-    }}
-  } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
-      int ks = pmb->ks;
-      for (int j=pmb->js; j<=pmb->je; ++j) {
-        for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den = prim(IDN,ks,j,i);
-          cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den
-                                *pmb->pcoord->x1v(i)+2.0*Omega_0_*den*prim(IVZ,ks,j,i));
-          cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
-          if (NON_BAROTROPIC_EOS) {
-            phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
-            phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
-            phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
-            cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
-                                    flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
-                                    /pmb->pcoord->dx1v(i);
+                               /pmb->pcoord->dx1v(i);
           }
         }
       }
+    }
+  } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
+    int ks = pmb->ks;
+    for (int j=pmb->js; j<=pmb->je; ++j) {
+      for (int i=pmb->is; i<=pmb->ie; ++i) {
+        Real den = prim(IDN,ks,j,i);
+        cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den
+                                *pmb->pcoord->x1v(i)+2.0*Omega_0_*den*prim(IVZ,ks,j,i));
+        cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
+        if (NON_BAROTROPIC_EOS) {
+          phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
+          phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
+          phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
+          cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
+                                  flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
+                              /pmb->pcoord->dx1v(i);
+        }
+      }
+    }
   } else {
     std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
     return;

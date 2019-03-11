@@ -5,7 +5,7 @@
 # $1 -- Name of the remote to which the push is being done
 # $2 -- URL to which the push is being done
 
-PUBLIC_REMOTE_URL="https://github.com/PrincetonUniversity/athena-public-version.git"
+public_remote_url="https://github.com/PrincetonUniversity/athena-public-version.git"
 
 public_local_branch="public"
 private_local_branch="master"
@@ -22,7 +22,7 @@ echo url: $url
 
 # Check that we are not pushing private results to
 # the public branch
-if ! [ $branch = $public_local_branch ] && [ $url = $PUBLIC_REMOTE_URL ]
+if ! [ $branch = $public_local_branch ] && [ $url = $public_remote_url ]
 then
     echo You are pushing the \(private\) $branch branch to the public repo.
     echo This is not allowed.

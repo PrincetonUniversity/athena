@@ -1,8 +1,7 @@
 <comment>
-problem = 2D MRI
-author  = J.F. Hawley & S.A. Balbus
-journal = ApJ 400, 595-609 (1992)
-config  = -shear -b --eos=isothermal --problem=hb3 
+problem   = 2D MRI
+reference = J.F. Hawley & S.A. Balbus. ApJ 400, 595-609 (1992)
+configure = --prob=hb3 -shear -b --eos=isothermal
 
 <job>
 problem_id  = HB3       # problem ID: basename of output filenames
@@ -64,4 +63,3 @@ nwy        = 1         # wavenumber in x2
 Omega0     = 1.0e-3    # orbital freq
 qshear     = 1.5       # shear rate
 shboxcoord = 2         # 1=xy; 2=xz
-

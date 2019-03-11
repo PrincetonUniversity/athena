@@ -14,32 +14,37 @@
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
 //   JCP, 43, 357 (1981).
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
+namespace {
 // prototype for function to compute Roe fluxes from eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
-  Real eigenvalues[], int &flag);
+                    Real eigenvalues[], int &flag);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with flux fn
-static Real gm1, iso_cs;
+Real gm1, iso_cs;
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
 //  \brief The Roe Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
-
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
@@ -49,26 +54,22 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   Real ev[(NHYDRO)],du[(NHYDRO)];
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,wroe,flxi,fl,fr,ev,du)
   for (int i=il; i<=iu; ++i) {
+    //--- Step 1.  Load L/R states into local variables
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
 
-//--- Step 1.  Load L/R states into local variables
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
-
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
-
-//--- Step 2.  Compute Roe-averaged data from left- and right-states
+    //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
@@ -88,7 +89,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       wroe[IPR] = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
     }
 
-//--- Step 3.  Compute L/R fluxes
+    //--- Step 3.  Compute L/R fluxes
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -115,7 +116,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }
 
-//--- Step 4.  Compute Roe fluxes.
+    //--- Step 4.  Compute Roe fluxes.
 
     du[IDN] = wri[IDN]          - wli[IDN];
     du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
@@ -132,7 +133,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     int llf_flag = 0;
     RoeFlux(wroe,du,wli,flxi,ev,llf_flag);
 
-//--- Step 5.  Overwrite with upwind flux if flow is supersonic
+    //--- Step 5.  Overwrite with upwind flux if flow is supersonic
 
     if (ev[0] >= 0.0) {
       flxi[IDN] = fl[IDN];
@@ -149,12 +150,12 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fr[IEN];
     }
 
-//--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
+    //--- Step 6.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
       Real cl = pmy_block->peos->SoundSpeed(wli);
       Real cr = pmy_block->peos->SoundSpeed(wri);
-      Real a  = 0.5*std::max( (fabs(wli[IVX]) + cl), (fabs(wri[IVX]) + cr) );
+      Real a  = 0.5*std::max( (std::fabs(wli[IVX]) + cl), (std::fabs(wri[IVX]) + cr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -165,7 +166,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       }
     }
 
-//--- Step 7. Store results into 3D array of fluxes
+    //--- Step 7. Store results into 3D array of fluxes
 
     flx(IDN,k,j,i) = flxi[IDN];
     flx(ivx,k,j,i) = flxi[IVX];
@@ -173,11 +174,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     flx(ivz,k,j,i) = flxi[IVZ];
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
   }
-  }}
-
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //! \fn RoeFlux()
 //  \brief Computes Roe fluxes for the conserved variables, that is
@@ -205,15 +205,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 //   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 #pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
-  Real ev[], int &llf_flag) {
-
+                    Real ev[], int &llf_flag) {
   Real d  = wroe[IDN];
   Real v1 = wroe[IVX];
   Real v2 = wroe[IVY];
   Real v3 = wroe[IVZ];
 
-//--- Adiabatic hydrodynamics
-
+  //--- Adiabatic hydrodynamics
   if (NON_BAROTROPIC_EOS) {
     Real h = wroe[IPR];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
@@ -259,11 +257,11 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     a[4] *= na;
 
     Real coeff[(NHYDRO)];
-    coeff[0] = -0.5*fabs(ev[0])*a[0];
-    coeff[1] = -0.5*fabs(ev[1])*a[1];
-    coeff[2] = -0.5*fabs(ev[2])*a[2];
-    coeff[3] = -0.5*fabs(ev[3])*a[3];
-    coeff[4] = -0.5*fabs(ev[4])*a[4];
+    coeff[0] = -0.5*std::fabs(ev[0])*a[0];
+    coeff[1] = -0.5*std::fabs(ev[1])*a[1];
+    coeff[2] = -0.5*std::fabs(ev[2])*a[2];
+    coeff[3] = -0.5*std::fabs(ev[3])*a[3];
+    coeff[4] = -0.5*std::fabs(ev[4])*a[4];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix
@@ -298,7 +296,7 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     flx[4] += coeff[3]*0.5*vsq;
     flx[4] += coeff[4]*(h + v1*cs);
 
-//--- Isothermal hydrodynamics
+    //--- Isothermal hydrodynamics
 
   } else {
     // Compute eigenvalues (eq. B6)
@@ -322,10 +320,10 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     a[3] += du[1]*0.5/iso_cs;
 
     Real coeff[(NHYDRO)];
-    coeff[0] = -0.5*fabs(ev[0])*a[0];
-    coeff[1] = -0.5*fabs(ev[1])*a[1];
-    coeff[2] = -0.5*fabs(ev[2])*a[2];
-    coeff[3] = -0.5*fabs(ev[3])*a[3];
+    coeff[0] = -0.5*std::fabs(ev[0])*a[0];
+    coeff[1] = -0.5*std::fabs(ev[1])*a[1];
+    coeff[2] = -0.5*std::fabs(ev[2])*a[2];
+    coeff[3] = -0.5*std::fabs(ev[3])*a[3];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix
@@ -350,4 +348,6 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     flx[3] += coeff[2];
     flx[3] += coeff[3]*v3;
   }
+  return;
 }
+} // namespace

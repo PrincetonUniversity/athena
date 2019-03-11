@@ -7,15 +7,19 @@
 //  \brief Applies divergence of the fluxes, including geometric "source terms" added
 //         by a function implemented in each Coordinate class.
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "hydro.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -35,8 +39,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
   AthenaArray<Real> &x3flux=flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  int tid=0;
   AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
   x1area.InitWithShallowCopy(x1face_area_);
   x2area.InitWithShallowCopy(x2face_area_);
@@ -48,7 +50,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
       for (int n=0; n<NHYDRO; ++n) {
@@ -94,7 +95,8 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
   }
 
   // add coordinate (geometric) source terms
-  pmb->pcoord->CoordSrcTerms((wght*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
+  if (!STS_ENABLED)
+    pmb->pcoord->CoordSrcTerms((wght*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
 
   return;
 }
@@ -111,52 +113,102 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
 
   // consider every possible simplified form of weighted sum operator:
   // U = a*U + b*U1 + c*U2
-  // if c=0, c=b=0, or c=b=a=0 (in that order) to avoid extra FMA operations
 
   // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
-  if (wght[2] != 0.0) {
-    for (int n=0; n<NHYDRO; ++n) {
-      for (int k=ks; k<=ke; ++k) {
-        for (int j=js; j<=je; ++j) {
-#pragma omp simd
-          for (int i=is; i<=ie; ++i) {
-            u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
-                + wght[2]*u_in2(n,k,j,i);
-          }
-        }
-      }
-    }
-  } else { // do not dereference u_in2
-    if (wght[1] != 0.0) {
+  if (wght[0] == 1.0) {
+    if (wght[2] != 0.0) {
       for (int n=0; n<NHYDRO; ++n) {
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
 #pragma omp simd
             for (int i=is; i<=ie; ++i) {
-              u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i);
+              u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
             }
           }
         }
       }
-    } else { // do not dereference u_in1
-      if (wght[0] != 0.0) {
+    } else { // do not dereference u_in2
+      if (wght[1] != 0.0) {
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=ks; k<=ke; ++k) {
             for (int j=js; j<=je; ++j) {
 #pragma omp simd
               for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i);
+                u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i);
               }
             }
           }
         }
-      } else { // directly initialize u_out to 0
+      }
+    }
+  } else if (wght[0] == 0.0) {
+    if (wght[2] != 0.0) {
+      for (int n=0; n<NHYDRO; ++n) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+#pragma omp simd
+            for (int i=is; i<=ie; ++i) {
+              u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
+            }
+          }
+        }
+      }
+    } else if (wght[1] == 1.0) {
+      // just deep copy
+      for (int n=0; n<NHYDRO; ++n) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+#pragma omp simd
+            for (int i=is; i<=ie; ++i) {
+              u_out(n,k,j,i) = u_in1(n,k,j,i);
+            }
+          }
+        }
+      }
+    } else {
+      for (int n=0; n<NHYDRO; ++n) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+#pragma omp simd
+            for (int i=is; i<=ie; ++i) {
+              u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i);
+            }
+          }
+        }
+      }
+    }
+  } else {
+    if (wght[2] != 0.0) {
+      for (int n=0; n<NHYDRO; ++n) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+#pragma omp simd
+            for (int i=is; i<=ie; ++i) {
+              u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
+                               + wght[2]*u_in2(n,k,j,i);
+            }
+          }
+        }
+      }
+    } else { // do not dereference u_in2
+      if (wght[1] != 0.0) {
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=ks; k<=ke; ++k) {
             for (int j=js; j<=je; ++j) {
 #pragma omp simd
               for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = 0.0;
+                u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i);
+              }
+            }
+          }
+        }
+      } else { // do not dereference u_in1
+        for (int n=0; n<NHYDRO; ++n) {
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je; ++j) {
+#pragma omp simd
+              for (int i=is; i<=ie; ++i) {
+                u_out(n,k,j,i) *= wght[0];
               }
             }
           }

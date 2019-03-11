@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-Script for plotting 1D data from .hst or .tab files.
+Script for plotting 1D data from .athdf, .hst, or .tab files.
 
 Run "plot_lines.py -h" to see full description of inputs.
 
@@ -48,9 +48,6 @@ def main(**kwargs):
         raise RuntimeError('First entry in x_names must be nonempty')
     if y_names[0] == '':
         raise RuntimeError('First entry in y_names must be nonempty')
-    for data_file in data_files:
-        if data_file[-4:] != '.hst' and data_file[-4:] != '.tab':
-            raise RuntimeError('Files must have .hst or .tab extension')
     if len(data_files) < num_lines:
         data_files += data_files[-1:] * (num_lines - len(data_files))
     if len(x_names) < num_lines:
@@ -64,6 +61,11 @@ def main(**kwargs):
             x_names[n] = x_names[n-1]
         if y_names[n] == '':
             y_names[n] = y_names[n-1]
+    for data_file in data_files:
+        valid_file = (data_file[-6:] == '.athdf' or data_file[-4:] == '.hst'
+                      or data_file[-4:] == '.tab')
+        if not valid_file:
+            raise RuntimeError('Files must have .athdf, .hst, or .tab extension')
     if len(styles) < num_lines:
         styles += styles[-1:] * (num_lines - len(styles))
     for n in range(num_lines):
@@ -106,12 +108,14 @@ def main(**kwargs):
     x_vals = []
     y_vals = []
     for n in range(num_lines):
-        if data_files[n][-4:] == '.hst':
+        if data_files[n][-6:] == '.athdf':
+            data = athena_read.athdf(data_files[n])
+        elif data_files[n][-4:] == '.hst':
             data = athena_read.hst(data_files[n])
         else:
             data = athena_read.tab(data_files[n])
-        x_vals.append(data[x_names[n]])
-        y_vals.append(data[y_names[n]])
+        x_vals.append(data[x_names[n]].flatten())
+        y_vals.append(data[y_names[n]].flatten())
 
     # Plot data
     plt.figure()
@@ -140,17 +144,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
       'data_files',
-      help=('comma-separated list of input files; empty strings repeat previous entries;'
+      help=('comma-separated list of input files; empty strings repeat previous entries; '
             'list is extended if x_names or y_names is longer')
     )
     parser.add_argument(
         'x_names',
-        help=('comma-separated list of abscissas; empty strings repeat previous entries;'
+        help=('comma-separated list of abscissas; empty strings repeat previous entries; '
               'list is extended if data_files or y_names is longer')
     )
     parser.add_argument(
         'y_names',
-        help=('comma-separated list of ordinates; empty strings repeat previous entries;'
+        help=('comma-separated list of ordinates; empty strings repeat previous entries; '
               'list is extended if data_files or x_names is longer')
     )
     parser.add_argument(

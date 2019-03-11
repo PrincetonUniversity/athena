@@ -6,6 +6,10 @@
 //! \file polarwedge.cpp
 //  \brief implementation of polar wedge BCs in x2 direction
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -15,20 +19,20 @@
 //----------------------------------------------------------------------------------------
 //! \fn void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                         FaceField &b, const Real time, const Real dt,
-//                         int is, int ie, int js, int je, int ks, int ke, int ngh)
+//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, inner x2 boundary
 
 void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                       FaceField &b, Real time, Real dt,
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
+    for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,k,js-j,i) = sign * prim(n,k,js+j-1,i);
+        for (int i=il; i<=iu; ++i) {
+          prim(n,k,jl-j,i) = sign * prim(n,k,jl+j-1,i);
         }
       }
     }
@@ -37,37 +41,40 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(js-j),i) = sign * b.x1f(k,(js+j-1),i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(jl-j),i) = sign * b.x1f(k,(jl+j-1),i);
+        }
       }
-    }}
+    }
 
     sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(js-j),i) = sign * b.x2f(k,(js+j  ),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(jl-j),i) = sign * b.x2f(k,(jl+j  ),i);
+        }
       }
-    }}
-    for (int k=ks; k<=ke; ++k) {
+    }
+    for (int k=kl; k<=ku; ++k) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,js,i) = 0.0;
+      for (int i=il; i<=iu; ++i) {
+        b.x2f(k,jl,i) = 0.0;
       }
     }
 
     sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(js-j),i) = sign * b.x3f(k,(js+j-1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(jl-j),i) = sign * b.x3f(k,(jl+j-1),i);
+        }
       }
-    }}
+    }
   }
 
   return;
@@ -76,20 +83,20 @@ void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 //----------------------------------------------------------------------------------------
 //! \fn void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 //                          FaceField &b, const Real time, const Real dt,
-//                          int is, int ie, int js, int je, int ks, int ke, int ngh)
+//                          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, outer x2 boundary
 
 void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, Real time, Real dt,
-                    int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                       FaceField &b, Real time, Real dt,
+                       int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
+    for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,k,je+j,i) = sign * prim(n,k,je-j+1,i);
+        for (int i=il; i<=iu; ++i) {
+          prim(n,k,ju+j,i) = sign * prim(n,k,ju-j+1,i);
         }
       }
     }
@@ -98,38 +105,41 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
     Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(je+j  ),i) = sign * b.x1f(k,(je-j+1),i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(ju+j  ),i) = sign * b.x1f(k,(ju-j+1),i);
+        }
       }
-    }}
+    }
 
     sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+j+1),i) = sign * b.x2f(k,(je-j+1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(ju+j+1),i) = sign * b.x2f(k,(ju-j+1),i);
+        }
       }
-    }}
-    for (int k=ks; k<=ke; ++k) {
+    }
+    for (int k=kl; k<=ku; ++k) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+1),i) = 0.0;
+      for (int i=il; i<=iu; ++i) {
+        b.x2f(k,(ju+1),i) = 0.0;
       }
     }
 
 
     sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(je+j  ),i) =  sign * b.x3f(k,(je-j+1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(ju+j  ),i) =  sign * b.x3f(k,(ju-j+1),i);
+        }
       }
-    }}
+    }
   }
 
   return;

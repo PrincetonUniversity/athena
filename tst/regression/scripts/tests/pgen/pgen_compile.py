@@ -16,11 +16,13 @@ pgen_choices = set([choice[len(pgen_directory):-4] for choice in pgen_choices])
 
 # Skip --prob=default_pgen; weak attr. may not compile with Intel C++ compiler
 pgen_choices.remove('default_pgen')
+# Skip from_array pgen
+pgen_choices.remove('from_array')
 # Currently testing GR Hydro, not MHD:
 # coord='minkowski', #'-t'
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
 # MHD-required problems: --rsolver=hlld by default
-mhd_probs = set(['cpaw', 'field_loop', 'orszag_tang', 'rotor', 'resist'])
+mhd_probs = set(['cpaw', 'field_loop', 'orszag_tang', 'rotor', 'resist', 'magnoh'])
 # Shearing box MHD problems
 shear_probs = set(['hb3', 'hgb', 'ssheet', 'strat'])
 # Newtonian Hydro-only or MHD-optional problems are all leftover pgen/ files

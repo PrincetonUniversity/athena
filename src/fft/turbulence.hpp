@@ -9,7 +9,11 @@
 //! \file turbulence.hpp
 //  \brief defines Turbulence class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "athena_fft.hpp"
@@ -25,16 +29,16 @@ class FFTDriver;
 //  \brief Turbulence Driver
 
 class TurbulenceDriver : public FFTDriver{
-public:
+ public:
   TurbulenceDriver(Mesh *pm, ParameterInput *pin);
   ~TurbulenceDriver();
-  void Driving(void);
-  void Generate(void);
+  void Driving();
+  void Generate();
   void PowerSpectrum(AthenaFFTComplex *amp);
   void Perturb(Real dt);
-  int64_t GetKcomp(int idx, int disp, int Nx);
-private:
-  int64_t rseed;
+  std::int64_t GetKcomp(int idx, int disp, int Nx);
+ private:
+  std::int64_t rseed;
   int nlow,nhigh;
   Real dtdrive,tdrive;
   Real expo,dedt,dvol;

@@ -5,26 +5,24 @@
 //========================================================================================
 //! \file show_config.cpp
 
+// C headers
+
 // C++ headers
 #include <iostream>
 #include <sstream>
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void ShowConfig(void)
+//! \fn void ShowConfig()
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void) {
+void ShowConfig() {
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;
-  if (NON_BAROTROPIC_EOS) {
-    std::cout<<"  Equation of state:          adiabatic" << std::endl;
-  } else {
-    std::cout<<"  Equation of state:          isothermal" << std::endl;
-  }
+  std::cout<<"  Equation of state:          " << EQUATION_OF_STATE << std::endl;
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
 
   if (SHEARING_BOX) {
@@ -57,9 +55,9 @@ void ShowConfig(void) {
     std::cout<<"  General Relativity:         OFF " << std::endl;
   }
   if (SINGLE_PRECISION_ENABLED) {
-    std::cout<<"  Floating point precision:   single" << std::endl;
+    std::cout<<"  Floating-point precision:   single" << std::endl;
   } else {
-    std::cout<<"  Floating point precision:   double" << std::endl;
+    std::cout<<"  Floating-point precision:   double" << std::endl;
   }
   std::cout<<"  Number of ghost cells:      " << NGHOST << std::endl;
 #ifdef MPI_PARALLEL
