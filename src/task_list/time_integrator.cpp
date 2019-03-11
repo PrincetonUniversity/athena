@@ -581,7 +581,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) 
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int stage) {
-  pmb->pbval->SendFluxCorrection(FLUX_HYDRO);
+  pmb->pbval->SendFluxCorrection(FluxCorrectionQuantity::hydro);
   return TASK_SUCCESS;
 }
 
@@ -594,7 +594,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage
 // Functions to receive fluxes between MeshBlocks
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int stage) {
-  if (pmb->pbval->ReceiveFluxCorrection(FLUX_HYDRO) == true) {
+  if (pmb->pbval->ReceiveFluxCorrection(FluxCorrectionQuantity::hydro) == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -746,7 +746,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage
 
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
   } else {
     return TASK_FAIL;
   }
@@ -768,7 +768,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int stage) {
 enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(CCBoundaryQuantity::cons);
   } else {
     return TASK_FAIL;
   }
@@ -797,7 +797,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) 
 
 enum TaskStatus TimeIntegratorTaskList::HydroSetBoundaries(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, CCBoundaryQuantity::cons);
     return TASK_SUCCESS;
   }
   return TASK_FAIL;

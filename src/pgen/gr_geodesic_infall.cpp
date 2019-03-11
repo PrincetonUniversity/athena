@@ -50,7 +50,7 @@ void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 

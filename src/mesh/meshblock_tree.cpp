@@ -189,14 +189,14 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
   for (oz=ozmin; oz<=ozmax; oz++) {
     nloc.lx3=loc.lx3+oz;
     if (nloc.lx3<0) {
-      if (mesh_bcs[INNER_X3]!=PERIODIC_BNDRY) {
+      if (mesh_bcs[BoundaryFace::inner_x3]!=BoundaryFlag::periodic) {
         continue;
       } else {
         nloc.lx3=nzmax-1;
       }
     }
     if (nloc.lx3>=nzmax) {
-      if (mesh_bcs[OUTER_X3]!=PERIODIC_BNDRY) {
+      if (mesh_bcs[BoundaryFace::outer_x3]!=BoundaryFlag::periodic) {
         continue;
       } else {
         nloc.lx3=0;
@@ -206,9 +206,9 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
       nloc.lx2=loc.lx2+oy;
       bool polar=false;
       if (nloc.lx2<0) {
-        if (mesh_bcs[INNER_X2]==PERIODIC_BNDRY) {
+        if (mesh_bcs[BoundaryFace::inner_x2]==BoundaryFlag::periodic) {
           nloc.lx2=nymax-1;
-        } else if (mesh_bcs[INNER_X2]==POLAR_BNDRY) {
+        } else if (mesh_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar) {
           nloc.lx2=0;
           polar=true;
         } else {
@@ -216,9 +216,9 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         }
       }
       if (nloc.lx2>=nymax) {
-        if (mesh_bcs[OUTER_X2]==PERIODIC_BNDRY) {
+        if (mesh_bcs[BoundaryFace::outer_x2]==BoundaryFlag::periodic) {
           nloc.lx2=0;
-        } else if (mesh_bcs[OUTER_X2]==POLAR_BNDRY) {
+        } else if (mesh_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar) {
           nloc.lx2=nymax-1;
           polar=true;
         } else {
@@ -230,14 +230,14 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
         if (ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;
         if (nloc.lx1<0) {
-          if (mesh_bcs[INNER_X1]!=PERIODIC_BNDRY) {
+          if (mesh_bcs[BoundaryFace::inner_x1]!=BoundaryFlag::periodic) {
             continue;
           } else {
             nloc.lx1=nxmax-1;
           }
         }
         if (nloc.lx1>=nxmax) {
-          if (mesh_bcs[OUTER_X1]!=PERIODIC_BNDRY) {
+          if (mesh_bcs[BoundaryFace::outer_x1]!=BoundaryFlag::periodic) {
             continue;
           } else {
             nloc.lx1=0;
@@ -391,14 +391,14 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if (lx<0) {
-    if (bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::inner_x1]==BoundaryFlag::periodic || bcs[BoundaryFace::inner_x1]==BoundaryFlag::shear_periodic) {
       lx=(rbx<<(ll-rl))-1;
     } else {
       return nullptr;
     }
   }
   if (lx>=rbx<<(ll-rl)) {;
-    if (bcs[OUTER_X1]==PERIODIC_BNDRY || bcs[OUTER_X1]==SHEAR_PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::outer_x1]==BoundaryFlag::periodic || bcs[BoundaryFace::outer_x1]==BoundaryFlag::shear_periodic) {
       lx=0;
     } else {
       return nullptr;
@@ -406,9 +406,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   bool polar = false;
   if (ly<0) {
-    if (bcs[INNER_X2]==PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::inner_x2]==BoundaryFlag::periodic) {
       ly=(rby<<(ll-rl))-1;
-    } else if (bcs[INNER_X2]==POLAR_BNDRY) {
+    } else if (bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar) {
       ly=0;
       polar=true;
     } else {
@@ -416,9 +416,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     }
   }
   if (ly>=rby<<(ll-rl)) {
-    if (bcs[OUTER_X2]==PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::outer_x2]==BoundaryFlag::periodic) {
       ly=0;
-    } else if (bcs[OUTER_X2]==POLAR_BNDRY) {
+    } else if (bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar) {
       ly=(rby<<(ll-rl))-1;
       polar=true;
     } else {
@@ -427,14 +427,14 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   std::int64_t num_x3 = rbz<<(ll-rl);
   if (lz<0) {
-    if (bcs[INNER_X3]==PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::inner_x3]==BoundaryFlag::periodic) {
       lz=num_x3-1;
     } else {
       return nullptr;
     }
   }
   if (lz>=num_x3) {
-    if (bcs[OUTER_X3]==PERIODIC_BNDRY) {
+    if (bcs[BoundaryFace::outer_x3]==BoundaryFlag::periodic) {
       lz=0;
     } else {
       return nullptr;

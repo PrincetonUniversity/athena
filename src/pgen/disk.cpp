@@ -92,23 +92,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(float_min)));
 
   // enroll user-defined boundary condition
-  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
+  if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, DiskInnerX1);
   }
-  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
+  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, DiskOuterX1);
   }
-  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
+  if (mesh_bcs[BoundaryFace::inner_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, DiskInnerX2);
   }
-  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
+  if (mesh_bcs[BoundaryFace::outer_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, DiskOuterX2);
   }
-  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X3, DiskInnerX3);
+  if (mesh_bcs[BoundaryFace::inner_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, DiskInnerX3);
   }
-  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X3, DiskOuterX3);
+  if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, DiskOuterX3);
   }
 
   return;

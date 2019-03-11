@@ -118,13 +118,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
   }
 
   // correct cell face coordinates in ghost zones for reflecting boundary condition
-  if (pmy_block->pbval->block_bcs[INNER_X1] == REFLECTING_BNDRY) {
+  if (pmy_block->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::reflect) {
     for (int i=1; i<=ng; ++i) {
       dx1f(is-i) = dx1f(is+i-1);
       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
-  if (pmy_block->pbval->block_bcs[OUTER_X1] == REFLECTING_BNDRY) {
+  if (pmy_block->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::reflect) {
     for (int i=1; i<=ng; ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -190,15 +190,15 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
-    if (pmy_block->pbval->block_bcs[INNER_X2] == REFLECTING_BNDRY
-        || pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY) { // also polar boundary
+    if (pmy_block->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::reflect
+        || pmy_block->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(js-j) = dx2f(js+j-1);
         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
-    if (pmy_block->pbval->block_bcs[OUTER_X2] == REFLECTING_BNDRY
-        || pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY) { // also polar boundary
+    if (pmy_block->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::reflect
+        || pmy_block->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) { // also polar boundary
       for (int j=1; j<=ng; ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -270,13 +270,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     }
 
     // correct cell face coordinates in ghost zones for reflecting boundary condition
-    if (pmy_block->pbval->block_bcs[INNER_X3] == REFLECTING_BNDRY) {
+    if (pmy_block->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::reflect) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
-    if (pmy_block->pbval->block_bcs[OUTER_X3] == REFLECTING_BNDRY) {
+    if (pmy_block->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::reflect) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
@@ -728,13 +728,13 @@ void Coordinates::CoordSrcTerms(
 //   returned value: true if face indexed with j is on a pole; false otherwise
 
 bool Coordinates::IsPole(int j) {
-  if ((pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY ||
-       pmy_block->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) &&
+  if ((pmy_block->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar ||
+       pmy_block->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) &&
       j == pmy_block->js) {
     return true;
   }
-  if ((pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY ||
-       pmy_block->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) &&
+  if ((pmy_block->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar ||
+       pmy_block->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) &&
       j == pmy_block->je+1) {
     return true;
   }

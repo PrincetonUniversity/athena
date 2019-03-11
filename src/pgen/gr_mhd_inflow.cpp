@@ -88,7 +88,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // Enroll fixed outer boundary function
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 

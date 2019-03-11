@@ -223,7 +223,7 @@ class BoundaryValues : public BoundaryBase {
   BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  void InitBoundaryData(BoundaryData &bd, enum BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData &bd);
   void Initialize(void);
   void CheckBoundary(void);
@@ -248,7 +248,7 @@ class BoundaryValues : public BoundaryBase {
                                             int ns, int ne, Real *buf,
                                             const NeighborBlock& nb);
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-                                       enum CCBoundaryType type);
+                                       enum CCBoundaryQuantity type);
   void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
                                         Real *buf, const NeighborBlock& nb, bool *flip);
   void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
@@ -256,10 +256,10 @@ class BoundaryValues : public BoundaryBase {
                                           const NeighborBlock& nb, bool *flip);
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
                                         Real *buf, const NeighborBlock& nb, bool *flip);
-  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type);
-  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type);
+  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryQuantity type);
+  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryQuantity type);
   void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
-                                                   enum CCBoundaryType type);
+                                                   enum CCBoundaryQuantity type);
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
@@ -278,8 +278,8 @@ class BoundaryValues : public BoundaryBase {
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 
-  void SendFluxCorrection(enum FluxCorrectionType type);
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
+  void SendFluxCorrection(enum FluxCorrectionQuantity type);
+  bool ReceiveFluxCorrection(enum FluxCorrectionQuantity type);
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);

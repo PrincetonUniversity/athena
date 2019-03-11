@@ -169,12 +169,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
 
   // read BC flags for each of the 6 boundaries in turn.
-  mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
-  mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
-  mesh_bcs[INNER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
-  mesh_bcs[OUTER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
-  mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
-  mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
 
   // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
@@ -240,12 +240,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   ViscosityCoeff_=nullptr;
   ConductionCoeff_=nullptr;
   FieldDiffusivity_=nullptr;
-  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
-  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
-  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
-  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
-  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
-  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
+  MGBoundaryFunction_[BoundaryFace::inner_x1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[BoundaryFace::outer_x1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[BoundaryFace::inner_x2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[BoundaryFace::outer_x2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[BoundaryFace::inner_x3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[BoundaryFace::outer_x3]=MGPeriodicOuterX3;
 
 
   // calculate the logical root level and maximum level
@@ -545,12 +545,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 
   // read BC flags for each of the 6 boundaries
-  mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
-  mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
-  mesh_bcs[INNER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
-  mesh_bcs[OUTER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
-  mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
-  mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
+  mesh_bcs[BoundaryFace::outer_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
 
   // get the end of the header
   headeroffset=resfile.GetPosition();
@@ -641,12 +641,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   ViscosityCoeff_=nullptr;
   ConductionCoeff_=nullptr;
   FieldDiffusivity_=nullptr;
-  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
-  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
-  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
-  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
-  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
-  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
+  MGBoundaryFunction_[BoundaryFace::inner_x1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[BoundaryFace::outer_x1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[BoundaryFace::inner_x2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[BoundaryFace::outer_x2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[BoundaryFace::inner_x3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[BoundaryFace::outer_x3]=MGPeriodicOuterX3;
 
   multilevel=false;
   adaptive=false;
@@ -1067,7 +1067,7 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc my_bc) {
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (mesh_bcs[dir]!=USER_BNDRY) {
+  if (mesh_bcs[dir]!=BoundaryFlag::user) {
     msg << "### FATAL ERROR in EnrollUserBoundaryFunction" << std::endl
         << "The boundary condition flag must be set to the string 'user' in the "
         << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
@@ -1321,7 +1321,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+        pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
         if (MAGNETIC_FIELDS_ENABLED)
           pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
       }
@@ -1330,7 +1330,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u, HYDRO_CONS);
+        pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u, CCBoundaryQuantity::cons);
         if (MAGNETIC_FIELDS_ENABLED)
           pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
         // send and receive shearingbox boundary conditions
@@ -1351,7 +1351,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, CCBoundaryQuantity::prim);
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1359,7 +1359,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
           pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
-                                                             HYDRO_PRIM);
+                                                             CCBoundaryQuantity::prim);
           pbval->ClearBoundaryForInit(false);
         }
       }
@@ -1429,7 +1429,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
           if (MAGNETIC_FIELDS_ENABLED)
             pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
         }
@@ -1439,7 +1439,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
           pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u,
-                                                             HYDRO_CONS);
+                                                             CCBoundaryQuantity::cons);
           if (MAGNETIC_FIELDS_ENABLED)
             pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
           // send and receive shearingbox boundary conditions
@@ -1642,44 +1642,44 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   // calculate physical block size, x1
   if (lx1==0) {
     block_size.x1min=mesh_size.x1min;
-    block_bcs[INNER_X1]=mesh_bcs[INNER_X1];
+    block_bcs[BoundaryFace::inner_x1]=mesh_bcs[BoundaryFace::inner_x1];
   } else {
     Real rx = ComputeMeshGeneratorX(lx1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
-    block_bcs[INNER_X1]=BLOCK_BNDRY;
+    block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::block;
   }
   if (lx1==nrbx_ll-1) {
     block_size.x1max=mesh_size.x1max;
-    block_bcs[OUTER_X1]=mesh_bcs[OUTER_X1];
+    block_bcs[BoundaryFace::outer_x1]=mesh_bcs[BoundaryFace::outer_x1];
   } else {
     Real rx = ComputeMeshGeneratorX(lx1+1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
     block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
-    block_bcs[OUTER_X1]=BLOCK_BNDRY;
+    block_bcs[BoundaryFace::outer_x1]=BoundaryFlag::block;
   }
 
   // calculate physical block size, x2
   if (mesh_size.nx2 == 1) {
     block_size.x2min=mesh_size.x2min;
     block_size.x2max=mesh_size.x2max;
-    block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
-    block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
+    block_bcs[BoundaryFace::inner_x2]=mesh_bcs[BoundaryFace::inner_x2];
+    block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
   } else {
     nrbx_ll = nrbx2<<(ll-root_level);
     if (lx2==0) {
       block_size.x2min=mesh_size.x2min;
-      block_bcs[INNER_X2]=mesh_bcs[INNER_X2];
+      block_bcs[BoundaryFace::inner_x2]=mesh_bcs[BoundaryFace::inner_x2];
     } else {
       Real rx = ComputeMeshGeneratorX(lx2, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
-      block_bcs[INNER_X2]=BLOCK_BNDRY;
+      block_bcs[BoundaryFace::inner_x2]=BoundaryFlag::block;
     }
     if (lx2==(nrbx_ll)-1) {
       block_size.x2max=mesh_size.x2max;
-      block_bcs[OUTER_X2]=mesh_bcs[OUTER_X2];
+      block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
     } else {
       Real rx = ComputeMeshGeneratorX(lx2+1, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
       block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
-      block_bcs[OUTER_X2]=BLOCK_BNDRY;
+      block_bcs[BoundaryFace::outer_x2]=BoundaryFlag::block;
     }
   }
 
@@ -1687,25 +1687,25 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   if (mesh_size.nx3 == 1) {
     block_size.x3min=mesh_size.x3min;
     block_size.x3max=mesh_size.x3max;
-    block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
-    block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
+    block_bcs[BoundaryFace::inner_x3]=mesh_bcs[BoundaryFace::inner_x3];
+    block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
   } else {
     nrbx_ll = nrbx3<<(ll-root_level);
     if (lx3==0) {
       block_size.x3min=mesh_size.x3min;
-      block_bcs[INNER_X3]=mesh_bcs[INNER_X3];
+      block_bcs[BoundaryFace::inner_x3]=mesh_bcs[BoundaryFace::inner_x3];
     } else {
       Real rx = ComputeMeshGeneratorX(lx3, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
-      block_bcs[INNER_X3]=BLOCK_BNDRY;
+      block_bcs[BoundaryFace::inner_x3]=BoundaryFlag::block;
     }
     if (lx3==(nrbx_ll)-1) {
       block_size.x3max=mesh_size.x3max;
-      block_bcs[OUTER_X3]=mesh_bcs[OUTER_X3];
+      block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
     } else {
       Real rx = ComputeMeshGeneratorX(lx3+1, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
       block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
-      block_bcs[OUTER_X3]=BLOCK_BNDRY;
+      block_bcs[BoundaryFace::outer_x3]=BoundaryFlag::block;
     }
   }
 
@@ -2476,5 +2476,5 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 // tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)
 
 unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
-  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | TAG_AMR;
+  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | AthenaTagMPI::amr;
 }

@@ -80,12 +80,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserRefinementCondition(RefinementCondition);
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
-    EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, ProjectPressureInnerX2);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, ProjectPressureOuterX2);
   } else { // 3D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
-    EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, ProjectPressureInnerX3);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, ProjectPressureOuterX3);
   }
   return;
 }

@@ -94,17 +94,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserRefinementCondition(RefinementCondition);
 
   // setup boundary condition
-  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X1, LoopInnerX1);
+  if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, LoopInnerX1);
   }
-  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X1, LoopOuterX1);
+  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, LoopOuterX1);
   }
-  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X2, LoopInnerX2);
+  if (mesh_bcs[BoundaryFace::inner_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, LoopInnerX2);
   }
-  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X2, LoopOuterX2);
+  if (mesh_bcs[BoundaryFace::outer_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, LoopOuterX2);
   }
 
   return;
@@ -193,8 +193,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
-      if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
+      if (pbval->block_bcs[BoundaryFace::inner_x2] == 5) jl=js+1;
+      if (pbval->block_bcs[BoundaryFace::outer_x2] == 5) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pcoord->Face2Area(k,j,is,ie,area);
         pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -251,8 +251,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
         int jl=js; int ju=je+1;
-        if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
-        if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
+        if (pbval->block_bcs[BoundaryFace::inner_x2] == 5) jl=js+1;
+        if (pbval->block_bcs[BoundaryFace::outer_x2] == 5) ju=je;
         for (int j=jl; j<=ju; ++j) {
           pcoord->Face2Area(k,j,is,ie,area);
           pcoord->Edge1Length(k  ,j,is,ie,len);

@@ -65,11 +65,11 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   }
 
   fperiodic_=false;
-  if (MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
-      && MGBoundary[INNER_X2]==MGPeriodicInnerX2
-      && MGBoundary[OUTER_X2]==MGPeriodicOuterX2
-      && MGBoundary[INNER_X3]==MGPeriodicInnerX3
-      && MGBoundary[OUTER_X3]==MGPeriodicOuterX3)
+  if (MGBoundary[BoundaryFace::inner_x1]==MGPeriodicInnerX1 && MGBoundary[BoundaryFace::outer_x1]==MGPeriodicOuterX1
+      && MGBoundary[BoundaryFace::inner_x2]==MGPeriodicInnerX2
+      && MGBoundary[BoundaryFace::outer_x2]==MGPeriodicOuterX2
+      && MGBoundary[BoundaryFace::inner_x3]==MGPeriodicInnerX3
+      && MGBoundary[BoundaryFace::outer_x3]==MGPeriodicOuterX3)
     fperiodic_=true;
 
   // Setting up the MPI information

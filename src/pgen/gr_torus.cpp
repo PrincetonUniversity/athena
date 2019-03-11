@@ -152,8 +152,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   pert_kz = pin->GetOrAddReal("problem", "pert_kz", 0.0);
 
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, InflowBoundary);
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 

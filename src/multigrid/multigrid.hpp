@@ -60,7 +60,7 @@ class Multigrid {
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  enum BoundaryType btype, btypef;
+  enum BoundaryQuantity btype, btypef;
   Multigrid *next, *prev;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);

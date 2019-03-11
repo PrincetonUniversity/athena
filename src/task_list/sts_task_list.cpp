@@ -388,7 +388,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int st
 
 enum TaskStatus SuperTimeStepTaskList::HydroSend_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
   } else {
     return TASK_FAIL;
   }
@@ -410,7 +410,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldSend_STS(MeshBlock *pmb, int stage) 
 enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(CCBoundaryQuantity::cons);
   } else {
     return TASK_FAIL;
   }
@@ -440,7 +440,7 @@ enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stag
 enum TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
                                                               int stage) {
   if (stage <= nstages) {
-    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+    pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, CCBoundaryQuantity::cons);
     return TASK_SUCCESS;
   }
   return TASK_FAIL;
