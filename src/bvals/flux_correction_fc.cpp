@@ -1424,7 +1424,8 @@ void BoundaryValues::PolarSingleEMF(void) {
     AthenaArray<Real> &e1=pmb->pfield->e.x1e;
     AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
-    if (block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar||block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar_wedge) {
+    if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+        || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
       int j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
@@ -1445,8 +1446,8 @@ void BoundaryValues::PolarSingleEMF(void) {
         }
       }
     }
-
-    if (block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge) {
+    if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
       int j=pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
@@ -1482,16 +1483,16 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
   bool flag=true;
 
   // Receive same-level non-polar EMF values
-  if (firsttime_==true) {
+  if (firsttime_ == true) {
     for (int n=0; n<nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = neighbor[n];
       if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
       if (nb.level!=pmb->loc.level) continue;
-      if ((nb.type==NeighborConnect::face) || ((nb.type==NeighborConnect::edge) &&
-                                       (edge_flag_[nb.eid]==true))) {
-        if (bd_emfcor_.flag[nb.bufid]==BoundaryStatus::completed) continue;
-        if (bd_emfcor_.flag[nb.bufid]==BoundaryStatus::waiting) {
-          if (nb.rank==Globals::my_rank) { // on the same process
+      if ((nb.type == NeighborConnect::face) || ((nb.type == NeighborConnect::edge) &&
+                                       (edge_flag_[nb.eid] == true))) {
+        if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
+        if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
+          if (nb.rank == Globals::my_rank) { // on the same process
             flag=false;
             continue;
           }
@@ -1500,7 +1501,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
             MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-            if (static_cast<bool>(test)==false) {
+            if (static_cast<bool>(test) == false) {
               flag=false;
               continue;
             }
@@ -1513,21 +1514,21 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
         bd_emfcor_.flag[nb.bufid] = BoundaryStatus::completed;
       }
     }
-    if (flag==false) return flag;
-    if (pmb->pmy_mesh->multilevel==true)
+    if (flag == false) return flag;
+    if (pmb->pmy_mesh->multilevel == true)
       ClearCoarseEMFBoundary();
     firsttime_=false;
   }
 
   // Receive finer non-polar EMF values
-  if (pmb->pmy_mesh->multilevel==true) {
+  if (pmb->pmy_mesh->multilevel == true) {
     for (int n=0; n<nneighbor; n++) { // then from finer
       NeighborBlock& nb = neighbor[n];
       if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
       if (nb.level!=pmb->loc.level+1) continue;
-      if (bd_emfcor_.flag[nb.bufid]==BoundaryStatus::completed) continue;
-      if (bd_emfcor_.flag[nb.bufid]==BoundaryStatus::waiting) {
-        if (nb.rank==Globals::my_rank) {// on the same process
+      if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
+      if (bd_emfcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
+        if (nb.rank == Globals::my_rank) {// on the same process
           flag=false;
           continue;
         }
@@ -1536,7 +1537,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&(bd_emfcor_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test)==false) {
+          if (static_cast<bool>(test) == false) {
             flag=false;
             continue;
           }
@@ -1592,7 +1593,7 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
     }
   }
 
-  if (flag==true) {
+  if (flag == true) {
     AverageEMFBoundary();
     if (num_north_polar_blocks_ > 0)
       SetEMFBoundaryPolar(emf_north_recv_, num_north_polar_blocks_, true);
@@ -1602,8 +1603,10 @@ bool BoundaryValues::ReceiveEMFCorrection(void) {
       SetEMFBoundaryPolar(emf_south_recv_, num_south_polar_blocks_, false);
     for (int n = 0; n < num_south_polar_blocks_; ++n)
       emf_south_flag_[n] = BoundaryStatus::completed;
-    if (block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar||
-        block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar_wedge||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge)
+    if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+        || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
       PolarSingleEMF();
   }
   return flag;

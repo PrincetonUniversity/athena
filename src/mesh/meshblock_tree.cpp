@@ -391,14 +391,16 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if (lx<0) {
-    if (bcs[BoundaryFace::inner_x1]==BoundaryFlag::periodic || bcs[BoundaryFace::inner_x1]==BoundaryFlag::shear_periodic) {
+    if (bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
+        || bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic) {
       lx=(rbx<<(ll-rl))-1;
     } else {
       return nullptr;
     }
   }
   if (lx>=rbx<<(ll-rl)) {;
-    if (bcs[BoundaryFace::outer_x1]==BoundaryFlag::periodic || bcs[BoundaryFace::outer_x1]==BoundaryFlag::shear_periodic) {
+    if (bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic
+        || bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic) {
       lx=0;
     } else {
       return nullptr;
@@ -406,9 +408,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   bool polar = false;
   if (ly<0) {
-    if (bcs[BoundaryFace::inner_x2]==BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic) {
       ly=(rby<<(ll-rl))-1;
-    } else if (bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar) {
+    } else if (bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
       ly=0;
       polar=true;
     } else {
@@ -416,9 +418,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     }
   }
   if (ly>=rby<<(ll-rl)) {
-    if (bcs[BoundaryFace::outer_x2]==BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic) {
       ly=0;
-    } else if (bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar) {
+    } else if (bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
       ly=(rby<<(ll-rl))-1;
       polar=true;
     } else {
@@ -427,14 +429,14 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   std::int64_t num_x3 = rbz<<(ll-rl);
   if (lz<0) {
-    if (bcs[BoundaryFace::inner_x3]==BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic) {
       lz=num_x3-1;
     } else {
       return nullptr;
     }
   }
   if (lz>=num_x3) {
-    if (bcs[BoundaryFace::outer_x3]==BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic) {
       lz=0;
     } else {
       return nullptr;
@@ -446,7 +448,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
 
 
   for (int level=0; level<ll; level++) {
-    if (bt->flag==true) { // leaf
+    if (bt->flag == true) { // leaf
       if (level == ll-1) {
         return bt;
       } else {
@@ -462,23 +464,23 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     oy = (((ly>>sh) & 1LL) == 1LL);
     oz = (((lz>>sh) & 1LL)  == 1LL);
     bt=bt->pleaf[oz][oy][ox];
-    if (bt==nullptr) {
+    if (bt == nullptr) {
       msg << "### FATAL ERROR in FindNeighbor" << std::endl
           << "Neighbor search failed. The Block Tree is broken." << std::endl;
       ATHENA_ERROR(msg);
       return nullptr;
     }
   }
-  if (bt->flag==true) // leaf on the same level
+  if (bt->flag == true) // leaf on the same level
     return bt;
   ox=oy=oz=0;
   // one level finer: check if they are leaves
   if (ox1<0) ox=1;
   if (ox2<0) oy=1;
   if (ox3<0) oz=1;
-  if (bt->pleaf[oz][oy][ox]->flag==true)
+  if (bt->pleaf[oz][oy][ox]->flag == true)
     return bt;  // return this block
-  if (amrflag==false) {
+  if (amrflag == false) {
     msg << "### FATAL ERROR in FindNeighbor" << std::endl
         << "Neighbor search failed. The Block Tree is broken." << std::endl;
     ATHENA_ERROR(msg);
@@ -491,7 +493,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
 //  \brief find MeshBlock with LogicalLocation tloc and return a pointer
 
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
-  if (tloc.level==loc.level) return this;
+  if (tloc.level == loc.level) return this;
   // get leaf indexes
   int sh = tloc.level-loc.level-1;
   int mx = (((tloc.lx1>>sh) & 1LL) == 1LL);

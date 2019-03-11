@@ -168,31 +168,31 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(void) {
 
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::inner_x1](
+        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x1
   if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::outer_x1](
+        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
 
   // Apply boundary function on inner-x2
   if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::inner_x2](
+        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x2
   if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::outer_x2](
+        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
 
   bjs=js-ngh, bje=je+ngh;
   // Apply boundary function on inner-x3
   if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::inner_x3](
+        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x3
   if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
-                                  x0, y0, z0, dx, dy, dz);
+    MGBoundaryFunction_[BoundaryFace::outer_x3](
+        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, x0, y0, z0, dx, dy, dz);
 
   return;
 }
@@ -399,7 +399,8 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(
 //  \brief receive the boundary data
 
 bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                                       int nc, enum BoundaryQuantity type) {
+                                                       int nc,
+                                                       enum BoundaryQuantity type) {
   bool bflag=true, faceonly=false;
   int nvar, ngh;
   MGBoundaryData *pbd{};

@@ -751,7 +751,8 @@ void BoundaryValues::SetFieldBoundaries(FaceField &dst) {
       SetFieldBoundaryFromFiner(dst, bd_field_.recv[nb.bufid], nb);
     bd_field_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
-  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }
@@ -779,8 +780,8 @@ void BoundaryValues::ReceiveAndSetFieldBoundariesWithWait(FaceField &dst) {
       SetFieldBoundaryFromFiner(dst, bd_field_.recv[nb.bufid], nb);
     bd_field_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
-
-  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarSingleField(dst);
     PolarAxisFieldAverage(dst);
   }

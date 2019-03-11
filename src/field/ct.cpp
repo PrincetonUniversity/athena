@@ -78,9 +78,11 @@ void Field::CT(const Real wght, FaceField &b_out) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
     if (pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-        || pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) jl=js+1;
+        || pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge)
+      jl=js+1;
     if (pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-        || pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) ju=je;
+        || pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
+      ju=je;
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
       pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -142,9 +144,11 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
   int jl=js; int ju=je+1;
   // move these limit modifications outside the loop
   if (pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-      || pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) jl=js+1;
+      || pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge)
+    jl=js+1;
   if (pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-      || pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) ju=je;
+      || pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
+    ju=je;
 
   // Note: these loops can be combined now that they avoid curl terms
   // Only need to separately account for the final longitudinal face in each loop limit

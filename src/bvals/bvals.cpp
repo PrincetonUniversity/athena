@@ -1393,7 +1393,8 @@ void BoundaryValues::ClearBoundaryAll(void) {
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
           else if ((nb.level==pmb->loc.level)
                    && ((nb.type==NeighborConnect::face)
-                       || ((nb.type==NeighborConnect::edge) && (edge_flag_[nb.eid]==true))))
+                       || ((nb.type==NeighborConnect::edge)
+                           && (edge_flag_[nb.eid]==true))))
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
       }
@@ -1480,10 +1481,14 @@ void BoundaryValues::ApplyPhysicalBoundaries(
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
       bks=pmb->ks, bke=pmb->ke;
-  if (BoundaryFunction_[BoundaryFace::inner_x2]==nullptr && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x2]==nullptr && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if (BoundaryFunction_[BoundaryFace::inner_x3]==nullptr && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x3]==nullptr && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr
+      && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr
+      && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr
+      && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr
+      && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   // Apply boundary function on inner-x1
   if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
     BoundaryFunction_[BoundaryFace::inner_x1](pmb, pco, pdst, bfdst, time, dt,
@@ -1596,7 +1601,7 @@ void BoundaryValues::ProlongateBoundaries(
     int nis, nie, njs, nje, nks, nke;
     nis=std::max(nb.ox1-1,-1);
     nie=std::min(nb.ox1+1,1);
-    if (pmb->block_size.nx2==1) {
+    if (pmb->block_size.nx2 == 1) {
       njs=0;
       nje=0;
     } else {
@@ -1604,7 +1609,7 @@ void BoundaryValues::ProlongateBoundaries(
       nje=std::min(nb.ox2+1,1);
     }
 
-    if (pmb->block_size.nx3==1) {
+    if (pmb->block_size.nx3 == 1) {
       nks=0;
       nke=0;
     } else {
@@ -1617,40 +1622,40 @@ void BoundaryValues::ProlongateBoundaries(
         for (int ni=nis; ni<=nie; ni++) {
           int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
           // skip myself or coarse levels; only the same level must be restricted
-          if (ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
+          if (ntype == 0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
           // this neighbor block is on the same level
           // and needs to be restricted for prolongation
           int ris, rie, rjs, rje, rks, rke;
-          if (ni==0) {
+          if (ni == 0) {
             ris=pmb->cis;
             rie=pmb->cie;
-            if (nb.ox1==1) {
+            if (nb.ox1 == 1) {
               ris=pmb->cie;
-            } else if (nb.ox1==-1) {
+            } else if (nb.ox1 == -1) {
               rie=pmb->cis;
             }
-          } else if (ni== 1) {
+          } else if (ni ==  1) {
             ris=pmb->cie+1, rie=pmb->cie+1;
-          } else { //(ni==-1)
+          } else { //(ni == -1)
             ris=pmb->cis-1, rie=pmb->cis-1;
           }
-          if (nj==0) {
+          if (nj == 0) {
             rjs=pmb->cjs, rje=pmb->cje;
-            if (nb.ox2==1) rjs=pmb->cje;
-            else if (nb.ox2==-1) rje=pmb->cjs;
-          } else if (nj== 1) {
+            if (nb.ox2 == 1) rjs=pmb->cje;
+            else if (nb.ox2 == -1) rje=pmb->cjs;
+          } else if (nj ==  1) {
             rjs=pmb->cje+1, rje=pmb->cje+1;
-          } else { //(nj==-1)
+          } else { //(nj == -1)
             rjs=pmb->cjs-1, rje=pmb->cjs-1;
           }
-          if (nk==0) {
+          if (nk == 0) {
             rks=pmb->cks, rke=pmb->cke;
-            if (nb.ox3==1) rks=pmb->cke;
-            else if (nb.ox3==-1) rke=pmb->cks;
-          } else if (nk== 1) {
+            if (nb.ox3 == 1) rks=pmb->cke;
+            else if (nb.ox3 == -1) rke=pmb->cks;
+          } else if (nk ==  1) {
             rks=pmb->cke+1, rke=pmb->cke+1;
-          } else { //(nk==-1)
+          } else { //(nk == -1)
             rks=pmb->cks-1, rke=pmb->cks-1;
           }
 
@@ -1661,14 +1666,14 @@ void BoundaryValues::ProlongateBoundaries(
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
-            if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
-            if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+            if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
+            if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
             pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
                                  rke);
             if (pmb->block_size.nx2 > 1) {
               rs=rjs, re=rje+1;
-              if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
-              if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+              if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
+              if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
                                    rke);
             } else { // 1D
@@ -1679,8 +1684,8 @@ void BoundaryValues::ProlongateBoundaries(
             }
             if (pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
-              if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
-              if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+              if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
+              if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
                                    re);
             } else { // 1D or 2D
@@ -1699,24 +1704,24 @@ void BoundaryValues::ProlongateBoundaries(
     // calculate the loop limits for the ghost zones
     int cn = pmb->cnghost-1;
     int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       si=pmb->cis, ei=pmb->cie;
-      if ((lx1 & 1LL)==0LL) ei+=cn;
+      if ((lx1 & 1LL) == 0LL) ei+=cn;
       else             si-=cn;
     } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
     else              si=pmb->cis-cn, ei=pmb->cis-1;
-    if (nb.ox2==0) {
+    if (nb.ox2 == 0) {
       sj=pmb->cjs, ej=pmb->cje;
       if (pmb->block_size.nx2 > 1) {
-        if ((lx2 & 1LL)==0LL) ej+=cn;
+        if ((lx2 & 1LL) == 0LL) ej+=cn;
         else             sj-=cn;
       }
     } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
     else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
-    if (nb.ox3==0) {
+    if (nb.ox3 == 0) {
       sk=pmb->cks, ek=pmb->cke;
       if (pmb->block_size.nx3 > 1) {
-        if ((lx3 & 1LL)==0LL) ek+=cn;
+        if ((lx3 & 1LL) == 0LL) ek+=cn;
         else             sk-=cn;
       }
     } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
@@ -1725,7 +1730,7 @@ void BoundaryValues::ProlongateBoundaries(
     // convert the ghost zone and ghost-ghost zones into primitive variables
     // this includes cell-centered field calculation
     int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       if (nblevel[1][1][0]!=-1) f1m=1;
       if (nblevel[1][1][2]!=-1) f1p=1;
     } else {
@@ -1733,7 +1738,7 @@ void BoundaryValues::ProlongateBoundaries(
       f1p=1;
     }
     if (pmb->block_size.nx2>1) {
-      if (nb.ox2==0) {
+      if (nb.ox2 == 0) {
         if (nblevel[1][0][1]!=-1) f2m=1;
         if (nblevel[1][2][1]!=-1) f2p=1;
       } else {
@@ -1742,7 +1747,7 @@ void BoundaryValues::ProlongateBoundaries(
       }
     }
     if (pmb->block_size.nx3>1) {
-      if (nb.ox3==0) {
+      if (nb.ox3 == 0) {
         if (nblevel[0][1][1]!=-1) f3m=1;
         if (nblevel[2][1][1]!=-1) f3p=1;
       } else {
@@ -1757,7 +1762,7 @@ void BoundaryValues::ProlongateBoundaries(
                                     si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
     // Apply physical boundaries
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       if (BoundaryFunction_[BoundaryFace::inner_x1]!=nullptr) {
         BoundaryFunction_[BoundaryFace::inner_x1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
                                     pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
@@ -1769,7 +1774,7 @@ void BoundaryValues::ProlongateBoundaries(
                                     sj, ej, sk, ek, 1);
       }
     }
-    if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
+    if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
       if (BoundaryFunction_[BoundaryFace::inner_x2]!=nullptr) {
         BoundaryFunction_[BoundaryFace::inner_x2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
                                     pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
@@ -1781,7 +1786,7 @@ void BoundaryValues::ProlongateBoundaries(
                                     sk, ek, 1);
       }
     }
-    if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
+    if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
       if (BoundaryFunction_[BoundaryFace::inner_x3]!=nullptr) {
         BoundaryFunction_[BoundaryFace::inner_x3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
                                     pmr->coarse_b_, time, dt, si, ei, sj, ej,

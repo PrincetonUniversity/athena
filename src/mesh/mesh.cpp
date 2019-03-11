@@ -164,26 +164,32 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // read ratios of grid cell size in each direction
-  block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh","x1rat",1.0);
-  block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh","x2rat",1.0);
-  block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
+  block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh", "x1rat", 1.0);
+  block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh", "x2rat", 1.0);
+  block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh", "x3rat", 1.0);
 
   // read BC flags for each of the 6 boundaries in turn.
-  mesh_bcs[BoundaryFace::inner_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
-  mesh_bcs[BoundaryFace::inner_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
-  mesh_bcs[BoundaryFace::inner_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x1] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x1] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none"));
+  mesh_bcs[BoundaryFace::inner_x2] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x2] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none"));
+  mesh_bcs[BoundaryFace::inner_x3] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x3] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"));
 
   // read MeshBlock parameters
-  block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
+  block_size.nx1 = pin->GetOrAddInteger("meshblock", "nx1", mesh_size.nx1);
   if (dim>=2)
-    block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
+    block_size.nx2 = pin->GetOrAddInteger("meshblock", "nx2", mesh_size.nx2);
   else
     block_size.nx2=mesh_size.nx2;
   if (dim==3)
-    block_size.nx3 = pin->GetOrAddInteger("meshblock","nx3",mesh_size.nx3);
+    block_size.nx3 = pin->GetOrAddInteger("meshblock", "nx3", mesh_size.nx3);
   else
     block_size.nx3=mesh_size.nx3;
 
@@ -253,17 +259,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   current_level=root_level;
 
   // create the root grid
-  tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
+  tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
   // SMR / AMR: create finer grids here
   multilevel=false;
   adaptive=false;
-  if (pin->GetOrAddString("mesh","refinement","none")=="adaptive")
+  if (pin->GetOrAddString("mesh", "refinement", "none")=="adaptive")
     adaptive=true, multilevel=true;
-  else if (pin->GetOrAddString("mesh","refinement","none")=="static")
+  else if (pin->GetOrAddString("mesh", "refinement", "none")=="static")
     multilevel=true;
   if (adaptive==true) {
-    max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
+    max_level = pin->GetOrAddInteger("mesh", "numlevel", 1)+root_level-1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The number of the refinement level must be smaller than "
@@ -288,25 +294,25 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
     InputBlock *pib = pin->pfirst_block;
     while (pib != nullptr) {
-      if (pib->block_name.compare(0,10,"refinement") == 0) {
+      if (pib->block_name.compare(0, 10, "refinement") == 0) {
         RegionSize ref_size;
-        ref_size.x1min=pin->GetReal(pib->block_name,"x1min");
-        ref_size.x1max=pin->GetReal(pib->block_name,"x1max");
+        ref_size.x1min=pin->GetReal(pib->block_name, "x1min");
+        ref_size.x1max=pin->GetReal(pib->block_name, "x1max");
         if (dim>=2) {
-          ref_size.x2min=pin->GetReal(pib->block_name,"x2min");
-          ref_size.x2max=pin->GetReal(pib->block_name,"x2max");
+          ref_size.x2min=pin->GetReal(pib->block_name, "x2min");
+          ref_size.x2max=pin->GetReal(pib->block_name, "x2max");
         } else {
           ref_size.x2min=mesh_size.x2min;
           ref_size.x2max=mesh_size.x2max;
         }
         if (dim>=3) {
-          ref_size.x3min=pin->GetReal(pib->block_name,"x3min");
-          ref_size.x3max=pin->GetReal(pib->block_name,"x3max");
+          ref_size.x3min=pin->GetReal(pib->block_name, "x3min");
+          ref_size.x3max=pin->GetReal(pib->block_name, "x3max");
         } else {
           ref_size.x3min=mesh_size.x3min;
           ref_size.x3max=mesh_size.x3max;
         }
-        int ref_lev=pin->GetInteger(pib->block_name,"level");
+        int ref_lev=pin->GetInteger(pib->block_name, "level");
         int lrlev=ref_lev+root_level;
         if (lrlev>current_level) current_level=lrlev;
         // range check
@@ -545,12 +551,18 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 
   // read BC flags for each of the 6 boundaries
-  mesh_bcs[BoundaryFace::inner_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
-  mesh_bcs[BoundaryFace::inner_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
-  mesh_bcs[BoundaryFace::inner_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
-  mesh_bcs[BoundaryFace::outer_x3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
+  mesh_bcs[BoundaryFace::inner_x1] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x1] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none"));
+  mesh_bcs[BoundaryFace::inner_x2] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x2] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none"));
+  mesh_bcs[BoundaryFace::inner_x3] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none"));
+  mesh_bcs[BoundaryFace::outer_x3] =
+      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"));
 
   // get the end of the header
   headeroffset=resfile.GetPosition();
@@ -560,7 +572,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
                                + sizeof(RegionSize)+sizeof(IOWrapperSizeT);
   char *headerdata = new char[headersize];
   if (Globals::my_rank==0) { // the master process reads the header data
-    if (resfile.Read(headerdata,1,headersize)!=headersize) {
+    if (resfile.Read(headerdata, 1, headersize)!=headersize) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
       ATHENA_ERROR(msg);
@@ -1330,7 +1342,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u, CCBoundaryQuantity::cons);
+        pbval->ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->u,
+                                                           CCBoundaryQuantity::cons);
         if (MAGNETIC_FIELDS_ENABLED)
           pbval->ReceiveAndSetFieldBoundariesWithWait(pmb->pfield->b);
         // send and receive shearingbox boundary conditions
@@ -1351,7 +1364,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w, CCBoundaryQuantity::prim);
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->w,
+                                                 CCBoundaryQuantity::prim);
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1429,7 +1443,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
-          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
+          pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u,
+                                                 CCBoundaryQuantity::cons);
           if (MAGNETIC_FIELDS_ENABLED)
             pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
         }
