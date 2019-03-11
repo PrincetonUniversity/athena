@@ -25,6 +25,7 @@
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "../../field/field.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
