@@ -59,6 +59,7 @@ struct TaskState { // aggregate and POD
 
 class TaskList {
  public:
+  TaskList() : ntasks(0), nstages(0), task_list_{} {} // 2x direct + zero initialization
   // rule of five:
   virtual ~TaskList() = default;
 
