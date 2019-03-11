@@ -501,9 +501,12 @@ void CalculateNormalConserved(
 //       iterations
 
 bool ConservedToPrimitiveNormal(
-                                const int num_iterations, const AthenaArray<Real> &dd_vals,
-                                const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-                                const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals,
+                                const int num_iterations,
+                                const AthenaArray<Real> &dd_vals,
+                                const AthenaArray<Real> &ee_vals,
+                                const AthenaArray<Real> &mm_vals,
+                                const AthenaArray<Real> &bb_vals,
+                                const AthenaArray<Real> &tt_vals,
                                 Real gamma_adi, Real pgas_old, int k, int j, int i,
                                 AthenaArray<Real> &prim, AthenaArray<Real> &gamma_vals,
                                 AthenaArray<Real> &pmag_vals) {
