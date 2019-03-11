@@ -42,7 +42,7 @@ enum BoundaryFace {undef=-1, inner_x1, outer_x1, inner_x2, outer_x2,
 // int to index regular arrays (not AthenaArrays).
 
 // identifiers for boundary conditions
-enum class BoundaryFlag {block=-1, undef, reflecting, outflow, user, periodic,
+enum class BoundaryFlag {block=-1, undef, reflect, outflow, user, periodic,
                          polar, polar_wedge, shear_periodic};
 
 // identifiers for types of neighbor blocks (connectivity with current MeshBlock)
