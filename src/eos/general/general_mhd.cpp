@@ -67,6 +67,9 @@ void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
     AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
     Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+
+  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
+
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -150,8 +153,8 @@ void EquationOfState::PrimitiveToConserved(
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
         // cellwise conversion
-        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
-                                              + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+        u_e = EgasFromRhoP(u_d, w_p) + 0.5*(w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz))
+                                     + (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
       }
     }
   }
