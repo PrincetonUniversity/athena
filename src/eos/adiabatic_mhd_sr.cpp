@@ -26,9 +26,9 @@
 namespace {
 // Declarations
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-	       Real gamma_prime);
+               Real gamma_prime);
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-		    Real gamma_prime);
+                    Real gamma_prime);
 } //namespace
 
 //----------------------------------------------------------------------------------------
@@ -63,10 +63,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
 
-void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+                                           const AthenaArray<Real> &prim_old,
                                            const FaceField &bb, AthenaArray<Real> &prim,
                                            AthenaArray<Real> &bb_cc, Coordinates *pco,
-                                           int il, int iu, int jl, int ju, int kl, int ku) {
+                                           int il, int iu, int jl,
+                                           int ju, int kl, int ku) {
   // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
   const Real v_sq_max = 1.0 - 1.0/SQR(gamma_max_);
@@ -199,9 +201,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons, const Athena
 // Outputs:
 //   cons: 3D array of conserved variables
 
-void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
-                                           AthenaArray<Real> &cons, Coordinates *pco, int il,
-                                           int iu, int jl, int ju, int kl, int ku) {
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+                                           const AthenaArray<Real> &bc,
+                                           AthenaArray<Real> &cons, Coordinates *pco,
+                                           int il, int iu, int jl,
+                                           int ju, int kl, int ku) {
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
@@ -265,9 +269,11 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim, const 
 //   applies approximation that may slightly overestimate wavespeeds
 //   almost same function as in adiabatic_mhd_gr.cpp
 
-void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
+void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+                                               const AthenaArray<Real> &bbx_vals,
                                                int k, int j, int il, int iu, int ivx,
-                                               AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m) {
+                                               AthenaArray<Real> &lambdas_p,
+                                               AthenaArray<Real> &lambdas_m) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;

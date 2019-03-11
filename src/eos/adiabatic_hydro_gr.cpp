@@ -234,7 +234,6 @@ void EquationOfState::ConservedToPrimitive(
         prim(IVX,k,j,i) = uu1;
         prim(IVY,k,j,i) = uu2;
         prim(IVZ,k,j,i) = uu3;
-
       }
     }
   }
@@ -269,8 +268,9 @@ void EquationOfState::ConservedToPrimitive(
 //       than having duplicate code
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
                                            const AthenaArray<Real> &bb_cc,
-                                           AthenaArray<Real> &cons, Coordinates *pco, int il,
-                                           int iu, int jl, int ju, int kl, int ku) {
+                                           AthenaArray<Real> &cons, Coordinates *pco,
+					   int il, int iu, int jl,
+					   int ju, int kl, int ku) {
   const Real gamma_adi = gamma_;
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 

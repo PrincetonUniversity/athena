@@ -31,14 +31,17 @@ void CalculateNormalConserved(
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
     AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(num_iterations,dd_vals,ee_vals,mm_vals,bb_vals,tt_vals,gamma_adi,k,j,prim,gamma_vals,pmag_vals) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) \
+uniform(num_iterations,dd_vals,ee_vals,mm_vals, \
+bb_vals,tt_vals,gamma_adi,k,j,prim,gamma_vals,pmag_vals) linear(i)
 bool ConservedToPrimitiveNormal(
     const int num_iterations, const AthenaArray<Real> &dd_vals,
     const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
     const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals,
     Real gamma_adi, Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
     AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(prim,gamma_adi,bb_cc,g, gi,k,j,cons,pco) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) \
+uniform(prim,gamma_adi,bb_cc,g, gi,k,j,cons,pco) linear(i)
 void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
@@ -183,8 +186,9 @@ void EquationOfState::ConservedToPrimitive(
 
         // Set primitives
         success_(i) = ConservedToPrimitiveNormal(3, normal_dd_, normal_ee_, normal_mm_,
-                                                 normal_bb_, normal_tt_, gamma_adi, prim_old(IPR,k,j,i),
-						 k, j, i, prim, normal_gamma_, pmag_);
+                                                 normal_bb_, normal_tt_, gamma_adi,
+                                                 prim_old(IPR,k,j,i),
+                                                 k, j, i, prim, normal_gamma_, pmag_);
       }
 
       // Pass 2: Cleanup (most cells should be skipped)
@@ -193,8 +197,9 @@ void EquationOfState::ConservedToPrimitive(
         // Reapply iteration procedure in case convergence not attained (possibly slow)
         if (!success_(i)) {
           success_(i) = ConservedToPrimitiveNormal(7, normal_dd_, normal_ee_, normal_mm_,
-                                                   normal_bb_, normal_tt_, gamma_adi, prim(IPR,k,j,i),
-						   k, j, i, prim, normal_gamma_, pmag_);
+                                                   normal_bb_, normal_tt_, gamma_adi,
+                                                   prim(IPR,k,j,i),
+                                                   k, j, i, prim, normal_gamma_, pmag_);
         }
       }
 
@@ -229,7 +234,7 @@ void EquationOfState::ConservedToPrimitive(
           // Recalculate primitives
           success_(i) = ConservedToPrimitiveNormal(10, normal_dd_, normal_ee_, normal_mm_,
                                                    normal_bb_, normal_tt_, gamma_adi,
-						   prim_old(IPR,k,j,i), k, j, i, prim,
+                                                   prim_old(IPR,k,j,i), k, j, i, prim,
                                                    normal_gamma_, pmag_);
 
           // Handle failures
@@ -346,9 +351,11 @@ void EquationOfState::ConservedToPrimitive(
 //       than having duplicate code
 
 void EquationOfState::PrimitiveToConserved(
-                                           const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+                                           const AthenaArray<Real> &prim,
+                                           const AthenaArray<Real> &bb_cc,
                                            AthenaArray<Real> &cons, Coordinates *pco,
-                                           int il, int iu, int jl, int ju, int kl, int ku) {
+                                           int il, int iu, int jl,
+                                           int ju, int kl, int ku) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
@@ -493,13 +500,13 @@ void CalculateNormalConserved(
 //   same exact function as ConservedToPrimitiveNormalInitial(), except this does 7
 //       iterations
 
-  bool ConservedToPrimitiveNormal(
-				  const int num_iterations, const AthenaArray<Real> &dd_vals,
-				  const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-				  const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals, Real gamma_adi,
-				  Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-				  AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals) {
-
+bool ConservedToPrimitiveNormal(
+                                const int num_iterations, const AthenaArray<Real> &dd_vals,
+                                const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
+                                const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals,
+                                Real gamma_adi, Real pgas_old, int k, int j, int i,
+                                AthenaArray<Real> &prim, AthenaArray<Real> &gamma_vals,
+                                AthenaArray<Real> &pmag_vals) {
     // Parameters
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
