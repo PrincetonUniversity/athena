@@ -114,33 +114,32 @@ struct EdgeField {
 // task_list.hpp, ???
 
 //------------------
-// anonymous, weakly typed / unscoped enums:
-//------------------
-
-// TODO(felker): C++ Core Guidelines Enum.6: Avoid unnamed enumerations
-// Either use "constexpr int idn=0;" (if the enumerators are unrelated)
-// Or name it as an unscoped enum type (even if the type name is never used?)
-
-// array indices for conserved: density, momemtum, total energy, face-centered field
-enum {IDN, IM1, IM2, IM3, IEN};
-enum {IB1, IB2, IB3};
-
-// array indices for 1D primitives: velocity, transverse components of field
-enum {IVX=1, IVY, IVZ, IPR, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
-
-// array indices for face-centered electric fields returned by Riemann solver
-enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
-
-// array indices for metric and triangular matrices in GR
-enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
-enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
-
-//------------------
 // named, weakly typed / unscoped enums:
 //------------------
+
+// enumerators only used for indexing AthenaArray and regular arrays; enum typename and
+// explicitly specified enumerator values aare unnecessary, but provided for clarity:
+
+// array indices for conserved: density, momemtum, total energy, face-centered field
+enum ConsIndex {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
+enum MagneticIndex {IB1=0, IB2=1, IB3=2};
+
+// array indices for 1D primitives: velocity, transverse components of field
+enum PrimIndex {IVX=1, IVY=2, IVZ=3, IPR=4, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
+
+// array indices for face-centered electric fields returned by Riemann solver
+enum ElectricIndex {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
+
+// array indices for metric and triangular matrices in GR
+enum MetricIndex {I00=0, I01=1, I02=2, I03=3, I11=4, I12=5, I13=6, I22=7, I23=8, I33=9,
+                  NMETRIC=10};
+enum TriangleIndex {T00=0, T10=1, T11=2, T20=3, T21=4, T22=5, T30=6, T31=7, T32=8, T33=9,
+                    NTRIANGULAR=10};
+
+// enumerator types that are used for variables and function parameters:
+
 // needed for arrays dimensioned over grid directions
-enum CoordinateDirection {X1DIR, X2DIR, X3DIR};
-// TODO(felker): probably remove the enum typename "CoordinateDirection" since it is
+enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 // only used in Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc my_mg)
 
 //------------------
