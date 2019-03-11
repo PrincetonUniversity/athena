@@ -193,8 +193,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pbval->block_bcs[BoundaryFace::inner_x2] == 5) jl=js+1;
-      if (pbval->block_bcs[BoundaryFace::outer_x2] == 5) ju=je;
+      if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) jl=js+1;
+      if (pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pcoord->Face2Area(k,j,is,ie,area);
         pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -251,8 +251,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
         int jl=js; int ju=je+1;
-        if (pbval->block_bcs[BoundaryFace::inner_x2] == 5) jl=js+1;
-        if (pbval->block_bcs[BoundaryFace::outer_x2] == 5) ju=je;
+        if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) jl=js+1;
+        if (pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) ju=je;
         for (int j=jl; j<=ju; ++j) {
           pcoord->Face2Area(k,j,is,ie,area);
           pcoord->Edge1Length(k  ,j,is,ie,len);
