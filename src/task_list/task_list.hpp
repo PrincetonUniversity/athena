@@ -33,18 +33,17 @@ enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 //! \struct Task
 //  \brief data and function pointer for an individual Task
 
-struct Task {
+struct Task { // aggregate and POD
   std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
   std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
 //---------------------------------------------------------------------------------------
-//! \class TaskState
+//! \struct TaskState
 //  \brief container for task states
 
-class TaskState {
- public:
+struct TaskState { // aggregate and POD
   std::uint64_t finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
