@@ -256,7 +256,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
 enum TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundaryAll();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 //----------------------------------------------------------------------------------------
@@ -268,17 +268,17 @@ enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int s
 
   if (stage <= nstages) {
     phydro->CalculateFluxes_STS();
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE_STS();
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stag
 
 enum TaskStatus SuperTimeStepTaskList::EMFCorrectSend_STS(MeshBlock *pmb, int stage) {
   pmb->pbval->SendEMFCorrection();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 //----------------------------------------------------------------------------------------
@@ -294,9 +294,9 @@ enum TaskStatus SuperTimeStepTaskList::EMFCorrectSend_STS(MeshBlock *pmb, int st
 
 enum TaskStatus SuperTimeStepTaskList::EMFCorrectReceive_STS(MeshBlock *pmb, int stage) {
   if (pmb->pbval->ReceiveEMFCorrection() == true) {
-    return TASK_NEXT;
+    return TaskStatus::next;
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 }
 
@@ -328,9 +328,9 @@ enum TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int st
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int stage) {
@@ -343,10 +343,10 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
     pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
 
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
@@ -356,14 +356,14 @@ enum TaskStatus SuperTimeStepTaskList::HydroDiffusion_STS(MeshBlock *pmb, int st
   Hydro *ph=pmb->phydro;
 
   // return if there are no diffusion to be added
-  if (ph->phdif->hydro_diffusion_defined == false) return TASK_NEXT;
+  if (ph->phdif->hydro_diffusion_defined == false) return TaskStatus::next;
 
   if (stage <= nstages) {
     ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
 //----------------------------------------------------------------------------------------
@@ -373,14 +373,14 @@ enum TaskStatus SuperTimeStepTaskList::FieldDiffusion_STS(MeshBlock *pmb, int st
   Field *pf=pmb->pfield;
 
   // return if there are no diffusion to be added
-  if (pf->pfdif->field_diffusion_defined == false) return TASK_NEXT;
+  if (pf->pfdif->field_diffusion_defined == false) return TaskStatus::next;
 
   if (stage <= nstages) {
     pf->pfdif->CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
 //----------------------------------------------------------------------------------------
@@ -390,18 +390,18 @@ enum TaskStatus SuperTimeStepTaskList::HydroSend_STS(MeshBlock *pmb, int stage) 
   if (stage <= nstages) {
     pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, CCBoundaryQuantity::cons);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 enum TaskStatus SuperTimeStepTaskList::FieldSend_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 //----------------------------------------------------------------------------------------
@@ -412,13 +412,13 @@ enum TaskStatus SuperTimeStepTaskList::HydroReceive_STS(MeshBlock *pmb, int stag
   if (stage <= nstages) {
     ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(CCBoundaryQuantity::cons);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 
   if (ret==true) {
-    return TASK_SUCCESS;
+    return TaskStatus::success;
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 }
 
@@ -427,13 +427,13 @@ enum TaskStatus SuperTimeStepTaskList::FieldReceive_STS(MeshBlock *pmb, int stag
   if (stage <= nstages) {
     ret=pmb->pbval->ReceiveFieldBoundaryBuffers();
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 
   if (ret==true) {
-    return TASK_SUCCESS;
+    return TaskStatus::success;
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 }
 
@@ -441,17 +441,17 @@ enum TaskStatus SuperTimeStepTaskList::HydroSetBoundaries_STS(MeshBlock *pmb,
                                                               int stage) {
   if (stage <= nstages) {
     pmb->pbval->SetCellCenteredBoundaries(pmb->phydro->u, CCBoundaryQuantity::cons);
-    return TASK_SUCCESS;
+    return TaskStatus::success;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 enum TaskStatus SuperTimeStepTaskList::FieldSetBoundaries_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pbval->SetFieldBoundaries(pmb->pfield->b);
-    return TASK_SUCCESS;
+    return TaskStatus::success;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 //--------------------------------------------------------------------------------------
@@ -479,10 +479,10 @@ enum TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage)
     phydro->w.SwapAthenaArray(phydro->w1);
 
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
@@ -498,8 +498,8 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
     pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
                                    pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }

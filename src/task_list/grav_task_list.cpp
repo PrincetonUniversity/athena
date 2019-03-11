@@ -100,22 +100,22 @@ void GravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
 enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
   pmb->pgbval->ClearBoundaryGravity();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
 enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
 enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
 enum TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   pmb->pgbval->ApplyPhysicalBoundaries();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
