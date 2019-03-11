@@ -99,10 +99,12 @@ void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryQuantit
         int ngh=pmy_mg_->ngh_;
         if (pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
           int nc=block_size_.nx1;
-          if (BoundaryValues::ni[n].type==NeighborConnect::face) size=SQR(nc)*ngh;
-          else if (BoundaryValues::ni[n].type==NeighborConnect::edge) size=nc*ngh*ngh +
-                                                                   (nc*ngh*ngh)/2;
-          else if (BoundaryValues::ni[n].type==NeighborConnect::corner) size=ngh*ngh*ngh*2;
+          if (BoundaryValues::ni[n].type==NeighborConnect::face)
+            size=SQR(nc)*ngh;
+          else if (BoundaryValues::ni[n].type==NeighborConnect::edge)
+            size=nc*ngh*ngh + (nc*ngh*ngh)/2;
+          else if (BoundaryValues::ni[n].type==NeighborConnect::corner)
+            size=ngh*ngh*ngh*2;
         } else { // uniform - NGHOST=1
           size=((BoundaryValues::ni[n].ox1==0)?block_size_.nx1:ngh)
                *((BoundaryValues::ni[n].ox2==0)?block_size_.nx2:ngh)

@@ -70,12 +70,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
       break;
     case BoundaryFlag::user: // user-enrolled BCs
-      BoundaryFunction_[BoundaryFace::inner_x1] = pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1];
+      BoundaryFunction_[BoundaryFace::inner_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" << block_bcs[BoundaryFace::inner_x1] << " not valid" << std::endl;
+          << "Flag ix1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
       break;
   }
@@ -97,12 +99,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
       break;
     case BoundaryFlag::user: // user-enrolled BCs
-      BoundaryFunction_[BoundaryFace::outer_x1] = pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1];
+      BoundaryFunction_[BoundaryFace::outer_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" << block_bcs[BoundaryFace::outer_x1] << " not valid" << std::endl;
+          << "Flag ox1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
 
@@ -125,12 +129,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         BoundaryFunction_[BoundaryFace::inner_x2] = PolarWedgeInnerX2;
         break;
       case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::inner_x2] = pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2];
+        BoundaryFunction_[BoundaryFace::inner_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" << block_bcs[BoundaryFace::inner_x2] << " not valid" << std::endl;
+            << "Flag ix2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
@@ -151,12 +157,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         BoundaryFunction_[BoundaryFace::outer_x2] = PolarWedgeOuterX2;
         break;
       case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::outer_x2] = pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2];
+        BoundaryFunction_[BoundaryFace::outer_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" << block_bcs[BoundaryFace::outer_x2] << " not valid" << std::endl;
+            << "Flag ox2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
@@ -176,12 +184,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         BoundaryFunction_[BoundaryFace::inner_x3] = nullptr;
         break;
       case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::inner_x3] = pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3];
+        BoundaryFunction_[BoundaryFace::inner_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" << block_bcs[BoundaryFace::inner_x3] << " not valid" << std::endl;
+            << "Flag ix3_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
@@ -198,31 +208,36 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         BoundaryFunction_[BoundaryFace::outer_x3] = nullptr;
         break;
       case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::outer_x3] = pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3];
+        BoundaryFunction_[BoundaryFace::outer_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << block_bcs[BoundaryFace::outer_x3] << " not valid" << std::endl;
+            << "Flag ox3_bc=" << static_cast<int>(block_bcs[BoundaryFace::outer_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
   // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
-  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     CheckPolarBoundaries();
   }
 
   // Count number of blocks wrapping around pole
-  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
   }
-  if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
+  if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
@@ -294,8 +309,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // single CPU in the azimuthal direction with the polar boundary
   if (pmb->loc.level == pmy_mesh_->root_level &&
       pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar||
-       block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar_wedge||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge))
+      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar
+       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge))
     exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
   // set parameters for shearing box bc and allocate buffers
@@ -511,9 +528,7 @@ BoundaryValues::~BoundaryValues() {
   if (MAGNETIC_FIELDS_ENABLED) {
     DestroyBoundaryData(bd_field_);
     DestroyBoundaryData(bd_emfcor_);
-  }
 
-  if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         delete[] emf_north_send_[n];
@@ -554,8 +569,10 @@ BoundaryValues::~BoundaryValues() {
     }
   }
   if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
-      && (block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar||
-          block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar_wedge||block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge))
+      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     exc_.DeleteAthenaArray();
 
   if (SHEARING_BOX) {
@@ -618,8 +635,9 @@ BoundaryValues::~BoundaryValues() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryQuantity type)
+//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd,enum BoundaryQuantity type)
 //  \brief Initialize BoundaryData structure
+
 void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
@@ -633,10 +651,12 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryQuantity ty
   int size=0;
   bd.nbmax=maxneighbor_;
   if (type==BoundaryQuantity::flcor || type==BoundaryQuantity::emfcor) {
-    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NeighborConnect::face; bd.nbmax++) {}
+    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type == NeighborConnect::face;
+         bd.nbmax++) {}
   }
   if (type==BoundaryQuantity::emfcor) {
-    for (          ; BoundaryValues::ni[bd.nbmax].type==NeighborConnect::edge; bd.nbmax++) {}
+    for (          ; BoundaryValues::ni[bd.nbmax].type==NeighborConnect::edge;
+                   bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
