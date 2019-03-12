@@ -192,13 +192,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
       || mesh_size.nx2 % block_size.nx2 != 0
       || mesh_size.nx3 % block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "the mesh must be evenly divisible by the meshblock" << std::endl;
+        << "the Mesh must be evenly divisible by the MeshBlock" << std::endl;
     ATHENA_ERROR(msg);
   }
   if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
       || (block_size.nx3 < 4 && dim==3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "block_size must be larger than or equal to 4 meshes." << std::endl;
+        << "block_size must be larger than or equal to 4 cells." << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -1613,7 +1613,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
       && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in LoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will cause a poor load balance." << std::endl;
+              << "This will result in poor load balancing." << std::endl;
   }
 #endif
   if ((Globals::nranks)*(num_mesh_threads_) > nb) {
