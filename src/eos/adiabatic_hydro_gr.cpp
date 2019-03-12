@@ -26,12 +26,13 @@
 namespace {
 // Declarations
 #pragma omp delcare simd simdlen(SIMD_WIDTH)
-  void PrimitiveToConservedSingle(
-      const AthenaArray<Real> &prim, Real gamma_adi,
-      const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-      int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco);
-  Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
-  Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
+void PrimitiveToConservedSingle(
+                                const AthenaArray<Real> &prim, Real gamma_adi,
+                                const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+                                int k, int j, int i,
+                                AthenaArray<Real> &cons, Coordinates *pco);
+Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
+Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -269,8 +270,8 @@ void EquationOfState::ConservedToPrimitive(
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
                                            const AthenaArray<Real> &bb_cc,
                                            AthenaArray<Real> &cons, Coordinates *pco,
-					   int il, int iu, int jl,
-					   int ju, int kl, int ku) {
+                                           int il, int iu, int jl,
+                                           int ju, int kl, int ku) {
   const Real gamma_adi = gamma_;
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 

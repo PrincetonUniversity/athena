@@ -23,18 +23,18 @@
 namespace {
 // Declarations
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
-		     const int il, const int iu, const int ivx,
-		     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-		     AthenaArray<Real> &g, AthenaArray<Real> &gi,
-		     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-		     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-		     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
-			const int il, const int iu,
-			AthenaArray<Real> &g, AthenaArray<Real> &gi,
-			AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-			AthenaArray<Real> &flux);
-} //namespace
+                        const int il, const int iu,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &flux);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -90,25 +90,25 @@ namespace {
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-		     const int iu, const int ivx, const AthenaArray<Real> &bb,
-		     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g,
-		     AthenaArray<Real> &gi,
-		     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-		     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-		     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                     const int iu, const int ivx, const AthenaArray<Real> &bb,
+                     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g,
+                     AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Transform primitives to locally flat coordinates if in GR
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVY:
-      pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVZ:
-      pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
+      case IVX:
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
+      case IVY:
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
+      case IVZ:
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -234,15 +234,15 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVY:
-      pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVZ:
-      pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
+      case IVX:
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
+      case IVY:
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
+      case IVZ:
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -393,4 +393,4 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 #endif // GENERAL_RELATIVITY
   return;
 }
-} //namespace
+} // namespace

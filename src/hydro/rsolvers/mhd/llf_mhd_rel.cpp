@@ -127,7 +127,7 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j,
       break;
     case IVZ:
       pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-        break;
+      break;
     }
   }
 #else  // SR; need to populate 1D normal B array
@@ -302,15 +302,15 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVY:
-      pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVZ:
-      pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
+      case IVX:
+	pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
+      case IVY:
+	pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
+      case IVZ:
+	pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
     }
   }
 #endif  // GENERAL_RELATIVITY

@@ -7,6 +7,8 @@
 //  \brief Implements functions for going between primitive and conserved variables in
 //  general-relativistic MHD, as well as for computing wavespeeds.
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), cbrt(), isfinite(), isnan(), NAN, pow(), sqrt()
@@ -22,31 +24,39 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "eos.hpp"
 
-
-// Declarations
 namespace {
-  // Declarations
+// Declarations
 void CalculateNormalConserved(
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
+			      const AthenaArray<Real> &cons,
+			      const AthenaArray<Real> &bb,
+			      const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+			      int k, int j, int il, int iu,
+			      AthenaArray<Real> &dd, AthenaArray<Real> &ee,
+			      AthenaArray<Real> &mm, AthenaArray<Real> &bbb,
+			      AthenaArray<Real> &tt);
 #pragma omp declare simd simdlen(SIMD_WIDTH) \
 uniform(num_iterations,dd_vals,ee_vals,mm_vals, \
 bb_vals,tt_vals,gamma_adi,k,j,prim,gamma_vals,pmag_vals) linear(i)
 bool ConservedToPrimitiveNormal(
-    const int num_iterations, const AthenaArray<Real> &dd_vals,
-    const AthenaArray<Real> &ee_vals, const AthenaArray<Real> &mm_vals,
-    const AthenaArray<Real> &bb_vals, const AthenaArray<Real> &tt_vals,
-    Real gamma_adi, Real pgas_old, int k, int j, int i, AthenaArray<Real> &prim,
-    AthenaArray<Real> &gamma_vals, AthenaArray<Real> &pmag_vals);
+				const int num_iterations,
+				const AthenaArray<Real> &dd_vals,
+				const AthenaArray<Real> &ee_vals,
+				const AthenaArray<Real> &mm_vals,
+				const AthenaArray<Real> &bb_vals,
+				const AthenaArray<Real> &tt_vals,
+				Real gamma_adi, Real pgas_old,
+				int k, int j, int i, AthenaArray<Real> &prim,
+				AthenaArray<Real> &gamma_vals,
+				AthenaArray<Real> &pmag_vals);
 #pragma omp declare simd simdlen(SIMD_WIDTH) \
 uniform(prim,gamma_adi,bb_cc,g, gi,k,j,cons,pco) linear(i)
 void PrimitiveToConservedSingle(
-    const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int i, AthenaArray<Real> &cons,Coordinates *pco);
-} //namespace
+				const AthenaArray<Real> &prim, Real gamma_adi,
+				const AthenaArray<Real> &bb_cc,
+				const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+				int k, int j, int i,
+				AthenaArray<Real> &cons, Coordinates *pco);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -226,7 +236,7 @@ void EquationOfState::ConservedToPrimitive(
         Real wgas_add = rho_add + gamma_prime * pgas_add;
 
         // Adjust normal frame conserved quantities, and recalculate primitives
-        if (success_(i) and (rho_add > 0.0 or pgas_add > 0.0)) {
+        if (success_(i) && (rho_add > 0.0 || pgas_add > 0.0)) {
           // Adjust conserved density and energy
           normal_dd_(i) += rho_add * normal_gamma_(i);
           normal_ee_(i) += wgas_add * SQR(normal_gamma_(i)) + pgas_add;
@@ -574,7 +584,7 @@ bool ConservedToPrimitiveNormal(
 
   // Step 3: Check for convergence
   bool success=true;
-  if (pgas[num_iterations%3] < pgas_min or
+  if (pgas[num_iterations%3] < pgas_min ||
       std::abs(pgas[num_iterations%3]-pgas[(num_iterations-1)%3]) > tol) {
     success = false;
   }

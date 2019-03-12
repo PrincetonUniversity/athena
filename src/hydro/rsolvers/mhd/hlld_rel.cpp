@@ -23,26 +23,26 @@
 namespace {
 // Declarations
 void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-		      const int il, const int iu, const int ivx,
-		      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-		      AthenaArray<Real> &lambdas_p_l,
-		      AthenaArray<Real> &lambdas_m_l,
-		      AthenaArray<Real> &lambdas_p_r,
-		      AthenaArray<Real> &lambdas_m_r,
-		      AthenaArray<Real> &g, AthenaArray<Real> &gi,
-		      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-		      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-		      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-	       Real gamma_prime);
+               Real gamma_prime);
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-		    Real gamma_prime);
+                    Real gamma_prime);
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-			 const int il, const int iu, const AthenaArray<Real> &bb,
-			 AthenaArray<Real> &g, AthenaArray<Real> &gi,
-			 AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-			 AthenaArray<Real> &flux,
-			 AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                         const int il, const int iu, const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 } //namepsace
 
 //----------------------------------------------------------------------------------------
@@ -66,18 +66,18 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //       Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-			  const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
-			  AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
-			  AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+                          AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
+                          AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   Real dt = pmy_block->pmy_mesh->dt;
 
-  if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
+  if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux, ey,
-			ez);
+                        ez);
   } else {
     HLLDTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, lambdas_p_l_,
-		     lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_, flux,
-		     ey, ez);
+                     lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_, flux,
+                     ey, ez);
   }
   for(int i=il; i<=iu; ++i) {
     wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
@@ -110,16 +110,16 @@ namespace {
 //   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 
 void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-			const int il, const int iu, const int ivx,
-			const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-			AthenaArray<Real> &lambdas_p_l,
-			AthenaArray<Real> &lambdas_m_l,
-			AthenaArray<Real> &lambdas_p_r,
-			AthenaArray<Real> &lambdas_m_r,
-			AthenaArray<Real> &g, AthenaArray<Real> &gi,
-			AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-			AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-		      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                        const int il, const int iu, const int ivx,
+                        const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                        AthenaArray<Real> &lambdas_p_l,
+                        AthenaArray<Real> &lambdas_m_l,
+                        AthenaArray<Real> &lambdas_p_r,
+                        AthenaArray<Real> &lambdas_m_r,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Parameters
   const Real p_transition = 0.01;     // value delineating intial pressure regimes
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
@@ -130,21 +130,21 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
-      i01 = I01;
-      i11 = I11;
-      break;
-    case IVY:
-      pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
-      i01 = I02;
-      i11 = I22;
-      break;
-    case IVZ:
-      pmb->pcoord->Face3Metric(k, j, il, iu, g, gi);
-      i01 = I03;
-      i11 = I33;
-      break;
+      case IVX:
+        pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
+        i01 = I01;
+        i11 = I11;
+        break;
+      case IVY:
+        pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
+        i01 = I02;
+        i11 = I22;
+        break;
+      case IVZ:
+        pmb->pcoord->Face3Metric(k, j, il, iu, g, gi);
+        i01 = I03;
+        i11 = I33;
+        break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -153,15 +153,15 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVY:
-      pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVZ:
-      pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
+      case IVX:
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
+      case IVY:
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
+      case IVZ:
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        break;
     }
   }
 #else  // SR; need to populate 1D normal B array
@@ -175,9 +175,9 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 
   // Calculate wavespeeds
   pmb->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, k, j, il, iu, ivx, lambdas_p_l,
-				      lambdas_m_l);
+                                      lambdas_m_l);
   pmb->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal, k, j, il, iu, ivx, lambdas_p_r,
-				      lambdas_m_r);
+                                      lambdas_m_r);
 
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
@@ -427,7 +427,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       }
 
       switch_to_hlle[m] = false;
-      if (!std::isfinite(ptot_init[m]) or ptot_init[m] <= 0.0) {
+      if (!std::isfinite(ptot_init[m]) || ptot_init[m] <= 0.0) {
         switch_to_hlle[m] = true;
       }
     }
@@ -939,7 +939,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 //   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-	       Real gamma_prime) {
+               Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -968,7 +968,7 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 //   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-		    Real gamma_prime) {
+                    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
       / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -1005,12 +1005,12 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
 //   same function as in hlle_mhd_rel.cpp
 
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-			 const int il, const int iu,
-			 const AthenaArray<Real> &bb,
-			 AthenaArray<Real> &g, AthenaArray<Real> &gi,
-			 AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-			 AthenaArray<Real> &flux,
-			 AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                         const int il, const int iu,
+                         const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -1119,13 +1119,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], b_sq_l,
-					g00, g02, g22, &lambda_p_l, &lambda_m_l);
+                                        g00, g02, g22, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], b_sq_r,
-					g00, g02, g22, &lambda_p_r, &lambda_m_r);
+                                        g00, g02, g22, &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -1186,8 +1186,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-		     + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
-	* lambda_diff_inv;
+                     + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
+        * lambda_diff_inv;
     }
 
     // Determine region of wavefan

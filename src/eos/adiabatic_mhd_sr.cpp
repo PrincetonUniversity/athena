@@ -29,7 +29,7 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
                Real gamma_prime);
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
                     Real gamma_prime);
-} //namespace
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -184,7 +184,6 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         prim(IVX,k,j,i) = vx;
         prim(IVY,k,j,i) = vy;
         prim(IVZ,k,j,i) = vz;
-
       }
     }
   }

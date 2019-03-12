@@ -34,7 +34,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                          AthenaArray<Real> &g, AthenaArray<Real> &gi,
                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                          AthenaArray<Real> &flux);
-} //namespace
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -57,10 +57,11 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bb,
-                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
+                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+			  AthenaArray<Real> &flux,
                           AthenaArray<Real> &ey, AthenaArray<Real> &ez,
                           AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
-  if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j)) {
+  if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     HLLENonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   } else {
     HLLETransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
@@ -102,21 +103,21 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
-      i01 = I01;
-      i11 = I11;
-      break;
-    case IVY:
-      pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
-      i01 = I02;
-      i11 = I22;
-      break;
-    case IVZ:
-      pmb->pcoord->Face3Metric(k, j, il, iu, g, gi);
-      i01 = I03;
-      i11 = I33;
-      break;
+      case IVX:
+	pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
+	i01 = I01;
+	i11 = I11;
+	break;
+      case IVY:
+	pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
+	i01 = I02;
+	i11 = I22;
+	break;
+      case IVZ:
+	pmb->pcoord->Face3Metric(k, j, il, iu, g, gi);
+	i01 = I03;
+	i11 = I33;
+	break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -125,15 +126,15 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVY:
-      pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
-    case IVZ:
-      pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
-      break;
+      case IVX:
+	pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+	break;
+      case IVY:
+	pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+	break;
+      case IVZ:
+	pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+	break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -261,7 +262,8 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
       // Calculate fluxes in HLL region (MB 11)
       for (int n = 0; n < NWAVE; ++n) {
         flux_hll[n][m] = (lambda_r*flux_l[n][m] - lambda_l*flux_r[n][m]
-                          + lambda_l*lambda_r * (cons_r[n][m] - cons_l[n][m])) * lambda_diff_inv;
+                          + lambda_l*lambda_r * (cons_r[n][m] - cons_l[n][m]))
+	  * lambda_diff_inv;
       }
 
       // Calculate interface velocity
@@ -306,15 +308,15 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
-    case IVX:
-      pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVY:
-      pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
-    case IVZ:
-      pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-      break;
+      case IVX:
+	pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
+      case IVY:
+	pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
+      case IVZ:
+	pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+	break;
     }
   }
 #endif  // GENERAL_RELATIVITY
@@ -483,4 +485,4 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 #endif // GENERAL_RELATIVITY
   return;
 }
-} //namespace
+} // namespace

@@ -36,7 +36,8 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                          const int il, const int iu, const AthenaArray<Real> &bb,
                          AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
                          AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 } // namespace
 
@@ -318,7 +319,8 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
       // Calculate fluxes in HLL region (MB2005 11)
       for (int n = 0; n < NWAVE; ++n) {
         flux_hll[n][m] = (lambda_r*flux_l[n][m] - lambda_l*flux_r[n][m]
-                          + lambda_l*lambda_r * (cons_r[n][m] - cons_l[n][m])) * lambda_diff_inv;
+                          + lambda_l*lambda_r * (cons_r[n][m] - cons_l[n][m]))
+          * lambda_diff_inv;
       }
 
       // Calculate interface velocity

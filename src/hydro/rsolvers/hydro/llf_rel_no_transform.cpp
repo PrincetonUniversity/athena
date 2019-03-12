@@ -54,15 +54,15 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
   // Get metric components
   switch (ivx) {
-  case IVX:
-    pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
-    break;
-  case IVY:
-    pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
-    break;
-  case IVZ:
-    pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
-    break;
+    case IVX:
+      pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+      break;
+     case IVY:
+       pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+       break;
+     case IVZ:
+       pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+       break;
   }
 
   // Go through each interface
