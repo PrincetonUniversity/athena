@@ -54,8 +54,7 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
-                                                           TaskState &ts) {
+TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts) {
   int skip=0;
   TaskStatus ret;
 

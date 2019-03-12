@@ -29,7 +29,7 @@
 //  cleared) in this TaskList, return status.
 
 TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
-                                             TaskState &ts) {
+                                             TaskStates &ts) {
   int skip=0;
   TaskStatus ret;
   if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;

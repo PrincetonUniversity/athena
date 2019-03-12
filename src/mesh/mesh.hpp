@@ -35,7 +35,7 @@ class MeshBlockTree;
 class BoundaryValues;
 class GravityBoundaryValues;
 class TaskList;
-class TaskState;
+struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
@@ -123,7 +123,9 @@ class MeshBlock {
   // data
   Real cost;
   Real new_block_dt_, new_block_dt_diff_;
-  TaskState tasks;
+  // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
+  // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
+  TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
   // functions

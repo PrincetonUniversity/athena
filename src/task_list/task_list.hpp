@@ -40,10 +40,10 @@ struct Task { // aggregate and POD
 };
 
 //---------------------------------------------------------------------------------------
-//! \struct TaskState
-//  \brief container for task states
+//! \struct TaskStates
+//  \brief container for task states on a single MeshBlock
 
-struct TaskState { // aggregate and POD
+struct TaskStates { // aggregate and POD
   std::uint64_t finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
@@ -68,7 +68,7 @@ class TaskList {
   int nstages;    // number of times the tasklist is repeated per each full timestep
 
   // functions
-  TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
+  TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:

@@ -104,7 +104,7 @@ class Multigrid {
 
  private:
   bool root_flag_;
-  TaskState ts_;
+  TaskStates ts_;
 };
 
 
