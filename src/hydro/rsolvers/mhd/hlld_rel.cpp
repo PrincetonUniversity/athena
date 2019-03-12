@@ -43,7 +43,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                          AthenaArray<Real> &flux,
                          AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-} // namepsace
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -78,8 +78,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                         ez);
   } else {
     HLLDTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, lambdas_p_l_,
-                     lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r, cons_, flux,
-                     ey, ez);
+                     lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r,
+                     cons_, flux, ey, ez);
   }
   for(int i=il; i<=iu; ++i) {
     wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
