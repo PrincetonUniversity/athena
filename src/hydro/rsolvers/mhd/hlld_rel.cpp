@@ -43,7 +43,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                          AthenaArray<Real> &flux,
                          AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-} //namepsace
+} // namepsace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -66,9 +66,11 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //       Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
-                          AthenaArray<Real> &prim_r, AthenaArray<Real> &flux, AthenaArray<Real> &ey,
-                          AthenaArray<Real> &ez, AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          const int ivx, const AthenaArray<Real> &bb,
+                          AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                          AthenaArray<Real> &flux,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   Real dt = pmy_block->pmy_mesh->dt;
 
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {

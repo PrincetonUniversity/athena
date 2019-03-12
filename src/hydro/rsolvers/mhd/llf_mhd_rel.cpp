@@ -303,14 +303,14 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j,
   {
     switch (ivx) {
       case IVX:
-	pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-	break;
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
       case IVY:
-	pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-	break;
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
       case IVZ:
-	pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
-	break;
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        break;
     }
   }
 #endif  // GENERAL_RELATIVITY

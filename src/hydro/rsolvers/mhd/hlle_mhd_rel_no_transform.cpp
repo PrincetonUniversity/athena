@@ -201,14 +201,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx],
                                               b_sq_l, g00, g0i, gii,
-					      &lambda_p_l, &lambda_m_l);
+                                              &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx],
                                               b_sq_r, g00, g0i, gii,
-					      &lambda_p_r, &lambda_m_r);
+                                              &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);

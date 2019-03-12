@@ -20,7 +20,7 @@
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 #include "../../hydro.hpp"
 
-namespace{
+namespace {
 // Declarations
 void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
                       const int iu, const int ivx,
