@@ -580,6 +580,7 @@ void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
 void AthenaFFTIndex::SwapAxis(int ref_axis) {
   Swap_(iloc,ref_axis);
   Swap_(Nx,ref_axis);
+  Swap_(Lx,ref_axis);
 }
 
 void AthenaFFTIndex::SwapProc(int ref_axis) {
@@ -601,6 +602,7 @@ void AthenaFFTIndex::Permute_(int loc[], int npermute) {
 void AthenaFFTIndex::PermuteAxis(int npermute) {
   Permute_(iloc,npermute);
   Permute_(Nx,npermute);
+  Permute_(Lx,npermute);
 }
 
 void AthenaFFTIndex::PermuteProc(int npermute) {
@@ -623,6 +625,7 @@ void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
 
 void AthenaFFTIndex::RemapAxis(int dir) {
   RemapArray_(Nx,iloc,dir);
+  RemapArray_(Lx,iloc,dir);
 }
 
 void AthenaFFTIndex::RemapProc(int dir) {
