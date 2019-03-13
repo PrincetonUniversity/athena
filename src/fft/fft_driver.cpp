@@ -75,6 +75,8 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   std::int64_t lx2max = lx2min;
   std::int64_t lx3max = lx3min;
 
+  int current_level = pm->root_level;
+
   for (int n=ns; n<ne; n++) {
     std::int64_t &lx1 = pm->loclist[n].lx1;
     std::int64_t &lx2 = pm->loclist[n].lx2;
@@ -85,7 +87,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     lx1max = lx1max>lx1?lx1min:lx1;
     lx2max = lx2max>lx2?lx2min:lx2;
     lx3max = lx3max>lx3?lx3min:lx3;
+    if(pm->loclist[n].level > current_level) current_level = pm->loclist[n].level;
   }
+  int ref_lev = current_level - pm->root_level;
   // KGF: possible underflow from std::int64_t
   int nbx1 = static_cast<int>(lx1max-lx1min+1);
   int nbx2 = static_cast<int>(lx2max-lx2min+1);
@@ -114,17 +118,21 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1 = pm->nrbx1/nbx1;
-  npx2 = pm->nrbx2/nbx2;
-  npx3 = pm->nrbx3/nbx3;
+  npx1 = (pm->nrbx1*(1L<<ref_lev))/nbx1;
+  npx2 = (pm->nrbx2*(1L<<ref_lev))/nbx2;
+  npx3 = (pm->nrbx3*(1L<<ref_lev))/nbx3;
 
   fft_mesh_size_=pm->mesh_size;
 
+  fft_mesh_size_.nx1 = pm->mesh_size.nx1*(1L<<ref_lev);
+  fft_mesh_size_.nx2 = pm->mesh_size.nx2*(1L<<ref_lev);
+  fft_mesh_size_.nx3 = pm->mesh_size.nx3*(1L<<ref_lev);
+
   RegionSize &bsize = (pm->pblock->block_size);
 
-  fft_block_size_.nx1=pm->mesh_size.nx1/npx1;
-  fft_block_size_.nx2=pm->mesh_size.nx2/npx2;
-  fft_block_size_.nx3=pm->mesh_size.nx3/npx3;
+  fft_block_size_.nx1=fft_mesh_size_.nx1/npx1;
+  fft_block_size_.nx2=fft_mesh_size_.nx2/npx2;
+  fft_block_size_.nx3=fft_mesh_size_.nx3/npx3;
 
   Real x1size=bsize.x1max-bsize.x1min;
   Real x2size=bsize.x2max-bsize.x2min;
