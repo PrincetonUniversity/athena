@@ -634,7 +634,7 @@ bool ConservedToPrimitiveNormal(
 // Outputs:
 //   cons: conserved variables set in desired cell
 
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco) {
