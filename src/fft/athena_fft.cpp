@@ -569,7 +569,7 @@ void AthenaFFTIndex::SetLocalIndex() {
   //  PrintIndex();
 }
 
-void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
+void AthenaFFTIndex::SwapInt_(int loc[],int ref_axis) {
   int tmp;
   int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
   tmp=loc[axis1];
@@ -577,19 +577,29 @@ void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
   loc[axis2]=tmp;
 }
 
+void AthenaFFTIndex::SwapReal_(Real loc[],int ref_axis) {
+  Real tmp;
+  int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
+  tmp=loc[axis1];
+  loc[axis1]=loc[axis2];
+  loc[axis2]=tmp;
+}
+
+
+
 void AthenaFFTIndex::SwapAxis(int ref_axis) {
-  Swap_(iloc,ref_axis);
-  Swap_(Nx,ref_axis);
-  Swap_(Lx,ref_axis);
+  SwapInt_(iloc,ref_axis);
+  SwapInt_(Nx,ref_axis);
+  SwapReal_(Lx,ref_axis);
 }
 
 void AthenaFFTIndex::SwapProc(int ref_axis) {
-  Swap_(ploc,ref_axis);
-  Swap_(ip,ref_axis);
-  Swap_(np,ref_axis);
+  SwapInt_(ploc,ref_axis);
+  SwapInt_(ip,ref_axis);
+  SwapInt_(np,ref_axis);
 }
 
-void AthenaFFTIndex::Permute_(int loc[], int npermute) {
+void AthenaFFTIndex::PermuteInt_(int loc[], int npermute) {
   int tmp;
   for (int i=0; i<npermute; i++) {
     tmp=loc[0];
@@ -599,38 +609,26 @@ void AthenaFFTIndex::Permute_(int loc[], int npermute) {
   }
 }
 
-void AthenaFFTIndex::PermuteAxis(int npermute) {
-  Permute_(iloc,npermute);
-  Permute_(Nx,npermute);
-  Permute_(Lx,npermute);
-}
-
-void AthenaFFTIndex::PermuteProc(int npermute) {
-  Permute_(ploc,npermute);
-  Permute_(np,npermute);
-  Permute_(ip,npermute);
-}
-
-void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
-  int tmp[3];
-  for (int i=0; i<dim_; i++) tmp[i]=arr[i];
-  for (int i=0; i<dim_; i++) {
-    if (dir>0) {
-      arr[loc[i]]=tmp[i];
-    } else {
-      arr[i]=tmp[loc[i]];
-    }
+void AthenaFFTIndex::PermuteReal_(Real loc[], int npermute) {
+  Real tmp;
+  for (int i=0; i<npermute; i++) {
+    tmp=loc[0];
+    loc[0]=loc[1];
+    loc[1]=loc[2];
+    loc[2]=tmp;
   }
 }
 
-void AthenaFFTIndex::RemapAxis(int dir) {
-  RemapArray_(Nx,iloc,dir);
-  RemapArray_(Lx,iloc,dir);
+void AthenaFFTIndex::PermuteAxis(int npermute) {
+  PermuteInt_(iloc,npermute);
+  PermuteInt_(Nx,npermute);
+  PermuteReal_(Lx,npermute);
 }
 
-void AthenaFFTIndex::RemapProc(int dir) {
-  RemapArray_(np,ploc,dir);
-  RemapArray_(ip,ploc,dir);
+void AthenaFFTIndex::PermuteProc(int npermute) {
+  PermuteInt_(ploc,npermute);
+  PermuteInt_(np,npermute);
+  PermuteInt_(ip,npermute);
 }
 
 void AthenaFFTIndex::PrintIndex() {
