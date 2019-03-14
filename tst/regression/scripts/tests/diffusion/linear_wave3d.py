@@ -57,7 +57,6 @@ def analyze():
 
     # Equation 3.16
     re_num = (4.0*np.pi**2 * _c_s)/(L*slow_mode_rate)
-    print("Reynolds number of slow mode linear wave in 3D: {}".format(re_num))
 
     basename = 'bin/DecayLinWave.block0.out2.'
     nframe = 100
@@ -77,10 +76,10 @@ def analyze():
     r2 = 1 - resid_normal/(yy.size*yy.var())
     pnormal = p.convert(domain=(-1, 1))
     fit_rate = -pnormal.coef[-1]
-
+    print('[Decaying 3D Linear Wave]: Reynolds number of slow mode: {}'.format(re_num))
     print('[Decaying 3D Linear Wave]: R-squared of WLS regression = {}'.format(r2))
-    print('[Decaying 3D Linear Wave]: analytic decay rate = {}'.format(slow_mode_rate))
-    print('[Decaying 3D Linear Wave]: measured decay rate = {}'.format(fit_rate))
+    print('[Decaying 3D Linear Wave]: Analytic decay rate = {}'.format(slow_mode_rate))
+    print('[Decaying 3D Linear Wave]: Measured decay rate = {}'.format(fit_rate))
 
     flag = True
     error_rel = np.fabs(slow_mode_rate/fit_rate - 1.0)
