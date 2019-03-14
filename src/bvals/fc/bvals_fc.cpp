@@ -1220,12 +1220,14 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
 
 // ------- KGF: move to a separate file?
 
-void FaceCenteredBoundaryVariable::Initialize() {
-  MeshBlock* pmb=pmy_block_;
-  int &mylevel=pmb->loc.level;
+void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
+  // KGF: can I move the following fn call somewhere else so only MPI actions occur?
   CountFineEdges();
 
 #ifdef MPI_PARALLEL
+  MeshBlock* pmb=pmy_block_;
+  int &mylevel=pmb->loc.level;
+
   // KGF: a lot of repeated logic as in InitBoundaryData()
   int f2d=0, f3d=0;
   int cng, cng1, cng2, cng3;

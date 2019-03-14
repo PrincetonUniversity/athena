@@ -124,12 +124,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // void DestroyBoundaryData(BoundaryData &bd) final;
 
   // called before time-stepper:
-  void Initialize(void) final; // setup MPI requests
+  void SetupPersistentMPI() final; // setup MPI requests
   void StartReceivingForInit(bool cons_and_field) final;
   void ClearBoundaryForInit(bool cons_and_field) final;
   // called during time-stepper:
   void StartReceivingAll() final;
-  void ClearBoundaryAll(void) final;
+  void ClearBoundaryAll() final;
 
   // functions unique to BoundaryValues. these do not exist in individual BoundaryVariable
 
@@ -140,9 +140,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // The following 2x methods are unique to the BoundaryValues class, and serve only to
   // check the user's configuration. Called in Mesh::Initialize() after processing
-  // ParameterInput(), before pbval->Initialize() is called in this class.
-  void CheckBoundary(void);
-  void CheckPolarBoundaries(void);
+  // ParameterInput(), before pbval->SetupPersistentMPI() is called in this class.
+  void CheckBoundary();
+  void CheckPolarBoundaries();
 
   // doubly linked list of references to BoundaryVariable instances
   std::vector<BoundaryVariable *> bvars;  // preallocate (num_bvars)?

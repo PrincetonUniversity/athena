@@ -159,21 +159,36 @@ class BoundaryCommunication {
   virtual ~BoundaryCommunication() {}
 
   // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
-  // TODO(felker): rename this function to disambiguate from mesh.cpp, and specify MPI
-  virtual void Initialize() = 0; // setup persistent MPI requests
-  virtual void StartReceivingForInit(bool cons_and_field) = 0; // Call MPI_Start()
+  // ----------------
+  // create unique tags for each MeshBlock/buffer/quantity + initalize MPI requests:
+  virtual void SetupPersistentMPI() = 0;
+  // call MPI_Start() on req_recv[]:
+  virtual void StartReceivingForInit(bool cons_and_field) = 0;
+
+  // Then, individual BoundaryVariable object calls its own functions:
+  // SendBoundary():    MPI_Start on req_send[]
+  // +
+  // ReceiveBoundary(): MPI_Iprobe, MPI_Itest ---> BoundaryStatus::arrived
+  // SetBoundaries():   BoundaryStatus::completed
+  // OR
+  // ReceiveAndSetBoundariesWithWait(): MPI_Wait, set, then BoundaryStatus::completed
+
+  // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting :
   virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
 
   // functions called only in task_list/ during timestepping
-  // time: pmesh->time+dtstep, where dtstep is the delta t for current step
+  // ----------------
   virtual void StartReceivingAll() = 0;
+
+  // Then, similar BoundaryVariable sequence occurs as in Mesh::Initialize() (no WithWait)
+
   virtual void ClearBoundaryAll() = 0;
 };
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBuffer
 //  \brief contains methods for managing MPI send/recvs and associated loads/stores from
-//  communication buffers
+//  communication buffers. KGF: Merge with above BoundaryCommunication interface?
 class BoundaryBuffer {
  public:
   BoundaryBuffer() {}

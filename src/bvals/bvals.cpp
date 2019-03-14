@@ -561,22 +561,22 @@ BoundaryValues::~BoundaryValues() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::Initialize(void)
+//! \fn void BoundaryValues::SetupPersistentMPI()
 //  \brief Setup persistent MPI requests
 // TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 // KGF: called in Mesh::Initialize(), after CheckBoundary()
 //      and before StartReceivingForInit(true)
-void BoundaryValues::Initialize(void) {
+void BoundaryValues::SetupPersistentMPI() {
   // KGF: (although the counting is for 2x BoundaryVariables private members that are only
   // used for emf purposes in flux_correction_fc.cpp)
   // num_north_polar_blocks_, num_south_polar_blocks_, nedge_, nface_ are calculated in
   // BoundaryValues() constructor.
 
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->Initialize();
+    (*bvars_it)->SetupPersistentMPI();
   }
 
-  // KGF: begin exclusive shearing-box section in Initialize
+  // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
 
   // initialize the shearing block lists
   // if (SHEARING_BOX) {
@@ -615,7 +615,7 @@ void BoundaryValues::Initialize(void) {
   //       }
   //     }
   //   }
-  // } // end KGF: exclusive shearing box portion of Initialize()
+  // } // end KGF: exclusive shearing box portion of SetupPersistentMPI()
   return;
 }
 

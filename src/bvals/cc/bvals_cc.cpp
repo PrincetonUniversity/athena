@@ -634,11 +634,11 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
 
 // ------- KGF: move to a separate file?
 
-void CellCenteredBoundaryVariable::Initialize(void) {
+void CellCenteredBoundaryVariable::SetupPersistentMPI() {
+#ifdef MPI_PARALLEL
   MeshBlock* pmb=pmy_block_;
   int &mylevel=pmb->loc.level;
 
-#ifdef MPI_PARALLEL
   int f2d=0, f3d=0;
   int cng, cng1, cng2, cng3;
   if (pmb->block_size.nx2 > 1) f2d=1;

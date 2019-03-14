@@ -49,7 +49,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
 
   // BoundaryCommunication:
-  void Initialize() override;
+  void SetupPersistentMPI() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;
   void StartReceivingAll() override;
