@@ -161,6 +161,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
   const bool *flip_across_pole_;
 
+  bool edge_flag_[12];
+  int nedge_fine_[12];
+
   // ready to recv flux from same level and apply correction? false= 2nd pass for fine lvl
   bool recv_flx_same_lvl_;
   // KGF: formerly "firsttime_". The variable switch is used in only 2x functions:
@@ -179,6 +182,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
   void PolarBoundarySingleAzimuthalBlock() override;
 
+  void CountFineEdges();
 #ifdef MPI_PARALLEL
   int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;

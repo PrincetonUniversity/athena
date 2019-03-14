@@ -155,10 +155,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // (these could probably all be moved to the FaceCenteredBoundaryVariable for the
   // flux_correction_fc.cpp functions. None are used in cc/)
   int num_north_polar_blocks_, num_south_polar_blocks_;
-
   int nface_, nedge_;
-  bool edge_flag_[12];
-  int nedge_fine_[12];
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered

@@ -585,7 +585,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     if (nb.level == pmb->loc.level) {
       if ((nb.type == NeighborConnect::face)
           || ((nb.type == NeighborConnect::edge)
-              && (pbval_->edge_flag_[nb.eid] == true))) {
+              && (edge_flag_[nb.eid] == true))) {
         p=LoadEMFBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
       } else {
         continue;
@@ -1232,7 +1232,7 @@ void FaceCenteredBoundaryVariable::ClearCoarseEMFBoundary() {
   }
   // edge
   for (int n=0; n<pbval_->nedge_; n++) {
-    if (pbval_->edge_flag_[n] == true) continue;
+    if (edge_flag_[n] == true) continue;
     if (n>=0 && n<4) {
       int i, j;
       if ((n & 1) == 0) {
@@ -1405,8 +1405,8 @@ void FaceCenteredBoundaryVariable::AverageEMFBoundary() {
   }
   // edge
   for (int n=0; n<pbval_->nedge_; n++) {
-    if (pbval_->nedge_fine_[n] == 1) continue;
-    Real div=1.0/static_cast<Real>(pbval_->nedge_fine_[n]);
+    if (nedge_fine_[n] == 1) continue;
+    Real div=1.0/static_cast<Real>(nedge_fine_[n]);
     NeighborBlock& nb=pbval_->neighbor[n+6];
     Real half_div=div;
     if (nb.shear) half_div=0.5;
@@ -1536,7 +1536,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
       if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
       if (nb.level!=pmb->loc.level) continue;
       if ((nb.type == NeighborConnect::face) || ((nb.type == NeighborConnect::edge) &&
-                                       (pbval_->edge_flag_[nb.eid] == true))) {
+                                       (edge_flag_[nb.eid] == true))) {
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
           if (nb.rank == Globals::my_rank) { // on the same process

@@ -1150,11 +1150,80 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
   return;
 }
 
-// ------- KGF: move to a separate file?
-
-void FaceCenteredBoundaryVariable::Initialize(void) {
+void FaceCenteredBoundaryVariable::CountFineEdges() {
   MeshBlock* pmb=pmy_block_;
   int &mylevel=pmb->loc.level;
+
+  // KGF: shared logic of counting of neighbor MeshBlock coarse/same/refined
+  // count the number of the fine meshblocks contacting on each edge
+  int eid=0;
+  if (pmb->block_size.nx2 > 1) {
+    for (int ox2=-1; ox2<=1; ox2+=2) {
+      for (int ox1=-1; ox1<=1; ox1+=2) {
+        int nis, nie, njs, nje;
+        nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
+        njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
+        int nf=0, fl=mylevel;
+        for (int nj=njs; nj<=nje; nj++) {
+          for (int ni=nis; ni<=nie; ni++) {
+            if (pbval_->nblevel[1][nj+1][ni+1] > fl)
+              fl++, nf=0;
+            if (pbval_->nblevel[1][nj+1][ni+1]==fl)
+              nf++;
+          }
+        }
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
+      }
+    }
+  }
+  if (pmb->block_size.nx3 > 1) {
+    for (int ox3=-1; ox3<=1; ox3+=2) {
+      for (int ox1=-1; ox1<=1; ox1+=2) {
+        int nis, nie, nks, nke;
+        nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
+        nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
+        int nf=0, fl=mylevel;
+        for (int nk=nks; nk<=nke; nk++) {
+          for (int ni=nis; ni<=nie; ni++) {
+            if (pbval_->nblevel[nk+1][1][ni+1] > fl)
+              fl++, nf=0;
+            if (pbval_->nblevel[nk+1][1][ni+1]==fl)
+              nf++;
+          }
+        }
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
+      }
+    }
+    for (int ox3=-1; ox3<=1; ox3+=2) {
+      for (int ox2=-1; ox2<=1; ox2+=2) {
+        int njs, nje, nks, nke;
+        njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
+        nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
+        int nf=0, fl=mylevel;
+        for (int nk=nks; nk<=nke; nk++) {
+          for (int nj=njs; nj<=nje; nj++) {
+            if (pbval_->nblevel[nk+1][nj+1][1] > fl)
+              fl++, nf=0;
+            if (pbval_->nblevel[nk+1][nj+1][1]==fl)
+              nf++;
+          }
+        }
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
+      }
+    }
+  }
+  // end KGF: shared logic of counting of neighbor MeshBlock coarse/same/refined
+}
+
+// ------- KGF: move to a separate file?
+
+void FaceCenteredBoundaryVariable::Initialize() {
+  MeshBlock* pmb=pmy_block_;
+  int &mylevel=pmb->loc.level;
+  CountFineEdges();
 
 #ifdef MPI_PARALLEL
   // KGF: a lot of repeated logic as in InitBoundaryData()
@@ -1286,7 +1355,7 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
       // field flux (emf) correction: bd_var_flcor_
       if (nb.level==mylevel) { // the same level
         if ((nb.type==NeighborConnect::face) || ((nb.type==NeighborConnect::edge)
-                                         && (pbval_->edge_flag_[nb.eid]==true))) {
+                                         && (edge_flag_[nb.eid]==true))) {
           tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
@@ -1378,7 +1447,7 @@ void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
         if ((nb.level>mylevel) ||
             ((nb.level==mylevel) && ((nb.type==NeighborConnect::face)
                                      || ((nb.type==NeighborConnect::edge)
-                                         && (pbval_->edge_flag_[nb.eid]==true)))))
+                                         && (edge_flag_[nb.eid]==true)))))
           MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
       }
     }
@@ -1432,7 +1501,8 @@ void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
           MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         else if ((nb.level==pmb->loc.level)
                  && ((nb.type==NeighborConnect::face)
-                     || ((nb.type==NeighborConnect::edge) && (pbval_->edge_flag_[nb.eid]==true))))
+                     || ((nb.type==NeighborConnect::edge)
+                         && (edge_flag_[nb.eid]==true))))
           MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
     } // KGF: end block on other MPI process
