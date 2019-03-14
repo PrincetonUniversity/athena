@@ -564,8 +564,8 @@ BoundaryValues::~BoundaryValues() {
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Setup persistent MPI requests
 // TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
-// KGF: called in Mesh::Initialize(), after CheckBoundary() and before
-// StartReceivingForInit(true)
+// KGF: called in Mesh::Initialize(), after CheckBoundary()
+//      and before StartReceivingForInit(true)
 void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int &mylevel=pmb->loc.level;

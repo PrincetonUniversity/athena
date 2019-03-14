@@ -56,27 +56,14 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundaryAll() override;
 
   // BoundaryBuffer:
-  int LoadBoundaryBufferSameLevel(Real *buf,
-                                  const NeighborBlock& nb) override;
   // 1x LoadField*() don't use: int nl, int nu
   void SendBoundaryBuffers() override;
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
-  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
-  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
-  // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
-  // needed for switching HydroBoundaryQuantity::cons and HydroBoundaryQuantity::prim
-  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
-  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
-  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
-  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
   // originally: SendEMFCorrection(), ReceiveEMFCorrection()
-
-  void PolarBoundarySingleAzimuthalBlock() override;
 
   // Face-centered/Field/EMF unique methods:
   void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
@@ -178,6 +165,19 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool recv_flx_same_lvl_;
   // KGF: formerly "firsttime_". The variable switch is used in only 2x functions:
   // ReceiveEMFCorrection() and StartReceivingAll()
+
+  // BoundaryBuffer:
+  int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
+  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
+  // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
+  // needed for switching HydroBoundaryQuantity::cons and HydroBoundaryQuantity::prim
+  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
+  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
+  void PolarBoundarySingleAzimuthalBlock() override;
 
 #ifdef MPI_PARALLEL
   int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;

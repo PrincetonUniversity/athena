@@ -180,12 +180,19 @@ class BoundaryBuffer {
   virtual ~BoundaryBuffer() {}
 
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
-  virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SendBoundaryBuffers() = 0; // client-facing
   virtual bool ReceiveBoundaryBuffers() = 0; // client-facing
   // this next fn is used only during problem initialization in mesh.cpp:
   virtual void ReceiveAndSetBoundariesWithWait() = 0; // client-facing
   virtual void SetBoundaries() = 0; // client-facing
+
+  // TODO(felker): handle the 6x unique Field-related flux correction functions
+  virtual void SendFluxCorrection() = 0;
+  virtual bool ReceiveFluxCorrection() = 0;
+
+ private:
+  // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
+  virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
 
   // SMR/AMR-exclusive buffer management methods
@@ -193,9 +200,6 @@ class BoundaryBuffer {
   virtual int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) = 0;
-  // TODO(felker): handle the 6x unique Field-related flux correction functions
-  virtual void SendFluxCorrection() = 0;
-  virtual bool ReceiveFluxCorrection() = 0;
 
   // optional extensions: spherical-polar-like coordinates, shearing box, etc.
   virtual void PolarBoundarySingleAzimuthalBlock() = 0;

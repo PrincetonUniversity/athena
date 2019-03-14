@@ -80,20 +80,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundaryAll() override;
 
   // BoundaryBuffer:
-  int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   void SendBoundaryBuffers() override;
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-  // "bool *flip" is passed in 3x Set...From*(), computed by switch in wrapper
-  // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
-  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
-  // coarse_buf:
-  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
-  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
-  // coarse_buf:
-  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
-  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
 
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
@@ -105,15 +95,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   //   Set/LoadEMFBoundaryPolarBuffer()
   // - AverageEMFBoundary(), ClearCoarseEMFBoundary(),
   //                         PolarBoundarySingleAzimuthalBlockEMF()
-
-  // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarBoundarySingleAzimuthalBlockEMF()
-  // what about PolarBoundaryAverageField()? -- make analog no-ops for cell-centered var:
-  // void PolarBoundaryAverage()
-  // and for EMF:
-  // void PolarBoundarySingleAzimuthalBlockFluxCorrection()
-  // void PolarBoundaryAverageFluxCorrection()
-  void PolarBoundarySingleAzimuthalBlock() override;
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -190,6 +171,26 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Pulling these variables out of function signatures, since FaceCentered
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
   // Hydro, unlike HydroBoundaryQuantity and AthenaArray<Real> coarse_buf)
+
+  // BoundaryBuffer:
+  int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
+  // "bool *flip" is passed in 3x Set...From*(), computed by switch in wrapper
+  // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  // coarse_buf:
+  int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
+  int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
+  // coarse_buf:
+  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
+  // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
+  //                      PolarBoundarySingleAzimuthalBlockEMF()
+  // what about PolarBoundaryAverageField()? -- make analog no-ops for cell-centered var:
+  // void PolarBoundaryAverage()
+  // and for EMF:
+  // void PolarBoundarySingleAzimuthalBlockFluxCorrection()
+  // void PolarBoundaryAverageFluxCorrection()
+  void PolarBoundarySingleAzimuthalBlock() override;
 
 #ifdef MPI_PARALLEL
   int cc_phys_id_, cc_flx_phys_id_;
