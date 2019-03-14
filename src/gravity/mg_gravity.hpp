@@ -31,7 +31,7 @@ class MGGravity : public Multigrid {
             RegionSize isize, MGBoundaryFunc *MGBoundary,
             BoundaryFlag *input_bcs, bool root)
       : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
-  { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggravf; };
+  { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggrav_f; };
   ~MGGravity() {}
   void Smooth(int color) final;
   void CalculateDefect() final;

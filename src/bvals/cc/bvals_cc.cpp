@@ -80,7 +80,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
 #endif
   if (pmy_mesh_->multilevel==true) { // SMR or AMR
-    InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_FLCOR);
+    InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_flcor);
     // KGF: if storing pointer instead of BoundaryData in BoundaryVariable base class:
     // pbd_var_flcor_ = &(bd_var_flcor_);
 #ifdef MPI_PARALLEL

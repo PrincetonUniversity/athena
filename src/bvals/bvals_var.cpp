@@ -94,10 +94,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
   // KGF: what is happening in the next two conditionals??
   // they are preventing the elimination of "BoundaryQuantity type" function parameter in
   // favor of a simpler boolean switch
-  if (type==BoundaryQuantity::cc_FLCOR || type==BoundaryQuantity::fc_FLCOR) {
+  if (type==BoundaryQuantity::cc_flcor || type==BoundaryQuantity::fc_flcor) {
     for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NeighborConnect::face; bd.nbmax++) {}
   }
-  if (type==BoundaryQuantity::fc_FLCOR) {
+  if (type==BoundaryQuantity::fc_flcor) {
     for (          ; pbval_->ni[bd.nbmax].type==NeighborConnect::edge; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
@@ -112,7 +112,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
     // Allocate buffers, calculating the buffer size (variable vs. flux correction)
     if (type ==BoundaryQuantity::cc || type==BoundaryQuantity::fc) {
       size = this->ComputeVariableBufferSize(ni[n], cng);
-    } else if (type ==BoundaryQuantity::cc_FLCOR || type==BoundaryQuantity::fc_FLCOR) {
+    } else if (type ==BoundaryQuantity::cc_flcor || type==BoundaryQuantity::fc_flcor) {
       size = this->ComputeFluxCorrectionBufferSize(ni[n], cng);
     } else {
       std::stringstream msg;
@@ -124,8 +124,8 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
     // switch(type) { // local variables as input: ni[n],
     //case BoundaryQuantity::cc: {  // local variables as input: cng, ..., cng3
     //case BoundaryQuantity::fc: { // local variables as input: cng, ..., cng3, f2d, f3d
-    //case BoundaryQuantity::cc_FLCOR: { // local variables as input: NONE
-    //case BoundaryQuantity::fc_FLCOR: { // local variables as input: NONE
+    //case BoundaryQuantity::cc_flcor: { // local variables as input: NONE
+    //case BoundaryQuantity::fc_flcor: { // local variables as input: NONE
 
     bd.send[n]=new Real[size];
     bd.recv[n]=new Real[size];

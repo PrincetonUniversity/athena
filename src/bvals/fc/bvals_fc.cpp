@@ -63,7 +63,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   // AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::fc);
-  InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_FLCOR);
+  InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);
   // pbd_var_flcor_ = &(bd_fc_flcor_);
 #ifdef MPI_PARALLEL
   fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);

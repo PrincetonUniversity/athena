@@ -60,7 +60,7 @@ class Multigrid {
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggravf (face
+  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggrav_f (face
   // neighbors only) are passed to comm function calls in mg_task_list.cpp Only
   // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
   // (not through btype) in MGBoundaryValues() ctor

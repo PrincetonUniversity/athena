@@ -214,14 +214,14 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
   MGBoundaryData *pbd;
 #endif
 
-  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf) {
+  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggrav_f) {
 #ifdef MPI_PARALLEL
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
     phys=TAG_MGGRAV;
 #endif
   }
-  if (type==BoundaryQuantity::mggravf)
+  if (type==BoundaryQuantity::mggrav_f)
     faceonly=true;
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -267,9 +267,9 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
   bool faceonly=false;
   MGBoundaryData *pbd{};
 
-  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf)
+  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggrav_f)
     pbd=&bd_mggrav_;
-  if (type==BoundaryQuantity::mggravf)
+  if (type==BoundaryQuantity::mggrav_f)
     faceonly=true;
 
   for (int n=0; n<nneighbor; n++) {
@@ -323,12 +323,12 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   bool bflag=true;
   MGBoundaryData *pbd{}, *ptarget{};
 
-  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf) {
+  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggrav_f) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
     phys = TAG_MGGRAV;
   }
-  if (type==BoundaryQuantity::mggravf)
+  if (type==BoundaryQuantity::mggrav_f)
     faceonly=true;
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -337,7 +337,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     int ssize = 0;
     if (nb.rank == Globals::my_rank) {
       Multigrid *pmg=pmy_mg_->pmy_driver_->FindMultigrid(nb.gid);
-      if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf)
+      if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggrav_f)
         ptarget=&(pmg->pmgbval->bd_mggrav_);
       if (ptarget->flag[nb.targetid] != BoundaryStatus::waiting) {
         bflag=false;
@@ -408,11 +408,11 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   int nvar, ngh;
   MGBoundaryData *pbd{};
 
-  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggravf) {
+  if (type==BoundaryQuantity::mggrav || type==BoundaryQuantity::mggrav_f) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=1;
   }
-  if (type==BoundaryQuantity::mggravf)
+  if (type==BoundaryQuantity::mggrav_f)
     faceonly=true;
 
   for (int n=0; n<nneighbor; n++) {
