@@ -118,15 +118,15 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1 = (pm->nrbx1*(1L<<ref_lev))/nbx1;
-  npx2 = (pm->nrbx2*(1L<<ref_lev))/nbx2;
-  npx3 = (pm->nrbx3*(1L<<ref_lev))/nbx3;
+  npx1 = (pm->nrbx1*(1<<ref_lev))/nbx1;
+  npx2 = (pm->nrbx2*(1<<ref_lev))/nbx2;
+  npx3 = (pm->nrbx3*(1<<ref_lev))/nbx3;
 
   fft_mesh_size_=pm->mesh_size;
 
-  fft_mesh_size_.nx1 = pm->mesh_size.nx1*(1L<<ref_lev);
-  fft_mesh_size_.nx2 = pm->mesh_size.nx2*(1L<<ref_lev);
-  fft_mesh_size_.nx3 = pm->mesh_size.nx3*(1L<<ref_lev);
+  fft_mesh_size_.nx1 = pm->mesh_size.nx1*(1<<ref_lev);
+  fft_mesh_size_.nx2 = pm->mesh_size.nx2*(1<<ref_lev);
+  fft_mesh_size_.nx3 = pm->mesh_size.nx3*(1<<ref_lev);
 
   RegionSize &bsize = (pm->pblock->block_size);
 
