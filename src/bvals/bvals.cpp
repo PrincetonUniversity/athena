@@ -620,11 +620,11 @@ void BoundaryValues::SetupPersistentMPI() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::CheckBoundary(void)
+//! \fn void BoundaryValues::CheckBoundary()
 //  \brief checks if the boundary conditions are correctly enrolled (and other boundary
 //  values compatibility checks performed at the top of Mesh::Initialize())
 
-void BoundaryValues::CheckBoundary(void) {
+void BoundaryValues::CheckBoundary() {
   for (int i=0; i<nface_; i++) {
     if (block_bcs[i]==BoundaryFlag::user) {
       if (BoundaryFunction_[i]==nullptr) {
@@ -770,7 +770,7 @@ void BoundaryValues::StartReceivingAll() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryForInit(void)
+//! \fn void BoundaryValues::ClearBoundaryForInit()
 //  \brief clean up the boundary flags for initialization
 
 void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
@@ -784,10 +784,10 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryAll(void)
+//! \fn void BoundaryValues::ClearBoundaryAll()
 //  \brief clean up the boundary flags after each loop
 
-void BoundaryValues::ClearBoundaryAll(void) {
+void BoundaryValues::ClearBoundaryAll() {
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
     (*bvars_it)->ClearBoundaryAll();
   }

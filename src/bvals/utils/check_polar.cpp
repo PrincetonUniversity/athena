@@ -22,7 +22,7 @@
 #include "../bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::CheckPolarBoundaries(void)
+//! \fn void BoundaryValues::CheckPolarBoundaries()
 //  \brief Check for any compatibility issues if polar-type boundary flags are selected.
 //  Called after setting 6x boundary functions in MeshBlock's BoundaryValues() constructor
 

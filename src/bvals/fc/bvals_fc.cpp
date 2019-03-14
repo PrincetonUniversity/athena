@@ -513,10 +513,10 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void)
+//! \fn void FaceCenteredBoundaryVariable::SendBoundaryBuffers()
 //  \brief Send face-centered boundary buffers
 
-void FaceCenteredBoundaryVariable::SendBoundaryBuffers(void) {
+void FaceCenteredBoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb=pmy_block_;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -940,10 +940,10 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void)
+//! \fn bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers()
 //  \brief receive the face-centered boundary data
 
-bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
+bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag=true;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -972,10 +972,10 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetBoundaries(void)
+//! \fn void FaceCenteredBoundaryVariable::SetBoundaries()
 //  \brief set the face-centered boundary data
 
-void FaceCenteredBoundaryVariable::SetBoundaries(void) {
+void FaceCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb=pmy_block_;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -1000,10 +1000,10 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void)
+//! \fn void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait()
 //  \brief receive and set the face-centered boundary data for initialization
 
-void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
+void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb=pmy_block_;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -1486,7 +1486,7 @@ void FaceCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
   return;
 }
 
-void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
+void FaceCenteredBoundaryVariable::ClearBoundaryAll() {
     // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];

@@ -147,10 +147,10 @@ void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(void)
+//! \fn void MGBoundaryValues::ApplyPhysicalBoundaries()
 //  \brief Apply physical boundary conditions to the current Multigrid data
 
-void MGBoundaryValues::ApplyPhysicalBoundaries(void) {
+void MGBoundaryValues::ApplyPhysicalBoundaries() {
   AthenaArray<Real> &dst=pmy_mg_->GetCurrentData();
   int ll=pmy_mg_->nlevel_-1-pmy_mg_->current_level_;
   int ngh=pmy_mg_->ngh_, nvar=pmy_mg_->nvar_;

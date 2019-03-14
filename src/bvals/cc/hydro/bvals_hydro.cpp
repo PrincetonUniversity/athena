@@ -53,7 +53,7 @@ void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type)
         coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_prim_);
     }
   }
-  // Smaller switch used only in ReceiveBoundaryBuffers(void)
+  // Smaller switch used only in ReceiveBoundaryBuffers()
   // if (hydro_type==HydroBoundaryQuantity::cons || hydro_type==HydroBoundaryQuantity::prim) {
   //   pbd=&bd_cc_;
   // }

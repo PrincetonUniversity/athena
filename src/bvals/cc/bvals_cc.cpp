@@ -234,11 +234,11 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers(void)
+//! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers()
 //  \brief Send boundary buffers of cell-centered variables
 
 // KGF: (AthenaArray<Real> &dst, HydroBoundaryQuantity type)
-void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
+void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
 
@@ -484,10 +484,10 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void)
+//! \fn bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers()
 //  \brief receive the cell-centered boundary data
 
-bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
+bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag=true;
 
   // KGF: call short switch over "HydroBoundaryQuantity type"
@@ -518,10 +518,10 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetBoundaries(void)
+//! \fn void CellCenteredBoundaryVariable::SetBoundaries()
 //  \brief set the cell-centered boundary data
 
-void CellCenteredBoundaryVariable::SetBoundaries(void) {
+void CellCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb=pmy_block_;
 
   // KGF: call switch over "HydroBoundaryQuantity type"
@@ -554,7 +554,7 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
 //! \fn void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait()
 //  \brief receive and set the cell-centered boundary data for initialization
 
-void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
+void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb=pmy_block_;
 
   // KGF: call switch over "HydroBoundaryQuantity type"
@@ -588,10 +588,10 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void)
+//! \fn void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock()
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
-void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
+void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
@@ -786,7 +786,7 @@ void CellCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
   return;
 }
 
-void CellCenteredBoundaryVariable::ClearBoundaryAll(void) {
+void CellCenteredBoundaryVariable::ClearBoundaryAll() {
     // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];

@@ -55,7 +55,7 @@ class MGBoundaryValues : public BoundaryBase {
   void InitBoundaryData(MGBoundaryData &bd, BoundaryQuantity type);
   void DestroyBoundaryData(MGBoundaryData &bd);
 
-  void ApplyPhysicalBoundaries(void);
+  void ApplyPhysicalBoundaries();
   void StartReceivingMultigrid(int nc, BoundaryQuantity type);
   void ClearBoundaryMultigrid(BoundaryQuantity type);
   int LoadMultigridBoundaryBufferSameLevel(
