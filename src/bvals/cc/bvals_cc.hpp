@@ -29,9 +29,6 @@
 //  \brief
 
 class CellCenteredBoundaryVariable : public BoundaryVariable {
-  // Allow functions to access most any variable to allow for fully general BC dependence
-  friend class Hydro;
-  friend class Field;
  public:
   CellCenteredBoundaryVariable(MeshBlock *pmb,
                                AthenaArray<Real> &var, AthenaArray<Real> *var_flux);

@@ -29,9 +29,6 @@
 //  \brief
 
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
-  // Allow functions to access most any variable to allow for fully general BC dependence
-  friend class Hydro;
-  friend class Field;
  public:
   FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField &var, EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
