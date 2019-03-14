@@ -157,10 +157,10 @@
 //           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
 //           std::memcpy(pbl->pbval->recv_innerbuf_emf_[n],
 //                   send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
-//           pbl->pbval->shbox_inner_emf_flag_[n]=BNDRY_ARRIVED;
+//           pbl->pbval->shbox_inner_emf_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, TAG_SHBOX_EMF);
+//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_emf);
 //           MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],
 //                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
 //                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
@@ -193,10 +193,10 @@
 //           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
 //           std::memcpy(pbl->pbval->recv_outerbuf_emf_[n],
 //                   send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
-//           pbl->pbval->shbox_outer_emf_flag_[n]=BNDRY_ARRIVED;
+//           pbl->pbval->shbox_outer_emf_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, TAG_SHBOX_EMF);
+//           int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, AthenaTagMPI::shbox_emf);
 //           MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],
 //                     MPI_ATHENA_REAL, send_outer_rank_[n], tag,
 //                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
@@ -294,8 +294,8 @@
 
 //   if (shbb_.inner == true) { // check inner boundaries
 //     for (int n=0; n<4; n++) {
-//       if (shbox_inner_emf_flag_[n]==BNDRY_COMPLETED) continue;
-//       if (shbox_inner_emf_flag_[n]==BNDRY_WAITING) {
+//       if (shbox_inner_emf_flag_[n]==BoundaryStatus::completed) continue;
+//       if (shbox_inner_emf_flag_[n]==BoundaryStatus::waiting) {
 //         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
 //           flagi=false;
 //           continue;
@@ -309,22 +309,22 @@
 //             flagi=false;
 //             continue;
 //           }
-//           shbox_inner_emf_flag_[n] = BNDRY_ARRIVED;
+//           shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
 // #endif
 //         }
 //       }
 //       // set dst if boundary arrived
 //       SetEMFShearingboxBoundarySameLevel(shboxmap_inner_emf_,
 //                                          recv_innerbuf_emf_[n],n);
-//       shbox_inner_emf_flag_[n] = BNDRY_COMPLETED; // completed
+//       shbox_inner_emf_flag_[n] = BoundaryStatus::completed; // completed
 //     }
 //   } // inner boundary
 
 //   if (shbb_.outer == true) { // check outer boundaries
 //     int offset = 4;
 //     for (int n=0; n<4; n++) {
-//       if (shbox_outer_emf_flag_[n]==BNDRY_COMPLETED) continue;
-//       if (shbox_outer_emf_flag_[n]==BNDRY_WAITING) {
+//       if (shbox_outer_emf_flag_[n]==BoundaryStatus::completed) continue;
+//       if (shbox_outer_emf_flag_[n]==BoundaryStatus::waiting) {
 //         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
 //           flago=false;
 //           continue;
@@ -338,13 +338,13 @@
 //             flago=false;
 //             continue;
 //           }
-//           shbox_outer_emf_flag_[n] = BNDRY_ARRIVED;
+//           shbox_outer_emf_flag_[n] = BoundaryStatus::arrived;
 // #endif
 //         }
 //       }
 //       SetEMFShearingboxBoundarySameLevel(shboxmap_outer_emf_,
 //                                          recv_outerbuf_emf_[n],n+offset);
-//       shbox_outer_emf_flag_[n] = BNDRY_COMPLETED; // completed
+//       shbox_outer_emf_flag_[n] = BoundaryStatus::completed; // completed
 //     }
 //   } // outer boundary
 

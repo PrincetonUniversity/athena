@@ -111,46 +111,72 @@ struct EdgeField {
 
 //----------------------------------------------------------------------------------------
 // enums used everywhere
+// (not specifying underlying integral type (C++11) for portability & performance)
+
+// TODO(felker): C++ Core Guidelines Enum.5: Don’t use ALL_CAPS for enumerators
+// (avoid clashes with preprocessor macros). Enumerated type definitions in this file and:
+// athena_fft.hpp, io_wrapper.hpp, bvals.hpp, hydro_diffusion.hpp, field_diffusion.hpp,
+// task_list.hpp, ???
+
+//------------------
+// named, weakly typed / unscoped enums:
+//------------------
+
+// enumerators only used for indexing AthenaArray and regular arrays; typename and
+// explicitly specified enumerator values aare unnecessary, but provided for clarity:
 
 // array indices for conserved: density, momemtum, total energy, face-centered field
-enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
-enum {IB1=0, IB2=1, IB3=2};
+enum ConsIndex {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
+enum MagneticIndex {IB1=0, IB2=1, IB3=2};
 
 // array indices for 1D primitives: velocity, transverse components of field
-enum {IVX=1, IVY=2, IVZ=3, IPR=4, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
+enum PrimIndex {IVX=1, IVY=2, IVZ=3, IPR=4, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
 
 // array indices for face-centered electric fields returned by Riemann solver
-enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
+enum ElectricIndex {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 
 // array indices for metric and triangular matrices in GR
-enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
-enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
+enum MetricIndex {I00=0, I01=1, I02=2, I03=3, I11=4, I12=5, I13=6, I22=7, I23=8, I33=9,
+                  NMETRIC=10};
+enum TriangleIndex {T00=0, T10=1, T11=2, T20=3, T21=4, T22=5, T30=6, T31=7, T32=8, T33=9,
+                    NTRIANGULAR=10};
+
+// enumerator types that are used for variables and function parameters:
 
 // needed for arrays dimensioned over grid directions
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
+// only used in Mesh::EnrollUserMeshGenerator(CoordinateDirection,MeshGenFunc my_mg)
 
+//------------------
+// strongly typed / scoped enums (C++11):
+//------------------
 // needed wherever MPI communications are used.  Must be < 32 and unique
-// enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1,
-//                      TAG_RAD=2, // unused on rad0 branch
-//                    TAG_CHEM=3, // chemistry: renamed to TAG_SPECIES; add TAG_SIXRAY=16
-//                      TAG_HYDFLX=4, TAG_FLDFLX=5,
-//                      TAG_RADFLX=6, // unused on rad0 branch
-//                      TAG_CHMFLX=7, // unused on chemistry branch
-//                      TAG_AMR=8,  // Mesh::CreateAMRMPITag() for load balancing
-//                      TAG_FLDFLX_POLE=9, // tricky; only used in
+
+// AthenaTagMPI {hydro=0, field=1,
+//                      rad=2, // unused on rad0 branch
+//                      chem=3, // chemistry: renamed to TAG_SPECIES; add TAG_SIXRAY=16
+//                      hydflx=4, fldflx=5,
+//                      radFLX=6, // unused on rad0 branch
+//                      chmflx=7, // unused on chemistry branch
+//                      amr=8,  // Mesh::CreateAMRMPITag() for load balancing
+//                      fldflx_POLE=9, // tricky; only used in
 //                                         // BoundaryValues::Initialize() for emf
-//                      TAG_GRAVITY=11, // FFT self-gravity
-//                      TAG_MGGRAV=12,  // phys=TAG_MGGRAV; in bvals_mg.cpp
-//                      TAG_SHBOX_HYDRO=13, TAG_SHBOX_FIELD=14, TAG_SHBOX_EMF=15};
+//                      gravity=11, // FFT self-gravity
+//                      mggrav=12,  // phys=mggrav; in bvals_mg.cpp
+//                      shbox_hydro=13, shbox_field=14, shbox_emf=15};
 
 // KGF: temporary workaround for Multigrid
 #define TAG_MGGRAV 12
 
+//enum AthenaTagMPI : int {hydro, field, rad, chem, hydflx, fldflx, radflx, chmflx,
+//                         amr, fldflx_pole, gravity, mggrav,
+//                         shbox_hydro, shbox_field, shbox_emf};
+
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
-enum BoundaryType {BNDRY_CC=0, BNDRY_FC=1, BNDRY_CC_FLCOR=2, BNDRY_FC_FLCOR=3,
-                   BNDRY_MGGRAV=4, BNDRY_MGGRAVF=5};
-enum HydroBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
+enum class BoundaryQuantity {hydro, field, gravity, mggrav, mggravf, flcor, emfcor};
+enum class HydroBoundaryQuantity {cons, prim};
+// enum class FluxCorrectionQuantity {hydro};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

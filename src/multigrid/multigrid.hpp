@@ -56,15 +56,15 @@ class Multigrid {
  public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
             int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
-            enum BoundaryFlag *input_bcs, bool root);
+            BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  // KGF: Both btype=BNDRY_MGGRAV and btypef=BNDRY_MGGRAVF (face neighbors only)
-  // are passed to comm function calls in mg_task_list.cpp
-  // Only BNDRY_MGGRAV is handled in a case in InitBoundaryData(). Passed directly
+  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggravf (face
+  // neighbors only) are passed to comm function calls in mg_task_list.cpp Only
+  // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
   // (not through btype) in MGBoundaryValues() ctor
-  enum BoundaryType btype, btypef;
+  BoundaryQuantity btype, btypef;
   Multigrid *next, *prev; // node links for doubly linked list
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
@@ -108,7 +108,7 @@ class Multigrid {
 
  private:
   bool root_flag_;
-  TaskState ts_;
+  TaskStates ts_;
 };
 
 

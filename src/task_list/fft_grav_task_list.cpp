@@ -29,8 +29,7 @@
 //----------------------------------------------------------------------------------------
 //  FFTGravitySolverTaskList constructor
 
-FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-    : TaskList(pm) {
+FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
@@ -55,27 +54,27 @@ void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   switch (id) {
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
       break;
     case (SETB_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&FFTGravitySolverTaskList::SetFFTGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&FFTGravitySolverTaskList::PhysicalBoundary);
       break;
     default:
@@ -97,42 +96,37 @@ void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   return;
 }
 
-enum TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb,
-                                                                  int stage) {
+TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb, int stage) {
   // KGF: BoundaryValues wrapper version called in time_integrator.cpp
   pmb->pgrav->pgbval->ClearBoundaryAll();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb,
-                                                                 int stage) {
+TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb, int stage) {
   // KGF: BoundaryBuffer version does not return bool (copied Multigrid implementation)
   pmb->pgrav->pgbval->SendBoundaryBuffers();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
-                                                                    int stage) {
-  //  std::cout << "In FFTGravitySolverTaskList::ReceiveFFTGravityBoundary" << std::endl;
+TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
+                                                               int stage) {
   bool ret = pmb->pgrav->pgbval->ReceiveBoundaryBuffers();
   //  std::cout << "ret= " << ret << std::endl;
   if (ret == false)
-    return TASK_FAIL;
+    return TaskStatus::fail;
   // if (pmb->pgrav->pgbval->ReceiveBoundaryBuffers() == false)
-  //   return TASK_FAIL;
-  return TASK_SUCCESS;
+  //   return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
 
 
-enum TaskStatus FFTGravitySolverTaskList::SetFFTGravityBoundary(MeshBlock *pmb,
-                                                                int stage) {
+TaskStatus FFTGravitySolverTaskList::SetFFTGravityBoundary(MeshBlock *pmb, int stage) {
   pmb->pgrav->pgbval->SetBoundaries();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb,
-                                                           int stage) {
+TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   //std::cout << "In FFTGravitySolverTaskList::PhysicalBoundary" << std::endl;
 
   // KGF: FFT self-gravity can only handle periodic boundary conditions
@@ -158,7 +152,7 @@ enum TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb,
   // the matching BoundaryVariable obejct contained in another MeshBlock object on the
   // same process.
 
-  // KGF: Does FFT self-gravity actually need additional "enum BoundaryStatus sflag[56]"
+  // KGF: Does FFT self-gravity actually need additional "BoundaryStatus sflag[56]"
   // that was copied from Multigrid's unique "struct MGBoundaryData"?
 
   // Need to trap errors and incompatibilitis with FFT self-gravity when:
@@ -170,5 +164,5 @@ enum TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb,
   // KGF: should this be moved to FFTGravity() (currently default ctor) in
   // gravity/fft_gravity.hpp? What exactly is the Gravity class's shared role between FFT
   // and Multigrid??
-  return TASK_NEXT;
+  return TaskStatus::next;
 }

@@ -78,7 +78,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   if (pbval_->num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[pbval_->num_north_polar_blocks_];
     emf_north_recv_ = new Real *[pbval_->num_north_polar_blocks_];
-    emf_north_flag_ = new enum BoundaryStatus[pbval_->num_north_polar_blocks_];
+    emf_north_flag_ = new BoundaryStatus[pbval_->num_north_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_north_send_ = new MPI_Request[pbval_->num_north_polar_blocks_];
     req_emf_north_recv_ = new MPI_Request[pbval_->num_north_polar_blocks_];
@@ -86,7 +86,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
       emf_north_send_[n] = nullptr;
       emf_north_recv_[n] = nullptr;
-      emf_north_flag_[n] = BNDRY_WAITING;
+      emf_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       req_emf_north_send_[n] = MPI_REQUEST_NULL;
       req_emf_north_recv_[n] = MPI_REQUEST_NULL;
@@ -96,7 +96,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   if (pbval_->num_south_polar_blocks_ > 0) {
     emf_south_send_ = new Real *[pbval_->num_south_polar_blocks_];
     emf_south_recv_ = new Real *[pbval_->num_south_polar_blocks_];
-    emf_south_flag_ = new enum BoundaryStatus[pbval_->num_south_polar_blocks_];
+    emf_south_flag_ = new BoundaryStatus[pbval_->num_south_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_south_send_ = new MPI_Request[pbval_->num_south_polar_blocks_];
     req_emf_south_recv_ = new MPI_Request[pbval_->num_south_polar_blocks_];
@@ -104,7 +104,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
       emf_south_send_[n] = nullptr;
       emf_south_recv_[n] = nullptr;
-      emf_south_flag_[n] = BNDRY_WAITING;
+      emf_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       req_emf_south_send_[n] = MPI_REQUEST_NULL;
       req_emf_south_recv_[n] = MPI_REQUEST_NULL;
@@ -198,7 +198,7 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
             *((ni.ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
   int size=size1+size2+size3;
   if (pmy_mesh_->multilevel) {
-    if (ni.type!=NEIGHBOR_FACE) {
+    if (ni.type!=NeighborConnect::face) {
       if (ni.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
       if (ni.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
       if (ni.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -215,7 +215,7 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
              *((ni.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
              *((ni.ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d)
                : NGHOST);
-    if (ni.type!=NEIGHBOR_FACE) {
+    if (ni.type!=NeighborConnect::face) {
       if (ni.ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
       if (ni.ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
       if (ni.ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
@@ -245,7 +245,7 @@ int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
   MeshBlock *pmb=pmy_block_;
   int size=0;
 
-  if (ni.type==NEIGHBOR_FACE) {
+  if (ni.type==NeighborConnect::face) {
     if (pmb->block_size.nx3>1) { // 3D
       if (ni.ox1!=0)
         size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
@@ -264,7 +264,7 @@ int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     } else { // 1D
       size=2;
           }
-  } else if (ni.type==NEIGHBOR_EDGE) {
+  } else if (ni.type==NeighborConnect::edge) {
     if (pmb->block_size.nx3>1) { // 3D
       if (ni.ox3==0) size=pmb->block_size.nx3;
       if (ni.ox2==0) size=pmb->block_size.nx2;
@@ -298,7 +298,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
@@ -312,7 +312,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox2==0) sj=pmb->js,          ej=pmb->je+1;
   else if (nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
   else               sj=pmb->js+1,        ej=pmb->js+NGHOST;
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
@@ -326,7 +326,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ox3==0) sk=pmb->ks,          ek=pmb->ke+1;
   else if (nb.ox3>0)  sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else               sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
@@ -359,7 +359,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   else if (nb.ox3>0) sk=pmb->cke-cng+1, ek=pmb->cke;
   else              sk=pmb->cks,       ek=pmb->cks+cng-1;
   // include the overlapping faces in edge and corner boundaries
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
@@ -374,7 +374,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   else if (nb.ox2==0) sj=pmb->cjs,       ej=pmb->cje+1;
   else if (nb.ox2>0)  sj=pmb->cje-cng+1, ej=pmb->cje;
   else               sj=pmb->cjs+1,     ej=pmb->cjs+cng;
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
@@ -393,7 +393,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   else if (nb.ox3==0) sk=pmb->cks,       ek=pmb->cke+1;
   else if (nb.ox3>0)  sk=pmb->cke-cng+1, ek=pmb->cke;
   else               sk=pmb->cks+1,     ek=pmb->cks+cng;
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
@@ -564,7 +564,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox1>0) si--;
     else if (nb.ox1<0) ei++;
   }
@@ -590,7 +590,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox2>0)  sj=pmb->je+2,       ej=pmb->je+NGHOST+1;
   else               sj=pmb->js-NGHOST,  ej=pmb->js-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox2>0) sj--;
     else if (nb.ox2<0) ej++;
   }
@@ -621,7 +621,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ox3>0)  sk=pmb->ke+2,       ek=pmb->ke+NGHOST+1;
   else               sk=pmb->ks-NGHOST,  ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel==true && nb.type != NEIGHBOR_FACE) {
+  if (pmy_mesh_->multilevel==true && nb.type != NeighborConnect::face) {
     if (nb.ox3>0) sk--;
     else if (nb.ox3<0) ek++;
   }
@@ -793,7 +793,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   } else if (nb.ox1>0) { si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;}
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   // include the overlapping faces in edge and corner boundaries
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox1>0) si--;
     else if (nb.ox1<0) ei++;
   }
@@ -859,7 +859,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   } else if (nb.ox2>0) { sj=pmb->je+2,      ej=pmb->je+NGHOST+1;}
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   // include the overlapping faces in edge and corner boundaries
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox2>0) sj--;
     else if (nb.ox2<0) ej++;
   }
@@ -911,7 +911,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   } else if (nb.ox3>0) { sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;}
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // include the overlapping faces in edge and corner boundaries
-  if (nb.type != NEIGHBOR_FACE) {
+  if (nb.type != NeighborConnect::face) {
     if (nb.ox3>0) sk--;
     else if (nb.ox3<0) ek++;
   }
@@ -948,8 +948,8 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (bd_var_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
-    if (bd_var_.flag[nb.bufid]==BNDRY_WAITING) {
+    if (bd_var_.flag[nb.bufid]==BoundaryStatus::arrived) continue;
+    if (bd_var_.flag[nb.bufid]==BoundaryStatus::waiting) {
       if (nb.rank==Globals::my_rank) { // on the same process
         bflag=false;
         continue;
@@ -963,7 +963,7 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
           bflag=false;
           continue;
         }
-        bd_var_.flag[nb.bufid] = BNDRY_ARRIVED;
+        bd_var_.flag[nb.bufid] = BoundaryStatus::arrived;
       }
 #endif
     }
@@ -988,11 +988,11 @@ void FaceCenteredBoundaryVariable::SetBoundaries(void) {
     else
       // KGF: dst
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
-    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY
-      || pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -1020,11 +1020,11 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
     else
       // KGF: dst
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
-    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY
-      || pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarBoundarySingleAzimuthalBlock();
     PolarBoundaryAverageField();
   }
@@ -1040,7 +1040,7 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
@@ -1077,7 +1077,7 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       }
     }
 
-    if (pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
@@ -1131,7 +1131,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
     kl -= NGHOST;
     ku += NGHOST;
   }
-  if (pbval_->block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
     int j = pmb->js;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
@@ -1139,7 +1139,7 @@ void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
       }
     }
   }
-  if (pbval_->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     int j = pmb->je + 1;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
@@ -1183,7 +1183,7 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
                 *((nb.ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
       size=size1+size2+size3;
       if (pmy_mesh_->multilevel==true) {
-        if (nb.type!=NEIGHBOR_FACE) {
+        if (nb.type!=NeighborConnect::face) {
           if (nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
           if (nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
           if (nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -1198,7 +1198,7 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
         int f2c3=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                  *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                  *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
-        if (nb.type!=NEIGHBOR_FACE) {
+        if (nb.type!=NeighborConnect::face) {
           if (nb.ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
           if (nb.ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
           if (nb.ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
@@ -1236,36 +1236,36 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
 
       // emf correction
       int f2csize;
-      if (nb.type==NEIGHBOR_FACE) { // face
+      if (nb.type==NeighborConnect::face) { // face
         if (pmb->block_size.nx3 > 1) { // 3D
-          if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+          if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
             size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                  +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
             f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
-          } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+          } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
             size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                  +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
             f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
-          } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+          } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
             size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                  +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
             f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
                     +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
           }
         } else if (pmb->block_size.nx2 > 1) { // 2D
-          if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+          if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
             size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
             f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-          } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+          } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
             size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
             f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
           }
         } else { // 1D
           size=f2csize=2;
         }
-      } else if (nb.type==NEIGHBOR_EDGE) { // edge
+      } else if (nb.type==NeighborConnect::edge) { // edge
         if (pmb->block_size.nx3 > 1) { // 3D
           if (nb.eid>=0 && nb.eid<4) {
             size=pmb->block_size.nx3;
@@ -1285,7 +1285,7 @@ void FaceCenteredBoundaryVariable::Initialize(void) {
       }
       // field flux (emf) correction: bd_var_flcor_
       if (nb.level==mylevel) { // the same level
-        if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE)
+        if ((nb.type==NeighborConnect::face) || ((nb.type==NeighborConnect::edge)
                                          && (pbval_->edge_flag_[nb.eid]==true))) {
           tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
@@ -1373,10 +1373,10 @@ void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+      if (nb.type==NeighborConnect::face || nb.type==NeighborConnect::edge) {
         if ((nb.level>mylevel) ||
-            ((nb.level==mylevel) && ((nb.type==NEIGHBOR_FACE)
-                                     || ((nb.type==NEIGHBOR_EDGE)
+            ((nb.level==mylevel) && ((nb.type==NeighborConnect::face)
+                                     || ((nb.type==NeighborConnect::edge)
                                          && (pbval_->edge_flag_[nb.eid]==true)))))
           MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
       }
@@ -1402,7 +1402,7 @@ void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
 void FaceCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
@@ -1418,20 +1418,20 @@ void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
     // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
-    if ((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
-      bd_var_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
+    if ((nb.type==NeighborConnect::face) || (nb.type==NeighborConnect::edge))
+      bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     MeshBlock *pmb=pmy_block_;
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+      if (nb.type==NeighborConnect::face || nb.type==NeighborConnect::edge) {
         if (nb.level < pmb->loc.level)
           MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         else if ((nb.level==pmb->loc.level)
-                 && ((nb.type==NEIGHBOR_FACE)
-                     || ((nb.type==NEIGHBOR_EDGE) && (pbval_->edge_flag_[nb.eid]==true))))
+                 && ((nb.type==NeighborConnect::face)
+                     || ((nb.type==NeighborConnect::edge) && (pbval_->edge_flag_[nb.eid]==true))))
           MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       }
     } // KGF: end block on other MPI process
@@ -1439,7 +1439,7 @@ void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
   } // KGF: end loop over pbval_->nneighbor
   // Clear polar boundary communications
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    emf_north_flag_[n] = BNDRY_WAITING;
+    emf_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
     if (nb.rank != Globals::my_rank)
@@ -1447,7 +1447,7 @@ void FaceCenteredBoundaryVariable::ClearBoundaryAll(void) {
 #endif
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    emf_south_flag_[n] = BNDRY_WAITING;
+    emf_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
     if (nb.rank != Globals::my_rank)

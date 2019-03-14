@@ -57,10 +57,10 @@ Real A3(const Real x1, const Real x2, const Real x3);
 
 // function to compute eigenvectors of linear waves
 void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-                        const Real h, const Real b1, const Real b2, const Real b3,
-                        const Real x, const Real y, Real eigenvalues[(NWAVE)],
-                        Real right_eigenmatrix[(NWAVE)][(NWAVE)],
-                        Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+                 const Real h, const Real b1, const Real b2, const Real b3,
+                 const Real x, const Real y, Real eigenvalues[(NWAVE)],
+                 Real right_eigenmatrix[(NWAVE)][(NWAVE)],
+                 Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
 } // namespace
 
 // AMR refinement condition
@@ -630,10 +630,10 @@ Real A3(const Real x1, const Real x2, const Real x3) {
 //  \brief computes eigenvectors of linear waves
 
 void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-                        const Real h, const Real b1, const Real b2, const Real b3,
-                        const Real x, const Real y, Real eigenvalues[(NWAVE)],
-                        Real right_eigenmatrix[(NWAVE)][(NWAVE)],
-                        Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
+                 const Real h, const Real b1, const Real b2, const Real b3,
+                 const Real x, const Real y, Real eigenvalues[(NWAVE)],
+                 Real right_eigenmatrix[(NWAVE)][(NWAVE)],
+                 Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
   if (MAGNETIC_FIELDS_ENABLED) {
     //--- Adiabatic MHD ---
     if (NON_BAROTROPIC_EOS) {

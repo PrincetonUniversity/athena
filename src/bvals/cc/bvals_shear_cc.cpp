@@ -236,10 +236,10 @@
 //           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
 //           std::memcpy(pbl->pbval->recv_innerbuf_hydro_[n],send_innerbuf_hydro_[n],
 //                       send_innersize_hydro_[n]*ssize*sizeof(Real));
-//           pbl->pbval->shbox_inner_hydro_flag_[n]=BNDRY_ARRIVED;
+//           pbl->pbval->shbox_inner_hydro_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, TAG_SHBOX_HYDRO);
+//           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_hydro);
 //           MPI_Isend(send_innerbuf_hydro_[n],send_innersize_hydro_[n]*ssize,
 //                     MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_innersend_hydro_[n]);
@@ -299,11 +299,11 @@
 //           std::memcpy(pbl->pbval->recv_outerbuf_hydro_[n],
 //                       send_outerbuf_hydro_[n],
 //                       send_outersize_hydro_[n]*ssize*sizeof(Real));
-//           pbl->pbval->shbox_outer_hydro_flag_[n]=BNDRY_ARRIVED;
+//           pbl->pbval->shbox_outer_hydro_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
 //           int tag=CreateBvalsMPITag(send_outer_lid_[n],
-//                         n+offset, TAG_SHBOX_HYDRO); //bufid for outer(inner): 2(0) and 3(1)
+//                         n+offset, AthenaTagMPI::shbox_hydro); //bufid for outer(inner): 2(0) and 3(1)
 //           MPI_Isend(send_outerbuf_hydro_[n],send_outersize_hydro_[n]*ssize,
 //                     MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_outersend_hydro_[n]);
@@ -390,8 +390,8 @@
 
 //   if (shbb_.inner == true) { // check inner boundaries
 //     for (int n=0; n<4; n++) {
-//       if (shbox_inner_hydro_flag_[n]==BNDRY_COMPLETED) continue;
-//       if (shbox_inner_hydro_flag_[n]==BNDRY_WAITING) {
+//       if (shbox_inner_hydro_flag_[n]==BoundaryStatus::completed) continue;
+//       if (shbox_inner_hydro_flag_[n]==BoundaryStatus::waiting) {
 //         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
 //           flagi=false;
 //           continue;
@@ -404,21 +404,21 @@
 //             flagi=false;
 //             continue;
 //           }
-//           shbox_inner_hydro_flag_[n] = BNDRY_ARRIVED;
+//           shbox_inner_hydro_flag_[n] = BoundaryStatus::arrived;
 // #endif
 //         }
 //       }
 //       // set dst if boundary arrived
 //       SetCellCenteredShearingboxBoundarySameLevel(dst,recv_innerbuf_hydro_[n],n);
-//       shbox_inner_hydro_flag_[n] = BNDRY_COMPLETED; // completed
+//       shbox_inner_hydro_flag_[n] = BoundaryStatus::completed; // completed
 //     } // loop over recv[0] to recv[3]
 //   } // inner boundary
 
 //   if (shbb_.outer == true) { // check outer boundaries
 //     int offset = 4;
 //     for (int n=0; n<4; n++) {
-//       if (shbox_outer_hydro_flag_[n]==BNDRY_COMPLETED) continue;
-//       if (shbox_outer_hydro_flag_[n]==BNDRY_WAITING) {
+//       if (shbox_outer_hydro_flag_[n]==BoundaryStatus::completed) continue;
+//       if (shbox_outer_hydro_flag_[n]==BoundaryStatus::waiting) {
 //         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
 //           flago=false;
 //           continue;
@@ -432,13 +432,13 @@
 //             flago=false;
 //             continue;
 //           }
-//           shbox_outer_hydro_flag_[n] = BNDRY_ARRIVED;
+//           shbox_outer_hydro_flag_[n] = BoundaryStatus::arrived;
 // #endif
 //         }
 //       }
 //       SetCellCenteredShearingboxBoundarySameLevel(dst,recv_outerbuf_hydro_[n],
 //                                            n+offset);
-//       shbox_outer_hydro_flag_[n] = BNDRY_COMPLETED; // completed
+//       shbox_outer_hydro_flag_[n] = BoundaryStatus::completed; // completed
 //     }
 //   } // outer boundary
 
@@ -489,14 +489,14 @@
 //       recv_inner_lid_[n]  = -1;
 //       send_innersize_hydro_[n] = 0;
 //       recv_innersize_hydro_[n] = 0;
-//       shbox_inner_hydro_flag_[n] = BNDRY_COMPLETED;
+//       shbox_inner_hydro_flag_[n] = BoundaryStatus::completed;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_innersize_field_[n] = 0;
 //         recv_innersize_field_[n] = 0;
-//         shbox_inner_field_flag_[n]=BNDRY_COMPLETED;
+//         shbox_inner_field_flag_[n]=BoundaryStatus::completed;
 //         send_innersize_emf_[n] = 0;
 //         recv_innersize_emf_[n] = 0;
-//         shbox_inner_emf_flag_[n]=BNDRY_COMPLETED;
+//         shbox_inner_emf_flag_[n]=BoundaryStatus::completed;
 //       }
 //     }
 //     int jblock=0;
@@ -521,16 +521,16 @@
 //     recv_inner_rank_[1] = shbb_.irnklist[jtmp];
 //     recv_inner_lid_[1]  = shbb_.ilidlist[jtmp];
 //     recv_innersize_hydro_[1] = send_innersize_hydro_[1];
-//     shbox_inner_hydro_flag_[1] = BNDRY_WAITING;
+//     shbox_inner_hydro_flag_[1] = BoundaryStatus::waiting;
 //     if (MAGNETIC_FIELDS_ENABLED) {
 //       send_innersize_field_[1] = send_innersize_hydro_[1]
 //                                 *NGHOST*(NFIELD*ncells3+1)
 //                                 +NGHOST*ncells3;
 //       recv_innersize_field_[1] = send_innersize_field_[1];
-//       shbox_inner_field_flag_[1] = BNDRY_WAITING;
+//       shbox_inner_field_flag_[1] = BoundaryStatus::waiting;
 //       send_innersize_emf_[1] = send_innersize_hydro_[1]*(2*nx3+1)+nx3;
 //       recv_innersize_emf_[1] = send_innersize_emf_[1];
-//       shbox_inner_emf_flag_[1] = BNDRY_WAITING;
+//       shbox_inner_emf_flag_[1] = BoundaryStatus::waiting;
 //     }
 
 
@@ -550,16 +550,16 @@
 //       recv_inner_rank_[0] = shbb_.irnklist[jtmp];
 //       recv_inner_lid_[0]  = shbb_.ilidlist[jtmp];
 //       recv_innersize_hydro_[0] = send_innersize_hydro_[0];
-//       shbox_inner_hydro_flag_[0] = BNDRY_WAITING;// switch on if overlap
+//       shbox_inner_hydro_flag_[0] = BoundaryStatus::waiting;// switch on if overlap
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_innersize_field_[0] = send_innersize_hydro_[0]
 //                                   *NGHOST*(NFIELD*ncells3+1)
 //                                   +NGHOST*ncells3;
 //         recv_innersize_field_[0] = send_innersize_field_[0];
-//         shbox_inner_field_flag_[0] = BNDRY_WAITING;
+//         shbox_inner_field_flag_[0] = BoundaryStatus::waiting;
 //         send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1)+nx3;
 //         recv_innersize_emf_[0] = send_innersize_emf_[0];
-//         shbox_inner_emf_flag_[0] = BNDRY_WAITING;
+//         shbox_inner_emf_flag_[0] = BoundaryStatus::waiting;
 //       }
 //       // deal the left boundary cells with send[2]
 //       if (joverlap_ >(nx2-NGHOST)) {
@@ -577,14 +577,14 @@
 //         recv_inner_rank_[2] = shbb_.irnklist[jtmp];
 //         recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
 //         recv_innersize_hydro_[2] = send_innersize_hydro_[2];
-//         shbox_inner_hydro_flag_[2] = BNDRY_WAITING;
+//         shbox_inner_hydro_flag_[2] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
 //           recv_innersize_field_[2] = send_innersize_field_[2];
-//           shbox_inner_field_flag_[2] = BNDRY_WAITING;
+//           shbox_inner_field_flag_[2] = BoundaryStatus::waiting;
 //           send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3+1);
 //           recv_innersize_emf_[2] = send_innersize_emf_[2];
-//           shbox_inner_emf_flag_[2] = BNDRY_WAITING;
+//           shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
 //         }
 //       }
 //       // deal with the right boundary cells with send[3]
@@ -603,15 +603,15 @@
 //         recv_inner_rank_[3] = shbb_.irnklist[jtmp];
 //         recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
 //         recv_innersize_hydro_[3] = send_innersize_hydro_[3];
-//         shbox_inner_hydro_flag_[3] = BNDRY_WAITING;
+//         shbox_inner_hydro_flag_[3] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST
 //                                    *(NFIELD*ncells3+1);
 //           recv_innersize_field_[3] = send_innersize_field_[3];
-//           shbox_inner_field_flag_[3] = BNDRY_WAITING;
+//           shbox_inner_field_flag_[3] = BoundaryStatus::waiting;
 //           send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3+1);
 //           recv_innersize_emf_[3] = send_innersize_emf_[3];
-//           shbox_inner_emf_flag_[3] = BNDRY_WAITING;
+//           shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
 //         }
 //       }
 //     } else { // joverlap_ == 0
@@ -629,15 +629,15 @@
 //       recv_inner_rank_[2] = shbb_.irnklist[jtmp];
 //       recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
 //       recv_innersize_hydro_[2] = send_innersize_hydro_[2];
-//       shbox_inner_hydro_flag_[2] = BNDRY_WAITING;
+//       shbox_inner_hydro_flag_[2] = BoundaryStatus::waiting;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST
 //                                  *(NFIELD*ncells3+1);
 //         recv_innersize_field_[2] = send_innersize_field_[2];
-//         shbox_inner_field_flag_[2] = BNDRY_WAITING;
+//         shbox_inner_field_flag_[2] = BoundaryStatus::waiting;
 //         send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3+1);
 //         recv_innersize_emf_[2] = send_innersize_emf_[2];
-//         shbox_inner_emf_flag_[2] = BNDRY_WAITING;
+//         shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
 //       }
 
 //       // send [js:js+(NGHOST-1)] to Left
@@ -656,15 +656,15 @@
 //       recv_inner_rank_[3] = shbb_.irnklist[jtmp];
 //       recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
 //       recv_innersize_hydro_[3] = send_innersize_hydro_[3];
-//       shbox_inner_hydro_flag_[3] = BNDRY_WAITING;
+//       shbox_inner_hydro_flag_[3] = BoundaryStatus::waiting;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST
 //                                  *(NFIELD*ncells3+1);
 //         recv_innersize_field_[3] = send_innersize_field_[3];
-//         shbox_inner_field_flag_[3] = BNDRY_WAITING;
+//         shbox_inner_field_flag_[3] = BoundaryStatus::waiting;
 //         send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3+1);
 //         recv_innersize_emf_[3] = send_innersize_emf_[3];
-//         shbox_inner_emf_flag_[3] = BNDRY_WAITING;
+//         shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
 //       }
 //     }
 //   } // inner bc
@@ -680,14 +680,14 @@
 //       recv_outer_lid_[n]  = -1;
 //       send_outersize_hydro_[n] = 0;
 //       recv_outersize_hydro_[n] = 0;
-//       shbox_outer_hydro_flag_[n] = BNDRY_COMPLETED;
+//       shbox_outer_hydro_flag_[n] = BoundaryStatus::completed;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_outersize_field_[n] = 0;
 //         recv_outersize_field_[n] = 0;
-//         shbox_outer_field_flag_[n]=BNDRY_COMPLETED;
+//         shbox_outer_field_flag_[n]=BoundaryStatus::completed;
 //         send_outersize_emf_[n] = 0;
 //         recv_outersize_emf_[n] = 0;
-//         shbox_outer_emf_flag_[n]=BNDRY_COMPLETED;
+//         shbox_outer_emf_flag_[n]=BoundaryStatus::completed;
 //       }
 //     }
 //     int jblock=0;
@@ -709,15 +709,15 @@
 //     send_outer_rank_[1] = shbb_.ornklist[jtmp];
 //     send_outer_lid_[1]  = shbb_.olidlist[jtmp];
 //     send_outersize_hydro_[1] = recv_outersize_hydro_[1];
-//     shbox_outer_hydro_flag_[1]=BNDRY_WAITING;
+//     shbox_outer_hydro_flag_[1]=BoundaryStatus::waiting;
 //     if (MAGNETIC_FIELDS_ENABLED) {
 //       send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1) +
 //           NGHOST*ncells3;
 //       recv_outersize_field_[1] = send_outersize_field_[1];
-//       shbox_outer_field_flag_[1] = BNDRY_WAITING;
+//       shbox_outer_field_flag_[1] = BoundaryStatus::waiting;
 //       send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1)+nx3;
 //       recv_outersize_emf_[1] = send_outersize_emf_[1];
-//       shbox_outer_emf_flag_[1] = BNDRY_WAITING;
+//       shbox_outer_emf_flag_[1] = BoundaryStatus::waiting;
 //     }
 
 //     // if there is overlap to next blocks
@@ -736,16 +736,16 @@
 //       send_outer_rank_[0] = shbb_.ornklist[jtmp];
 //       send_outer_lid_[0]  = shbb_.olidlist[jtmp];
 //       send_outersize_hydro_[0] = recv_outersize_hydro_[0];
-//       shbox_outer_hydro_flag_[0]=BNDRY_WAITING; // switch on if overlap
+//       shbox_outer_hydro_flag_[0]=BoundaryStatus::waiting; // switch on if overlap
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_outersize_field_[0] = send_outersize_hydro_[0]
 //                                   *NGHOST*(NFIELD*ncells3+1)
 //                                   +NGHOST*ncells3;
 //         recv_outersize_field_[0] = send_outersize_field_[0];
-//         shbox_outer_field_flag_[0] = BNDRY_WAITING;
+//         shbox_outer_field_flag_[0] = BoundaryStatus::waiting;
 //         send_outersize_emf_[0] = send_outersize_hydro_[0]*(2*nx3+1)+nx3;
 //         recv_outersize_emf_[0] = send_outersize_emf_[0];
-//         shbox_outer_emf_flag_[0] = BNDRY_WAITING;
+//         shbox_outer_emf_flag_[0] = BoundaryStatus::waiting;
 //       }
 //       // deal the left boundary cells with send[2]
 //       if (joverlap_>(nx2-NGHOST)) {
@@ -763,14 +763,14 @@
 //         send_outer_rank_[2] = shbb_.ornklist[jtmp];
 //         send_outer_lid_[2]  = shbb_.olidlist[jtmp];
 //         send_outersize_hydro_[2] = recv_outersize_hydro_[2];
-//         shbox_outer_hydro_flag_[2] = BNDRY_WAITING;
+//         shbox_outer_hydro_flag_[2] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
 //           recv_outersize_field_[2] = send_outersize_field_[2];
-//           shbox_outer_field_flag_[2] = BNDRY_WAITING;
+//           shbox_outer_field_flag_[2] = BoundaryStatus::waiting;
 //           send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3+1);
 //           recv_outersize_emf_[2] = send_outersize_emf_[2];
-//           shbox_outer_emf_flag_[2] = BNDRY_WAITING;
+//           shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
 //         }
 //       }
 //       // deal the right boundary cells with send[3]
@@ -789,15 +789,15 @@
 //         send_outer_rank_[3] = shbb_.ornklist[jtmp];
 //         send_outer_lid_[3]  = shbb_.olidlist[jtmp];
 //         send_outersize_hydro_[3] = recv_outersize_hydro_[3];
-//         shbox_outer_hydro_flag_[3] = BNDRY_WAITING;
+//         shbox_outer_hydro_flag_[3] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           send_outersize_field_[3] = send_outersize_hydro_[3]*NGHOST
 //                                    *(NFIELD*ncells3+1);
 //           recv_outersize_field_[3] = send_outersize_field_[3];
-//           shbox_outer_field_flag_[3] = BNDRY_WAITING;
+//           shbox_outer_field_flag_[3] = BoundaryStatus::waiting;
 //           send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3+1);
 //           recv_outersize_emf_[3] = send_outersize_emf_[3];
-//           shbox_outer_emf_flag_[3] = BNDRY_WAITING;
+//           shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
 //         }
 //       }
 //     } else { // joverlap_ == 0
@@ -815,15 +815,15 @@
 //       send_outer_rank_[2] = shbb_.ornklist[jtmp];
 //       send_outer_lid_[2]  = shbb_.olidlist[jtmp];
 //       send_outersize_hydro_[2] = NGHOST;
-//       shbox_outer_hydro_flag_[2] = BNDRY_WAITING;
+//       shbox_outer_hydro_flag_[2] = BoundaryStatus::waiting;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_outersize_field_[2] = send_outersize_hydro_[2]
 //                                   *NGHOST*(NFIELD*ncells3+1);
 //         recv_outersize_field_[2] = send_outersize_field_[2];
-//         shbox_outer_field_flag_[2] = BNDRY_WAITING;
+//         shbox_outer_field_flag_[2] = BoundaryStatus::waiting;
 //         send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3+1);
 //         recv_outersize_emf_[2] = send_outersize_emf_[2];
-//         shbox_outer_emf_flag_[2] = BNDRY_WAITING;
+//         shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
 //       }
 
 //       // recv [js-NGHOST:js-1] from Left
@@ -842,15 +842,15 @@
 //       send_outer_rank_[3] = shbb_.ornklist[jtmp];
 //       send_outer_lid_[3]  = shbb_.olidlist[jtmp];
 //       send_outersize_hydro_[3] = NGHOST;
-//       shbox_outer_hydro_flag_[3] = BNDRY_WAITING;
+//       shbox_outer_hydro_flag_[3] = BoundaryStatus::waiting;
 //       if (MAGNETIC_FIELDS_ENABLED) {
 //         send_outersize_field_[3] = send_outersize_hydro_[3]
 //                                   *NGHOST*(NFIELD*ncells3+1);
 //         recv_outersize_field_[3] = send_outersize_field_[3];
-//         shbox_outer_field_flag_[3] = BNDRY_WAITING;
+//         shbox_outer_field_flag_[3] = BoundaryStatus::waiting;
 //         send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3+1);
 //         recv_outersize_emf_[3] = send_outersize_emf_[3];
-//         shbox_outer_emf_flag_[3] = BNDRY_WAITING;
+//         shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
 //       }
 //     }
 //   }

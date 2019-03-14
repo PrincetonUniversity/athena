@@ -54,7 +54,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     x3flux.InitWithShallowCopy(var_flux[X3DIR]);
   }
   // KGF: Taken from 2x functions in flux_correction_cc.cpp
-  // if (type==FLUX_HYDRO) {
+  // if (type==FluxCorrectionQuantity::hydro) {
   //   nl_=0, nu_=NHYDRO-1;
   //   x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
   //   x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
@@ -237,12 +237,12 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers(void)
 //  \brief Send boundary buffers of cell-centered variables
 
-// KGF: (AthenaArray<Real> &dst, enum CCBoundaryType type)
+// KGF: (AthenaArray<Real> &dst, HydroBoundaryQuantity type)
 void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
 
-  // KGF: call switch over "enum HydroBoundaryType type"
+  // KGF: call switch over "HydroBoundaryQuantity type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -261,9 +261,9 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers(void) {
       // KGF: nl_, nu_
       ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
-      // KGF: additional "enum HydroBoundaryBuffer type" switch unique to
+      // KGF: additional "HydroBoundaryBuffer type" switch unique to
       // SendBoundaryBuffers().
-      // if (type==HYDRO_CONS || type==HYDRO_PRIM)
+      // if (type==HydroBoundaryQuantity::cons || type==HydroBoundaryQuantity::prim)
       //   ptarget=&(ptarget_block->pbval_->bd_var_);
       CopyVariableBufferSameProcess(nb, ssize);
     }
@@ -490,12 +490,12 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
   bool bflag=true;
 
-  // KGF: call short switch over "enum HydroBoundaryType type"
+  // KGF: call short switch over "HydroBoundaryQuantity type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (bd_var_.flag[nb.bufid]==BNDRY_ARRIVED) continue;
-    if (bd_var_.flag[nb.bufid]==BNDRY_WAITING) {
+    if (bd_var_.flag[nb.bufid]==BoundaryStatus::arrived) continue;
+    if (bd_var_.flag[nb.bufid]==BoundaryStatus::waiting) {
       if (nb.rank==Globals::my_rank) {// on the same process
         bflag=false;
         continue;
@@ -509,7 +509,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
           bflag=false;
           continue;
         }
-        bd_var_.flag[nb.bufid] = BNDRY_ARRIVED;
+        bd_var_.flag[nb.bufid] = BoundaryStatus::arrived;
       }
 #endif
     }
@@ -524,7 +524,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers(void) {
 void CellCenteredBoundaryVariable::SetBoundaries(void) {
   MeshBlock *pmb=pmy_block_;
 
-  // KGF: call switch over "enum HydroBoundaryType type"
+  // KGF: call switch over "HydroBoundaryQuantity type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -540,11 +540,11 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
       // KGF: dst
       // KGF: nl_, nu_
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
-    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY ||
-      pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar ||
+      pbval_->block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -557,7 +557,7 @@ void CellCenteredBoundaryVariable::SetBoundaries(void) {
 void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
   MeshBlock *pmb=pmy_block_;
 
-  // KGF: call switch over "enum HydroBoundaryType type"
+  // KGF: call switch over "HydroBoundaryQuantity type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -577,11 +577,11 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait(void) {
       // KGF: dst
       // KGF: nl_, nu_
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
-    bd_var_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
 
-  if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY
-      || pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (pbval_->block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar
+      || pbval_->block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar)
     PolarBoundarySingleAzimuthalBlock();
 
   return;
@@ -595,7 +595,7 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    if (pbval_->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[BoundaryFace::inner_x2]==BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
@@ -612,7 +612,7 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock(void) {
       }
     }
 
-    if (pbval_->block_bcs[OUTER_X2]==POLAR_BNDRY) {
+    if (pbval_->block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
@@ -688,7 +688,7 @@ void CellCenteredBoundaryVariable::Initialize(void) {
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
+      if (pmy_mesh_->multilevel==true && nb.type==NeighborConnect::face) {
         int size;
         if (nb.fid==0 || nb.fid==1)
           size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
@@ -735,7 +735,7 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 // -- unable to access nb without passing as function parameter
 // void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
 //   MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-//   if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
+//   if (nb.type==NeighborConnect::face && nb.level>mylevel)
 //     MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
 //   return;
 // }
@@ -756,7 +756,7 @@ void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
+      if (nb.type==NeighborConnect::face && nb.level>mylevel)
         MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
     }
   }
@@ -768,9 +768,9 @@ void CellCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     // KGF: probably can eliminate GR+AMR conditionals in this implementation
-    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
     if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-      bd_var_.flag[nb.bufid] = BNDRY_WAITING;
+      bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
@@ -790,15 +790,15 @@ void CellCenteredBoundaryVariable::ClearBoundaryAll(void) {
     // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    bd_var_.flag[nb.bufid] = BNDRY_WAITING;
-    if (nb.type==NEIGHBOR_FACE)
-      bd_var_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
+    if (nb.type==NeighborConnect::face)
+      bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     MeshBlock *pmb=pmy_block_;
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
+      if (nb.type==NeighborConnect::face && nb.level<pmb->loc.level)
         MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
     } // KGF: end block on other MPI process
 #endif

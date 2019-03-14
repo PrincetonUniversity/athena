@@ -21,23 +21,23 @@
 //! \fn GetBoundaryFlag(std::string input_string)
 //  \brief Parses input string to return integer flag specifying boundary condition
 
-enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
+BoundaryFlag GetBoundaryFlag(std::string input_string) {
   if (input_string == "reflecting") {
-    return REFLECTING_BNDRY;
+    return BoundaryFlag::reflect;
   } else if (input_string == "outflow") {
-    return OUTFLOW_BNDRY;
+    return BoundaryFlag::outflow;
   } else if (input_string == "user") {
-    return USER_BNDRY;
+    return BoundaryFlag::user;
   } else if (input_string == "periodic") {
-    return PERIODIC_BNDRY;
+    return BoundaryFlag::periodic;
   } else if (input_string == "shear_periodic") {
-    return SHEAR_PERIODIC_BNDRY;
+    return BoundaryFlag::shear_periodic;
   } else if (input_string == "polar") {
-    return POLAR_BNDRY;
+    return BoundaryFlag::polar;
   } else if (input_string == "polar_wedge") {
-    return POLAR_BNDRY_WEDGE;
+    return BoundaryFlag::polar_wedge;
   } else if (input_string == "none") {
-    return BNDRY_UNDEF;
+    return BoundaryFlag::undef;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
@@ -48,32 +48,32 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn GetBoundaryString(enum BoundaryFlag input_flag)
+//! \fn GetBoundaryString(BoundaryFlag input_flag)
 //  \brief Parses enumerated type BoundaryFlag internal integer representation to return
 //  string describing the boundary condition. Used for diagnostics. Inverse of
 //  GetBoundaryFlag()
 
-std::string GetBoundaryString(enum BoundaryFlag input_flag) {
-  if (input_flag == REFLECTING_BNDRY) {
+std::string GetBoundaryString(BoundaryFlag input_flag) {
+  if (input_flag == BoundaryFlag::reflect) {
     return "reflecting";
-  } else if (input_flag == OUTFLOW_BNDRY) {
+  } else if (input_flag == BoundaryFlag::outflow) {
     return "outflow";
-  } else if (input_flag == USER_BNDRY) {
+  } else if (input_flag == BoundaryFlag::user) {
     return "user";
-  } else if (input_flag == PERIODIC_BNDRY) {
+  } else if (input_flag == BoundaryFlag::periodic) {
     return "periodic";
-  } else if (input_flag == SHEAR_PERIODIC_BNDRY) {
+  } else if (input_flag == BoundaryFlag::shear_periodic) {
     return "shear_periodic";
-  } else if (input_flag == POLAR_BNDRY) {
+  } else if (input_flag == BoundaryFlag::polar) {
     return "polar";
-  } else if (input_flag == POLAR_BNDRY_WEDGE) {
+  } else if (input_flag == BoundaryFlag::polar_wedge) {
     return "polar_wedge";
-  } else if (input_flag == BNDRY_UNDEF) {
+  } else if (input_flag == BoundaryFlag::undef) {
     return "none";
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryString" << std::endl
-        << "Input enum BoundaryFlag=" << input_flag << "\n"
+        << "Input enum class BoundaryFlag=" << static_cast<int>(input_flag) << "\n"
         << "is an invalid boundary type" << std::endl;
     ATHENA_ERROR(msg);
   }

@@ -25,7 +25,7 @@ namespace {
 // Declarations
 Real Determinant(const AthenaArray<Real> &g);
 Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
-                        Real a31, Real a32, Real a33);
+                 Real a31, Real a32, Real a33);
 Real Determinant(Real a11, Real a12, Real a21, Real a22);
 void CalculateTransformation(
     const AthenaArray<Real> &g,
@@ -1819,7 +1819,7 @@ Real Determinant(const AthenaArray<Real> &g) {
 }
 
 Real Determinant(Real a11, Real a12, Real a13, Real a21, Real a22, Real a23,
-                        Real a31, Real a32, Real a33) {
+                 Real a31, Real a32, Real a33) {
   Real det = a11 * Determinant(a22, a23, a32, a33)
              - a12 * Determinant(a21, a23, a31, a33)
              + a13 * Determinant(a21, a22, a31, a32);

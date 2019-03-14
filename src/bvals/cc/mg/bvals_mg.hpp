@@ -35,7 +35,7 @@ class Coordinates;
 struct MGBoundaryData {
   int nbmax;
   // KGF: the addition of sflag is the only change relative to BoundaryData
-  enum BoundaryStatus flag[56], sflag[56];
+  BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
@@ -48,26 +48,26 @@ struct MGBoundaryData {
 
 class MGBoundaryValues : public BoundaryBase {
  public:
-  MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
                    MGBoundaryFunc *MGBoundary);
   ~MGBoundaryValues();
 
-  void InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type);
+  void InitBoundaryData(MGBoundaryData &bd, BoundaryQuantity type);
   void DestroyBoundaryData(MGBoundaryData &bd);
 
   void ApplyPhysicalBoundaries(void);
-  void StartReceivingMultigrid(int nc, enum BoundaryType type);
-  void ClearBoundaryMultigrid(enum BoundaryType type);
+  void StartReceivingMultigrid(int nc, BoundaryQuantity type);
+  void ClearBoundaryMultigrid(BoundaryQuantity type);
   int LoadMultigridBoundaryBufferSameLevel(
       AthenaArray<Real> &src,
       int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                    int nc, enum BoundaryType type);
+                                    int nc, BoundaryQuantity type);
   void SetMultigridBoundarySameLevel(
       AthenaArray<Real> &dst,
       int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                       int nc, enum BoundaryType type);
+                                       int nc, BoundaryQuantity type);
 
  private:
   Multigrid *pmy_mg_;

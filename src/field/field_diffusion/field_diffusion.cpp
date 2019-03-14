@@ -314,13 +314,13 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_ohm > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(I_O,k,j,i);
+          eta_t(i) += etaB(ohmic,k,j,i);
         }
       }
       if (eta_ad > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(I_A,k,j,i);
+          eta_t(i) += etaB(DiffProcess::ambipolar,k,j,i);
         }
       }
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
@@ -341,7 +341,7 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h,
                           static_cast<Real>(fac_h*SQR(len(i))
-                                            / (std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
+                                            / (std::fabs(etaB(hall,k,j,i))+TINY_NUMBER)));
       }
     }
   }

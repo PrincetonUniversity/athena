@@ -37,9 +37,8 @@
 //----------------------------------------------------------------------------------------
 //  SuperTimeStepTaskList constructor
 
-SuperTimeStepTaskList::SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm,
-                                             TimeIntegratorTaskList *ptlist)
-    : TaskList(pm), ptlist_(ptlist) {
+SuperTimeStepTaskList::SuperTimeStepTaskList(
+    ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED &&
       !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&
@@ -137,96 +136,96 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   switch (id) {
     case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
 
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::CalculateFluxes_STS);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::CalculateEMF_STS);
       break;
 
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::EMFCorrectSend);
       break;
 
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::HydroIntegrate_STS);
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::FieldIntegrate_STS);
       break;
 
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::HydroSend);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldSend);
       break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::HydroReceive);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldReceive);
       break;
 
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::HydroSetBoundaries);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldSetBoundaries);
       break;
 
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
       break;
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::PhysicalBoundary_STS);
       break;
 
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::HydroDiffusion);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldDiffusion);
       break;
     default:
@@ -263,29 +262,29 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-enum TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   // Field *pfield=pmb->pfield;
 
   if (stage <= nstages) {
     phydro->CalculateFluxes_STS();
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
-enum TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE_STS();
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
-enum TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) {
   Hydro *ph=pmb->phydro;
   Field *pf=pmb->pfield;
 
@@ -310,12 +309,12 @@ enum TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int st
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
-enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int stage) {
   Field *pf=pmb->pfield;
 
   if (stage <= nstages) {
@@ -325,13 +324,12 @@ enum TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int st
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
     pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
-    return TASK_NEXT;
+    return TaskStatus::next;
   }
-  return TASK_FAIL;
+  return TaskStatus::fail;
 }
 
-
-enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval=pmb->pbval;
   if (stage <= nstages) {
     // TODO(pdmullen): for time-dependent BC's, what is the time inside of an
@@ -340,8 +338,8 @@ enum TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int 
     // Real dt = pmb->pmy_mesh->dt;
     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {
-    return TASK_FAIL;
+    return TaskStatus::fail;
   }
 
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }

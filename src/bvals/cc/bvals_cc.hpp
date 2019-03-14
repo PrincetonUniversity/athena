@@ -50,25 +50,26 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Current Facade class BoundaryValues calls in time_integrator.cpp:
   // StartReceivingAll(time);
   // ClearBoundaryAll();
-  // SendFluxCorrection(FLUX_HYDRO);
+  // SendFluxCorrection(FluxCorrectionQuantity::hydro);
   // SendEMFCorrection();
-  // ReceiveFluxCorrection(FLUX_HYDRO)
+  // ReceiveFluxCorrection(FluxCorrectionQuantity::hydro)
   // ReceiveEMFCorrection()
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
+  // SendCellCenteredBoundaryBuffers(pmb->phydro->u, HydroBoundaryQuantity::cons);
   // SendFieldBoundaryBuffers(pmb->pfield->b);
-  // ReceiveCellCenteredBoundaryBuffers(HYDRO_CONS);
+  // ReceiveCellCenteredBoundaryBuffers(HydroBoundaryQuantity::cons);
   // ReceiveFieldBoundaryBuffers();
-  // SetCellCenteredBoundaries(pmb->phydro->u, HYDRO_CONS);
+  // SetCellCenteredBoundaries(pmb->phydro->u, HydroBoundaryQuantity::cons);
   // SetFieldBoundaries(pmb->pfield->b);
   // +8x shearing box-specific functions
 
   // - Replace all of these pbval->fn() calls with phbval->fn() or pfbval->fn()
   // - Create a unique function for HydroBoundaryVariable to change:
-  // enum CCBoundaryType, AthenaArray<Real> coarse_buf, &src, &dst
+  // HydroBoundaryQuantity, AthenaArray<Real> coarse_buf, &src, &dst
 
-  // HYDRO_PRIM is passed only in 2x lines in mesh.cpp:
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HYDRO_PRIM);
-  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w, HYDRO_PRIM);
+  // HydroBoundaryQuantity::prim is passed only in 2x lines in mesh.cpp:
+  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HydroBoundaryQuantity::prim);
+  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
+  //                                             HydroBoundaryQuantity::prim);
 
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
@@ -87,7 +88,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-  // "bool *flip" is passed in 3x Set...From*(), computed by enum switch in wrapper
+  // "bool *flip" is passed in 3x Set...From*(), computed by switch in wrapper
   // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   // coarse_buf:
@@ -99,7 +100,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
-  // TODO(felker): FLUX_HYDRO=0 is the only defined FluxCorrectionType enum in athena.hpp
+  // TODO(felker): hydro=0 is the only defined FluxCorrectionQuantity in athena.hpp
   // TODO(felker): handle the 6x unique Field-related flux correction functions
   // Cell-centered flux correction functions are much simpler than Field counterpart
   // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
@@ -191,14 +192,14 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // Pulling these variables out of function signatures, since FaceCentered
   // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
-  // Hydro, unlike enum CCBoundaryType and AthenaArray<Real> coarse_buf)
+  // Hydro, unlike HydroBoundaryQuantity and AthenaArray<Real> coarse_buf)
 
 #ifdef MPI_PARALLEL
   int cc_phys_id_, cc_flx_phys_id_;
 #endif
 
   // Shearingbox Hydro
-  //   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  //   BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
   //   // working arrays of remapped quantities
   //   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
   //   // Hydro flux from conservative remapping

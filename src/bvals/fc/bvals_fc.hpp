@@ -66,11 +66,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: enum CCBoundaryType type
+  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
   // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
-  // needed for switching HYDRO_CONS and HYDRO_PRIM
+  // needed for switching HydroBoundaryQuantity::cons and HydroBoundaryQuantity::prim
   int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
@@ -168,8 +168,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // KGF: currently declared in base BoundaryValues class:
   //BoundaryData bd_fc_;
   //BoundaryData bd_fc_flcor_; // bd_emfcor_;
-  enum BoundaryStatus *emf_north_flag_;
-  enum BoundaryStatus *emf_south_flag_;
+  BoundaryStatus *emf_north_flag_;
+  BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
 
@@ -186,7 +186,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void CopyPolarBufferSameProcess(const PolarNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
   // Shearingbox Field
-  //   enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
+  //   BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
   //   FaceField shboxvar_inner_field_, shboxvar_outer_field_;
   //   FaceField flx_inner_field_, flx_outer_field_;
   //   int  send_innersize_field_[4], recv_innersize_field_[4];
@@ -198,7 +198,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   //   MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];
   // #endif
   //   // Shearing box EMF correction
-  //   enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
+  //   BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
   //   EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_;
   //   EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_;
   //   EdgeField flx_inner_emf_, flx_outer_emf_;

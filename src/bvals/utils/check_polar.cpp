@@ -53,7 +53,8 @@ void BoundaryValues::CheckPolarBoundaries() {
   }
 
   // Mesh must extend from 0.0 to PI (exactly) along the polar x2 dimension
-  if ((block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE || block_bcs[INNER_X2] == POLAR_BNDRY)
+  if ((block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar)
       && pmy_mesh_->mesh_size.x2min != static_cast<Real>(0.0)) {
     // PI, TWO_PI macro constants are specified to 16 digits after the decimal pt.
     std::stringstream msg;
@@ -63,14 +64,15 @@ void BoundaryValues::CheckPolarBoundaries() {
         << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
         << "x2min=" << std::scientific << 0.0 << "\n"
         << "Current x2 boundary selections are: \n"
-        << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
-        << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << "\n"
+        << "ix2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::inner_x2]) << "\n"
+        << "ox2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::outer_x2]) << "\n"
         << "Current x2 domain limits are: \n"
         << "x2min=" << pmy_mesh_->mesh_size.x2min << "\n"
         << "x2max=" << pmy_mesh_->mesh_size.x2max << std::endl;
     ATHENA_ERROR(msg);
   }
-  if ((block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2] == POLAR_BNDRY)
+  if ((block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar)
       && pmy_mesh_->mesh_size.x2max != static_cast<Real>(PI)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -79,8 +81,8 @@ void BoundaryValues::CheckPolarBoundaries() {
         << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
         << "x2max=" << std::scientific << PI << "\n"
         << "Current x2 boundary selections are: \n"
-        << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
-        << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << "\n"
+        << "ix2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::inner_x2]) << "\n"
+        << "ox2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::outer_x2]) << "\n"
         << "Current x2 domain limits are: \n"
         << "x2min=" << pmy_mesh_->mesh_size.x2min << "\n"
         << "x2max=" << pmy_mesh_->mesh_size.x2max << std::endl;
@@ -93,7 +95,8 @@ void BoundaryValues::CheckPolarBoundaries() {
     // doesn't span exactly x3min=0.0,x3max=2*pi for lower,upper boundaries, respectively
     if ((pmy_mesh_->mesh_size.x3min != static_cast<Real>(0.0)
          || pmy_mesh_->mesh_size.x3max != static_cast<Real>(TWO_PI))
-        && (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+        && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+            || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "3D spherical-like coordinates with current x3 domain limits:\n"
@@ -106,8 +109,8 @@ void BoundaryValues::CheckPolarBoundaries() {
           << "Otherwise, use 'polar_wedge' flag(s)" << std::endl;
       ATHENA_ERROR(msg);
     }
-    if (block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-        || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
       if ((pmy_mesh_->mesh_size.x3min == static_cast<Real>(0.0)
            && pmy_mesh_->mesh_size.x3max == static_cast<Real>(TWO_PI))) {
         std::stringstream msg;
@@ -153,15 +156,16 @@ void BoundaryValues::CheckPolarBoundaries() {
     }
     // Azimuthal x3 boundaries (of Mesh) must both be periodic if 'polar' or 'polar_wedge'
     // flags are used even once
-    if (pmy_mesh_->mesh_bcs[INNER_X3] != PERIODIC_BNDRY
-        || pmy_mesh_->mesh_bcs[OUTER_X3] != PERIODIC_BNDRY) {
+    if (pmy_mesh_->mesh_bcs[BoundaryFace::inner_x3] != BoundaryFlag::periodic
+        || pmy_mesh_->mesh_bcs[BoundaryFace::outer_x3] != BoundaryFlag::periodic) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "3D spherical-like coordinates with at least one x2 'polar' \n"
           << "boundary requires that both x3 boundary conditions are periodic \n"
           << "Current x3 boundary selections are: \n"
-          << "ix3_bc=" << GetBoundaryString(block_bcs[INNER_X3]) << "\n"
-          << "ox3_bc=" << GetBoundaryString(block_bcs[OUTER_X3]) << std::endl;
+          << "ix3_bc=" << GetBoundaryString(block_bcs[BoundaryFace::inner_x3]) << "\n"
+          << "ox3_bc=" << GetBoundaryString(block_bcs[BoundaryFace::outer_x3])
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -185,13 +189,15 @@ void BoundaryValues::CheckPolarBoundaries() {
     }
   } else { // 2D or 1D:
     // 'polar' boundary flag can only be used in 3D
-    if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Use 'polar_wedge', not 'polar' boundary flag for 2D spherical-like \n"
           << "coordinate boundaries. Current x2 boundary selections are: \n"
-          << "ix2_bc=" << GetBoundaryString(block_bcs[INNER_X2]) << "\n"
-          << "ox2_bc=" << GetBoundaryString(block_bcs[OUTER_X2]) << std::endl;
+          << "ix2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::inner_x2]) << "\n"
+          << "ox2_bc=" << GetBoundaryString(block_bcs[BoundaryFace::outer_x2])
+          << std::endl;
       ATHENA_ERROR(msg);
     }
   }

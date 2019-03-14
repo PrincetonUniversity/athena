@@ -51,12 +51,12 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.type!=NEIGHBOR_FACE) break;
+    if (nb.type!=NeighborConnect::face) break;
     if (nb.level==pmb->loc.level-1) {
       int p=0;
       Real *sbuf=bd_var_flcor_.send[nb.bufid];
       // x1 direction
-      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=nl_; nn<=nu_; nn++) {
@@ -91,7 +91,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
             sbuf[p++]=x1flux(nn, k, j, i);
         }
         // x2 direction
-      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
         int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid & 1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=nl_; nn<=nu_; nn++) {
@@ -119,7 +119,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
           }
         }
         // x3 direction - 3D onl_y
-      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
         int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid & 1);
         for (int nn=nl_; nn<=nu_; nn++) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
@@ -159,10 +159,10 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.type!=NEIGHBOR_FACE) break;
+    if (nb.type!=NeighborConnect::face) break;
     if (nb.level==pmb->loc.level+1) {
-      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if (bd_var_flcor_.flag[nb.bufid]==BNDRY_WAITING) {
+      if (bd_var_flcor_.flag[nb.bufid]==BoundaryStatus::completed) continue;
+      if (bd_var_flcor_.flag[nb.bufid]==BoundaryStatus::waiting) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
@@ -176,14 +176,14 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
             bflag=false;
             continue;
           }
-          bd_var_flcor_.flag[nb.bufid] = BNDRY_ARRIVED;
+          bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
         }
 #endif
       }
       // boundary arrived; apply flux correction
       int p=0;
       Real *rbuf=bd_var_flcor_.recv[nb.bufid];
-      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
         int il=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
         int jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
         if (nb.fi1==0) ju-=pmb->block_size.nx2/2;
@@ -196,7 +196,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
               x1flux(nn,k,j,il)=rbuf[p++];
           }
         }
-      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
         int jl=pmb->js+(pmb->je-pmb->js)*(nb.fid & 1)+(nb.fid & 1);
         int il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
         if (nb.fi1==0) iu-=pmb->block_size.nx1/2;
@@ -209,7 +209,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
               x2flux(nn,k,jl,i)=rbuf[p++];
           }
         }
-      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
         int kl=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid & 1)+(nb.fid & 1);
         int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
         if (nb.fi1==0) iu-=pmb->block_size.nx1/2;
@@ -223,7 +223,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
           }
         }
       }
-      bd_var_flcor_.flag[nb.bufid] = BNDRY_COMPLETED;
+      bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
     }
   }
   return bflag;

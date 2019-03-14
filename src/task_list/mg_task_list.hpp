@@ -30,7 +30,7 @@ class MultigridTaskList;
 struct MGTask {
   std::uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
   std::uint64_t dependency;   // encodes dependencies to other tasks using " " " "
-  enum TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
+  TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
 };
 
 
@@ -48,25 +48,25 @@ class MultigridTaskList {
   int ntasks;     // number of tasks in this list
 
   // functions
-  enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
+  TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
   void ClearTaskList() {ntasks=0;}
 
   // functions
-  enum TaskStatus StartReceive(Multigrid *pmg);
-  enum TaskStatus StartReceiveFace(Multigrid *pmg);
-  enum TaskStatus ClearBoundary(Multigrid *pmg);
-  enum TaskStatus ClearBoundaryFace(Multigrid *pmg);
-  enum TaskStatus SendBoundary(Multigrid *pmg);
-  enum TaskStatus SendBoundaryFace(Multigrid *pmg);
-  enum TaskStatus ReceiveBoundary(Multigrid *pmg);
-  enum TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
-  enum TaskStatus SmoothRed(Multigrid *pmg);
-  enum TaskStatus SmoothBlack(Multigrid *pmg);
-  enum TaskStatus PhysicalBoundary(Multigrid *pmg);
-  enum TaskStatus Restrict(Multigrid *pmg);
-  enum TaskStatus Prolongate(Multigrid *pmg);
-  enum TaskStatus FMGProlongate(Multigrid *pmg);
+  TaskStatus StartReceive(Multigrid *pmg);
+  TaskStatus StartReceiveFace(Multigrid *pmg);
+  TaskStatus ClearBoundary(Multigrid *pmg);
+  TaskStatus ClearBoundaryFace(Multigrid *pmg);
+  TaskStatus SendBoundary(Multigrid *pmg);
+  TaskStatus SendBoundaryFace(Multigrid *pmg);
+  TaskStatus ReceiveBoundary(Multigrid *pmg);
+  TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
+  TaskStatus SmoothRed(Multigrid *pmg);
+  TaskStatus SmoothBlack(Multigrid *pmg);
+  TaskStatus PhysicalBoundary(Multigrid *pmg);
+  TaskStatus Restrict(Multigrid *pmg);
+  TaskStatus Prolongate(Multigrid *pmg);
+  TaskStatus FMGProlongate(Multigrid *pmg);
 
   void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);

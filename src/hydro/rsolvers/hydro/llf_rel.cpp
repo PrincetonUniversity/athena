@@ -23,17 +23,17 @@
 namespace {
 // Declarations
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
-                            const int il, const int iu, const int ivx,
-                            const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                            AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                            AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                            AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                            AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
 void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
-                               const int il, const int iu,
-                               AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                               AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                               AthenaArray<Real> &flux);
+                        const int il, const int iu,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &flux);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -90,12 +90,12 @@ namespace {
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
-                            const int il, const int iu, const int ivx,
-                            const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                            AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                            AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                            AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                            AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Transform primitives to locally flat coordinates if in GR
 #if GENERAL_RELATIVITY
   {
@@ -264,10 +264,10 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j,
 //   derived from RiemannSolver() in llf_rel_no_transform.cpp assuming ivx = IVY
 
 void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
-                               const int il, const int iu,
-                               AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                               AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                               AthenaArray<Real> &flux) {
+                        const int il, const int iu,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &flux) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();

@@ -57,7 +57,7 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
   // KGF: should we even initialize this unsigned integer type data member?
   bvar_index = 0;
 
-  // KGF: not sure of the value of passing around BoundaryType type anymore.
+  // KGF: not sure of the value of passing around BoundaryQuantity type anymore.
   // Currently, it is always tied to the BoundaryVariable subclass type
 
   // Need to access both BoundaryData in generic BoundaryVariable::Copy*SameProcess()
@@ -81,10 +81,10 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
 // }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
+//! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
 //  \brief Initialize BoundaryData structure
 
-void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
+void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_;
   NeighborIndexes *ni=pbval_->ni;
   int cng = pmb->cnghost;
@@ -92,17 +92,17 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, enum BoundaryType type
 
   bd.nbmax=pbval_->maxneighbor_;
   // KGF: what is happening in the next two conditionals??
-  // they are preventing the elimination of "enum BoundaryType type" function parameter in
+  // they are preventing the elimination of "BoundaryQuantity type" function parameter in
   // favor of a simpler boolean switch
   if (type==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
-    for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
+    for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NeighborConnect::face; bd.nbmax++) {}
   }
   if (type==BNDRY_FC_FLCOR) {
-    for (          ; pbval_->ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
+    for (          ; pbval_->ni[bd.nbmax].type==NeighborConnect::edge; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
-    bd.flag[n]=BNDRY_WAITING;
+    bd.flag[n]=BoundaryStatus::waiting;
     bd.send[n]=nullptr;
     bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
@@ -178,7 +178,7 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
-  ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
+  ptarget_bdata->flag[nb.targetid]=BoundaryStatus::arrived;
   return;
 }
 
@@ -190,6 +190,6 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
-  ptarget_bdata->flag[nb.targetid]=BNDRY_ARRIVED;
+  ptarget_bdata->flag[nb.targetid]=BoundaryStatus::arrived;
   return;
 }

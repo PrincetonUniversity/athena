@@ -35,8 +35,8 @@ class Coordinates;
 struct RegionSize;
 
 // functions to return boundary flag given input string, and vice versa
-enum BoundaryFlag GetBoundaryFlag(std::string input_string);
-std::string GetBoundaryString(enum BoundaryFlag input_flag);
+BoundaryFlag GetBoundaryFlag(std::string input_string);
+std::string GetBoundaryString(BoundaryFlag input_flag);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
@@ -60,7 +60,7 @@ std::string GetBoundaryString(enum BoundaryFlag input_flag);
 class BoundaryBase {
  public:
   BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-               enum BoundaryFlag *input_bcs);
+               BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
 
   // Currently, these 2x static data members are shared among 3x possible derived class
@@ -76,7 +76,7 @@ class BoundaryBase {
   int nneighbor;
   int nblevel[3][3][3];
   LogicalLocation loc;
-  enum BoundaryFlag block_bcs[6];
+  BoundaryFlag block_bcs[6];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
   static int CreateBvalsMPITag(int lid, int bufid, int phys);
@@ -113,14 +113,14 @@ class BoundaryBase {
 class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                        public BoundaryCommunication {
  public:
-  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
+  BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
   // must repeat function declarations to override the pure virtual methods from
   // BoundaryCommunication parent class:
 
   // called in BoundaryValues() constructor/destructor:
-  // void InitBoundaryData(BoundaryData &bd, enum BoundaryType type) final;
+  // void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) final;
   // void DestroyBoundaryData(BoundaryData &bd) final;
 
   // called before time-stepper:
@@ -170,7 +170,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // Store signed, but positive, integer corresponding to the next unused value to be used
   // as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
-  // Athena_MPI_Tag"). 5 bits of unsigned integer representation are currently reserved
+  // AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
   // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
   int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
 

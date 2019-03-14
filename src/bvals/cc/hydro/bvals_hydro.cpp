@@ -24,7 +24,7 @@
 HydroBoundaryVariable::HydroBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> &var_hydro,
     AthenaArray<Real> *var_flux,
-    enum HydroBoundaryType hydro_type)
+    HydroBoundaryQuantity hydro_type)
     // AthenaArray<Real> &prim)
     : CellCenteredBoundaryVariable(pmb, var_hydro, var_flux) {
   hydro_type_=hydro_type;
@@ -38,23 +38,23 @@ HydroBoundaryVariable::HydroBoundaryVariable(
 // }
 
 //----------------------------------------------------------------------------------------
-//! \fn void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType type)
+//! \fn void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity type)
 //  \brief
 
 // 3x calls to long switch for coarse buffer selection: Send(), ReceiveAndSet(), Set()
 // +1x call to shortened "non-switch": Receive()
-void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType hydro_type) {
+void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type) {
   // KGF: currently always true:
-  if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
+  if (hydro_type==HydroBoundaryQuantity::cons || hydro_type==HydroBoundaryQuantity::prim) {
     if (pmy_mesh_->multilevel) {
-      if (hydro_type==HYDRO_CONS)
+      if (hydro_type==HydroBoundaryQuantity::cons)
         coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_cons_);
-      if (hydro_type==HYDRO_PRIM)
+      if (hydro_type==HydroBoundaryQuantity::prim)
         coarse_buf.InitWithShallowCopy(pmy_block_->pmr->coarse_prim_);
     }
   }
   // Smaller switch used only in ReceiveBoundaryBuffers(void)
-  // if (hydro_type==HYDRO_CONS || hydro_type==HYDRO_PRIM) {
+  // if (hydro_type==HydroBoundaryQuantity::cons || hydro_type==HydroBoundaryQuantity::prim) {
   //   pbd=&bd_cc_;
   // }
   hydro_type_ = hydro_type;
@@ -72,7 +72,7 @@ void HydroBoundaryVariable::SelectCoarseBuffer(enum HydroBoundaryType hydro_type
 // alternative is to pass "int nregister", and have the function directly access Hydro
 // "u1, u2" or "w, w1" or Field "b1, b2".
 void HydroBoundaryVariable::SwapHydroQuantity(AthenaArray<Real> &var_hydro,
-                                              enum HydroBoundaryType hydro_type) {
+                                              HydroBoundaryQuantity hydro_type) {
   var_cc.InitWithShallowCopy(var_hydro);
   // KGF: src and dst are completely useless as-is, since they always mirror var_cc
   // src.InitWithShallowCopy(var_cc);

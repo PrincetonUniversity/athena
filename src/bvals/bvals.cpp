@@ -59,7 +59,7 @@ void BValFuncPlaceholder(
 
 // called in MeshBlock() constructor
 
-BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
+BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
@@ -69,109 +69,117 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // Set BC functions for each of the 6 boundaries in turn ------------------------------
   // Inner x1
   nface_=2; nedge_=0;
-  switch(block_bcs[INNER_X1]) {
-    case REFLECTING_BNDRY:
-      BoundaryFunction_[INNER_X1] = BValFuncPlaceholder;
+  switch(block_bcs[BoundaryFace::inner_x1]) {
+    case BoundaryFlag::reflect:
+      BoundaryFunction_[BoundaryFace::inner_x1] = BValFuncPlaceholder;
       break;
-    case OUTFLOW_BNDRY:
-      BoundaryFunction_[INNER_X1] = BValFuncPlaceholder;
+    case BoundaryFlag::outflow:
+      BoundaryFunction_[BoundaryFace::inner_x1] = BValFuncPlaceholder;
       break;
-    case BLOCK_BNDRY: // block boundary
-    case PERIODIC_BNDRY: // periodic boundary
-      BoundaryFunction_[INNER_X1] = nullptr;
+    case BoundaryFlag::block: // block boundary
+    case BoundaryFlag::periodic: // periodic boundary
+      BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
       break;
-    // case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-    //   if (!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
-    //   BoundaryFunction_[INNER_X1] = nullptr;
+    // case BoundaryFlag::shear_periodic: // shearing periodic boundary
+    //   if (!SHEARING_BOX) block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::periodic;
+    //   BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
     //   break;
-    case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[INNER_X1] = pmy_mesh_->BoundaryFunction_[INNER_X1];
+    case BoundaryFlag::user: // user-enrolled BCs
+      BoundaryFunction_[BoundaryFace::inner_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" << block_bcs[INNER_X1] << " not valid" << std::endl;
+          << "Flag ix1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
       break;
   }
 
   // Outer x1
-  switch(block_bcs[OUTER_X1]) {
-    case REFLECTING_BNDRY:
-      BoundaryFunction_[OUTER_X1] = BValFuncPlaceholder;
+  switch(block_bcs[BoundaryFace::outer_x1]) {
+    case BoundaryFlag::reflect:
+      BoundaryFunction_[BoundaryFace::outer_x1] = BValFuncPlaceholder;
       break;
-    case OUTFLOW_BNDRY:
-      BoundaryFunction_[OUTER_X1] = BValFuncPlaceholder;
+    case BoundaryFlag::outflow:
+      BoundaryFunction_[BoundaryFace::outer_x1] = BValFuncPlaceholder;
       break;
-    case BLOCK_BNDRY: // block boundary
-    case PERIODIC_BNDRY: // periodic boundary
-      BoundaryFunction_[OUTER_X1] = nullptr;
+    case BoundaryFlag::block: // block boundary
+    case BoundaryFlag::periodic: // periodic boundary
+      BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
       break;
-    // case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-    //   if (!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
-    //   BoundaryFunction_[OUTER_X1] = nullptr;
+    // case BoundaryFlag::shear_periodic: // shearing periodic boundary
+    //   if (!SHEARING_BOX) block_bcs[BoundaryFace::outer_x1]=BoundaryFlag::periodic;
+    //   BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
     //   break;
-    case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[OUTER_X1] = pmy_mesh_->BoundaryFunction_[OUTER_X1];
+    case BoundaryFlag::user: // user-enrolled BCs
+      BoundaryFunction_[BoundaryFace::outer_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" << block_bcs[OUTER_X1] << " not valid" << std::endl;
+          << "Flag ox1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
     // Inner x2
-    switch(block_bcs[INNER_X2]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[INNER_X2] = BValFuncPlaceholder;
+    switch(block_bcs[BoundaryFace::inner_x2]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[INNER_X2] = BValFuncPlaceholder;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-      case POLAR_BNDRY: // polar boundary
-        BoundaryFunction_[INNER_X2] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+      case BoundaryFlag::polar: // polar boundary
+        BoundaryFunction_[BoundaryFace::inner_x2] = nullptr;
         break;
-      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
-        BoundaryFunction_[INNER_X2] = BValFuncPlaceholder;
+      case BoundaryFlag::polar_wedge: //polar boundary with a wedge
+        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X2] = pmy_mesh_->BoundaryFunction_[INNER_X2];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::inner_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" << block_bcs[INNER_X2] << " not valid" << std::endl;
+            << "Flag ix2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
     // Outer x2
-    switch(block_bcs[OUTER_X2]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[OUTER_X2] = BValFuncPlaceholder;
+    switch(block_bcs[BoundaryFace::outer_x2]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[OUTER_X2] = BValFuncPlaceholder;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-      case POLAR_BNDRY: // polar boundary
-        BoundaryFunction_[OUTER_X2] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+      case BoundaryFlag::polar: // polar boundary
+        BoundaryFunction_[BoundaryFace::outer_x2] = nullptr;
         break;
-      case POLAR_BNDRY_WEDGE: // polar boundary with a wedge
-        BoundaryFunction_[OUTER_X2] = BValFuncPlaceholder;
+      case BoundaryFlag::polar_wedge: // polar boundary with a wedge
+        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X2] = pmy_mesh_->BoundaryFunction_[OUTER_X2];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::outer_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" << block_bcs[OUTER_X2] << " not valid" << std::endl;
+            << "Flag ox2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
@@ -179,65 +187,72 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
     // Inner x3
-    switch(block_bcs[INNER_X3]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[INNER_X3] = BValFuncPlaceholder;
+    switch(block_bcs[BoundaryFace::inner_x3]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::inner_x3] = BValFuncPlaceholder;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[INNER_X3] = BValFuncPlaceholder;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::inner_x3] = BValFuncPlaceholder;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-        BoundaryFunction_[INNER_X3] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+        BoundaryFunction_[BoundaryFace::inner_x3] = nullptr;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X3] = pmy_mesh_->BoundaryFunction_[INNER_X3];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::inner_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" << block_bcs[INNER_X3] << " not valid" << std::endl;
+            << "Flag ix3_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
     // Outer x3
-    switch(block_bcs[OUTER_X3]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[OUTER_X3] = BValFuncPlaceholder;
+    switch(block_bcs[BoundaryFace::outer_x3]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::outer_x3] = BValFuncPlaceholder;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[OUTER_X3] = BValFuncPlaceholder;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::outer_x3] = BValFuncPlaceholder;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-        BoundaryFunction_[OUTER_X3] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+        BoundaryFunction_[BoundaryFace::outer_x3] = nullptr;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X3] = pmy_mesh_->BoundaryFunction_[OUTER_X3];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::outer_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << block_bcs[OUTER_X3] << " not valid" << std::endl;
+            << "Flag ox3_bc=" << static_cast<int>(block_bcs[BoundaryFace::outer_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
   // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
-      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     CheckPolarBoundaries();
   }
 
   // Count number of blocks wrapping around pole
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
@@ -251,8 +266,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // KGF: shouldn't this only be allocated for MHD?
   if (pmb->loc.level == pmy_mesh_->root_level &&
       pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
-       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
   // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
@@ -285,9 +302,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //       ssize_ = NGHOST*ncells3;
 
 //       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-//         if (block_bcs[INNER_X1] != SHEAR_PERIODIC_BNDRY) {
-//           block_bcs[INNER_X1] = SHEAR_PERIODIC_BNDRY;
-//           BoundaryFunction_[INNER_X1] = nullptr;
+//         if (block_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic) {
+//           block_bcs[BoundaryFace::inner_x1] = BoundaryFlag::shear_periodic;
+//           BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
 //         }
 //         shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
 //         flx_inner_hydro_.NewAthenaArray(ncells2);
@@ -323,7 +340,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //         for (int n=0; n<2; n++) {
 //           send_innerbuf_hydro_[n] = new Real[size];
 //           recv_innerbuf_hydro_[n] = new Real[size];
-//           shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+//           shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
 //           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -331,10 +348,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             send_innerbuf_field_[n] = new Real[bsize];
 //             recv_innerbuf_field_[n] = new Real[bsize];
-//             shbox_inner_field_flag_[n]=BNDRY_WAITING;
+//             shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
 //             send_innerbuf_emf_[n] = new Real[esize];
 //             recv_innerbuf_emf_[n] = new Real[esize];
-//             shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+//             shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //             rq_innersend_field_[n] = MPI_REQUEST_NULL;
 //             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -351,7 +368,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //         for (int n=2; n<4; n++) {
 //           send_innerbuf_hydro_[n] = new Real[size];
 //           recv_innerbuf_hydro_[n] = new Real[size];
-//           shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+//           shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
 //           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -359,10 +376,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             send_innerbuf_field_[n] = new Real[bsize];
 //             recv_innerbuf_field_[n] = new Real[bsize];
-//             shbox_inner_field_flag_[n]=BNDRY_WAITING;
+//             shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
 //             send_innerbuf_emf_[n] = new Real[esize];
 //             recv_innerbuf_emf_[n] = new Real[esize];
-//             shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+//             shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //             rq_innersend_field_[n] = MPI_REQUEST_NULL;
 //             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -374,9 +391,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //       }
 
 //       if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
-//         if (block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
-//           block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
-//           BoundaryFunction_[OUTER_X1] = nullptr;
+//         if (block_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic) {
+//           block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::shear_periodic;
+//           BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
 //         }
 //         shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
 //         flx_outer_hydro_.NewAthenaArray(ncells2);
@@ -412,7 +429,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //         for (int n=0; n<2; n++) {
 //           send_outerbuf_hydro_[n] = new Real[size];
 //           recv_outerbuf_hydro_[n] = new Real[size];
-//           shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
+//           shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
 //           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -420,10 +437,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             send_outerbuf_field_[n] = new Real[bsize];
 //             recv_outerbuf_field_[n] = new Real[bsize];
-//             shbox_outer_field_flag_[n]=BNDRY_WAITING;
+//             shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
 //             send_outerbuf_emf_[n] = new Real[esize];
 //             recv_outerbuf_emf_[n] = new Real[esize];
-//             shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+//             shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //             rq_outersend_field_[n] = MPI_REQUEST_NULL;
 //             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -440,7 +457,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //         for (int n=2; n<4; n++) {
 //           send_outerbuf_hydro_[n] = new Real[size];
 //           recv_outerbuf_hydro_[n] = new Real[size];
-//           shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
+//           shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
 //           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -448,10 +465,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             send_outerbuf_field_[n] = new Real[bsize];
 //             recv_outerbuf_field_[n] = new Real[bsize];
-//             shbox_outer_field_flag_[n]=BNDRY_WAITING;
+//             shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
 //             send_outerbuf_emf_[n] = new Real[esize];
 //             recv_outerbuf_emf_[n] = new Real[esize];
-//             shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+//             shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
 // #ifdef MPI_PARALLEL
 //             rq_outersend_field_[n] = MPI_REQUEST_NULL;
 //             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -475,8 +492,10 @@ BoundaryValues::~BoundaryValues() {
   // true for its counterpart in constructor). Probably should be inside.
   if (pmb->loc.level == pmy_mesh_->root_level &&
       pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY ||
-       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE || block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     azimuthal_shift_.DeleteAthenaArray();
   // end KGF: edge-case...
 
@@ -543,15 +562,10 @@ BoundaryValues::~BoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::Initialize(void)
-//  \brief Initialize MPI requests
-
+//  \brief Setup persistent MPI requests
+// TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 // KGF: called in Mesh::Initialize(), after CheckBoundary() and before
 // StartReceivingForInit(true)
-
-
-// KGF: setup persistent MPI requests
-
-// TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
 void BoundaryValues::Initialize(void) {
   MeshBlock* pmb=pmy_block_;
   int &mylevel=pmb->loc.level;
@@ -635,7 +649,6 @@ void BoundaryValues::Initialize(void) {
     (*bvars_it)->Initialize();
   }
 
-
   // KGF: begin exclusive shearing-box section in Initialize
 
   // initialize the shearing block lists
@@ -686,7 +699,7 @@ void BoundaryValues::Initialize(void) {
 
 void BoundaryValues::CheckBoundary(void) {
   for (int i=0; i<nface_; i++) {
-    if (block_bcs[i]==USER_BNDRY) {
+    if (block_bcs[i]==BoundaryFlag::user) {
       if (BoundaryFunction_[i]==nullptr) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
@@ -781,18 +794,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 //         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
 //                           (recv_inner_rank_[n]!=-1)) {
 //           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_HYDRO);
+//           tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_hydro);
 //           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
 //                     recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_innerrecv_hydro_[n]);
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             size = recv_innersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_FIELD);
+//             tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_field);
 //             MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
 //                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_innerrecv_field_[n]);
 //             size = recv_innersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n, TAG_SHBOX_EMF);
+//             tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_emf);
 //             MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
 //                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_innerrecv_emf_[n]);
@@ -807,18 +820,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 //         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
 //                           (recv_outer_rank_[n]!=-1)) {
 //           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_HYDRO);
+//           tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_hydro);
 //           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
 //                     recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_outerrecv_hydro_[n]);
 //           if (MAGNETIC_FIELDS_ENABLED) {
 //             size = recv_outersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_FIELD);
+//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_field);
 //             MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
 //                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_outerrecv_field_[n]);
 //             size = recv_outersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, TAG_SHBOX_EMF);
+//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_emf);
 //             MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
 //                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                       &rq_outerrecv_emf_[n]);
@@ -860,10 +873,10 @@ void BoundaryValues::ClearBoundaryAll(void) {
 //     if (shbb_.inner == true) {
 //       for (int n=0; n<4; n++) {
 //         if (send_inner_rank_[n] == -1) continue;
-//         shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
+//         shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//           shbox_inner_field_flag_[n] = BNDRY_WAITING;
-//           shbox_inner_emf_flag_[n] = BNDRY_WAITING;
+//           shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
+//           shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
 //         }
 // #ifdef MPI_PARALLEL
 //         if (send_inner_rank_[n]!=Globals::my_rank) {
@@ -880,9 +893,9 @@ void BoundaryValues::ClearBoundaryAll(void) {
 //     if (shbb_.outer == true) {
 //       for (int n=0; n<4; n++) {
 //         if (send_outer_rank_[n] == -1) continue;
-//         shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
+//         shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//           shbox_outer_field_flag_[n] = BNDRY_WAITING;
+//           shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
 //         }
 // #ifdef MPI_PARALLEL
 //         if (send_outer_rank_[n]!=Globals::my_rank) {
@@ -919,10 +932,14 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // updated
 
   // x1, then x2, then x3
-  if (BoundaryFunction_[INNER_X2]==nullptr && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if (BoundaryFunction_[OUTER_X2]==nullptr && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if (BoundaryFunction_[INNER_X3]==nullptr && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if (BoundaryFunction_[OUTER_X3]==nullptr && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2>1)
+    bjs=pmb->js-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2>1)
+    bje=pmb->je+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr && pmb->block_size.nx3>1)
+    bks=pmb->ks-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3>1)
+    bke=pmb->ke+NGHOST;
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
   // to user-defined boundary function stored in function pointer array
@@ -941,23 +958,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
-  if (BoundaryFunction_[INNER_X1] != nullptr) {
-    switch(block_bcs[INNER_X1]) {
-      case REFLECTING_BNDRY:
+  if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
+    switch(block_bcs[BoundaryFace::inner_x1]) {
+      case BoundaryFlag::reflect:
         for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
           (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
-      case OUTFLOW_BNDRY:
+      case BoundaryFlag::outflow:
         for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
           (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X1](pmb, pco, ph->w, pf->b, time, dt, pmb->is, pmb->ie,
-                                    bjs, bje, bks, bke, NGHOST);
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::inner_x1] (
+            pmb, pco, ph->w, pf->b, time, dt,
+            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
         break;
       default:
         break;
@@ -972,23 +990,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   }
 
   // Apply boundary function on outer-x1 and update W,bcc (if not periodic)
-  if (BoundaryFunction_[OUTER_X1] != nullptr) {
-    switch(block_bcs[OUTER_X1]) {
-      case REFLECTING_BNDRY:
+  if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
+    switch(block_bcs[BoundaryFace::outer_x1]) {
+      case BoundaryFlag::reflect:
         for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
           (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
-      case OUTFLOW_BNDRY:
+      case BoundaryFlag::outflow:
         for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
           (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X1](pmb, pco, ph->w, pf->b, time, dt, pmb->is, pmb->ie,
-                                    bjs, bje, bks, bke, NGHOST);
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::outer_x1](
+            pmb, pco, ph->w, pf->b, time, dt,
+            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
         break;
       default:
         break;
@@ -1004,28 +1023,28 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
     // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[INNER_X2] != nullptr) {
-      switch(block_bcs[INNER_X2]) {
-        case REFLECTING_BNDRY:
+    if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
+      switch(block_bcs[BoundaryFace::inner_x2]) {
+        case BoundaryFlag::reflect:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case OUTFLOW_BNDRY:
+        case BoundaryFlag::outflow:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case POLAR_BNDRY_WEDGE:
+        case BoundaryFlag::polar_wedge:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, bis, bie,
                                            pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case USER_BNDRY: // user-enrolled BCs
-          BoundaryFunction_[INNER_X2](pmb, pco, ph->w, pf->b, time, dt,
+        case BoundaryFlag::user: // user-enrolled BCs
+          BoundaryFunction_[BoundaryFace::inner_x2](pmb, pco, ph->w, pf->b, time, dt,
                                       bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
           break;
         default:
@@ -1041,28 +1060,28 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
 
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[OUTER_X2] != nullptr) {
-      switch(block_bcs[OUTER_X2]) {
-        case REFLECTING_BNDRY:
+    if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
+      switch(block_bcs[BoundaryFace::outer_x2]) {
+        case BoundaryFlag::reflect:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case OUTFLOW_BNDRY:
+        case BoundaryFlag::outflow:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case POLAR_BNDRY_WEDGE:
+        case BoundaryFlag::polar_wedge:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, bis, bie,
                                            pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
-        case USER_BNDRY: // user-enrolled BCs
-          BoundaryFunction_[OUTER_X2](pmb, pco, ph->w, pf->b, time, dt,
+        case BoundaryFlag::user: // user-enrolled BCs
+          BoundaryFunction_[BoundaryFace::outer_x2](pmb, pco, ph->w, pf->b, time, dt,
                                       bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
           break;
         default:
@@ -1083,23 +1102,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     bje=pmb->je+NGHOST;
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[INNER_X3] != nullptr) {
-      switch(block_bcs[INNER_X3]) {
-        case REFLECTING_BNDRY:
+    if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
+      switch(block_bcs[BoundaryFace::inner_x3]) {
+        case BoundaryFlag::reflect:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
-        case OUTFLOW_BNDRY:
+        case BoundaryFlag::outflow:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
-        case USER_BNDRY: // user-enrolled BCs
-          BoundaryFunction_[INNER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
-                                      bjs, bje, pmb->ks, pmb->ke, NGHOST);
+        case BoundaryFlag::user: // user-enrolled BCs
+          BoundaryFunction_[BoundaryFace::inner_x3](
+              pmb, pco, ph->w, pf->b, time, dt,
+              bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
           break;
         default:
           break;
@@ -1114,23 +1134,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
 
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[OUTER_X3] != nullptr) {
-      switch(block_bcs[OUTER_X3]) {
-        case REFLECTING_BNDRY:
+    if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
+      switch(block_bcs[BoundaryFace::outer_x3]) {
+        case BoundaryFlag::reflect:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
-        case OUTFLOW_BNDRY:
+        case BoundaryFlag::outflow:
           for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
             (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
-        case USER_BNDRY: // user-enrolled BCs
-          BoundaryFunction_[OUTER_X3](pmb, pco, ph->w, pf->b, time, dt, bis, bie,
-                                      bjs, bje, pmb->ks, pmb->ke, NGHOST);
+        case BoundaryFlag::user: // user-enrolled BCs
+          BoundaryFunction_[BoundaryFace::outer_x3](
+              pmb, pco, ph->w, pf->b, time, dt,
+              bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
           break;
         default:
           break;
@@ -1200,7 +1221,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     int nis, nie, njs, nje, nks, nke;
     nis=std::max(nb.ox1-1,-1);
     nie=std::min(nb.ox1+1,1);
-    if (pmb->block_size.nx2==1) {
+    if (pmb->block_size.nx2 == 1) {
       njs=0;
       nje=0;
     } else {
@@ -1208,7 +1229,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       nje=std::min(nb.ox2+1,1);
     }
 
-    if (pmb->block_size.nx3==1) {
+    if (pmb->block_size.nx3 == 1) {
       nks=0;
       nke=0;
     } else {
@@ -1221,40 +1242,40 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
         for (int ni=nis; ni<=nie; ni++) {
           int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
           // skip myself or coarse levels; only the same level must be restricted
-          if (ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
+          if (ntype == 0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
           // this neighbor block is on the same level
           // and needs to be restricted for prolongation
           int ris, rie, rjs, rje, rks, rke;
-          if (ni==0) {
+          if (ni == 0) {
             ris=pmb->cis;
             rie=pmb->cie;
-            if (nb.ox1==1) {
+            if (nb.ox1 == 1) {
               ris=pmb->cie;
-            } else if (nb.ox1==-1) {
+            } else if (nb.ox1 == -1) {
               rie=pmb->cis;
             }
-          } else if (ni== 1) {
+          } else if (ni ==  1) {
             ris=pmb->cie+1, rie=pmb->cie+1;
-          } else { //(ni==-1)
+          } else { //(ni == -1)
             ris=pmb->cis-1, rie=pmb->cis-1;
           }
-          if (nj==0) {
+          if (nj == 0) {
             rjs=pmb->cjs, rje=pmb->cje;
-            if (nb.ox2==1) rjs=pmb->cje;
-            else if (nb.ox2==-1) rje=pmb->cjs;
-          } else if (nj== 1) {
+            if (nb.ox2 == 1) rjs=pmb->cje;
+            else if (nb.ox2 == -1) rje=pmb->cjs;
+          } else if (nj ==  1) {
             rjs=pmb->cje+1, rje=pmb->cje+1;
-          } else { //(nj==-1)
+          } else { //(nj == -1)
             rjs=pmb->cjs-1, rje=pmb->cjs-1;
           }
-          if (nk==0) {
+          if (nk == 0) {
             rks=pmb->cks, rke=pmb->cke;
-            if (nb.ox3==1) rks=pmb->cke;
-            else if (nb.ox3==-1) rke=pmb->cks;
-          } else if (nk== 1) {
+            if (nb.ox3 == 1) rks=pmb->cke;
+            else if (nb.ox3 == -1) rke=pmb->cks;
+          } else if (nk ==  1) {
             rks=pmb->cke+1, rke=pmb->cke+1;
-          } else { //(nk==-1)
+          } else { //(nk == -1)
             rks=pmb->cks-1, rke=pmb->cks-1;
           }
 
@@ -1265,14 +1286,14 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
-            if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
-            if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+            if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
+            if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
             pmr->RestrictFieldX1(pf->b.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
                                  rke);
             if (pmb->block_size.nx2 > 1) {
               rs=rjs, re=rje+1;
-              if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
-              if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+              if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
+              if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
                                    rke);
             } else { // 1D
@@ -1283,8 +1304,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             }
             if (pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
-              if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
-              if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+              if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
+              if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
                                    re);
             } else { // 1D or 2D
@@ -1303,24 +1324,24 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // calculate the loop limits for the ghost zones
     int cn = pmb->cnghost-1;
     int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       si=pmb->cis, ei=pmb->cie;
-      if ((lx1 & 1LL)==0LL) ei+=cn;
+      if ((lx1 & 1LL) == 0LL) ei+=cn;
       else             si-=cn;
     } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
     else              si=pmb->cis-cn, ei=pmb->cis-1;
-    if (nb.ox2==0) {
+    if (nb.ox2 == 0) {
       sj=pmb->cjs, ej=pmb->cje;
       if (pmb->block_size.nx2 > 1) {
-        if ((lx2 & 1LL)==0LL) ej+=cn;
+        if ((lx2 & 1LL) == 0LL) ej+=cn;
         else             sj-=cn;
       }
     } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
     else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
-    if (nb.ox3==0) {
+    if (nb.ox3 == 0) {
       sk=pmb->cks, ek=pmb->cke;
       if (pmb->block_size.nx3 > 1) {
-        if ((lx3 & 1LL)==0LL) ek+=cn;
+        if ((lx3 & 1LL) == 0LL) ek+=cn;
         else             sk-=cn;
       }
     } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
@@ -1329,7 +1350,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // convert the ghost zone and ghost-ghost zones into primitive variables
     // this includes cell-centered field calculation
     int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       if (nblevel[1][1][0]!=-1) f1m=1;
       if (nblevel[1][1][2]!=-1) f1p=1;
     } else {
@@ -1337,7 +1358,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       f1p=1;
     }
     if (pmb->block_size.nx2>1) {
-      if (nb.ox2==0) {
+      if (nb.ox2 == 0) {
         if (nblevel[1][0][1]!=-1) f2m=1;
         if (nblevel[1][2][1]!=-1) f2p=1;
       } else {
@@ -1346,7 +1367,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       }
     }
     if (pmb->block_size.nx3>1) {
-      if (nb.ox3==0) {
+      if (nb.ox3 == 0) {
         if (nblevel[0][1][1]!=-1) f3m=1;
         if (nblevel[2][1][1]!=-1) f3p=1;
       } else {
@@ -1381,157 +1402,156 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     }
 
     // Apply physical boundaries
-    if (nb.ox1==0) {
-      if (BoundaryFunction_[INNER_X1]!=nullptr) {
-        switch(block_bcs[INNER_X1]) {
-          case REFLECTING_BNDRY:
+    if (nb.ox1 == 0) {
+      if (BoundaryFunction_[BoundaryFace::inner_x1]!=nullptr) {
+        switch(block_bcs[BoundaryFace::inner_x1]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                           sj, ej, sk, ek, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                           sj, ej, sk, ek, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-            BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::inner_x1](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
             break;
           default:
             break;
         }
       }
-      if (BoundaryFunction_[OUTER_X1]!=nullptr) {
-        switch(block_bcs[OUTER_X1]) {
-          case REFLECTING_BNDRY:
+      if (BoundaryFunction_[BoundaryFace::outer_x1]!=nullptr) {
+        switch(block_bcs[BoundaryFace::outer_x1]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                           sj, ej, sk, ek, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                           sj, ej, sk, ek, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-            BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::outer_x1](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
             break;
           default:
             break;
         }
       }
     }
-    if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
-      if (BoundaryFunction_[INNER_X2]!=nullptr) {
-        switch(block_bcs[INNER_X2]) {
-          case REFLECTING_BNDRY:
+    if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
+      if (BoundaryFunction_[BoundaryFace::inner_x2]!=nullptr) {
+        switch(block_bcs[BoundaryFace::inner_x2]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, si, ei,
                                           pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, si, ei,
                                           pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case POLAR_BNDRY_WEDGE:
+          case BoundaryFlag::polar_wedge:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, si, ei,
                                              pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-            BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::inner_x2](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
             break;
           default:
             break;
         }
       }
-      if (BoundaryFunction_[OUTER_X2]!=nullptr) {
-        switch(block_bcs[OUTER_X2]) {
-          case REFLECTING_BNDRY:
+      if (BoundaryFunction_[BoundaryFace::outer_x2]!=nullptr) {
+        switch(block_bcs[BoundaryFace::outer_x2]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, si, ei,
                                           pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, si, ei,
                                           pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case POLAR_BNDRY_WEDGE:
+          case BoundaryFlag::polar_wedge:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, si, ei,
                                              pmb->cjs, pmb->cje, sk, ek, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-            BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::outer_x2](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
             break;
           default:
             break;
         }
       }
     }
-    if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
-      if (BoundaryFunction_[INNER_X3]!=nullptr) {
-        switch(block_bcs[INNER_X3]) {
-          case REFLECTING_BNDRY:
+    if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
+      if (BoundaryFunction_[BoundaryFace::inner_x3]!=nullptr) {
+        switch(block_bcs[BoundaryFace::inner_x3]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, si, ei,
                                           sj, ej, pmb->cks, pmb->cke, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, si, ei,
                                           sj, ej, pmb->cks, pmb->cke, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-            BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                        pmb->cks, pmb->cke, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::inner_x3](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                si, ei, sj, ej, pmb->cks, pmb->cke, 1);
             break;
           default:
             break;
         }
       }
-      if (BoundaryFunction_[OUTER_X3]!=nullptr) {
-        switch(block_bcs[OUTER_X3]) {
-          case REFLECTING_BNDRY:
+      if (BoundaryFunction_[BoundaryFace::outer_x3]!=nullptr) {
+        switch(block_bcs[BoundaryFace::outer_x3]) {
+          case BoundaryFlag::reflect:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, si, ei,
                                           sj, ej, pmb->cks, pmb->cke, 1);
             }
             break;
-          case OUTFLOW_BNDRY:
+          case BoundaryFlag::outflow:
             for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
               (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, si, ei,
                                           sj, ej, pmb->cks, pmb->cke, 1);
             }
             break;
-          case USER_BNDRY: // user-enrolled BCs
-
-            BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                        pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                        pmb->cks, pmb->cke, 1);
+          case BoundaryFlag::user: // user-enrolled BCs
+            BoundaryFunction_[BoundaryFace::outer_x3](
+                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                si, ei, sj, ej, pmb->cks, pmb->cke, 1);
             break;
           default:
             break;
