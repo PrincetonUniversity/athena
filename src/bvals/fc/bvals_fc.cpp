@@ -1366,6 +1366,7 @@ void FaceCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 }
 
 void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+  recv_flx_same_lvl_ = true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;

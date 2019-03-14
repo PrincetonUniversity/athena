@@ -174,6 +174,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
   const bool *flip_across_pole_;
 
+  // ready to recv flux from same level and apply correction? false= 2nd pass for fine lvl
+  bool recv_flx_same_lvl_;
+  // KGF: formerly "firsttime_". The variable switch is used in only 2x functions:
+  // ReceiveEMFCorrection() and StartReceivingAll()
+
 #ifdef MPI_PARALLEL
   int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;

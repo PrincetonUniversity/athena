@@ -760,8 +760,6 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 //  \brief initiate MPI_Irecv for all the sweeps
 
 void BoundaryValues::StartReceivingAll(const Real time) {
-  firsttime_=true;
-
   // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
 // #ifdef MPI_PARALLEL
 //   MeshBlock *pmb=pmy_block_;
