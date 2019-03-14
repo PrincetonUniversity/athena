@@ -26,9 +26,9 @@
 namespace {
 // Declarations
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime);
+               Real gamma_prime);
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime);
+                    Real gamma_prime);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -449,7 +449,7 @@ void EquationOfState::FastMagnetosonicSpeedsSR(
 //   same function as in hlld_rel.cpp
 namespace {
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime) {
+               Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -478,7 +478,7 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 //   same function as in hlld_mhd_rel.cpp
 
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime) {
+                    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);

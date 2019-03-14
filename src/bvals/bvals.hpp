@@ -33,24 +33,27 @@ class Coordinates;
 struct RegionSize;
 struct FaceField;
 
+// TODO(felker): nest these enum definitions inside bvals/ classes, when possible.
+
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
-                   INNER_X3=4, OUTER_X3=5};
+enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
+                   inner_x3=4, outer_x3=5};
+// TODO(felker): BoundaryFace must be unscoped enum, for now. Its enumerators are used as
+// int to index regular arrays (not AthenaArrays). Hence enumerator values are specified.
 
 // identifiers for boundary conditions
-enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-                   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6,
-                   SHEAR_PERIODIC_BNDRY=7};
+enum class BoundaryFlag {block=-1, undef, reflect, outflow, user, periodic,
+                         polar, polar_wedge, shear_periodic};
 
-// identifiers for types of neighbor blocks
-enum NeighborType {NEIGHBOR_NONE=0, NEIGHBOR_FACE=1, NEIGHBOR_EDGE=2, NEIGHBOR_CORNER=3};
+// identifiers for types of neighbor blocks (connectivity with current MeshBlock)
+enum class NeighborConnect {none, face, edge, corner}; // degenerate/shared part of block
 
 // identifiers for status of MPI boundary communications
-enum BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
+enum class BoundaryStatus {waiting, arrived, completed};
 
 // flags to mark which variables are reversed across polar boundary
-static bool flip_across_pole_hydro[] = {false, false, true, true, false};
-static bool flip_across_pole_field[] = {false, true, true};
+constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false};
+constexpr const bool flip_across_pole_field[] = {false, true, true};
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
@@ -58,15 +61,16 @@ static bool flip_across_pole_field[] = {false, true, true};
 
 struct NeighborBlock { // not aggregate nor POD type
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
-  enum NeighborType type;
-  enum BoundaryFace fid;
+  NeighborConnect type;
+  BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
                     fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
-                    type(NEIGHBOR_NONE), fid(FACE_UNDEF), polar(false), shear(false) {}
+                    type(NeighborConnect::none), fid(BoundaryFace::undef), polar(false),
+                    shear(false) {}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, enum NeighborType itype, int ibid, int itargetid,
+                   int iox3, NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
 };
 
@@ -81,15 +85,15 @@ struct PolarNeighborBlock { // aggregate and POD
   bool north;  // flag that is true for North pole and false for South pole
 };
 
-//! \struct NeighborType
+//! \struct NeighborIndexes
 //  \brief data to describe MeshBlock neighbors
 struct NeighborIndexes { // aggregate and POD
   int ox1, ox2, ox3, fi1, fi2;
-  enum NeighborType type;
+  NeighborConnect type;
   // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
   // NeighborIndexes() {
   //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-  //   type=NEIGHBOR_NONE;
+  //   type=NeighborConnect::none;
   // }
 
   // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
@@ -108,7 +112,7 @@ struct NeighborIndexes { // aggregate and POD
 //  \brief structure storing boundary information
 struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
   int nbmax;
-  enum BoundaryStatus flag[56];
+  BoundaryStatus flag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
@@ -164,8 +168,8 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 
 
 // functions to return boundary flag given input string, and vice versa
-enum BoundaryFlag GetBoundaryFlag(std::string input_string);
-std::string GetBoundaryString(enum BoundaryFlag input_flag);
+BoundaryFlag GetBoundaryFlag(std::string input_string);
+std::string GetBoundaryString(BoundaryFlag input_flag);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
 struct ShearingBoundaryBlock {
@@ -181,7 +185,7 @@ struct ShearingBoundaryBlock {
 class BoundaryBase {
  public:
   BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-               enum BoundaryFlag *input_bcs);
+               BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
 
   static NeighborIndexes ni[56];
@@ -190,7 +194,7 @@ class BoundaryBase {
   int nneighbor;
   int nblevel[3][3][3];
   LogicalLocation loc;
-  enum BoundaryFlag block_bcs[6];
+  BoundaryFlag block_bcs[6];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
   static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
@@ -216,10 +220,10 @@ class BoundaryBase {
 
 class BoundaryValues : public BoundaryBase {
  public:
-  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs, ParameterInput *pin);
+  BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
-  void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
+  void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData &bd);
   void Initialize(void);
   void CheckBoundary(void);
@@ -244,18 +248,20 @@ class BoundaryValues : public BoundaryBase {
                                             int ns, int ne, Real *buf,
                                             const NeighborBlock& nb);
   void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
-                                       enum CCBoundaryType type);
+                                       CCBoundaryQuantity type);
   void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
+                                        Real *buf, const NeighborBlock& nb,
+                                        const bool *flip);
   void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
                                           AthenaArray<Real> &cbuf,
-                                          const NeighborBlock& nb, bool *flip);
+                                          const NeighborBlock& nb, const bool *flip);
   void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
-                                        Real *buf, const NeighborBlock& nb, bool *flip);
-  bool ReceiveCellCenteredBoundaryBuffers(enum CCBoundaryType type);
-  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, enum CCBoundaryType type);
+                                        Real *buf, const NeighborBlock& nb,
+                                        const bool *flip);
+  bool ReceiveCellCenteredBoundaryBuffers(CCBoundaryQuantity type);
+  void SetCellCenteredBoundaries(AthenaArray<Real> &dst, CCBoundaryQuantity type);
   void ReceiveAndSetCellCenteredBoundariesWithWait(AthenaArray<Real> &dst,
-                                                   enum CCBoundaryType type);
+                                                   CCBoundaryQuantity type);
   void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
@@ -274,8 +280,8 @@ class BoundaryValues : public BoundaryBase {
   void PolarSingleField(FaceField &dst);
   void PolarAxisFieldAverage(FaceField &dst);
 
-  void SendFluxCorrection(enum FluxCorrectionType type);
-  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
+  void SendFluxCorrection(FluxCorrectionQuantity type);
+  bool ReceiveFluxCorrection(FluxCorrectionQuantity type);
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
@@ -329,8 +335,8 @@ class BoundaryValues : public BoundaryBase {
   bool firsttime_;
 
   BoundaryData bd_hydro_, bd_field_, bd_flcor_, bd_emfcor_;
-  enum BoundaryStatus *emf_north_flag_;
-  enum BoundaryStatus *emf_south_flag_;
+  BoundaryStatus *emf_north_flag_;
+  BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
   AthenaArray<Real> exc_;
@@ -361,7 +367,7 @@ class BoundaryValues : public BoundaryBase {
   int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
 
   // Hydro
-  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
   // working arrays of remapped quantities
   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
   // flux from conservative remapping
@@ -376,7 +382,7 @@ class BoundaryValues : public BoundaryBase {
   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
 #endif
   // Field
-  enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
+  BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
   FaceField shboxvar_inner_field_, shboxvar_outer_field_;
   FaceField flx_inner_field_, flx_outer_field_;
   int  send_innersize_field_[4], recv_innersize_field_[4];
@@ -388,7 +394,7 @@ class BoundaryValues : public BoundaryBase {
   MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];
 #endif
   // EMF correction
-  enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
+  BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
   EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_;
   EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_;
   EdgeField flx_inner_emf_, flx_outer_emf_;

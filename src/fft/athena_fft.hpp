@@ -29,8 +29,6 @@
 #endif // MPI_PARALLEL
 #endif
 
-enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
-
 #ifdef FFT
 typedef fftw_complex AthenaFFTComplex;
 
@@ -127,14 +125,16 @@ class FFTBlock {
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
                AthenaFFTComplex *out_data);
 
-  AthenaFFTPlan *QuickCreatePlan(AthenaFFTComplex *data,enum AthenaFFTDirection dir);
+  enum class AthenaFFTDirection {forward=-1, backward=1};
+
+  AthenaFFTPlan *QuickCreatePlan(AthenaFFTComplex *data,AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(int nfast, AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
+                            AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(int nfast, int nslow, AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
+                            AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(int nfast, int nmid, int nslow,
                             AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
+                            AthenaFFTDirection dir);
 
   void ExecuteForward() {Execute(fplan_);}
   void ExecuteBackward() {Execute(bplan_);}

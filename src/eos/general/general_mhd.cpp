@@ -155,7 +155,7 @@ void EquationOfState::PrimitiveToConserved(
         u_m3 = w_vz*w_d;
         // cellwise conversion
         u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
-                                              + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+                                                + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
       }
     }
   }

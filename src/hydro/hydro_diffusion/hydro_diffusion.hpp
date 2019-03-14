@@ -23,7 +23,7 @@ class ParameterInput;
 class Coordinates;
 class HydroDiffusion;
 
-
+// currently must be free functions for compatibility with user-defined fn via fn pointers
 void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                     const AthenaArray<Real> &bc,
                     int is, int ie, int js, int je, int ks, int ke);
@@ -31,8 +31,6 @@ void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Rea
 void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                      const AthenaArray<Real> &bc,
                      int is, int ie, int js, int je, int ks, int ke);
-
-enum {ISO=0, ANI=1};
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
@@ -51,6 +49,10 @@ class HydroDiffusion {
   Real kappa_iso, kappa_aniso; // thermal conduction coeff
   AthenaArray<Real> cndflx[3]; // thermal stress tensor
   AthenaArray<Real> kappa; // conduction array
+
+  // array indices for hydro diffusion (conduction & viscosity) variants: directionality
+  // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
+  enum DiffProcess {iso=0, aniso=1};
 
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,

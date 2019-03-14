@@ -58,7 +58,7 @@ void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Set IIB value function pointer
-  EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, ShockCloudInnerX1);
   return;
 }
 

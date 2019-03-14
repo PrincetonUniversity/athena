@@ -207,10 +207,11 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
           std::memcpy(pbl->pbval->recv_innerbuf_field_[n],send_innerbuf_field_[n],
                       send_innersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_field_flag_[n]=BNDRY_ARRIVED;
+          pbl->pbval->shbox_inner_field_flag_[n]=BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_FIELD, n); // bufid = n
+          // bufid = n
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], AthenaTagMPI::shbox_field, n);
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
 #endif
@@ -291,11 +292,12 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
           std::memcpy(pbl->pbval->recv_outerbuf_field_[n],
                       send_outerbuf_field_[n], send_outersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_field_flag_[n]=BNDRY_ARRIVED;
+          pbl->pbval->shbox_outer_field_flag_[n]=BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           //bufid for outer(inner): 2(0) and 3(1)
-          int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_FIELD, n+offset);
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], AthenaTagMPI::shbox_field,
+                                      n+offset);
           MPI_Isend(send_outerbuf_field_[n],send_outersize_field_[n],MPI_ATHENA_REAL,
                     send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
 #endif
@@ -383,8 +385,8 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
 
   if (shbb_.inner == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shbox_inner_field_flag_[n]==BNDRY_COMPLETED) continue;
-      if (shbox_inner_field_flag_[n]==BNDRY_WAITING) {
+      if (shbox_inner_field_flag_[n]==BoundaryStatus::completed) continue;
+      if (shbox_inner_field_flag_[n]==BoundaryStatus::waiting) {
         if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
           flagi=false;
           continue;
@@ -397,21 +399,21 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
             flagi=false;
             continue;
           }
-          shbox_inner_field_flag_[n] = BNDRY_ARRIVED;
+          shbox_inner_field_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set dst if boundary arrived
       SetFieldShearingboxBoundarySameLevel(dst,recv_innerbuf_field_[n],n);
-      shbox_inner_field_flag_[n] = BNDRY_COMPLETED; // completed
+      shbox_inner_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shbox_outer_field_flag_[n]==BNDRY_COMPLETED) continue;
-      if (shbox_outer_field_flag_[n]==BNDRY_WAITING) {
+      if (shbox_outer_field_flag_[n]==BoundaryStatus::completed) continue;
+      if (shbox_outer_field_flag_[n]==BoundaryStatus::waiting) {
         if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
           flago=false;
           continue;
@@ -424,12 +426,12 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst) {
             flago=false;
             continue;
           }
-          shbox_outer_field_flag_[n] = BNDRY_ARRIVED;
+          shbox_outer_field_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       SetFieldShearingboxBoundarySameLevel(dst,recv_outerbuf_field_[n],n+offset);
-      shbox_outer_field_flag_[n] = BNDRY_COMPLETED; // completed
+      shbox_outer_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
 

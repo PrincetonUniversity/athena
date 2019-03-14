@@ -19,11 +19,10 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     for i in (64, 128):
-        arguments0 = ['output1/file_type=hst', 'output1/dt=0.1',
-                      'output2/file_type=tab', 'output2/variable=v2',
+        arguments0 = ['output2/file_type=tab', 'output2/variable=v2',
                       'output2/data_format=%24.16e', 'output2/dt=0.5',
                       'time/cfl_number=0.8', 'time/tlim=0.5', 'time/nlim=500',
-                      'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=0',
+                      'time/ncycle_out=0',
                       'mesh/nx1=' + repr(i), 'mesh/x1min=-4.0', 'mesh/x1max=4.0',
                       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
                       'mesh/nx2=1', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
