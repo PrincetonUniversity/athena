@@ -55,7 +55,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
 
-  // pgbval = new GravityBoundaryVariable(pmy_block, BNDRY_CC, phi);
+  // pgbval = new GravityBoundaryVariable(pmy_block, BoundaryQuantity::cc, phi);
   // KGF: temporary workaround:
   pgbval = new CellCenteredBoundaryVariable(pmy_block, phi, nullptr);
   pgbval->bvar_index = pmb->pbval->bvars.size();

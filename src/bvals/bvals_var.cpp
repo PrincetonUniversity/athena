@@ -94,10 +94,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
   // KGF: what is happening in the next two conditionals??
   // they are preventing the elimination of "BoundaryQuantity type" function parameter in
   // favor of a simpler boolean switch
-  if (type==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
+  if (type==BoundaryQuantity::cc_FLCOR || type==BoundaryQuantity::fc_FLCOR) {
     for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NeighborConnect::face; bd.nbmax++) {}
   }
-  if (type==BNDRY_FC_FLCOR) {
+  if (type==BoundaryQuantity::fc_FLCOR) {
     for (          ; pbval_->ni[bd.nbmax].type==NeighborConnect::edge; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
@@ -110,9 +110,9 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
     bd.req_recv[n]=MPI_REQUEST_NULL;
 #endif
     // Allocate buffers, calculating the buffer size (variable vs. flux correction)
-    if (type ==BNDRY_CC || type==BNDRY_FC) {
+    if (type ==BoundaryQuantity::cc || type==BoundaryQuantity::fc) {
       size = this->ComputeVariableBufferSize(ni[n], cng);
-    } else if (type ==BNDRY_CC_FLCOR || type==BNDRY_FC_FLCOR) {
+    } else if (type ==BoundaryQuantity::cc_FLCOR || type==BoundaryQuantity::fc_FLCOR) {
       size = this->ComputeFluxCorrectionBufferSize(ni[n], cng);
     } else {
       std::stringstream msg;
@@ -122,10 +122,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
     }
     // KGF: original switch statement dependencies on local variableS:
     // switch(type) { // local variables as input: ni[n],
-    //case BNDRY_CC: {  // local variables as input: cng, ..., cng3
-    //case BNDRY_FC: { // local variables as input: cng, ..., cng3, f2d, f3d
-    //case BNDRY_CC_FLCOR: { // local variables as input: NONE
-    //case BNDRY_FC_FLCOR: { // local variables as input: NONE
+    //case BoundaryQuantity::cc: {  // local variables as input: cng, ..., cng3
+    //case BoundaryQuantity::fc: { // local variables as input: cng, ..., cng3, f2d, f3d
+    //case BoundaryQuantity::cc_FLCOR: { // local variables as input: NONE
+    //case BoundaryQuantity::fc_FLCOR: { // local variables as input: NONE
 
     bd.send[n]=new Real[size];
     bd.recv[n]=new Real[size];
