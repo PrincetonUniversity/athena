@@ -1434,7 +1434,7 @@ void FaceCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
   return;
 }
 
-void FaceCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+void FaceCenteredBoundaryVariable::StartReceivingAll() {
   recv_flx_same_lvl_ = true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;

@@ -166,7 +166,7 @@ class BoundaryCommunication {
 
   // functions called only in task_list/ during timestepping
   // time: pmesh->time+dtstep, where dtstep is the delta t for current step
-  virtual void StartReceivingAll(const Real time) = 0;
+  virtual void StartReceivingAll() = 0;
   virtual void ClearBoundaryAll() = 0;
 };
 

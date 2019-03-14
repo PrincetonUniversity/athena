@@ -45,7 +45,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // what about bool *flip? CC or Hydro-specific? Assuming CC now, see protected: vars
 
   // Current Facade class BoundaryValues calls in time_integrator.cpp:
-  // StartReceivingAll(time);
+  // StartReceivingAll();
   // ClearBoundaryAll();
   // SendFluxCorrection(FluxCorrectionQuantity::hydro);
   // SendEMFCorrection();
@@ -76,7 +76,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void Initialize() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;
-  void StartReceivingAll(const Real time) override;
+  void StartReceivingAll() override;
   void ClearBoundaryAll() override;
 
   // BoundaryBuffer:

@@ -52,7 +52,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void Initialize() override;
   void StartReceivingForInit(bool cons_and_field) override;
   void ClearBoundaryForInit(bool cons_and_field) override;
-  void StartReceivingAll(const Real time) override;
+  void StartReceivingAll() override;
   void ClearBoundaryAll() override;
 
   // BoundaryBuffer:

@@ -683,10 +683,10 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingAll(const Real time)
+//! \fn void BoundaryValues::StartReceivingAll()
 //  \brief initiate MPI_Irecv for all the sweeps
 
-void BoundaryValues::StartReceivingAll(const Real time) {
+void BoundaryValues::StartReceivingAll() {
   // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
 // #ifdef MPI_PARALLEL
 //   MeshBlock *pmb=pmy_block_;
@@ -695,7 +695,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
 //     NeighborBlock& nb = neighbor[n];
 //     if (nb.rank!=Globals::my_rank) {
 //       for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-//         bvars_it->StartReceivingAll(time);
+//         bvars_it->StartReceivingAll();
 //       }
 //     }
 //   }
@@ -704,7 +704,7 @@ void BoundaryValues::StartReceivingAll(const Real time) {
   // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
   // independent loops over nneighbor
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->StartReceivingAll(time);
+    (*bvars_it)->StartReceivingAll();
   }
 
   // KGF: begin shearing-box exclusive section of StartReceivingAll

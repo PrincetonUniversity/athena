@@ -254,7 +254,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
 
   Real time = pmb->pmy_mesh->time;
-  pmb->pbval->StartReceivingAll(time);
+  pmb->pbval->StartReceivingAll();
 
   return;
 }

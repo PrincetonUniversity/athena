@@ -733,7 +733,7 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 // for (int n=0; n<nneighbor; n++) {
 
 // -- unable to access nb without passing as function parameter
-// void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+// void CellCenteredBoundaryVariable::StartReceivingAll() {
 //   MPI_Start(&(bd_var_.req_recv[nb.bufid]));
 //   if (nb.type==NeighborConnect::face && nb.level>mylevel)
 //     MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
@@ -748,7 +748,7 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 
 // Are there any shared implemenations worth placing as the default inherited virtual
 // function in BoundaryVariable
-void CellCenteredBoundaryVariable::StartReceivingAll(const Real time) {
+void CellCenteredBoundaryVariable::StartReceivingAll() {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;

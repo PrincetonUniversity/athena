@@ -540,7 +540,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
   Real time = pmb->pmy_mesh->time+dt;
 
-  pmb->pbval->StartReceivingAll(time);
+  pmb->pbval->StartReceivingAll();
 
   return;
 }

@@ -92,7 +92,7 @@ void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   // KGF: what is "time" parameter ever used for in this function?
   // ANSWER: shearing box capabilities, only. Remove this function parameter.
   Real time=0;
-  pmb->pgrav->pgbval->StartReceivingAll(time);
+  pmb->pgrav->pgbval->StartReceivingAll();
   return;
 }
 

@@ -128,7 +128,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void StartReceivingForInit(bool cons_and_field) final;
   void ClearBoundaryForInit(bool cons_and_field) final;
   // called during time-stepper:
-  void StartReceivingAll(const Real time) final;
+  void StartReceivingAll() final;
   void ClearBoundaryAll(void) final;
 
   // functions unique to BoundaryValues. these do not exist in individual BoundaryVariable
