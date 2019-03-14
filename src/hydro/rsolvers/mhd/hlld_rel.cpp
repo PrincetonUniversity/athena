@@ -112,15 +112,15 @@ namespace {
 //   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 
 void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-                        const int il, const int iu, const int ivx,
-                        const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                        AthenaArray<Real> &lambdas_p_l,
-                        AthenaArray<Real> &lambdas_m_l,
-                        AthenaArray<Real> &lambdas_p_r,
-                        AthenaArray<Real> &lambdas_m_r,
-                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                        AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
                       AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Parameters
   const Real p_transition = 0.01;     // value delineating intial pressure regimes

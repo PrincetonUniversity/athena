@@ -89,10 +89,10 @@ namespace {
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
-void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                     const int iu, const int ivx, const AthenaArray<Real> &bb,
-                     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g,
-                     AthenaArray<Real> &gi,
+void LLFTransforming(MeshBlock *pmb, const int k, const int j,
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {

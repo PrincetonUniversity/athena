@@ -33,10 +33,10 @@ class GravitySolverTaskList : public TaskList {
   void AddGravitySolverTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
-  enum TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 
  private:
   void StartupTaskList(MeshBlock *pmb, int stage) override;

@@ -91,13 +91,14 @@ namespace {
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                        const int iu, const int ivx, const AthenaArray<Real> &bb,
-                        AthenaArray<Real> &bb_normal, AthenaArray<Real> &g,
-                        AthenaArray<Real> &gi,
-                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                        AthenaArray<Real> &cons,
-                        AthenaArray<Real> &flux,
-                        AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+
+                      const int iu, const int ivx, const AthenaArray<Real> &bb,
+                      AthenaArray<Real> &bb_normal, AthenaArray<Real> &g,
+                      AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons,
+                      AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric if in GR
   int i01(0), i11(0);
 #if GENERAL_RELATIVITY
@@ -339,9 +340,10 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
 //   same function as in hllc_rel.cpp
 
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                           const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                           AthenaArray<Real> &flux) {
+                         const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux)
+
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();

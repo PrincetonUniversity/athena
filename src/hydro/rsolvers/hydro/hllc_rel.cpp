@@ -394,10 +394,11 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 //   derived from RiemannSolver() in hlle_rel_no_transform.cpp assuming ivx = IVY
 //   same function as in hlle_rel.cpp
 
-void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                                const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux) {
+void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                         const int il, const int iu,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();

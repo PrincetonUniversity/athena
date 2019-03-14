@@ -23,37 +23,27 @@ class MeshBlock;
 class TaskList;
 class GravitySolverTaskList;
 
-// return codes for functions working on individual Tasks and TaskList
-enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
-enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
+// TODO(felker): these 4x declarations can be nested in TaskList if MGTaskList is derived
 
-//----------------------------------------------------------------------------------------
-//! \struct IntegratorWeight
-//  \brief weights used in time integrator tasks
-
-struct IntegratorWeight {
-  // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
-  Real delta; // low-storage coefficients to avoid double F() evaluation per substage
-  Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
-  Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
-};
+// constants = return codes for functions working on individual Tasks and TaskList
+enum class TaskStatus {fail, success, next};
+enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 
 //----------------------------------------------------------------------------------------
 //! \struct Task
 //  \brief data and function pointer for an individual Task
 
-struct Task {
+struct Task { // aggregate and POD
   std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
   std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
-  enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
+  TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
 //---------------------------------------------------------------------------------------
-//! \class TaskState
-//  \brief container for task states
+//! \struct TaskStates
+//  \brief container for task states on a single MeshBlock
 
-class TaskState {
- public:
+struct TaskStates { // aggregate and POD
   std::uint64_t finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
@@ -68,11 +58,8 @@ class TaskState {
 //  \brief data and function definitions for task list base class
 
 class TaskList {
-  friend class TimeIntegratorTaskList;
-  friend class GravitySolverTaskList;
-  friend class SuperTimeStepTaskList;
  public:
-  explicit TaskList(Mesh *pm);
+  TaskList() : ntasks(0), nstages(0), task_list_{} {} // 2x direct + zero initialization
   // rule of five:
   virtual ~TaskList() = default;
 
@@ -81,13 +68,12 @@ class TaskList {
   int nstages;    // number of times the tasklist is repeated per each full timestep
 
   // functions
-  enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskState &ts);
+  TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
+ protected:
+  Task task_list_[64];
  private:
-  Mesh* pmy_mesh_;
-  struct Task task_list_[64];
-
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
@@ -100,59 +86,71 @@ class TimeIntegratorTaskList : public TaskList {
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   ~TimeIntegratorTaskList() {}
 
+  //--------------------------------------------------------------------------------------
+  //! \struct IntegratorWeight
+  //  \brief weights used in time integrator tasks
+
+  struct IntegratorWeight {
+    // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+    Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+  };
+
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
-  struct IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   void AddTimeIntegratorTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
-  enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
 
-  enum TaskStatus CalculateFluxes(MeshBlock *pmb, int stage);
-  enum TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
+  TaskStatus CalculateFluxes(MeshBlock *pmb, int stage);
+  TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
 
-  enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
-  enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
+  TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
+  TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
 
-  enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
+  TaskStatus FluxCorrectReceive(MeshBlock *pmb, int stage);
+  TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldIntegrate(MeshBlock *pmb, int stage);
+  TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
+  TaskStatus FieldIntegrate(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int stage);
+  TaskStatus HydroSourceTerms(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
-  enum TaskStatus CalcDiffusivity(MeshBlock *pmb, int stage);
+  TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
+  TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
+  TaskStatus CalcDiffusivity(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSend(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSend(MeshBlock *pmb, int stage);
+  TaskStatus HydroSend(MeshBlock *pmb, int stage);
+  TaskStatus FieldSend(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldReceive(MeshBlock *pmb, int stage);
+  TaskStatus HydroReceive(MeshBlock *pmb, int stage);
+  TaskStatus FieldReceive(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSetBoundaries(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSetBoundaries(MeshBlock *pmb, int stage);
+  TaskStatus HydroSetBoundaries(MeshBlock *pmb, int stage);
+  TaskStatus FieldSetBoundaries(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroShearSend(MeshBlock *pmb, int stage);
-  enum TaskStatus HydroShearReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldShearSend(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldShearReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus EMFShearSend(MeshBlock *pmb, int stage);
-  enum TaskStatus EMFShearReceive(MeshBlock *pmb, int stage);
-  enum TaskStatus EMFShearRemap(MeshBlock *pmb, int stage);
+  TaskStatus HydroShearSend(MeshBlock *pmb, int stage);
+  TaskStatus HydroShearReceive(MeshBlock *pmb, int stage);
+  TaskStatus FieldShearSend(MeshBlock *pmb, int stage);
+  TaskStatus FieldShearReceive(MeshBlock *pmb, int stage);
+  TaskStatus EMFShearSend(MeshBlock *pmb, int stage);
+  TaskStatus EMFShearReceive(MeshBlock *pmb, int stage);
+  TaskStatus EMFShearRemap(MeshBlock *pmb, int stage);
 
-  enum TaskStatus Prolongation(MeshBlock *pmb, int stage);
-  enum TaskStatus Primitives(MeshBlock *pmb, int stage);
-  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
-  enum TaskStatus UserWork(MeshBlock *pmb, int stage);
-  enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
-  enum TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
+  TaskStatus Prolongation(MeshBlock *pmb, int stage);
+  TaskStatus Primitives(MeshBlock *pmb, int stage);
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
+  TaskStatus UserWork(MeshBlock *pmb, int stage);
+  TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
+  TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
  private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
@@ -168,33 +166,33 @@ class SuperTimeStepTaskList : public TaskList {
   void AddSuperTimeStepTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
-  enum TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
+  TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateFluxes_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus EMFCorrectSend_STS(MeshBlock *pmb, int stage);
+  TaskStatus EMFCorrectSend_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus EMFCorrectReceive_STS(MeshBlock *pmb, int stage);
+  TaskStatus EMFCorrectReceive_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
+  TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus CalcDiffusivity_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroDiffusion_STS(MeshBlock *pmb, int stage);
+  TaskStatus FieldDiffusion_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalcDiffusivity_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSend_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSend_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroSend_STS(MeshBlock *pmb, int stage);
+  TaskStatus FieldSend_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroReceive_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldReceive_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroReceive_STS(MeshBlock *pmb, int stage);
+  TaskStatus FieldReceive_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus HydroSetBoundaries_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus FieldSetBoundaries_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroSetBoundaries_STS(MeshBlock *pmb, int stage);
+  TaskStatus FieldSetBoundaries_STS(MeshBlock *pmb, int stage);
 
-  enum TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
-  enum TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+  TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
+  TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
  private:
   void StartupTaskList(MeshBlock *pmb, int stage) override;

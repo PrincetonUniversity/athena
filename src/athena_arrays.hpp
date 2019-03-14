@@ -54,12 +54,21 @@ class AthenaArray {
   std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
 
   bool IsShallowCopy() { return (scopy_ == true); }
+  // "getter" function to access private data member
+  // TODO(felker): Replace this unrestricted "getter" with a limited, safer alternative.
+  // TODO(felker): Rename function. Conflicts with "AthenaArray<> data" OutputData member.
   T *data() { return pdata_; }
   const T *data() const { return pdata_; }
 
-  // overload operator() to access 1d-5d data
+  // overload "function call" operator() to access 1d-5d data
+  // provides Fortran-like syntax for multidimensional arrays vs. "subscript" operator[]
+
+  // "non-const variants" called for "AthenaArray<T>()" provide read/write access via
+  // returning by reference, enabling assignment on returned l-value, e.g.: a(3) = 3.0;
   T &operator() (const int n) {
     return pdata_[n]; }
+  // "const variants" called for "const AthenaArray<T>" returns T by value, since T is
+  // typically a built-in type (versus "const T &" to avoid copying for general types)
   T operator() (const int n) const {
     return pdata_[n]; }
 
