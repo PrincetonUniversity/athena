@@ -137,10 +137,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // KGF: currently declared in base BoundaryValues class:
   //BoundaryData bd_fc_;
   //BoundaryData bd_fc_flcor_; // bd_emfcor_;
-  BoundaryStatus *emf_north_flag_;
-  BoundaryStatus *emf_south_flag_;
-  Real **emf_north_send_, **emf_north_recv_;
-  Real **emf_south_send_, **emf_south_recv_;
+  BoundaryStatus *flux_north_flag_;
+  BoundaryStatus *flux_south_flag_;
+  Real **flux_north_send_, **flux_north_recv_;
+  Real **flux_south_send_, **flux_south_recv_;
 
   // original bvals_fc.cpp functions never took "bool *flip" as a function parameter
   // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
@@ -156,8 +156,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
 #ifdef MPI_PARALLEL
   int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
-  MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
-  MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
+  MPI_Request *req_flux_north_send_, *req_flux_north_recv_;
+  MPI_Request *req_flux_south_send_, *req_flux_south_recv_;
 #endif
 
   // BoundaryBuffer:
@@ -178,21 +178,21 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // encapsulated functions (or no-op fns) for load/set fluxes?
 
   // called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
-  void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
+  void PolarFieldBoundaryAverage(); // formerly PolarAxisFieldAverage()
 
   // all 3x only called in SendFluxCorrection()
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
-  int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
-  int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
+  int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
+  int LoadFluxBoundaryBufferToPolar(Real *buf, const PolarNeighborBlock &nb);
 
   // all 6x only called in ReceiveFluxCorrection()
-  void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
-  void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
-  void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
+  void SetFluxBoundarySameLevel(Real *buf, const NeighborBlock& nb);
+  void SetFluxBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
+  void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool north);
 
-  void ClearCoarseEMFBoundary();
-  void AverageEMFBoundary();
-  void PolarBoundarySingleAzimuthalBlockEMF();
+  void ClearCoarseFluxBoundary();
+  void AverageFluxBoundary();  // average flux from fine and equal lvls
+  void PolarFluxBoundarySingleAzimuthalBlock();
   // called in SetupPersistentMPI()
   void CountFineEdges();
 

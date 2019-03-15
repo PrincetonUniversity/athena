@@ -220,8 +220,8 @@ class BoundaryBuffer {
   virtual void PolarBoundarySingleAzimuthalBlock() = 0;
 
   // compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarBoundarySingleAzimuthalBlockEMF()
-  // what about PolarBoundaryAverageField()?
+  //                      PolarFluxBoundarySingleAzimuthalBlock()
+  // what about PolarFieldBoundaryAverage()?
 };
 
 //----------------------------------------------------------------------------------------

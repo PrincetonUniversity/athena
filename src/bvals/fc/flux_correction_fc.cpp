@@ -40,11 +40,11 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(Real *buf,
+//! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
 //                                                   const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the same level
 
-int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(
+int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
     Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
 
@@ -265,11 +265,11 @@ int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferSameLevel(
 
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferToCoarser(Real *buf,
+//! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
 //                                                         const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the coarser level
 
-int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferToCoarser(
+int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
     Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
@@ -524,11 +524,11 @@ int FaceCenteredBoundaryVariable::LoadEMFBoundaryBufferToCoarser(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadEMFBoundaryPolarBuffer(Real *buf,
+//! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(Real *buf,
 //                                                           const PolarNeighborBlock &nb)
 //  \brief Load EMF values along polar axis into send buffers
 
-int FaceCenteredBoundaryVariable::LoadEMFBoundaryPolarBuffer(
+int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
     Real *buf, const PolarNeighborBlock &nb) {
   MeshBlock *pmb = pmy_block_;
   int count = 0;
@@ -557,13 +557,13 @@ void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
   Real *target_buf, *send_buf;
   BoundaryStatus target_flag;
   if (is_north) {
-    target_buf= ptarget_pfbval->emf_north_recv_[pmy_block_->loc.lx3];
-    send_buf = emf_north_send_[polar_block_index];
-    target_flag = ptarget_pfbval->emf_north_flag_[pmy_block_->loc.lx3];
+    target_buf= ptarget_pfbval->flux_north_recv_[pmy_block_->loc.lx3];
+    send_buf = flux_north_send_[polar_block_index];
+    target_flag = ptarget_pfbval->flux_north_flag_[pmy_block_->loc.lx3];
   } else {
-    target_buf= ptarget_pfbval->emf_south_recv_[pmy_block_->loc.lx3];
-    send_buf = emf_south_send_[polar_block_index];
-    target_flag = ptarget_pfbval->emf_south_flag_[pmy_block_->loc.lx3];
+    target_buf= ptarget_pfbval->flux_south_recv_[pmy_block_->loc.lx3];
+    send_buf = flux_south_send_[polar_block_index];
+    target_flag = ptarget_pfbval->flux_south_flag_[pmy_block_->loc.lx3];
   }
   std::memcpy(target_buf, send_buf, ssize*sizeof(Real));
   target_flag = BoundaryStatus::arrived;
@@ -586,12 +586,12 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
       if ((nb.type == NeighborConnect::face)
           || ((nb.type == NeighborConnect::edge)
               && (edge_flag_[nb.eid] == true))) {
-        p=LoadEMFBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
+        p=LoadFluxBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
       } else {
         continue;
       }
     } else if (nb.level == pmb->loc.level-1) {
-      p=LoadEMFBoundaryBufferToCoarser(bd_var_flcor_.send[nb.bufid], nb);
+      p=LoadFluxBoundaryBufferToCoarser(bd_var_flcor_.send[nb.bufid], nb);
     } else {
       continue;
     }
@@ -610,34 +610,34 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   // Send polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
-    int count = LoadEMFBoundaryPolarBuffer(emf_north_send_[n], nb);
+    int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb);
     if (nb.rank == Globals::my_rank) { // on the same MPI rank
       CopyPolarBufferSameProcess(nb, count, n, true);
       // KGF: check this
       // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      // std::memcpy(pbl->pbval->emf_north_recv_[pmb->loc.lx3],
-      //             emf_north_send_[n], count * sizeof(Real));
-      // pbl->pbval->emf_north_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
+      // std::memcpy(pbl->pbval->flux_north_recv_[pmb->loc.lx3],
+      //             flux_north_send_[n], count * sizeof(Real));
+      // pbl->pbval->flux_north_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
     }
 #ifdef MPI_PARALLEL
     else
-      MPI_Start(&req_emf_north_send_[n]);
+      MPI_Start(&req_flux_north_send_[n]);
 #endif
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
-    int count = LoadEMFBoundaryPolarBuffer(emf_south_send_[n], nb);
+    int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb);
     if (nb.rank == Globals::my_rank) { // on the same node
       CopyPolarBufferSameProcess(nb, count, n, false);
       // KGF: check this
       // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      // std::memcpy(pbl->pbval->emf_south_recv_[pmb->loc.lx3],
-      //             emf_south_send_[n], count * sizeof(Real));
-      // pbl->pbval->emf_south_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
+      // std::memcpy(pbl->pbval->flux_south_recv_[pmb->loc.lx3],
+      //             flux_south_send_[n], count * sizeof(Real));
+      // pbl->pbval->flux_south_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
     }
 #ifdef MPI_PARALLEL
     else
-      MPI_Start(&req_emf_south_send_[n]);
+      MPI_Start(&req_flux_south_send_[n]);
 #endif
   }
   return;
@@ -645,12 +645,12 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetEMFBoundarySameLevel(Real *buf,
+//! \fn void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Add up the EMF received from a block on the same level
-//         Later they will be divided in the AverageEMFBoundary function
+//         Later they will be divided in the AverageFluxBoundary function
 
-void FaceCenteredBoundaryVariable::SetEMFBoundarySameLevel(Real *buf,
+void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
                                                            const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
@@ -871,12 +871,12 @@ void FaceCenteredBoundaryVariable::SetEMFBoundarySameLevel(Real *buf,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf,
+//! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Add up the EMF received from a block on the finer level
-//         Later they will be divided in the AverageEMFBoundary function
+//         Later they will be divided in the AverageFluxBoundary function
 
-void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf,
+void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
                                                            const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
@@ -1120,11 +1120,11 @@ void FaceCenteredBoundaryVariable::SetEMFBoundaryFromFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetEMFBoundaryPolar(Real **buf_list,
+//! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list,
 //                                                             int num_bufs, bool north)
 //  \brief Overwrite EMF values along polar axis with azimuthal averages
 
-void FaceCenteredBoundaryVariable::SetEMFBoundaryPolar(Real **buf_list, int num_bufs,
+void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs,
                                                        bool north) {
   MeshBlock *pmb = pmy_block_;
   if (pmb->block_size.nx3 > 1) {
@@ -1143,10 +1143,10 @@ void FaceCenteredBoundaryVariable::SetEMFBoundaryPolar(Real **buf_list, int num_
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::ClearCoarseEMFBoundary()
+//! \fn void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary()
 //  \brief Clear the EMFs on the surface/edge contacting with a finer block
 
-void FaceCenteredBoundaryVariable::ClearCoarseEMFBoundary() {
+void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
@@ -1284,10 +1284,10 @@ void FaceCenteredBoundaryVariable::ClearCoarseEMFBoundary() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::AverageEMFBoundary()
+//! \fn void FaceCenteredBoundaryVariable::AverageFluxBoundary()
 // \brief Set EMF boundary received from a block on the finer level
 
-void FaceCenteredBoundaryVariable::AverageEMFBoundary() {
+void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
@@ -1461,10 +1461,10 @@ void FaceCenteredBoundaryVariable::AverageEMFBoundary() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlockEMF()
+//! \fn void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock()
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
-void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlockEMF() {
+void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
@@ -1558,13 +1558,13 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 #endif
         }
         // boundary arrived; apply EMF correction
-        SetEMFBoundarySameLevel(bd_var_flcor_.recv[nb.bufid], nb);
+        SetFluxBoundarySameLevel(bd_var_flcor_.recv[nb.bufid], nb);
         bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
       }
     }
     if (flag == false) return flag;
     if (pmb->pmy_mesh->multilevel == true)
-      ClearCoarseEMFBoundary();
+      ClearCoarseFluxBoundary();
     recv_flx_same_lvl_ = false;
   }
 
@@ -1595,7 +1595,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 #endif
       }
       // boundary arrived; apply EMF correction
-      SetEMFBoundaryFromFiner(bd_var_flcor_.recv[nb.bufid], nb);
+      SetFluxBoundaryFromFiner(bd_var_flcor_.recv[nb.bufid], nb);
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
     }
   }
@@ -1603,7 +1603,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
   // Receive polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
-    if (emf_north_flag_[n]  ==  BoundaryStatus::waiting) {
+    if (flux_north_flag_[n]  ==  BoundaryStatus::waiting) {
       if (nb.rank  ==  Globals::my_rank) { // on the same process
         flag = false;
         continue;
@@ -1611,19 +1611,19 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 #ifdef MPI_PARALLEL
       else { // NOLINT
         int recv_flag;
-        MPI_Test(&req_emf_north_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
+        MPI_Test(&req_flux_north_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
         if (!recv_flag) {
           flag = false;
           continue;
         }
-        emf_north_flag_[n] = BoundaryStatus::arrived;
+        flux_north_flag_[n] = BoundaryStatus::arrived;
       }
 #endif
     }
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
-    if (emf_south_flag_[n] == BoundaryStatus::waiting) {
+    if (flux_south_flag_[n] == BoundaryStatus::waiting) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
@@ -1631,32 +1631,32 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 #ifdef MPI_PARALLEL
       else { // NOLINT
         int recv_flag;
-        MPI_Test(&req_emf_south_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
+        MPI_Test(&req_flux_south_recv_[n], &recv_flag, MPI_STATUS_IGNORE);
         if (!recv_flag) {
           flag = false;
           continue;
         }
-        emf_south_flag_[n] = BoundaryStatus::arrived;
+        flux_south_flag_[n] = BoundaryStatus::arrived;
       }
 #endif
     }
   }
 
   if (flag == true) {
-    AverageEMFBoundary();
+    AverageFluxBoundary();
     if (pbval_->num_north_polar_blocks_ > 0)
-      SetEMFBoundaryPolar(emf_north_recv_, pbval_->num_north_polar_blocks_, true);
+      SetFluxBoundaryFromPolar(flux_north_recv_, pbval_->num_north_polar_blocks_, true);
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n)
-      emf_north_flag_[n] = BoundaryStatus::completed;
+      flux_north_flag_[n] = BoundaryStatus::completed;
     if (pbval_->num_south_polar_blocks_ > 0)
-      SetEMFBoundaryPolar(emf_south_recv_, pbval_->num_south_polar_blocks_, false);
+      SetFluxBoundaryFromPolar(flux_south_recv_, pbval_->num_south_polar_blocks_, false);
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n)
-      emf_south_flag_[n] = BoundaryStatus::completed;
+      flux_south_flag_[n] = BoundaryStatus::completed;
     if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
         || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
-      PolarBoundarySingleAzimuthalBlockEMF();
+      PolarFluxBoundarySingleAzimuthalBlock();
   }
   return flag;
 }

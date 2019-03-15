@@ -92,9 +92,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Cell-centered flux correction functions are much simpler than Field counterpart
   // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
   // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
-  //   Set/LoadEMFBoundaryPolarBuffer()
-  // - AverageEMFBoundary(), ClearCoarseEMFBoundary(),
-  //                         PolarBoundarySingleAzimuthalBlockEMF()
+  //   Set/LoadFluxBoundaryBufferToPolar()
+  // - AverageFluxBoundary(), ClearCoarseFluxBoundary(),
+  //                         PolarFluxBoundarySingleAzimuthalBlock()
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -184,8 +184,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
   // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarBoundarySingleAzimuthalBlockEMF()
-  // what about PolarBoundaryAverageField()? -- make analog no-ops for cell-centered var:
+  //                      PolarFluxBoundarySingleAzimuthalBlock()
+  // what about PolarFieldBoundaryAverage()? -- make analog no-ops for cell-centered var:
   // void PolarBoundaryAverage()
   // and for EMF:
   // void PolarBoundarySingleAzimuthalBlockFluxCorrection()

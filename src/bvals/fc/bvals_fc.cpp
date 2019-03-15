@@ -76,38 +76,38 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 
   // KGF: was not in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master
   if (pbval_->num_north_polar_blocks_ > 0) {
-    emf_north_send_ = new Real *[pbval_->num_north_polar_blocks_];
-    emf_north_recv_ = new Real *[pbval_->num_north_polar_blocks_];
-    emf_north_flag_ = new BoundaryStatus[pbval_->num_north_polar_blocks_];
+    flux_north_send_ = new Real *[pbval_->num_north_polar_blocks_];
+    flux_north_recv_ = new Real *[pbval_->num_north_polar_blocks_];
+    flux_north_flag_ = new BoundaryStatus[pbval_->num_north_polar_blocks_];
 #ifdef MPI_PARALLEL
-    req_emf_north_send_ = new MPI_Request[pbval_->num_north_polar_blocks_];
-    req_emf_north_recv_ = new MPI_Request[pbval_->num_north_polar_blocks_];
+    req_flux_north_send_ = new MPI_Request[pbval_->num_north_polar_blocks_];
+    req_flux_north_recv_ = new MPI_Request[pbval_->num_north_polar_blocks_];
 #endif
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-      emf_north_send_[n] = nullptr;
-      emf_north_recv_[n] = nullptr;
-      emf_north_flag_[n] = BoundaryStatus::waiting;
+      flux_north_send_[n] = nullptr;
+      flux_north_recv_[n] = nullptr;
+      flux_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-      req_emf_north_send_[n] = MPI_REQUEST_NULL;
-      req_emf_north_recv_[n] = MPI_REQUEST_NULL;
+      req_flux_north_send_[n] = MPI_REQUEST_NULL;
+      req_flux_north_recv_[n] = MPI_REQUEST_NULL;
 #endif
     }
   }
   if (pbval_->num_south_polar_blocks_ > 0) {
-    emf_south_send_ = new Real *[pbval_->num_south_polar_blocks_];
-    emf_south_recv_ = new Real *[pbval_->num_south_polar_blocks_];
-    emf_south_flag_ = new BoundaryStatus[pbval_->num_south_polar_blocks_];
+    flux_south_send_ = new Real *[pbval_->num_south_polar_blocks_];
+    flux_south_recv_ = new Real *[pbval_->num_south_polar_blocks_];
+    flux_south_flag_ = new BoundaryStatus[pbval_->num_south_polar_blocks_];
 #ifdef MPI_PARALLEL
-    req_emf_south_send_ = new MPI_Request[pbval_->num_south_polar_blocks_];
-    req_emf_south_recv_ = new MPI_Request[pbval_->num_south_polar_blocks_];
+    req_flux_south_send_ = new MPI_Request[pbval_->num_south_polar_blocks_];
+    req_flux_south_recv_ = new MPI_Request[pbval_->num_south_polar_blocks_];
 #endif
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-      emf_south_send_[n] = nullptr;
-      emf_south_recv_[n] = nullptr;
-      emf_south_flag_[n] = BoundaryStatus::waiting;
+      flux_south_send_[n] = nullptr;
+      flux_south_recv_[n] = nullptr;
+      flux_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-      req_emf_south_send_[n] = MPI_REQUEST_NULL;
-      req_emf_south_recv_[n] = MPI_REQUEST_NULL;
+      req_flux_south_send_[n] = MPI_REQUEST_NULL;
+      req_flux_south_recv_[n] = MPI_REQUEST_NULL;
 #endif
     }
   }
@@ -115,14 +115,14 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   // Allocate buffers for polar neighbor communication
   if (pbval_->num_north_polar_blocks_ > 0) {
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-      emf_north_send_[n] = new Real[pmb->block_size.nx1];
-      emf_north_recv_[n] = new Real[pmb->block_size.nx1];
+      flux_north_send_[n] = new Real[pmb->block_size.nx1];
+      flux_north_recv_[n] = new Real[pmb->block_size.nx1];
     }
   }
   if (pbval_->num_south_polar_blocks_ > 0) {
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-      emf_south_send_[n] = new Real[pmb->block_size.nx1];
-      emf_south_recv_[n] = new Real[pmb->block_size.nx1];
+      flux_south_send_[n] = new Real[pmb->block_size.nx1];
+      flux_south_recv_[n] = new Real[pmb->block_size.nx1];
     }
   }
 }
@@ -138,40 +138,40 @@ FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   // only the emf_south/north_send/recv_[] etc. variables are conditionally allocated
   if (pbval_->num_north_polar_blocks_ > 0) {
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-      delete[] emf_north_send_[n];
-      delete[] emf_north_recv_[n];
+      delete[] flux_north_send_[n];
+      delete[] flux_north_recv_[n];
 #ifdef MPI_PARALLEL
-      if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_north_send_[n]);
-      if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_north_recv_[n]);
+      if (req_flux_north_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_north_send_[n]);
+      if (req_flux_north_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_north_recv_[n]);
 #endif
     }
-    delete[] emf_north_send_;
-    delete[] emf_north_recv_;
-    delete[] emf_north_flag_;
+    delete[] flux_north_send_;
+    delete[] flux_north_recv_;
+    delete[] flux_north_flag_;
 #ifdef MPI_PARALLEL
-    delete[] req_emf_north_send_;
-    delete[] req_emf_north_recv_;
+    delete[] req_flux_north_send_;
+    delete[] req_flux_north_recv_;
 #endif
   }
   if (pbval_->num_south_polar_blocks_ > 0) {
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-      delete[] emf_south_send_[n];
-      delete[] emf_south_recv_[n];
+      delete[] flux_south_send_[n];
+      delete[] flux_south_recv_[n];
 #ifdef MPI_PARALLEL
-      if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_south_send_[n]);
-      if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_south_recv_[n]);
+      if (req_flux_south_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_south_send_[n]);
+      if (req_flux_south_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_south_recv_[n]);
 #endif
     }
-    delete[] emf_south_send_;
-    delete[] emf_south_recv_;
-    delete[] emf_south_flag_;
+    delete[] flux_south_send_;
+    delete[] flux_south_recv_;
+    delete[] flux_south_flag_;
 #ifdef MPI_PARALLEL
-    delete[] req_emf_south_send_;
-    delete[] req_emf_south_recv_;
+    delete[] req_flux_south_send_;
+    delete[] req_flux_south_recv_;
 #endif
   }
 }
@@ -994,7 +994,7 @@ void FaceCenteredBoundaryVariable::SetBoundaries() {
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarBoundarySingleAzimuthalBlock();
-    PolarBoundaryAverageField();
+    PolarFieldBoundaryAverage();
   }
   return;
 }
@@ -1026,7 +1026,7 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarBoundarySingleAzimuthalBlock();
-    PolarBoundaryAverageField();
+    PolarFieldBoundaryAverage();
   }
 
   return;
@@ -1118,10 +1118,10 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::PolarBoundaryAverageField()
+//! \fn void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage()
 //  \brief set theta-component of field along axis
 
-void FaceCenteredBoundaryVariable::PolarBoundaryAverageField() {
+void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage() {
   MeshBlock *pmb = pmy_block_;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
@@ -1392,30 +1392,30 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
     if (nb.rank != Globals::my_rank) {
       tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
-      if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_north_send_[n]);
-      MPI_Send_init(emf_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[n]);
+      if (req_flux_north_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_north_send_[n]);
+      MPI_Send_init(flux_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &req_flux_north_send_[n]);
       tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
-      if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_north_recv_[n]);
-      MPI_Recv_init(emf_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_recv_[n]);
+      if (req_flux_north_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_north_recv_[n]);
+      MPI_Recv_init(flux_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &req_flux_north_recv_[n]);
     }
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
     if (nb.rank != Globals::my_rank) {
       tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
-      if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_south_send_[n]);
-      MPI_Send_init(emf_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[n]);
+      if (req_flux_south_send_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_south_send_[n]);
+      MPI_Send_init(flux_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &req_flux_south_send_[n]);
       tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
-      if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
-        MPI_Request_free(&req_emf_south_recv_[n]);
-      MPI_Recv_init(emf_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_recv_[n]);
+      if (req_flux_south_recv_[n]!=MPI_REQUEST_NULL)
+        MPI_Request_free(&req_flux_south_recv_[n]);
+      MPI_Recv_init(flux_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &req_flux_south_recv_[n]);
     }
   }
 #endif
@@ -1458,13 +1458,13 @@ void FaceCenteredBoundaryVariable::StartReceivingAll() {
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank) {
-        MPI_Start(&req_emf_north_recv_[n]);
+        MPI_Start(&req_flux_north_recv_[n]);
       }
     }
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
       if (nb.rank != Globals::my_rank) {
-        MPI_Start(&req_emf_south_recv_[n]);
+        MPI_Start(&req_flux_south_recv_[n]);
       }
     }
 #endif
@@ -1512,19 +1512,19 @@ void FaceCenteredBoundaryVariable::ClearBoundaryAll() {
   } // KGF: end loop over pbval_->nneighbor
   // Clear polar boundary communications
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    emf_north_flag_[n] = BoundaryStatus::waiting;
+    flux_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
     if (nb.rank != Globals::my_rank)
-        MPI_Wait(&req_emf_north_send_[n], MPI_STATUS_IGNORE);
+        MPI_Wait(&req_flux_north_send_[n], MPI_STATUS_IGNORE);
 #endif
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    emf_south_flag_[n] = BoundaryStatus::waiting;
+    flux_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
     if (nb.rank != Globals::my_rank)
-      MPI_Wait(&req_emf_south_send_[n], MPI_STATUS_IGNORE);
+      MPI_Wait(&req_flux_south_send_[n], MPI_STATUS_IGNORE);
 #endif
   }
   return;
