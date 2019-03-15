@@ -65,21 +65,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
   // originally: SendEMFCorrection(), ReceiveEMFCorrection()
 
-  // Face-centered/Field/EMF unique methods:
-  void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
-
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
-  int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
-  int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-
-  void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
-  void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
-  void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
-
-  void ClearCoarseEMFBoundary();
-  void AverageEMFBoundary();
-  void PolarBoundarySingleAzimuthalBlockEMF();
-
   // Shearingbox Field
   // void LoadFieldShearing(FaceField &src, Real *buf, int nb);
   // void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
@@ -169,6 +154,12 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // KGF: formerly "firsttime_". The variable switch is used in only 2x functions:
   // ReceiveEMFCorrection() and StartReceivingAll()
 
+#ifdef MPI_PARALLEL
+  int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
+  MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
+  MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
+#endif
+
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
@@ -182,12 +173,28 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
   void PolarBoundarySingleAzimuthalBlock() override;
 
+  // Face-centered/Field/EMF unique class methods:
+  // KGF: should we require CellCenteredBoundaryVariable class to provide similar
+  // encapsulated functions (or no-op fns) for load/set fluxes?
+
+  // called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
+  void PolarBoundaryAverageField(); // formerly PolarAxisFieldAverage()
+
+  // all 3x only called in SendFluxCorrection()
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
+  int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
+
+  // all 6x only called in ReceiveFluxCorrection()
+  void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
+  void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
+  void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
+
+  void ClearCoarseEMFBoundary();
+  void AverageEMFBoundary();
+  void PolarBoundarySingleAzimuthalBlockEMF();
+  // called in SetupPersistentMPI()
   void CountFineEdges();
-#ifdef MPI_PARALLEL
-  int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
-  MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
-  MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
-#endif
 
   void CopyPolarBufferSameProcess(const PolarNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
