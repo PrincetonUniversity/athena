@@ -44,7 +44,7 @@ else
     time python3 run_tests.py grav --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
 fi
 time python3 run_tests.py amr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
-time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
+time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD -c=--flux=hllc --silent
 time python3 run_tests.py outputs --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py gr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
