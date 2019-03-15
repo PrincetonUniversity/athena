@@ -253,8 +253,8 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   if (MAGNETIC_FIELDS_ENABLED)
     pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
 
-  Real time = pmb->pmy_mesh->time;
-  pmb->pbval->StartReceivingAll();
+  // Real time = pmb->pmy_mesh->time;
+  pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;
 }

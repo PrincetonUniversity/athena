@@ -1326,7 +1326,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
         pbval->SetupPersistentMPI();
-        pbval->StartReceivingForInit(true);
+        pbval->StartReceiving(BoundaryCommSubset::mesh_init);
       }
 
       // send conserved variables
@@ -1358,15 +1358,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // if (SHEARING_BOX)
         //   pmb->phydro->phbval->
         //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-        pbval->ClearBoundaryForInit(true);
+        pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
 
       // With AMR/SMR GR send primitives to enable cons->prim before prolongation
       if (GENERAL_RELATIVITY && multilevel) {
         // prepare to receive primitives
-#pragma omp for
+#pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb_array[i]->pbval->StartReceivingForInit(false);
+          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pbval->StartReceiving(BoundaryCommSubset::gr_amr);
         }
 
         // KGF: the below 2x loops are the only places where "prim" is passed to calls
@@ -1388,7 +1389,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                  HydroBoundaryQuantity::prim);
           // KGF: (pmb->phydro->w, HydroBoundaryQuantity::prim); where w was bound to &dst
           pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
-          pbval->ClearBoundaryForInit(false);
+          pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
           // KGF: just to be sure?
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
@@ -1454,7 +1455,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb=pmb_array[i]; pbval=pmb->pbval;
           // no need to re-SetupPersistentMPI() the MPI requests for boundary values
-          pbval->StartReceivingForInit(true);
+          pbval->StartReceiving(BoundaryCommSubset::mesh_init);
         }
 
 #pragma omp for private(pmb,pbval)
@@ -1485,7 +1486,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           // if (SHEARING_BOX)
           //   pmb->phydro->phbval->
           //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-          pbval->ClearBoundaryForInit(true);
+          pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
         }
         // -----------------  (verbatim copied from above)
         // end second exchange of ghost cells

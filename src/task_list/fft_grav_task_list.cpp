@@ -91,14 +91,13 @@ void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   // KGF: BoundaryValues wrapper version called in time_integrator.cpp
   // KGF: what is "time" parameter ever used for in this function?
   // ANSWER: shearing box capabilities, only. Remove this function parameter.
-  Real time=0;
-  pmb->pgrav->pgbval->StartReceivingAll();
+  pmb->pgrav->pgbval->StartReceiving(BoundaryCommSubset::all);
   return;
 }
 
 TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb, int stage) {
   // KGF: BoundaryValues wrapper version called in time_integrator.cpp
-  pmb->pgrav->pgbval->ClearBoundaryAll();
+  pmb->pgrav->pgbval->ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
 

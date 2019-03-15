@@ -537,10 +537,11 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
   }
 
-  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  Real time = pmb->pmy_mesh->time+dt;
+  // KGF: Needed only for shearing box in "StartReceivingAll(time)"
+  // Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+  // Real time = pmb->pmy_mesh->time+dt;
 
-  pmb->pbval->StartReceivingAll();
+  pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;
 }
@@ -549,7 +550,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to end MPI communication
 
 TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
-  pmb->pbval->ClearBoundaryAll();
+  pmb->pbval->ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
 
