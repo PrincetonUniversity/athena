@@ -93,10 +93,8 @@ class AthenaFFTIndex{
  private:
   int dim_;
   int npermute_, swap_;
-  void PermuteInt_(int loc[], int npermute);
-  void SwapInt_(int loc[], int ref_axis);
-  void PermuteReal_(Real loc[], int npermute);
-  void SwapReal_(Real loc[], int ref_axis);
+  template <typename T> void Swap_(T loc[], int ref_axis);
+  template <typename T> void Permute_(T loc[], int npermute);
 };
 
 //! \class FFTBlock

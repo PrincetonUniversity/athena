@@ -569,48 +569,28 @@ void AthenaFFTIndex::SetLocalIndex() {
   //  PrintIndex();
 }
 
-void AthenaFFTIndex::SwapInt_(int loc[],int ref_axis) {
-  int tmp;
+template <typename T> void AthenaFFTIndex::Swap_(T loc[], int ref_axis) {
+  T tmp;
   int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
   tmp=loc[axis1];
   loc[axis1]=loc[axis2];
   loc[axis2]=tmp;
 }
-
-void AthenaFFTIndex::SwapReal_(Real loc[],int ref_axis) {
-  Real tmp;
-  int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
-  tmp=loc[axis1];
-  loc[axis1]=loc[axis2];
-  loc[axis2]=tmp;
-}
-
-
 
 void AthenaFFTIndex::SwapAxis(int ref_axis) {
-  SwapInt_(iloc,ref_axis);
-  SwapInt_(Nx,ref_axis);
-  SwapReal_(Lx,ref_axis);
+  Swap_(iloc,ref_axis);
+  Swap_(Nx,ref_axis);
+  Swap_(Lx,ref_axis);
 }
 
 void AthenaFFTIndex::SwapProc(int ref_axis) {
-  SwapInt_(ploc,ref_axis);
-  SwapInt_(ip,ref_axis);
-  SwapInt_(np,ref_axis);
+  Swap_(ploc,ref_axis);
+  Swap_(ip,ref_axis);
+  Swap_(np,ref_axis);
 }
 
-void AthenaFFTIndex::PermuteInt_(int loc[], int npermute) {
-  int tmp;
-  for (int i=0; i<npermute; i++) {
-    tmp=loc[0];
-    loc[0]=loc[1];
-    loc[1]=loc[2];
-    loc[2]=tmp;
-  }
-}
-
-void AthenaFFTIndex::PermuteReal_(Real loc[], int npermute) {
-  Real tmp;
+template <typename T> void AthenaFFTIndex::Permute_(T loc[], int npermute) {
+  T tmp;
   for (int i=0; i<npermute; i++) {
     tmp=loc[0];
     loc[0]=loc[1];
@@ -620,15 +600,15 @@ void AthenaFFTIndex::PermuteReal_(Real loc[], int npermute) {
 }
 
 void AthenaFFTIndex::PermuteAxis(int npermute) {
-  PermuteInt_(iloc,npermute);
-  PermuteInt_(Nx,npermute);
-  PermuteReal_(Lx,npermute);
+  Permute_(iloc,npermute);
+  Permute_(Nx,npermute);
+  Permute_(Lx,npermute);
 }
 
 void AthenaFFTIndex::PermuteProc(int npermute) {
-  PermuteInt_(ploc,npermute);
-  PermuteInt_(np,npermute);
-  PermuteInt_(ip,npermute);
+  Permute_(ploc,npermute);
+  Permute_(np,npermute);
+  Permute_(ip,npermute);
 }
 
 void AthenaFFTIndex::PrintIndex() {
