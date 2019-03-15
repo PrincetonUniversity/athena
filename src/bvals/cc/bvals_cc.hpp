@@ -74,10 +74,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // BoundaryCommunication:
   void SetupPersistentMPI() override;
-  void StartReceivingForInit(bool cons_and_field) override;
-  void ClearBoundaryForInit(bool cons_and_field) override;
-  void StartReceivingAll() override;
-  void ClearBoundaryAll() override;
+  // void StartReceivingForInit(bool cons_and_field) override;
+  // void ClearBoundaryForInit(bool cons_and_field) override;
+  void StartReceiving(BoundaryCommSubset phase) override;
+  void ClearBoundary(BoundaryCommSubset phase) override;
 
   // BoundaryBuffer:
   void SendBoundaryBuffers() override;

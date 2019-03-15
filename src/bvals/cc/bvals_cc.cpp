@@ -717,18 +717,6 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
-void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
-#ifdef MPI_PARALLEL
-  for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.rank  !=  Globals::my_rank) {
-      MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-    }
-  }
-#endif
-  return;
-}
-
 // KGF: approach #1: called inside #ifdef MPI_PARALLEL and loop:
 // for (int n=0; n<nneighbor; n++) {
 
@@ -748,15 +736,16 @@ void CellCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
 
 // Are there any shared implemenations worth placing as the default inherited virtual
 // function in BoundaryVariable
-void CellCenteredBoundaryVariable::StartReceivingAll() {
+void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_block_;
-  int mylevel=pmb->loc.level;
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (nb.type == NeighborConnect::face && nb.level>mylevel)
+      if (phase == BoundaryCommSubset::all && nb.type == NeighborConnect::face
+          && nb.level > mylevel) // opposite condition in ClearBoundary()
         MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
     }
   }
@@ -764,42 +753,21 @@ void CellCenteredBoundaryVariable::StartReceivingAll() {
   return;
 }
 
-void CellCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
-  for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    // KGF: probably can eliminate GR+AMR conditionals in this implementation
-    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-    if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-      bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-#ifdef MPI_PARALLEL
-    if (nb.rank != Globals::my_rank) {
-      if (cons_and_field) {  // normal case
-        // Wait for Isend
-        MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      } else {  // must be primitive initialization
-        if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-          MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      }
-    }
-#endif
-  }
-  return;
-}
-
-void CellCenteredBoundaryVariable::ClearBoundaryAll() {
-    // Clear non-polar boundary communications
+void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
     if (nb.type == NeighborConnect::face)
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-    MeshBlock *pmb=pmy_block_;
+    MeshBlock *pmb = pmy_block_;
+    int mylevel = pmb->loc.level;
     if (nb.rank != Globals::my_rank) {
       // Wait for Isend
-      MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type == NeighborConnect::face && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+      if (phase == BoundaryCommSubset::all && nb.type == NeighborConnect::face
+          && nb.level < mylevel)
+        MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
     } // KGF: end block on other MPI process
 #endif
   } // KGF: end loop over nneighbor

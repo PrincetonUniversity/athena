@@ -125,11 +125,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // called before time-stepper:
   void SetupPersistentMPI() final; // setup MPI requests
-  void StartReceivingForInit(bool cons_and_field) final;
-  void ClearBoundaryForInit(bool cons_and_field) final;
+  // void StartReceivingForInit(bool cons_and_field) final;
+  // void ClearBoundaryForInit(bool cons_and_field) final;
+
   // called during time-stepper:
-  void StartReceivingAll() final;
-  void ClearBoundaryAll() final;
+  void StartReceiving(BoundaryCommSubset phase) final;
+  void ClearBoundary(BoundaryCommSubset phase) final;
 
   // functions unique to BoundaryValues. these do not exist in individual BoundaryVariable
 

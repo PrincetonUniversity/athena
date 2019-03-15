@@ -640,53 +640,10 @@ void BoundaryValues::CheckBoundary() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingForInit(bool cons_and_field)
-//  \brief initiate MPI_Irecv for initialization
+//! \fn void BoundaryValues::StartReceiving(BoundaryCommSubset phase)
+//  \brief initiate MPI_Irecv()
 
-void BoundaryValues::StartReceivingForInit(bool cons_and_field) {
-  // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
-// #ifdef MPI_PARALLEL
-//   for (int n=0; n<nneighbor; n++) {
-//     NeighborBlock& nb = neighbor[n];
-//     if (nb.rank != Globals::my_rank) {
-//       if (cons_and_field) {  // normal case
-//         for (std::list<Multigrid *>::iterator bvars_it = bvars.begin();
-//              bvars_it != bvars.end();
-//              ++bvars_it) {
-//         MPI_Start(&(bvars_it->bd_var_.req_recv[nb.bufid]));
-//         //MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-//         // if (MAGNETIC_FIELDS_ENABLED)
-//         //   MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-//         }
-//       } else { // must be primitive initialization
-//         // KGF: assuming 1st vector element corresponds to HydroBoundaryVariable obj
-//         MPI_Start(&(bvars[0].bd_var_.req_recv[nb.bufid]));
-//         //MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-//       }
-//     }
-//   }
-// #endif
-  // KGF: approach #2
-  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->StartReceivingForInit(cons_and_field);
-  }
-
-  // KGF: begin shearing-box exclusive section of StartReceivingForInit
-  // find send_block_id and recv_block_id;
-  // if (SHEARING_BOX) {
-  //   MeshBlock *pmb=pmy_block_;
-  //   Mesh *pmesh = pmb->pmy_mesh;
-  //   FindShearBlock(pmesh->time);
-  // }
-  // end KGF: shearing box
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingAll()
-//  \brief initiate MPI_Irecv for all the sweeps
-
-void BoundaryValues::StartReceivingAll() {
+void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
 // #ifdef MPI_PARALLEL
 //   MeshBlock *pmb=pmy_block_;
@@ -695,7 +652,7 @@ void BoundaryValues::StartReceivingAll() {
 //     NeighborBlock& nb = neighbor[n];
 //     if (nb.rank!=Globals::my_rank) {
 //       for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-//         bvars_it->StartReceivingAll();
+//         bvars_it->StartReceiving(BoundaryCommSubset phase);
 //       }
 //     }
 //   }
@@ -704,10 +661,19 @@ void BoundaryValues::StartReceivingAll() {
   // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
   // independent loops over nneighbor
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->StartReceivingAll();
+    (*bvars_it)->StartReceiving(phase);
   }
 
-  // KGF: begin shearing-box exclusive section of StartReceivingAll
+  // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
+  // find send_block_id and recv_block_id;
+  // if (SHEARING_BOX) {
+  //   MeshBlock *pmb=pmy_block_;
+  //   Mesh *pmesh = pmb->pmy_mesh;
+  //   FindShearBlock(pmesh->time);
+  // }
+  // end KGF: shearing box
+
+  // KGF: begin shearing-box exclusive section of original StartReceivingAll()
   // find send_block_id and recv_block_id; post non-blocking recv
 //   if (SHEARING_BOX) {
 //     FindShearBlock(time);
@@ -769,27 +735,17 @@ void BoundaryValues::StartReceivingAll() {
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryForInit()
-//  \brief clean up the boundary flags for initialization
-
-void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
-  // Note step==0 corresponds to initial exchange of conserved variables, while step==1
-  // corresponds to primitives sent only in the case of GR with refinement
-  for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->ClearBoundaryForInit(cons_and_field);
-  }
-  return;
-}
-
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryAll()
+//! \fn void BoundaryValues::ClearBoundary(BoundaryCommSubset phase)
 //  \brief clean up the boundary flags after each loop
 
-void BoundaryValues::ClearBoundaryAll() {
+void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
+  // Note BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
+  // variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
+  // primitive variables sent only in the case of GR with refinement
   for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-    (*bvars_it)->ClearBoundaryAll();
+    (*bvars_it)->ClearBoundary(phase);
   }
 
   // KGF: begin shearing-box exclusive section of ClearBoundaryAll

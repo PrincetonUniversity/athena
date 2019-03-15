@@ -158,31 +158,23 @@ class BoundaryCommunication {
   BoundaryCommunication() {}
   virtual ~BoundaryCommunication() {}
 
-  // functions called only at the start of simulation in Mesh::Initialize(res_flag, pin)
-  // ----------------
   // create unique tags for each MeshBlock/buffer/quantity + initalize MPI requests:
   virtual void SetupPersistentMPI() = 0;
   // call MPI_Start() on req_recv[]:
-  virtual void StartReceivingForInit(bool cons_and_field) = 0;
+  // virtual void StartReceivingForInit(bool cons_and_field) = 0;
+  virtual void StartReceiving(BoundaryCommSubset phase) = 0;
 
   // Then, individual BoundaryVariable object calls its own functions:
   // SendBoundary():    MPI_Start on req_send[]
   // +
   // ReceiveBoundary(): MPI_Iprobe, MPI_Itest ---> BoundaryStatus::arrived
   // SetBoundaries():   BoundaryStatus::completed
-  // OR
+  // OR (in Mesh::Initialize() only)
   // ReceiveAndSetBoundariesWithWait(): MPI_Wait, set, then BoundaryStatus::completed
 
   // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting :
-  virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
-
-  // functions called only in task_list/ during timestepping
-  // ----------------
-  virtual void StartReceivingAll() = 0;
-
-  // Then, similar BoundaryVariable sequence occurs as in Mesh::Initialize() (no WithWait)
-
-  virtual void ClearBoundaryAll() = 0;
+  //virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
+  virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
 };
 
 //----------------------------------------------------------------------------------------

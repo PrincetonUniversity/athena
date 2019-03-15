@@ -1422,31 +1422,29 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
-void FaceCenteredBoundaryVariable::StartReceivingForInit(bool cons_and_field) {
-#ifdef MPI_PARALLEL
-  for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.rank != Globals::my_rank) {
-      if (cons_and_field) {  // normal case
-        MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      }
-    }
-  }
-#endif
-  return;
-}
+// KGF: as in bvals_cc.cpp, the StartReceiving() and ClearBoundary() logic (conditionals,
+// loop structure, local varaiables) are nearly identical. The former calls MPI_Start on
+// req_recv, the latter calls MPI_Wait on req_send (and sets BoundaryStatus flags,
+// regardless if MPI is used or not). Would there be an advantage to unifying the
+// functions, to ensure that every "recv from neighbor" matches a "send to neighbor" call,
+// in the midst of complexity over all "BoundaryCommSubset phase" switches?
+// Or would that introduce too many switches to a single function / mixup the role of the
+// function in a confusing way? Could be called:
+// StartOrFinishCommunication(BoundaryCommSubset phase, bool is_start);
 
-void FaceCenteredBoundaryVariable::StartReceivingAll() {
-  recv_flx_same_lvl_ = true;
+void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
+  if (phase == BoundaryCommSubset::all)
+    recv_flx_same_lvl_ = true;
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_block_;
-  int mylevel=pmb->loc.level;
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.rank != Globals::my_rank) {
+    if (nb.rank != Globals::my_rank && phase != BoundaryCommSubset::gr_amr) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (nb.type == NeighborConnect::face || nb.type == NeighborConnect::edge) {
-        if ((nb.level>mylevel) ||
+      if (phase == BoundaryCommSubset::all &&
+          (nb.type == NeighborConnect::face || nb.type == NeighborConnect::edge)) {
+        if ((nb.level > mylevel) ||
             ((nb.level == mylevel) && ((nb.type == NeighborConnect::face)
                                      || ((nb.type == NeighborConnect::edge)
                                          && (edge_flag_[nb.eid] == true)))))
@@ -1455,7 +1453,8 @@ void FaceCenteredBoundaryVariable::StartReceivingAll() {
     }
   }
 
-  for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+  if (phase == BoundaryCommSubset::all) {
+    for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank) {
         MPI_Start(&req_flux_north_recv_[n]);
@@ -1467,65 +1466,66 @@ void FaceCenteredBoundaryVariable::StartReceivingAll() {
         MPI_Start(&req_flux_south_recv_[n]);
       }
     }
-#endif
-  return;
-}
-
-void FaceCenteredBoundaryVariable::ClearBoundaryForInit(bool cons_and_field) {
-  for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-#ifdef MPI_PARALLEL
-    if (nb.rank != Globals::my_rank) {
-      if (cons_and_field) {  // normal case
-        MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      }
-    }
-#endif
   }
+#endif
   return;
 }
 
-void FaceCenteredBoundaryVariable::ClearBoundaryAll() {
+void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-    if ((nb.type == NeighborConnect::face) || (nb.type == NeighborConnect::edge))
+    if (((nb.type == NeighborConnect::face) || (nb.type == NeighborConnect::edge))
+        && phase == BoundaryCommSubset::all)
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-    MeshBlock *pmb=pmy_block_;
-    if (nb.rank != Globals::my_rank) {
+    MeshBlock *pmb = pmy_block_;
+    int mylevel = pmb->loc.level;
+    if (nb.rank != Globals::my_rank && phase != BoundaryCommSubset::gr_amr) {
+      // KGF: should we use switched statements w/ explicitly marked intended fallthrough?
+      // switch (phase): {
+      //     case (BoundaryCommSubset::mesh_init):
+      //     case (BoundaryCommSubset::gr_amr):
+      //     case (BoundaryCommSubset::all):
+      //   }
+
       // Wait for Isend
-      MPI_Wait(&(bd_var_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type == NeighborConnect::face || nb.type == NeighborConnect::edge) {
-        if (nb.level < pmb->loc.level)
-          MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        else if ((nb.level == pmb->loc.level)
-                 && ((nb.type == NeighborConnect::face)
-                     || ((nb.type == NeighborConnect::edge)
-                         && (edge_flag_[nb.eid] == true))))
-          MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      }
+      MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+
+      if (phase == BoundaryCommSubset::all) {
+        if (nb.type == NeighborConnect::face || nb.type == NeighborConnect::edge) {
+          if (nb.level < mylevel)
+            MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+          else if ((nb.level == mylevel)
+                   && ((nb.type == NeighborConnect::face)
+                       || ((nb.type == NeighborConnect::edge)
+                           && (edge_flag_[nb.eid] == true))))
+            MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+        }
+      } // phase == all
     } // KGF: end block on other MPI process
 #endif
   } // KGF: end loop over pbval_->nneighbor
-  // Clear polar boundary communications
-  for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    flux_north_flag_[n] = BoundaryStatus::waiting;
+
+  // Clear polar boundary communications (only during main integration loop)
+  if (phase == BoundaryCommSubset::all) {
+    for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
+      flux_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-    PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
-    if (nb.rank != Globals::my_rank)
+      PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+      if (nb.rank != Globals::my_rank)
         MPI_Wait(&req_flux_north_send_[n], MPI_STATUS_IGNORE);
 #endif
-  }
-  for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    flux_south_flag_[n] = BoundaryStatus::waiting;
+    }
+    for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
+      flux_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-    PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
-    if (nb.rank != Globals::my_rank)
-      MPI_Wait(&req_flux_south_send_[n], MPI_STATUS_IGNORE);
+      PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+      if (nb.rank != Globals::my_rank)
+        MPI_Wait(&req_flux_south_send_[n], MPI_STATUS_IGNORE);
 #endif
+    }
   }
   return;
 }
