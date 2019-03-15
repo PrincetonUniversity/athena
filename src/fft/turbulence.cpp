@@ -70,12 +70,17 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   InitializeFFTBlock(true);
   QuickCreatePlan();
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
+
+  fv_ = new AthenaFFTComplex*[3];
+  for (int nv=0; nv<3; nv++) fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
 }
 
 // destructor
 TurbulenceDriver::~TurbulenceDriver() {
   for (int nv=0; nv<3; nv++) vel[nv].DeleteAthenaArray();
   delete [] vel;
+  for (int nv=0; nv<3; nv++) delete [] fv_[nv];
+  delete [] fv_;
 }
 
 //----------------------------------------------------------------------------------------
@@ -126,14 +131,22 @@ void TurbulenceDriver::Generate() {
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
 
+  std::cout << "initialize PS in k-space" << std::endl;
+
+  for (int nv=0; nv<3; nv++) {
+    AthenaFFTComplex *fv = fv_[nv];
+    PowerSpectrum(fv);
+  }
+
+  std::cout << "project and OU smoothing in k-space" << std::endl;
+//  Project(fv);
+//  OUStep(fv,dt);
+
+  std::cout << "get perturbation in real-space" << std::endl;
   for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
-    AthenaFFTComplex *fv = pfb->in_;
-
-    PowerSpectrum(fv);
-
-    pfb->Execute(plan);
-
+    AthenaFFTComplex *fv = fv_[nv];
+    pfb->Execute(plan, fv, pfb->out_);
     for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
       if (pmb != nullptr) {

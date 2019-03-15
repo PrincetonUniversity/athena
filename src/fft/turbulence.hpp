@@ -43,6 +43,7 @@ class TurbulenceDriver : public FFTDriver{
   Real dtdrive,tdrive;
   Real expo,dedt,dvol;
   AthenaArray<Real> *vel;
+  AthenaFFTComplex **fv_;
 };
 
 #endif // FFT_TURBULENCE_HPP_
