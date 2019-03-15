@@ -176,6 +176,8 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
+// enum class BoundaryCommPhase {mesh_init, mesh_init_gr_amr, main_int};
+enum class BoundaryCommSubset {mesh_init, gr_amr, all};
 // enum class FluxCorrectionQuantity {hydro};
 
 //----------------------------------------------------------------------------------------
