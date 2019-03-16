@@ -145,8 +145,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void CheckBoundary();
   void CheckPolarBoundaries();
 
-  // doubly linked list of references to BoundaryVariable instances
+  // variable-length arrays of references to BoundaryVariable instances
+  // containing all BoundaryVariable instances
   std::vector<BoundaryVariable *> bvars;  // preallocate (num_bvars)?
+  // subset of bvars that are exchanged in main TimeIntegratorTaskList
+  std::vector<BoundaryVariable *> bvars_main_int;
+
   // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects
   int ReserveTagVariableIDs(int num_phys);
 
