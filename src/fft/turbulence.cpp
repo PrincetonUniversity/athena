@@ -152,18 +152,33 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
   Real pcoeff;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
-  int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
+  int kNx1 = pfb->kNx[0], kNx2 = pfb->kNx[1], kNx3 = pfb->kNx[2];
+  int knx1 = pfb->knx[0], knx2 = pfb->knx[1], knx3 = pfb->knx[2];
+  int kdisp1 = pfb->kdisp[0], kdisp2 = pfb->kdisp[1], kdisp3 = pfb->kdisp[2];
+
   // set random amplitudes with gaussian deviation
-  for (int k=0; k<knx3; k++) {
-    for (int j=0; j<knx2; j++) {
-      for (int i=0; i<knx1; i++) {
-        Real q1=ran2(&rseed);
-        Real q2=ran2(&rseed);
-        Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(TWO_PI*q2);
-        q1=ran2(&rseed);
-        std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
-        amp[kidx][0] = q3*std::cos(TWO_PI*q1);
-        amp[kidx][1] = q3*std::sin(TWO_PI*q1);
+  // loop over entire Mesh
+  for (int gk=0; gk<kNx3; gk++) {
+    for (int gj=0; gj<kNx2; gj++) {
+      for (int gi=0; gi<kNx1; gi++) {
+        int k = gk - kdisp3;
+        int j = gj - kdisp2;
+        int i = gi - kdisp1;
+        if ((k >= 0) && (k < knx3) &&
+            (j >= 0) && (j < knx2) &&
+            (i >= 0) && (i < knx3)) {
+          Real q1=ran2(&rseed);
+          Real q2=ran2(&rseed);
+          Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(TWO_PI*q2);
+          q1=ran2(&rseed);
+          std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
+          amp[kidx][0] = q3*std::cos(TWO_PI*q1);
+          amp[kidx][1] = q3*std::sin(TWO_PI*q1);
+        } else { // if it is not in FFTBlock, just burn three random numbers
+          ran2(&rseed);
+          ran2(&rseed);
+          ran2(&rseed);
+        }
       }
     }
   }
