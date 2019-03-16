@@ -129,7 +129,7 @@ void TurbulenceDriver::Driving() {
     case 2: // turb_flag == 2 : impulsively driven turbulence with OU smoothing
       if (pm->time >= tdrive) {
         if (Globals::my_rank==0)
-          std::cout << "generating turbulence at " << pm->time << std::endl;
+//          std::cout << "generating turbulence at " << pm->time << std::endl;
         tdrive = pm->time + dtdrive;
         Generate();
         Perturb(dtdrive);
@@ -166,14 +166,17 @@ void TurbulenceDriver::Generate() {
   // fv_ are set initially (or in restart) and kept
   // unless tcorr == 0
   if (not initialized_){
-    std::cout << "initialize PS in k-space" << std::endl;
+//    std::cout << "initialize PS in k-space" << std::endl;
     for (int nv=0; nv<3; nv++) {
-      PowerSpectrum(fv_[nv]);
+      AthenaFFTComplex *fv = fv_[nv];
+      PowerSpectrum(fv);
     }
     if (f_shear >= 0) Project(fv_,f_shear);
     if (tcorr > 0.) initialized_ = true;
   } else {
-    OUProcess(pm->dt);
+    Real OUdt = pm->dt;
+    if (pm->turb_flag == 2) OUdt=dtdrive;
+    OUProcess(OUdt);
   }
 
   for (int nv=0; nv<3; nv++) {
@@ -199,11 +202,12 @@ void TurbulenceDriver::OUProcess(Real dt) {
   // dv_k(t+dt) = f*dv_k(t) + sqrt(1-f^2)*dv_k'
   // or by assuming dt << tcorr, f=1-dt/tcorr
   FFTBlock *pfb = pmy_fb;
-  //Real factor = std::exp(-dt/tcorr);
-  Real factor = 1-dt/tcorr;
+  Real factor = std::exp(-dt/tcorr);
+  //Real factor = 1-dt/tcorr;
   Real sqrt_factor = std::sqrt(1-factor*factor);
 
-  std::cout << "add new PS with OU process" << std::endl;
+//  std::cout << "add new PS with OU process with f_old =" << factor
+//            << " and f_new = " << sqrt_factor << std::endl;
 
   for (int nv=0; nv<3; nv++) PowerSpectrum(fv_new_[nv]);
 
@@ -375,13 +379,13 @@ void TurbulenceDriver::Perturb(Real dt) {
   if (pm->turb_flag > 1) {
     // driven turbulence
     de = dedt*dt;
-    if (Globals::my_rank==0)
-      std::cout << "driven turbulence with " << de << std::endl;
+//    if (Globals::my_rank==0)
+//      std::cout << "driven turbulence with " << de << std::endl;
   } else {
     // decaying turbulence (all in one shot)
     de = dedt;
-    if (Globals::my_rank==0)
-      std::cout << "decaying turbulence with " << de << std::endl;
+//    if (Globals::my_rank==0)
+//      std::cout << "decaying turbulence with " << de << std::endl;
   }
   aa = 0.5*m[0];
   aa = std::max(aa,static_cast<Real>(1.0e-20));
