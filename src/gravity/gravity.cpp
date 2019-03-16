@@ -28,8 +28,8 @@
 
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
-  four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
-  if (four_pi_G==0.0) {
+  four_pi_G = pmb->pmy_mesh->four_pi_G_; // default: 4*pi*G=1
+  if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -37,8 +37,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
     ATHENA_ERROR(msg);
     return;
   }
-  grav_mean_rho=pmb->pmy_mesh->grav_mean_rho_;
-  if (grav_mean_rho==-1.0) {
+  grav_mean_rho = pmb->pmy_mesh->grav_mean_rho_;
+  if (grav_mean_rho == -1.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Background Mean Density must be set in the Mesh::InitUserMeshData "

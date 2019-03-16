@@ -63,6 +63,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   phbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(phbval);
 
+  pmb->pbval->bvars_main_int.push_back(phbval);
+
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(ncells1);
   dt2_.NewAthenaArray(ncells1);

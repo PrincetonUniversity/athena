@@ -86,6 +86,8 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     pfbval  = new FaceCenteredBoundaryVariable(pmy_block, b, e);
     pfbval->bvar_index = pmb->pbval->bvars.size();
     pmb->pbval->bvars.push_back(pfbval);
+
+    pmb->pbval->bvars_main_int.push_back(pfbval);
   } // end (MAGNETIC_FIELDS_ENABLED)
 }
 

@@ -1298,7 +1298,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (res_flag==0) {
 #pragma omp parallel for num_threads(nthreads)
       for (int i=0; i<nmb; ++i) {
-        MeshBlock *pmb=pmb_array[i];
+        MeshBlock *pmb = pmb_array[i];
         pmb->ProblemGenerator(pin);
         pmb->pbval->CheckBoundary();
       }
@@ -1308,9 +1308,19 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (((turb_flag == 1) || (turb_flag == 2)) && (res_flag == 0))
       ptrbd->Driving();
 
+    // Create send/recv MPI_Requests for all BoundaryData objects
+#pragma omp parallel for num_threads(nthreads)
+    for (int i=0; i<nmb; ++i) {
+      MeshBlock *pmb = pmb_array[i];
+      // BoundaryVariable objects evolved in main TimeIntegratorTaskList:
+      pmb->pbval->SetupPersistentMPI();
+      // other BoundaryVariable objects:
+      pmb->pgrav->pgbval->SetupPersistentMPI();
+    }
+
     // solve gravity for the first time
     if (SELF_GRAVITY_ENABLED == 1)
-      pfgrd->Solve(1,0);
+      pfgrd->Solve(1, 0);
     else if (SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
@@ -1325,7 +1335,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb=pmb_array[i]; pbval=pmb->pbval;
-        pbval->SetupPersistentMPI();
         pbval->StartReceiving(BoundaryCommSubset::mesh_init);
       }
 
