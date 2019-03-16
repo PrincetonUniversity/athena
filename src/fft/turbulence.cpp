@@ -41,7 +41,10 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2);
   expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
   dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
-  dtdrive = pin->GetReal("problem","dtdrive"); // driving interval
+  if (pm->turb_flag == 2)
+    dtdrive = pin->GetReal("problem","dtdrive"); // driving interval
+  if (pm->turb_flag == 3)
+    tcorr = pin->GetReal("problem","tcorr"); // correlation time scales for OU smoothing
   tdrive = pm->time;
 
   if (pm->turb_flag == 0) {
@@ -73,6 +76,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 
   fv_ = new AthenaFFTComplex*[3];
   for (int nv=0; nv<3; nv++) fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+  if (pm->turb_flag == 3) fv_new_ = new AthenaFFTComplex[pmy_fb->cnt_];
 }
 
 // destructor
@@ -81,6 +85,7 @@ TurbulenceDriver::~TurbulenceDriver() {
   delete [] vel;
   for (int nv=0; nv<3; nv++) delete [] fv_[nv];
   delete [] fv_;
+  if (fv_new_ != nullptr) delete [] fv_new_;
 }
 
 //----------------------------------------------------------------------------------------
@@ -89,25 +94,23 @@ TurbulenceDriver::~TurbulenceDriver() {
 
 void TurbulenceDriver::Driving() {
   Mesh *pm=pmy_mesh_;
-  bool new_perturb = false;
 
   // check driving time interval to generate new perturbation
-  if (pm->time >= tdrive) {
-    if (Globals::my_rank==0)
-      std::cout << "generating turbulence at " << pm->time << std::endl;
-    Generate();
-    tdrive = pm->time + dtdrive;
-    new_perturb = true;
-  }
-
   switch(pm->turb_flag) {
     case 1: // turb_flag == 1 : decaying turbulence
       Perturb(0);
       break;
     case 2: // turb_flag == 2 : impulsively driven turbulence
-      if (new_perturb) Perturb(dtdrive);
+      if (pm->time >= tdrive) {
+        if (Globals::my_rank==0)
+          std::cout << "generating turbulence at " << pm->time << std::endl;
+        tdrive = pm->time + dtdrive;
+        Generate();
+        Perturb(dtdrive);
+      }
       break;
-    case 3: // turb_flag == 3 : continuously driven turbulence
+    case 3: // turb_flag == 3 : continuously driven turbulence with OU smoothing
+      Generate();
       Perturb(pm->dt);
       break;
     default:
@@ -131,22 +134,25 @@ void TurbulenceDriver::Generate() {
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
 
-  std::cout << "initialize PS in k-space" << std::endl;
 
-  for (int nv=0; nv<3; nv++) {
-    AthenaFFTComplex *fv = fv_[nv];
-    PowerSpectrum(fv);
+  // For continuously driven turbulence (turb_flag == 3),
+  // Ornstein-Uhlenbeck (OU) process is implemented.
+  // Therefore, fv_ are set initially (or in restart) and kept
+  // unless tcorr == 0
+  if ((pm->turb_flag != 3) || (not initialized_)){
+    std::cout << "initialize PS in k-space" << std::endl;
+    for (int nv=0; nv<3; nv++) {
+      PowerSpectrum(fv_[nv]);
+    }
+    if (tcorr > 0.) initialized_ = true;
   }
 
-  std::cout << "project and OU smoothing in k-space" << std::endl;
 //  Project(fv);
-//  OUStep(fv,dt);
+  if ((pm->turb_flag == 3) & (tcorr > 0.)) OUProcess(pm->dt);
 
-  std::cout << "get perturbation in real-space" << std::endl;
   for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
-    AthenaFFTComplex *fv = fv_[nv];
-    pfb->Execute(plan, fv, pfb->out_);
+    pfb->Execute(plan, fv_[nv], pfb->out_);
     for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
       if (pmb != nullptr) {
@@ -156,6 +162,30 @@ void TurbulenceDriver::Generate() {
     }
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void TurbulenceDriver::OUProcess(Real dt)
+//  \brief Generate velocity pertubation.
+
+void TurbulenceDriver::OUProcess(Real dt) {
+  // Ornstein–Uhlenbeck (OU) process based on Eq. 26 in Lynn et al. (2012)
+  // original formalism for f=exp(-dt/tcorr)
+  // dv_k(t+dt) = f*dv_k(t) + sqrt(1-f^2)*dv_k'
+  // or by assuming dt << tcorr, f=1-dt/tcorr
+  FFTBlock *pfb = pmy_fb;
+  //Real factor = std::exp(-dt/tcorr);
+  Real factor = 1-dt/tcorr;
+  Real sqrt_factor = std::sqrt(1-factor*factor);
+
+  for (int nv=0; nv<3; nv++) {
+    PowerSpectrum(fv_new_);
+    for (int k=0; k<pfb->cnt_; k++) {
+      fv_[nv][k][0] = factor * fv_[nv][k][0] + sqrt_factor * fv_new_[k][0];
+      fv_[nv][k][1] = factor * fv_[nv][k][1] + sqrt_factor * fv_new_[k][1];
+    }
+  }
+}
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp)

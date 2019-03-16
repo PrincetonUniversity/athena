@@ -58,3 +58,4 @@ nlow       = 0    # cut-off wavenumber at low-k
 nhigh      = 16   # cut-off wavenumber at high-k
 expo       = 2.0  # power-law exponent
 dtdrive    = 0.1  # time interval between perturbation generation
+tcorr      = 0.1  # correlation time
