@@ -41,7 +41,7 @@ class TurbulenceDriver : public FFTDriver{
  private:
   std::int64_t rseed;
   int nlow,nhigh;
-  Real dtdrive,tdrive,tcorr;
+  Real tdrive,dtdrive,tcorr;
   Real expo,dedt,dvol;
   AthenaArray<Real> *vel;
   AthenaFFTComplex **fv_, *fv_new_;

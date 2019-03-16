@@ -41,10 +41,11 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2);
   expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
   dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
-  if (pm->turb_flag == 2)
-    dtdrive = pin->GetReal("problem","dtdrive"); // driving interval
-  if (pm->turb_flag == 3)
+  if (pm->turb_flag > 1){
     tcorr = pin->GetReal("problem","tcorr"); // correlation time scales for OU smoothing
+    if (pm->turb_flag == 2)
+      dtdrive = pin->GetReal("problem","dtdrive"); // driving interval is set by hand 
+  }
   tdrive = pm->time;
 
   if (pm->turb_flag == 0) {
@@ -76,7 +77,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 
   fv_ = new AthenaFFTComplex*[3];
   for (int nv=0; nv<3; nv++) fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-  if (pm->turb_flag == 3) fv_new_ = new AthenaFFTComplex[pmy_fb->cnt_];
+  if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex[pmy_fb->cnt_];
 }
 
 // destructor
@@ -98,9 +99,10 @@ void TurbulenceDriver::Driving() {
   // check driving time interval to generate new perturbation
   switch(pm->turb_flag) {
     case 1: // turb_flag == 1 : decaying turbulence
+      Generate();
       Perturb(0);
       break;
-    case 2: // turb_flag == 2 : impulsively driven turbulence
+    case 2: // turb_flag == 2 : impulsively driven turbulence with OU smoothing
       if (pm->time >= tdrive) {
         if (Globals::my_rank==0)
           std::cout << "generating turbulence at " << pm->time << std::endl;
@@ -135,11 +137,11 @@ void TurbulenceDriver::Generate() {
   int nbe=nbs+nblist_[Globals::my_rank]-1;
 
 
-  // For continuously driven turbulence (turb_flag == 3),
+  // For driven turbulence (turb_flag == 2 or 3),
   // Ornstein-Uhlenbeck (OU) process is implemented.
-  // Therefore, fv_ are set initially (or in restart) and kept
+  // fv_ are set initially (or in restart) and kept
   // unless tcorr == 0
-  if ((pm->turb_flag != 3) || (not initialized_)){
+  if ((pm->turb_flag > 1) || (not initialized_)){
     std::cout << "initialize PS in k-space" << std::endl;
     for (int nv=0; nv<3; nv++) {
       PowerSpectrum(fv_[nv]);
@@ -148,7 +150,7 @@ void TurbulenceDriver::Generate() {
   }
 
 //  Project(fv);
-  if ((pm->turb_flag == 3) & (tcorr > 0.)) OUProcess(pm->dt);
+  if ((pm->turb_flag > 1) && (tcorr > 0.)) OUProcess(pm->dt);
 
   for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
