@@ -46,6 +46,16 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     if (pm->turb_flag == 2)
       dtdrive = pin->GetReal("problem","dtdrive"); // driving interval is set by hand 
   }
+  f_shear = pin->GetOrAddReal("problem","f_shear",-1); // ratio of shear component
+  if (f_shear > 1) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
+        << "The ratio between shear and compressible components should be less than one" 
+        << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
+
   tdrive = pm->time;
 
   if (pm->turb_flag == 0) {
@@ -76,16 +86,30 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
 
   fv_ = new AthenaFFTComplex*[3];
-  for (int nv=0; nv<3; nv++) fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-  if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex[pmy_fb->cnt_];
+  fv_sh_ = new AthenaFFTComplex*[3];
+  fv_co_ = new AthenaFFTComplex*[3];
+  if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex*[3];
+  for (int nv=0; nv<3; nv++){
+    fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+    fv_sh_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+    fv_co_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+    if (pm->turb_flag > 1) fv_new_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+  }
 }
 
 // destructor
 TurbulenceDriver::~TurbulenceDriver() {
-  for (int nv=0; nv<3; nv++) vel[nv].DeleteAthenaArray();
+  for (int nv=0; nv<3; nv++) {
+    vel[nv].DeleteAthenaArray();
+    delete [] fv_[nv];
+    delete [] fv_sh_[nv];
+    delete [] fv_co_[nv];
+    if (fv_new_ != nullptr) delete [] fv_new_[nv];
+  }
   delete [] vel;
-  for (int nv=0; nv<3; nv++) delete [] fv_[nv];
   delete [] fv_;
+  delete [] fv_sh_;
+  delete [] fv_co_;
   if (fv_new_ != nullptr) delete [] fv_new_;
 }
 
@@ -141,16 +165,16 @@ void TurbulenceDriver::Generate() {
   // Ornstein-Uhlenbeck (OU) process is implemented.
   // fv_ are set initially (or in restart) and kept
   // unless tcorr == 0
-  if ((pm->turb_flag > 1) || (not initialized_)){
+  if (not initialized_){
     std::cout << "initialize PS in k-space" << std::endl;
     for (int nv=0; nv<3; nv++) {
       PowerSpectrum(fv_[nv]);
     }
+    if (f_shear >= 0) Project(fv_,f_shear);
     if (tcorr > 0.) initialized_ = true;
+  } else {
+    OUProcess(pm->dt);
   }
-
-//  Project(fv);
-  if ((pm->turb_flag > 1) && (tcorr > 0.)) OUProcess(pm->dt);
 
   for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
@@ -179,11 +203,16 @@ void TurbulenceDriver::OUProcess(Real dt) {
   Real factor = 1-dt/tcorr;
   Real sqrt_factor = std::sqrt(1-factor*factor);
 
+  std::cout << "add new PS with OU process" << std::endl;
+
+  for (int nv=0; nv<3; nv++) PowerSpectrum(fv_new_[nv]);
+
+  if (f_shear >= 0) Project(fv_new_,f_shear);
+
   for (int nv=0; nv<3; nv++) {
-    PowerSpectrum(fv_new_);
     for (int k=0; k<pfb->cnt_; k++) {
-      fv_[nv][k][0] = factor * fv_[nv][k][0] + sqrt_factor * fv_new_[k][0];
-      fv_[nv][k][1] = factor * fv_[nv][k][1] + sqrt_factor * fv_new_[k][1];
+      fv_[nv][k][0] = factor * fv_[nv][k][0] + sqrt_factor * fv_new_[nv][k][0];
+      fv_[nv][k][1] = factor * fv_[nv][k][1] + sqrt_factor * fv_new_[nv][k][1];
     }
   }
 }
@@ -388,6 +417,69 @@ void TurbulenceDriver::Perturb(Real dt) {
             pmb->phydro->u(IM2,k,j,i) += s*den*v2;
             pmb->phydro->u(IM3,k,j,i) += s*den*v3;
           }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh, AthenaFFTComplex **fv_co)
+//  \brief calculates shear and compressible components
+
+void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
+  FFTBlock *pfb = pmy_fb;
+  Project(fv, fv_sh_, fv_co_);
+  for (int nv=0; nv<3; nv++) {
+    for (int kidx=0; kidx<pfb->cnt_; kidx++) {
+      fv_[nv][kidx][0] = (1-f_shear)*fv_co_[nv][kidx][0] + f_shear*fv_sh_[nv][kidx][0];
+      fv_[nv][kidx][1] = (1-f_shear)*fv_co_[nv][kidx][1] + f_shear*fv_sh_[nv][kidx][1];
+    }
+  }
+}
+
+void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh, AthenaFFTComplex **fv_co) {
+  FFTBlock *pfb = pmy_fb;
+  AthenaFFTIndex *idx = pfb->b_in_;
+  int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
+
+  for (int k=0; k<knx3; k++) {
+    for (int j=0; j<knx2; j++) {
+      for (int i=0; i<knx1; i++) {
+        // Get khat
+        std::int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
+        std::int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
+        std::int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
+        Real kx=nx*pfb->dkx[0];
+        Real ky=ny*pfb->dkx[1];
+        Real kz=nz*pfb->dkx[2];
+        Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
+
+        std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
+        if (kmag != 0.0) {
+          kx /= kmag;
+          ky /= kmag;
+          kz /= kmag;
+          // Form (khat.f)
+          Real kdotf_re = kx*fv[0][kidx][0] + ky*fv[1][kidx][0] + kz*fv[2][kidx][0];
+          Real kdotf_im = kx*fv[0][kidx][1] + ky*fv[1][kidx][1] + kz*fv[2][kidx][1];
+
+          fv_co[0][kidx][0] = kdotf_re * kx;
+          fv_co[1][kidx][0] = kdotf_re * ky;
+          fv_co[2][kidx][0] = kdotf_re * kz;
+
+          fv_co[0][kidx][1] = kdotf_im * kx;
+          fv_co[1][kidx][1] = kdotf_im * ky;
+          fv_co[2][kidx][1] = kdotf_im * kz;
+
+          fv_sh[0][kidx][0] = fv[0][kidx][0] - fv_co[0][kidx][0];
+          fv_sh[1][kidx][0] = fv[1][kidx][0] - fv_co[1][kidx][0];
+          fv_sh[2][kidx][0] = fv[2][kidx][0] - fv_co[2][kidx][0];
+
+          fv_sh[0][kidx][1] = fv[0][kidx][1] - fv_co[0][kidx][1];
+          fv_sh[1][kidx][1] = fv[1][kidx][1] - fv_co[1][kidx][1];
+          fv_sh[2][kidx][1] = fv[2][kidx][1] - fv_co[2][kidx][1];
         }
       }
     }

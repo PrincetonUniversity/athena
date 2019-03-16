@@ -59,3 +59,4 @@ nhigh      = 16   # cut-off wavenumber at high-k
 expo       = 2.0  # power-law exponent
 tcorr      = 0.1  # correlation time for OU process (both impulsive and continuous)
 dtdrive    = 0.1  # time interval between perturbation (impulsive)
+f_shear    = 0.5  # the ratio of the shear component

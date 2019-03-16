@@ -37,14 +37,17 @@ class TurbulenceDriver : public FFTDriver{
   void PowerSpectrum(AthenaFFTComplex *amp);
   void Perturb(Real dt);
   void OUProcess(Real dt);
+  void Project(AthenaFFTComplex **fv, Real f_shear);
+  void Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh, AthenaFFTComplex **fv_co);
   std::int64_t GetKcomp(int idx, int disp, int Nx);
  private:
   std::int64_t rseed;
   int nlow,nhigh;
-  Real tdrive,dtdrive,tcorr;
+  Real tdrive,dtdrive,tcorr,f_shear;
   Real expo,dedt,dvol;
   AthenaArray<Real> *vel;
-  AthenaFFTComplex **fv_, *fv_new_;
+  AthenaFFTComplex **fv_, **fv_new_;
+  AthenaFFTComplex **fv_sh_, **fv_co_;
   bool initialized_ = false;
 };
 
