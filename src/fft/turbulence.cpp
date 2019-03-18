@@ -128,8 +128,6 @@ void TurbulenceDriver::Driving() {
       break;
     case 2: // turb_flag == 2 : impulsively driven turbulence with OU smoothing
       if (pm->time >= tdrive) {
-        if (Globals::my_rank==0)
-//          std::cout << "generating turbulence at " << pm->time << std::endl;
         tdrive = pm->time + dtdrive;
         Generate();
         Perturb(dtdrive);
@@ -166,7 +164,6 @@ void TurbulenceDriver::Generate() {
   // fv_ are set initially (or in restart) and kept
   // unless tcorr == 0
   if (not initialized_){
-//    std::cout << "initialize PS in k-space" << std::endl;
     for (int nv=0; nv<3; nv++) {
       AthenaFFTComplex *fv = fv_[nv];
       PowerSpectrum(fv);
@@ -205,9 +202,6 @@ void TurbulenceDriver::OUProcess(Real dt) {
   Real factor = std::exp(-dt/tcorr);
   //Real factor = 1-dt/tcorr;
   Real sqrt_factor = std::sqrt(1-factor*factor);
-
-//  std::cout << "add new PS with OU process with f_old =" << factor
-//            << " and f_new = " << sqrt_factor << std::endl;
 
   for (int nv=0; nv<3; nv++) PowerSpectrum(fv_new_[nv]);
 
@@ -371,7 +365,6 @@ void TurbulenceDriver::Perturb(Real dt) {
         << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
-  //  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
   m[0] = gm[0];  m[1] = gm[1];
 #endif // MPI_PARALLEL
 
@@ -379,13 +372,9 @@ void TurbulenceDriver::Perturb(Real dt) {
   if (pm->turb_flag > 1) {
     // driven turbulence
     de = dedt*dt;
-//    if (Globals::my_rank==0)
-//      std::cout << "driven turbulence with " << de << std::endl;
   } else {
     // decaying turbulence (all in one shot)
     de = dedt;
-//    if (Globals::my_rank==0)
-//      std::cout << "decaying turbulence with " << de << std::endl;
   }
   aa = 0.5*m[0];
   aa = std::max(aa,static_cast<Real>(1.0e-20));
