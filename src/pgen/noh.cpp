@@ -55,10 +55,10 @@ Real gmma, gmma1;
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary value function pointers
-  EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
-  EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, Noh3DOuterX1);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x2, Noh3DOuterX2);
   if (mesh_size.nx3 > 1)
-    EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, Noh3DOuterX3);
   return;
 }
 

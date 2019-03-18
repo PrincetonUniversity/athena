@@ -37,17 +37,17 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
+//! \fn void BoundaryValues::SendFluxCorrection(FluxCorrectionQuantity type)
 //  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
-void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
+void BoundaryValues::SendFluxCorrection(FluxCorrectionQuantity type) {
   MeshBlock *pmb=pmy_block_, *pbl;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   int ns, ne;
   BoundaryData *pbd{}, *ptarget{};
 
-  if (type==FLUX_HYDRO) {
+  if (type==FluxCorrectionQuantity::hydro) {
     ns=0, ne=NHYDRO-1;
     x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
     x2flux.InitWithShallowCopy(pmb->phydro->flux[X2DIR]);
@@ -57,12 +57,12 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (nb.type!=NEIGHBOR_FACE) break;
+    if (nb.type!=NeighborConnect::face) break;
     if (nb.level==pmb->loc.level-1) {
       int p=0;
       Real *sbuf=pbd->send[nb.bufid];
       // x1 direction
-      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=ns; nn<=ne; nn++) {
@@ -97,7 +97,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
             sbuf[p++]=x1flux(nn, k, j, i);
         }
         // x2 direction
-      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
         int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid & 1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=ns; nn<=ne; nn++) {
@@ -125,7 +125,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
           }
         }
         // x3 direction - 3D only
-      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
         int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid & 1);
         for (int nn=ns; nn<=ne; nn++) {
           for (int j=pmb->js; j<=pmb->je; j+=2) {
@@ -143,10 +143,10 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
       }
       if (nb.rank==Globals::my_rank) { // on the same node
         pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-        if (type==FLUX_HYDRO)
+        if (type==FluxCorrectionQuantity::hydro)
           ptarget=&(pbl->pbval->bd_flcor_);
         std::memcpy(ptarget->recv[nb.targetid], sbuf, p*sizeof(Real));
-        ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
+        ptarget->flag[nb.targetid]=BoundaryStatus::arrived;
       }
 #ifdef MPI_PARALLEL
       else
@@ -159,17 +159,17 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
+//! \fn bool BoundaryValues::ReceiveFluxCorrection(FluxCorrectionQuantity type)
 //  \brief Receive and apply the surface flux from the finer neighbor(s)
 
-bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
+bool BoundaryValues::ReceiveFluxCorrection(FluxCorrectionQuantity type) {
   MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   bool bflag=true;
   int ns, ne;
   BoundaryData *pbd{};
 
-  if (type==FLUX_HYDRO) {
+  if (type==FluxCorrectionQuantity::hydro) {
     pbd=&bd_flcor_;
     ns=0, ne=NHYDRO-1;
     x1flux.InitWithShallowCopy(pmb->phydro->flux[X1DIR]);
@@ -179,10 +179,10 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (nb.type!=NEIGHBOR_FACE) break;
+    if (nb.type!=NeighborConnect::face) break;
     if (nb.level==pmb->loc.level+1) {
-      if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
-      if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+      if (pbd->flag[nb.bufid]==BoundaryStatus::completed) continue;
+      if (pbd->flag[nb.bufid]==BoundaryStatus::waiting) {
         if (nb.rank==Globals::my_rank) {// on the same process
           bflag=false;
           continue;
@@ -196,14 +196,14 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
             bflag=false;
             continue;
           }
-          pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+          pbd->flag[nb.bufid] = BoundaryStatus::arrived;
         }
 #endif
       }
       // boundary arrived; apply flux correction
       int p=0;
       Real *rbuf=pbd->recv[nb.bufid];
-      if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+      if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
         int is=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
         int js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
         if (nb.fi1==0) je-=pmb->block_size.nx2/2;
@@ -216,7 +216,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
               x1flux(nn,k,j,is)=rbuf[p++];
           }
         }
-      } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+      } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
         int js=pmb->js+(pmb->je-pmb->js)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
@@ -229,7 +229,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
               x2flux(nn,k,js,i)=rbuf[p++];
           }
         }
-      } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+      } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
         int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid & 1)+(nb.fid & 1);
         int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
         if (nb.fi1==0) ie-=pmb->block_size.nx1/2;
@@ -244,7 +244,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type) {
         }
       }
 
-      pbd->flag[nb.bufid] = BNDRY_COMPLETED;
+      pbd->flag[nb.bufid] = BoundaryStatus::completed;
     }
   }
   return bflag;

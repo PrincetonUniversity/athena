@@ -35,7 +35,7 @@
 #endif
 
 // Declarations
-enum b_configs {vertical, normal, renorm};
+enum class MagneticFieldConfigs {vertical, normal, renorm};
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
@@ -45,25 +45,25 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 
 namespace {
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
+                                  Real *ptheta, Real *pphi);
 void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 Real CalculateLFromRPeak(Real r);
 Real CalculateRPeakFromL(Real l_target);
 Real LogHAux(Real r, Real sin_theta);
 void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3);
 void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
-                                           Real *pu1, Real *pu2, Real *pu3);
+                                    Real *pu1, Real *pu2, Real *pu3);
 Real CalculateBetaMin();
 bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-                          Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta);
+                   Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta);
 bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
-                               Real theta_m, Real theta_c, Real theta_p,
-                               Real a_cm, Real a_cp, Real a_mc, Real a_pc,
-                               Real *pbeta);
+                        Real theta_m, Real theta_c, Real theta_p,
+                        Real a_cm, Real a_cp, Real a_mc, Real a_pc,
+                        Real *pbeta);
 Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
-                                      Real phi);
+                               Real phi);
 
 // Global variables
 Real m, a;                                  // black hole parameters
@@ -73,7 +73,7 @@ Real psi, sin_psi, cos_psi;                 // tilt parameters
 Real log_h_edge, log_h_peak;                // calculated torus parameters
 Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
 Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
-b_configs field_config;                     // type of magnetic field
+MagneticFieldConfigs field_config;                     // type of magnetic field
 Real potential_cutoff;                      // sets region of torus to magnetize
 Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
 Real beta_min;                              // min ratio of gas to mag pressure
@@ -112,11 +112,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::string field_config_str = pin->GetString("problem",
                                                   "field_config");
     if (field_config_str == "vertical") {
-      field_config = vertical;
+      field_config = MagneticFieldConfigs::vertical;
     } else if (field_config_str == "normal") {
-      field_config = normal;
+      field_config = MagneticFieldConfigs::normal;
     } else if (field_config_str == "renorm") {
-      field_config = renorm;
+      field_config = MagneticFieldConfigs::renorm;
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Problem Generator\n"
@@ -125,7 +125,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       ATHENA_ERROR(msg);
     }
 
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       potential_cutoff = pin->GetReal("problem", "potential_cutoff");
       potential_r_pow = pin->GetReal("problem", "potential_r_pow");
       potential_rho_pow = pin->GetReal("problem", "potential_rho_pow");
@@ -152,8 +152,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   pert_kz = pin->GetOrAddReal("problem", "pert_kz", 0.0);
 
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, InflowBoundary);
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 
@@ -352,7 +352,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     AthenaArray<Real> a_phi_edges, a_phi_cells;
     AthenaArray<Real> a_theta_0, a_theta_1, a_theta_2, a_theta_3;
     AthenaArray<Real> a_phi_0, a_phi_1, a_phi_2, a_phi_3;
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       if (psi == 0.0) {
         a_phi_edges.NewAthenaArray(ju+2, iu+2);
         a_phi_cells.NewAthenaArray(ju+1, iu+1);
@@ -370,7 +370,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real normalization;
 
     // Calculate vector potential in normal case
-    if (field_config == normal) {
+    if (field_config == MagneticFieldConfigs::normal) {
       // Calculate edge-centered vector potential values for untilted disks
       if (psi == 0.0) {
         for (int j=jl; j<=ju+1; ++j) {
@@ -505,7 +505,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
       // Calculate vector potential in renormalized case
-    } else if (field_config == renorm) {
+    } else if (field_config == MagneticFieldConfigs::renorm) {
       // Check that this is not a tilted disk
       if (psi != 0.0) {
         std::stringstream msg;
@@ -854,7 +854,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       bbr_theta_faces.DeleteAthenaArray();
 
       // Calculate normalization in vertical case
-    } else if (field_config == vertical) {
+    } else if (field_config == MagneticFieldConfigs::vertical) {
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
         normalization = 0.0;
@@ -871,7 +871,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Set magnetic fields according to vector potential in vertical case
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       // Set B^1
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -1231,7 +1231,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Free vector potential arrays
-    if (field_config != vertical) {
+    if (field_config != MagneticFieldConfigs::vertical) {
       if (psi == 0.0) {
         a_phi_edges.DeleteAthenaArray();
         a_phi_cells.DeleteAthenaArray();
@@ -1441,7 +1441,7 @@ namespace {
 //   conversion is trivial in all currently implemented coordinate systems
 
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
@@ -1462,8 +1462,8 @@ void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
 void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -1636,7 +1636,7 @@ void CalculateVelocityInTorus(Real r, Real sin_theta, Real *pu0, Real *pu3) {
 //   finally transforms that velocity into coordinates in which torus is tilted
 
 void CalculateVelocityInTiltedTorus(Real r, Real theta, Real phi, Real *pu0,
-                                           Real *pu1, Real *pu2, Real *pu3) {
+                                    Real *pu1, Real *pu2, Real *pu3) {
   // Calculate corresponding location
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);
@@ -1768,7 +1768,7 @@ Real CalculateBetaMin() {
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
-                          Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta) {
+                   Real theta_p, Real phi_m, Real phi_c, Real phi_p, Real *pbeta) {
   // Assemble arrays of points
   Real r_vals[7], theta_vals[7], phi_vals[7];
   r_vals[0] = r_c; theta_vals[0] = theta_c; phi_vals[0] = phi_c;
@@ -1798,14 +1798,14 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
       Real vary = y;
       Real varz = sin_psi * x + cos_psi * z;
       sin_vartheta_vals[p] = std::sqrt(SQR(varx) + SQR(vary));
-      if (field_config == vertical) {
+      if (field_config == MagneticFieldConfigs::vertical) {
         break;
       }
       cos_vartheta_vals[p] = varz;
       varphi = std::atan2(vary, varx);
     } else {
       sin_vartheta_vals[p] = std::abs(sin_theta_vals[p]);
-      if (field_config == vertical) {
+      if (field_config == MagneticFieldConfigs::vertical) {
         break;
       }
       cos_vartheta_vals[p] = cos_theta_vals[p];
@@ -1825,7 +1825,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
     if (log_h_vals[p] < 0.0) {
       return false;
     }
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       break;
     }
   }
@@ -1842,7 +1842,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
     if (p == 0) {
       pgas = pgas_over_rho * rho;
     }
-    if (field_config == vertical) {
+    if (field_config == MagneticFieldConfigs::vertical) {
       break;
     }
     Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
@@ -1855,7 +1855,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
 
   // Account for tilt
   Real a_theta_vals[7], a_phi_vals[7];
-  if (field_config != vertical) {
+  if (field_config != MagneticFieldConfigs::vertical) {
     for (int p = 0; p < 7; ++p) {
       if (psi != 0.0) {
         Real dvarphi_dtheta = -sin_psi * sin_phi_vals[p] / SQR(sin_vartheta_vals[p]);
@@ -1874,7 +1874,7 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
   // Calculate cell-centered 3-magnetic field
   Real det = (SQR(r_c) + SQR(a) * SQR(cos_theta_vals[0])) * std::abs(sin_theta_vals[0]);
   Real bb1, bb2, bb3;
-  if (field_config != vertical) {
+  if (field_config != MagneticFieldConfigs::vertical) {
     bb1 = 1.0/det * ((a_phi_vals[4]-a_phi_vals[3]) / (theta_p-theta_m)
                      - (a_theta_vals[6]-a_theta_vals[5]) / (phi_p-phi_m));
     bb2 = -1.0/det * (a_phi_vals[2]-a_phi_vals[1]) / (r_p-r_m);
@@ -1906,9 +1906,9 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
-                               Real theta_m, Real theta_c, Real theta_p,
-                               Real a_cm, Real a_cp, Real a_mc, Real a_pc,
-                               Real *pbeta) {
+                        Real theta_m, Real theta_c, Real theta_p,
+                        Real a_cm, Real a_cp, Real a_mc, Real a_pc,
+                        Real *pbeta) {
   // Calculate trigonometric functions of theta
   Real sin_theta_c = std::sin(theta_c);
   Real cos_theta_c = std::cos(theta_c);
@@ -1953,7 +1953,7 @@ bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
 //   returned value: magnetic pressure
 
 Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
-                                      Real phi) {
+                               Real phi) {
   // Calculate Boyer-Lindquist metric
   Real sin_theta = std::sin(theta);
   Real cos_theta = std::cos(theta);

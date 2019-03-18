@@ -226,13 +226,13 @@ void FFTBlock::ApplyKernel(int mode) {
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
-//                                                enum AthenaFFTDirection dir)
+//                                                AthenaFFTDirection dir)
 //  \brief initialize FFT plan using mesh information
 
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
-                                         enum AthenaFFTDirection dir) {
+                                         AthenaFFTDirection dir) {
   int nfast,nmid,nslow;
-  if (dir == AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     nfast = f_in_->Nx[0]; nmid = f_in_->Nx[1]; nslow = f_in_->Nx[2];
   } else {
     nfast = b_in_->Nx[0]; nmid = b_in_->Nx[1]; nslow = b_in_->Nx[2];
@@ -244,16 +244,16 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(AthenaFFTComplex *data,
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 1D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
-  if (dir == AthenaFFTForward)
+  if (dir == AthenaFFTDirection::forward)
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
   else
     plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -264,20 +264,20 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, AthenaFFTComplex *data,
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //                                           AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 2D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                     AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
-  if (dir == AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     plan->dir = FFTW_FORWARD;
     plan->plan2d = fft_2d_create_plan(MPI_COMM_WORLD,nfast,nslow,
                                       f_in_->is[0],f_in_->ie[0],
@@ -301,7 +301,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->plan3d=nullptr;
   plan->plan=nullptr;
 #else // MPI_PARALLEL
-  if (dir == AthenaFFTForward)
+  if (dir == AthenaFFTDirection::forward)
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   else
     plan->plan = fftw_plan_dft_2d(nslow,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);
@@ -314,22 +314,22 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 //                                           AthenaFFTComplex *data,
-//                                           enum AthenaFFTDirection dir)
+//                                           AthenaFFTDirection dir)
 //  \brief initialize FFT plan for 3D FFT
 
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                     AthenaFFTComplex *data,
-                                    enum AthenaFFTDirection dir) {
+                                    AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
 
 #ifdef FFT
   plan = new AthenaFFTPlan;
-  plan->dir = dir;
+  plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
 #ifdef MPI_PARALLEL
   int nbuf;
   int ois[3], oie[3];
-  if (dir == AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     for (int l=0; l<dim_; l++) {
       ois[l]=f_out_->is[(l+(dim_-permute1_)) % dim_];
       oie[l]=f_out_->ie[(l+(dim_-permute1_)) % dim_];
@@ -361,7 +361,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
   plan->plan2d=nullptr;
   plan->plan=nullptr;
 #else // MPI_PARALLEL
-  if (dir == AthenaFFTForward) {
+  if (dir == AthenaFFTDirection::forward) {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_FORWARD,FFTW_MEASURE);
   } else {
     plan->plan = fftw_plan_dft_3d(nslow,nmid,nfast,data,data,FFTW_BACKWARD,FFTW_MEASURE);
@@ -569,8 +569,8 @@ void AthenaFFTIndex::SetLocalIndex() {
   //  PrintIndex();
 }
 
-void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
-  int tmp;
+template <typename T> void AthenaFFTIndex::Swap_(T loc[], int ref_axis) {
+  T tmp;
   int axis1=(ref_axis+1) % dim_, axis2=ref_axis+2 % dim_;
   tmp=loc[axis1];
   loc[axis1]=loc[axis2];
@@ -580,6 +580,7 @@ void AthenaFFTIndex::Swap_(int loc[],int ref_axis) {
 void AthenaFFTIndex::SwapAxis(int ref_axis) {
   Swap_(iloc,ref_axis);
   Swap_(Nx,ref_axis);
+  Swap_(Lx,ref_axis);
 }
 
 void AthenaFFTIndex::SwapProc(int ref_axis) {
@@ -588,8 +589,8 @@ void AthenaFFTIndex::SwapProc(int ref_axis) {
   Swap_(np,ref_axis);
 }
 
-void AthenaFFTIndex::Permute_(int loc[], int npermute) {
-  int tmp;
+template <typename T> void AthenaFFTIndex::Permute_(T loc[], int npermute) {
+  T tmp;
   for (int i=0; i<npermute; i++) {
     tmp=loc[0];
     loc[0]=loc[1];
@@ -601,33 +602,13 @@ void AthenaFFTIndex::Permute_(int loc[], int npermute) {
 void AthenaFFTIndex::PermuteAxis(int npermute) {
   Permute_(iloc,npermute);
   Permute_(Nx,npermute);
+  Permute_(Lx,npermute);
 }
 
 void AthenaFFTIndex::PermuteProc(int npermute) {
   Permute_(ploc,npermute);
   Permute_(np,npermute);
   Permute_(ip,npermute);
-}
-
-void AthenaFFTIndex::RemapArray_(int arr[], int loc[], int dir) {
-  int tmp[3];
-  for (int i=0; i<dim_; i++) tmp[i]=arr[i];
-  for (int i=0; i<dim_; i++) {
-    if (dir>0) {
-      arr[loc[i]]=tmp[i];
-    } else {
-      arr[i]=tmp[loc[i]];
-    }
-  }
-}
-
-void AthenaFFTIndex::RemapAxis(int dir) {
-  RemapArray_(Nx,iloc,dir);
-}
-
-void AthenaFFTIndex::RemapProc(int dir) {
-  RemapArray_(np,ploc,dir);
-  RemapArray_(ip,ploc,dir);
 }
 
 void AthenaFFTIndex::PrintIndex() {

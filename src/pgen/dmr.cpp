@@ -59,9 +59,9 @@ int RefinementCondition(MeshBlock *pmb);
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll user-defined boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
-  EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
-  EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, DMRInnerX1);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x2, DMRInnerX2);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x2, DMROuterX2);
   // Enroll user-defined AMR criterion
   if (adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);

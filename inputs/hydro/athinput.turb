@@ -18,7 +18,7 @@ dt         = 0.1        # time increment between outputs
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = 100000     # cycle limit
-tlim       = 0.2        # time limit
+tlim       = 0.5        # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
@@ -42,10 +42,21 @@ x3max      = 1.0        # maximum value of X3
 ix3_bc     = periodic   # inner-X3 boundary flag
 ox3_bc     = periodic   # outer-X3 boundary flag
 
+refinement = none
+
 <meshblock>
 nx1        = 32
 nx2        = 32
 nx3        = 32
+
+<refinement1>
+x1min      = 0.0
+x1max      = 1.0
+x2min      = 0.0
+x2max      = 1.0
+x3min      = 0.0
+x3max      = 1.0
+level      = 1
 
 <hydro>
 gamma           = 1.666666666667 # gamma = C_p/C_v

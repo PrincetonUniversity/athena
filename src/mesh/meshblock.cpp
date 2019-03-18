@@ -42,7 +42,7 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-                     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
+                     BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
                      int igflag, bool ref_flag) {
   pmy_mesh = pm;
   // int root_level = pm->root_level;
@@ -141,7 +141,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      LogicalLocation iloc, RegionSize input_block,
-                     enum BoundaryFlag *input_bcs,
+                     BoundaryFlag *input_bcs,
                      Real icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
   prev=nullptr;

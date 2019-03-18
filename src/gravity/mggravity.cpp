@@ -75,7 +75,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   block_size.nx2 = pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
   block_size.nx3 = pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
   for (int i=nbs; i<=nbe; i++) {
-    enum BoundaryFlag block_bcs[6];
+    BoundaryFlag block_bcs[6];
     pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
     Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
                                  MGBoundary, block_bcs, false);
