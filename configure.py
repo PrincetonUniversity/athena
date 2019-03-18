@@ -13,7 +13,7 @@
 #   --eos=xxx         use xxx as the equation of state
 #   --flux=xxx        use xxx as the Riemann solver
 #   --nghost=xxx      set NGHOST=xxx
-#   --nscalars=xxx      set NSCALARS=xxx
+#   --nscalars=xxx    set NSCALARS=xxx
 #   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
