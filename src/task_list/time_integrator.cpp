@@ -486,7 +486,41 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldDiffusion);
       break;
-
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
+    // case (DIFFUSE_FLD):
+    //   task_list_[ntasks].TaskFunc=
+    //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //   break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl

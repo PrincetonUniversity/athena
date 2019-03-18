@@ -246,5 +246,14 @@ const std::uint64_t RMAP_EMFSH = 1ULL<<46;
 const std::uint64_t DIFFUSE_HYD      = 1ULL<<47;
 const std::uint64_t DIFFUSE_FLD      = 1ULL<<48;
 const std::uint64_t CALC_DIFFUSIVITY = 1ULL<<49;
+
+const std::uint64_t CALC_SCALARFLX    = 1ULL<<50;
+const std::uint64_t SEND_SCALARFLX    = 1ULL<<51;
+const std::uint64_t RECV_SCALARFLX    = 1ULL<<52;
+const std::uint64_t INT_SCALARS       = 1ULL<<53;
+const std::uint64_t SEND_SCALARS      = 1ULL<<54;
+const std::uint64_t RECV_SCALARS      = 1ULL<<55;
+const std::uint64_t SETB_SCALARS      = 1ULL<<56;
+
 } // namespace HydroIntegratorTaskNames
 #endif // TASK_LIST_TASK_LIST_HPP_
