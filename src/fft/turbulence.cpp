@@ -41,16 +41,16 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2);
   expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
   dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
-  if (pm->turb_flag > 1){
+  if (pm->turb_flag > 1) {
     tcorr = pin->GetReal("problem","tcorr"); // correlation time scales for OU smoothing
     if (pm->turb_flag == 2)
-      dtdrive = pin->GetReal("problem","dtdrive"); // driving interval is set by hand 
+      dtdrive = pin->GetReal("problem","dtdrive"); // driving interval is set by hand
   }
   f_shear = pin->GetOrAddReal("problem","f_shear",-1); // ratio of shear component
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
-        << "The ratio between shear and compressible components should be less than one" 
+        << "The ratio between shear and compressible components should be less than one"
         << std::endl;
     ATHENA_ERROR(msg);
     return;
@@ -89,7 +89,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   fv_sh_ = new AthenaFFTComplex*[3];
   fv_co_ = new AthenaFFTComplex*[3];
   if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex*[3];
-  for (int nv=0; nv<3; nv++){
+  for (int nv=0; nv<3; nv++) {
     fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
     fv_sh_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
     fv_co_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
@@ -163,7 +163,7 @@ void TurbulenceDriver::Generate() {
   // Ornstein-Uhlenbeck (OU) process is implemented.
   // fv_ are set initially (or in restart) and kept
   // unless tcorr == 0
-  if (not initialized_){
+  if (!initialized_) {
     for (int nv=0; nv<3; nv++) {
       AthenaFFTComplex *fv = fv_[nv];
       PowerSpectrum(fv);
@@ -433,7 +433,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh, AthenaFFTComplex **fv_co)
+//! \fn void TurbulenceDriver::Project()
 //  \brief calculates shear and compressible components
 
 void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
@@ -447,7 +447,8 @@ void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
   }
 }
 
-void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh, AthenaFFTComplex **fv_co) {
+void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh,
+                               AthenaFFTComplex **fv_co) {
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
   int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
