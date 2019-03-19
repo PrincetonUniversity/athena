@@ -303,8 +303,8 @@ TaskStatus SuperTimeStepTaskList::EMFCorrectReceive_STS(MeshBlock *pmb, int stag
 // Functions to integrate conserved variables
 
 TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
-  Field *pf=pmb->pfield;
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
 
   // set registers
   ph->u2.SwapAthenaArray(ph->u1);
@@ -325,7 +325,7 @@ TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) 
     ave_wghts[0] = 0.0;
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
-    ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+    pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
     return TaskStatus::next;
   }
@@ -333,14 +333,14 @@ TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) 
 }
 
 TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int stage) {
-  Field *pf=pmb->pfield;
+  Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
-    pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+    pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
     pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
     return TaskStatus::next;
   }

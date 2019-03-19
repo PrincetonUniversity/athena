@@ -612,15 +612,15 @@ TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int stage) 
 // Functions to integrate conserved variables
 
 TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
-  Field *pf=pmb->pfield;
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to FieldInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    ph->WeightedAveU(ph->u1, ph->u, ph->u2, ave_wghts);
+    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -628,7 +628,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
     if (ave_wghts[0] == 0.0 && ave_wghts[0] == 1.0 && ave_wghts[2] == 0.0)
       ph->u.SwapAthenaArray(ph->u1);
     else
-      ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
 
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, stage_wghts[stage-1].beta, ph->u);
 
@@ -641,7 +641,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
       ave_wghts[2] = 0.0;
       Real beta = 0.063692468666290; // F(u^(3)) coeff.
       // writing out to u2 register
-      ph->WeightedAveU(ph->u2, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
       ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, beta, ph->u2);
     }
@@ -652,7 +652,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
-  Field *pf=pmb->pfield;
+  Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
@@ -660,7 +660,7 @@ TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pf->WeightedAveB(pf->b1,pf->b,pf->b2,ave_wghts);
+    pmb->WeightedAve(pf->b1, pf->b, pf->b2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -670,7 +670,7 @@ TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
       pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
       pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
     } else {
-      pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+      pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
     }
 
     pf->CT(stage_wghts[stage-1].beta, pf->b);
