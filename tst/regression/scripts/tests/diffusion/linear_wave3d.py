@@ -21,6 +21,12 @@ _kappa = _nu*2.0
 _eta = _kappa
 _c_s = 0.5  # slow mode wave speed of Athena++ linear wave configuration
 
+resolution_range = [32, 64]
+# Upper bound on relative L1 error for each above nx1:
+error_rel_tols = [0.22, 0.05]
+# lower bound on convergence rate at final (Nx1=64) asymptotic convergence regime
+rate_tols = [2.0]  # convergence rate > 3.0 for this particular resolution, sovler
+
 
 def prepare(**kwargs):
     athena.configure('b',
@@ -31,18 +37,25 @@ def prepare(**kwargs):
 
 
 def run(**kwargs):
-    arguments0 = ['output2/dt=0.03',
-                  'time/tlim=3.0',
-                  'time/ncycle_out=0',
-                  # L-going slow wave
-                  'problem/wave_flag=2',
-                  'problem/amp=1.0e-4',
-                  'problem/vflow=0.0',
-                  'problem/nu_iso={}'.format(_nu),
-                  'problem/eta_ohm={}'.format(_eta),
-                  'problem/kappa_iso={}'.format(_kappa)]
-    arguments = arguments0 + ['job/problem_id=DecayLinWave']
-    athena.run('mhd/athinput.linear_wave3d', arguments)
+    for i in resolution_range:
+        arguments = ['output2/dt=0.03',
+                     'time/tlim=3.0',
+                     'time/ncycle_out=0',
+                     # L-going slow wave
+                     'problem/wave_flag=2',
+                     'problem/amp=1.0e-4',
+                     'problem/vflow=0.0',
+                     'problem/nu_iso={}'.format(_nu),
+                     'problem/eta_ohm={}'.format(_eta),
+                     'problem/kappa_iso={}'.format(_kappa),
+                     'mesh/nx1=' + repr(i),
+                     'mesh/nx2=' + repr(i/2),
+                     'mesh/nx3=' + repr(i/2),
+                     'meshblock/nx1=' + repr(i),
+                     'meshblock/nx2=' + repr(i/2),
+                     'meshblock/nx3=' + repr(i/2),
+                     'job/problem_id=DecayLinWave-{}'.format(i)]
+        athena.run('mhd/athinput.linear_wave3d', arguments)
 
 
 def analyze():
@@ -57,36 +70,69 @@ def analyze():
 
     # Equation 3.16
     re_num = (4.0*np.pi**2 * _c_s)/(L*slow_mode_rate)
-
-    basename = 'bin/DecayLinWave.block0.out2.'
     nframe = 100
     dumprate = 0.03
-    max_vy = np.zeros(nframe)
-    tt = np.zeros(nframe)
-    # TODO(#237): Replace full 3D dataset output with user-defined .hst output
-    for i in range(nframe):
-        x1f, x2f, x3f, data = athena_read.vtk(basename + '{:05d}.vtk'.format(i))
-        max_vy[i] = np.max(data['vel'][..., 1])
-        tt[i] = i*dumprate
+    analyze_status = True
+    errors_abs = []
 
-    # estimate the decay rate from simulation, using weighted least-squares (WLS)
-    yy = np.log(np.abs(max_vy))
-    p, [resid, rank, sv, rcond] = Polynomial.fit(tt, yy, 1, w=np.sqrt(max_vy), full=True)
-    resid_normal = np.sum((yy - p(tt)) ** 2)
-    r2 = 1 - resid_normal/(yy.size*yy.var())
-    pnormal = p.convert(domain=(-1, 1))
-    fit_rate = -pnormal.coef[-1]
-    print('[Decaying 3D Linear Wave]: Reynolds number of slow mode: {}'.format(re_num))
-    print('[Decaying 3D Linear Wave]: R-squared of WLS regression = {}'.format(r2))
-    print('[Decaying 3D Linear Wave]: Analytic decay rate = {}'.format(slow_mode_rate))
-    print('[Decaying 3D Linear Wave]: Measured decay rate = {}'.format(fit_rate))
+    for (nx, err_tol) in zip(resolution_range, error_rel_tols):
+        print("[Decaying 3D Linear Wave]: Mesh size {} x {} x {}".format(nx, nx/2, nx/2))
+        basename = 'bin/DecayLinWave-{}.block0.out2.'.format(nx)
+        max_vy = np.zeros(nframe)
+        tt = np.zeros(nframe)
+        # TODO(#237): Replace full 3D dataset output with user-defined .hst output
+        for i in range(nframe):
+            x1f, x2f, x3f, data = athena_read.vtk(basename + '{:05d}.vtk'.format(i))
+            max_vy[i] = np.max(data['vel'][..., 1])
+            tt[i] = i*dumprate
 
-    flag = True
-    error_rel = np.fabs(slow_mode_rate/fit_rate - 1.0)
-    if error_rel > 0.1:
-        print('[Decaying 3D Linear Wave]: decay rate disagrees with prediction by >10%')
-        flag = False
+        # estimate the decay rate from simulation, using weighted least-squares (WLS)
+        yy = np.log(np.abs(max_vy))
+        p, [resid, rank, sv, rcond] = Polynomial.fit(tt, yy, 1, w=np.sqrt(max_vy),
+                                                     full=True)
+        resid_normal = np.sum((yy - p(tt)) ** 2)
+        r2 = 1 - resid_normal/(yy.size*yy.var())
+        pnormal = p.convert(domain=(-1, 1))
+        fit_rate = -pnormal.coef[-1]
+
+        error_abs = np.fabs(slow_mode_rate - fit_rate)
+        errors_abs += [error_abs]
+        error_rel = np.fabs(slow_mode_rate/fit_rate - 1.0)
+        err_rel_tol_percent = err_tol*100.
+
+        print('[Decaying 3D Linear Wave]: Reynolds number of slow mode: {}'.format(
+            re_num))
+        print('[Decaying 3D Linear Wave]: R-squared of WLS regression = {}'.format(
+            r2))
+        print('[Decaying 3D Linear Wave]: Analytic decay rate = {}'.format(
+            slow_mode_rate))
+        print('[Decaying 3D Linear Wave]: Measured decay rate = {}'.format(
+            fit_rate))
+        print('[Decaying 3D Linear Wave]: Decay rate absolute error = {}'.format(
+            error_abs))
+        print('[Decaying 3D Linear Wave]: Decay rate relative error = {}'.format(
+            error_rel))
+
+        if error_rel > err_tol:
+            print('[Decaying 3D Linear Wave]: decay rate disagrees'
+                  ' with prediction by >{}%'.format(err_rel_tol_percent))
+            analyze_status = False
+        else:
+            print('[Decaying 3D Linear Wave]: decay rate is within '
+                  '{}% of analytic value'.format(err_rel_tol_percent))
+        print('')
+
+    # Check second-order convergence rate of overall solver (STS converges only at 1st)
+    rate = np.log(errors_abs[-2]/errors_abs[-1]) / (
+        np.log(resolution_range[-1]/resolution_range[-2]))
+    print('[Decaying 3D Linear Wave]: convergence rate of decay rate error = {}'.format(
+        rate))
+    if rate < rate_tols[-1]:
+        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
+              'is slower than {}'.format(rate_tols[-1]))
+        analyze_status = False
     else:
-        print('[Decaying 3D Linear Wave]: decay rate is within 10% of analytic value')
+        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
+              'is at least {}'.format(rate_tols[-1]))
 
-    return flag
+    return analyze_status
