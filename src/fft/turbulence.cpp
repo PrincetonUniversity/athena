@@ -441,8 +441,8 @@ void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
   Project(fv, fv_sh_, fv_co_);
   for (int nv=0; nv<3; nv++) {
     for (int kidx=0; kidx<pfb->cnt_; kidx++) {
-      fv_[nv][kidx][0] = (1-f_shear)*fv_co_[nv][kidx][0] + f_shear*fv_sh_[nv][kidx][0];
-      fv_[nv][kidx][1] = (1-f_shear)*fv_co_[nv][kidx][1] + f_shear*fv_sh_[nv][kidx][1];
+      fv[nv][kidx][0] = (1-f_shear)*fv_co_[nv][kidx][0] + f_shear*fv_sh_[nv][kidx][0];
+      fv[nv][kidx][1] = (1-f_shear)*fv_co_[nv][kidx][1] + f_shear*fv_sh_[nv][kidx][1];
     }
   }
 }
