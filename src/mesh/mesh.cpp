@@ -1315,7 +1315,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // BoundaryVariable objects evolved in main TimeIntegratorTaskList:
       pmb->pbval->SetupPersistentMPI();
       // other BoundaryVariable objects:
-      pmb->pgrav->pgbval->SetupPersistentMPI();
+      if (SELF_GRAVITY_ENABLED == 1)
+        pmb->pgrav->pgbval->SetupPersistentMPI();
     }
 
     // solve gravity for the first time
