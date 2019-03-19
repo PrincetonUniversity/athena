@@ -25,7 +25,8 @@
 
 namespace {
 // Declarations
-#pragma omp delcare simd simdlen(SIMD_WIDTH)
+//#pragma omp delcare simd simdlen(SIMD_WIDTH) uniform(prim,gamma_adi,g,gi,k,j,cons,pco) \
+  //linear(i)
 void PrimitiveToConservedSingle(
                                 const AthenaArray<Real> &prim, Real gamma_adi,
                                 const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
@@ -243,7 +244,7 @@ void EquationOfState::ConservedToPrimitive(
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-#pragma omp simd simdlen(SIMD_WIDTH)
+      //#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         if (fixed_(k,j,i)) {
           PrimitiveToConservedSingle(prim, gamma_prime, g_, g_inv_, k, j, i, cons, pco);
@@ -278,7 +279,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pco->CellMetric(k, j, il, iu, g_, g_inv_);
-#pragma omp simd simdlen(SIMD_WIDTH)
+      //#pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         PrimitiveToConservedSingle(prim, gamma_prime, g_, g_inv_, k, j, i, cons, pco);
       }
