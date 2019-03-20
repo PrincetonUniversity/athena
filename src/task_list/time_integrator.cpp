@@ -225,9 +225,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if (!STS_ENABLED) {
       AddTask(DIFFUSE_HYD,NONE);
       if (MAGNETIC_FIELDS_ENABLED) {
-        AddTask(DIFFUSE_FLD,DIFFUSE_HYD);
+        AddTask(DIFFUSE_FLD,NONE);
         // compute hydro fluxes, integrate hydro variables
-        AddTask(CALC_HYDFLX,DIFFUSE_FLD);
+        AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
       } else {
         AddTask(CALC_HYDFLX,DIFFUSE_HYD);
       }
@@ -558,13 +558,13 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
 
     // Initialize storage registers
-    Hydro *ph=pmb->phydro;
+    Hydro *ph = pmb->phydro;
     ph->u1.ZeroClear();
     if (integrator == "ssprk5_4")
       ph->u2 = ph->u;
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      Field *pf=pmb->pfield;
+      Field *pf = pmb->pfield;
       pf->b1.x1f.ZeroClear();
       pf->b1.x2f.ZeroClear();
       pf->b1.x3f.ZeroClear();
@@ -592,8 +592,8 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 // Functions to calculates fluxes
 
 TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
+  Hydro *phydro = pmb->phydro;
+  Field *pfield = pmb->pfield;
 
   if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
@@ -651,23 +651,23 @@ TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int stage) 
 // Functions to integrate conserved variables
 
 TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
-  Field *pf=pmb->pfield;
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to FieldInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    ph->WeightedAveU(ph->u1, ph->u, ph->u2, ave_wghts);
+    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    if (ave_wghts[0] == 0.0 && ave_wghts[0] == 1.0 && ave_wghts[2] == 0.0)
+    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
       ph->u.SwapAthenaArray(ph->u1);
     else
-      ph->WeightedAveU(ph->u, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
 
     ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, stage_wghts[stage-1].beta, ph->u);
 
@@ -680,7 +680,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
       ave_wghts[2] = 0.0;
       Real beta = 0.063692468666290; // F(u^(3)) coeff.
       // writing out to u2 register
-      ph->WeightedAveU(ph->u2, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
       ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, beta, ph->u2);
     }
@@ -691,7 +691,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
-  Field *pf=pmb->pfield;
+  Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
@@ -699,17 +699,17 @@ TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pf->WeightedAveB(pf->b1,pf->b,pf->b2,ave_wghts);
+    pmb->WeightedAve(pf->b1, pf->b, pf->b2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    if (ave_wghts[0] == 0.0 && ave_wghts[0] == 1.0 && ave_wghts[2] == 0.0) {
+    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
       pf->b.x1f.SwapAthenaArray(pf->b1.x1f);
       pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
       pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
     } else {
-      pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
+      pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
     }
 
     pf->CT(stage_wghts[stage-1].beta, pf->b);
@@ -724,8 +724,8 @@ TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
 // Functions to add source terms
 
 TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
-  Field *pf=pmb->pfield;
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
 
   // return if there are no source terms to be added
   if (ph->psrc->hydro_sourceterms_defined == false) return TaskStatus::next;
@@ -747,7 +747,7 @@ TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int stage) {
 // Functions to calculate hydro diffusion fluxes
 
 TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
-  Hydro *ph=pmb->phydro;
+  Hydro *ph = pmb->phydro;
 
   // return if there are no diffusion to be added
   if (ph->phdif->hydro_diffusion_defined == false) return TaskStatus::next;
@@ -764,7 +764,7 @@ TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
 // Functions to calculate diffusion EMF
 
 TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
-  Field *pf=pmb->pfield;
+  Field *pf = pmb->pfield;
 
   // return if there are no diffusion to be added
   if (pf->pfdif->field_diffusion_defined == false) return TaskStatus::next;
@@ -920,7 +920,7 @@ TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage) {
 // Functions for everything else
 
 TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
-  BoundaryValues *pbval=pmb->pbval;
+  BoundaryValues *pbval = pmb->pbval;
 
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
@@ -936,10 +936,10 @@ TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
-  int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+  Hydro *phydro = pmb->phydro;
+  Field *pfield = pmb->pfield;
+  BoundaryValues *pbval = pmb->pbval;
+  int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
   if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
   if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
   if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
@@ -982,7 +982,7 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  BoundaryValues *pbval=pmb->pbval;
+  BoundaryValues *pbval = pmb->pbval;
 
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair

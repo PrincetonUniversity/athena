@@ -77,9 +77,9 @@ class MeshBlock {
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
-  int is,ie,js,je,ks,ke;
+  int is, ie, js, je, ks, ke;
   int gid, lid;
-  int cis,cie,cjs,cje,cks,cke,cnghost;
+  int cis, cie, cjs, cje, cks, cke, cnghost;
   int gflag;
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
@@ -115,6 +115,10 @@ class MeshBlock {
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+  void WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                   AthenaArray<Real> &u_in2, const Real wght[3]);
+  void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+                   const Real wght[3]);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
