@@ -250,7 +250,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   // Move restarts to the end of the OutputType list, so file counters for other
   // output types are up-to-date in restart file
   int pos=0, found=0;
-  OutputType *pot=pfirst_type_, *prst;
+  OutputType *pot = pfirst_type_;
+  OutputType *prst = pot;
   while (pot!=nullptr) {
     if (pot->output_params.file_type.compare("rst")==0) {
       prst=pot;
@@ -334,10 +335,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-  }
 
-  // pressure
-  if (NON_BAROTROPIC_EOS) {
+    // pressure
     if (output_params.variable.compare("p") == 0 ||
         output_params.variable.compare("prim") == 0) {
       pod = new OutputData;
@@ -364,7 +363,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "mom_xyz";
-      pod->data.NewAthenaArray(3, phyd->u.GetDim3(), phyd->u.GetDim2(), phyd->u.GetDim1());
+      pod->data.NewAthenaArray(3, phyd->u.GetDim3(), phyd->u.GetDim2(),
+                               phyd->u.GetDim1());
       CalculateCartesianVector(src,  pod->data,  pmb->pcoord);
       AppendOutputDataNode(pod);
       num_vars_+=3;
@@ -412,7 +412,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "vel_xyz";
-      pod->data.NewAthenaArray(3, phyd->w.GetDim3(), phyd->w.GetDim2(), phyd->w.GetDim1());
+      pod->data.NewAthenaArray(3, phyd->w.GetDim3(), phyd->w.GetDim2(),
+                               phyd->w.GetDim1());
       CalculateCartesianVector(src,  pod->data,  pmb->pcoord);
       AppendOutputDataNode(pod);
       num_vars_+=3;
@@ -817,14 +818,11 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
 //  \brief perform data summation and update the data list
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
-  std::stringstream str;
-
   // For each node in OutputData linked list, sum arrays containing output data
-  OutputData *pdata,*pnew;
-  pdata = pfirst_data_;
+  OutputData *pdata = pfirst_data_;
 
   while (pdata != nullptr) {
-    pnew = new OutputData;
+    OutputData *pnew = new OutputData;
     pnew->type = pdata->type;
     pnew->name = pdata->name;
     int nx4 = pdata->data.GetDim4();
