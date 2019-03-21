@@ -28,11 +28,11 @@ error_rel_tols = [0.22, 0.05]
 rate_tols = [2.0]  # convergence rate > 3.0 for this particular resolution, sovler
 
 
-def prepare(**kwargs):
-    athena.configure('b',
+def prepare(*args, **kwargs):
+    athena.configure('b', *args,
                      prob='linear_wave',
                      flux='hlld',
-                     eos='adiabatic')
+                     eos='adiabatic', **kwargs)
     athena.make()
 
 
