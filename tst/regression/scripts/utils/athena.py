@@ -54,6 +54,10 @@ def make(clean_first=True, obj_only=False):
             stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
+            # KGF: temporarily ignore "--silent" option for devnull redirection
+            # (what about stderr?) stdout, stderr default behavior:
+            # "With the default settings of None, no redirection will occur; the child’s
+            # file handles will be inherited from the parent."
             subprocess.check_call(make_command)  # , stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
