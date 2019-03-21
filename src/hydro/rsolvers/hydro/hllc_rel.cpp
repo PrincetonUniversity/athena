@@ -179,13 +179,13 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
         u_l[2] = vy_l;
         u_l[3] = vz_l;
       } else {  // SR
-      Real vx_l = prim_l(ivx,ipm);
-      Real vy_l = prim_l(ivy,ipm);
-      Real vz_l = prim_l(ivz,ipm);
-      u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-      u_l[1] = u_l[0] * vx_l;
-      u_l[2] = u_l[0] * vy_l;
-      u_l[3] = u_l[0] * vz_l;
+        Real vx_l = prim_l(ivx,ipm);
+        Real vy_l = prim_l(ivy,ipm);
+        Real vz_l = prim_l(ivz,ipm);
+        u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
+        u_l[1] = u_l[0] * vx_l;
+        u_l[2] = u_l[0] * vy_l;
+        u_l[3] = u_l[0] * vz_l;
       }
 
       // Extract right primitives
@@ -265,7 +265,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
       for (int n = 0; n < NWAVE; ++n) {
         flux_hll[n][m] = (lambda_r*flux_l[n][m] - lambda_l*flux_r[n][m]
                           + lambda_l*lambda_r * (cons_r[n][m] - cons_l[n][m]))
-          * lambda_diff_inv;
+                         * lambda_diff_inv;
       }
 
       // Calculate contact wavespeed (MB2005 18)
@@ -274,7 +274,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
       if (std::abs(flux_hll[IEN][m]) > TINY_NUMBER) {  // use quadratic formula
         // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
         lambda_star = - 2.0 * cons_hll[ivx][m]
-          / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN][m]*cons_hll[ivx][m]));
+                      / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN][m]*cons_hll[ivx][m]));
       } else {  // no quadratic term
         lambda_star = - cons_hll[ivx][m] / b;
       }
@@ -412,13 +412,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
   for (int i=il; i<=iu; i++) {
     // Extract metric
     Real g_00 = g(I00,i), g_01 = g(I01,i), g_02 = g(I02,i), g_03 = g(I03,i),
-      g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
-      g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
-      g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+         g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+         g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+         g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
     Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
-      g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
-      g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
-      g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
+         g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+         g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+         g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
@@ -438,8 +438,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-      + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-      + g_33*SQR(uu3_l);
+               + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+               + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
     ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -453,8 +453,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-      + g_33*SQR(uu3_r);
+          + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+          + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
     ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -489,7 +489,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     cons_l[IVY] = wgas_l * ucon_l[0] * ucov_l[2];
     cons_l[IVZ] = wgas_l * ucon_l[0] * ucov_l[3];
 
-      // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = IVY)
+    // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = IVY)
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * ucon_l[IVY];
     flux_l[IEN] = wgas_l * ucon_l[IVY] * ucov_l[0];

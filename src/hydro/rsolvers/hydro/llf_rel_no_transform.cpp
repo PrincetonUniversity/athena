@@ -57,12 +57,12 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     case IVX:
       pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
       break;
-     case IVY:
-       pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
-       break;
-     case IVZ:
-       pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
-       break;
+    case IVY:
+      pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+      break;
+    case IVZ:
+      pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+      break;
   }
 
   // Go through each interface
@@ -70,13 +70,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   for (int i=il; i<=iu; ++i) {
     // Extract metric
     Real g_00 = g_(I00,i), g_01 = g_(I01,i), g_02 = g_(I02,i), g_03 = g_(I03,i),
-      g_10 = g_(I01,i), g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
-      g_20 = g_(I02,i), g_21 = g_(I12,i), g_22 = g_(I22,i), g_23 = g_(I23,i),
-      g_30 = g_(I03,i), g_31 = g_(I13,i), g_32 = g_(I23,i), g_33 = g_(I33,i);
+         g_10 = g_(I01,i), g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
+         g_20 = g_(I02,i), g_21 = g_(I12,i), g_22 = g_(I22,i), g_23 = g_(I23,i),
+         g_30 = g_(I03,i), g_31 = g_(I13,i), g_32 = g_(I23,i), g_33 = g_(I33,i);
     Real g00 = gi_(I00,i), g01 = gi_(I01,i), g02 = gi_(I02,i), g03 = gi_(I03,i),
-      g10 = gi_(I01,i), g11 = gi_(I11,i), g12 = gi_(I12,i), g13 = gi_(I13,i),
-      g20 = gi_(I02,i), g21 = gi_(I12,i), g22 = gi_(I22,i), g23 = gi_(I23,i),
-      g30 = gi_(I03,i), g31 = gi_(I13,i), g32 = gi_(I23,i), g33 = gi_(I33,i);
+         g10 = gi_(I01,i), g11 = gi_(I11,i), g12 = gi_(I12,i), g13 = gi_(I13,i),
+         g20 = gi_(I02,i), g21 = gi_(I12,i), g22 = gi_(I22,i), g23 = gi_(I23,i),
+         g30 = gi_(I03,i), g31 = gi_(I13,i), g32 = gi_(I23,i), g33 = gi_(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
     Real gii, g0i;
 
@@ -108,8 +108,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-      + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-      + g_33*SQR(uu3_l);
+               + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+               + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
     ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -123,8 +123,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-      + g_33*SQR(uu3_r);
+          + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+          + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
     ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -189,7 +189,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Set fluxes
     for (int n = 0; n < NHYDRO; ++n) {
       flux(n,k,j,i) =
-        0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+          0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
     }
   }
   return;

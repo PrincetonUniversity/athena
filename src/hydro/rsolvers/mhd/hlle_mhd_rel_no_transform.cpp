@@ -69,13 +69,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   for (int i=il; i<=iu; ++i) {
     // Extract metric
     Real g_00 = g_(I00,i), g_01 = g_(I01,i), g_02 = g_(I02,i), g_03 = g_(I03,i),
-      g_10 = g_(I01,i), g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
-      g_20 = g_(I02,i), g_21 = g_(I12,i), g_22 = g_(I22,i), g_23 = g_(I23,i),
-      g_30 = g_(I03,i), g_31 = g_(I13,i), g_32 = g_(I23,i), g_33 = g_(I33,i);
+         g_10 = g_(I01,i), g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
+         g_20 = g_(I02,i), g_21 = g_(I12,i), g_22 = g_(I22,i), g_23 = g_(I23,i),
+         g_30 = g_(I03,i), g_31 = g_(I13,i), g_32 = g_(I23,i), g_33 = g_(I33,i);
     Real g00 = gi_(I00,i), g01 = gi_(I01,i), g02 = gi_(I02,i), g03 = gi_(I03,i),
-      g10 = gi_(I01,i), g11 = gi_(I11,i), g12 = gi_(I12,i), g13 = gi_(I13,i),
-      g20 = gi_(I02,i), g21 = gi_(I12,i), g22 = gi_(I22,i), g23 = gi_(I23,i),
-      g30 = gi_(I03,i), g31 = gi_(I13,i), g32 = gi_(I23,i), g33 = gi_(I33,i);
+         g10 = gi_(I01,i), g11 = gi_(I11,i), g12 = gi_(I12,i), g13 = gi_(I13,i),
+         g20 = gi_(I02,i), g21 = gi_(I12,i), g22 = gi_(I22,i), g23 = gi_(I23,i),
+         g30 = gi_(I03,i), g31 = gi_(I13,i), g32 = gi_(I23,i), g33 = gi_(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
     Real gii, g0i;
 
@@ -85,7 +85,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     } else if (ivx==IVY) {
       gii = g22;
       g0i = g02;
-        } else if (ivx==IVZ) {
+    } else if (ivx==IVZ) {
       gii = g33;
       g0i = g03;
     }
@@ -137,8 +137,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-      + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-      + g_33*SQR(uu3_l);
+               + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+               + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
     ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -152,8 +152,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-      + g_33*SQR(uu3_r);
+          + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+          + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
     ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -167,9 +167,9 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     // Calculate 4-magnetic field in left state
     Real bcon_l[4], bcov_l[4];
     bcon_l[0] = ucon_l[0] * (g_01*bb1_l + g_02*bb2_l + g_03*bb3_l)
-      + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
-      + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
-      + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
+                + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
+                + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
+                + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
     bcon_l[1] = (bb1_l + bcon_l[0] * ucon_l[1]) / ucon_l[0];
     bcon_l[2] = (bb2_l + bcon_l[0] * ucon_l[2]) / ucon_l[0];
     bcon_l[3] = (bb3_l + bcon_l[0] * ucon_l[3]) / ucon_l[0];
@@ -178,14 +178,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     bcov_l[2] = g_20*bcon_l[0] + g_21*bcon_l[1] + g_22*bcon_l[2] + g_23*bcon_l[3];
     bcov_l[3] = g_30*bcon_l[0] + g_31*bcon_l[1] + g_32*bcon_l[2] + g_33*bcon_l[3];
     Real b_sq_l = bcon_l[0]*bcov_l[0] + bcon_l[1]*bcov_l[1] + bcon_l[2]*bcov_l[2]
-      + bcon_l[3]*bcov_l[3];
+                  + bcon_l[3]*bcov_l[3];
 
     // Calculate 4-magnetic field in right state
     Real bcon_r[4], bcov_r[4];
     bcon_r[0] = ucon_r[0] * (g_01*bb1_r + g_02*bb2_r + g_03*bb3_r)
-      + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
-      + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
-      + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
+                + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
+                + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
+                + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
     bcon_r[1] = (bb1_r + bcon_r[0] * ucon_r[1]) / ucon_r[0];
     bcon_r[2] = (bb2_r + bcon_r[0] * ucon_r[2]) / ucon_r[0];
     bcon_r[3] = (bb3_r + bcon_r[0] * ucon_r[3]) / ucon_r[0];
@@ -194,7 +194,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     bcov_r[2] = g_20*bcon_r[0] + g_21*bcon_r[1] + g_22*bcon_r[2] + g_23*bcon_r[3];
     bcov_r[3] = g_30*bcon_r[0] + g_31*bcon_r[1] + g_32*bcon_r[2] + g_33*bcon_r[3];
     Real b_sq_r = bcon_r[0]*bcov_r[0] + bcon_r[1]*bcov_r[1] + bcon_r[2]*bcov_r[2]
-      + bcon_r[3]*bcov_r[3];
+                  + bcon_r[3]*bcov_r[3];
 
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
@@ -270,7 +270,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
                      + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
-        * lambda_diff_inv;
+                    * lambda_diff_inv;
     }
 
     // Determine region of wavefan
@@ -280,7 +280,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     } else if (lambda_r <= 0.0) { // R region
       flux_interface = flux_r;
     } else {  // HLL region
-          flux_interface = flux_hll;
+      flux_interface = flux_hll;
     }
 
     // Set fluxes

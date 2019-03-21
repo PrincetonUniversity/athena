@@ -371,7 +371,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real m_sq = SQR(cons_hll[ivx][m]) + SQR(cons_hll[ivy][m]) + SQR(cons_hll[ivz][m]);
         Real bb_sq = SQR(bbx) + SQR(cons_hll[IBY][m]) + SQR(cons_hll[IBZ][m]);
         Real m_dot_bb = cons_hll[ivx][m]*bbx + cons_hll[ivy][m]*cons_hll[IBY][m]
-          + cons_hll[ivz][m]*cons_hll[IBZ][m];
+                        + cons_hll[ivz][m]*cons_hll[IBZ][m];
         Real ss_sq = SQR(m_dot_bb);
 
         // Construct initial guess for enthalpy W (MM A26-A27)
@@ -406,9 +406,9 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real pgas = 1.0 / gamma_prime * chi;  // (MM A17)
         Real vx = (cons_hll[ivx][m] + m_dot_bb/w * bbx) / (w+bb_sq);  // (MM A10)
         Real vy = (cons_hll[ivy][m] + m_dot_bb/w * cons_hll[IBY][m])
-          / (w+bb_sq);  // (MM A10)
+                  / (w+bb_sq);  // (MM A10)
         Real vz = (cons_hll[ivz][m] + m_dot_bb/w * cons_hll[IBZ][m])
-          / (w+bb_sq);  // (MM A10)
+                  / (w+bb_sq);  // (MM A10)
 
         // Calculate total pressure
         Real v_bb = vx*bbx + vy*cons_hll[IBY][m] + vz*cons_hll[IBZ][m];
@@ -423,7 +423,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         ptot_init[m] = (s2 >= 0.0 && a1 >= 0.0) ?
-          -2.0*a0/(a1+s) : (-a1+s)/2.0;  // (MUB 55)
+                       -2.0*a0/(a1+s) : (-a1+s)/2.0;  // (MUB 55)
       } else {  // strong magnetic field
         ptot_init[m] = ptot_hll;
       }
@@ -455,7 +455,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       {
         // Calculate v_aL and v_aR
         Real al = r_l[ivx][m] - lambda_l*r_l[IEN][m]
-          + ptot_0[m]*(1.0-SQR(lambda_l));  // (MUB 26)
+                  + ptot_0[m]*(1.0-SQR(lambda_l));  // (MUB 26)
         Real gl = SQR(r_l[IBY][m]) + SQR(r_l[IBZ][m]);  // (MUB 27)
         Real cl = r_l[ivy][m]*r_l[IBY][m] + r_l[ivz][m]*r_l[IBZ][m];  // (MUB 28)
         Real ql = -al - gl + SQR(bbx)*(1.0-SQR(lambda_l));  // (MUB 29)
@@ -468,7 +468,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         vz_al = (ql*r_l[ivz][m] + r_l[IBZ][m] *
                  (cl + bbx * (lambda_l*r_l[ivx][m]-r_l[IEN][m]))) * xl_inv;  // (MUB 24)
         Real ar = r_r[ivx][m] - lambda_r*r_r[IEN][m]
-          + ptot_0[m]*(1.0-SQR(lambda_r));  // (MUB 26)
+                  + ptot_0[m]*(1.0-SQR(lambda_r));  // (MUB 26)
         Real gr = SQR(r_r[IBY][m]) + SQR(r_r[IBZ][m]);  // (MUB 27)
         Real cr = r_r[ivy][m]*r_r[IBY][m] + r_r[ivz][m]*r_r[IBZ][m];  // (MUB 28)
         Real qr = -ar - gr + SQR(bbx)*(1.0-SQR(lambda_r));  // (MUB 29)
@@ -500,12 +500,12 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         // Calculate K_L and K_R (MUB 43)
         Real denom_al_inv = 1.0 / (lambda_l*ptot_0[m] + r_l[IEN][m] + bbx*eta_l);
         kx_l = (r_l[ivx][m] + ptot_0[m] + lambda_l*bbx*eta_l)
-          * denom_al_inv;  // R_{B^x} = \lambda B^x
+               * denom_al_inv;  // R_{B^x} = \lambda B^x
         ky_l = (r_l[ivy][m] + r_l[IBY][m]*eta_l) * denom_al_inv;
         kz_l = (r_l[ivz][m] + r_l[IBZ][m]*eta_l) * denom_al_inv;
         Real denom_ar_inv = 1.0 / (lambda_r*ptot_0[m] + r_r[IEN][m] + bbx*eta_r);
         kx_r = (r_r[ivx][m] + ptot_0[m] + lambda_r*bbx*eta_r)
-          * denom_ar_inv;  // R_{B^x} = \lambda B^x
+               * denom_ar_inv;  // R_{B^x} = \lambda B^x
         ky_r = (r_r[ivy][m] + r_r[IBY][m]*eta_r) * denom_ar_inv;
         kz_r = (r_r[ivz][m] + r_r[IBZ][m]*eta_r) * denom_ar_inv;
 
@@ -517,18 +517,18 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real delta_kx = kx_r - kx_l + delta_kx_aug;
         Real bbx_c_delta_kx = bbx * delta_kx;
         Real by_c_delta_kx = cons_ar[IBY][m]*(lambda_ar[m]-vx_ar)
-          - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
+                             - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
         Real bz_c_delta_kx = cons_ar[IBZ][m]*(lambda_ar[m]-vx_ar)
-          - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
+                             - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
 
         // Calculate residual
         Real k_sq_l = SQR(kx_l) + SQR(ky_l) + SQR(kz_l);
         Real k_dot_bc_delta_kx = kx_l*bbx_c_delta_kx + ky_l*by_c_delta_kx
-          + kz_l*bz_c_delta_kx;
+                                 + kz_l*bz_c_delta_kx;
         Real y_l = (1.0-k_sq_l) / (eta_l*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         Real k_sq_r = SQR(kx_r) + SQR(ky_r) + SQR(kz_r);
         k_dot_bc_delta_kx = kx_r*bbx_c_delta_kx + ky_r*by_c_delta_kx
-          + kz_r*bz_c_delta_kx;
+                            + kz_r*bz_c_delta_kx;
         Real y_r = (1.0-k_sq_r) / (eta_r*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         res_0[m] = delta_kx * (1.0 - bbx * (y_r-y_l));  // (MUB 48)
       }
@@ -538,7 +538,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       {
         // Calculate v_aL and v_aR
         Real al = r_l[ivx][m] - lambda_l*r_l[IEN][m]
-          + ptot_1[m]*(1.0-SQR(lambda_l));  // (MUB 26)
+                  + ptot_1[m]*(1.0-SQR(lambda_l));  // (MUB 26)
         Real gl = SQR(r_l[IBY][m]) + SQR(r_l[IBZ][m]);  // (MUB 27)
         Real cl = r_l[ivy][m]*r_l[IBY][m] + r_l[ivz][m]*r_l[IBZ][m];  // (MUB 28)
         Real ql = -al - gl + SQR(bbx)*(1.0-SQR(lambda_l));  // (MUB 29)
@@ -551,7 +551,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         vz_al = (ql*r_l[ivz][m] + r_l[IBZ][m] *
                  (cl + bbx * (lambda_l*r_l[ivx][m]-r_l[IEN][m]))) * xl_inv;  // (MUB 24)
         Real ar = r_r[ivx][m] - lambda_r*r_r[IEN][m]
-          + ptot_1[m]*(1.0-SQR(lambda_r));  // (MUB 26)
+                  + ptot_1[m]*(1.0-SQR(lambda_r));  // (MUB 26)
         Real gr = SQR(r_r[IBY][m]) + SQR(r_r[IBZ][m]);  // (MUB 27)
         Real cr = r_r[ivy][m]*r_r[IBY][m] + r_r[ivz][m]*r_r[IBZ][m];  // (MUB 28)
         Real qr = -ar - gr + SQR(bbx)*(1.0-SQR(lambda_r));  // (MUB 29)
@@ -583,12 +583,12 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         // Calculate K_L and K_R (MUB 43)
         Real denom_al_inv = 1.0 / (lambda_l*ptot_1[m] + r_l[IEN][m] + bbx*eta_l);
         kx_l = (r_l[ivx][m] + ptot_1[m] + lambda_l*bbx*eta_l)
-          * denom_al_inv;  // R_{B^x} = \lambda B^x
+               * denom_al_inv;  // R_{B^x} = \lambda B^x
         ky_l = (r_l[ivy][m] + r_l[IBY][m]*eta_l) * denom_al_inv;
         kz_l = (r_l[ivz][m] + r_l[IBZ][m]*eta_l) * denom_al_inv;
         Real denom_ar_inv = 1.0 / (lambda_r*ptot_1[m] + r_r[IEN][m] + bbx*eta_r);
         kx_r = (r_r[ivx][m] + ptot_1[m] + lambda_r*bbx*eta_r)
-          * denom_ar_inv;  // R_{B^x} = \lambda B^x
+               * denom_ar_inv;  // R_{B^x} = \lambda B^x
         ky_r = (r_r[ivy][m] + r_r[IBY][m]*eta_r) * denom_ar_inv;
         kz_r = (r_r[ivz][m] + r_r[IBZ][m]*eta_r) * denom_ar_inv;
 
@@ -600,18 +600,18 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real delta_kx = kx_r - kx_l + delta_kx_aug;
         Real bbx_c_delta_kx = bbx * delta_kx;
         Real by_c_delta_kx = cons_ar[IBY][m]*(lambda_ar[m]-vx_ar)
-          - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
+                             - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
         Real bz_c_delta_kx = cons_ar[IBZ][m]*(lambda_ar[m]-vx_ar)
-          - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
+                             - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
 
         // Calculate residual
         Real k_sq_l = SQR(kx_l) + SQR(ky_l) + SQR(kz_l);
         Real k_dot_bc_delta_kx = kx_l*bbx_c_delta_kx + ky_l*by_c_delta_kx
-          + kz_l*bz_c_delta_kx;
+                                 + kz_l*bz_c_delta_kx;
         Real y_l = (1.0-k_sq_l) / (eta_l*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         Real k_sq_r = SQR(kx_r) + SQR(ky_r) + SQR(kz_r);
         k_dot_bc_delta_kx = kx_r*bbx_c_delta_kx + ky_r*by_c_delta_kx
-          + kz_r*bz_c_delta_kx;
+                            + kz_r*bz_c_delta_kx;
         Real y_r = (1.0-k_sq_r) / (eta_r*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         res_1[m] = delta_kx * (1.0 - bbx * (y_r-y_l));  // (MUB 48)
       }
@@ -645,7 +645,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real res_old = res_last;
         res_last = res_n;
         bool need_to_iterate = std::abs(res_last) > tol_res
-            && std::abs(ptot_last-ptot_old) > tol_ptot;
+                               && std::abs(ptot_last-ptot_old) > tol_ptot;
         if (need_to_iterate) {
           ptot_n = (res_last*ptot_old - res_old*ptot_last) / (res_last-res_old);
         } else {
@@ -654,31 +654,35 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 
         // Calculate v_aL and v_aR
         Real al = r_l[ivx][m] - lambda_l*r_l[IEN][m]
-          + ptot_n*(1.0-SQR(lambda_l));  // (MUB 26)
+                  + ptot_n*(1.0-SQR(lambda_l));  // (MUB 26)
         Real gl = SQR(r_l[IBY][m]) + SQR(r_l[IBZ][m]);  // (MUB 27)
         Real cl = r_l[ivy][m]*r_l[IBY][m] + r_l[ivz][m]*r_l[IBZ][m];  // (MUB 28)
         Real ql = -al - gl + SQR(bbx)*(1.0-SQR(lambda_l));  // (MUB 29)
         Real xl_inv = 1.0 / (bbx * (al*lambda_l*bbx+cl)
                              - (al+gl) * (lambda_l*ptot_n+r_l[IEN][m]));  // (MUB 30)
         vx_al = (bbx * (al*bbx+lambda_l*cl)
-            - (al+gl) * (ptot_n+r_l[ivx][m])) * xl_inv;  // (MUB 23)
-        vy_al = (ql*r_l[ivy][m] + r_l[IBY][m] * (cl + bbx * (lambda_l*r_l[ivx][m]
-            -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
-        vz_al = (ql*r_l[ivz][m] + r_l[IBZ][m] * (cl + bbx * (lambda_l*r_l[ivx][m]
-            -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
+                 - (al+gl) * (ptot_n+r_l[ivx][m])) * xl_inv;  // (MUB 23)
+        vy_al = (ql*r_l[ivy][m] + r_l[IBY][m]
+                 * (cl + bbx * (lambda_l*r_l[ivx][m]
+                                -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
+        vz_al = (ql*r_l[ivz][m] + r_l[IBZ][m]
+                 * (cl + bbx * (lambda_l*r_l[ivx][m]
+                                -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
         Real ar = r_r[ivx][m] - lambda_r*r_r[IEN][m]
-          + ptot_n*(1.0-SQR(lambda_r));  // (MUB 26)
+                  + ptot_n*(1.0-SQR(lambda_r));  // (MUB 26)
         Real gr = SQR(r_r[IBY][m]) + SQR(r_r[IBZ][m]);  // (MUB 27)
         Real cr = r_r[ivy][m]*r_r[IBY][m] + r_r[ivz][m]*r_r[IBZ][m];  // (MUB 28)
         Real qr = -ar - gr + SQR(bbx)*(1.0-SQR(lambda_r));  // (MUB 29)
         Real xr_inv = 1.0 / (bbx * (ar*lambda_r*bbx+cr)
-                         - (ar+gr) * (lambda_r*ptot_n+r_r[IEN][m]));  // (MUB 30)
+                             - (ar+gr) * (lambda_r*ptot_n+r_r[IEN][m]));  // (MUB 30)
         vx_ar = (bbx * (ar*bbx+lambda_r*cr)
-            - (ar+gr) * (ptot_n+r_r[ivx][m])) * xr_inv;  // (MUB 23)
-        vy_ar = (qr*r_r[ivy][m] + r_r[IBY][m] * (cr + bbx * (lambda_r*r_r[ivx][m]
-            -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
-        vz_ar = (qr*r_r[ivz][m] + r_r[IBZ][m] * (cr + bbx * (lambda_r*r_r[ivx][m]
-            -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
+                 - (ar+gr) * (ptot_n+r_r[ivx][m])) * xr_inv;  // (MUB 23)
+        vy_ar = (qr*r_r[ivy][m] + r_r[IBY][m]
+                 * (cr + bbx * (lambda_r*r_r[ivx][m]
+                                -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
+        vz_ar = (qr*r_r[ivz][m] + r_r[IBZ][m]
+                 * (cr + bbx * (lambda_r*r_r[ivx][m]
+                                -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
 
         // Calculate B_aL and B_aR (MUB 21)
         cons_al[IBY][m] = (r_l[IBY][m] - bbx*vy_al) / (lambda_l-vx_al);
@@ -699,12 +703,12 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         // Calculate K_L and K_R (MUB 43)
         Real denom_al_inv = 1.0 / (lambda_l*ptot_n + r_l[IEN][m] + bbx*eta_l);
         kx_l = (r_l[ivx][m] + ptot_n + lambda_l*bbx*eta_l)
-          * denom_al_inv;  // R_{B^x} = \lambda B^x
+               * denom_al_inv;  // R_{B^x} = \lambda B^x
         ky_l = (r_l[ivy][m] + r_l[IBY][m]*eta_l) * denom_al_inv;
         kz_l = (r_l[ivz][m] + r_l[IBZ][m]*eta_l) * denom_al_inv;
         Real denom_ar_inv = 1.0 / (lambda_r*ptot_n + r_r[IEN][m] + bbx*eta_r);
         kx_r = (r_r[ivx][m] + ptot_n + lambda_r*bbx*eta_r)
-          * denom_ar_inv;  // R_{B^x} = \lambda B^x
+               * denom_ar_inv;  // R_{B^x} = \lambda B^x
         ky_r = (r_r[ivy][m] + r_r[IBY][m]*eta_r) * denom_ar_inv;
         kz_r = (r_r[ivz][m] + r_r[IBZ][m]*eta_r) * denom_ar_inv;
 
@@ -716,18 +720,18 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         Real delta_kx = kx_r - kx_l + delta_kx_aug;
         Real bbx_c_delta_kx = bbx * delta_kx;
         Real by_c_delta_kx = cons_ar[IBY][m]*(lambda_ar[m]-vx_ar)
-            - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
+                             - cons_al[IBY][m]*(lambda_al[m]-vx_al) + bbx*(vy_ar-vy_al);
         Real bz_c_delta_kx = cons_ar[IBZ][m]*(lambda_ar[m]-vx_ar)
-            - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
+                             - cons_al[IBZ][m]*(lambda_al[m]-vx_al) + bbx*(vz_ar-vz_al);
 
         // Calculate residual
         Real k_sq_l = SQR(kx_l) + SQR(ky_l) + SQR(kz_l);
         Real k_dot_bc_delta_kx = kx_l*bbx_c_delta_kx + ky_l*by_c_delta_kx
-            + kz_l*bz_c_delta_kx;
+                                 + kz_l*bz_c_delta_kx;
         Real y_l = (1.0-k_sq_l) / (eta_l*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         Real k_sq_r = SQR(kx_r) + SQR(ky_r) + SQR(kz_r);
         k_dot_bc_delta_kx = kx_r*bbx_c_delta_kx + ky_r*by_c_delta_kx
-            + kz_r*bz_c_delta_kx;
+                            + kz_r*bz_c_delta_kx;
         Real y_r = (1.0-k_sq_r) / (eta_r*delta_kx - k_dot_bc_delta_kx);  // (MUB 49)
         res_n = delta_kx * (1.0 - bbx * (y_r-y_l));  // (MUB 48)
       }
@@ -744,25 +748,25 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       Real v_bb_al = vx_al*bbx + vy_al*cons_al[IBY][m] + vz_al*cons_al[IBZ][m];
       cons_al[IDN][m] = r_l[IDN][m] / (lambda_l-vx_al);  // (MUB 32)
       cons_al[IEN][m] = (r_l[IEN][m] + ptot_c[m]*vx_al - v_bb_al*bbx)
-        / (lambda_l-vx_al);  // (MUB 33)
+                        / (lambda_l-vx_al);  // (MUB 33)
       cons_al[ivx][m] = (cons_al[IEN][m] + ptot_c[m]) * vx_al
-        - v_bb_al * bbx;  // (MUB 34)
+                        - v_bb_al * bbx;  // (MUB 34)
       cons_al[ivy][m] = (cons_al[IEN][m] + ptot_c[m]) * vy_al
-        - v_bb_al * cons_al[IBY][m];  // (MUB 34)
+                        - v_bb_al * cons_al[IBY][m];  // (MUB 34)
       cons_al[ivz][m] = (cons_al[IEN][m] + ptot_c[m]) * vz_al
-        - v_bb_al * cons_al[IBZ][m]; // (MUB 34)
+                        - v_bb_al * cons_al[IBZ][m]; // (MUB 34)
 
       // Calculate remaining conserved quantities in aR region
       Real v_bb_ar = vx_ar*bbx + vy_ar*cons_ar[IBY][m] + vz_ar*cons_ar[IBZ][m];
       cons_ar[IDN][m] = r_r[IDN][m] / (lambda_r-vx_ar);  // (MUB 32)
       cons_ar[IEN][m] = (r_r[IEN][m] + ptot_c[m]*vx_ar - v_bb_ar*bbx)
-        / (lambda_r-vx_ar);  // (MUB 33)
+                        / (lambda_r-vx_ar);  // (MUB 33)
       cons_ar[ivx][m] = (cons_ar[IEN][m] + ptot_c[m]) * vx_ar
-        - v_bb_ar * bbx;  // (MUB 34)
+                        - v_bb_ar * bbx;  // (MUB 34)
       cons_ar[ivy][m] = (cons_ar[IEN][m] + ptot_c[m]) * vy_ar
-        - v_bb_ar * cons_ar[IBY][m];  // (MUB 34)
+                        - v_bb_ar * cons_ar[IBY][m];  // (MUB 34)
       cons_ar[ivz][m] = (cons_ar[IEN][m] + ptot_c[m]) * vz_ar
-        - v_bb_ar * cons_ar[IBZ][m];  // (MUB 34)
+                        - v_bb_ar * cons_ar[IBZ][m];  // (MUB 34)
 
       // Calculate fluxes in aL region (MUB 11,12)
       for (int n = 0; n < NWAVE; ++n) {
@@ -802,21 +806,21 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       Real v_bb_c = vx_c*bbx + vy_c*cons_c[IBY][m] + vz_c*cons_c[IBZ][m];
       if (vx_c >= 0.0) {  // cL region
         cons_c[IDN][m] = cons_al[IDN][m] * (lambda_al[m]-vx_al)
-          / (lambda_al[m]-vx_c);  // (MUB 50)
+                         / (lambda_al[m]-vx_c);  // (MUB 50)
         cons_c[IEN][m] = (lambda_al[m]*cons_al[IEN][m] - cons_al[ivx][m] + ptot_c[m]*vx_c
                           - v_bb_c*bbx) / (lambda_al[m]-vx_c);  // (MUB 51)
       } else {  // cR region
         cons_c[IDN][m] = cons_ar[IDN][m] * (lambda_ar[m]-vx_ar)
-          / (lambda_ar[m]-vx_c);  // (MUB 50)
+                         / (lambda_ar[m]-vx_c);  // (MUB 50)
         cons_c[IEN][m] = (lambda_ar[m]*cons_ar[IEN][m] - cons_ar[ivx][m] + ptot_c[m]*vx_c
                           - v_bb_c*bbx) / (lambda_ar[m]-vx_c);  // (MUB 51)
       }
       cons_c[ivx][m] = (cons_c[IEN][m] + ptot_c[m]) * vx_c
-        - v_bb_c * bbx;  // (MUB 52)
+                       - v_bb_c * bbx;  // (MUB 52)
       cons_c[ivy][m] = (cons_c[IEN][m] + ptot_c[m]) * vy_c
-        - v_bb_c * cons_c[IBY][m];  // (MUB 52)
+                       - v_bb_c * cons_c[IBY][m];  // (MUB 52)
       cons_c[ivz][m] = (cons_c[IEN][m] + ptot_c[m]) * vz_c
-        - v_bb_c * cons_c[IBZ][m];  // (MUB 52)
+                       - v_bb_c * cons_c[IBZ][m];  // (MUB 52)
 
       // Calculate fluxes in c region (MUB 11)
       for (int n = 0; n < NWAVE; ++n) {
@@ -883,9 +887,9 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         }
         if (switch_to_hlle[m]) {
           for (int n = 0; n < NWAVE; ++n) {
-              cons_interface[n][m] = cons_hll[n][m];
-              flux_interface[n][m] = flux_hll[n][m];
-            }
+            cons_interface[n][m] = cons_hll[n][m];
+            flux_interface[n][m] = flux_hll[n][m];
+          }
         }
       }
 
@@ -905,7 +909,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   }
 
   // Transform fluxes to global coordinates if in GR
-  #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
   {
     switch (ivx) {
       case IVX:
@@ -919,7 +923,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         break;
     }
   }
-  #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
   return;
 }
 
@@ -943,13 +947,13 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
                Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
   Real pgas = chi/gamma_prime;                                     // (MM A17)
   Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
-      - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
+                 - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
   return ee_calc - ee;
 }
 
@@ -972,16 +976,16 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
                     Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);           // (cf. MM A11)
   Real w_cu = SQR(w_guess) * w_guess;
   Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
-  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
-      * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
-  Real dchi_dw = 1.0 - v_sq
-      - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)                                // (MM A16)
+                  * (ss_sq * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);
+  Real dchi_dw = 1.0 - v_sq                                           // (cf. MM A14)
+                 - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;
   Real drho_dw = -gamma_lorentz*dd/2.0 * dv_sq_dw;                    // (MM A15)
   Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
   Real dpgas_drho = 0.0;                                              // (MM A18)
@@ -1026,13 +1030,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
   for (int i=il; i<=iu; i++) {
     // Extract metric
     Real g_00 = g(I00,i), g_01 = g(I01,i), g_02 = g(I02,i), g_03 = g(I03,i),
-      g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
-      g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
-      g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+         g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+         g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+         g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
     Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
-      g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
-      g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
-      g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
+         g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+         g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+         g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
@@ -1058,8 +1062,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-      + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-      + g_33*SQR(uu3_l);
+               + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+               + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
     ucon_l[1] = uu1_l - alpha * gamma_l * g01;
@@ -1073,8 +1077,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-      + g_33*SQR(uu3_r);
+          + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+          + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
     ucon_r[1] = uu1_r - alpha * gamma_r * g01;
@@ -1088,9 +1092,9 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate 4-magnetic field in left state
     Real bcon_l[4], bcov_l[4];
     bcon_l[0] = ucon_l[0] * (g_01*bb1_l + g_02*bb2_l + g_03*bb3_l)
-      + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
-      + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
-      + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
+                + ucon_l[1] * (g_11*bb1_l + g_12*bb2_l + g_13*bb3_l)
+                + ucon_l[2] * (g_21*bb1_l + g_22*bb2_l + g_23*bb3_l)
+                + ucon_l[3] * (g_31*bb1_l + g_32*bb2_l + g_33*bb3_l);
     bcon_l[1] = (bb1_l + bcon_l[0] * ucon_l[1]) / ucon_l[0];
     bcon_l[2] = (bb2_l + bcon_l[0] * ucon_l[2]) / ucon_l[0];
     bcon_l[3] = (bb3_l + bcon_l[0] * ucon_l[3]) / ucon_l[0];
@@ -1099,14 +1103,14 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     bcov_l[2] = g_20*bcon_l[0] + g_21*bcon_l[1] + g_22*bcon_l[2] + g_23*bcon_l[3];
     bcov_l[3] = g_30*bcon_l[0] + g_31*bcon_l[1] + g_32*bcon_l[2] + g_33*bcon_l[3];
     Real b_sq_l = bcon_l[0]*bcov_l[0] + bcon_l[1]*bcov_l[1] + bcon_l[2]*bcov_l[2]
-      + bcon_l[3]*bcov_l[3];
+                  + bcon_l[3]*bcov_l[3];
 
     // Calculate 4-magnetic field in right state
     Real bcon_r[4], bcov_r[4];
     bcon_r[0] = ucon_r[0] * (g_01*bb1_r + g_02*bb2_r + g_03*bb3_r)
-      + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
-      + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
-      + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
+                + ucon_r[1] * (g_11*bb1_r + g_12*bb2_r + g_13*bb3_r)
+                + ucon_r[2] * (g_21*bb1_r + g_22*bb2_r + g_23*bb3_r)
+                + ucon_r[3] * (g_31*bb1_r + g_32*bb2_r + g_33*bb3_r);
     bcon_r[1] = (bb1_r + bcon_r[0] * ucon_r[1]) / ucon_r[0];
     bcon_r[2] = (bb2_r + bcon_r[0] * ucon_r[2]) / ucon_r[0];
     bcon_r[3] = (bb3_r + bcon_r[0] * ucon_r[3]) / ucon_r[0];
@@ -1115,7 +1119,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     bcov_r[2] = g_20*bcon_r[0] + g_21*bcon_r[1] + g_22*bcon_r[2] + g_23*bcon_r[3];
     bcov_r[3] = g_30*bcon_r[0] + g_31*bcon_r[1] + g_32*bcon_r[2] + g_33*bcon_r[3];
     Real b_sq_r = bcon_r[0]*bcov_r[0] + bcon_r[1]*bcov_r[1] + bcon_r[2]*bcov_r[2]
-      + bcon_r[3]*bcov_r[3];
+                  + bcon_r[3]*bcov_r[3];
 
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
@@ -1189,7 +1193,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
                      + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
-        * lambda_diff_inv;
+                    * lambda_diff_inv;
     }
 
     // Determine region of wavefan

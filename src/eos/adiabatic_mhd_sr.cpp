@@ -349,13 +349,13 @@ namespace {
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
                Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
   Real pgas = chi/gamma_prime;                                     // (MM A17)
   Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
-      - ss_sq*0.5/SQR(w_guess);                                    // (MM A1)
+                 - ss_sq*0.5/SQR(w_guess);                                    // (MM A1)
   return ee_calc - ee;
 }
 
@@ -378,16 +378,16 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
                     Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
-      / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
+              / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
   Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);           // (cf. MM A11)
   Real w_cu = SQR(w_guess) * w_guess;
   Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
-  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
-      * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
-  Real dchi_dw = 1.0 - v_sq
-      - 0.5*gamma_lorentz * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)                                // (MM A16)
+                  * (ss_sq * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);
+  Real dchi_dw = 1.0 - v_sq                                           // (cf. MM A14)
+                 - 0.5*gamma_lorentz * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;
   Real drho_dw = -0.5*gamma_lorentz*dd*dv_sq_dw;                      // (MM A15)
   Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
   Real dpgas_drho = 0.0;                                              // (MM A18)

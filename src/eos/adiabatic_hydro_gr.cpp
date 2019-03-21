@@ -26,10 +26,10 @@
 namespace {
 // Declarations
 void PrimitiveToConservedSingle(
-                                const AthenaArray<Real> &prim, Real gamma_adi,
-                                const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-                                int k, int j, int i,
-                                AthenaArray<Real> &cons, Coordinates *pco);
+    const AthenaArray<Real> &prim, Real gamma_adi,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+    int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco);
 Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 } // namespace
@@ -112,13 +112,13 @@ void EquationOfState::ConservedToPrimitive(
       for (int i=il; i<=iu; ++i) {
         // Extract metric
         Real g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
-          g_22 = g_(I22,i), g_23 = g_(I23,i), g_33 = g_(I33,i);
+             g_22 = g_(I22,i), g_23 = g_(I23,i), g_33 = g_(I33,i);
         Real g00 = g_inv_(I00,i), g01 = g_inv_(I01,i), g02 = g_inv_(I02,i),
-          g03 = g_inv_(I03,i), g10 = g_inv_(I01,i), g11 = g_inv_(I11,i),
-          g12 = g_inv_(I12,i), g13 = g_inv_(I13,i), g20 = g_inv_(I02,i),
-          g21 = g_inv_(I12,i), g22 = g_inv_(I22,i), g23 = g_inv_(I23,i),
-          g30 = g_inv_(I03,i), g31 = g_inv_(I13,i), g32 = g_inv_(I23,i),
-          g33 = g_inv_(I33,i);
+             g03 = g_inv_(I03,i), g10 = g_inv_(I01,i), g11 = g_inv_(I11,i),
+             g12 = g_inv_(I12,i), g13 = g_inv_(I13,i), g20 = g_inv_(I02,i),
+             g21 = g_inv_(I12,i), g22 = g_inv_(I22,i), g23 = g_inv_(I23,i),
+             g30 = g_inv_(I03,i), g31 = g_inv_(I13,i), g32 = g_inv_(I23,i),
+             g33 = g_inv_(I33,i);
         Real alpha = 1.0/std::sqrt(-g00);
         Real alpha_2 = alpha * alpha;
 
@@ -149,11 +149,11 @@ void EquationOfState::ConservedToPrimitive(
 
         // Construct initial guess for relativistic gas enthalpy W
         Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old + 2.0*g_13*uu1_old*uu3_old
-          + g_22*SQR(uu2_old) + 2.0*g_23*uu2_old*uu3_old
-          + g_33*SQR(uu3_old);
+                   + g_22*SQR(uu2_old) + 2.0*g_23*uu2_old*uu3_old
+                   + g_33*SQR(uu3_old);
         Real gamma_sq = 1.0 + tmp;
         Real wgas_rel_init =
-          gamma_sq * (rho_old + gamma_prime * pgas_old);
+            gamma_sq * (rho_old + gamma_prime * pgas_old);
         for (int count = 0; count < initial_guess_multiplications; ++count) {
           if (SQR(wgas_rel_init) <= qq_sq) {  // v^2 >= 1 according to (N 28)
             wgas_rel_init *= initial_guess_multiplier;
@@ -356,49 +356,49 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
 }
 
 namespace {
-  // Function for converting primitives to conserved variables in a single cell
-  // Inputs:
-  //   prim: 3D array of primitives
-  //   gamma_adi: ratio of specific heats
-  //   g,gi: 1D arrays of metric covariant and contravariant coefficients
-  //   k,j,i: indices of cell
-  //   pco: pointer to Coordinate
-  // Outputs:
-  //   cons: conserved variables set in desired cell
-  void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_prime,
-                                         const AthenaArray<Real> &g,
-                                         const AthenaArray<Real> &gi, int k, int j, int i,
-                                         AthenaArray<Real> &cons, Coordinates *pco) {
-    // Extract primitives
-    Real rho = prim(IDN,k,j,i);
-    Real pgas = prim(IPR,k,j,i);
-    Real uu1 = prim(IVX,k,j,i);
-    Real uu2 = prim(IVY,k,j,i);
-    Real uu3 = prim(IVZ,k,j,i);
+// Function for converting primitives to conserved variables in a single cell
+// Inputs:
+//   prim: 3D array of primitives
+//   gamma_adi: ratio of specific heats
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   k,j,i: indices of cell
+//   pco: pointer to Coordinate
+// Outputs:
+//   cons: conserved variables set in desired cell
+void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_prime,
+                                const AthenaArray<Real> &g,
+                                const AthenaArray<Real> &gi, int k, int j, int i,
+                                AthenaArray<Real> &cons, Coordinates *pco) {
+  // Extract primitives
+  Real rho = prim(IDN,k,j,i);
+  Real pgas = prim(IPR,k,j,i);
+  Real uu1 = prim(IVX,k,j,i);
+  Real uu2 = prim(IVY,k,j,i);
+  Real uu3 = prim(IVZ,k,j,i);
 
-    // Calculate 4-velocity
-    Real alpha = std::sqrt(-1.0/gi(I00,i));
-    Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-      + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-      + g(I33,i)*uu3*uu3;
-    Real gamma = std::sqrt(1.0 + tmp);
-    Real u0 = gamma/alpha;
-    Real u1 = uu1 - alpha * gamma * gi(I01,i);
-    Real u2 = uu2 - alpha * gamma * gi(I02,i);
-    Real u3 = uu3 - alpha * gamma * gi(I03,i);
-    Real u_0, u_1, u_2, u_3;
-    pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+  // Calculate 4-velocity
+  Real alpha = std::sqrt(-1.0/gi(I00,i));
+  Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+             + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+             + g(I33,i)*uu3*uu3;
+  Real gamma = std::sqrt(1.0 + tmp);
+  Real u0 = gamma/alpha;
+  Real u1 = uu1 - alpha * gamma * gi(I01,i);
+  Real u2 = uu2 - alpha * gamma * gi(I02,i);
+  Real u3 = uu3 - alpha * gamma * gi(I03,i);
+  Real u_0, u_1, u_2, u_3;
+  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
-    // Set conserved quantities
-    Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
-    cons(IDN,k,j,i) = rho * u0;
-    cons(IEN,k,j,i) = wgas_u0 * u_0 + pgas;
-    cons(IM1,k,j,i) = wgas_u0 * u_1;
-    cons(IM2,k,j,i) = wgas_u0 * u_2;
-    cons(IM3,k,j,i) = wgas_u0 * u_3;
+  // Set conserved quantities
+  Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
+  cons(IDN,k,j,i) = rho * u0;
+  cons(IEN,k,j,i) = wgas_u0 * u_0 + pgas;
+  cons(IM1,k,j,i) = wgas_u0 * u_1;
+  cons(IM2,k,j,i) = wgas_u0 * u_2;
+  cons(IM3,k,j,i) = wgas_u0 * u_3;
 
-    return;
-  }
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 // Function whose value vanishes for correct enthalpy
