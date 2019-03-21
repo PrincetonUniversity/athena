@@ -83,7 +83,8 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     std::stringstream msg;
     if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
       msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
-          <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
+          << std::endl << "Output file '" << fname << "' could not be opened"
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 

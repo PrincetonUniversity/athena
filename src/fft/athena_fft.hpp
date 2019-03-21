@@ -84,8 +84,6 @@ class AthenaFFTIndex{
   void PermuteAxis(int npermute);
   void SwapProc(int ref_axis);
   void PermuteProc(int npermute);
-  void RemapAxis(int dir);
-  void RemapProc(int dir);
   void PrintIndex();
 
   friend class FFTDriver;
@@ -93,9 +91,8 @@ class AthenaFFTIndex{
  private:
   int dim_;
   int npermute_, swap_;
-  void Permute_(int loc[], int npermute);
-  void Swap_(int loc[], int ref_axis);
-  void RemapArray_(int arr[], int loc[], int dir);
+  template <typename T> void Swap_(T loc[], int ref_axis);
+  template <typename T> void Permute_(T loc[], int npermute);
 };
 
 //! \class FFTBlock

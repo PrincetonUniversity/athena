@@ -49,8 +49,6 @@ class Hydro {
 
   // functions
   void NewBlockTimeStep();    // computes new timestep on a MeshBlock
-  void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                    AthenaArray<Real> &u_in2, const Real wght[3]);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
                                   const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
