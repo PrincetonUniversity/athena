@@ -1072,7 +1072,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   // Both calls pass the following first 4x arguments:
   // phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
 
-  // Corresponding to:
+  // Corresponding to function parameters:
   // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
   // FaceField &bfdst, AthenaArray<Real> &bcdst,
 
@@ -1161,41 +1161,41 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             rks = pmb->cks-1, rke = pmb->cks-1;
           }
 
-          pmb->pmr->RestrictCellCenteredValues(ph->u, pmr->coarse_cons_, 0, NHYDRO-1,
+          pmb->pmr->RestrictCellCenteredValues(ph->u, ph->coarse_cons_, 0, NHYDRO-1,
                                                ris, rie, rjs, rje, rks, rke);
           if (GENERAL_RELATIVITY)
-            pmb->pmr->RestrictCellCenteredValues(ph->w, pmr->coarse_prim_, 0, NHYDRO-1,
+            pmb->pmr->RestrictCellCenteredValues(ph->w, ph->coarse_prim_, 0, NHYDRO-1,
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs = ris, re = rie+1;
             if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
             if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
-            pmr->RestrictFieldX1(pf->b.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
+            pmr->RestrictFieldX1(pf->b.x1f, pf->coarse_b_.x1f, rs, re, rjs, rje, rks,
                                  rke);
             if (pmb->block_size.nx2 > 1) {
               rs = rjs, re = rje+1;
               if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
               if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
-              pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
+              pmr->RestrictFieldX2(pf->b.x2f, pf->coarse_b_.x2f, ris, rie, rs, re, rks,
                                    rke);
             } else { // 1D
-              pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
+              pmr->RestrictFieldX2(pf->b.x2f, pf->coarse_b_.x2f, ris, rie, rjs, rje, rks,
                                    rke);
               for (int i=ris; i<=rie; i++)
-                pmr->coarse_b_.x2f(rks,rjs+1,i) = pmr->coarse_b_.x2f(rks,rjs,i);
+                pf->coarse_b_.x2f(rks,rjs+1,i) = pf->coarse_b_.x2f(rks,rjs,i);
             }
             if (pmb->block_size.nx3 > 1) {
               rs = rks, re =  rke+1;
               if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
               if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
-              pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
+              pmr->RestrictFieldX3(pf->b.x3f, pf->coarse_b_.x3f, ris, rie, rjs, rje, rs,
                                    re);
             } else { // 1D or 2D
-              pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks,
+              pmr->RestrictFieldX3(pf->b.x3f, pf->coarse_b_.x3f, ris, rie, rjs, rje, rks,
                                    rke);
               for (int j=rjs; j<=rje; j++) {
                 for (int i=ris; i<=rie; i++)
-                  pmr->coarse_b_.x3f(rks+1,j,i) = pmr->coarse_b_.x3f(rks,j,i);
+                  pf->coarse_b_.x3f(rks+1,j,i) = pf->coarse_b_.x3f(rks,j,i);
               }
             }
           }
@@ -1258,9 +1258,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       }
     }
 
-    pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
-                                    pmr->coarse_b_, pmr->coarse_prim_,
-                                    pmr->coarse_bcc_, pmr->pcoarsec,
+    pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
+                                    pf->coarse_b_, ph->coarse_prim_,
+                                    pf->coarse_bcc_, pmr->pcoarsec,
                                     si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
     // KGF: here is another TODO generalization of this manual coupling between the
     // MeshRefinement class and BoundaryVariable class objects. This will only work for
@@ -1276,11 +1276,11 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // + ADD swap statements back to the previous var_cc, var_fc pointers after calling
     // the functions.
     Coordinates *pco = pmb->pcoord;
-    phbvar->var_cc.InitWithShallowCopy(pmr->coarse_prim_);
+    phbvar->var_cc.InitWithShallowCopy(ph->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED) {
-      pfbvar->var_fc.x1f.InitWithShallowCopy(pmr->coarse_b_.x1f);
-      pfbvar->var_fc.x2f.InitWithShallowCopy(pmr->coarse_b_.x2f);
-      pfbvar->var_fc.x3f.InitWithShallowCopy(pmr->coarse_b_.x3f);
+      pfbvar->var_fc.x1f.InitWithShallowCopy(pf->coarse_b_.x1f);
+      pfbvar->var_fc.x2f.InitWithShallowCopy(pf->coarse_b_.x2f);
+      pfbvar->var_fc.x3f.InitWithShallowCopy(pf->coarse_b_.x3f);
     }
 
     // Apply physical boundaries
@@ -1301,7 +1301,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::inner_x1](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
             break;
           default:
@@ -1324,7 +1324,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::outer_x1](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
             break;
           default:
@@ -1355,7 +1355,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::inner_x2](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
             break;
           default:
@@ -1384,7 +1384,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::outer_x2](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
             break;
           default:
@@ -1409,7 +1409,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::inner_x3](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 si, ei, sj, ej, pmb->cks, pmb->cke, 1);
             break;
           default:
@@ -1432,7 +1432,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             break;
           case BoundaryFlag::user: // user-enrolled BCs
             BoundaryFunction_[BoundaryFace::outer_x3](
-                pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_, time, dt,
+                pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
                 si, ei, sj, ej, pmb->cks, pmb->cke, 1);
             break;
           default:
@@ -1460,7 +1460,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       fek = pmb->ke;
     }
     // prolongate hydro variables using primitive
-    pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, ph->w, 0, NHYDRO-1,
+    pmr->ProlongateCellCenteredValues(ph->coarse_prim_, ph->w, 0, NHYDRO-1,
                                       si, ei, sj, ej, sk, ek);
     // prolongate magnetic fields
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1486,11 +1486,11 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       }
 
       // step 1. calculate x1 outer surface fields and slopes
-      pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pf->b.x1f, il, iu, sj, ej, sk, ek);
+      pmr->ProlongateSharedFieldX1(pf->coarse_b_.x1f, pf->b.x1f, il, iu, sj, ej, sk, ek);
       // step 2. calculate x2 outer surface fields and slopes
-      pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pf->b.x2f, si, ei, jl, ju, sk, ek);
+      pmr->ProlongateSharedFieldX2(pf->coarse_b_.x2f, pf->b.x2f, si, ei, jl, ju, sk, ek);
       // step 3. calculate x3 outer surface fields and slopes
-      pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pf->b.x3f, si, ei, sj, ej, kl, ku);
+      pmr->ProlongateSharedFieldX3(pf->coarse_b_.x3f, pf->b.x3f, si, ei, sj, ej, kl, ku);
       // step 4. calculate the internal finer fields using the Toth & Roe method
       pmr->ProlongateInternalField(pf->b, si, ei, sj, ej, sk, ek);
       // Field prolongation completed, calculate cell centered fields

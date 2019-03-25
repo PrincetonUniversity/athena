@@ -52,6 +52,7 @@ class Field {
   AthenaArray<Real> e1_x3f, e2_x3f; // electric fields at x3-face from Riemann solver
 
   // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_bcc_;
   FaceField coarse_b_;
 

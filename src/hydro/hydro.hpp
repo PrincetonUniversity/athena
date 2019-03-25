@@ -46,6 +46,7 @@ class Hydro {
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_cons_, coarse_prim_;
 
   // fourth-order intermediate quantities
