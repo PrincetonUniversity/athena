@@ -1057,12 +1057,12 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 //  \brief Prolongate the level boundary using the coarse data
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
-  MeshBlock *pmb=pmy_block_;
-  MeshRefinement *pmr=pmb->pmr;
-  std::int64_t &lx1=pmb->loc.lx1;
-  std::int64_t &lx2=pmb->loc.lx2;
-  std::int64_t &lx3=pmb->loc.lx3;
-  int &mylevel=pmb->loc.level;
+  MeshBlock *pmb = pmy_block_;
+  MeshRefinement *pmr = pmb->pmr;
+  std::int64_t &lx1 = pmb->loc.lx1;
+  std::int64_t &lx2 = pmb->loc.lx2;
+  std::int64_t &lx3 = pmb->loc.lx3;
+  int &mylevel = pmb->loc.level;
 
   // KGF: temporarily hardcode Hydro and Field array access for coupling in
   // PrimitiveToConserved() call, and in individual Prolongate*(), Restrict*() calls
@@ -1085,7 +1085,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
-    pf=pmb->pfield;
+    pf = pmb->pfield;
     pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
   }
 
@@ -1101,28 +1101,28 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     if (nb.level >= mylevel) continue;
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
-    nis=std::max(nb.ox1-1,-1);
-    nie=std::min(nb.ox1+1,1);
+    nis = std::max(nb.ox1-1,-1);
+    nie = std::min(nb.ox1+1,1);
     if (pmb->block_size.nx2 == 1) {
-      njs=0;
-      nje=0;
+      njs = 0;
+      nje = 0;
     } else {
-      njs=std::max(nb.ox2-1,-1);
-      nje=std::min(nb.ox2+1,1);
+      njs = std::max(nb.ox2-1,-1);
+      nje = std::min(nb.ox2+1,1);
     }
 
     if (pmb->block_size.nx3 == 1) {
-      nks=0;
-      nke=0;
+      nks = 0;
+      nke = 0;
     } else {
-      nks=std::max(nb.ox3-1,-1);
-      nke=std::min(nb.ox3+1,1);
+      nks = std::max(nb.ox3-1,-1);
+      nke = std::min(nb.ox3+1,1);
     }
 
     for (int nk=nks; nk<=nke; nk++) {
       for (int nj=njs; nj<=nje; nj++) {
         for (int ni=nis; ni<=nie; ni++) {
-          int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+          int ntype = std::abs(ni)+std::abs(nj)+std::abs(nk);
           // skip myself or coarse levels; only the same level must be restricted
           if (ntype == 0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
@@ -1130,35 +1130,35 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
           // and needs to be restricted for prolongation
           int ris, rie, rjs, rje, rks, rke;
           if (ni == 0) {
-            ris=pmb->cis;
-            rie=pmb->cie;
+            ris = pmb->cis;
+            rie = pmb->cie;
             if (nb.ox1 == 1) {
-              ris=pmb->cie;
+              ris = pmb->cie;
             } else if (nb.ox1 == -1) {
-              rie=pmb->cis;
+              rie = pmb->cis;
             }
           } else if (ni ==  1) {
-            ris=pmb->cie+1, rie=pmb->cie+1;
+            ris = pmb->cie+1, rie = pmb->cie+1;
           } else { //(ni == -1)
-            ris=pmb->cis-1, rie=pmb->cis-1;
+            ris = pmb->cis-1, rie = pmb->cis-1;
           }
           if (nj == 0) {
-            rjs=pmb->cjs, rje=pmb->cje;
-            if (nb.ox2 == 1) rjs=pmb->cje;
-            else if (nb.ox2 == -1) rje=pmb->cjs;
+            rjs = pmb->cjs, rje = pmb->cje;
+            if (nb.ox2 == 1) rjs = pmb->cje;
+            else if (nb.ox2 == -1) rje = pmb->cjs;
           } else if (nj ==  1) {
-            rjs=pmb->cje+1, rje=pmb->cje+1;
+            rjs = pmb->cje+1, rje = pmb->cje+1;
           } else { //(nj == -1)
-            rjs=pmb->cjs-1, rje=pmb->cjs-1;
+            rjs = pmb->cjs-1, rje = pmb->cjs-1;
           }
           if (nk == 0) {
-            rks=pmb->cks, rke=pmb->cke;
-            if (nb.ox3 == 1) rks=pmb->cke;
-            else if (nb.ox3 == -1) rke=pmb->cks;
+            rks = pmb->cks, rke = pmb->cke;
+            if (nb.ox3 == 1) rks = pmb->cke;
+            else if (nb.ox3 == -1) rke = pmb->cks;
           } else if (nk ==  1) {
-            rks=pmb->cke+1, rke=pmb->cke+1;
+            rks = pmb->cke+1, rke = pmb->cke+1;
           } else { //(nk == -1)
-            rks=pmb->cks-1, rke=pmb->cks-1;
+            rks = pmb->cks-1, rke = pmb->cks-1;
           }
 
           pmb->pmr->RestrictCellCenteredValues(ph->u, pmr->coarse_cons_, 0, NHYDRO-1,
@@ -1167,13 +1167,13 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
             pmb->pmr->RestrictCellCenteredValues(ph->w, pmr->coarse_prim_, 0, NHYDRO-1,
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
-            int rs=ris, re=rie+1;
+            int rs = ris, re = rie+1;
             if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
             if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
             pmr->RestrictFieldX1(pf->b.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
                                  rke);
             if (pmb->block_size.nx2 > 1) {
-              rs=rjs, re=rje+1;
+              rs = rjs, re = rje+1;
               if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
               if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
@@ -1182,10 +1182,10 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
               pmr->RestrictFieldX2(pf->b.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks,
                                    rke);
               for (int i=ris; i<=rie; i++)
-                pmr->coarse_b_.x2f(rks,rjs+1,i)=pmr->coarse_b_.x2f(rks,rjs,i);
+                pmr->coarse_b_.x2f(rks,rjs+1,i) = pmr->coarse_b_.x2f(rks,rjs,i);
             }
             if (pmb->block_size.nx3 > 1) {
-              rs=rks, re=rke+1;
+              rs = rks, re =  rke+1;
               if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
               if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(pf->b.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
@@ -1195,7 +1195,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
                                    rke);
               for (int j=rjs; j<=rje; j++) {
                 for (int i=ris; i<=rie; i++)
-                  pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
+                  pmr->coarse_b_.x3f(rks+1,j,i) = pmr->coarse_b_.x3f(rks,j,i);
               }
             }
           }
@@ -1207,54 +1207,54 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     int cn = pmb->cnghost-1;
     int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
     if (nb.ox1 == 0) {
-      si=pmb->cis, ei=pmb->cie;
+      si = pmb->cis, ei = pmb->cie;
       if ((lx1 & 1LL) == 0LL) ei+=cn;
       else             si-=cn;
-    } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
-    else              si=pmb->cis-cn, ei=pmb->cis-1;
+    } else if (nb.ox1>0) { si = pmb->cie+1,  ei = pmb->cie+cn;}
+    else              si = pmb->cis-cn, ei = pmb->cis-1;
     if (nb.ox2 == 0) {
-      sj=pmb->cjs, ej=pmb->cje;
+      sj = pmb->cjs, ej = pmb->cje;
       if (pmb->block_size.nx2 > 1) {
         if ((lx2 & 1LL) == 0LL) ej+=cn;
         else             sj-=cn;
       }
-    } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
-    else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
+    } else if (nb.ox2>0) { sj = pmb->cje+1,  ej = pmb->cje+cn;}
+    else              sj = pmb->cjs-cn, ej = pmb->cjs-1;
     if (nb.ox3 == 0) {
-      sk=pmb->cks, ek=pmb->cke;
+      sk = pmb->cks, ek = pmb->cke;
       if (pmb->block_size.nx3 > 1) {
         if ((lx3 & 1LL) == 0LL) ek+=cn;
         else             sk-=cn;
       }
-    } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
-    else              sk=pmb->cks-cn, ek=pmb->cks-1;
+    } else if (nb.ox3>0) { sk = pmb->cke+1,  ek = pmb->cke+cn;}
+    else              sk = pmb->cks-cn, ek = pmb->cks-1;
 
     // convert the ghost zone and ghost-ghost zones into primitive variables
     // this includes cell-centered field calculation
-    int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
+    int f1m = 0, f1p = 0, f2m = 0, f2p = 0, f3m = 0, f3p = 0;
     if (nb.ox1 == 0) {
-      if (nblevel[1][1][0]!=-1) f1m=1;
-      if (nblevel[1][1][2]!=-1) f1p=1;
+      if (nblevel[1][1][0]!=-1) f1m = 1;
+      if (nblevel[1][1][2]!=-1) f1p = 1;
     } else {
-      f1m=1;
-      f1p=1;
+      f1m = 1;
+      f1p = 1;
     }
     if (pmb->block_size.nx2>1) {
       if (nb.ox2 == 0) {
-        if (nblevel[1][0][1]!=-1) f2m=1;
-        if (nblevel[1][2][1]!=-1) f2p=1;
+        if (nblevel[1][0][1]!=-1) f2m = 1;
+        if (nblevel[1][2][1]!=-1) f2p = 1;
       } else {
-        f2m=1;
-        f2p=1;
+        f2m = 1;
+        f2p = 1;
       }
     }
     if (pmb->block_size.nx3>1) {
       if (nb.ox3 == 0) {
-        if (nblevel[0][1][1]!=-1) f3m=1;
-        if (nblevel[2][1][1]!=-1) f3p=1;
+        if (nblevel[0][1][1]!=-1) f3m = 1;
+        if (nblevel[2][1][1]!=-1) f3p = 1;
       } else {
-        f3m=1;
-        f3p=1;
+        f3m = 1;
+        f3p = 1;
       }
     }
 
@@ -1275,7 +1275,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // + ADD swap statements back to the previous var_cc, var_fc pointers after calling
     // the functions.
-    Coordinates *pco=pmb->pcoord;
+    Coordinates *pco = pmb->pcoord;
     phbvar->var_cc.InitWithShallowCopy(pmr->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED) {
       pfbvar->var_fc.x1f.InitWithShallowCopy(pmr->coarse_b_.x1f);
@@ -1443,21 +1443,21 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // now that the ghost-ghost zones are filled
     // calculate the loop limits for the finer grid
-    fsi=(si-pmb->cis)*2+pmb->is;
-    fei=(ei-pmb->cis)*2+pmb->is+1;
+    fsi = (si-pmb->cis)*2+pmb->is;
+    fei = (ei-pmb->cis)*2+pmb->is+1;
     if (pmb->block_size.nx2 > 1) {
-      fsj=(sj-pmb->cjs)*2+pmb->js;
-      fej=(ej-pmb->cjs)*2+pmb->js+1;
+      fsj = (sj-pmb->cjs)*2+pmb->js;
+      fej = (ej-pmb->cjs)*2+pmb->js+1;
     } else {
-      fsj=pmb->js;
-      fej=pmb->je;
+      fsj = pmb->js;
+      fej = pmb->je;
     }
     if (pmb->block_size.nx3 > 1) {
-      fsk=(sk-pmb->cks)*2+pmb->ks;
-      fek=(ek-pmb->cks)*2+pmb->ks+1;
+      fsk = (sk-pmb->cks)*2+pmb->ks;
+      fek = (ek-pmb->cks)*2+pmb->ks+1;
     } else {
-      fsk=pmb->ks;
-      fek=pmb->ke;
+      fsk = pmb->ks;
+      fek = pmb->ke;
     }
     // prolongate hydro variables using primitive
     pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, ph->w, 0, NHYDRO-1,
@@ -1465,21 +1465,21 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // prolongate magnetic fields
     if (MAGNETIC_FIELDS_ENABLED) {
       int il, iu, jl, ju, kl, ku;
-      il=si, iu=ei+1;
-      if ((nb.ox1>=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
-      if ((nb.ox1<=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
+      il = si, iu = ei+1;
+      if ((nb.ox1 >= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ] >= mylevel)) il++;
+      if ((nb.ox1 <= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2] >= mylevel)) iu--;
       if (pmb->block_size.nx2 > 1) {
         jl=sj, ju=ej+1;
-        if ((nb.ox2>=0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
-        if ((nb.ox2<=0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
+        if ((nb.ox2 >= 0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1] >= mylevel)) jl++;
+        if ((nb.ox2 <= 0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1] >= mylevel)) ju--;
       } else {
         jl=sj;
         ju=ej;
       }
       if (pmb->block_size.nx3 > 1) {
         kl=sk, ku=ek+1;
-        if ((nb.ox3>=0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
-        if ((nb.ox3<=0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
+        if ((nb.ox3 >= 0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1] >= mylevel)) kl++;
+        if ((nb.ox3 <= 0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1] >= mylevel)) ku--;
       } else {
         kl=sk;
         ku=ek;

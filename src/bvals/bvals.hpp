@@ -193,6 +193,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   friend class Mesh;
+  // KGF: necessary friendships in new framework
   friend class BoundaryVariable;
   friend class CellCenteredBoundaryVariable;
   friend class FaceCenteredBoundaryVariable;
