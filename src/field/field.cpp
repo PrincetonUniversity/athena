@@ -26,81 +26,79 @@
 Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
-  // Allocate memory for interface fields, but only when needed.
-  if (MAGNETIC_FIELDS_ENABLED) {
-    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+  // Allocate memory for interface fields
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
-    //  Note the extra cell in each longitudinal dirn for interface fields
-    b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  //  Note the extra cell in each longitudinal dirn for interface fields
+  b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+  b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+  b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-    b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    // If user-requested time integrator is type 3S*, allocate additional memory registers
-    std::string integrator = pin->GetOrAddString("time","integrator","vl2");
-    if (integrator == "ssprk5_4" || STS_ENABLED) {
-      // future extension may add "int nregister" to Hydro class
-      b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-      b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-      b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    }
+  b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+  b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+  b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+  if (integrator == "ssprk5_4" || STS_ENABLED) {
+    // future extension may add "int nregister" to Hydro class
+    b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  }
 
-    bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
+  bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
 
-    e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
-    e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
-    e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
+  e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
+  e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
+  e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
-    wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+  wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+  wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-    e2_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    e3_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    e1_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    e3_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    e1_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  e2_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+  e3_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+  e1_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+  e3_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+  e1_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-    // Allocate memory for scratch vectors
-    if (pmb->block_size.nx3 == 1)
-      cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
-    else
-      cc_e_.NewAthenaArray(3,ncells3,ncells2,ncells1);
+  // Allocate memory for scratch vectors
+  if (pmb->block_size.nx3 == 1)
+    cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
+  else
+    cc_e_.NewAthenaArray(3,ncells3,ncells2,ncells1);
 
-    face_area_.NewAthenaArray(ncells1);
-    edge_length_.NewAthenaArray(ncells1);
-    edge_length_p1_.NewAthenaArray(ncells1);
-    if (GENERAL_RELATIVITY) {
-      g_.NewAthenaArray(NMETRIC,ncells1);
-      gi_.NewAthenaArray(NMETRIC,ncells1);
-    }
-    // allocate prolongation buffers
-    if (pmy_block->pmy_mesh->multilevel == true) {
-      int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
-      int ncc2 = 1;
-      if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
-      int ncc3 = 1;
-      if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-      coarse_b_.x1f.NewAthenaArray(ncc3, ncc2, ncc1+1);
-      coarse_b_.x2f.NewAthenaArray(ncc3, ncc2+1, ncc1);
-      coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
-      coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
-    }
-    // ptr to diffusion object
-    pfdif = new FieldDiffusion(pmb, pin);
+  face_area_.NewAthenaArray(ncells1);
+  edge_length_.NewAthenaArray(ncells1);
+  edge_length_p1_.NewAthenaArray(ncells1);
+  if (GENERAL_RELATIVITY) {
+    g_.NewAthenaArray(NMETRIC,ncells1);
+    gi_.NewAthenaArray(NMETRIC,ncells1);
+  }
+  // allocate prolongation buffers
+  if (pmy_block->pmy_mesh->multilevel == true) {
+    int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
+    int ncc2 = 1;
+    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    int ncc3 = 1;
+    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    coarse_b_.x1f.NewAthenaArray(ncc3, ncc2, ncc1+1);
+    coarse_b_.x2f.NewAthenaArray(ncc3, ncc2+1, ncc1);
+    coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
+    coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
+  }
+  // ptr to diffusion object
+  pfdif = new FieldDiffusion(pmb, pin);
 
-    pfbval  = new FaceCenteredBoundaryVariable(pmy_block, b, e);
-    pfbval->bvar_index = pmb->pbval->bvars.size();
-    pmb->pbval->bvars.push_back(pfbval);
+  pfbval  = new FaceCenteredBoundaryVariable(pmy_block, b, e);
+  pfbval->bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(pfbval);
 
-    pmb->pbval->bvars_main_int.push_back(pfbval);
-  } // end (MAGNETIC_FIELDS_ENABLED)
+  pmb->pbval->bvars_main_int.push_back(pfbval);
 }
 
 // destructor
