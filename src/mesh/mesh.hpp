@@ -269,7 +269,12 @@ class Mesh {
   void InitUserMeshData(ParameterInput *pin);
 
   // often used (not defined) in prob file in ../pgen/
-  void EnrollUserBoundaryFunction (BoundaryFace face, BValFunc my_func);
+  void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
+  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
+  void EnrollUserBoundaryFunction(int face, BValFunc my_func);
+  void EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc);
+
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);
   void EnrollUserExplicitSourceFunction(SrcTermFunc my_func);
@@ -277,7 +282,6 @@ class Mesh {
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name);
   void EnrollUserMetric(MetricFunc my_func);
-  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
   void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
   void EnrollConductionCoefficient(ConductionCoeffFunc my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);

@@ -1085,7 +1085,34 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
         << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
     ATHENA_ERROR(msg);
   }
-  BoundaryFunction_[dir]=my_bc;
+  BoundaryFunction_[static_cast<int>(dir)]=my_bc;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir
+//                                              MGBoundaryFunc my_bc)
+//  \brief Enroll a user-defined Multigrid boundary function
+
+void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  MGBoundaryFunction_[static_cast<int>(dir)]=my_bc;
+  return;
+}
+
+// DEPRECATED(felker): provide trivial overloads for old-style BoundaryFace enum argument
+void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
+  EnrollUserBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+  return;
+}
+
+void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
+  EnrollUserMGBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
 }
 
@@ -1246,21 +1273,6 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir
-//                                              MGBoundaryFunc my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
-  std::stringstream msg;
-  if (dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  MGBoundaryFunction_[dir]=my_bc;
-  return;
-}
 
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
