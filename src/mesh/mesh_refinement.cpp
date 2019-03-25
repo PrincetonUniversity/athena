@@ -51,14 +51,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
-  // allocate prolongation buffer
-  int ncc1=pmb->block_size.nx1/2+2*NGHOST;
-  int ncc2=1;
-  if (pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*NGHOST;
-  int ncc3=1;
-  if (pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*NGHOST;
-  coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
-  coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
 
   int nc1=pmb->block_size.nx1+2*NGHOST;
   fvol_[0][0].NewAthenaArray(nc1);
@@ -81,13 +73,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   sarea_x3_[1][1].NewAthenaArray(nc1);
   sarea_x3_[2][0].NewAthenaArray(nc1);
   sarea_x3_[2][1].NewAthenaArray(nc1);
-
-  if (MAGNETIC_FIELDS_ENABLED) {
-    coarse_b_.x1f.NewAthenaArray(ncc3,ncc2,ncc1+1);
-    coarse_b_.x2f.NewAthenaArray(ncc3,ncc2+1,ncc1);
-    coarse_b_.x3f.NewAthenaArray(ncc3+1,ncc2,ncc1);
-    coarse_bcc_.NewAthenaArray(3,ncc3,ncc2,ncc1);
-  }
 }
 
 
@@ -96,8 +81,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 //  \brief destructor
 
 MeshRefinement::~MeshRefinement() {
-  coarse_cons_.DeleteAthenaArray();
-  coarse_prim_.DeleteAthenaArray();
   fvol_[0][0].DeleteAthenaArray();
   fvol_[0][1].DeleteAthenaArray();
   fvol_[1][0].DeleteAthenaArray();
@@ -118,12 +101,6 @@ MeshRefinement::~MeshRefinement() {
   sarea_x3_[1][1].DeleteAthenaArray();
   sarea_x3_[2][0].DeleteAthenaArray();
   sarea_x3_[2][1].DeleteAthenaArray();
-  if (MAGNETIC_FIELDS_ENABLED) {
-    coarse_b_.x1f.DeleteAthenaArray();
-    coarse_b_.x2f.DeleteAthenaArray();
-    coarse_b_.x3f.DeleteAthenaArray();
-    coarse_bcc_.DeleteAthenaArray();
-  }
   delete pcoarsec;
 }
 

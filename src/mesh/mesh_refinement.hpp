@@ -34,11 +34,13 @@ class HydroBoundaryVariable;
 //  \brief
 
 class MeshRefinement {
+  // KGF: needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()
   friend class BoundaryValues;
-  friend class FaceCenteredBoundaryVariable;
-  friend class HydroBoundaryVariable;
-  friend class MeshBlock;
-  friend class Mesh;
+
+  // friend class FaceCenteredBoundaryVariable;
+  // friend class HydroBoundaryVariable;
+  // friend class MeshBlock;
+  // friend class Mesh;
  public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
@@ -70,13 +72,12 @@ class MeshRefinement {
   // data
   MeshBlock *pmy_block_;
   Coordinates *pcoarsec;
-  AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
-  FaceField coarse_b_;
+
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
 
   // functions
-  AMRFlagFunc AMRFlag_;
+  AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_

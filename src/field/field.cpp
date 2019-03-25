@@ -80,8 +80,20 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
       g_.NewAthenaArray(NMETRIC,ncells1);
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
+    // allocate prolongation buffers
+    if (pmy_block->pmy_mesh->multilevel == true) {
+      int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
+      int ncc2 = 1;
+      if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+      int ncc3 = 1;
+      if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+      coarse_b_.x1f.NewAthenaArray(ncc3, ncc2, ncc1+1);
+      coarse_b_.x2f.NewAthenaArray(ncc3, ncc2+1, ncc1);
+      coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
+      coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
+    }
     // ptr to diffusion object
-    pfdif = new FieldDiffusion(pmb,pin);
+    pfdif = new FieldDiffusion(pmb, pin);
 
     pfbval  = new FaceCenteredBoundaryVariable(pmy_block, b, e);
     pfbval->bvar_index = pmb->pbval->bvars.size();
@@ -94,6 +106,12 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Field::~Field() {
+  if (pmy_block->pmy_mesh->multilevel == true) {
+    coarse_b_.x1f.DeleteAthenaArray();
+    coarse_b_.x2f.DeleteAthenaArray();
+    coarse_b_.x3f.DeleteAthenaArray();
+    coarse_bcc_.DeleteAthenaArray();
+  }
   b.x1f.DeleteAthenaArray();
   b.x2f.DeleteAthenaArray();
   b.x3f.DeleteAthenaArray();

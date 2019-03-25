@@ -57,6 +57,17 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   if (pmy_block->block_size.nx3 > 1)
     flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
 
+  // allocate prolongation buffers
+  if (pmy_block->pmy_mesh->multilevel == true) {
+    int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
+    int ncc2 = 1;
+    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    int ncc3 = 1;
+    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+  }
+
   // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
   // (must come after u is actually allocated)
   phbval  = new HydroBoundaryVariable(pmy_block, u, flux, HydroBoundaryQuantity::cons);
@@ -132,6 +143,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Hydro::~Hydro() {
+  if (pmy_block->pmy_mesh->multilevel == true) {
+    coarse_cons_.DeleteAthenaArray();
+    coarse_prim_.DeleteAthenaArray();
+  }
+
   u.DeleteAthenaArray();
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();

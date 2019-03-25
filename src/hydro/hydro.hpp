@@ -33,6 +33,7 @@ class Hydro {
   ~Hydro();
 
   // data
+  // KGF: make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
   HydroBoundaryVariable *phbval;
 
@@ -43,6 +44,9 @@ class Hydro {
   // (no more than MAX_NREGISTER allowed)
 
   AthenaArray<Real> flux[3];  // face-averaged flux vector
+
+  // storage for SMR/AMR
+  AthenaArray<Real> coarse_cons_, coarse_prim_;
 
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
