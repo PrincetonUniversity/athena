@@ -176,7 +176,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 
 
 // functions to return boundary flag given input string, and vice versa
-BoundaryFlag GetBoundaryFlag(std::string input_string);
+BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
