@@ -35,7 +35,7 @@ class Coordinates;
 struct RegionSize;
 
 // functions to return boundary flag given input string, and vice versa
-BoundaryFlag GetBoundaryFlag(std::string input_string);
+BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 
 //----------------------------------------------------------------------------------------

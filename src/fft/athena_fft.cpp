@@ -83,8 +83,8 @@ FFTBlock::~FFTBlock() {
   delete f_out_;
   delete b_in_;
   delete b_out_;
-  if (fplan_!=nullptr) DestroyPlan(fplan_);
-  if (bplan_!=nullptr) DestroyPlan(bplan_);
+  if (fplan_ != nullptr) DestroyPlan(fplan_);
+  if (bplan_ != nullptr) DestroyPlan(bplan_);
 #ifdef FFT
   fftw_cleanup();
 #endif
