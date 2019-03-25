@@ -36,21 +36,24 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     time python3 run_tests.py omp --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 --silent
     time python3 run_tests.py grav --config=--cxx=g++ --config=--ccmd=/usr/local/bin/g++-8 \
 	 --config=--mpiccmd='mpicxx -DMPICH_SKIP_MPICXX -DOMPI_SKIP_MPICXX' --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
+    # Skip gr/, diffusion/ sets of regression tests on macOS VMs ONLY. Slower than Ubuntu Docker containers
+    # time python3 run_tests.py gr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
+    # time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 else
     # Fix for broken libomp.h with Travis CI's clang installation on Ubuntu images:
     export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH
     time python3 run_tests.py hybrid --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --mpirun_opts=$MPI_OPTS --silent
     time python3 run_tests.py omp --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
     time python3 run_tests.py grav --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --mpirun_opts=$MPI_OPTS --silent # requires FFTW library
+    time python3 run_tests.py gr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
+    time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 fi
 time python3 run_tests.py amr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py hydro --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD -c=--flux=hllc --silent
 time python3 run_tests.py outputs --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
-time python3 run_tests.py gr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 #time python3 run_tests.py sr --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent  # 9x tests take about 11-15m on Travis CI
 time python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
-time python3 run_tests.py diffusion --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py symmetry --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py eos --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD  --silent
 
