@@ -24,9 +24,6 @@
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 
-namespace RefinementConditions {
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 //  \brief constructor
