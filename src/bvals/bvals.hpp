@@ -37,11 +37,22 @@ struct FaceField;
 
 // DEPRECATED(felker): maintain old-style (ALL_CAPS) enumerators as unscoped,unnamed types
 // Keep for compatibility with user-provided pgen/ files. Use only new types internally.
-enum {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
-      INNER_X3=4, OUTER_X3=5};
-enum {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-      USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6,
-      SHEAR_PERIODIC_BNDRY=7};
+enum {FACE_UNDEF __attribute__((deprecated)) = -1,
+      INNER_X1 __attribute__((deprecated)),
+      OUTER_X1 __attribute__((deprecated)),
+      INNER_X2 __attribute__((deprecated)),
+      OUTER_X2 __attribute__((deprecated)),
+      INNER_X3 __attribute__((deprecated)),
+      OUTER_X3 __attribute__((deprecated))};
+enum {BLOCK_BNDRY __attribute__((deprecated)) = -1,
+      BNDRY_UNDEF __attribute__((deprecated)),
+      REFLECTING_BNDRY __attribute__((deprecated)),
+      OUTFLOW_BNDRY __attribute__((deprecated)),
+      USER_BNDRY __attribute__((deprecated)),
+      PERIODIC_BNDRY __attribute__((deprecated)),
+      POLAR_BNDRY __attribute__((deprecated)),
+      POLAR_BNDRY_WEDGE __attribute__((deprecated)),
+      SHEAR_PERIODIC_BNDRY __attribute__((deprecated))};
 
 // identifiers for all 6 faces of a MeshBlock
 enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
