@@ -4,7 +4,7 @@
 
 # Modules
 # (needed for global variables modified in run_tests.py, even w/o athena.run(), etc.)
-import scripts.utils.athena as athena # noqa
+import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.resistive_diffusion as resistive_diffusion
 
 resistive_diffusion.method = 'STS'
