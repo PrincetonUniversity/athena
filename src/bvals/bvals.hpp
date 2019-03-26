@@ -137,7 +137,19 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // these typically define a coupled interaction of these boundary variables
   // KGF: will need to access AthenaArray<Real> &bcdst = pfield->bcc
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
+
+  // KGF: wrapper function for the following AMR-related actions:
   void ProlongateBoundaries(const Real time, const Real dt);
+
+  // KGF: called within loop over nneighbor
+  // KGF: this next function is also called within 3x loops over nk,nj,ni
+  void RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk, int nj, int ni);
+  void ApplyPhysicalBoundariesOnCoarseLevel(
+      const NeighborBlock& nb, const Real time, const Real dt,
+      int si, int ei, int sj, int ej, int sk, int ek);
+  void ProlongateGhostCells(const NeighborBlock& nb,
+                            int si, int ei, int sj, int ej, int sk, int ek);
+
 
   // The following 2x methods are unique to the BoundaryValues class, and serve only to
   // check the user's configuration. Called in Mesh::Initialize() after processing
