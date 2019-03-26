@@ -403,8 +403,8 @@ int main(int argc, char *argv[]) {
   // For performance, there is no error handler protecting this step (except outputs)
 
 
-  if (Globals::my_rank==0) {
-    std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
+  if (Globals::my_rank == 0) {
+    std::cout << "\nSetup complete, entering main loop...\n" << std::endl;
   }
 
   clock_t tstart = clock();
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-    if (Globals::my_rank==0) {
+    if (Globals::my_rank == 0) {
       if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
           std::cout << "cycle=" << pmesh->ncycle<< std::scientific

@@ -150,7 +150,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
-
   // The following 2x methods are unique to the BoundaryValues class, and serve only to
   // check the user's configuration. Called in Mesh::Initialize() after processing
   // ParameterInput(), before pbval->SetupPersistentMPI() is called in this class.
