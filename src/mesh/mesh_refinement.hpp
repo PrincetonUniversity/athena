@@ -40,7 +40,10 @@ class MeshRefinement {
   // friend class FaceCenteredBoundaryVariable;
   // friend class HydroBoundaryVariable;
   // friend class MeshBlock;
-  // friend class Mesh;
+
+  // KGF: needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
+  friend class Mesh;
+
  public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();

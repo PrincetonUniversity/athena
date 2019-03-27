@@ -60,6 +60,7 @@ int CheckSignalFlags() {
   sigprocmask(SIG_BLOCK, &mask, nullptr);
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE,
+                // KGF: why cast "static volatile int *" to "void *"?
                 const_cast<void *>(reinterpret_cast<volatile void *>(signalflag)),
                 nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif

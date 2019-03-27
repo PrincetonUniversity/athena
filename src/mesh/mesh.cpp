@@ -1696,14 +1696,14 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      BoundaryFlag *block_bcs) {
-  std::int64_t &lx1=loc.lx1;
-  std::int64_t &lx2=loc.lx2;
-  std::int64_t &lx3=loc.lx3;
-  int &ll=loc.level;
+  std::int64_t &lx1 = loc.lx1;
+  std::int64_t &lx2 = loc.lx2;
+  std::int64_t &lx3 = loc.lx3;
+  int &ll = loc.level;
   std::int64_t nrbx_ll = nrbx1<<(ll-root_level);
 
   // calculate physical block size, x1
-  if (lx1==0) {
+  if (lx1 == 0) {
     block_size.x1min=mesh_size.x1min;
     block_bcs[BoundaryFace::inner_x1]=mesh_bcs[BoundaryFace::inner_x1];
   } else {
@@ -1711,7 +1711,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
     block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::block;
   }
-  if (lx1==nrbx_ll-1) {
+  if (lx1 == nrbx_ll-1) {
     block_size.x1max=mesh_size.x1max;
     block_bcs[BoundaryFace::outer_x1]=mesh_bcs[BoundaryFace::outer_x1];
   } else {
@@ -1728,7 +1728,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
   } else {
     nrbx_ll = nrbx2<<(ll-root_level);
-    if (lx2==0) {
+    if (lx2 == 0) {
       block_size.x2min=mesh_size.x2min;
       block_bcs[BoundaryFace::inner_x2]=mesh_bcs[BoundaryFace::inner_x2];
     } else {
@@ -1736,7 +1736,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
       block_bcs[BoundaryFace::inner_x2]=BoundaryFlag::block;
     }
-    if (lx2==(nrbx_ll)-1) {
+    if (lx2 == (nrbx_ll)-1) {
       block_size.x2max=mesh_size.x2max;
       block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
     } else {
@@ -1754,7 +1754,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
   } else {
     nrbx_ll = nrbx3<<(ll-root_level);
-    if (lx3==0) {
+    if (lx3 == 0) {
       block_size.x3min=mesh_size.x3min;
       block_bcs[BoundaryFace::inner_x3]=mesh_bcs[BoundaryFace::inner_x3];
     } else {
@@ -1762,19 +1762,19 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[BoundaryFace::inner_x3]=BoundaryFlag::block;
     }
-    if (lx3==(nrbx_ll)-1) {
+    if (lx3 == (nrbx_ll)-1) {
       block_size.x3max=mesh_size.x3max;
       block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
     } else {
       Real rx = ComputeMeshGeneratorX(lx3+1, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
-      block_size.x3max=MeshGenerator_[X3DIR](rx,mesh_size);
+      block_size.x3max = MeshGenerator_[X3DIR](rx,mesh_size);
       block_bcs[BoundaryFace::outer_x3]=BoundaryFlag::block;
     }
   }
 
-  block_size.x1rat=mesh_size.x1rat;
-  block_size.x2rat=mesh_size.x2rat;
-  block_size.x3rat=mesh_size.x3rat;
+  block_size.x1rat = mesh_size.x1rat;
+  block_size.x2rat = mesh_size.x2rat;
+  block_size.x3rat = mesh_size.x3rat;
 
   return;
 }
@@ -1785,19 +1785,19 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 
 void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   MeshBlock *pmb;
-  int nlbl=2, dim=1;
-  if (mesh_size.nx2 > 1) nlbl=4, dim=2;
-  if (mesh_size.nx3 > 1) nlbl=8, dim=3;
+  int nlbl = 2, dim = 1;
+  if (mesh_size.nx2 > 1) nlbl = 4, dim = 2;
+  if (mesh_size.nx3 > 1) nlbl = 8, dim = 3;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
-  nref[Globals::my_rank]=0;
-  nderef[Globals::my_rank]=0;
-  pmb=pblock;
-  while (pmb!=nullptr) {
-    if (pmb->pmr->refine_flag_== 1) nref[Globals::my_rank]++;
-    if (pmb->pmr->refine_flag_==-1) nderef[Globals::my_rank]++;
-    pmb=pmb->next;
+  nref[Globals::my_rank] = 0;
+  nderef[Globals::my_rank] = 0;
+  pmb = pblock;
+  while (pmb != nullptr) {
+    if (pmb->pmr->refine_flag_ ==  1) nref[Globals::my_rank]++;
+    if (pmb->pmr->refine_flag_ == -1) nderef[Globals::my_rank]++;
+    pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL
   MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD);
@@ -1805,15 +1805,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 #endif
 
   // count the number of the blocks to be (de)refined and displacement
-  int tnref=0, tnderef=0;
+  int tnref = 0, tnderef = 0;
   for (int n=0; n<Globals::nranks; n++) {
     tnref  += nref[n];
-    tnderef+= nderef[n];
+    tnderef += nderef[n];
   }
-  if (tnref==0 && tnderef<nlbl) // nothing to do
+  if (tnref == 0 && tnderef < nlbl) // nothing to do
     return;
 
-  int rd=0, dd=0;
+  int rd = 0, dd = 0;
   for (int n=0; n<Globals::nranks; n++) {
     rdisp[n] = rd;
     ddisp[n] = dd;
@@ -1825,35 +1825,35 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     bnderef[n] = static_cast<int>(nderef[n]*sizeof(LogicalLocation));
     brdisp[n] = static_cast<int>(rd*sizeof(LogicalLocation));
     bddisp[n] = static_cast<int>(dd*sizeof(LogicalLocation));
-    rd+=nref[n];
-    dd+=nderef[n];
+    rd += nref[n];
+    dd += nderef[n];
   }
 
   // allocate memory for the location arrays
   LogicalLocation *lref{}, *lderef{}, *clderef{};
-  if (tnref>0)
+  if (tnref > 0)
     lref = new LogicalLocation[tnref];
-  if (tnderef>=nlbl) {
+  if (tnderef >= nlbl) {
     lderef = new LogicalLocation[tnderef];
     clderef = new LogicalLocation[tnderef/nlbl];
   }
 
   // collect the locations and costs
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
-  pmb=pblock;
-  while (pmb!=nullptr) {
-    if (pmb->pmr->refine_flag_== 1)
+  pmb = pblock;
+  while (pmb != nullptr) {
+    if (pmb->pmr->refine_flag_ ==  1)
       lref[iref++]=pmb->loc;
-    if (pmb->pmr->refine_flag_==-1 && tnderef>=nlbl)
+    if (pmb->pmr->refine_flag_ == -1 && tnderef>=nlbl)
       lderef[ideref++]=pmb->loc;
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL
-  if (tnref>0) {
+  if (tnref > 0) {
     MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
   }
-  if (tnderef>=nlbl) {
+  if (tnderef >= nlbl) {
     MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
@@ -1861,30 +1861,30 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // calculate the list of the newly derefined blocks
   int ctnd=0;
-  if (tnderef>=nlbl) {
+  if (tnderef >= nlbl) {
     int lk=0, lj=0;
     if (mesh_size.nx2 > 1) lj=1;
     if (mesh_size.nx3 > 1) lk=1;
     for (int n=0; n<tnderef; n++) {
-      if ((lderef[n].lx1 & 1LL)==0LL &&
-          (lderef[n].lx2 & 1LL)==0LL &&
-          (lderef[n].lx3 & 1LL)==0LL) {
+      if ((lderef[n].lx1 & 1LL) == 0LL &&
+          (lderef[n].lx2 & 1LL) == 0LL &&
+          (lderef[n].lx3 & 1LL) == 0LL) {
         int r=n, rr=0;
         for (std::int64_t k=0; k<=lk; k++) {
           for (std::int64_t j=0; j<=lj; j++) {
             for (std::int64_t i=0; i<=1; i++) {
               if (r < tnderef) {
-                if ((lderef[n].lx1+i)==lderef[r].lx1
-                    && (lderef[n].lx2+j)==lderef[r].lx2
-                    && (lderef[n].lx3+k)==lderef[r].lx3
-                    &&  lderef[n].level ==lderef[r].level)
+                if ((lderef[n].lx1+i) == lderef[r].lx1
+                    && (lderef[n].lx2+j) == lderef[r].lx2
+                    && (lderef[n].lx3+k) == lderef[r].lx3
+                    &&  lderef[n].level  == lderef[r].level)
                   rr++;
                 r++;
               }
             }
           }
         }
-        if (rr==nlbl) {
+        if (rr == nlbl) {
           clderef[ctnd].lx1  =(lderef[n].lx1>>1);
           clderef[ctnd].lx2  =(lderef[n].lx2>>1);
           clderef[ctnd].lx3  =(lderef[n].lx3>>1);
@@ -1898,7 +1898,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (ctnd>1)
     std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
 
-  if (tnderef>=nlbl)
+  if (tnderef >= nlbl)
     delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
@@ -1909,7 +1909,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
   }
-  if (tnref!=0)
+  if (tnref != 0)
     delete [] lref;
 
   // Step 2. perform derefinement
@@ -1917,10 +1917,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
-  if (tnderef>=nlbl)
+  if (tnderef >= nlbl)
     delete [] clderef;
   ntot=nbtotal+nnew-ndel;
-  if (nnew==0 && ndel==0)
+  if (nnew == 0 && ndel == 0)
     return; // nothing to do
   // Tree manipulation completed
   nbnew+=nnew; nbdel+=ndel;
@@ -1936,20 +1936,20 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   tree.GetMeshBlockList(newloc,newtoold,nbtotal);
 
   // create a list mapping the previous gid to the current one
-  oldtonew[0]=0;
+  oldtonew[0] = 0;
   int k_outer=1;
   for (int n=1; n<ntot; n++) {
-    if (newtoold[n]==newtoold[n-1]+1) { // normal
-      oldtonew[k_outer++]=n;
-    } else if (newtoold[n]==newtoold[n-1]+nlbl) { // derefined
+    if (newtoold[n] == newtoold[n-1]+1) { // normal
+      oldtonew[k_outer++] = n;
+    } else if (newtoold[n] == newtoold[n-1]+nlbl) { // derefined
       for (int j=0; j<nlbl-1; j++)
-        oldtonew[k_outer++]=n-1;
-      oldtonew[k_outer++]=n;
+        oldtonew[k_outer++] = n-1;
+      oldtonew[k_outer++] = n;
     }
   }
   // fill the last block
   for ( ; k_outer<nbtold; k_outer++)
-    oldtonew[k_outer]=ntot-1;
+    oldtonew[k_outer] = ntot-1;
 
 #ifdef MPI_PARALLEL
   // share the cost list
@@ -1962,13 +1962,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     int on=newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level=newloc[n].level;
-    if (newloc[n].level>=loclist[on].level) { // same or refined
-      newcost[n]=costlist[on];
+    if (newloc[n].level >= loclist[on].level) { // same or refined
+      newcost[n] = costlist[on];
     } else {
       Real acost=0.0;
       for (int l=0; l<nlbl; l++)
         acost+=costlist[on+l];
-      newcost[n]=acost/nlbl;
+      newcost[n] = acost/nlbl;
     }
   }
 #ifdef MPI_PARALLEL
@@ -2004,11 +2004,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     int on=newtoold[n];
     if (loclist[on].level > newloc[n].level) { // f2c
       for (int k=0; k<nlbl; k++) {
-        if (ranklist[on+k]!=Globals::my_rank)
+        if (ranklist[on+k] != Globals::my_rank)
           nrecv++;
       }
     } else {
-      if (ranklist[on]!=Globals::my_rank)
+      if (ranklist[on] != Globals::my_rank)
         nrecv++;
     }
   }
@@ -2016,34 +2016,34 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     int nn=oldtonew[n];
     if (loclist[n].level < newloc[nn].level) { // c2f
       for (int k=0; k<nlbl; k++) {
-        if (newrank[nn+k]!=Globals::my_rank)
+        if (newrank[nn+k] != Globals::my_rank)
           nsend++;
       }
     } else {
-      if (newrank[nn]!=Globals::my_rank)
+      if (newrank[nn] != Globals::my_rank)
         nsend++;
     }
   }
 
   // Step 4. calculate buffer sizes
   Real **sendbuf, **recvbuf;
-  int bssame=bnx1*bnx2*bnx3*NHYDRO;
-  int bsf2c=(bnx1/2)*((bnx2+1)/2)*((bnx3+1)/2)*NHYDRO;
-  int bsc2f=(bnx1/2+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)*NHYDRO;
+  int bssame = bnx1*bnx2*bnx3*NHYDRO;
+  int bsf2c = (bnx1/2)*((bnx2+1)/2)*((bnx3+1)/2)*NHYDRO;
+  int bsc2f = (bnx1/2+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)*NHYDRO;
   if (MAGNETIC_FIELDS_ENABLED) {
-    bssame+=(bnx1+1)*bnx2*bnx3+bnx1*(bnx2+f2)*bnx3+bnx1*bnx2*(bnx3+f3);
-    bsf2c+=((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
-           +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
-           +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
-    bsc2f+=((bnx1/2)+1+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)
-           +(bnx1/2+2)*(((bnx2+1)/2)+f2+2*f2)*((bnx3+1)/2+2*f3)
-           +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2)+f3+2*f3);
+    bssame += (bnx1+1)*bnx2*bnx3+bnx1*(bnx2+f2)*bnx3+bnx1*bnx2*(bnx3+f3);
+    bsf2c += ((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
+             +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
+             +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
+    bsc2f += ((bnx1/2)+1+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)
+             +(bnx1/2+2)*(((bnx2+1)/2)+f2+2*f2)*((bnx3+1)/2+2*f3)
+             +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2)+f3+2*f3);
   }
   bssame++; // for derefinement counter
 
   MPI_Request *req_send, *req_recv;
   // Step 5. allocate and start receiving buffers
-  if (nrecv!=0) {
+  if (nrecv != 0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
     k_outer=0;
@@ -2053,7 +2053,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       LogicalLocation &nloc=newloc[n];
       if (oloc.level>nloc.level) { // f2c
         for (int l=0; l<nlbl; l++) {
-          if (ranklist[on+l]==Globals::my_rank) continue;
+          if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
           int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
           recvbuf[k_outer] = new Real[bsf2c];
@@ -2063,7 +2063,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           k_outer++;
         }
       } else { // same or c2f
-        if (ranklist[on]==Globals::my_rank) continue;
+        if (ranklist[on] == Globals::my_rank) continue;
         int size;
         if (oloc.level == nloc.level) {
           size=bssame;
@@ -2079,7 +2079,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     }
   }
   // Step 6. allocate, pack and start sending buffers
-  if (nsend!=0) {
+  if (nsend != 0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
     k_outer=0;
@@ -2087,9 +2087,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       int nn=oldtonew[n];
       LogicalLocation &oloc=loclist[n];
       LogicalLocation &nloc=newloc[nn];
-      MeshBlock* pb=FindMeshBlock(n);
-      if (nloc.level==oloc.level) { // same
-        if (newrank[nn]==Globals::my_rank) continue;
+      MeshBlock* pb = FindMeshBlock(n);
+      if (nloc.level == oloc.level) { // same
+        if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[k_outer] = new Real[bssame];
         // pack
         int p=0;
@@ -2103,6 +2103,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[k_outer],
                                     pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
+        // KGF: dangerous? casting from "Real *" to "int *"
         int *dcp = reinterpret_cast<int *>(&(sendbuf[k_outer][p]));
         *dcp=pb->pmr->deref_count_;
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
@@ -2111,17 +2112,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         k_outer++;
       } else if (nloc.level>oloc.level) { // c2f
         for (int l=0; l<nlbl; l++) {
-          if (newrank[nn+l]==Globals::my_rank) continue;
+          if (newrank[nn+l] == Globals::my_rank) continue;
           LogicalLocation &lloc=newloc[nn+l];
           int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
           sendbuf[k_outer] = new Real[bsc2f];
           // pack
           int is, ie, js, je, ks, ke;
-          if (ox1==0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
+          if (ox1 == 0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
           else        is=pb->is+pb->block_size.nx1/2-1,  ie=pb->ie+1;
-          if (ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
+          if (ox2 == 0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           else        js=pb->js+pb->block_size.nx2/2-f2, je=pb->je+f2;
-          if (ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
+          if (ox3 == 0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
           else        ks=pb->ks+pb->block_size.nx3/2-f3, ke=pb->ke+f3;
           int p=0;
           BufferUtility::PackData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
@@ -2140,43 +2141,43 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           k_outer++;
         }
       } else { // f2c
-        if (newrank[nn]==Globals::my_rank) continue;
+        if (newrank[nn] == Globals::my_rank) continue;
         int ox1=oloc.lx1 & 1LL, ox2=oloc.lx2 & 1LL, ox3=oloc.lx3 & 1LL;
         sendbuf[k_outer] = new Real[bsf2c];
         // restrict and pack
         MeshRefinement *pmr=pb->pmr;
-        pmr->RestrictCellCenteredValues(pb->phydro->u, pmr->coarse_cons_,
+        pmr->RestrictCellCenteredValues(pb->phydro->u, pb->phydro->coarse_cons_,
                                         0, NHYDRO-1,
                                         pb->cis, pb->cie,
                                         pb->cjs, pb->cje,
                                         pb->cks, pb->cke);
         int p=0;
-        BufferUtility::PackData(pmr->coarse_cons_, sendbuf[k_outer], 0, NHYDRO-1,
+        BufferUtility::PackData(pb->phydro->coarse_cons_, sendbuf[k_outer], 0, NHYDRO-1,
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
-          pmr->RestrictFieldX1(pb->pfield->b.x1f, pmr->coarse_b_.x1f,
+          pmr->RestrictFieldX1(pb->pfield->b.x1f, pb->pfield->coarse_b_.x1f,
                                pb->cis, pb->cie+1,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pmr->coarse_b_.x1f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x1f, sendbuf[k_outer],
                                     pb->cis, pb->cie+1,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke, p);
-          pmr->RestrictFieldX2(pb->pfield->b.x2f, pmr->coarse_b_.x2f,
+          pmr->RestrictFieldX2(pb->pfield->b.x2f, pb->pfield->coarse_b_.x2f,
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje+f2,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pmr->coarse_b_.x2f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x2f, sendbuf[k_outer],
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje+f2,
                                     pb->cks, pb->cke, p);
-          pmr->RestrictFieldX3(pb->pfield->b.x3f, pmr->coarse_b_.x3f,
+          pmr->RestrictFieldX3(pb->pfield->b.x3f, pb->pfield->coarse_b_.x3f,
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke+f3);
-          BufferUtility::PackData(pmr->coarse_b_.x3f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x3f, sendbuf[k_outer],
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke+f3, p);
@@ -2192,23 +2193,23 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 7. construct a new MeshBlock list
   // move the data within the node
-  MeshBlock *newlist=nullptr;
+  MeshBlock *newlist = nullptr;
 
-  RegionSize block_size=pblock->block_size;
+  RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
-    int on=newtoold[n];
-    if ((ranklist[on]==Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
+    int on = newtoold[n];
+    if ((ranklist[on] == Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
       // on the same node and same level -> just move it
       MeshBlock* pob=FindMeshBlock(on);
-      if (pob->prev==nullptr) {
+      if (pob->prev == nullptr) {
         pblock=pob->next;
       } else {
         pob->prev->next=pob->next;
       }
-      if (pob->next!=nullptr) pob->next->prev=pob->prev;
+      if (pob->next != nullptr) pob->next->prev=pob->prev;
       pob->next=nullptr;
-      if (n==nbs) { // first
+      if (n == nbs) { // first
         pob->prev=nullptr;
         newlist=pob;
         pmb=newlist;
@@ -2224,7 +2225,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
-      if (n==nbs) { // first
+      if (n == nbs) { // first
         newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
                                 pin, gflag, true);
         pmb=newlist;
@@ -2237,11 +2238,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       // fill the conservative variables
       if ((loclist[on].level>newloc[n].level)) { // fine to coarse
         for (int ll=0; ll<nlbl; ll++) {
-          if (ranklist[on+ll]!=Globals::my_rank) continue;
+          if (ranklist[on+ll] != Globals::my_rank) continue;
           // on the same node - restriction
           MeshBlock* pob=FindMeshBlock(on+ll);
           MeshRefinement *pmr=pob->pmr;
-          pmr->RestrictCellCenteredValues(pob->phydro->u, pmr->coarse_cons_,
+          pmr->RestrictCellCenteredValues(pob->phydro->u, pob->phydro->coarse_cons_,
                                           0, NHYDRO-1,
                                           pob->cis, pob->cie,
                                           pob->cjs, pob->cje,
@@ -2249,7 +2250,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
           int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
           int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
-          AthenaArray<Real> &src=pmr->coarse_cons_;
+          AthenaArray<Real> &src=pob->phydro->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
           for (int nv=0; nv<NHYDRO; nv++) {
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
@@ -2260,19 +2261,19 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
           if (MAGNETIC_FIELDS_ENABLED) {
-            pmr->RestrictFieldX1(pob->pfield->b.x1f, pmr->coarse_b_.x1f,
+            pmr->RestrictFieldX1(pob->pfield->b.x1f, pob->pfield->coarse_b_.x1f,
                                  pob->cis, pob->cie+1,
                                  pob->cjs, pob->cje,
                                  pob->cks, pob->cke);
-            pmr->RestrictFieldX2(pob->pfield->b.x2f, pmr->coarse_b_.x2f,
+            pmr->RestrictFieldX2(pob->pfield->b.x2f, pob->pfield->coarse_b_.x2f,
                                  pob->cis, pob->cie,
                                  pob->cjs, pob->cje+f2,
                                  pob->cks, pob->cke);
-            pmr->RestrictFieldX3(pob->pfield->b.x3f, pmr->coarse_b_.x3f,
+            pmr->RestrictFieldX3(pob->pfield->b.x3f, pob->pfield->coarse_b_.x3f,
                                  pob->cis, pob->cie,
                                  pob->cjs, pob->cje,
                                  pob->cks, pob->cke+f3);
-            FaceField &src_b=pmr->coarse_b_;
+            FaceField &src_b=pob->pfield->coarse_b_;
             FaceField &dst_b=pmb->pfield->b;
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
@@ -2286,7 +2287,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                   dst_b.x2f(k, j, i)=src_b.x2f(fk, fj, fi);
               }
             }
-            if (pmb->block_size.nx2==1) {
+            if (pmb->block_size.nx2 == 1) {
               int ie=is+block_size.nx1/2-1;
               for (int i=is; i<=ie; i++)
                 dst_b.x2f(pmb->ks, pmb->js+1, i)=dst_b.x2f(pmb->ks, pmb->js, i);
@@ -2297,9 +2298,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                   dst_b.x3f(k, j, i)=src_b.x3f(fk, fj, fi);
               }
             }
-            if (pmb->block_size.nx3==1) {
+            if (pmb->block_size.nx3 == 1) {
               int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
-              if (pmb->block_size.nx2==1) je=js;
+              if (pmb->block_size.nx2 == 1) je=js;
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
                   dst_b.x3f(pmb->ks+1, j, i)=dst_b.x3f(pmb->ks, j, i);
@@ -2308,7 +2309,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
         }
       } else if ((loclist[on].level < newloc[n].level) &&
-                 (ranklist[on]==Globals::my_rank)) {
+                 (ranklist[on] == Globals::my_rank)) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob=FindMeshBlock(on);
         MeshRefinement *pmr=pmb->pmr;
@@ -2318,7 +2319,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js-f2;
         int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks-f3;
         AthenaArray<Real> &src=pob->phydro->u;
-        AthenaArray<Real> &dst=pmr->coarse_cons_;
+        AthenaArray<Real> &dst=pmb->phydro->coarse_cons_;
         // fill the coarse buffer
         for (int nv=0; nv<NHYDRO; nv++) {
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
@@ -2333,7 +2334,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &src_b=pob->pfield->b;
-          FaceField &dst_b=pmr->coarse_b_;
+          FaceField &dst_b=pmb->pfield->coarse_b_;
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie+1; i++, ci++)
@@ -2371,8 +2372,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // discard remaining MeshBlocks
   // they could be reused, but for the moment, just throw them away for simplicity
-  if (pblock!=nullptr) {
-    while (pblock->next != nullptr)
+  if (pblock != nullptr) {
+    while (pblock->next  !=  nullptr)
       delete pblock->next;
     delete pblock;
   }
@@ -2383,17 +2384,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Step 8. Receive the data and load into MeshBlocks
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
-  if (nrecv!=0) {
-    k_outer=0;
+  if (nrecv != 0) {
+    k_outer = 0;
     for (int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
       LogicalLocation &nloc=newloc[n];
       MeshBlock *pb=FindMeshBlock(n);
-      if (oloc.level==nloc.level) { // same
-        if (ranklist[on]==Globals::my_rank) continue;
+      if (oloc.level == nloc.level) { // same
+        if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
-        int p=0;
+        int p = 0;
         BufferUtility::UnpackData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
                                     pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -2407,31 +2408,32 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           BufferUtility::UnpackData(
               recvbuf[k_outer], dst_b.x3f,
               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
-          if (pb->block_size.nx2==1) {
+          if (pb->block_size.nx2 == 1) {
             for (int i=pb->is; i<=pb->ie; i++)
               dst_b.x2f(pb->ks, pb->js+1, i)=dst_b.x2f(pb->ks, pb->js, i);
           }
-          if (pb->block_size.nx3==1) {
+          if (pb->block_size.nx3 == 1) {
             for (int j=pb->js; j<=pb->je; j++) {
               for (int i=pb->is; i<=pb->ie; i++)
                 dst_b.x3f(pb->ks+1, j, i)=dst_b.x3f(pb->ks, j, i);
             }
           }
         }
-        int *dcp=reinterpret_cast<int *>(&(recvbuf[k_outer][p]));
+        // KGF: dangerous? casting from "Real *" to "int *"
+        int *dcp = reinterpret_cast<int *>(&(recvbuf[k_outer][p]));
         pb->pmr->deref_count_=*dcp;
         k_outer++;
       } else if (oloc.level>nloc.level) { // f2c
         for (int l=0; l<nlbl; l++) {
-          if (ranklist[on+l]==Globals::my_rank) continue;
+          if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc=loclist[on+l];
           int ox1=lloc.lx1 & 1LL, ox2=lloc.lx2 & 1LL, ox3=lloc.lx3 & 1LL;
-          int p=0, is, ie, js, je, ks, ke;
-          if (ox1==0) is=pb->is,                      ie=pb->is+pb->block_size.nx1/2-1;
+          int p = 0, is, ie, js, je, ks, ke;
+          if (ox1 == 0) is=pb->is,                      ie=pb->is+pb->block_size.nx1/2-1;
           else        is=pb->is+pb->block_size.nx1/2, ie=pb->ie;
-          if (ox2==0) js=pb->js,                      je=pb->js+pb->block_size.nx2/2-f2;
+          if (ox2 == 0) js=pb->js,                      je=pb->js+pb->block_size.nx2/2-f2;
           else        js=pb->js+pb->block_size.nx2/2, je=pb->je;
-          if (ox3==0) ks=pb->ks,                      ke=pb->ks+pb->block_size.nx3/2-f3;
+          if (ox3 == 0) ks=pb->ks,                      ke=pb->ks+pb->block_size.nx3/2-f3;
           else        ks=pb->ks+pb->block_size.nx3/2, ke=pb->ke;
           MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
           BufferUtility::UnpackData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
@@ -2444,11 +2446,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                         is, ie, js, je+f2, ks, ke, p);
             BufferUtility::UnpackData(recvbuf[k_outer], dst_b.x3f,
                                         is, ie, js, je, ks, ke+f3, p);
-            if (pb->block_size.nx2==1) {
+            if (pb->block_size.nx2 == 1) {
               for (int i=is; i<=ie; i++)
                 dst_b.x2f(pb->ks, pb->js+1, i)=dst_b.x2f(pb->ks, pb->js, i);
             }
-            if (pb->block_size.nx3==1) {
+            if (pb->block_size.nx3 == 1) {
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
                   dst_b.x3f(pb->ks+1, j, i)=dst_b.x3f(pb->ks, j, i);
@@ -2458,23 +2460,23 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           k_outer++;
         }
       } else { // c2f
-        if (ranklist[on]==Globals::my_rank) continue;
+        if (ranklist[on] == Globals::my_rank) continue;
         MeshRefinement *pmr=pb->pmr;
-        int p=0;
+        int p = 0;
         int is=pb->cis-1, ie=pb->cie+1, js=pb->cjs-f2,
             je=pb->cje+f2, ks=pb->cks-f3, ke=pb->cke+f3;
         MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
-        BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_cons_,
+        BufferUtility::UnpackData(recvbuf[k_outer], pb->phydro->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
         pmr->ProlongateCellCenteredValues(
-            pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
+            pb->phydro->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
             pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x1f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pb->pfield->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x2f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pb->pfield->coarse_b_.x2f,
                                       is, ie, js, je+f2, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x3f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pb->pfield->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(
               pmr->coarse_b_.x1f, pb->pfield->b.x1f,
@@ -2502,14 +2504,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   delete [] newtoold;
   delete [] oldtonew;
 #ifdef MPI_PARALLEL
-  if (nsend!=0) {
+  if (nsend != 0) {
     MPI_Waitall(nsend, req_send, MPI_STATUSES_IGNORE);
     for (int n=0; n<nsend; n++)
       delete [] sendbuf[n];
     delete [] sendbuf;
     delete [] req_send;
   }
-  if (nrecv!=0) {
+  if (nrecv != 0) {
     for (int n=0; n<nrecv; n++)
       delete [] recvbuf[n];
     delete [] recvbuf;
@@ -2524,9 +2526,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // re-initialize the MeshBlocks
   pmb=pblock;
-  while (pmb!=nullptr) {
+  while (pmb != nullptr) {
     pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
   Initialize(2, pin);
 
