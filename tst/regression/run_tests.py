@@ -233,11 +233,15 @@ if __name__ == '__main__':
                               ' -t and -o options w/ reformatted test name to COVERAGE.'))
     parser.add_argument('-d', '--debug',
                         help="same as verbose",
-                        action="store_const", dest="loglevel", const=logging.DEBUG,
+                        action="store_const",
+                        dest="loglevel",
+                        const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('-v', '--verbose',
                         help="print all output",
-                        action="store_const", dest="loglevel", const=logging.DEBUG)
+                        action="store_const",
+                        dest="loglevel",
+                        const=logging.DEBUG)
     parser.add_argument('--logfile',
                         type=str,
                         default=None,
@@ -260,11 +264,12 @@ if __name__ == '__main__':
     c_handler = logging.StreamHandler()  # console/terminal handler
     c_handler.setLevel(kwargs.pop('loglevel'))
     c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
-    if not kwargs.pop('show_make'):
-        c_handler.addFilter(MakeFilter())
     if c_handler.level < logging.INFO:
         c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
     else:
+        # if we are not in debugging mode and (not show_make) add MakeFilter
+        if not kwargs.pop('show_make'):
+            c_handler.addFilter(MakeFilter())
         c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
     logger.addHandler(c_handler)
     # setup logfile
