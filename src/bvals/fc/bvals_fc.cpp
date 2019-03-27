@@ -43,7 +43,6 @@
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     MeshBlock *pmb, FaceField *var, EdgeField &var_flux)
     : BoundaryVariable(pmb) {
-
   var_fc = var;
   // KGF: is there no better way to shallow copy a reference to a FaceField in a class
   // data member?

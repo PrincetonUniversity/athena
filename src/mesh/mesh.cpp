@@ -2479,13 +2479,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           BufferUtility::UnpackData(recvbuf[k_outer], pb->pfield->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(
-              pmr->coarse_b_.x1f, pb->pfield->b.x1f,
+              pb->pfield->coarse_b_.x1f, pb->pfield->b.x1f,
               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX2(
-              pmr->coarse_b_.x2f, pb->pfield->b.x2f,
+              pb->pfield->coarse_b_.x2f, pb->pfield->b.x2f,
               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX3(
-              pmr->coarse_b_.x3f, pb->pfield->b.x3f,
+              pb->pfield->coarse_b_.x3f, pb->pfield->b.x3f,
               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
           pmr->ProlongateInternalField(
               pb->pfield->b, pb->cis, pb->cie,
