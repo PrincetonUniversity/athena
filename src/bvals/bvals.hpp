@@ -35,6 +35,34 @@ struct FaceField;
 
 // TODO(felker): nest these enum definitions inside bvals/ classes, when possible.
 
+// DEPRECATED(felker): maintain old-style (ALL_CAPS) enumerators as unscoped,unnamed types
+// Keep for compatibility with user-provided pgen/ files. Use only new types internally.
+
+// GCC 6 added Enumerator Attr (v6.1 released on 2016-04-27)
+// TODO(felker): replace with C++14 [[deprecated]] attributes if we ever bump --std=c++14
+#if (defined(__GNUC__) &&__GNUC__ >= 6) || (defined(__clang__) && __clang_major__ >= 3)
+enum {FACE_UNDEF __attribute__((deprecated)) = -1,
+      INNER_X1 __attribute__((deprecated)),
+      OUTER_X1 __attribute__((deprecated)),
+      INNER_X2 __attribute__((deprecated)),
+      OUTER_X2 __attribute__((deprecated)),
+      INNER_X3 __attribute__((deprecated)),
+      OUTER_X3 __attribute__((deprecated))};
+enum {BLOCK_BNDRY __attribute__((deprecated)) = -1,
+      BNDRY_UNDEF __attribute__((deprecated)),
+      REFLECTING_BNDRY __attribute__((deprecated)),
+      OUTFLOW_BNDRY __attribute__((deprecated)),
+      USER_BNDRY __attribute__((deprecated)),
+      PERIODIC_BNDRY __attribute__((deprecated)),
+      POLAR_BNDRY __attribute__((deprecated)),
+      POLAR_BNDRY_WEDGE __attribute__((deprecated)),
+      SHEAR_PERIODIC_BNDRY __attribute__((deprecated))};
+#else
+enum {FACE_UNDEF = -1, INNER_X1, OUTER_X1, INNER_X2, OUTER_X2, INNER_X3, OUTER_X3};
+enum {BLOCK_BNDRY = -1, BNDRY_UNDEF, REFLECTING_BNDRY, OUTFLOW_BNDRY, USER_BNDRY,
+      PERIODIC_BNDRY, POLAR_BNDRY, POLAR_BNDRY_WEDGE, SHEAR_PERIODIC_BNDRY};
+#endif
+
 // identifiers for all 6 faces of a MeshBlock
 enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
                    inner_x3=4, outer_x3=5};
@@ -168,7 +196,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 
 
 // functions to return boundary flag given input string, and vice versa
-BoundaryFlag GetBoundaryFlag(std::string input_string);
+BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 
 // Struct for describing blocks which touched the shearing-periodic boundaries
