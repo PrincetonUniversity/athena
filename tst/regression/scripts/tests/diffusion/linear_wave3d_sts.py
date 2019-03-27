@@ -7,7 +7,7 @@
 import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.linear_wave3d as linear_wave3d
 
-linear_wave3d.error_rel_tols = [0.22, 0.05]
+linear_wave3d.method = 'STS'
 
 
 def prepare(*args, **kwargs):

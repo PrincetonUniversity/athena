@@ -73,6 +73,6 @@ def analyze():
         flag = False
     else:
         print('[Viscous Diffusion {}]: '
-              'Scheme converging at expected order.', format(method))
+              'Scheme converging at expected order.'.format(method))
 
     return flag
