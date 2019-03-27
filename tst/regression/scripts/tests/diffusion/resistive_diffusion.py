@@ -67,13 +67,13 @@ def analyze():
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(resolution_range)))
     print('[Resistive Diffusion {}]: Convergence order = {}'.format(method, conv))
 
-    flag = True
+    analyze_status = True
     if conv > rate_tols[-1]:
         print('[Resistive Diffusion {}]: '
               'Scheme NOT converging at expected order.'.format(method))
-        flag = False
+        analyze_status = False
     else:
         print('[Resistive Diffusion {}]: '
               'Scheme converging at expected order.'.format(method))
 
-    return flag
+    return analyze_status
