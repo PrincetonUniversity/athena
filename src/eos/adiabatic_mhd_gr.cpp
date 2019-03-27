@@ -639,11 +639,11 @@ void PrimitiveToConservedSingle(
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco) {
   // Extract primitives and magnetic fields
-  const Real &rho = prim(IDN,i);
-  const Real &pgas = prim(IPR,i);
-  const Real &uu1 = prim(IVX,i);
-  const Real &uu2 = prim(IVY,i);
-  const Real &uu3 = prim(IVZ,i);
+  const Real &rho = prim(IDN,k,j,i);
+  const Real &pgas = prim(IPR,k,j,i);
+  const Real &uu1 = prim(IVX,k,j,i);
+  const Real &uu2 = prim(IVY,k,j,i);
+  const Real &uu3 = prim(IVZ,k,j,i);
   const Real &bb1 = bb_cc(IB1,k,j,i);
   const Real &bb2 = bb_cc(IB2,k,j,i);
   const Real &bb3 = bb_cc(IB3,k,j,i);
