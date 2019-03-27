@@ -57,12 +57,14 @@ def make(clean_first=True, obj_only=False):
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         if obj_only:
             # used in pgen_compile.py to save expensive linking time for Intel Compiler:
-            make_command = ['make', '-j8', 'objs', exe_dir, obj_dir]
+            make_command = ['make', '-j8', 'objs']
         else:
-            # KGF: temporarily disable parallel compilation to debug Jenkins+Gcov issues
-            # (could disable only if --coverage was used)
-            make_command = ['make',  # '-j8',
-                            exe_dir, obj_dir]
+            if (global_coverage_cmd is not None):
+                # disable parallel compilation for Lcov issues on Jenkins filesystem
+                make_command = ['make']
+            else:
+                make_command = ['make', '-j8']
+        make_command += [exe_dir, obj_dir]
         try:
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
