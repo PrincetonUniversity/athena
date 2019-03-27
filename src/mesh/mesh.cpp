@@ -2093,14 +2093,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         sendbuf[k_outer] = new Real[bssame];
         // pack
         int p=0;
-        BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
+        BufferUtility::PackData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
                                   pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[k_outer],
                                     pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[k_outer],
                                     pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k_outer],
+          BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[k_outer],
                                     pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
         int *dcp = reinterpret_cast<int *>(&(sendbuf[k_outer][p]));
@@ -2124,14 +2124,14 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
           else        ks=pb->ks+pb->block_size.nx3/2-f3, ke=pb->ke+f3;
           int p=0;
-          BufferUtility::Pack4DData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
+          BufferUtility::PackData(pb->phydro->u, sendbuf[k_outer], 0, NHYDRO-1,
                                     is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
-            BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k_outer],
+            BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[k_outer],
                                       is, ie+1, js, je, ks, ke, p);
-            BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k_outer],
+            BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[k_outer],
                                       is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k_outer],
+            BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[k_outer],
                                       is, ie, js, je, ks, ke+f3, p);
           }
           int tag=CreateAMRMPITag(nn+l-nslist[newrank[nn+l]], 0, 0, 0);
@@ -2151,7 +2151,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                         pb->cjs, pb->cje,
                                         pb->cks, pb->cke);
         int p=0;
-        BufferUtility::Pack4DData(pmr->coarse_cons_, sendbuf[k_outer], 0, NHYDRO-1,
+        BufferUtility::PackData(pmr->coarse_cons_, sendbuf[k_outer], 0, NHYDRO-1,
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke, p);
@@ -2160,7 +2160,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie+1,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x1f, sendbuf[k_outer],
+          BufferUtility::PackData(pmr->coarse_b_.x1f, sendbuf[k_outer],
                                     pb->cis, pb->cie+1,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke, p);
@@ -2168,7 +2168,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje+f2,
                                pb->cks, pb->cke);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x2f, sendbuf[k_outer],
+          BufferUtility::PackData(pmr->coarse_b_.x2f, sendbuf[k_outer],
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje+f2,
                                     pb->cks, pb->cke, p);
@@ -2176,7 +2176,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke+f3);
-          BufferUtility::Pack3DData(pmr->coarse_b_.x3f, sendbuf[k_outer],
+          BufferUtility::PackData(pmr->coarse_b_.x3f, sendbuf[k_outer],
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke+f3, p);
@@ -2394,17 +2394,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (ranklist[on]==Globals::my_rank) continue;
         MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
         int p=0;
-        BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
+        BufferUtility::UnpackData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
                                     pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &dst_b=pb->pfield->b;
-          BufferUtility::Unpack3DData(
+          BufferUtility::UnpackData(
               recvbuf[k_outer], dst_b.x1f,
               pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::Unpack3DData(
+          BufferUtility::UnpackData(
               recvbuf[k_outer], dst_b.x2f,
               pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::Unpack3DData(
+          BufferUtility::UnpackData(
               recvbuf[k_outer], dst_b.x3f,
               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if (pb->block_size.nx2==1) {
@@ -2434,15 +2434,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ox3==0) ks=pb->ks,                      ke=pb->ks+pb->block_size.nx3/2-f3;
           else        ks=pb->ks+pb->block_size.nx3/2, ke=pb->ke;
           MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
-          BufferUtility::Unpack4DData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
+          BufferUtility::UnpackData(recvbuf[k_outer], pb->phydro->u, 0, NHYDRO-1,
                                       is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
             FaceField &dst_b=pb->pfield->b;
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x1f,
+            BufferUtility::UnpackData(recvbuf[k_outer], dst_b.x1f,
                                         is, ie+1, js, je, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x2f,
+            BufferUtility::UnpackData(recvbuf[k_outer], dst_b.x2f,
                                         is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::Unpack3DData(recvbuf[k_outer], dst_b.x3f,
+            BufferUtility::UnpackData(recvbuf[k_outer], dst_b.x3f,
                                         is, ie, js, je, ks, ke+f3, p);
             if (pb->block_size.nx2==1) {
               for (int i=is; i<=ie; i++)
@@ -2464,17 +2464,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int is=pb->cis-1, ie=pb->cie+1, js=pb->cjs-f2,
             je=pb->cje+f2, ks=pb->cks-f3, ke=pb->cke+f3;
         MPI_Wait(&(req_recv[k_outer]), MPI_STATUS_IGNORE);
-        BufferUtility::Unpack4DData(recvbuf[k_outer], pmr->coarse_cons_,
+        BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
         pmr->ProlongateCellCenteredValues(
             pmr->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
             pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x1f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x2f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x2f,
                                       is, ie, js, je+f2, ks, ke, p);
-          BufferUtility::Unpack3DData(recvbuf[k_outer], pmr->coarse_b_.x3f,
+          BufferUtility::UnpackData(recvbuf[k_outer], pmr->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(
               pmr->coarse_b_.x1f, pb->pfield->b.x1f,

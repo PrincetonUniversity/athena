@@ -154,7 +154,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
   int p=0;
-  BufferUtility::Pack4DData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -180,7 +180,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   int p=0;
   pmr->RestrictCellCenteredValues(var_cc, coarse_buf, nl_, nu_,
                                   si, ei, sj, ej, sk, ek);
-  BufferUtility::Pack4DData(coarse_buf, buf, nl_, nu_,
+  BufferUtility::PackData(coarse_buf, buf, nl_, nu_,
                             si, ei, sj, ej, sk, ek, p);
   return p;
 }
@@ -229,7 +229,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   }
 
   int p=0;
-  BufferUtility::Pack4DData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -309,7 +309,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack4DData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
   // if (SHEARING_BOX) {
@@ -405,7 +405,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack4DData(buf, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   return;
 }
@@ -478,7 +478,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack4DData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   return;
 }

@@ -94,7 +94,7 @@
 //   }
 
 //   int p=0;
-//   BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+//   BufferUtility::PackData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
 
 //   return;
 // }
@@ -374,7 +374,7 @@
 
 //   // set [sj:ej] of current meshblock
 //   int p=0;
-//   BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+//   BufferUtility::UnpackData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
 //   return;
 // }
 

@@ -302,7 +302,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
-  BufferUtility::Pack3DData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0)      si=pmb->is,          ei=pmb->ie;
@@ -316,7 +316,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
-  BufferUtility::Pack3DData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0)      sj=pmb->js,          ej=pmb->je;
@@ -330,7 +330,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
-  BufferUtility::Pack3DData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -364,7 +364,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     else if (nb.ox1<0) si--;
   }
   pmr->RestrictFieldX1(var_fc.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
-  BufferUtility::Pack3DData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0)      si=pmb->cis,       ei=pmb->cie;
@@ -383,7 +383,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     for (int i=si; i<=ei; i++)
       pmr->coarse_b_.x2f(sk,sj+1,i)=pmr->coarse_b_.x2f(sk,sj,i);
   }
-  BufferUtility::Pack3DData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0)      sj=pmb->cjs,       ej=pmb->cje;
@@ -404,7 +404,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
         pmr->coarse_b_.x3f(sk+1,j,i)=pmr->coarse_b_.x3f(sk,j,i);
     }
   }
-  BufferUtility::Pack3DData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -455,7 +455,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox3>0) { sk=pmb->ke-cn, ek=pmb->ke;}
   else              sk=pmb->ks,    ek=pmb->ks+cn;
-  BufferUtility::Pack3DData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0) {
@@ -477,7 +477,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox2>0) { sj=pmb->je+1-pmb->cnghost, ej=pmb->je+1;}
   else              sj=pmb->js,                ej=pmb->js+pmb->cnghost;
-  BufferUtility::Pack3DData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0) {
@@ -507,7 +507,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   } else if (nb.ox3>0) { sk=pmb->ke+1-pmb->cnghost, ek=pmb->ke+1;}
   else              sk=pmb->ks,                ek=pmb->ks+pmb->cnghost;
-  BufferUtility::Pack3DData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -578,7 +578,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -604,7 +604,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2 == 1) { // 1D
 #pragma omp simd
@@ -635,7 +635,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3 == 1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
@@ -695,7 +695,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -725,7 +725,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
     if (pmb->block_size.nx2  ==  1) { // 1D
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
@@ -762,7 +762,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
     if (pmb->block_size.nx3 == 1) { // 2D
       for (int j=sj; j<=ej; ++j) {
         for (int i=si; i<=ei; ++i)
@@ -834,7 +834,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -874,7 +874,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2 == 1) { // 1D
 #pragma omp simd
@@ -926,7 +926,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
-    BufferUtility::Unpack3DData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3 == 1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
