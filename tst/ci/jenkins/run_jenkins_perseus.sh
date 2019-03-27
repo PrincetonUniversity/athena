@@ -165,27 +165,27 @@ module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 # Note, do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 
-time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
-time python -u ./run_tests.py grav --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
-time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
-time python -u ./run_tests.py omp --config=--cxx=icpc --silent
-timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
+time python -u ./run_tests.py grav --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python -u ./run_tests.py mpi --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
+time python -u ./run_tests.py omp --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ \
 	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
-time python -u ./run_tests.py hydro --config=--cxx=icpc --silent
-time python -u ./run_tests.py mhd --config=--cxx=icpc --silent
-time python -u ./run_tests.py amr --config=--cxx=icpc --silent
-time python -u ./run_tests.py outputs --config=--cxx=icpc --silent
-time python -u ./run_tests.py sr --config=--cxx=icpc --silent
-time python -u ./run_tests.py gr --config=--cxx=icpc --silent
-time python -u ./run_tests.py curvilinear --config=--cxx=icpc --silent
-time python -u ./run_tests.py shearingbox --config=--cxx=icpc --silent
-time python -u ./run_tests.py diffusion --config=--cxx=icpc --silent
-time python -u ./run_tests.py symmetry --config=--cxx=icpc --silent
-time python -u ./run_tests.py eos --config=--cxx=icpc --silent
+time python -u ./run_tests.py hydro --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py mhd --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py amr --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py outputs --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py sr --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py gr --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py curvilinear --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py shearingbox --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py diffusion --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py symmetry --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py eos --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
 
 # High-order solver regression tests w/ Intel compiler
-time python -u ./run_tests.py hydro4 --config=--cxx=icpc --silent
+time python -u ./run_tests.py hydro4 --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-17.0/1.10.0
@@ -194,17 +194,17 @@ mpi_hdf5_library_path='/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64'
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc \
+time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
      --config=--lib=${mpi_hdf5_library_path} --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
-time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
-time python -u ./run_tests.py hydro --config=--cxx=icpc-debug --silent
-time python -u ./run_tests.py mhd --config=--cxx=icpc-debug --silent
-time python -u ./run_tests.py sr --config=--cxx=icpc-debug --silent
-time python -u ./run_tests.py gr --config=--cxx=icpc-debug --silent
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc-debug --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
+time python -u ./run_tests.py hydro --config=--cxx=icpc-debug --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py mhd --config=--cxx=icpc-debug --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py sr --config=--cxx=icpc-debug --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
+time python -u ./run_tests.py gr --config=--cxx=icpc-debug --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --silent
 
 set +e
 # end regression tests

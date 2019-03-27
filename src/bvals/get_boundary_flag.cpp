@@ -21,7 +21,7 @@
 //! \fn GetBoundaryFlag(std::string input_string)
 //  \brief Parses input string to return integer flag specifying boundary condition
 
-BoundaryFlag GetBoundaryFlag(std::string input_string) {
+BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
   if (input_string == "reflecting") {
     return BoundaryFlag::reflect;
   } else if (input_string == "outflow") {
