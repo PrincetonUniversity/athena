@@ -93,4 +93,21 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
   return;
 }
 
+// provide explicit instantiation definitions (C++03) to allow the template definitions to
+// exist outside of header file (non-inline), but still provide the requisite instances
+// for other TUs during linking time (~13x files include "buffer_utils.hpp")
+
+// 13x files include buffer_utils.hpp
+template void UnpackData<Real>(Real *, AthenaArray<Real> &, int, int, int, int, int, int,
+                               int, int,
+                               int &);
+template void UnpackData<Real>(Real *, AthenaArray<Real> &, int, int, int, int, int, int,
+                               int &);
+
+template void PackData<Real>(AthenaArray<Real> &, Real *, int, int, int, int, int, int,
+                             int, int,
+                             int &);
+template void PackData<Real>(AthenaArray<Real> &, Real *, int, int, int, int, int, int,
+                             int &);
+
 } // end namespace BufferUtility
