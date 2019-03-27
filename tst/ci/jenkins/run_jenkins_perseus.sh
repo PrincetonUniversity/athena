@@ -165,7 +165,6 @@ module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 # Note, do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
 module list
 
---config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++
 time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
 time python -u ./run_tests.py grav --config=--cxx=icpc --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
