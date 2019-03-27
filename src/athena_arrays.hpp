@@ -20,7 +20,7 @@
 
 // Athena++ headers
 
-template<typename T>
+template <typename T>
 class AthenaArray {
  public:
   AthenaArray();
