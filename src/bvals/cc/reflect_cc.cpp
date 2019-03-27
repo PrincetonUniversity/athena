@@ -31,7 +31,7 @@ void CellCenteredBoundaryVariable::ReflectInnerX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=1; i<=ngh; ++i) {
-          var_cc(n,k,j,il-i) = var_cc(n,k,j,(il+i-1));
+          (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,(il+i-1));
         }
       }
     }
@@ -54,7 +54,7 @@ void CellCenteredBoundaryVariable::ReflectOuterX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=1; i<=ngh; ++i) {
-          var_cc(n,k,j,iu+i) = var_cc(n,k,j,(iu-i+1));
+          (*var_cc)(n,k,j,iu+i) = (*var_cc)(n,k,j,(iu-i+1));
         }
       }
     }
@@ -77,7 +77,7 @@ void CellCenteredBoundaryVariable::ReflectInnerX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,jl-j,i) = var_cc(n,k,jl+j-1,i);
+          (*var_cc)(n,k,jl-j,i) = (*var_cc)(n,k,jl+j-1,i);
         }
       }
     }
@@ -100,7 +100,7 @@ void CellCenteredBoundaryVariable::ReflectOuterX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,ju+j,i) = var_cc(n,k,ju-j+1,i);
+          (*var_cc)(n,k,ju+j,i) = (*var_cc)(n,k,ju-j+1,i);
         }
       }
     }
@@ -123,7 +123,7 @@ void CellCenteredBoundaryVariable::ReflectInnerX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,kl-k,j,i) = var_cc(n,kl+k-1,j,i);
+          (*var_cc)(n,kl-k,j,i) = (*var_cc)(n,kl+k-1,j,i);
         }
       }
     }
@@ -146,7 +146,7 @@ void CellCenteredBoundaryVariable::ReflectOuterX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,ku+k,j,i) = var_cc(n,ku-k+1,j,i);
+          (*var_cc)(n,ku+k,j,i) = (*var_cc)(n,ku-k+1,j,i);
         }
       }
     }

@@ -37,9 +37,11 @@
 // constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
-    MeshBlock *pmb, AthenaArray<Real> &var, AthenaArray<Real> *var_flux)
+    MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *var_flux)
     : BoundaryVariable(pmb) {
-  var_cc.InitWithShallowCopy(var);
+
+  // var_cc.InitWithShallowCopy(var);
+  var_cc = var;
   // src.InitWithShallowCopy(var_cc);
   // dst.InitWithShallowCopy(var_cc);
 
@@ -68,12 +70,12 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // Loops over generic cc arrays are inclusive of upper limit in 4D, e.g. nl_<=n<=nu_
   // Outside of bvals/, loops over the 4th dimension are typically exclusive:
   // e.g. in calculate_fluxes.cpp, loops are n<NWAVE or n<NHYDRO
-  nl_=0;
-  nu_=var.GetDim4() - 1;
+  nl_ = 0;
+  nu_ = var->GetDim4() - 1;
 
   // class data members that are initialized only in derived class HydroBoundaryVariable()
   //coarse_buf=;  // unitialized AthenaArray
-  flip_across_pole_=nullptr;
+  flip_across_pole_ = nullptr;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::cc);
 #ifdef MPI_PARALLEL
@@ -101,11 +103,11 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
   int cng1, cng2, cng3;
-  cng1=cng;
-  cng2=cng*(pmb->block_size.nx2 > 1 ? 1 : 0);
-  cng3=cng*(pmb->block_size.nx3 > 1 ? 1 : 0);
+  cng1 = cng;
+  cng2 = cng*(pmb->block_size.nx2 > 1 ? 1 : 0);
+  cng3 = cng*(pmb->block_size.nx3 > 1 ? 1 : 0);
 
   int size=((ni.ox1 == 0)?pmb->block_size.nx1:NGHOST)
            *((ni.ox2 == 0)?pmb->block_size.nx2:NGHOST)
@@ -117,23 +119,23 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
     int c2f=((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
             *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2):cng)
             *((ni.ox3 == 0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-    size=std::max(size,c2f);
-    size=std::max(size,f2c);
+    size = std::max(size,c2f);
+    size = std::max(size,f2c);
   }
-  size*=nu_+1;
+  size *= nu_+1;
   return size;
 }
 
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
-  MeshBlock *pmb=pmy_block_;
-  int size=0;
+  MeshBlock *pmb = pmy_block_;
+  int size = 0;
   if (ni.ox1 != 0)
-    size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
+    size = (pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
   if (ni.ox2 != 0)
-    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
+    size = (pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*(nu_+1);
   if (ni.ox3 != 0)
-    size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*(nu_+1);
+    size = (pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*(nu_+1);
   return size;
 }
 
@@ -144,17 +146,29 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
-  si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
-  ei=(nb.ox1<0)?(pmb->is+NGHOST-1):pmb->ie;
-  sj=(nb.ox2>0)?(pmb->je-NGHOST+1):pmb->js;
-  ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
-  sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
-  ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
-  int p=0;
-  BufferUtility::PackData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  si = (nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
+  ei = (nb.ox1<0)?(pmb->is+NGHOST-1):pmb->ie;
+  sj = (nb.ox2>0)?(pmb->je-NGHOST+1):pmb->js;
+  ej = (nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
+  sk = (nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
+  ek = (nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
+  int p = 0;
+  // KGF: 3/21/19 workarounds for handling mutable pdata ptr in AthenaArray obj. In either
+  // approach, the pointer is resolved as soon as this function is called, so it should
+  // contain the updated AthenaArray member pdata, unless a SwapAthenaArray() call occurs
+  // while the function is running. In either Approach #1 or #2, this window of danger is
+  // only if the call occurs inside Pack4DData(), since dereferencing the ptr to
+  // AthenaArray when initializing the reference in Approach #1 does not imply a local,
+  // independent copy of pdata, unlike the former "InitWithShallowCopy()" approach.
+
+  // KGF: approach #1: store local reference variable to dereferenced pointer in each fn.
+  AthenaArray<Real> &var = *var_cc; // KGF: need to rename from "var_cc" member....
+  BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  // KGF: approach #2: just dereference original pointer each time it is used
+  // BufferUtility::Pack4DData(*var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -165,23 +179,22 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
-  MeshRefinement *pmr=pmb->pmr;
+  MeshBlock *pmb = pmy_block_;
+  MeshRefinement *pmr = pmb->pmr;
   int si, sj, sk, ei, ej, ek;
-  int cn=NGHOST-1;
+  int cn = NGHOST-1;
+  AthenaArray<Real> &var = *var_cc;
 
-  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
-  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
-  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
-  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
-  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
-  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  si = (nb.ox1>0)?(pmb->cie-cn):pmb->cis;
+  ei = (nb.ox1<0)?(pmb->cis+cn):pmb->cie;
+  sj = (nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
+  ej = (nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
+  sk = (nb.ox3>0)?(pmb->cke-cn):pmb->cks;
+  ek = (nb.ox3<0)?(pmb->cks+cn):pmb->cke;
 
-  int p=0;
-  pmr->RestrictCellCenteredValues(var_cc, coarse_buf, nl_, nu_,
-                                  si, ei, sj, ej, sk, ek);
-  BufferUtility::PackData(coarse_buf, buf, nl_, nu_,
-                            si, ei, sj, ej, sk, ek, p);
+  int p = 0;
+  pmr->RestrictCellCenteredValues(var, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek);
+  BufferUtility::PackData(coarse_buf, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -192,44 +205,45 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
-  int cn=pmb->cnghost-1;
+  int cn = pmb->cnghost-1;
+  AthenaArray<Real> &var = *var_cc;
 
-  si=(nb.ox1>0)?(pmb->ie-cn):pmb->is;
-  ei=(nb.ox1<0)?(pmb->is+cn):pmb->ie;
-  sj=(nb.ox2>0)?(pmb->je-cn):pmb->js;
-  ej=(nb.ox2<0)?(pmb->js+cn):pmb->je;
-  sk=(nb.ox3>0)?(pmb->ke-cn):pmb->ks;
-  ek=(nb.ox3<0)?(pmb->ks+cn):pmb->ke;
+  si = (nb.ox1>0)?(pmb->ie-cn):pmb->is;
+  ei = (nb.ox1<0)?(pmb->is+cn):pmb->ie;
+  sj = (nb.ox2>0)?(pmb->je-cn):pmb->js;
+  ej = (nb.ox2<0)?(pmb->js+cn):pmb->je;
+  sk = (nb.ox3>0)?(pmb->ke-cn):pmb->ks;
+  ek = (nb.ox3<0)?(pmb->ks+cn):pmb->ke;
 
   // send the data first and later prolongate on the target block
   // need to add edges for faces, add corners for edges
   if (nb.ox1 == 0) {
-    if (nb.fi1 == 1)   si+=pmb->block_size.nx1/2-pmb->cnghost;
-    else            ei-=pmb->block_size.nx1/2-pmb->cnghost;
+    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2-pmb->cnghost;
+    else            ei -= pmb->block_size.nx1/2-pmb->cnghost;
   }
   if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
     if (nb.ox1 != 0) {
-      if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-      else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      if (nb.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+      else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
     } else {
-      if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-      else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      if (nb.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+      else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
     }
   }
   if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
     if (nb.ox1 != 0 && nb.ox2 != 0) {
-      if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-      else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      if (nb.fi1 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+      else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
     } else {
-      if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-      else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      if (nb.fi2 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+      else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
     }
   }
 
   int p=0;
-  BufferUtility::PackData(var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -239,8 +253,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 // KGF: (AthenaArray<Real> &dst, HydroBoundaryQuantity type)
 void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
-  MeshBlock *pmb=pmy_block_;
-  int mylevel=pmb->loc.level;
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
 
   // KGF: call switch over "HydroBoundaryQuantity type"
 
@@ -284,6 +298,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
+  AthenaArray<Real> &var = *var_cc;
 
   if (nb.ox1 == 0)     si=pmb->is,        ei=pmb->ie;
   else if (nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
@@ -296,6 +311,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
+
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
@@ -303,13 +319,16 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
-          for (int i=si; i<=ei; ++i)
-            var_cc(n,k,j,i) = sign * buf[p++];
+          for (int i=si; i<=ei; ++i) {
+            // KGF: approach #2
+            //(*var_cc)(n,k,j,i) = sign * buf[p++];
+            var(n,k,j,i) = sign * buf[p++];
+          }
         }
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
   // if (SHEARING_BOX) {
@@ -355,43 +374,43 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
-  int cng=pmb->cnghost;
+  int cng = pmb->cnghost;
 
   if (nb.ox1 == 0) {
-    si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1 & 1LL) == 0LL) ei+=cng;
-    else                             si-=cng;
+    si = pmb->cis, ei = pmb->cie;
+    if ((pmb->loc.lx1 & 1LL) == 0LL) ei += cng;
+    else                             si -= cng;
   } else if (nb.ox1>0)  {
-    si=pmb->cie+1,   ei=pmb->cie+cng;
+    si = pmb->cie+1,   ei = pmb->cie+cng;
   } else {
-    si=pmb->cis-cng, ei=pmb->cis-1;
+    si = pmb->cis-cng, ei = pmb->cis-1;
   }
   if (nb.ox2 == 0) {
-    sj=pmb->cjs, ej=pmb->cje;
+    sj = pmb->cjs, ej = pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
-      else                             sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej += cng;
+      else                             sj -= cng;
     }
   } else if (nb.ox2>0) {
-    sj=pmb->cje+1,   ej=pmb->cje+cng;
+    sj = pmb->cje+1,   ej = pmb->cje+cng;
   } else {
-    sj=pmb->cjs-cng, ej=pmb->cjs-1;
+    sj = pmb->cjs-cng, ej = pmb->cjs-1;
   }
   if (nb.ox3 == 0) {
-    sk=pmb->cks, ek=pmb->cke;
+    sk = pmb->cks, ek = pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3 & 1LL) == 0LL) ek+=cng;
-      else                             sk-=cng;
+      if ((pmb->loc.lx3 & 1LL) == 0LL) ek += cng;
+      else                             sk -= cng;
     }
   } else if (nb.ox3>0)  {
-    sk=pmb->cke+1,   ek=pmb->cke+cng;
+    sk = pmb->cke+1,   ek = pmb->cke+cng;
   } else {
-    sk=pmb->cks-cng, ek=pmb->cks-1;
+    sk = pmb->cks-cng, ek = pmb->cks-1;
   }
 
-  int p=0;
+  int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign = 1.0;
@@ -418,67 +437,68 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
+  AthenaArray<Real> &var = *var_cc;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
 
   if (nb.ox1 == 0) {
-    si=pmb->is, ei=pmb->ie;
-    if (nb.fi1 == 1)   si+=pmb->block_size.nx1/2;
-    else            ei-=pmb->block_size.nx1/2;
+    si = pmb->is, ei = pmb->ie;
+    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2;
+    else            ei -= pmb->block_size.nx1/2;
   } else if (nb.ox1>0) {
-    si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+    si = pmb->ie+1,      ei = pmb->ie+NGHOST;
   } else {
-    si=pmb->is-NGHOST, ei=pmb->is-1;
+    si = pmb->is-NGHOST, ei = pmb->is-1;
   }
   if (nb.ox2 == 0) {
-    sj=pmb->js, ej=pmb->je;
+    sj = pmb->js, ej = pmb->je;
     if (pmb->block_size.nx2 > 1) {
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       }
     }
   } else if (nb.ox2>0) {
-    sj=pmb->je+1,      ej=pmb->je+NGHOST;
+    sj = pmb->je+1,      ej = pmb->je+NGHOST;
   } else {
-    sj=pmb->js-NGHOST, ej=pmb->js-1;
+    sj = pmb->js-NGHOST, ej = pmb->js-1;
   }
   if (nb.ox3 == 0) {
-    sk=pmb->ks, ek=pmb->ke;
+    sk = pmb->ks, ek = pmb->ke;
     if (pmb->block_size.nx3 > 1) {
       if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       } else {
-        if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       }
     }
   } else if (nb.ox3>0) {
-    sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+    sk = pmb->ke+1,      ek = pmb->ke+NGHOST;
   } else {
-    sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+    sk = pmb->ks-NGHOST, ek = pmb->ks-1;
   }
 
-  int p=0;
+  int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
       Real sign=1.0;
-      if (flip_across_pole_  !=  nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
+      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
           for (int i=si; i<=ei; ++i)
-            var_cc(n,k,j,i) = sign * buf[p++];
+            var(n,k,j,i) = sign * buf[p++];
         }
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   return;
 }
@@ -488,7 +508,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //  \brief receive the cell-centered boundary data
 
 bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
-  bool bflag=true;
+  bool bflag = true;
 
   // KGF: call short switch over "HydroBoundaryQuantity type"
 
@@ -497,7 +517,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::arrived) continue;
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::waiting) {
       if (nb.rank == Globals::my_rank) {// on the same process
-        bflag=false;
+        bflag = false;
         continue;
       }
 #ifdef MPI_PARALLEL
@@ -506,7 +526,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&(bd_var_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if (static_cast<bool>(test) == false) {
-          bflag=false;
+          bflag = false;
           continue;
         }
         bd_var_.flag[nb.bufid] = BoundaryStatus::arrived;
@@ -522,7 +542,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
 //  \brief set the cell-centered boundary data
 
 void CellCenteredBoundaryVariable::SetBoundaries() {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
 
   // KGF: call switch over "HydroBoundaryQuantity type"
 
@@ -532,7 +552,7 @@ void CellCenteredBoundaryVariable::SetBoundaries() {
       // KGF: dst
       // KGF: nl_, nu_
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.level<pmb->loc.level) // this set only the prolongation buffer
+    else if (nb.level < pmb->loc.level) // this set only the prolongation buffer
       // KGF: nl_, nu_
       // KGF: coarse_buf
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
@@ -592,7 +612,9 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
+  AthenaArray<Real> &var = *var_cc;
+
   if (pmb->loc.level  ==  pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
     if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
@@ -601,11 +623,11 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval_->azimuthal_shift_(k) = var_cc(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = var(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              var_cc(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
+              var(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }
@@ -618,11 +640,11 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
           for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-              pbval_->azimuthal_shift_(k) = var_cc(n,k,j,i);
+              pbval_->azimuthal_shift_(k) = var(n,k,j,i);
             for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
               int k_shift = k;
               k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-              var_cc(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
+              var(n,k,j,i) = pbval_->azimuthal_shift_(k_shift);
             }
           }
         }

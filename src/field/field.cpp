@@ -94,7 +94,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   // ptr to diffusion object
   pfdif = new FieldDiffusion(pmb, pin);
 
-  pfbval  = new FaceCenteredBoundaryVariable(pmy_block, b, e);
+  pfbval  = new FaceCenteredBoundaryVariable(pmy_block, &b, e);
   pfbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pfbval);
 

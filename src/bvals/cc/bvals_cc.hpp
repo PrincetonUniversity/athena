@@ -31,15 +31,22 @@
 class CellCenteredBoundaryVariable : public BoundaryVariable {
  public:
   CellCenteredBoundaryVariable(MeshBlock *pmb,
-                               AthenaArray<Real> &var, AthenaArray<Real> *var_flux);
+                               AthenaArray<Real> *var, AthenaArray<Real> *var_flux);
   ~CellCenteredBoundaryVariable();
 
-  AthenaArray<Real> var_cc;
+  AthenaArray<Real> *var_cc;
   // AthenaArray<Real> src, dst;
 
-  // KGF: considered moving variable to derived HydroBoundaryVariable class
+  // KGF: considered moving variable to derived HydroBoundaryVariable class-- No.
+
+  // KGF: for HydroBoundaryVariable derived class, this will switch between coarse_prim_
+  // and coarse_cons_, but their underlying raw pointers will never be swapped. Therefore,
+  // we could keep this as a reference member, as long as all switches occur due to
+  // InitBoundaryData() calls in SwapHydroQuantity() or SelectCoarseBuffer()
   AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
 
+  // KGF: no need to ever switch flux[]? Keep as non-pointer (reference) objects,
+  // shallow-copied
   AthenaArray<Real> x1flux, x2flux, x3flux;
 
   // what about bool *flip? CC or Hydro-specific? Assuming CC now, see protected: vars

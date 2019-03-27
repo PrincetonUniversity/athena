@@ -33,7 +33,7 @@ void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f(k,(jl-j),i) = sign * var_fc.x1f(k,(jl+j-1),i);
+        (*var_fc).x1f(k,(jl-j),i) = sign * (*var_fc).x1f(k,(jl+j-1),i);
       }
     }
   }
@@ -42,14 +42,14 @@ void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,(jl-j),i) = sign * var_fc.x2f(k,(jl+j  ),i);
+        (*var_fc).x2f(k,(jl-j),i) = sign * (*var_fc).x2f(k,(jl+j  ),i);
       }
     }
   }
   for (int k=kl; k<=ku; ++k) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      var_fc.x2f(k,jl,i) = 0.0;
+      (*var_fc).x2f(k,jl,i) = 0.0;
     }
   }
   sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
@@ -57,7 +57,7 @@ void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f(k,(jl-j),i) = sign * var_fc.x3f(k,(jl+j-1),i);
+        (*var_fc).x3f(k,(jl-j),i) = sign * (*var_fc).x3f(k,(jl+j-1),i);
       }
     }
   }
@@ -80,7 +80,7 @@ void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f(k,(ju+j  ),i) = sign * var_fc.x1f(k,(ju-j+1),i);
+        (*var_fc).x1f(k,(ju+j  ),i) = sign * (*var_fc).x1f(k,(ju-j+1),i);
       }
     }
   }
@@ -89,14 +89,14 @@ void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,(ju+j+1),i) = sign * var_fc.x2f(k,(ju-j+1),i);
+        (*var_fc).x2f(k,(ju+j+1),i) = sign * (*var_fc).x2f(k,(ju-j+1),i);
       }
     }
   }
   for (int k=kl; k<=ku; ++k) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      var_fc.x2f(k,(ju+1),i) = 0.0;
+      (*var_fc).x2f(k,(ju+1),i) = 0.0;
     }
   }
   sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
@@ -104,7 +104,7 @@ void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f(k,(ju+j  ),i) =  sign * var_fc.x3f(k,(ju-j+1),i);
+        (*var_fc).x3f(k,(ju+j  ),i) =  sign * (*var_fc).x3f(k,(ju-j+1),i);
       }
     }
   }

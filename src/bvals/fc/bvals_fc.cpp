@@ -41,12 +41,16 @@
 // constructor
 
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
-    MeshBlock *pmb, FaceField &var, EdgeField &var_flux)
+    MeshBlock *pmb, FaceField *var, EdgeField &var_flux)
     : BoundaryVariable(pmb) {
-  // Is there no better way to copy a reference to a FaceField in a class data member?
-  var_fc.x1f.InitWithShallowCopy(var.x1f);
-  var_fc.x2f.InitWithShallowCopy(var.x2f);
-  var_fc.x3f.InitWithShallowCopy(var.x3f);
+
+  var_fc = var;
+  // KGF: is there no better way to shallow copy a reference to a FaceField in a class
+  // data member?
+  // var_fc.x1f.InitWithShallowCopy(var.x1f);
+  // var_fc.x2f.InitWithShallowCopy(var.x2f);
+  // var_fc.x3f.InitWithShallowCopy(var.x3f);
+
   // src.x1f.InitWithShallowCopy(var_fc.x1f);
   // src.x2f.InitWithShallowCopy(var_fc.x2f);
   // src.x3f.InitWithShallowCopy(var_fc.x3f);
@@ -58,9 +62,9 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   e2.InitWithShallowCopy(var_flux.x2e);
   e3.InitWithShallowCopy(var_flux.x3e);
   // KGF: Taken from 2x functions in flux_correction_fc.cpp
-  // AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-  // AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  // AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  // AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
+  // AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
+  // AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::fc);
   InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);
@@ -183,59 +187,59 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   int f2d = (pmb->block_size.nx2 > 1 ? 1 : 0);
   int f3d = (pmb->block_size.nx3 > 1 ? 1 : 0);
   int cng1, cng2, cng3;
-  cng1=cng;
-  cng2=cng*f2d;
-  cng3=cng*f3d;
+  cng1 = cng;
+  cng2 = cng*f2d;
+  cng3 = cng*f3d;
 
-  int size1=((ni.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
+  int size1 = ((ni.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
             *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
             *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-  int size2=((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
+  int size2 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
             *((ni.ox2 == 0) ? (pmb->block_size.nx2+f2d):NGHOST)
             *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-  int size3=((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
+  int size3 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
             *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
             *((ni.ox3 == 0) ? (pmb->block_size.nx3+f3d):NGHOST);
-  int size=size1+size2+size3;
+  int size = size1+size2+size3;
   if (pmy_mesh_->multilevel) {
     if (ni.type != NeighborConnect::face) {
-      if (ni.ox1 != 0) size1=size1/NGHOST*(NGHOST+1);
-      if (ni.ox2 != 0) size2=size2/NGHOST*(NGHOST+1);
-      if (ni.ox3 != 0) size3=size3/NGHOST*(NGHOST+1);
+      if (ni.ox1 != 0) size1 = size1/NGHOST*(NGHOST+1);
+      if (ni.ox2 != 0) size2 = size2/NGHOST*(NGHOST+1);
+      if (ni.ox3 != 0) size3 = size3/NGHOST*(NGHOST+1);
     }
-    size=size1+size2+size3;
-    int f2c1=((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
+    size = size1+size2+size3;
+    int f2c1 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                    *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-    int f2c2=((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+    int f2c2 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2d)
                : NGHOST)
              *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-    int f2c3=((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+    int f2c3 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
              *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3d)
                : NGHOST);
     if (ni.type != NeighborConnect::face) {
-      if (ni.ox1 != 0) f2c1=f2c1/NGHOST*(NGHOST+1);
-      if (ni.ox2 != 0) f2c2=f2c2/NGHOST*(NGHOST+1);
-      if (ni.ox3 != 0) f2c3=f2c3/NGHOST*(NGHOST+1);
+      if (ni.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST+1);
+      if (ni.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST+1);
+      if (ni.ox3 != 0) f2c3 = f2c3/NGHOST*(NGHOST+1);
     }
-    int fsize=f2c1+f2c2+f2c3;
-    int c2f1=
+    int fsize = f2c1+f2c2+f2c3;
+    int c2f1 =
         ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
         *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
         *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-    int c2f2=
+    int c2f2 =
         ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
         *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
         *((ni.ox3 == 0)?((pmb->block_size.nx3+1)/2+cng3):cng);
-    int c2f3=
+    int c2f3 =
         ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
         *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2):cng)
         *((ni.ox3 == 0) ?
           ((pmb->block_size.nx3+1)/2+cng3+f3d) : cng+1);
-    int csize=c2f1+c2f2+c2f3;
-    size=std::max(size,std::max(csize,fsize));
+    int csize = c2f1+c2f2+c2f3;
+    size = std::max(size,std::max(csize,fsize));
   }
   return size;
 }
@@ -243,34 +247,34 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
 int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
   MeshBlock *pmb=pmy_block_;
-  int size=0;
+  int size = 0;
 
   if (ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3>1) { // 3D
       if (ni.ox1 != 0)
-        size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
+        size = (pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                    +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
       else if (ni.ox2 != 0)
-        size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
+        size = (pmb->block_size.nx1+1)*(pmb->block_size.nx3)
              +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
       else
-              size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
+              size = (pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                    +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
     } else if (pmb->block_size.nx2>1) { // 2D
       if (ni.ox1 != 0)
-        size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
+        size = (pmb->block_size.nx2+1)+pmb->block_size.nx2;
       else
-        size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
+        size = (pmb->block_size.nx1+1)+pmb->block_size.nx1;
     } else { // 1D
-      size=2;
+      size = 2;
           }
   } else if (ni.type == NeighborConnect::edge) {
     if (pmb->block_size.nx3>1) { // 3D
-      if (ni.ox3 == 0) size=pmb->block_size.nx3;
-      if (ni.ox2 == 0) size=pmb->block_size.nx2;
-      if (ni.ox1 == 0) size=pmb->block_size.nx1;
+      if (ni.ox3 == 0) size = pmb->block_size.nx3;
+      if (ni.ox2 == 0) size = pmb->block_size.nx2;
+      if (ni.ox1 == 0) size = pmb->block_size.nx1;
     } else if (pmb->block_size.nx2>1) {
-      size=1;
+      size = 1;
     }
   }
   return size;
@@ -285,7 +289,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
-  int p=0;
+  int p = 0;
 
   // bx1
   if (nb.ox1 == 0)     si=pmb->is,          ei=pmb->ie+1;
@@ -302,7 +306,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
-  BufferUtility::PackData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  // KGF: taking only "approach #2" from bvals_cc.cpp in this file
+  BufferUtility::PackData((*var_fc).x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0)      si=pmb->is,          ei=pmb->ie;
@@ -316,7 +321,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
-  BufferUtility::PackData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData((*var_fc).x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0)      sj=pmb->js,          ej=pmb->je;
@@ -330,7 +335,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
-  BufferUtility::PackData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData((*var_fc).x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -363,8 +368,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox1>0) ei++;
     else if (nb.ox1<0) si--;
   }
-  pmr->RestrictFieldX1(var_fc.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
-  BufferUtility::PackData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  pmr->RestrictFieldX1((*var_fc).x1f, pmb->pfield->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
+  BufferUtility::PackData(pmb->pfield->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0)      si=pmb->cis,       ei=pmb->cie;
@@ -378,12 +383,12 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox2>0) ej++;
     else if (nb.ox2<0) sj--;
   }
-  pmr->RestrictFieldX2(var_fc.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
+  pmr->RestrictFieldX2((*var_fc).x2f, pmb->pfield->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx2 == 1) { // 1D
     for (int i=si; i<=ei; i++)
-      pmr->coarse_b_.x2f(sk,sj+1,i)=pmr->coarse_b_.x2f(sk,sj,i);
+      pmb->pfield->coarse_b_.x2f(sk,sj+1,i)=pmb->pfield->coarse_b_.x2f(sk,sj,i);
   }
-  BufferUtility::PackData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(pmb->pfield->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0)      sj=pmb->cjs,       ej=pmb->cje;
@@ -397,14 +402,14 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
     if (nb.ox3>0) ek++;
     else if (nb.ox3<0) sk--;
   }
-  pmr->RestrictFieldX3(var_fc.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
+  pmr->RestrictFieldX3((*var_fc).x3f, pmb->pfield->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
   if (pmb->block_size.nx3 == 1) { // 1D or 2D
     for (int j=sj; j<=ej; j++) {
       for (int i=si; i<=ei; i++)
-        pmr->coarse_b_.x3f(sk+1,j,i)=pmr->coarse_b_.x3f(sk,j,i);
+        pmb->pfield->coarse_b_.x3f(sk+1,j,i)=pmb->pfield->coarse_b_.x3f(sk,j,i);
     }
   }
-  BufferUtility::PackData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(pmb->pfield->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -433,11 +438,11 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     sj=pmb->js,    ej=pmb->je;
     if (pmb->block_size.nx2 > 1) {
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je-cn, ej=pmb->je;}
@@ -446,16 +451,16 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     sk=pmb->ks,    ek=pmb->ke;
     if (pmb->block_size.nx3 > 1) {
       if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
       } else {
-        if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
       }
     }
   } else if (nb.ox3>0) { sk=pmb->ke-cn, ek=pmb->ke;}
   else              sk=pmb->ks,    ek=pmb->ks+cn;
-  BufferUtility::PackData(var_fc.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData((*var_fc).x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if (nb.ox1 == 0) {
@@ -468,27 +473,27 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     if (pmb->block_size.nx2 > 1) {
       ej++;
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je+1-pmb->cnghost, ej=pmb->je+1;}
   else              sj=pmb->js,                ej=pmb->js+pmb->cnghost;
-  BufferUtility::PackData(var_fc.x2f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData((*var_fc).x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if (nb.ox2 == 0) {
     sj=pmb->js,    ej=pmb->je;
     if (pmb->block_size.nx2 > 1) {
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
-        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je-cn, ej=pmb->je;}
@@ -498,16 +503,16 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     if (pmb->block_size.nx3 > 1) {
       ek++;
       if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
       } else {
-        if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
-        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
       }
     }
   } else if (nb.ox3>0) { sk=pmb->ke+1-pmb->cnghost, ek=pmb->ke+1;}
   else              sk=pmb->ks,                ek=pmb->ks+pmb->cnghost;
-  BufferUtility::PackData(var_fc.x3f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData((*var_fc).x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -523,13 +528,13 @@ void FaceCenteredBoundaryVariable::SendBoundaryBuffers() {
     int ssize;
     if (nb.level == pmb->loc.level)
       // KGF: src
-      ssize=LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid],nb);
+      ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid],nb);
     else if (nb.level<pmb->loc.level)
       // KGF: src
-      ssize=LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid],nb);
+      ssize = LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid],nb);
     else
       // KGF: src
-      ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
+      ssize = LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) { // on the same process
       CopyVariableBufferSameProcess(nb, ssize);
     }
@@ -574,11 +579,11 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x1f(k,j,i) = sign*buf[p++];
+          (*var_fc).x1f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
@@ -600,16 +605,16 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x2f(k,j,i) = sign*buf[p++];
+          (*var_fc).x2f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2 == 1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
-      var_fc.x2f(sk,sj+1,i) = var_fc.x2f(sk,sj,i);
+      (*var_fc).x2f(sk,sj+1,i) = (*var_fc).x2f(sk,sj,i);
   }
 
   // bx3
@@ -631,17 +636,17 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x3f(k,j,i) = sign*buf[p++];
+          (*var_fc).x3f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3 == 1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
-        var_fc.x3f(sk+1,j,i) = var_fc.x3f(sk,j,i);
+        (*var_fc).x3f(sk+1,j,i) = (*var_fc).x3f(sk,j,i);
     }
   }
 
@@ -664,23 +669,23 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   // bx1
   if (nb.ox1 == 0) {
     si=pmb->cis, ei=pmb->cie+1;
-    if ((pmb->loc.lx1 & 1LL) == 0LL) ei+=cng;
-    else             si-=cng;
+    if ((pmb->loc.lx1 & 1LL) == 0LL) ei += cng;
+    else             si -= cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+1+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis;
   if (nb.ox2 == 0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
-      else             sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej += cng;
+      else             sj -= cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if (nb.ox3 == 0) {
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3 & 1LL) == 0LL) ek+=cng;
-      else             sk-=cng;
+      if ((pmb->loc.lx3 & 1LL) == 0LL) ek += cng;
+      else             sk -= cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+cng;}
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
@@ -691,26 +696,26 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
+          pmb->pfield->coarse_b_.x1f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmb->pfield->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
   if (nb.ox1 == 0) {
     si=pmb->cis, ei=pmb->cie;
-    if ((pmb->loc.lx1 & 1LL) == 0LL) ei+=cng;
-    else             si-=cng;
+    if ((pmb->loc.lx1 & 1LL) == 0LL) ei += cng;
+    else             si -= cng;
   } else if (nb.ox1>0) {  si=pmb->cie+1,   ei=pmb->cie+cng;}
   else               si=pmb->cis-cng, ei=pmb->cis-1;
   if (nb.ox2 == 0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
       ej++;
-      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
-      else             sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej += cng;
+      else             sj -= cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+1+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs;
@@ -721,15 +726,15 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
+          pmb->pfield->coarse_b_.x2f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmb->pfield->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
     if (pmb->block_size.nx2  ==  1) { // 1D
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x2f(sk,sj+1,i) = pmr->coarse_b_.x2f(sk,sj,i);
+        pmb->pfield->coarse_b_.x2f(sk,sj+1,i) = pmb->pfield->coarse_b_.x2f(sk,sj,i);
     }
   }
 
@@ -737,8 +742,8 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   if (nb.ox2 == 0) {
     sj=pmb->cjs, ej=pmb->cje;
     if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2 & 1LL) == 0LL) ej+=cng;
-      else             sj-=cng;
+      if ((pmb->loc.lx2 & 1LL) == 0LL) ej += cng;
+      else             sj -= cng;
     }
   } else if (nb.ox2>0) {  sj=pmb->cje+1,   ej=pmb->cje+cng;}
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
@@ -746,8 +751,8 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     sk=pmb->cks, ek=pmb->cke;
     if (pmb->block_size.nx3 > 1) {
       ek++;
-      if ((pmb->loc.lx3 & 1LL) == 0LL) ek+=cng;
-      else             sk-=cng;
+      if ((pmb->loc.lx3 & 1LL) == 0LL) ek += cng;
+      else             sk -= cng;
     }
   } else if (nb.ox3>0) {  sk=pmb->cke+1,   ek=pmb->cke+1+cng;}
   else               sk=pmb->cks-cng, ek=pmb->cks;
@@ -758,15 +763,15 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
+          pmb->pfield->coarse_b_.x3f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, pmb->pfield->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
     if (pmb->block_size.nx3 == 1) { // 2D
       for (int j=sj; j<=ej; ++j) {
         for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x3f(sk+1,j,i) = pmr->coarse_b_.x3f(sk,j,i);
+          pmb->pfield->coarse_b_.x3f(sk+1,j,i) = pmb->pfield->coarse_b_.x3f(sk,j,i);
       }
     }
   }
@@ -788,8 +793,8 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   // bx1
   if (nb.ox1 == 0) {
     si=pmb->is, ei=pmb->ie+1;
-    if (nb.fi1 == 1)   si+=pmb->block_size.nx1/2;
-    else            ei-=pmb->block_size.nx1/2;
+    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2;
+    else            ei -= pmb->block_size.nx1/2;
   } else if (nb.ox1>0) { si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;}
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   // include the overlapping faces in edge and corner boundaries
@@ -801,11 +806,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sj=pmb->js, ej=pmb->je;
     if (pmb->block_size.nx2 > 1) {
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je+1,      ej=pmb->je+NGHOST;}
@@ -814,11 +819,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sk=pmb->ks, ek=pmb->ke;
     if (pmb->block_size.nx3 > 1) {
       if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       } else {
-        if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       }
     }
   } else if (nb.ox3>0) { sk=pmb->ke+1,      ek=pmb->ke+NGHOST;}
@@ -830,18 +835,18 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x1f(k,j,i) = sign*buf[p++];
+          (*var_fc).x1f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x1f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x1f, si, ei, sj, ej, sk, ek, p);
   }
 
   // bx2
   if (nb.ox1 == 0) {
     si=pmb->is, ei=pmb->ie;
-    if (nb.fi1 == 1)   si+=pmb->block_size.nx1/2;
-    else            ei-=pmb->block_size.nx1/2;
+    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2;
+    else            ei -= pmb->block_size.nx1/2;
   } else if (nb.ox1>0) { si=pmb->ie+1,      ei=pmb->ie+NGHOST;}
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   if (nb.ox2 == 0) {
@@ -849,11 +854,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     if (pmb->block_size.nx2 > 1) {
       ej++;
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je+2,      ej=pmb->je+NGHOST+1;}
@@ -870,16 +875,16 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x2f(k,j,i) = sign*buf[p++];
+          (*var_fc).x2f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x2f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x2f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx2 == 1) { // 1D
 #pragma omp simd
     for (int i=si; i<=ei; ++i)
-      var_fc.x2f(sk,sj+1,i) = var_fc.x2f(sk,sj,i);
+      (*var_fc).x2f(sk,sj+1,i) = (*var_fc).x2f(sk,sj,i);
   }
 
   // bx3
@@ -887,11 +892,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sj=pmb->js, ej=pmb->je;
     if (pmb->block_size.nx2 > 1) {
       if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       } else {
-        if (nb.fi2 == 1) sj+=pmb->block_size.nx2/2;
-        else          ej-=pmb->block_size.nx2/2;
+        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2;
+        else          ej -= pmb->block_size.nx2/2;
       }
     }
   } else if (nb.ox2>0) { sj=pmb->je+1,      ej=pmb->je+NGHOST;}
@@ -901,11 +906,11 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     if (pmb->block_size.nx3 > 1) {
       ek++;
       if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       } else {
-        if (nb.fi2 == 1) sk+=pmb->block_size.nx3/2;
-        else          ek-=pmb->block_size.nx3/2;
+        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2;
+        else          ek -= pmb->block_size.nx3/2;
       }
     }
   } else if (nb.ox3>0) { sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;}
@@ -922,17 +927,17 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
         for (int i=si; i<=ei; ++i)
-          var_fc.x3f(k,j,i) = sign*buf[p++];
+          (*var_fc).x3f(k,j,i) = sign*buf[p++];
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, var_fc.x3f, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, (*var_fc).x3f, si, ei, sj, ej, sk, ek, p);
   }
   if (pmb->block_size.nx3 == 1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
       for (int i=si; i<=ei; ++i)
-        var_fc.x3f(sk+1,j,i) = var_fc.x3f(sk,j,i);
+        (*var_fc).x3f(sk+1,j,i) = (*var_fc).x3f(sk,j,i);
     }
   }
 
@@ -1045,33 +1050,33 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -1082,33 +1087,33 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x1f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x1f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x1f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x2f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x2f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x2f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k)
-            pbval_->azimuthal_shift_(k) = var_fc.x3f(k,j,i);
+            pbval_->azimuthal_shift_(k) = (*var_fc).x3f(k,j,i);
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            var_fc.x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
+            (*var_fc).x3f(k,j,i) = pbval_->azimuthal_shift_(k_shift);
           }
         }
       }
@@ -1135,7 +1140,7 @@ void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage() {
     int j = pmb->js;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,j,i) = 0.5 * (var_fc.x2f(k,j-1,i) + var_fc.x2f(k,j+1,i));
+        (*var_fc).x2f(k,j,i) = 0.5 * ((*var_fc).x2f(k,j-1,i) + (*var_fc).x2f(k,j+1,i));
       }
     }
   }
@@ -1143,7 +1148,7 @@ void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage() {
     int j = pmb->je + 1;
     for (int k=kl; k<=ku; ++k) {
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,j,i) = 0.5 * (var_fc.x2f(k,j-1,i) + var_fc.x2f(k,j+1,i));
+        (*var_fc).x2f(k,j,i) = 0.5 * ((*var_fc).x2f(k,j-1,i) + (*var_fc).x2f(k,j+1,i));
       }
     }
   }
@@ -1161,13 +1166,13 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
     for (int ox2=-1; ox2<=1; ox2+=2) {
       for (int ox1=-1; ox1<=1; ox1+=2) {
         int nis, nie, njs, nje;
-        nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
-        njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
+        nis = std::max(ox1-1,-1), nie = std::min(ox1+1,1);
+        njs = std::max(ox2-1,-1), nje = std::min(ox2+1,1);
         int nf=0, fl=mylevel;
         for (int nj=njs; nj<=nje; nj++) {
           for (int ni=nis; ni<=nie; ni++) {
             if (pbval_->nblevel[1][nj+1][ni+1] > fl)
-              fl++, nf=0;
+              fl++, nf = 0;
             if (pbval_->nblevel[1][nj+1][ni+1] == fl)
               nf++;
           }
@@ -1243,55 +1248,55 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.rank != Globals::my_rank) {
       int size, csize, fsize;
-      int size1=((nb.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
+      int size1 = ((nb.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
                 *((nb.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
                 *((nb.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-      int size2=((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
+      int size2 = ((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
                 *((nb.ox2 == 0) ? (pmb->block_size.nx2+f2d):NGHOST)
                 *((nb.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-      int size3=((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
+      int size3 = ((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
                 *((nb.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
                 *((nb.ox3 == 0) ? (pmb->block_size.nx3+f3d):NGHOST);
-      size=size1+size2+size3;
+      size = size1+size2+size3;
       if (pmy_mesh_->multilevel == true) {
         if (nb.type != NeighborConnect::face) {
-          if (nb.ox1 != 0) size1=size1/NGHOST*(NGHOST+1);
-          if (nb.ox2 != 0) size2=size2/NGHOST*(NGHOST+1);
-          if (nb.ox3 != 0) size3=size3/NGHOST*(NGHOST+1);
+          if (nb.ox1 != 0) size1 = size1/NGHOST*(NGHOST+1);
+          if (nb.ox2 != 0) size2 = size2/NGHOST*(NGHOST+1);
+          if (nb.ox3 != 0) size3 = size3/NGHOST*(NGHOST+1);
         }
-        size=size1+size2+size3;
-        int f2c1=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
+        size = size1+size2+size3;
+        int f2c1 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        int f2c2=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+        int f2c2 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        int f2c3=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+        int f2c3 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
         if (nb.type != NeighborConnect::face) {
-          if (nb.ox1 != 0) f2c1=f2c1/NGHOST*(NGHOST+1);
-          if (nb.ox2 != 0) f2c2=f2c2/NGHOST*(NGHOST+1);
-          if (nb.ox3 != 0) f2c3=f2c3/NGHOST*(NGHOST+1);
+          if (nb.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST+1);
+          if (nb.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST+1);
+          if (nb.ox3 != 0) f2c3 = f2c3/NGHOST*(NGHOST+1);
         }
-        fsize=f2c1+f2c2+f2c3;
-        int c2f1=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
+        fsize = f2c1+f2c2+f2c3;
+        int c2f1 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-        int c2f2=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+        int c2f2 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-        int c2f3=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
+        int c2f3 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
-        csize=c2f1+c2f2+c2f3;
+        csize = c2f1+c2f2+c2f3;
       } // end of multilevel == true
       if (nb.level == mylevel) // same refinement level
-        ssize=size, rsize=size;
+        ssize = size, rsize = size;
       else if (nb.level<mylevel) // coarser
-        ssize=fsize, rsize=csize;
+        ssize = fsize, rsize = csize;
       else // finer
-        ssize=csize, rsize=fsize;
+        ssize = csize, rsize = fsize;
 
       // face-centered field: bd_var_
       tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, fc_phys_id_);
@@ -1310,46 +1315,49 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       if (nb.type == NeighborConnect::face) { // face
         if (pmb->block_size.nx3 > 1) { // 3D
           if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
-            size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
+            size = (pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                  +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-            f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
+            f2csize = (pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
-          } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
-            size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
+          } else if (nb.fid == BoundaryFace::inner_x2
+                     || nb.fid == BoundaryFace::outer_x2) {
+            size = (pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                  +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
-            f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
+            f2csize = (pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
-          } else if (nb.fid == BoundaryFace::inner_x3 || nb.fid == BoundaryFace::outer_x3) {
-            size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
+          } else if (nb.fid == BoundaryFace::inner_x3
+                     || nb.fid == BoundaryFace::outer_x3) {
+            size = (pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                  +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
-            f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
+            f2csize = (pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
                     +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
           }
         } else if (pmb->block_size.nx2 > 1) { // 2D
           if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
-            size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
-            f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-          } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
-            size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
-            f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+            size = (pmb->block_size.nx2+1)+pmb->block_size.nx2;
+            f2csize = (pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
+          } else if (nb.fid == BoundaryFace::inner_x2
+                     || nb.fid == BoundaryFace::outer_x2) {
+            size = (pmb->block_size.nx1+1)+pmb->block_size.nx1;
+            f2csize = (pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
           }
         } else { // 1D
-          size=f2csize=2;
+          size = f2csize = 2;
         }
       } else if (nb.type == NeighborConnect::edge) { // edge
         if (pmb->block_size.nx3 > 1) { // 3D
           if (nb.eid>=0 && nb.eid<4) {
-            size=pmb->block_size.nx3;
-            f2csize=pmb->block_size.nx3/2;
+            size = pmb->block_size.nx3;
+            f2csize = pmb->block_size.nx3/2;
           } else if (nb.eid>=4 && nb.eid<8) {
-            size=pmb->block_size.nx2;
-            f2csize=pmb->block_size.nx2/2;
+            size = pmb->block_size.nx2;
+            f2csize = pmb->block_size.nx2/2;
           } else if (nb.eid>=8 && nb.eid<12) {
-            size=pmb->block_size.nx1;
-            f2csize=pmb->block_size.nx1/2;
+            size = pmb->block_size.nx1;
+            f2csize = pmb->block_size.nx1/2;
           }
         } else if (pmb->block_size.nx2 > 1) { // 2D
-          size=f2csize=1;
+          size = f2csize = 1;
         }
       } else { // corner
         continue;

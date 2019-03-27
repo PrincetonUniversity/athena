@@ -32,7 +32,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x1f(k,j,(il-i)) = var_fc.x1f(k,j,il);
+        (*var_fc).x1f(k,j,(il-i)) = (*var_fc).x1f(k,j,il);
       }
     }
   }
@@ -40,7 +40,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x2f(k,j,(il-i)) = var_fc.x2f(k,j,il);
+        (*var_fc).x2f(k,j,(il-i)) = (*var_fc).x2f(k,j,il);
       }
     }
   }
@@ -48,7 +48,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x3f(k,j,(il-i)) = var_fc.x3f(k,j,il);
+        (*var_fc).x3f(k,j,(il-i)) = (*var_fc).x3f(k,j,il);
       }
     }
   }
@@ -71,7 +71,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x1f(k,j,(iu+i+1)) = var_fc.x1f(k,j,(iu+1));
+        (*var_fc).x1f(k,j,(iu+i+1)) = (*var_fc).x1f(k,j,(iu+1));
       }
     }
   }
@@ -79,7 +79,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x2f(k,j,(iu+i)) = var_fc.x2f(k,j,iu);
+        (*var_fc).x2f(k,j,(iu+i)) = (*var_fc).x2f(k,j,iu);
       }
     }
   }
@@ -87,7 +87,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=1; i<=ngh; ++i) {
-        var_fc.x3f(k,j,(iu+i)) = var_fc.x3f(k,j,iu);
+        (*var_fc).x3f(k,j,(iu+i)) = (*var_fc).x3f(k,j,iu);
       }
     }
   }
@@ -110,7 +110,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f(k,(jl-j),i) = var_fc.x1f(k,jl,i);
+        (*var_fc).x1f(k,(jl-j),i) = (*var_fc).x1f(k,jl,i);
       }
     }
   }
@@ -118,7 +118,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,(jl-j),i) = var_fc.x2f(k,jl,i);
+        (*var_fc).x2f(k,(jl-j),i) = (*var_fc).x2f(k,jl,i);
       }
     }
   }
@@ -126,7 +126,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f(k,(jl-j),i) = var_fc.x3f(k,jl,i);
+        (*var_fc).x3f(k,(jl-j),i) = (*var_fc).x3f(k,jl,i);
       }
     }
   }
@@ -149,7 +149,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f(k,(ju+j  ),i) = var_fc.x1f(k,(ju  ),i);
+        (*var_fc).x1f(k,(ju+j  ),i) = (*var_fc).x1f(k,(ju  ),i);
       }
     }
   }
@@ -157,7 +157,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f(k,(ju+j+1),i) = var_fc.x2f(k,(ju+1),i);
+        (*var_fc).x2f(k,(ju+j+1),i) = (*var_fc).x2f(k,(ju+1),i);
       }
     }
   }
@@ -165,7 +165,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
     for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f(k,(ju+j  ),i) = var_fc.x3f(k,(ju  ),i);
+        (*var_fc).x3f(k,(ju+j  ),i) = (*var_fc).x3f(k,(ju  ),i);
       }
     }
   }
@@ -188,7 +188,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f((kl-k),j,i) = var_fc.x1f(kl,j,i);
+        (*var_fc).x1f((kl-k),j,i) = (*var_fc).x1f(kl,j,i);
       }
     }
   }
@@ -196,7 +196,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
     for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f((kl-k),j,i) = var_fc.x2f(kl,j,i);
+        (*var_fc).x2f((kl-k),j,i) = (*var_fc).x2f(kl,j,i);
       }
     }
   }
@@ -204,7 +204,7 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f((kl-k),j,i) = var_fc.x3f(kl,j,i);
+        (*var_fc).x3f((kl-k),j,i) = (*var_fc).x3f(kl,j,i);
       }
     }
   }
@@ -227,7 +227,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX3(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
-        var_fc.x1f((ku+k  ),j,i) = var_fc.x1f((ku  ),j,i);
+        (*var_fc).x1f((ku+k  ),j,i) = (*var_fc).x1f((ku  ),j,i);
       }
     }
   }
@@ -235,7 +235,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX3(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x2f((ku+k  ),j,i) = var_fc.x2f((ku  ),j,i);
+        (*var_fc).x2f((ku+k  ),j,i) = (*var_fc).x2f((ku  ),j,i);
       }
     }
   }
@@ -243,7 +243,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX3(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        var_fc.x3f((ku+k+1),j,i) = var_fc.x3f((ku+1),j,i);
+        (*var_fc).x3f((ku+k+1),j,i) = (*var_fc).x3f((ku+1),j,i);
       }
     }
   }

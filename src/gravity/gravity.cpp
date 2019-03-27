@@ -57,7 +57,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
   // pgbval = new GravityBoundaryVariable(pmy_block, BoundaryQuantity::cc, phi);
   // KGF: temporary workaround:
-  pgbval = new CellCenteredBoundaryVariable(pmy_block, phi, nullptr);
+  pgbval = new CellCenteredBoundaryVariable(pmy_block, &phi, nullptr);
   pgbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pgbval);
 }

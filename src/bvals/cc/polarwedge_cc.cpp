@@ -32,7 +32,7 @@ void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,jl-j,i) = sign * var_cc(n,k,jl+j-1,i);
+          (*var_cc)(n,k,jl-j,i) = sign * (*var_cc)(n,k,jl+j-1,i);
         }
       }
     }
@@ -56,7 +56,7 @@ void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,ju+j,i) = sign * var_cc(n,k,ju-j+1,i);
+          (*var_cc)(n,k,ju+j,i) = sign * (*var_cc)(n,k,ju-j+1,i);
         }
       }
     }

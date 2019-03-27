@@ -1540,12 +1540,16 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // KGF: 3/25/19 changes might be incompatible with this swap, which occured after
     // Cons2Prim call in original refactoring
-    phbvar->var_cc.InitWithShallowCopy(ph->coarse_prim_);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pfbvar->var_fc.x1f.InitWithShallowCopy(pf->coarse_b_.x1f);
-      pfbvar->var_fc.x2f.InitWithShallowCopy(pf->coarse_b_.x2f);
-      pfbvar->var_fc.x3f.InitWithShallowCopy(pf->coarse_b_.x3f);
-    }
+    phbvar->var_cc = &(ph->coarse_prim_);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pfbvar->var_fc = &(pf->coarse_b_);
+
+    // phbvar->var_cc.InitWithShallowCopy(ph->coarse_prim_);
+    // if (MAGNETIC_FIELDS_ENABLED) {
+    //   pfbvar->var_fc.x1f.InitWithShallowCopy(pf->coarse_b_.x1f);
+    //   pfbvar->var_fc.x2f.InitWithShallowCopy(pf->coarse_b_.x2f);
+    //   pfbvar->var_fc.x3f.InitWithShallowCopy(pf->coarse_b_.x3f);
+    // }
 
     // 2) Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
@@ -1554,12 +1558,16 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
 
     // KGF: (temp workaround) swap BoundaryVariable references back from MeshRefinement
-    phbvar->var_cc.InitWithShallowCopy(ph->w);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pfbvar->var_fc.x1f.InitWithShallowCopy(pf->b.x1f);
-      pfbvar->var_fc.x2f.InitWithShallowCopy(pf->b.x2f);
-      pfbvar->var_fc.x3f.InitWithShallowCopy(pf->b.x3f);
-    }
+    phbvar->var_cc = &(ph->w);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pfbvar->var_fc = &(pf->b);
+
+    // phbvar->var_cc.InitWithShallowCopy(ph->w);
+    // if (MAGNETIC_FIELDS_ENABLED) {
+    //   pfbvar->var_fc.x1f.InitWithShallowCopy(pf->b.x1f);
+    //   pfbvar->var_fc.x2f.InitWithShallowCopy(pf->b.x2f);
+    //   pfbvar->var_fc.x3f.InitWithShallowCopy(pf->b.x3f);
+    // }
   } // end loop over nneighbor
   return;
 }

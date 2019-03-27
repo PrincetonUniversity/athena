@@ -31,7 +31,7 @@ void CellCenteredBoundaryVariable::OutflowInnerX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=1; i<=ngh; ++i) {
-          var_cc(n,k,j,il-i) = var_cc(n,k,j,il);
+          (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,il);
         }
       }
     }
@@ -54,7 +54,7 @@ void CellCenteredBoundaryVariable::OutflowOuterX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=1; i<=ngh; ++i) {
-          var_cc(n,k,j,iu+i) = var_cc(n,k,j,iu);
+          (*var_cc)(n,k,j,iu+i) = (*var_cc)(n,k,j,iu);
         }
       }
     }
@@ -77,7 +77,7 @@ void CellCenteredBoundaryVariable::OutflowInnerX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,jl-j,i) = var_cc(n,k,jl,i);
+          (*var_cc)(n,k,jl-j,i) = (*var_cc)(n,k,jl,i);
         }
       }
     }
@@ -100,7 +100,7 @@ void CellCenteredBoundaryVariable::OutflowOuterX2(
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,k,ju+j,i) = var_cc(n,k,ju,i);
+          (*var_cc)(n,k,ju+j,i) = (*var_cc)(n,k,ju,i);
         }
       }
     }
@@ -123,7 +123,7 @@ void CellCenteredBoundaryVariable::OutflowInnerX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,kl-k,j,i) = var_cc(n,kl,j,i);
+          (*var_cc)(n,kl-k,j,i) = (*var_cc)(n,kl,j,i);
         }
       }
     }
@@ -146,7 +146,7 @@ void CellCenteredBoundaryVariable::OutflowOuterX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          var_cc(n,ku+k,j,i) = var_cc(n,ku,j,i);
+          (*var_cc)(n,ku+k,j,i) = (*var_cc)(n,ku,j,i);
         }
       }
     }

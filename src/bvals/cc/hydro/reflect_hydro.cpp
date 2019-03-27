@@ -32,7 +32,7 @@ void HydroBoundaryVariable::ReflectInnerX1(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=1; i<=ngh; ++i) {
-            var_cc(IVX,k,j,il-i) = -var_cc(IVX,k,j,(il+i-1));  // reflect 1-velocity
+            (*var_cc)(IVX,k,j,il-i) = -(*var_cc)(IVX,k,j,(il+i-1));  // reflect 1-velocity
           }
         }
       }
@@ -41,7 +41,7 @@ void HydroBoundaryVariable::ReflectInnerX1(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=1; i<=ngh; ++i) {
-            var_cc(n,k,j,il-i) = var_cc(n,k,j,(il+i-1));
+            (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,(il+i-1));
           }
         }
       }
@@ -66,7 +66,7 @@ void HydroBoundaryVariable::ReflectOuterX1(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=1; i<=ngh; ++i) {
-            var_cc(IVX,k,j,iu+i) = -var_cc(IVX,k,j,(iu-i+1));  // reflect 1-velocity
+            (*var_cc)(IVX,k,j,iu+i) = -(*var_cc)(IVX,k,j,(iu-i+1));  // reflect 1-velocity
           }
         }
       }
@@ -75,7 +75,7 @@ void HydroBoundaryVariable::ReflectOuterX1(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=1; i<=ngh; ++i) {
-            var_cc(n,k,j,iu+i) = var_cc(n,k,j,(iu-i+1));
+            (*var_cc)(n,k,j,iu+i) = (*var_cc)(n,k,j,(iu-i+1));
           }
         }
       }
@@ -100,7 +100,7 @@ void HydroBoundaryVariable::ReflectInnerX2(
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(IVY,k,jl-j,i) = -var_cc(IVY,k,jl+j-1,i);  // reflect 2-velocity
+            (*var_cc)(IVY,k,jl-j,i) = -(*var_cc)(IVY,k,jl+j-1,i);  // reflect 2-velocity
           }
         }
       }
@@ -109,7 +109,7 @@ void HydroBoundaryVariable::ReflectInnerX2(
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(n,k,jl-j,i) = var_cc(n,k,jl+j-1,i);
+            (*var_cc)(n,k,jl-j,i) = (*var_cc)(n,k,jl+j-1,i);
           }
         }
       }
@@ -134,7 +134,7 @@ void HydroBoundaryVariable::ReflectOuterX2(
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(IVY,k,ju+j,i) = -var_cc(IVY,k,ju-j+1,i);  // reflect 2-velocity
+            (*var_cc)(IVY,k,ju+j,i) = -(*var_cc)(IVY,k,ju-j+1,i);  // reflect 2-velocity
           }
         }
       }
@@ -143,7 +143,7 @@ void HydroBoundaryVariable::ReflectOuterX2(
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(n,k,ju+j,i) = var_cc(n,k,ju-j+1,i);
+            (*var_cc)(n,k,ju+j,i) = (*var_cc)(n,k,ju-j+1,i);
           }
         }
       }
@@ -168,7 +168,7 @@ void HydroBoundaryVariable::ReflectInnerX3(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(IVZ,kl-k,j,i) = -var_cc(IVZ,kl+k-1,j,i);  // reflect 3-velocity
+            (*var_cc)(IVZ,kl-k,j,i) = -(*var_cc)(IVZ,kl+k-1,j,i);  // reflect 3-velocity
           }
         }
       }
@@ -177,7 +177,7 @@ void HydroBoundaryVariable::ReflectInnerX3(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(n,kl-k,j,i) = var_cc(n,kl+k-1,j,i);
+            (*var_cc)(n,kl-k,j,i) = (*var_cc)(n,kl+k-1,j,i);
           }
         }
       }
@@ -202,7 +202,7 @@ void HydroBoundaryVariable::ReflectOuterX3(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(IVZ,ku+k,j,i) = -var_cc(IVZ,ku-k+1,j,i);  // reflect 3-velocity
+            (*var_cc)(IVZ,ku+k,j,i) = -(*var_cc)(IVZ,ku-k+1,j,i);  // reflect 3-velocity
           }
         }
       }
@@ -211,7 +211,7 @@ void HydroBoundaryVariable::ReflectOuterX3(
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            var_cc(n,ku+k,j,i) = var_cc(n,ku-k+1,j,i);
+            (*var_cc)(n,ku+k,j,i) = (*var_cc)(n,ku-k+1,j,i);
           }
         }
       }

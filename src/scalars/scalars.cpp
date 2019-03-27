@@ -46,7 +46,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
   // KGF: change to RAII
-  psbval  = new CellCenteredBoundaryVariable(pmy_block, s, s_flux);
+  psbval  = new CellCenteredBoundaryVariable(pmy_block, &s, s_flux);
   psbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(psbval);
 

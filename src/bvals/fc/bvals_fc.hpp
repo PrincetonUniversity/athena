@@ -30,10 +30,12 @@
 
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
  public:
-  FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField &var, EdgeField &var_flux);
+  // KGF: unlike CellCenteredBoundaryVariable, flux is always required. Hence, reference:
+  FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField *var, EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
-  FaceField var_fc;
+  FaceField *var_fc;
+
   // KGF: TODO mimic new CellCenteredBoundaryVariable member &coarse_buf (originally
   // passed as a function parameter as "cbuf"); Store reference to MeshRefinement
   // "pmr->coarse_b_"
