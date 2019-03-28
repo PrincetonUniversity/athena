@@ -287,7 +287,7 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='set filename of logfile')
-    parser.add_argument('--runtime_diag',
+    parser.add_argument('--runtime_diag_file',
                         default=False,
                         action='store_true',
                         help='Write runtime diagnostics to runtime.log')
