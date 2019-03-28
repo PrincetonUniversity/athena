@@ -186,6 +186,46 @@ class MakeFilter(logging.Filter):
         return not 'athena.make' == record.name[:len('athena.make')]
 
 
+def log_init(args):
+    """Initialize log"""
+    kwargs = vars(args)
+    logging.basicConfig(level=0)  # setting this to zero gives output control to handler
+    logger.propagate = False  # don't use default handler
+    c_handler = logging.StreamHandler()  # console/terminal handler
+    c_handler.setLevel(kwargs.pop('loglevel'))
+    c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
+    if c_handler.level < logging.INFO:
+        c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
+    else:
+        # if we are not in debugging mode and (not show_make) add MakeFilter
+        if not kwargs.pop('show_make'):
+            c_handler.addFilter(MakeFilter())
+        c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
+    logger.addHandler(c_handler)
+    # setup logfile
+    log_fn = kwargs.pop('logfile')
+    if log_fn:
+        f_handler = logging.FileHandler(log_fn)
+        f_handler.setLevel(0)  # log everything
+        f_format = \
+            logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
+        f_handler.setFormatter(f_format)
+        logger.addHandler(f_handler)
+    # setup runtime diagnostics file
+    if kwargs.pop('runtime_diag'):
+        rtd_handler = logging.FileHandler('runtime.log')
+        rtd_handler.setLevel(0)  # log everything
+        rtd_fmt = logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
+        rtd_handler.setFormatter(rtd_fmt)
+        record = logger.makeRecord('athena.tests', logging.INFO, None, None,
+                                   'Starting new tests', None, None)
+        rtd_handler.emit(record)
+        for log in ['athena.run', 'athena.tests']:
+            logging.getLogger(log).addHandler(rtd_handler)
+
+    logger.debug('Starting Athena++ regression tests')
+
+
 # Execute main function
 if __name__ == '__main__':
     help_msg = ('names of tests to run, relative to scripts/tests/,'
@@ -256,46 +296,10 @@ if __name__ == '__main__':
                         help='Show output from make command')
 
     args = parser.parse_args()
-    kwargs = vars(args)
+    log_init(args)
 
-    # logger config
-    logging.basicConfig(level=0)  # setting this to zero gives output control to handler
-    logger.propagate = False  # don't use default handler
-    c_handler = logging.StreamHandler()  # console/terminal handler
-    c_handler.setLevel(kwargs.pop('loglevel'))
-    c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
-    if c_handler.level < logging.INFO:
-        c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
-    else:
-        # if we are not in debugging mode and (not show_make) add MakeFilter
-        if not kwargs.pop('show_make'):
-            c_handler.addFilter(MakeFilter())
-        c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
-    logger.addHandler(c_handler)
-    # setup logfile
-    log_fn = kwargs.pop('logfile')
-    if log_fn:
-        f_handler = logging.FileHandler(log_fn)
-        f_handler.setLevel(0)  # log everything
-        f_format = \
-            logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
-        f_handler.setFormatter(f_format)
-        logger.addHandler(f_handler)
-    # setup runtime diagnostics file
-    if kwargs.pop('runtime_diag'):
-        rtd_handler = logging.FileHandler('runtime.log')
-        rtd_handler.setLevel(0)  # log everything
-        rtd_fmt = logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
-        rtd_handler.setFormatter(rtd_fmt)
-        record = logger.makeRecord('athena.tests', logging.INFO, None, None,
-                                   'Starting new tests', None, None)
-        rtd_handler.emit(record)
-        for log in ['athena.run', 'athena.tests']:
-            logging.getLogger(log).addHandler(rtd_handler)
-
-    logger.debug('Starting Athena++ regression tests')
     try:
-        main(**kwargs)
+        main(**vars(args))
     except Exception:
         logger.critical('', exc_info=True)
         raise
