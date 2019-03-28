@@ -574,7 +574,8 @@ void BoundaryValues::SetupPersistentMPI() {
   // num_north_polar_blocks_, num_south_polar_blocks_, nedge_, nface_ are calculated in
   // BoundaryValues() constructor.
 
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+       ++bvars_it) {
     (*bvars_it)->SetupPersistentMPI();
   }
 
@@ -1103,13 +1104,13 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     pmb->pmr->RestrictCellCenteredValues(ph->w, ph->coarse_prim_, 0, NHYDRO-1,
                                          ris, rie, rjs, rje, rks, rke);
   if (MAGNETIC_FIELDS_ENABLED) {
-    int rs = ris, re = rie+1;
+    int rs = ris, re = rie + 1;
     if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ] < mylevel) rs++;
     if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2] < mylevel) re--;
     pmr->RestrictFieldX1(pf->b.x1f, pf->coarse_b_.x1f, rs, re, rjs, rje, rks,
                          rke);
     if (pmb->block_size.nx2 > 1) {
-      rs = rjs, re = rje+1;
+      rs = rjs, re = rje + 1;
       if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1] < mylevel) rs++;
       if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1] < mylevel) re--;
       pmr->RestrictFieldX2(pf->b.x2f, pf->coarse_b_.x2f, ris, rie, rs, re, rks,
@@ -1121,7 +1122,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
         pf->coarse_b_.x2f(rks,rjs+1,i) = pf->coarse_b_.x2f(rks,rjs,i);
     }
     if (pmb->block_size.nx3 > 1) {
-      rs = rks, re =  rke+1;
+      rs = rks, re =  rke + 1;
       if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1] < mylevel) rs++;
       if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1] < mylevel) re--;
       pmr->RestrictFieldX3(pf->b.x3f, pf->coarse_b_.x3f, ris, rie, rjs, rje, rs,

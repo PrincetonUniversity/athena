@@ -584,26 +584,26 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 #endif
   IOWrapperSizeT hdos = 0;
   std::memcpy(&nbtotal, &(headerdata[hdos]), sizeof(int));
-  hdos+=sizeof(int);
+  hdos += sizeof(int);
   std::memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
-  hdos+=sizeof(int);
+  hdos += sizeof(int);
   current_level=root_level;
   std::memcpy(&mesh_size, &(headerdata[hdos]), sizeof(RegionSize));
-  hdos+=sizeof(RegionSize);
+  hdos += sizeof(RegionSize);
   std::memcpy(&time, &(headerdata[hdos]), sizeof(Real));
-  hdos+=sizeof(Real);
+  hdos += sizeof(Real);
   std::memcpy(&dt, &(headerdata[hdos]), sizeof(Real));
-  hdos+=sizeof(Real);
+  hdos += sizeof(Real);
   std::memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
-  hdos+=sizeof(int);
+  hdos += sizeof(int);
   std::memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSizeT));
-  hdos+=sizeof(IOWrapperSizeT);
+  hdos += sizeof(IOWrapperSizeT);   // KGF: this updated value is never used
 
   delete [] headerdata;
 
-  int dim=1;
-  if (mesh_size.nx2>1) dim=2;
-  if (mesh_size.nx3>1) dim=3;
+  int dim = 1;
+  if (mesh_size.nx2 > 1) dim=2;
+  if (mesh_size.nx3 > 1) dim=3;
 
   // initialize
   loclist=new LogicalLocation[nbtotal];
@@ -684,9 +684,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // read user Mesh data
   IOWrapperSizeT udsize = 0;
   for (int n=0; n<nint_user_mesh_data_; n++)
-    udsize+=iuser_mesh_data[n].GetSizeInBytes();
+    udsize += iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_mesh_data_; n++)
-    udsize+=ruser_mesh_data[n].GetSizeInBytes();
+    udsize += ruser_mesh_data[n].GetSizeInBytes();
   if (udsize != 0) {
     char *userdata = new char[udsize];
     if (Globals::my_rank==0) { // only the master process reads the ID list
@@ -705,12 +705,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     for (int n=0; n<nint_user_mesh_data_; n++) {
       std::memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
                   iuser_mesh_data[n].GetSizeInBytes());
-      udoffset+=iuser_mesh_data[n].GetSizeInBytes();
+      udoffset += iuser_mesh_data[n].GetSizeInBytes();
     }
     for (int n=0; n<nreal_user_mesh_data_; n++) {
       std::memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
                   ruser_mesh_data[n].GetSizeInBytes());
-      udoffset+=ruser_mesh_data[n].GetSizeInBytes();
+      udoffset += ruser_mesh_data[n].GetSizeInBytes();
     }
     delete [] userdata;
   }
@@ -734,15 +734,15 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   int os=0;
   for (int i=0; i<nbtotal; i++) {
     std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
-    os+=sizeof(LogicalLocation);
+    os += sizeof(LogicalLocation);
     std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
-    os+=sizeof(Real);
+    os += sizeof(Real);
     if (loclist[i].level>current_level) current_level=loclist[i].level;
   }
   delete [] idlist;
 
   // calculate the header offset and seek
-  headeroffset+=headersize+udsize+listsize*nbtotal;
+  headeroffset += headersize+udsize+listsize*nbtotal;
   if (Globals::my_rank != 0)
     resfile.Seek(headeroffset);
 
@@ -1291,10 +1291,10 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
 // \brief  initialization before the main loop
 
 void Mesh::Initialize(int res_flag, ParameterInput *pin) {
-  bool iflag=true;
-  int inb=nbtotal;
-  int nthreads=GetNumMeshThreads();
-  int nmb=GetNumMeshBlocksThisRank(Globals::my_rank);
+  bool iflag = true;
+  int inb = nbtotal;
+  int nthreads = GetNumMeshThreads();
+  int nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
   std::vector<MeshBlock*> pmb_array(nmb);
 
   do {
@@ -1937,7 +1937,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // create a list mapping the previous gid to the current one
   oldtonew[0] = 0;
-  int mb_idx=1;
+  int mb_idx = 1;
   for (int n=1; n<ntot; n++) {
     if (newtoold[n] == newtoold[n-1]+1) { // normal
       oldtonew[mb_idx++] = n;
@@ -2047,7 +2047,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nrecv != 0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
-    rb_idx = 0;     // recv buffer index
+    int rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
       LogicalLocation &oloc = loclist[on];
@@ -2083,7 +2083,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nsend != 0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
-    sb_idx = 0;      // send buffer index
+    int sb_idx = 0;      // send buffer index
     for (int n=onbs; n<=onbe; n++) {
       int nn = oldtonew[n];
       LogicalLocation &oloc = loclist[n];
@@ -2401,7 +2401,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
   if (nrecv != 0) {
-    rb_idx = 0;     // recv buffer index
+    int rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
       LogicalLocation &oloc = loclist[on];
