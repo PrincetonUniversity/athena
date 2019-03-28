@@ -64,8 +64,19 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
     if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    // coarse_cons_ is used extensively in Mesh::AdaptiveMeshRefinement() and for
+    // Restrict, W(U) in BoundaryValues::ProlongateBoundaries() and (implicitly via
+    // coarse_buf switch) for most of the main integrators + initialization communication
     coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    // coarse_prim_ is only used in BoundaryValues::ProlongateBoundaries() for Restrict,
+    // W(U), and applications of physical bndry
+    // and (implicitly via coarse_buf switch) in Mesh::Initialize() for GR+AMR
     coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    // KGF: in the future, we may have a need to pass primitives in
+    // Mesh::AdaptiveMeshRefinement() for GR purposes.
+
+    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+    // pmy_block->pmr->pvars_cc_.push_back(&coarse_cons);
   }
 
   // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"

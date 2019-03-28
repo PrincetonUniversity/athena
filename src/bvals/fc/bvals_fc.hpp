@@ -31,15 +31,18 @@
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
  public:
   // KGF: unlike CellCenteredBoundaryVariable, flux is always required. Hence, reference:
-  FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField *var, EdgeField &var_flux);
+  FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField *var, FaceField &coarse_buf,
+                               EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
+  // KGF: make these private, and extend friendship to BoundaryValues class (same for CC)
   FaceField *var_fc;
 
-  // KGF: TODO mimic new CellCenteredBoundaryVariable member &coarse_buf (originally
-  // passed as a function parameter as "cbuf"); Store reference to MeshRefinement
-  // "pmr->coarse_b_"
-  //FaceField &coarse_buf;
+  // KGF: TODO mimic new CellCenteredBoundaryVariable member coarse_buf (originally
+  // passed as a function parameter as "cbuf"); However, unlke Hydro cons vs. prim, we
+  // never need to rebind FaceCentered coarse_buf, so it can be a reference member:
+  // ---> must be initialized in initializer list, cannot pass nullptr
+  FaceField &coarse_buf;
 
   // KGF: rename/change to single "EdgeField var_fc_flux"?
   AthenaArray<Real> e1;

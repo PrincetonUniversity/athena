@@ -276,6 +276,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // KGF: prevent reallocation of contiguous memory space for each of 3x current calls to
   // std::vector<BoundaryVariable *>.push_back() for Hydro, Field, Gravity
   bvars.reserve(3);
+  // KGF: rename to "bvars_time_int"? what about sts?
   bvars_main_int.reserve(2);
 
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
@@ -486,7 +487,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 // destructor
 
 BoundaryValues::~BoundaryValues() {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
 
   // KGF: edge-case of single block across pole in MHD spherical polar coordinates
   // Note, this conditional is outside "if MAGNETIC_FIELDS_ENABLED" in master (also
@@ -647,8 +648,8 @@ void BoundaryValues::CheckBoundary() {
 void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
 // #ifdef MPI_PARALLEL
-//   MeshBlock *pmb=pmy_block_;
-//   int mylevel=pmb->loc.level;
+//   MeshBlock *pmb = pmy_block_;
+//   int mylevel = pmb->loc.level;
 //   for (int n=0; n<nneighbor; n++) {
 //     NeighborBlock& nb = neighbor[n];
 //     if (nb.rank!=Globals::my_rank) {
@@ -668,7 +669,7 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
   // if (SHEARING_BOX) {
-  //   MeshBlock *pmb=pmy_block_;
+  //   MeshBlock *pmb = pmy_block_;
   //   Mesh *pmesh = pmb->pmy_mesh;
   //   FindShearBlock(pmesh->time);
   // }
@@ -804,24 +805,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
   // FaceField &bfdst, AthenaArray<Real> &bcdst,
   // const Real time, const Real dt) {
-  MeshBlock *pmb=pmy_block_;
-  Coordinates *pco=pmb->pcoord;
-  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST,
-      bjs=pmb->js, bje=pmb->je,
-      bks=pmb->ks, bke=pmb->ke;
+  MeshBlock *pmb = pmy_block_;
+  Coordinates *pco = pmb->pcoord;
+  int bis = pmb->is-NGHOST, bie = pmb->ie+NGHOST,
+      bjs = pmb->js, bje = pmb->je,
+      bks = pmb->ks, bke = pmb->ke;
 
   // Extend the transverse limits that correspond to periodic boundaries as they are
   // updated
 
   // x1, then x2, then x3
   if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2>1)
-    bjs=pmb->js-NGHOST;
+    bjs = pmb->js-NGHOST;
   if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2>1)
-    bje=pmb->je+NGHOST;
+    bje = pmb->je+NGHOST;
   if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr && pmb->block_size.nx3>1)
-    bks=pmb->ks-NGHOST;
+    bks = pmb->ks-NGHOST;
   if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3>1)
-    bke=pmb->ke+NGHOST;
+    bke = pmb->ke+NGHOST;
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
   // to user-defined boundary function stored in function pointer array
@@ -835,7 +836,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
-    pf=pmb->pfield;
+    pf = pmb->pfield;
     pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
   }
 
@@ -980,8 +981,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   }
 
   if (pmb->block_size.nx3>1) { // 3D
-    bjs=pmb->js-NGHOST;
-    bje=pmb->je+NGHOST;
+    bjs = pmb->js-NGHOST;
+    bje = pmb->je+NGHOST;
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
     if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
@@ -1185,6 +1186,10 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
 
+  // KGF: by moving coarse_* arrays from MeshRefinement class to Hydro and Field classes,
+  // we run into a possible issue of passing nullptrs to this function if
+  // MAGNETIC_FIELDS_ENABLED=0 but SMR/AMR + Hydro is active. Probably fine, since they
+  // wont be dereferenced in the EOS function, but this is suboptimal.
   pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
                                   pf->coarse_b_, ph->coarse_prim_,
                                   pf->coarse_bcc_, pmr->pcoarsec,
@@ -1194,13 +1199,15 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x1]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                         sj, ej, sk, ek, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                         sj, ej, sk, ek, 1);
           }
@@ -1572,8 +1579,11 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   return;
 }
 
+// Public function, allows calling sites other than BoundaryVariable objects
+// E.g. if chemistry or radiation elects to communicate additional information with MPI
+// outside the framework of the BoundaryVariable classes
 int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
-  // KGF: add check that input, output are positive, obey <= 31= MAX_NUM_PHYS
+  // KGF: add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = bvars_next_phys_id_;
   bvars_next_phys_id_ += num_phys;
   return start_id;

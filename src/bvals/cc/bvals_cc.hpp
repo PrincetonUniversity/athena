@@ -41,8 +41,11 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // KGF: for HydroBoundaryVariable derived class, this will switch between coarse_prim_
   // and coarse_cons_, but their underlying raw pointers will never be swapped. Therefore,
-  // we could keep this as a reference member, as long as all switches occur due to
-  // InitBoundaryData() calls in SwapHydroQuantity() or SelectCoarseBuffer()
+  // we could keep this as a shallow-copied member, as long as all switches occur due to
+  // InitWithShallowCopy() calls in SwapHydroQuantity() or SelectCoarseBuffer()
+
+  // Could not keep as reference member, since we need to rebind the reference, which a
+  // full AthenaArray data member (shallow-copied) allows via InitWithShallowCopy()
   AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
 
   // KGF: no need to ever switch flux[]? Keep as non-pointer (reference) objects,
