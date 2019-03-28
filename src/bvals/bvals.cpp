@@ -663,7 +663,8 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
 
   // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
   // independent loops over nneighbor
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+       ++bvars_it) {
     (*bvars_it)->StartReceiving(phase);
   }
 
@@ -747,7 +748,8 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
   // Note BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
   // variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
   // primitive variables sent only in the case of GR with refinement
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+       ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
   }
 
@@ -845,13 +847,15 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
     switch(block_bcs[BoundaryFace::inner_x1]) {
       case BoundaryFlag::reflect:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+             ++bvars_it) {
           (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
       case BoundaryFlag::outflow:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+             ++bvars_it) {
           (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
@@ -877,13 +881,15 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
     switch(block_bcs[BoundaryFace::outer_x1]) {
       case BoundaryFlag::reflect:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+             ++bvars_it) {
           (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
         break;
       case BoundaryFlag::outflow:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+             ++bvars_it) {
           (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
                                       bjs, bje, bks, bke, NGHOST);
         }
@@ -910,26 +916,29 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x2]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, bis, bie,
                                            pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
           BoundaryFunction_[BoundaryFace::inner_x2](pmb, pco, ph->w, pf->b, time, dt,
-                                      bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+                                                    bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
           break;
         default:
           break;
@@ -947,26 +956,29 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
       switch(block_bcs[BoundaryFace::outer_x2]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, bis, bie,
                                         pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, bis, bie,
                                            pmb->js, pmb->je, bks, bke, NGHOST);
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
           BoundaryFunction_[BoundaryFace::outer_x2](pmb, pco, ph->w, pf->b, time, dt,
-                                      bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+                                                    bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
           break;
         default:
           break;
@@ -989,13 +1001,15 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x3]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
@@ -1021,13 +1035,15 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
       switch(block_bcs[BoundaryFace::outer_x3]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, bis, bie,
                                         bjs, bje, pmb->ks, pmb->ke, NGHOST);
           }
@@ -1225,13 +1241,15 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
       switch(block_bcs[BoundaryFace::outer_x1]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                         sj, ej, sk, ek, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
                                         sj, ej, sk, ek, 1);
           }
@@ -1250,19 +1268,22 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x2]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, si, ei,
                                         pmb->cjs, pmb->cje, sk, ek, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, si, ei,
                                         pmb->cjs, pmb->cje, sk, ek, 1);
           }
           break;
         case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, si, ei,
                                            pmb->cjs, pmb->cje, sk, ek, 1);
           }
@@ -1279,19 +1300,22 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
       switch(block_bcs[BoundaryFace::outer_x2]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, si, ei,
                                         pmb->cjs, pmb->cje, sk, ek, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, si, ei,
                                         pmb->cjs, pmb->cje, sk, ek, 1);
           }
           break;
         case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, si, ei,
                                            pmb->cjs, pmb->cje, sk, ek, 1);
           }
@@ -1310,13 +1334,15 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x3]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, si, ei,
                                         sj, ej, pmb->cks, pmb->cke, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, si, ei,
                                         sj, ej, pmb->cks, pmb->cke, 1);
           }
@@ -1333,13 +1359,15 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
       switch(block_bcs[BoundaryFace::outer_x3]) {
         case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, si, ei,
                                         sj, ej, pmb->cks, pmb->cke, 1);
           }
           break;
         case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end(); ++bvars_it) {
+          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+               ++bvars_it) {
             (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, si, ei,
                                         sj, ej, pmb->cks, pmb->cke, 1);
           }
@@ -1503,33 +1531,32 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     } // end 3x nested loops over nk, nj, ni
 
     // calculate the loop limits for the ghost zones
-    std::int64_t &lx1 = pmb->loc.lx1;
-    std::int64_t &lx2 = pmb->loc.lx2;
-    std::int64_t &lx3 = pmb->loc.lx3;
-
     int cn = pmb->cnghost - 1;
     int si, ei, sj, ej, sk, ek;
     if (nb.ox1 == 0) {
+      std::int64_t &lx1 = pmb->loc.lx1;
       si = pmb->cis, ei = pmb->cie;
       if ((lx1 & 1LL) == 0LL) ei += cn;
       else             si -= cn;
-    } else if (nb.ox1>0) { si = pmb->cie+1,  ei = pmb->cie+cn;}
+    } else if (nb.ox1 > 0) { si = pmb->cie+1,  ei = pmb->cie+cn;}
     else              si = pmb->cis-cn, ei = pmb->cis-1;
     if (nb.ox2 == 0) {
       sj = pmb->cjs, ej = pmb->cje;
       if (pmb->block_size.nx2 > 1) {
+        std::int64_t &lx2 = pmb->loc.lx2;
         if ((lx2 & 1LL) == 0LL) ej += cn;
         else             sj -= cn;
       }
-    } else if (nb.ox2>0) { sj = pmb->cje+1,  ej = pmb->cje+cn;}
+    } else if (nb.ox2 > 0) { sj = pmb->cje+1,  ej = pmb->cje+cn;}
     else              sj = pmb->cjs-cn, ej = pmb->cjs-1;
     if (nb.ox3 == 0) {
       sk = pmb->cks, ek = pmb->cke;
       if (pmb->block_size.nx3 > 1) {
+        std::int64_t &lx3 = pmb->loc.lx3;
         if ((lx3 & 1LL) == 0LL) ek += cn;
         else             sk -= cn;
       }
-    } else if (nb.ox3>0) { sk = pmb->cke+1,  ek = pmb->cke+cn;}
+    } else if (nb.ox3 > 0) { sk = pmb->cke+1,  ek = pmb->cke+cn;}
     else              sk = pmb->cks-cn, ek = pmb->cks-1;
 
     // KGF: here is another TODO generalization of this manual coupling between the
