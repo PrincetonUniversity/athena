@@ -30,7 +30,7 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
       for (int j=sj; j<=ej; j++) {
 #pragma omp simd
         for (int i=si; i<=ei; i++)
-          buf[offset++]=src(n,k,j,i);
+          buf[offset++] = src(n,k,j,i);
       }
     }
   }
@@ -48,7 +48,7 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
     for (int j=sj; j<=ej; j++) {
 #pragma omp simd
       for (int i=si; i<=ei; i++)
-        buf[offset++]=src(k, j, i);
+        buf[offset++] = src(k, j, i);
     }
   }
   return;

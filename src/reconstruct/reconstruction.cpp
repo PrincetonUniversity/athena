@@ -181,21 +181,21 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     // cylindrical: r should be non uniform; the others depend on the mesh spacing
-    uniform_limiter[X1DIR]=false;
+    uniform_limiter[X1DIR] = false;
   }
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     // spherical_polar: r and theta should be non uniform, phi can be uniform
-    uniform_limiter[X1DIR]=false;
-    uniform_limiter[X2DIR]=false;
+    uniform_limiter[X1DIR] = false;
+    uniform_limiter[X2DIR] = false;
   }
   // nonuniform geometric spacing or user-defined MeshGenerator, for all coordinate
   // systems, use nonuniform limiter (non-curvilinear will default to Cartesian factors)
   if (pmb->block_size.x1rat != 1.0)
-    uniform_limiter[X1DIR]=false;
+    uniform_limiter[X1DIR] = false;
   if (pmb->block_size.x2rat != 1.0)
-    uniform_limiter[X2DIR]=false;
+    uniform_limiter[X2DIR] = false;
   if (pmb->block_size.x3rat != 1.0)
-    uniform_limiter[X3DIR]=false;
+    uniform_limiter[X3DIR] = false;
   // uniform cartesian,minkowski,sinusoidal,tilted,schwarzschild,kerr-schild,gr_user
   // will use first PLM/PPM limiter without any coordinate terms
 
