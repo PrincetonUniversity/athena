@@ -16,6 +16,7 @@ Notes:
 """
 
 # Python modules
+from __future__ import print_function
 import argparse
 import os
 from collections import OrderedDict
