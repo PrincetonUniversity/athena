@@ -1959,6 +1959,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   current_level = 0;
   for (int n=0; n<ntot; n++) {
+    // "on" = "old n" = "old gid" = "old global MeshBlock ID"
     int on = newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level = newloc[n].level;
@@ -2046,7 +2047,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nrecv != 0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
-    mb_idx = 0;
+    rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
       LogicalLocation &oloc = loclist[on];
@@ -2056,11 +2057,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = loclist[on+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
-          recvbuf[mb_idx] = new Real[bsf2c];
+          recvbuf[rb_idx] = new Real[bsf2c];
           int tag = CreateAMRMPITag(n-nbs, ox1, ox2, ox3);
-          MPI_Irecv(recvbuf[mb_idx], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
-                    tag, MPI_COMM_WORLD, &(req_recv[mb_idx]));
-          mb_idx++;
+          MPI_Irecv(recvbuf[rb_idx], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
+                    tag, MPI_COMM_WORLD, &(req_recv[rb_idx]));
+          rb_idx++;
         }
       } else { // same or c2f
         if (ranklist[on] == Globals::my_rank) continue;
@@ -2070,11 +2071,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         } else {
           size = bsc2f;
         }
-        recvbuf[mb_idx] = new Real[size];
+        recvbuf[rb_idx] = new Real[size];
         int tag = CreateAMRMPITag(n-nbs, 0, 0, 0);
-        MPI_Irecv(recvbuf[mb_idx], size, MPI_ATHENA_REAL, ranklist[on],
-                  tag, MPI_COMM_WORLD, &(req_recv[mb_idx]));
-        mb_idx++;
+        MPI_Irecv(recvbuf[rb_idx], size, MPI_ATHENA_REAL, ranklist[on],
+                  tag, MPI_COMM_WORLD, &(req_recv[rb_idx]));
+        rb_idx++;
       }
     }
   }
@@ -2082,7 +2083,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (nsend != 0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
-    mb_idx = 0;
+    sb_idx = 0;      // send buffer index
     for (int n=onbs; n<=onbe; n++) {
       int nn = oldtonew[n];
       LogicalLocation &oloc = loclist[n];
@@ -2090,29 +2091,29 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       MeshBlock* pb = FindMeshBlock(n);
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
-        sendbuf[mb_idx] = new Real[bssame];
+        sendbuf[sb_idx] = new Real[bssame];
         // pack
         int p = 0;
         // KGF: CellCentered step 6, branch 1 (same2same: just pack+send)
-        BufferUtility::PackData(pb->phydro->u, sendbuf[mb_idx], 0, NHYDRO-1,
+        BufferUtility::PackData(pb->phydro->u, sendbuf[sb_idx], 0, NHYDRO-1,
                                 pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
 
         // KGF: FaceCentered step 6, branch 1 (same2same: just pack+send)
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[sb_idx],
                                   pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[sb_idx],
                                   pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[sb_idx],
                                   pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
         // KGF: dangerous? casting from "Real *" to "int *"
-        int *dcp = reinterpret_cast<int *>(&(sendbuf[mb_idx][p]));
+        int *dcp = reinterpret_cast<int *>(&(sendbuf[sb_idx][p]));
         *dcp = pb->pmr->deref_count_;
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
-        MPI_Isend(sendbuf[mb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
-                  tag, MPI_COMM_WORLD, &(req_send[mb_idx]));
-        mb_idx++;
+        MPI_Isend(sendbuf[sb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
+        sb_idx++;
 
 
 
@@ -2121,7 +2122,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (newrank[nn+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = newloc[nn+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
-          sendbuf[mb_idx] = new Real[bsc2f];
+          sendbuf[sb_idx] = new Real[bsc2f];
           // pack
           int is, ie, js, je, ks, ke;
           if (ox1 == 0) is = pb->is-1,                   ie = pb->is+pb->block_size.nx1/2;
@@ -2133,27 +2134,27 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           int p = 0;
 
           // KGF: CellCentered step 6, branch 2 (c2f: just pack+send)
-          BufferUtility::PackData(pb->phydro->u, sendbuf[mb_idx], 0, NHYDRO-1,
+          BufferUtility::PackData(pb->phydro->u, sendbuf[sb_idx], 0, NHYDRO-1,
                                   is, ie, js, je, ks, ke, p);
 
           // KGF: FaceCentered step 6, branch 2 (c2f: just pack+send)
           if (MAGNETIC_FIELDS_ENABLED) {
-            BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[mb_idx],
+            BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[sb_idx],
                                     is, ie+1, js, je, ks, ke, p);
-            BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[mb_idx],
+            BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[sb_idx],
                                     is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[mb_idx],
+            BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[sb_idx],
                                     is, ie, js, je, ks, ke+f3, p);
           }
           int tag = CreateAMRMPITag(nn+l-nslist[newrank[nn+l]], 0, 0, 0);
-          MPI_Isend(sendbuf[mb_idx], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
-                    tag, MPI_COMM_WORLD, &(req_send[mb_idx]));
-          mb_idx++;
+          MPI_Isend(sendbuf[sb_idx], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
+                    tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
+          sb_idx++;
         }
       } else { // f2c
         if (newrank[nn] == Globals::my_rank) continue;
         int ox1 = oloc.lx1 & 1LL, ox2 = oloc.lx2 & 1LL, ox3 = oloc.lx3 & 1LL;
-        sendbuf[mb_idx] = new Real[bsf2c];
+        sendbuf[sb_idx] = new Real[bsf2c];
         // restrict and pack
         MeshRefinement *pmr = pb->pmr;
 
@@ -2164,7 +2165,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                         pb->cjs, pb->cje,
                                         pb->cks, pb->cke);
         int p = 0;
-        BufferUtility::PackData(pb->phydro->coarse_cons_, sendbuf[mb_idx], 0, NHYDRO-1,
+        BufferUtility::PackData(pb->phydro->coarse_cons_, sendbuf[sb_idx], 0, NHYDRO-1,
                                 pb->cis, pb->cie,
                                 pb->cjs, pb->cje,
                                 pb->cks, pb->cke, p);
@@ -2174,7 +2175,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie+1,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x1f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x1f, sendbuf[sb_idx],
                                   pb->cis, pb->cie+1,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke, p);
@@ -2182,7 +2183,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje+f2,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x2f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x2f, sendbuf[sb_idx],
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje+f2,
                                   pb->cks, pb->cke, p);
@@ -2190,7 +2191,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke+f3);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x3f, sendbuf[mb_idx],
+          BufferUtility::PackData(pb->pfield->coarse_b_.x3f, sendbuf[sb_idx],
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke+f3, p);
@@ -2198,9 +2199,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
 
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], ox1, ox2, ox3);
-        MPI_Isend(sendbuf[mb_idx], bsf2c, MPI_ATHENA_REAL, newrank[nn],
-                  tag, MPI_COMM_WORLD, &(req_send[mb_idx]));
-        mb_idx++;
+        MPI_Isend(sendbuf[sb_idx], bsf2c, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
+        sb_idx++;
       }
     }
   }
@@ -2400,7 +2401,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
   if (nrecv != 0) {
-    mb_idx = 0;
+    rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
       LogicalLocation &oloc = loclist[on];
@@ -2408,20 +2409,20 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       MeshBlock *pb = FindMeshBlock(n);
       if (oloc.level == nloc.level) { // same
         if (ranklist[on] == Globals::my_rank) continue;
-        MPI_Wait(&(req_recv[mb_idx]), MPI_STATUS_IGNORE);
+        MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
         int p = 0;
-        BufferUtility::UnpackData(recvbuf[mb_idx], pb->phydro->u, 0, NHYDRO-1,
+        BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->u, 0, NHYDRO-1,
                                   pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if (MAGNETIC_FIELDS_ENABLED) {
           FaceField &dst_b = pb->pfield->b;
           BufferUtility::UnpackData(
-              recvbuf[mb_idx], dst_b.x1f,
+              recvbuf[rb_idx], dst_b.x1f,
               pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::UnpackData(
-              recvbuf[mb_idx], dst_b.x2f,
+              recvbuf[rb_idx], dst_b.x2f,
               pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::UnpackData(
-              recvbuf[mb_idx], dst_b.x3f,
+              recvbuf[rb_idx], dst_b.x3f,
               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if (pb->block_size.nx2 == 1) {
             for (int i=pb->is; i<=pb->ie; i++)
@@ -2435,9 +2436,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
         }
         // KGF: dangerous? casting from "Real *" to "int *"
-        int *dcp = reinterpret_cast<int *>(&(recvbuf[mb_idx][p]));
+        int *dcp = reinterpret_cast<int *>(&(recvbuf[rb_idx][p]));
         pb->pmr->deref_count_ = *dcp;
-        mb_idx++;
+        rb_idx++;
       } else if (oloc.level > nloc.level) { // f2c
         for (int l=0; l<nlbl; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
@@ -2450,16 +2451,16 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           else        js = pb->js + pb->block_size.nx2/2, je = pb->je;
           if (ox3 == 0) ks = pb->ks,              ke = pb->ks + pb->block_size.nx3/2 - f3;
           else        ks = pb->ks + pb->block_size.nx3/2, ke = pb->ke;
-          MPI_Wait(&(req_recv[mb_idx]), MPI_STATUS_IGNORE);
-          BufferUtility::UnpackData(recvbuf[mb_idx], pb->phydro->u, 0, NHYDRO-1,
+          MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
+          BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->u, 0, NHYDRO-1,
                                       is, ie, js, je, ks, ke, p);
           if (MAGNETIC_FIELDS_ENABLED) {
             FaceField &dst_b = pb->pfield->b;
-            BufferUtility::UnpackData(recvbuf[mb_idx], dst_b.x1f,
+            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x1f,
                                         is, ie+1, js, je, ks, ke, p);
-            BufferUtility::UnpackData(recvbuf[mb_idx], dst_b.x2f,
+            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x2f,
                                         is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::UnpackData(recvbuf[mb_idx], dst_b.x3f,
+            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x3f,
                                         is, ie, js, je, ks, ke+f3, p);
             if (pb->block_size.nx2 == 1) {
               for (int i=is; i<=ie; i++)
@@ -2472,7 +2473,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               }
             }
           }
-          mb_idx++;
+          rb_idx++;
         }
       } else { // c2f
         if (ranklist[on] == Globals::my_rank) continue;
@@ -2480,18 +2481,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int p = 0;
         int is = pb->cis-1, ie = pb->cie+1, js = pb->cjs-f2,
             je = pb->cje+f2, ks = pb->cks-f3, ke = pb->cke+f3;
-        MPI_Wait(&(req_recv[mb_idx]), MPI_STATUS_IGNORE);
-        BufferUtility::UnpackData(recvbuf[mb_idx], pb->phydro->coarse_cons_,
+        MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
+        BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
         pmr->ProlongateCellCenteredValues(
             pb->phydro->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
             pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::UnpackData(recvbuf[mb_idx], pb->pfield->coarse_b_.x1f,
+          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x1f,
                                       is, ie+1, js, je, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[mb_idx], pb->pfield->coarse_b_.x2f,
+          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x2f,
                                       is, ie, js, je+f2, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[mb_idx], pb->pfield->coarse_b_.x3f,
+          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(
               pb->pfield->coarse_b_.x1f, pb->pfield->b.x1f,
@@ -2506,7 +2507,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               pb->pfield->b, pb->cis, pb->cie,
               pb->cjs, pb->cje, pb->cks, pb->cke);
         }
-        mb_idx++;
+        rb_idx++;
       }
     }
   }
