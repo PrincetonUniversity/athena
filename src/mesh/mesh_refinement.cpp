@@ -30,7 +30,7 @@
 
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
-  AMRFlag_=pmb->pmy_mesh->AMRFlag_;
+  AMRFlag_ = pmb->pmy_mesh->AMRFlag_;
 
   // Create coarse mesh object for parent grid
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -52,7 +52,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
 
-  int nc1=pmb->block_size.nx1+2*NGHOST;
+  int nc1 = pmb->block_size.nx1+2*NGHOST;
   fvol_[0][0].NewAthenaArray(nc1);
   fvol_[0][1].NewAthenaArray(nc1);
   fvol_[1][0].NewAthenaArray(nc1);
@@ -73,6 +73,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   sarea_x3_[1][1].NewAthenaArray(nc1);
   sarea_x3_[2][0].NewAthenaArray(nc1);
   sarea_x3_[2][1].NewAthenaArray(nc1);
+
+  // KGF: probably don't need to preallocate space for pointers in these vectors
+  pvars_cc_.reserve(3);
+  pvars_fc_.reserve(3);
 }
 
 

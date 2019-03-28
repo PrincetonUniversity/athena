@@ -216,21 +216,21 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nbmax = (nbmax>nrbx3) ? nbmax:nrbx3;
 
   // initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0) {
+  if (mesh_size.x1rat != 1.0) {
     use_uniform_meshgen_fn_[X1DIR]=false;
     MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   } else {
     use_uniform_meshgen_fn_[X1DIR]=true;
     MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
   }
-  if (mesh_size.x2rat!=1.0) {
+  if (mesh_size.x2rat != 1.0) {
     use_uniform_meshgen_fn_[X2DIR]=false;
     MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   } else {
     use_uniform_meshgen_fn_[X2DIR]=true;
     MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
   }
-  if (mesh_size.x3rat!=1.0) {
+  if (mesh_size.x3rat != 1.0) {
     use_uniform_meshgen_fn_[X3DIR]=false;
     MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
   } else {
@@ -296,23 +296,23 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     while (pib != nullptr) {
       if (pib->block_name.compare(0, 10, "refinement") == 0) {
         RegionSize ref_size;
-        ref_size.x1min=pin->GetReal(pib->block_name, "x1min");
-        ref_size.x1max=pin->GetReal(pib->block_name, "x1max");
+        ref_size.x1min = pin->GetReal(pib->block_name, "x1min");
+        ref_size.x1max = pin->GetReal(pib->block_name, "x1max");
         if (dim>=2) {
-          ref_size.x2min=pin->GetReal(pib->block_name, "x2min");
-          ref_size.x2max=pin->GetReal(pib->block_name, "x2max");
+          ref_size.x2min = pin->GetReal(pib->block_name, "x2min");
+          ref_size.x2max = pin->GetReal(pib->block_name, "x2max");
         } else {
           ref_size.x2min=mesh_size.x2min;
           ref_size.x2max=mesh_size.x2max;
         }
         if (dim>=3) {
-          ref_size.x3min=pin->GetReal(pib->block_name, "x3min");
-          ref_size.x3max=pin->GetReal(pib->block_name, "x3max");
+          ref_size.x3min = pin->GetReal(pib->block_name, "x3min");
+          ref_size.x3max = pin->GetReal(pib->block_name, "x3max");
         } else {
           ref_size.x3min=mesh_size.x3min;
           ref_size.x3max=mesh_size.x3max;
         }
-        int ref_lev=pin->GetInteger(pib->block_name, "level");
+        int ref_lev = pin->GetInteger(pib->block_name, "level");
         int lrlev=ref_lev+root_level;
         if (lrlev>current_level) current_level=lrlev;
         // range check
@@ -422,7 +422,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           }
         }
       }
-      pib=pib->pnext;
+      pib = pib->pnext;
     }
   }
 
@@ -501,7 +501,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     }
     pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
-  pblock=pfirst;
+  pblock = pfirst;
 
   if (SELF_GRAVITY_ENABLED==1)
     pfgrd = new FFTGravityDriver(this, pin);
@@ -572,7 +572,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
                               + sizeof(RegionSize)+sizeof(IOWrapperSizeT);
   char *headerdata = new char[headersize];
   if (Globals::my_rank==0) { // the master process reads the header data
-    if (resfile.Read(headerdata, 1, headersize)!=headersize) {
+    if (resfile.Read(headerdata, 1, headersize) != headersize) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
       ATHENA_ERROR(msg);
@@ -623,21 +623,21 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   nrbx3=mesh_size.nx3/block_size.nx3;
 
   // initialize user-enrollable functions
-  if (mesh_size.x1rat!=1.0) {
+  if (mesh_size.x1rat != 1.0) {
     use_uniform_meshgen_fn_[X1DIR]=false;
     MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   } else {
     use_uniform_meshgen_fn_[X1DIR]=true;
     MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
   }
-  if (mesh_size.x2rat!=1.0) {
+  if (mesh_size.x2rat != 1.0) {
     use_uniform_meshgen_fn_[X2DIR]=false;
     MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   } else {
     use_uniform_meshgen_fn_[X2DIR]=true;
     MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
   }
-  if (mesh_size.x3rat!=1.0) {
+  if (mesh_size.x3rat != 1.0) {
     use_uniform_meshgen_fn_[X3DIR]=false;
     MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
   } else {
@@ -687,10 +687,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     udsize+=iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_mesh_data_; n++)
     udsize+=ruser_mesh_data[n].GetSizeInBytes();
-  if (udsize!=0) {
+  if (udsize != 0) {
     char *userdata = new char[udsize];
     if (Globals::my_rank==0) { // only the master process reads the ID list
-      if (resfile.Read(userdata,1,udsize)!=udsize) {
+      if (resfile.Read(userdata,1,udsize) != udsize) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
             << "The restart file is broken." << std::endl;
         ATHENA_ERROR(msg);
@@ -720,7 +720,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   //allocate the idlist buffer
   char *idlist = new char[listsize*nbtotal];
   if (Globals::my_rank==0) { // only the master process reads the ID list
-    if (resfile.Read(idlist,listsize,nbtotal)!=static_cast<unsigned int>(nbtotal)) {
+    if (resfile.Read(idlist,listsize,nbtotal) != static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
       ATHENA_ERROR(msg);
@@ -743,7 +743,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   // calculate the header offset and seek
   headeroffset+=headersize+udsize+listsize*nbtotal;
-  if (Globals::my_rank!=0)
+  if (Globals::my_rank != 0)
     resfile.Seek(headeroffset);
 
   // rebuild the Block Tree
@@ -752,7 +752,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   int nnb;
   // check the tree structure, and assign GID
   tree.GetMeshBlockList(loclist, nullptr, nnb);
-  if (nnb!=nbtotal) {
+  if (nnb != nbtotal) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Tree reconstruction failed. The total numbers of the blocks do not match. ("
         << nbtotal << " != " << nnb << ")" << std::endl;
@@ -832,10 +832,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     }
     pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
-  pblock=pfirst;
+  pblock = pfirst;
   delete [] mbdata;
   // check consistency
-  if (datasize!=pblock->GetBlockSizeInBytes()) {
+  if (datasize != pblock->GetBlockSizeInBytes()) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
@@ -930,7 +930,7 @@ void Mesh::OutputMeshStructure(int dim) {
     cost_per_plevel[(loclist[i].level - root_level)] += costlist[i];
   }
   for (int i=root_level; i<=max_level; i++) {
-    if (nb_per_plevel[i-root_level]!=0) {
+    if (nb_per_plevel[i-root_level] != 0) {
       std::cout << "  Physical level = " << i-root_level << " (logical level = " << i
                 << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = "
                 << cost_per_plevel[i-root_level] <<  std::endl;
@@ -1053,7 +1053,7 @@ void Mesh::NewTimeStep() {
   while (pmb != nullptr)  {
     dt = std::min(dt,pmb->new_block_dt_);
     dt_diff  = std::min(dt_diff, pmb->new_block_dt_diff_);
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
 
 #ifdef MPI_PARALLEL
@@ -1079,7 +1079,7 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (mesh_bcs[dir]!=BoundaryFlag::user) {
+  if (mesh_bcs[dir] != BoundaryFlag::user) {
     msg << "### FATAL ERROR in EnrollUserBoundaryFunction" << std::endl
         << "The boundary condition flag must be set to the string 'user' in the "
         << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
@@ -1246,7 +1246,7 @@ void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateRealUserMeshDataField(int n) {
-  if (nreal_user_mesh_data_!=0) {
+  if (nreal_user_mesh_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateRealUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
@@ -1262,7 +1262,7 @@ void Mesh::AllocateRealUserMeshDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateIntUserMeshDataField(int n) {
-  if (nint_user_mesh_data_!=0) {
+  if (nint_user_mesh_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateIntUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
@@ -1282,7 +1282,7 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   MeshBlock *pmb = pblock;
   while (pmb != nullptr)  {
     pmb->UserWorkBeforeOutput(pin);
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
 }
 
@@ -1300,11 +1300,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   do {
     // initialize a vector of MeshBlock pointers
     nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
-    if (static_cast<unsigned int>(nmb)!=pmb_array.size()) pmb_array.resize(nmb);
+    if (static_cast<unsigned int>(nmb) != pmb_array.size()) pmb_array.resize(nmb);
     MeshBlock *pmbl = pblock;
     for (int i=0; i<nmb; ++i) {
       pmb_array[i] = pmbl;
-      pmbl=pmbl->next;
+      pmbl = pmbl->next;
     }
 
     if (res_flag==0) {
@@ -1347,14 +1347,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // prepare to receive conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pmb = pmb_array[i]; pbval = pmb->pbval;
         pbval->StartReceiving(BoundaryCommSubset::mesh_init);
       }
 
       // send conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pmb = pmb_array[i]; pbval = pmb->pbval;
         pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
         // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
@@ -1367,7 +1367,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval;
+        pmb = pmb_array[i]; pbval = pmb->pbval;
         pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
         // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
@@ -1388,7 +1388,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // prepare to receive primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           pbval->StartReceiving(BoundaryCommSubset::gr_amr);
         }
 
@@ -1396,7 +1396,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // send primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
           // KGF: (pmb->phydro->w, HydroBoundaryQuantity::prim); where w was bound to &dst
@@ -1406,7 +1406,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // wait to receive AMR/SMR GR primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
           // KGF: (pmb->phydro->w, HydroBoundaryQuantity::prim); where w was bound to &dst
@@ -1426,14 +1426,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (correct_ic == true) {
 #pragma omp for private(pmb, phydro, pfield, pbval)
         for (int nb=0; nb<nmb; ++nb) {
-          pmb=pmb_array[nb];
-          phydro=pmb->phydro;
-          pfield=pmb->pfield;
-          pbval=pmb->pbval;
+          pmb = pmb_array[nb];
+          phydro = pmb->phydro;
+          pfield = pmb->pfield;
+          pbval = pmb->pbval;
 
           // Assume cell-centered analytic value is computed at all real cells, and ghost
           // cells with the cell-centered U have been exchanged
-          int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+          int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
 
           // Laplacian of cell-averaged conserved variables
           AthenaArray<Real> delta_cons_;
@@ -1475,14 +1475,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // prepare to receive conserved variables
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           // no need to re-SetupPersistentMPI() the MPI requests for boundary values
           pbval->StartReceiving(BoundaryCommSubset::mesh_init);
         }
 
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
           // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
@@ -1495,7 +1495,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
-          pmb=pmb_array[i]; pbval=pmb->pbval;
+          pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
           // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
@@ -1519,20 +1519,20 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; pbval=pmb->pbval, phydro=pmb->phydro, pfield=pmb->pfield;
+        pmb = pmb_array[i]; pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
         if (multilevel==true)
           pbval->ProlongateBoundaries(time, 0.0);
 
-        int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-        if (pbval->nblevel[1][1][0]!=-1) il-=NGHOST;
-        if (pbval->nblevel[1][1][2]!=-1) iu+=NGHOST;
+        int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
+        if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
+        if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
         if (pmb->block_size.nx2 > 1) {
-          if (pbval->nblevel[1][0][1]!=-1) jl-=NGHOST;
-          if (pbval->nblevel[1][2][1]!=-1) ju+=NGHOST;
+          if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
+          if (pbval->nblevel[1][2][1] != -1) ju+=NGHOST;
         }
         if (pmb->block_size.nx3 > 1) {
-          if (pbval->nblevel[0][1][1]!=-1) kl-=NGHOST;
-          if (pbval->nblevel[2][1][1]!=-1) ku+=NGHOST;
+          if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
+          if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
         }
         pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                         phydro->w, pfield->bcc, pmb->pcoord,
@@ -1564,7 +1564,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // Calc initial diffusion coefficients
 #pragma omp for private(pmb,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
-        pmb=pmb_array[i]; phydro=pmb->phydro, pfield=pmb->pfield;
+        pmb = pmb_array[i]; phydro = pmb->phydro, pfield = pmb->pfield;
         if (phydro->phdif->hydro_diffusion_defined)
           phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -1573,7 +1573,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
 
-      if ((res_flag==0) && (adaptive==true)) {
+      if ((res_flag == 0) && (adaptive == true)) {
 #pragma omp for
         for (int i=0; i<nmb; ++i) {
           pmb_array[i]->pmr->CheckRefinementCondition();
@@ -1581,19 +1581,19 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     } // omp parallel
 
-    if ((res_flag==0) && (adaptive==true)) {
-      iflag=false;
-      int onb=nbtotal;
+    if ((res_flag == 0) && (adaptive == true)) {
+      iflag = false;
+      int onb = nbtotal;
       AdaptiveMeshRefinement(pin);
-      if (nbtotal==onb) {
+      if (nbtotal == onb) {
         iflag=true;
-      } else if (nbtotal < onb && Globals::my_rank==0) {
+      } else if (nbtotal < onb && Globals::my_rank == 0) {
         std::cout << "### Warning in Mesh::Initialize" << std::endl
                   << "The number of MeshBlocks decreased during AMR grid initialization."
                   << std::endl
                   << "Possibly the refinement criteria have a problem." << std::endl;
       }
-      if (nbtotal > 2*inb && Globals::my_rank==0) {
+      if (nbtotal > 2*inb && Globals::my_rank == 0) {
         std::cout
             << "### Warning in Mesh::Initialize" << std::endl
             << "The number of MeshBlocks increased more than twice during initialization."
@@ -1601,7 +1601,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             << "More computing power than you expected may be required." << std::endl;
       }
     }
-  } while (iflag==false);
+  } while (iflag == false);
 
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)
@@ -1618,11 +1618,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 //  \brief return the MeshBlock whose gid is tgid
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
-  MeshBlock *pbl=pblock;
-  while (pbl!=nullptr) {
-    if (pbl->gid==tgid)
+  MeshBlock *pbl = pblock;
+  while (pbl != nullptr) {
+    if (pbl->gid == tgid)
       break;
-    pbl=pbl->next;
+    pbl = pbl->next;
   }
   return pbl;
 }
@@ -1646,7 +1646,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   Real mycost=0.0;
   // create rank list from the end: the master node should have less load
   for (int i=nb-1; i>=0; i--) {
-    if (targetcost==0.0) {
+    if (targetcost == 0.0) {
       msg << "### FATAL ERROR in LoadBalance" << std::endl
           << "There is at least one process which has no MeshBlock" << std::endl
           << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
@@ -1664,7 +1664,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   slist[0]=0;
   j=0;
   for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
-    if (rlist[i]!=rlist[i-1]) {
+    if (rlist[i] != rlist[i-1]) {
       nlist[j]=i-nslist[j];
       slist[++j]=i;
     }
@@ -1673,7 +1673,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
-      && maxcost == mincost && Globals::my_rank==0) {
+      && maxcost == mincost && Globals::my_rank == 0) {
     std::cout << "### Warning in LoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will result in poor load balancing." << std::endl;
@@ -1843,9 +1843,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   pmb = pblock;
   while (pmb != nullptr) {
     if (pmb->pmr->refine_flag_ ==  1)
-      lref[iref++]=pmb->loc;
+      lref[iref++] = pmb->loc;
     if (pmb->pmr->refine_flag_ == -1 && tnderef>=nlbl)
-      lderef[ideref++]=pmb->loc;
+      lderef[ideref++] = pmb->loc;
     pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL

@@ -11,6 +11,7 @@
 // C headers
 
 // C++ headers
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"         // Real
@@ -81,6 +82,9 @@ class MeshRefinement {
 
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
+
+  std::vector<AthenaArray<Real> *> pvars_cc_;
+  std::vector<FaceField *> pvars_fc_;
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_
