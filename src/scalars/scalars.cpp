@@ -46,14 +46,20 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-  // KGF: redundant with code in hydro.cpp--- abstract into fn
+
+  // KGF: CellCentered size calculation is redundant with code in hydro.cpp--- abstract
+  // into a MeshRefinement member function? Combine with AddToAMR? But "coarse_prim_" must
+  // be created even though it is NOT used in Mesh::AdaptiveMeshRefinement()
   if (pmy_block->pmy_mesh->multilevel == true) {
+    // KGF: note, ncc1 != ncells1, but conditionals could be combined at top of fn
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
-    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
-    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-    coarse_s_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    coarse_s_.NewAthenaArray(NSCALARS, ncc3, ncc2, ncc1);
+    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+    pmy_block->pmr->AddToAMR(&coarse_s_);
   }
 
   // KGF: change to RAII
@@ -65,9 +71,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
 
   // Allocate memory for scratch arrays
   dxw_.NewAthenaArray(ncells1);
-  wl_.NewAthenaArray((NWAVE), ncells1);
-  wr_.NewAthenaArray((NWAVE), ncells1);
-  wlb_.NewAthenaArray((NWAVE), ncells1);
+  wl_.NewAthenaArray(NSCALARS, ncells1);
+  wr_.NewAthenaArray(NSCALARS, ncells1);
+  wlb_.NewAthenaArray(NSCALARS, ncells1);
   x1face_area_.NewAthenaArray(ncells1+1);
   if (pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(ncells1);
@@ -81,8 +87,8 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
 
   // fourth-order hydro
   // 4D scratch arrays
-  wl3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  wr3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wl3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+  wr3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
   scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   laplacian_l_fc_.NewAthenaArray(ncells1);
   laplacian_r_fc_.NewAthenaArray(ncells1);

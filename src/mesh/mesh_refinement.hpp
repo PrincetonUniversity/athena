@@ -72,6 +72,10 @@ class MeshRefinement {
                                int si, int ei, int sj, int ej, int sk, int ek);
   void CheckRefinementCondition();
 
+  // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
+  void AddToAMR(AthenaArray<Real> *pvar_cc);
+  void AddToAMR(FaceField *pvar_fc);
+
  private:
   // data
   MeshBlock *pmy_block_;

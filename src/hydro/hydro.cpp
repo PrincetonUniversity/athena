@@ -58,25 +58,30 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
+
+  // KGF: CellCentered size calculation is redundant with code in hydro.cpp--- abstract
+  // into a MeshRefinement member function? Combine with AddToAMR? But "coarse_prim_" must
+  // be created even though it is NOT used in Mesh::AdaptiveMeshRefinement()
   if (pmy_block->pmy_mesh->multilevel == true) {
+    // KGF: note, ncc1 != ncells1, but conditionals could be combined at top of fn
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
-    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
-    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     // coarse_cons_ is used extensively in Mesh::AdaptiveMeshRefinement() and for
     // Restrict, W(U) in BoundaryValues::ProlongateBoundaries() and (implicitly via
     // coarse_buf switch) for most of the main integrators + initialization communication
-    coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    coarse_cons_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
     // coarse_prim_ is only used in BoundaryValues::ProlongateBoundaries() for Restrict,
     // W(U), and applications of physical bndry
     // and (implicitly via coarse_buf switch) in Mesh::Initialize() for GR+AMR
-    coarse_prim_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+    coarse_prim_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
     // KGF: in the future, we may have a need to pass primitives in
     // Mesh::AdaptiveMeshRefinement() for GR purposes.
 
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    // pmy_block->pmr->pvars_cc_.push_back(&coarse_cons);
+    pmy_block->pmr->AddToAMR(&coarse_cons_);
   }
 
   // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
@@ -93,9 +98,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   dt2_.NewAthenaArray(ncells1);
   dt3_.NewAthenaArray(ncells1);
   dxw_.NewAthenaArray(ncells1);
-  wl_.NewAthenaArray((NWAVE), ncells1);
-  wr_.NewAthenaArray((NWAVE), ncells1);
-  wlb_.NewAthenaArray((NWAVE), ncells1);
+  wl_.NewAthenaArray(NWAVE, ncells1);
+  wr_.NewAthenaArray(NWAVE, ncells1);
+  wlb_.NewAthenaArray(NWAVE, ncells1);
   x1face_area_.NewAthenaArray(ncells1+1);
   if (pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(ncells1);
@@ -136,8 +141,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // fourth-order hydro
   // 4D scratch arrays
-  wl3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
-  wr3d_.NewAthenaArray((NWAVE), ncells3, ncells2, ncells1);
+  wl3d_.NewAthenaArray(NWAVE, ncells3, ncells2, ncells1);
+  wr3d_.NewAthenaArray(NWAVE, ncells3, ncells2, ncells1);
   scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   scr2_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   laplacian_l_fc_.NewAthenaArray(ncells1);

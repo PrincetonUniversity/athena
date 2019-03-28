@@ -1015,3 +1015,13 @@ void MeshRefinement::CheckRefinementCondition() {
   }
   return;
 }
+
+void MeshRefinement::AddToAMR(AthenaArray<Real> *pvar_cc) {
+  pvars_cc_.push_back(pvar_cc);
+  return;
+}
+
+void MeshRefinement::AddToAMR(FaceField *pvar_fc) {
+  pvars_fc_.push_back(pvar_fc);
+  return;
+}

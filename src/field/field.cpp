@@ -76,16 +76,16 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   edge_length_.NewAthenaArray(ncells1);
   edge_length_p1_.NewAthenaArray(ncells1);
   if (GENERAL_RELATIVITY) {
-    g_.NewAthenaArray(NMETRIC,ncells1);
-    gi_.NewAthenaArray(NMETRIC,ncells1);
+    g_.NewAthenaArray(NMETRIC, ncells1);
+    gi_.NewAthenaArray(NMETRIC, ncells1);
   }
   // allocate prolongation buffers
   if (pmy_block->pmy_mesh->multilevel == true) {
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
-    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
-    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     // coarse_b_ is used extensively in Mesh::AdaptiveMeshRefinement() and for Restrict,
     // W(U), applications of physical boundaries in BoundaryValues::ProlongateBoundaries()
     // and (implicitly via coarse_buf switch) for most of the main integrators +
@@ -95,6 +95,9 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
     // coarse_bcc_ is only used in BoundaryValues::ProlongateBoundaries() for W(U)
     coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
+
+    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+    pmy_block->pmr->AddToAMR(&coarse_b_);
   }
   // ptr to diffusion object
   pfdif = new FieldDiffusion(pmb, pin);
