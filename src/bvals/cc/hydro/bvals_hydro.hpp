@@ -24,7 +24,8 @@
 class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
  public:
   HydroBoundaryVariable(MeshBlock *pmb,
-                        AthenaArray<Real> *var_hydro, AthenaArray<Real> *var_flux,
+                        AthenaArray<Real> *var_hydro, AthenaArray<Real> *coarse_var,
+                        AthenaArray<Real> *var_flux,
                         HydroBoundaryQuantity hydro_type);
                                                 // AthenaArray<Real> &prim);
   virtual ~HydroBoundaryVariable() = default;

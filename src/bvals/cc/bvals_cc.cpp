@@ -37,11 +37,15 @@
 // constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
-    MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *var_flux)
+    MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
+    AthenaArray<Real> *var_flux)
     : BoundaryVariable(pmb) {
 
   // var_cc.InitWithShallowCopy(var);
   var_cc = var;
+  if (coarse_var) {
+    coarse_buf.InitWithShallowCopy(*coarse_var);
+  }
   // src.InitWithShallowCopy(var_cc);
   // dst.InitWithShallowCopy(var_cc);
 

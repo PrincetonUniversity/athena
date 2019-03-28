@@ -23,15 +23,16 @@
 //! \class HydroBoundaryFunctions
 
 HydroBoundaryVariable::HydroBoundaryVariable(
-    MeshBlock *pmb, AthenaArray<Real> *var_hydro,
+    MeshBlock *pmb, AthenaArray<Real> *var_hydro, AthenaArray<Real> *coarse_var,
     AthenaArray<Real> *var_flux,
     HydroBoundaryQuantity hydro_type)
     // AthenaArray<Real> &prim)
-    : CellCenteredBoundaryVariable(pmb, var_hydro, var_flux) {
+    : CellCenteredBoundaryVariable(pmb, var_hydro, coarse_var, var_flux) {
   hydro_type_ = hydro_type;
   // nl_=0, nu_=NHYDRO-1; // inferred in parent class constructor
   flip_across_pole_ = flip_across_pole_hydro;
 
+  // KGF: immediatlely overwrites base class assignment of shallow-copy of coarse_var
   SelectCoarseBuffer(hydro_type_);
 }
 

@@ -31,7 +31,8 @@
 class CellCenteredBoundaryVariable : public BoundaryVariable {
  public:
   CellCenteredBoundaryVariable(MeshBlock *pmb,
-                               AthenaArray<Real> *var, AthenaArray<Real> *var_flux);
+                               AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
+                               AthenaArray<Real> *var_flux);
   ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> *var_cc;
@@ -45,7 +46,11 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // InitWithShallowCopy() calls in SwapHydroQuantity() or SelectCoarseBuffer()
 
   // Could not keep as reference member, since we need to rebind the reference, which a
-  // full AthenaArray data member (shallow-copied) allows via InitWithShallowCopy()
+  // full AthenaArray data member (shallow-copied) allows via InitWithShallowCopy(). And
+  // we must accept nullptr passed for coarse_var if SMR/AMR is explicitly
+  // forbidden. E.g. FFT self-gravity, but not Hydro, since AthenaArray<Real> coarse_cons_
+  // always exists as a member of Hydro class, even if multilevel=false (it has
+  // pdata_=nullptr)
   AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
 
   // KGF: no need to ever switch flux[]? Keep as non-pointer (reference) objects,

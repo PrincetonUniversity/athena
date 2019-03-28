@@ -39,6 +39,10 @@ class PassiveScalars {
   // fourth-order intermediate quantities
   AthenaArray<Real> s_cc;      // cell-centered approximations
 
+  // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
+  AthenaArray<Real> coarse_s_;
+
   // public functions:
 
   // KGF: make the following Hydro member fn a free function:

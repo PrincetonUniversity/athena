@@ -45,8 +45,19 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
   if (pmy_block->block_size.nx3 > 1)
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
+  // allocate prolongation buffers
+  // KGF: redundant with code in hydro.cpp--- abstract into fn
+  if (pmy_block->pmy_mesh->multilevel == true) {
+    int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
+    int ncc2 = 1;
+    if (pmb->block_size.nx2>1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    int ncc3 = 1;
+    if (pmb->block_size.nx3>1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    coarse_s_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
+  }
+
   // KGF: change to RAII
-  psbval  = new CellCenteredBoundaryVariable(pmy_block, &s, s_flux);
+  psbval  = new CellCenteredBoundaryVariable(pmy_block, &s, &coarse_s_, s_flux);
   psbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(psbval);
 
