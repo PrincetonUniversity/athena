@@ -20,7 +20,7 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "./scalars.hpp"
+#include "scalars.hpp"
 
 // constructor, initializes data structures and parameters
 
