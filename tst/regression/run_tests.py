@@ -195,9 +195,10 @@ def log_init(args):
     c_handler = logging.StreamHandler()  # console/terminal handler
     c_handler.setLevel(kwargs.pop('loglevel'))
     c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
-    if c_handler.level < logging.INFO:
+    if kwargs.pop('verbose'):
+        c_handler.setLevel(0)
         c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
-    else:
+    if c_handler.level >= logging.INFO:
         # if we are not in debugging mode and (not show_make) add MakeFilter
         if not kwargs.pop('show_make'):
             c_handler.addFilter(MakeFilter())
@@ -213,7 +214,7 @@ def log_init(args):
         f_handler.setFormatter(f_format)
         logger.addHandler(f_handler)
     # setup runtime diagnostics file
-    if kwargs.pop('runtime_diag'):
+    if kwargs.pop('runtime_diag_file'):
         rtd_handler = logging.FileHandler('runtime.log')
         rtd_handler.setLevel(0)  # log everything
         rtd_fmt = logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
@@ -273,16 +274,15 @@ if __name__ == '__main__':
                               ' Currently, assumes that Lcov is being used and appends '
                               ' -t and -o options w/ reformatted test name to COVERAGE.'))
     parser.add_argument('-d', '--debug',
-                        help="same as verbose",
+                        help="print debugging information",
                         action="store_const",
                         dest="loglevel",
                         const=logging.DEBUG,
                         default=logging.INFO)
     parser.add_argument('-v', '--verbose',
-                        help="print all output",
-                        action="store_const",
-                        dest="loglevel",
-                        const=logging.DEBUG)
+                        default=False,
+                        action='store_true',
+                        help="print all output, timestamps and logging information")
     parser.add_argument('--logfile',
                         type=str,
                         default=None,
