@@ -32,8 +32,13 @@ HydroBoundaryVariable::HydroBoundaryVariable(
   // nl_=0, nu_=NHYDRO-1; // inferred in parent class constructor
   flip_across_pole_ = flip_across_pole_hydro;
 
-  // KGF: immediatlely overwrites base class assignment of shallow-copy of coarse_var
-  SelectCoarseBuffer(hydro_type_);
+  // KGF: immediatlely overwrites base class assignment of shallow-copy of coarse_var?
+  // Why pass in "hydro_type", if not? Self-identification / record keeping?
+
+  // Cannot call this here! Accesses pmy_block_->phydro (which is bad coupling). And Hydro
+  // class is not fully constructed at this point, since Hydro() calls this constructor
+  // HydroBoundaryVariable()!
+  // SelectCoarseBuffer(hydro_type_);
 }
 
 // destructor
@@ -48,13 +53,19 @@ HydroBoundaryVariable::HydroBoundaryVariable(
 // +1x call to shortened "non-switch": Receive()
 void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type) {
   // KGF: currently always true:
-  if (hydro_type == HydroBoundaryQuantity::cons
-      || hydro_type == HydroBoundaryQuantity::prim) {
-    if (pmy_mesh_->multilevel) {
-      if (hydro_type == HydroBoundaryQuantity::cons)
+  // if (hydro_type == HydroBoundaryQuantity::cons
+  //     || hydro_type == HydroBoundaryQuantity::prim) {
+  if (pmy_mesh_->multilevel) {
+    switch (hydro_type) {
+      case (HydroBoundaryQuantity::cons): {
         coarse_buf.InitWithShallowCopy(pmy_block_->phydro->coarse_cons_);
-      if (hydro_type == HydroBoundaryQuantity::prim)
+        // coarse_buf = pmy_block_->phydro->coarse_cons_;
+        break;
+      }
+      case (HydroBoundaryQuantity::prim): {
         coarse_buf.InitWithShallowCopy(pmy_block_->phydro->coarse_prim_);
+        break;
+      }
     }
   }
   // Smaller switch used only in ReceiveBoundaryBuffers()
