@@ -1433,7 +1433,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
           // Assume cell-centered analytic value is computed at all real cells, and ghost
           // cells with the cell-centered U have been exchanged
-          int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
+          int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+              kl = pmb->ks, ku = pmb->ke;
 
           // Laplacian of cell-averaged conserved variables
           AthenaArray<Real> delta_cons_;
@@ -2028,23 +2029,33 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 4. calculate buffer sizes
   Real **sendbuf, **recvbuf;
-  // KGF:
-  // int num_cc = pmb->pmr->pvars_cc_.size();
-  // int num_fc = pmb->pmr->pvars_fc_.size();
+  // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
+  // representative of all MeshBlocks for counting the "SMR/AMR-enrolled" quantities
 
-  int bssame = bnx1*bnx2*bnx3*NHYDRO;
-  int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*NHYDRO;
-  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*NHYDRO;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    bssame += (bnx1+1)*bnx2*bnx3+bnx1*(bnx2 + f2)*bnx3+bnx1*bnx2*(bnx3 + f3);
-    bsf2c += ((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
-             +(bnx1/2)*(((bnx2+1)/2) + f2)*((bnx3+1)/2)
-             +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2) + f3);
-    bsc2f += ((bnx1/2)+1+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)
-             +(bnx1/2+2)*(((bnx2+1)/2) + f2+2*f2)*((bnx3+1)/2+2*f3)
-             +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2) + f3+2*f3);
+  // int num_cc = pblock->pmr->pvars_cc_.size();
+  int num_fc = pblock->pmr->pvars_fc_.size();
+
+  // KGF: need to calculate weighted sum of nx4 overall num_cc (originally just NHYDRO)
+  int nx4_tot = 0; // NHYDRO;
+  for (auto cc_pair : pblock->pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    nx4_tot += var_cc->GetDim4();
   }
-  bssame++; // add one more element to array to store the derefinement counter
+
+  // cell-centered quantities enrolled in SMR/AMR
+  int bssame = bnx1*bnx2*bnx3*nx4_tot;
+  int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
+  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
+  // face-centered quantities enrolled in SMR/AMR
+  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3 + bnx1*bnx2*(bnx3 + f3));
+  bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
+                   + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
+                   + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
+  bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                   + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                   + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 +2*f3));
+  // add one more element to buffer size for storing the derefinement counter
+  bssame++;
 
   MPI_Request *req_send, *req_recv;
   // Step 5. allocate and start receiving buffers
@@ -2139,9 +2150,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         MPI_Isend(sendbuf[sb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
         sb_idx++;
-
-
-
       } else if (nloc.level > oloc.level) { // c2f
         for (int l=0; l<nlbl; l++) {
           if (newrank[nn+l] == Globals::my_rank) continue;
@@ -2159,16 +2167,21 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           int p = 0;
 
           // KGF: CellCentered step 6, branch 2 (c2f: just pack+send)
-          BufferUtility::PackData(pb->phydro->u, sendbuf[sb_idx], 0, NHYDRO-1,
-                                  is, ie, js, je, ks, ke, p);
+          for (auto cc_pair : pb->pmr->pvars_cc_) {
+            AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+            int nu = var_cc->GetDim4() - 1;
+            BufferUtility::PackData((*var_cc), sendbuf[sb_idx], 0, nu,
+                                    is, ie, js, je, ks, ke, p);
+          }
 
           // KGF: FaceCentered step 6, branch 2 (c2f: just pack+send)
-          if (MAGNETIC_FIELDS_ENABLED) {
-            BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[sb_idx],
+          for (auto fc_pair : pb->pmr->pvars_fc_) {
+            FaceField *var_fc = std::get<0>(fc_pair);
+            BufferUtility::PackData((*var_fc).x1f, sendbuf[sb_idx],
                                     is, ie+1, js, je, ks, ke, p);
-            BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[sb_idx],
+            BufferUtility::PackData((*var_fc).x2f, sendbuf[sb_idx],
                                     is, ie, js, je+f2, ks, ke, p);
-            BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[sb_idx],
+            BufferUtility::PackData((*var_fc).x3f, sendbuf[sb_idx],
                                     is, ie, js, je, ks, ke+f3, p);
           }
           int tag = CreateAMRMPITag(nn+l-nslist[newrank[nn+l]], 0, 0, 0);
@@ -2183,45 +2196,51 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         // restrict and pack
         MeshRefinement *pmr = pb->pmr;
 
-        // KGF: CellCentered step 6, branch 3 (f2c: restrict, pack, send)
-        pmr->RestrictCellCenteredValues(pb->phydro->u, pb->phydro->coarse_cons_,
-                                        0, NHYDRO-1,
-                                        pb->cis, pb->cie,
-                                        pb->cjs, pb->cje,
-                                        pb->cks, pb->cke);
         int p = 0;
-        BufferUtility::PackData(pb->phydro->coarse_cons_, sendbuf[sb_idx], 0, NHYDRO-1,
-                                pb->cis, pb->cie,
-                                pb->cjs, pb->cje,
-                                pb->cks, pb->cke, p);
+        // KGF: CellCentered step 6, branch 3 (f2c: restrict, pack, send)
+        for (auto cc_pair : pb->pmr->pvars_cc_) {
+          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+          AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+          int nu = var_cc->GetDim4() - 1;
+          pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
+                                          0, nu,
+                                          pb->cis, pb->cie,
+                                          pb->cjs, pb->cje,
+                                          pb->cks, pb->cke);
+          BufferUtility::PackData((*coarse_cc), sendbuf[sb_idx], 0, nu,
+                                  pb->cis, pb->cie,
+                                  pb->cjs, pb->cje,
+                                  pb->cks, pb->cke, p);
+        }
         // KGF: FaceCentered step 6, branch 3 (f2c: restrict, pack, send)
-        if (MAGNETIC_FIELDS_ENABLED) {
-          pmr->RestrictFieldX1(pb->pfield->b.x1f, pb->pfield->coarse_b_.x1f,
+        for (auto fc_pair : pb->pmr->pvars_fc_) {
+          FaceField *var_fc = std::get<0>(fc_pair);
+          FaceField *coarse_fc = std::get<1>(fc_pair);
+          pmr->RestrictFieldX1((*var_fc).x1f, (*coarse_fc).x1f,
                                pb->cis, pb->cie+1,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x1f, sendbuf[sb_idx],
+          BufferUtility::PackData((*coarse_fc).x1f, sendbuf[sb_idx],
                                   pb->cis, pb->cie+1,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke, p);
-          pmr->RestrictFieldX2(pb->pfield->b.x2f, pb->pfield->coarse_b_.x2f,
+          pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje+f2,
                                pb->cks, pb->cke);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x2f, sendbuf[sb_idx],
+          BufferUtility::PackData((*coarse_fc).x2f, sendbuf[sb_idx],
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje+f2,
                                   pb->cks, pb->cke, p);
-          pmr->RestrictFieldX3(pb->pfield->b.x3f, pb->pfield->coarse_b_.x3f,
+          pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
                                pb->cis, pb->cie,
                                pb->cjs, pb->cje,
                                pb->cks, pb->cke+f3);
-          BufferUtility::PackData(pb->pfield->coarse_b_.x3f, sendbuf[sb_idx],
+          BufferUtility::PackData((*coarse_fc).x3f, sendbuf[sb_idx],
                                   pb->cis, pb->cie,
                                   pb->cjs, pb->cje,
                                   pb->cks, pb->cke+f3, p);
         }
-
 
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], ox1, ox2, ox3);
         MPI_Isend(sendbuf[sb_idx], bsf2c, MPI_ATHENA_REAL, newrank[nn],
@@ -2260,11 +2279,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         pmb = pmb->next;
       }
       pmb->gid = n;
-      pmb->lid = n-nbs;
+      pmb->lid = n - nbs;
     } else {
+      // on a different level or node - create a new block
       BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
-      // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       if (n == nbs) { // first
         newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
@@ -2283,39 +2302,60 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           // on the same node - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
           MeshRefinement *pmr = pob->pmr;
-          pmr->RestrictCellCenteredValues(pob->phydro->u, pob->phydro->coarse_cons_,
-                                          0, NHYDRO-1,
-                                          pob->cis, pob->cie,
-                                          pob->cjs, pob->cje,
-                                          pob->cks, pob->cke);
           int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
           int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
           int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
-          AthenaArray<Real> &src = pob->phydro->coarse_cons_;
-          AthenaArray<Real> &dst = pmb->phydro->u;
-          for (int nv=0; nv<NHYDRO; nv++) {
-            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst(nv, k, j, i) = src(nv, fk, fj, fi);
+
+          // KGF: CellCentered step 7: f2c, same node (just restrict+copy, no pack/send)
+
+          // KGF: absent a zip() feature for range-based for loops, manually advance the
+          // iterator over "SMR/AMR-enrolled" cell-centered quantities on the new
+          // MeshBlock in lock-step with pob
+          auto pmb_cc_it = pmb->pmr->pvars_cc_.begin();
+          // iterate MeshRefinement std::vectors on pob
+          for (auto cc_pair : pmr->pvars_cc_) {
+            AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+            AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+            int nu = var_cc->GetDim4() - 1;
+            pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
+                                            0, nu,
+                                            pob->cis, pob->cie,
+                                            pob->cjs, pob->cje,
+                                            pob->cks, pob->cke);
+            // KGF:
+            // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
+            AthenaArray<Real> &src = (*coarse_cc);
+            AthenaArray<Real> &dst = *(std::get<0>(*pmb_cc_it)); // pmb->phydro->u;
+            for (int nv=0; nv<=nu; nv++) {
+              for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+                for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                  for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+                    dst(nv, k, j, i) = src(nv, fk, fj, fi);
+                }
               }
             }
-          }
-          if (MAGNETIC_FIELDS_ENABLED) {
-            pmr->RestrictFieldX1(pob->pfield->b.x1f, pob->pfield->coarse_b_.x1f,
+            pmb_cc_it++;
+          } // end loop over var_cc
+
+          // KGF: FaceCentered step 7: f2c, same node (just restrict+copy, no pack/send)
+          auto pmb_fc_it = pmb->pmr->pvars_fc_.begin();
+          for (auto fc_pair : pmr->pvars_fc_) {
+            FaceField *var_fc = std::get<0>(fc_pair);
+            FaceField *coarse_fc = std::get<1>(fc_pair);
+            pmr->RestrictFieldX1((*var_fc).x1f, (*coarse_fc).x1f,
                                  pob->cis, pob->cie+1,
                                  pob->cjs, pob->cje,
                                  pob->cks, pob->cke);
-            pmr->RestrictFieldX2(pob->pfield->b.x2f, pob->pfield->coarse_b_.x2f,
+            pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
                                  pob->cis, pob->cie,
                                  pob->cjs, pob->cje+f2,
                                  pob->cks, pob->cke);
-            pmr->RestrictFieldX3(pob->pfield->b.x3f, pob->pfield->coarse_b_.x3f,
+            pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
                                  pob->cis, pob->cie,
                                  pob->cjs, pob->cje,
                                  pob->cks, pob->cke+f3);
-            FaceField &src_b = pob->pfield->coarse_b_;
-            FaceField &dst_b = pmb->pfield->b;
+            FaceField &src_b = (*coarse_fc);
+            FaceField &dst_b = *(std::get<0>(*pmb_fc_it)); // pmb->pfield->b;
             for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for (int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
@@ -2340,14 +2380,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               }
             }
             if (pmb->block_size.nx3 == 1) {
-              int ie = is+block_size.nx1/2-1, je = js+block_size.nx2/2-1;
+              int ie = is + block_size.nx1/2-1, je = js + block_size.nx2/2-1;
               if (pmb->block_size.nx2 == 1) je = js;
               for (int j=js; j<=je; j++) {
                 for (int i=is; i<=ie; i++)
                   dst_b.x3f(pmb->ks+1, j, i) = dst_b.x3f(pmb->ks, j, i);
               }
             }
-          }
+            pmb_fc_it++;
+          } // end loop over fc
         }
       } else if ((loclist[on].level < newloc[n].level) &&
                  (ranklist[on] == Globals::my_rank)) {
@@ -2359,23 +2400,41 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
         int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2;
         int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3;
-        AthenaArray<Real> &src = pob->phydro->u;
-        AthenaArray<Real> &dst = pmb->phydro->coarse_cons_;
-        // fill the coarse buffer
-        for (int nv=0; nv<NHYDRO; nv++) {
-          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for (int j=js, cj=cjs; j<=je; j++, cj++) {
-              for (int i=is, ci=cis; i<=ie; i++, ci++)
-                dst(nv, k, j, i) = src(nv, ck, cj, ci);
+
+        // KGF: CellCentered step 7: c2f, same node (just copy+prolongate, no pack/send)
+        auto pob_cc_it = pob->pmr->pvars_cc_.begin();
+        // iterate MeshRefinement std::vectors on new pmb
+        for (auto cc_pair : pmr->pvars_cc_) {
+          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+          AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+          int nu = var_cc->GetDim4() - 1;
+
+          AthenaArray<Real> &src = *(std::get<0>(*pob_cc_it)); // pob->phydro->u;
+          AthenaArray<Real> &dst = (*coarse_cc); // pmb->phydro->coarse_cons_;
+          // fill the coarse buffer
+          for (int nv=0; nv<=nu; nv++) {
+            for (int k=ks, ck=cks; k<=ke; k++, ck++) {
+              for (int j=js, cj=cjs; j<=je; j++, cj++) {
+                for (int i=is, ci=cis; i<=ie; i++, ci++)
+                  dst(nv, k, j, i) = src(nv, ck, cj, ci);
+              }
             }
           }
-        }
-        pmr->ProlongateCellCenteredValues(
-            dst, pmb->phydro->u, 0, NHYDRO-1,
-            pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
-        if (MAGNETIC_FIELDS_ENABLED) {
-          FaceField &src_b = pob->pfield->b;
-          FaceField &dst_b = pmb->pfield->coarse_b_;
+          pmr->ProlongateCellCenteredValues(
+              dst, (*var_cc), 0, nu,
+              pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
+          pob_cc_it++;
+        } // end loop over var_cc
+
+        // KGF: FaceCentered step 7: c2f, same node (just copy+prolongate, no pack/send)
+        auto pob_fc_it = pob->pmr->pvars_fc_.begin();
+        // iterate MeshRefinement std::vectors on new pmb
+        for (auto fc_pair : pmr->pvars_fc_) {
+          FaceField *var_fc = std::get<0>(fc_pair);
+          FaceField *coarse_fc = std::get<1>(fc_pair);
+
+          FaceField &src_b = *(std::get<0>(*pob_fc_it));
+          FaceField &dst_b = (*coarse_fc);
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie+1; i++, ci++)
@@ -2395,18 +2454,21 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
           pmr->ProlongateSharedFieldX1(
-              dst_b.x1f, pmb->pfield->b.x1f,
+              dst_b.x1f, (*var_fc).x1f,
               pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX2(
-              dst_b.x2f, pmb->pfield->b.x2f,
+              dst_b.x2f, (*var_fc).x2f,
               pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
           pmr->ProlongateSharedFieldX3(
-              dst_b.x3f, pmb->pfield->b.x3f,
+              dst_b.x3f, (*var_fc).x3f,
               pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
           pmr->ProlongateInternalField(
-              pmb->pfield->b, pob->cis, pob->cie,
+              (*var_fc), pob->cis, pob->cie,
               pob->cjs, pob->cje, pob->cks, pob->cke);
-        }
+          pob_fc_it++;
+        } // end loop over var_fc
+
+        // KGF: what are these loops?
       }
     }
   }
@@ -2436,10 +2498,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
         int p = 0;
-        BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->u, 0, NHYDRO-1,
-                                  pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
-        if (MAGNETIC_FIELDS_ENABLED) {
-          FaceField &dst_b = pb->pfield->b;
+        // KGF: CellCentered step 8 (receive and load), branch 1 (same2same: unpack)
+        for (auto cc_pair : pb->pmr->pvars_cc_) {
+          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+          int nu = var_cc->GetDim4() - 1;
+          BufferUtility::UnpackData(recvbuf[rb_idx], (*var_cc), 0, nu,
+                                    pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+        }
+        // KGF: FaceCentered step 8 (receive and load), branch 1 (same2same: unpack)
+        for (auto fc_pair : pb->pmr->pvars_fc_) {
+          FaceField *var_fc = std::get<0>(fc_pair);
+          FaceField &dst_b = (*var_fc);
           BufferUtility::UnpackData(
               recvbuf[rb_idx], dst_b.x1f,
               pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
@@ -2459,7 +2528,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                 dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
             }
           }
-        }
+        } // end loop over var_fc
         // KGF: dangerous? casting from "Real *" to "int *"
         int *dcp = reinterpret_cast<int *>(&(recvbuf[rb_idx][p]));
         pb->pmr->deref_count_ = *dcp;
@@ -2477,10 +2546,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ox3 == 0) ks = pb->ks,              ke = pb->ks + pb->block_size.nx3/2 - f3;
           else        ks = pb->ks + pb->block_size.nx3/2, ke = pb->ke;
           MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-          BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->u, 0, NHYDRO-1,
+
+          // KGF: CellCentered step 8 (receive and load), branch 2 (f2c: unpack)
+          for (auto cc_pair : pb->pmr->pvars_cc_) {
+            AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+            int nu = var_cc->GetDim4() - 1;
+            BufferUtility::UnpackData(recvbuf[rb_idx], (*var_cc), 0, nu,
                                       is, ie, js, je, ks, ke, p);
-          if (MAGNETIC_FIELDS_ENABLED) {
-            FaceField &dst_b = pb->pfield->b;
+          }
+          // KGF: FaceCentered step 8 (receive and load), branch 2 (f2c: unpack)
+          for (auto fc_pair : pb->pmr->pvars_fc_) {
+            FaceField *var_fc = std::get<0>(fc_pair);
+            FaceField &dst_b = (*var_fc);
             BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x1f,
                                         is, ie+1, js, je, ks, ke, p);
             BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x2f,
@@ -2497,7 +2574,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                   dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
               }
             }
-          }
+          } // end loop over var_fc
           rb_idx++;
         }
       } else { // c2f
@@ -2507,29 +2584,39 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int is = pb->cis - 1, ie = pb->cie+1, js = pb->cjs - f2,
             je = pb->cje + f2, ks = pb->cks - f3, ke = pb->cke + f3;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->coarse_cons_,
-                                    0, NHYDRO-1, is, ie, js, je, ks, ke, p);
-        pmr->ProlongateCellCenteredValues(
-            pb->phydro->coarse_cons_, pb->phydro->u, 0, NHYDRO-1,
-            pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
-        if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x1f,
+        // KGF: CellCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+        for (auto cc_pair : pb->pmr->pvars_cc_) {
+          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+          AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+          int nu = var_cc->GetDim4() - 1;
+          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_cc),
+                                    0, nu, is, ie, js, je, ks, ke, p);
+          pmr->ProlongateCellCenteredValues(
+              (*coarse_cc), (*var_cc), 0, nu,
+              pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+        }
+        // KGF: FaceCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+        for (auto fc_pair : pb->pmr->pvars_fc_) {
+          FaceField *var_fc = std::get<0>(fc_pair);
+          FaceField *coarse_fc = std::get<1>(fc_pair);
+
+          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x1f,
                                       is, ie+1, js, je, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x2f,
+          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x2f,
                                       is, ie, js, je+f2, ks, ke, p);
-          BufferUtility::UnpackData(recvbuf[rb_idx], pb->pfield->coarse_b_.x3f,
+          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x3f,
                                       is, ie, js, je, ks, ke+f3, p);
           pmr->ProlongateSharedFieldX1(
-              pb->pfield->coarse_b_.x1f, pb->pfield->b.x1f,
+              (*coarse_fc).x1f, (*var_fc).x1f,
               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX2(
-              pb->pfield->coarse_b_.x2f, pb->pfield->b.x2f,
+              (*coarse_fc).x2f, (*var_fc).x2f,
               pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
           pmr->ProlongateSharedFieldX3(
-              pb->pfield->coarse_b_.x3f, pb->pfield->b.x3f,
+              (*coarse_fc).x3f, (*var_fc).x3f,
               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
           pmr->ProlongateInternalField(
-              pb->pfield->b, pb->cis, pb->cie,
+              (*var_fc), pb->cis, pb->cie,
               pb->cjs, pb->cje, pb->cks, pb->cke);
         }
         rb_idx++;
