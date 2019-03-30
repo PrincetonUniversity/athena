@@ -196,6 +196,7 @@ class Mesh {
   int turb_flag; // turbulence flag
   EosTable *peos_table;
 
+  // ptr to first MeshBlock (node) in linked list of blocks belonging to this MPI rank:
   MeshBlock *pblock;
 
   TurbulenceDriver *ptrbd;

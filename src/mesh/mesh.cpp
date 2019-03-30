@@ -1860,11 +1860,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 #endif
 
   // calculate the list of the newly derefined blocks
-  int ctnd=0;
+  int ctnd = 0;
   if (tnderef >= nlbl) {
     int lk=0, lj=0;
-    if (mesh_size.nx2 > 1) lj=1;
-    if (mesh_size.nx3 > 1) lk=1;
+    if (mesh_size.nx2 > 1) lj = 1;
+    if (mesh_size.nx3 > 1) lk = 1;
     for (int n=0; n<tnderef; n++) {
       if ((lderef[n].lx1 & 1LL) == 0LL &&
           (lderef[n].lx2 & 1LL) == 0LL &&
@@ -1885,10 +1885,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           }
         }
         if (rr == nlbl) {
-          clderef[ctnd].lx1  =(lderef[n].lx1>>1);
-          clderef[ctnd].lx2  =(lderef[n].lx2>>1);
-          clderef[ctnd].lx3  =(lderef[n].lx3>>1);
-          clderef[ctnd].level=lderef[n].level-1;
+          clderef[ctnd].lx1   = (lderef[n].lx1>>1);
+          clderef[ctnd].lx2   = (lderef[n].lx2>>1);
+          clderef[ctnd].lx3   = (lderef[n].lx3>>1);
+          clderef[ctnd].level = lderef[n].level-1;
           ctnd++;
         }
       }
@@ -1904,7 +1904,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Now the lists of the blocks to be refined and derefined are completed
   // Start tree manipulation
   // Step 1. perform refinement
-  int nnew=0, ndel=0, ntot=0;
+  int nnew = 0, ndel = 0, ntot = 0;
   for (int n=0; n<tnref; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
@@ -1914,12 +1914,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 2. perform derefinement
   for (int n=0; n<ctnd; n++) {
-    MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
+    MeshBlockTree *bt = tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
   if (tnderef >= nlbl)
     delete [] clderef;
-  ntot=nbtotal+nnew-ndel;
+  ntot = nbtotal + nnew - ndel;
   if (nnew == 0 && ndel == 0)
     return; // nothing to do
   // Tree manipulation completed
@@ -2028,19 +2028,23 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 4. calculate buffer sizes
   Real **sendbuf, **recvbuf;
+  // KGF:
+  // int num_cc = pmb->pmr->pvars_cc_.size();
+  // int num_fc = pmb->pmr->pvars_fc_.size();
+
   int bssame = bnx1*bnx2*bnx3*NHYDRO;
   int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*NHYDRO;
   int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*NHYDRO;
   if (MAGNETIC_FIELDS_ENABLED) {
-    bssame += (bnx1+1)*bnx2*bnx3+bnx1*(bnx2+f2)*bnx3+bnx1*bnx2*(bnx3+f3);
+    bssame += (bnx1+1)*bnx2*bnx3+bnx1*(bnx2 + f2)*bnx3+bnx1*bnx2*(bnx3 + f3);
     bsf2c += ((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
-             +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
-             +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
+             +(bnx1/2)*(((bnx2+1)/2) + f2)*((bnx3+1)/2)
+             +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2) + f3);
     bsc2f += ((bnx1/2)+1+2)*((bnx2+1)/2+2*f2)*((bnx3+1)/2+2*f3)
-             +(bnx1/2+2)*(((bnx2+1)/2)+f2+2*f2)*((bnx3+1)/2+2*f3)
-             +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2)+f3+2*f3);
+             +(bnx1/2+2)*(((bnx2+1)/2) + f2+2*f2)*((bnx3+1)/2+2*f3)
+             +(bnx1/2+2)*((bnx2+1)/2+2*f2)*(((bnx3+1)/2) + f3+2*f3);
   }
-  bssame++; // for derefinement counter
+  bssame++; // add one more element to array to store the derefinement counter
 
   MPI_Request *req_send, *req_recv;
   // Step 5. allocate and start receiving buffers
@@ -2092,21 +2096,42 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] = new Real[bssame];
+
         // pack
         int p = 0;
         // KGF: CellCentered step 6, branch 1 (same2same: just pack+send)
-        BufferUtility::PackData(pb->phydro->u, sendbuf[sb_idx], 0, NHYDRO-1,
-                                pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+
+        // for (auto cc_it = pb->pmr->pvars_cc_.begin();
+        //      cc_it != pb->pmr->pvars_cc_.end(); ++cc_it) {
+        //  AthenaArray<Real> *var_cc = std::get<0>(*cc_it);
+
+        // KGF: C++11 range-based for loop
+        for (auto cc_pair : pb->pmr->pvars_cc_) {
+        // for (std::tuple<AthenaArray<Real>*, AthenaArray<Real>*> cc_pair
+          //   : pb->pmr->pvars_cc_) {
+
+          // KGF: No need to dereference an Iterator object in range-based for loop:
+          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+          int nu = var_cc->GetDim4() - 1;
+          BufferUtility::PackData(*var_cc, sendbuf[sb_idx], 0, nu,
+                                  pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+        }
 
         // KGF: FaceCentered step 6, branch 1 (same2same: just pack+send)
-        if (MAGNETIC_FIELDS_ENABLED) {
-          BufferUtility::PackData(pb->pfield->b.x1f, sendbuf[sb_idx],
+        // for (auto fc_it = pb->pmr->pvars_fc_.begin();
+        //      fc_it != pb->pmr->pvars_fc_.end(); ++fc_it) {
+
+        // KGF: C++11 range-based for loop
+        for (auto fc_pair : pb->pmr->pvars_fc_) {
+          FaceField *var_fc = std::get<0>(fc_pair);
+          BufferUtility::PackData((*var_fc).x1f, sendbuf[sb_idx],
                                   pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::PackData(pb->pfield->b.x2f, sendbuf[sb_idx],
+          BufferUtility::PackData((*var_fc).x2f, sendbuf[sb_idx],
                                   pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::PackData(pb->pfield->b.x3f, sendbuf[sb_idx],
+          BufferUtility::PackData((*var_fc).x3f, sendbuf[sb_idx],
                                   pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
+
         // KGF: dangerous? casting from "Real *" to "int *"
         int *dcp = reinterpret_cast<int *>(&(sendbuf[sb_idx][p]));
         *dcp = pb->pmr->deref_count_;
@@ -2125,12 +2150,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           sendbuf[sb_idx] = new Real[bsc2f];
           // pack
           int is, ie, js, je, ks, ke;
-          if (ox1 == 0) is = pb->is-1,                   ie = pb->is+pb->block_size.nx1/2;
-          else        is = pb->is+pb->block_size.nx1/2-1,  ie = pb->ie+1;
-          if (ox2 == 0) js = pb->js-f2,                  je = pb->js+pb->block_size.nx2/2;
-          else        js = pb->js+pb->block_size.nx2/2-f2, je = pb->je+f2;
-          if (ox3 == 0) ks = pb->ks-f3,                  ke = pb->ks+pb->block_size.nx3/2;
-          else        ks = pb->ks+pb->block_size.nx3/2-f3, ke = pb->ke+f3;
+          if (ox1 == 0) is = pb->is - 1,               ie = pb->is + pb->block_size.nx1/2;
+          else        is = pb->is + pb->block_size.nx1/2-1,  ie = pb->ie + 1;
+          if (ox2 == 0) js = pb->js - f2,              je = pb->js + pb->block_size.nx2/2;
+          else        js = pb->js + pb->block_size.nx2/2-f2, je = pb->je + f2;
+          if (ox3 == 0) ks = pb->ks - f3,              ke = pb->ks + pb->block_size.nx3/2;
+          else        ks = pb->ks + pb->block_size.nx3/2-f3, ke = pb->ke + f3;
           int p = 0;
 
           // KGF: CellCentered step 6, branch 2 (c2f: just pack+send)
@@ -2304,7 +2329,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
               }
             }
             if (pmb->block_size.nx2 == 1) {
-              int ie = is+block_size.nx1/2-1;
+              int ie = is + block_size.nx1/2 - 1;
               for (int i=is; i<=ie; i++)
                 dst_b.x2f(pmb->ks, pmb->js+1, i) = dst_b.x2f(pmb->ks, pmb->js, i);
             }
@@ -2329,11 +2354,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob = FindMeshBlock(on);
         MeshRefinement *pmr = pmb->pmr;
-        int is = pob->cis-1, ie = pob->cie+1, js = pob->cjs-f2,
-            je = pob->cje+f2, ks = pob->cks-f3, ke = pob->cke+f3;
-        int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is-1;
-        int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js-f2;
-        int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks-f3;
+        int is = pob->cis - 1, ie = pob->cie + 1, js = pob->cjs - f2,
+            je = pob->cje + f2, ks = pob->cks - f3, ke = pob->cke + f3;
+        int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
+        int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2;
+        int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3;
         AthenaArray<Real> &src = pob->phydro->u;
         AthenaArray<Real> &dst = pmb->phydro->coarse_cons_;
         // fill the coarse buffer
@@ -2349,8 +2374,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             dst, pmb->phydro->u, 0, NHYDRO-1,
             pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
         if (MAGNETIC_FIELDS_ENABLED) {
-          FaceField &src_b=pob->pfield->b;
-          FaceField &dst_b=pmb->pfield->coarse_b_;
+          FaceField &src_b = pob->pfield->b;
+          FaceField &dst_b = pmb->pfield->coarse_b_;
           for (int k=ks, ck=cks; k<=ke; k++, ck++) {
             for (int j=js, cj=cjs; j<=je; j++, cj++) {
               for (int i=is, ci=cis; i<=ie+1; i++, ci++)
@@ -2479,8 +2504,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (ranklist[on] == Globals::my_rank) continue;
         MeshRefinement *pmr = pb->pmr;
         int p = 0;
-        int is = pb->cis-1, ie = pb->cie+1, js = pb->cjs-f2,
-            je = pb->cje+f2, ks = pb->cks-f3, ke = pb->cke+f3;
+        int is = pb->cis - 1, ie = pb->cie+1, js = pb->cjs - f2,
+            je = pb->cje + f2, ks = pb->cks - f3, ke = pb->cke + f3;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
         BufferUtility::UnpackData(recvbuf[rb_idx], pb->phydro->coarse_cons_,
                                     0, NHYDRO-1, is, ie, js, je, ks, ke, p);
