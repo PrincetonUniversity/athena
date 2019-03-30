@@ -81,7 +81,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     // Mesh::AdaptiveMeshRefinement() for GR purposes.
 
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToAMR(&coarse_cons_);
+    pmy_block->pmr->AddToAMR(&u, &coarse_cons_);
   }
 
   // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"

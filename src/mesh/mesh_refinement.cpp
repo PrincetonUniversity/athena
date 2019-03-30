@@ -12,6 +12,7 @@
 #include <algorithm>   // max()
 #include <cmath>
 #include <cstring>     // strcmp()
+#include <tuple>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -1016,12 +1017,15 @@ void MeshRefinement::CheckRefinementCondition() {
   return;
 }
 
-void MeshRefinement::AddToAMR(AthenaArray<Real> *pvar_cc) {
-  pvars_cc_.push_back(pvar_cc);
+
+// KGF: could replace overloading with function template if pvars_cc/fc was passed as
+// parameter
+void MeshRefinement::AddToAMR(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc) {
+  pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
   return;
 }
 
-void MeshRefinement::AddToAMR(FaceField *pvar_fc) {
-  pvars_fc_.push_back(pvar_fc);
+void MeshRefinement::AddToAMR(FaceField *pvar_fc, FaceField *pcoarse_fc) {
+  pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return;
 }

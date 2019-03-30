@@ -59,7 +59,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     coarse_s_.NewAthenaArray(NSCALARS, ncc3, ncc2, ncc1);
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToAMR(&coarse_s_);
+    pmy_block->pmr->AddToAMR(&s, &coarse_s_);
   }
 
   // KGF: change to RAII

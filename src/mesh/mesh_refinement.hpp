@@ -11,6 +11,7 @@
 // C headers
 
 // C++ headers
+#include <tuple>
 #include <vector>
 
 // Athena++ headers
@@ -73,8 +74,8 @@ class MeshRefinement {
   void CheckRefinementCondition();
 
   // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
-  void AddToAMR(AthenaArray<Real> *pvar_cc);
-  void AddToAMR(FaceField *pvar_fc);
+  void AddToAMR(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
+  void AddToAMR(FaceField *pvar_fc, FaceField *pcoarse_fc);
 
  private:
   // data
@@ -87,8 +88,9 @@ class MeshRefinement {
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
 
-  std::vector<AthenaArray<Real> *> pvars_cc_;
-  std::vector<FaceField *> pvars_fc_;
+  // KGF:
+  std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
+  std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_

@@ -97,7 +97,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
 
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToAMR(&coarse_b_);
+    pmy_block->pmr->AddToAMR(&b, &coarse_b_);
   }
   // ptr to diffusion object
   pfdif = new FieldDiffusion(pmb, pin);
