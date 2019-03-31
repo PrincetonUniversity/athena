@@ -2158,13 +2158,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
           sendbuf[sb_idx] = new Real[bsc2f];
           // pack
-          int is, ie, js, je, ks, ke;
-          if (ox1 == 0) is = pb->is - 1,               ie = pb->is + pb->block_size.nx1/2;
-          else        is = pb->is + pb->block_size.nx1/2-1,  ie = pb->ie + 1;
-          if (ox2 == 0) js = pb->js - f2,              je = pb->js + pb->block_size.nx2/2;
-          else        js = pb->js + pb->block_size.nx2/2-f2, je = pb->je + f2;
-          if (ox3 == 0) ks = pb->ks - f3,              ke = pb->ks + pb->block_size.nx3/2;
-          else        ks = pb->ks + pb->block_size.nx3/2-f3, ke = pb->ke + f3;
+          int il, iu, jl, ju, kl, ku;
+          if (ox1 == 0) il = pb->is - 1,               iu = pb->is + pb->block_size.nx1/2;
+          else        il = pb->is + pb->block_size.nx1/2-1,  iu = pb->ie + 1;
+          if (ox2 == 0) jl = pb->js - f2,              ju = pb->js + pb->block_size.nx2/2;
+          else        jl = pb->js + pb->block_size.nx2/2-f2, ju = pb->je + f2;
+          if (ox3 == 0) kl = pb->ks - f3,              ku = pb->ks + pb->block_size.nx3/2;
+          else        kl = pb->ks + pb->block_size.nx3/2-f3, ku = pb->ke + f3;
           int p = 0;
 
           // KGF: CellCentered step 6, branch 2 (c2f: just pack+send)
@@ -2172,18 +2172,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
             int nu = var_cc->GetDim4() - 1;
             BufferUtility::PackData((*var_cc), sendbuf[sb_idx], 0, nu,
-                                    is, ie, js, je, ks, ke, p);
+                                    il, iu, jl, ju, kl, ku, p);
           }
 
           // KGF: FaceCentered step 6, branch 2 (c2f: just pack+send)
           for (auto fc_pair : pb->pmr->pvars_fc_) {
             FaceField *var_fc = std::get<0>(fc_pair);
             BufferUtility::PackData((*var_fc).x1f, sendbuf[sb_idx],
-                                    is, ie+1, js, je, ks, ke, p);
+                                    il, iu+1, jl, ju, kl, ku, p);
             BufferUtility::PackData((*var_fc).x2f, sendbuf[sb_idx],
-                                    is, ie, js, je+f2, ks, ke, p);
+                                    il, iu, jl, ju+f2, kl, ku, p);
             BufferUtility::PackData((*var_fc).x3f, sendbuf[sb_idx],
-                                    is, ie, js, je, ks, ke+f3, p);
+                                    il, iu, jl, ju, kl, ku+f3, p);
           }
           int tag = CreateAMRMPITag(nn+l-nslist[newrank[nn+l]], 0, 0, 0);
           MPI_Isend(sendbuf[sb_idx], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
@@ -2302,9 +2302,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           // on the same node - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
           MeshRefinement *pmr = pob->pmr;
-          int is = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
-          int js = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
-          int ks = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
+          int il = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
+          int jl = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
+          int kl = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
 
           // KGF: CellCentered step 7: f2c, same node (just restrict+copy, no pack/send)
 
@@ -2327,9 +2327,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             AthenaArray<Real> &src = (*coarse_cc);
             AthenaArray<Real> &dst = *(std::get<0>(*pmb_cc_it)); // pmb->phydro->u;
             for (int nv=0; nv<=nu; nv++) {
-              for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-                for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                  for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+              for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+                for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                  for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
                     dst(nv, k, j, i) = src(nv, fk, fj, fi);
                 }
               }
@@ -2356,34 +2356,34 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                                  pob->cks, pob->cke+f3);
             FaceField &src_b = (*coarse_fc);
             FaceField &dst_b = *(std::get<0>(*pmb_fc_it)); // pmb->pfield->b;
-            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for (int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
+            for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for (int i=il, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
                   dst_b.x1f(k, j, i) = src_b.x1f(fk, fj, fi);
               }
             }
-            for (int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for (int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
-                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+            for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for (int j=jl, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
+                for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst_b.x2f(k, j, i) = src_b.x2f(fk, fj, fi);
               }
             }
             if (pmb->block_size.nx2 == 1) {
-              int ie = is + block_size.nx1/2 - 1;
-              for (int i=is; i<=ie; i++)
+              int iu = il + block_size.nx1/2 - 1;
+              for (int i=il; i<=iu; i++)
                 dst_b.x2f(pmb->ks, pmb->js+1, i) = dst_b.x2f(pmb->ks, pmb->js, i);
             }
-            for (int k=ks, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
-              for (int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for (int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
+            for (int k=kl, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
+              for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst_b.x3f(k, j, i) = src_b.x3f(fk, fj, fi);
               }
             }
             if (pmb->block_size.nx3 == 1) {
-              int ie = is + block_size.nx1/2-1, je = js + block_size.nx2/2-1;
-              if (pmb->block_size.nx2 == 1) je = js;
-              for (int j=js; j<=je; j++) {
-                for (int i=is; i<=ie; i++)
+              int iu = il + block_size.nx1/2-1, ju = jl + block_size.nx2/2-1;
+              if (pmb->block_size.nx2 == 1) ju = jl;
+              for (int j=jl; j<=ju; j++) {
+                for (int i=il; i<=iu; i++)
                   dst_b.x3f(pmb->ks+1, j, i) = dst_b.x3f(pmb->ks, j, i);
               }
             }
@@ -2395,8 +2395,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         // coarse to fine on the same node - prolongation
         MeshBlock* pob = FindMeshBlock(on);
         MeshRefinement *pmr = pmb->pmr;
-        int is = pob->cis - 1, ie = pob->cie + 1, js = pob->cjs - f2,
-            je = pob->cje + f2, ks = pob->cks - f3, ke = pob->cke + f3;
+        int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
+            ju = pob->cje + f2, kl = pob->cks - f3, ku = pob->cke + f3;
         int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
         int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2;
         int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3;
@@ -2413,9 +2413,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           AthenaArray<Real> &dst = (*coarse_cc); // pmb->phydro->coarse_cons_;
           // fill the coarse buffer
           for (int nv=0; nv<=nu; nv++) {
-            for (int k=ks, ck=cks; k<=ke; k++, ck++) {
-              for (int j=js, cj=cjs; j<=je; j++, cj++) {
-                for (int i=is, ci=cis; i<=ie; i++, ci++)
+            for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+              for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+                for (int i=il, ci=cis; i<=iu; i++, ci++)
                   dst(nv, k, j, i) = src(nv, ck, cj, ci);
               }
             }
@@ -2435,21 +2435,21 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
           FaceField &src_b = *(std::get<0>(*pob_fc_it));
           FaceField &dst_b = (*coarse_fc);
-          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for (int j=js, cj=cjs; j<=je; j++, cj++) {
-              for (int i=is, ci=cis; i<=ie+1; i++, ci++)
+          for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+            for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+              for (int i=il, ci=cis; i<=iu+1; i++, ci++)
                 dst_b.x1f(k, j, i) = src_b.x1f(ck, cj, ci);
             }
           }
-          for (int k=ks, ck=cks; k<=ke; k++, ck++) {
-            for (int j=js, cj=cjs; j<=je+f2; j++, cj++) {
-              for (int i=is, ci=cis; i<=ie; i++, ci++)
+          for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+            for (int j=jl, cj=cjs; j<=ju+f2; j++, cj++) {
+              for (int i=il, ci=cis; i<=iu; i++, ci++)
                 dst_b.x2f(k, j, i) = src_b.x2f(ck, cj, ci);
             }
           }
-          for (int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
-            for (int j=js, cj=cjs; j<=je; j++, cj++) {
-              for (int i=is, ci=cis; i<=ie; i++, ci++)
+          for (int k=kl, ck=cks; k<=ku+f3; k++, ck++) {
+            for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+              for (int i=il, ci=cis; i<=iu; i++, ci++)
                 dst_b.x3f(k, j, i) = src_b.x3f(ck, cj, ci);
             }
           }
@@ -2538,13 +2538,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = loclist[on+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
-          int p = 0, is, ie, js, je, ks, ke;
-          if (ox1 == 0) is = pb->is,              ie = pb->is + pb->block_size.nx1/2 - 1;
-          else        is = pb->is + pb->block_size.nx1/2, ie = pb->ie;
-          if (ox2 == 0) js = pb->js,              je = pb->js + pb->block_size.nx2/2 - f2;
-          else        js = pb->js + pb->block_size.nx2/2, je = pb->je;
-          if (ox3 == 0) ks = pb->ks,              ke = pb->ks + pb->block_size.nx3/2 - f3;
-          else        ks = pb->ks + pb->block_size.nx3/2, ke = pb->ke;
+          int p = 0, il, iu, jl, ju, kl, ku;
+          if (ox1 == 0) il = pb->is,              iu = pb->is + pb->block_size.nx1/2 - 1;
+          else        il = pb->is + pb->block_size.nx1/2, iu = pb->ie;
+          if (ox2 == 0) jl = pb->js,              ju = pb->js + pb->block_size.nx2/2 - f2;
+          else        jl = pb->js + pb->block_size.nx2/2, ju = pb->je;
+          if (ox3 == 0) kl = pb->ks,              ku = pb->ks + pb->block_size.nx3/2 - f3;
+          else        kl = pb->ks + pb->block_size.nx3/2, ku = pb->ke;
           MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
 
           // KGF: CellCentered step 8 (receive and load), branch 2 (f2c: unpack)
@@ -2552,25 +2552,25 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
             int nu = var_cc->GetDim4() - 1;
             BufferUtility::UnpackData(recvbuf[rb_idx], (*var_cc), 0, nu,
-                                      is, ie, js, je, ks, ke, p);
+                                      il, iu, jl, ju, kl, ku, p);
           }
           // KGF: FaceCentered step 8 (receive and load), branch 2 (f2c: unpack)
           for (auto fc_pair : pb->pmr->pvars_fc_) {
             FaceField *var_fc = std::get<0>(fc_pair);
             FaceField &dst_b = (*var_fc);
             BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x1f,
-                                        is, ie+1, js, je, ks, ke, p);
+                                        il, iu+1, jl, ju, kl, ku, p);
             BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x2f,
-                                        is, ie, js, je+f2, ks, ke, p);
+                                        il, iu, jl, ju+f2, kl, ku, p);
             BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x3f,
-                                        is, ie, js, je, ks, ke+f3, p);
+                                        il, iu, jl, ju, kl, ku+f3, p);
             if (pb->block_size.nx2 == 1) {
-              for (int i=is; i<=ie; i++)
+              for (int i=il; i<=iu; i++)
                 dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
             }
             if (pb->block_size.nx3 == 1) {
-              for (int j=js; j<=je; j++) {
-                for (int i=is; i<=ie; i++)
+              for (int j=jl; j<=ju; j++) {
+                for (int i=il; i<=iu; i++)
                   dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
               }
             }
@@ -2581,8 +2581,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         if (ranklist[on] == Globals::my_rank) continue;
         MeshRefinement *pmr = pb->pmr;
         int p = 0;
-        int is = pb->cis - 1, ie = pb->cie+1, js = pb->cjs - f2,
-            je = pb->cje + f2, ks = pb->cks - f3, ke = pb->cke + f3;
+        int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2,
+            ju = pb->cje + f2, kl = pb->cks - f3, ku = pb->cke + f3;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
         // KGF: CellCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
         for (auto cc_pair : pb->pmr->pvars_cc_) {
@@ -2590,7 +2590,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
           int nu = var_cc->GetDim4() - 1;
           BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_cc),
-                                    0, nu, is, ie, js, je, ks, ke, p);
+                                    0, nu, il, iu, jl, ju, kl, ku, p);
           pmr->ProlongateCellCenteredValues(
               (*coarse_cc), (*var_cc), 0, nu,
               pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
@@ -2601,11 +2601,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           FaceField *coarse_fc = std::get<1>(fc_pair);
 
           BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x1f,
-                                      is, ie+1, js, je, ks, ke, p);
+                                      il, iu+1, jl, ju, kl, ku, p);
           BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x2f,
-                                      is, ie, js, je+f2, ks, ke, p);
+                                      il, iu, jl, ju+f2, kl, ku, p);
           BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x3f,
-                                      is, ie, js, je, ks, ke+f3, p);
+                                      il, iu, jl, ju, kl, ku+f3, p);
           pmr->ProlongateSharedFieldX1(
               (*coarse_fc).x1f, (*var_fc).x1f,
               pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
