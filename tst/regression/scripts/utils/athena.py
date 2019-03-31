@@ -47,13 +47,23 @@ def make(clean_first=True, obj_only=False):
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         if obj_only:
-            make_command = ['make', '-j8', 'objs', exe_dir, obj_dir]
+            # used in pgen_compile.py to save expensive linking time for Intel Compiler:
+            make_command = ['make', '-j8', 'objs']
         else:
-            make_command = ['make', '-j8', exe_dir, obj_dir]
+            if (global_coverage_cmd is not None):
+                # disable parallel compilation for Lcov issues on Jenkins filesystem
+                make_command = ['make']
+            else:
+                make_command = ['make', '-j8']
+        make_command += [exe_dir, obj_dir]
         try:
             stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
+            # KGF: temporarily ignore "--silent" option for devnull redirection
+            # (what about stderr?) stdout, stderr default behavior:
+            # "with the default settings of None, no redirection will occur; the child's
+            # file handles will be inherited from the parent."
             subprocess.check_call(make_command)  # , stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''

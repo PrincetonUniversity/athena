@@ -34,9 +34,9 @@
 // Declarations
 namespace {
 void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz);
+                             Real *px, Real *py, Real *pz);
 void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -340,7 +340,7 @@ namespace {
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz) {
+                             Real *px, Real *py, Real *pz) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
@@ -362,7 +362,7 @@ void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
 //   useful to have if other coordinate systems for Minkowski space are developed
 
 void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;

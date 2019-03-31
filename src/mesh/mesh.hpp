@@ -35,7 +35,7 @@ class MeshBlockTree;
 class BoundaryValues;
 class GravityBoundaryValues;
 class TaskList;
-class TaskState;
+struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
@@ -64,10 +64,10 @@ class MeshBlock {
 
  public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-            enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
+            BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost,
+            RegionSize input_block, BoundaryFlag *input_bcs, Real icost,
             char *mbdata, int igflag);
   ~MeshBlock();
 
@@ -75,9 +75,9 @@ class MeshBlock {
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
-  int is,ie,js,je,ks,ke;
+  int is, ie, js, je, ks, ke;
   int gid, lid;
-  int cis,cie,cjs,cje,cks,cke,cnghost;
+  int cis, cie, cjs, cje, cks, cke, cnghost;
   int gflag;
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
@@ -114,6 +114,10 @@ class MeshBlock {
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+  void WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                   AthenaArray<Real> &u_in2, const Real wght[3]);
+  void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+                   const Real wght[3]);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
@@ -123,7 +127,9 @@ class MeshBlock {
   // data
   Real cost;
   Real new_block_dt_, new_block_dt_diff_;
-  TaskState tasks;
+  // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
+  // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
+  TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
   // functions
@@ -178,7 +184,7 @@ class Mesh {
 
   // data
   RegionSize mesh_size;
-  enum BoundaryFlag mesh_bcs[6];
+  BoundaryFlag mesh_bcs[6];
   Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
@@ -200,7 +206,7 @@ class Mesh {
   // functions
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
-                                 enum BoundaryFlag *block_bcs);
+                                 BoundaryFlag *block_bcs);
   void NewTimeStep();
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
@@ -263,15 +269,19 @@ class Mesh {
   void InitUserMeshData(ParameterInput *pin);
 
   // often used (not defined) in prob file in ../pgen/
-  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc my_func);
+  void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
+  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
+  void EnrollUserBoundaryFunction(int face, BValFunc my_func);
+  void EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc);
+
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
-  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc my_mg);
+  void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);
   void EnrollUserExplicitSourceFunction(SrcTermFunc my_func);
   void EnrollUserTimeStepFunction(TimeStepFunc my_func);
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name);
   void EnrollUserMetric(MetricFunc my_func);
-  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc my_bc);
   void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
   void EnrollConductionCoefficient(ConductionCoeffFunc my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);

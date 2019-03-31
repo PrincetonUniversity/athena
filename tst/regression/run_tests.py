@@ -106,7 +106,9 @@ def main(**kwargs):
                 try:
                     module.prepare(**kwargs)
                 except Exception:
-                    os.listdir('obj')  # temporary debugging diagnostic for Jenkins+Gcov
+                    # KGF: temporary debugging diagnostic for Jenkins+Gcov issues
+                    # (will pollute output if prepare() fails to compile an obj/ dir)
+                    print(os.listdir('obj'))
                     traceback.print_exc()
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')

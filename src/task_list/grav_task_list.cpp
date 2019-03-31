@@ -30,8 +30,7 @@
 //----------------------------------------------------------------------------------------
 //  GravitySolverTaskList constructor
 
-GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm)
-    : TaskList(pm) {
+GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
@@ -56,22 +55,22 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
   switch (id) {
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&GravitySolverTaskList::ClearGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&GravitySolverTaskList::SendGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&GravitySolverTaskList::ReceiveGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
-          static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&GravitySolverTaskList::PhysicalBoundary);
       break;
     default:
@@ -98,24 +97,24 @@ void GravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
 
-enum TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
+TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
   pmb->pgbval->ClearBoundaryGravity();
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
+TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
-enum TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int stage) {
+TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
-enum TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
+TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   pmb->pgbval->ApplyPhysicalBoundaries();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }

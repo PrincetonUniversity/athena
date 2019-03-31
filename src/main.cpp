@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 #endif
     pinput = new ParameterInput;
     if (res_flag==1) {
-      restartfile.Open(restart_filename, IO_WRAPPER_READ_MODE);
+      restartfile.Open(restart_filename, IOWrapper::FileMode::read);
       pinput->LoadFromFile(restartfile);
       // If both -r and -i are specified, make sure next_time gets corrected.
       // This needs to be corrected on the restart file because we need the old dt.
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     }
     if (iarg_flag==1) {
       // if both -r and -i are specified, override the parameters using the input file
-      infile.Open(input_filename, IO_WRAPPER_READ_MODE);
+      infile.Open(input_filename, IOWrapper::FileMode::read);
       pinput->LoadFromFile(infile);
       infile.Close();
     }
@@ -401,8 +401,8 @@ int main(int argc, char *argv[]) {
   // For performance, there is no error handler protecting this step (except outputs)
 
 
-  if (Globals::my_rank==0) {
-    std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
+  if (Globals::my_rank == 0) {
+    std::cout << "\nSetup complete, entering main loop...\n" << std::endl;
   }
 
   clock_t tstart = clock();
@@ -412,7 +412,7 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-    if (Globals::my_rank==0) {
+    if (Globals::my_rank == 0) {
       if (pmesh->ncycle_out != 0) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
           std::cout << "cycle=" << pmesh->ncycle<< std::scientific
@@ -543,9 +543,9 @@ int main(int argc, char *argv[]) {
 #endif
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
-                      1.0)/static_cast<double> (CLOCKS_PER_SEC);
-    std::uint64_t zonecycles = mbcnt*
-      static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
+                       1.0)/static_cast<double> (CLOCKS_PER_SEC);
+    std::uint64_t zonecycles =
+        mbcnt*static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
     double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
     std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;

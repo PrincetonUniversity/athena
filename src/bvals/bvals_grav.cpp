@@ -42,14 +42,14 @@ class FFTDriver;
 
 //----------------------------------------------------------------------------------------
 //! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb,
-//                                                   enum BoundaryFlag *input_bcs)
+//                                                   BoundaryFlag *input_bcs)
 //  \brief Constructor of the GravityBoundaryValues class
 
-GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
   for (int i=0; i<6; i++) {
-    if (block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
+    if (block_bcs[i] == BoundaryFlag::periodic || block_bcs[i]==BoundaryFlag::block)
       GravityBoundaryFunction_[i]=nullptr;
     // else
   }
@@ -77,8 +77,8 @@ void GravityBoundaryValues::InitBoundaryData(GravityBoundaryData &bd) {
   for (int n=0; n<bd.nbmax; n++) {
     int size;
     // Clear flags and requests
-    bd.flag[n]=BNDRY_WAITING;
-    bd.sflag[n]=BNDRY_WAITING;
+    bd.flag[n]=BoundaryStatus::waiting;
+    bd.sflag[n]=BoundaryStatus::waiting;
     bd.send[n]=nullptr;
     bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
@@ -125,46 +125,45 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void) {
       bks=pmb->ks, bke=pmb->ke;
   Real time=pmy_mesh_->time;
   Real dt=pmy_mesh_->dt;
-  if (GravityBoundaryFunction_[INNER_X2]==nullptr
+  if (GravityBoundaryFunction_[BoundaryFace::inner_x2]==nullptr
       && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if (GravityBoundaryFunction_[OUTER_X2]==nullptr
+  if (GravityBoundaryFunction_[BoundaryFace::outer_x2]==nullptr
       && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if (GravityBoundaryFunction_[INNER_X3]==nullptr
+  if (GravityBoundaryFunction_[BoundaryFace::inner_x3]==nullptr
       && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if (GravityBoundaryFunction_[OUTER_X3]==nullptr
+  if (GravityBoundaryFunction_[BoundaryFace::outer_x3]==nullptr
       && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   // Apply boundary function on inner-x1
-  if (GravityBoundaryFunction_[INNER_X1] != nullptr)
-    GravityBoundaryFunction_[INNER_X1](pmb, pco, dst, time, dt,
-                                       pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if (GravityBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
+    GravityBoundaryFunction_[BoundaryFace::inner_x1](
+        pmb, pco, dst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke);
   // Apply boundary function on outer-x1
-  if (GravityBoundaryFunction_[OUTER_X1] != nullptr)
-    GravityBoundaryFunction_[OUTER_X1](pmb, pco, dst, time, dt,
-                                       pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if (GravityBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
+    GravityBoundaryFunction_[BoundaryFace::outer_x1](
+        pmb, pco, dst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke);
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
     // Apply boundary function on inner-x2
-    if (GravityBoundaryFunction_[INNER_X2] != nullptr)
-      GravityBoundaryFunction_[INNER_X2](pmb, pco, dst, time, dt,
-                                         bis, bie, pmb->js, pmb->je, bks, bke);
+    if (GravityBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
+      GravityBoundaryFunction_[BoundaryFace::inner_x2](
+          pmb, pco, dst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke);
     // Apply boundary function on outer-x2
-    if (GravityBoundaryFunction_[OUTER_X2] != nullptr)
-      GravityBoundaryFunction_[OUTER_X2](pmb, pco, dst, time, dt,
-                                         bis, bie, pmb->js, pmb->je, bks, bke);
+    if (GravityBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
+      GravityBoundaryFunction_[BoundaryFace::outer_x2](
+          pmb, pco, dst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke);
   }
 
   if (pmb->block_size.nx3>1) { // 3D
     // Apply boundary function on inner-x3
-    if (GravityBoundaryFunction_[INNER_X3] != nullptr)
-      GravityBoundaryFunction_[INNER_X3](pmb, pco, dst, time, dt,
-                                         bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if (GravityBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
+      GravityBoundaryFunction_[BoundaryFace::inner_x3](
+          pmb, pco, dst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke);
     // Apply boundary function on outer-x3
-    if (GravityBoundaryFunction_[OUTER_X3] != nullptr)
-      GravityBoundaryFunction_[OUTER_X3](pmb, pco, dst, time, dt,
-                                         bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if (GravityBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
+      GravityBoundaryFunction_[BoundaryFace::outer_x3](
+          pmb, pco, dst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
-
   return;
 }
 
@@ -183,7 +182,7 @@ void GravityBoundaryValues::StartReceivingGravity(void) {
       int size=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
                *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
                *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
-      int tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
+      int tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::gravity, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL,
                 nb.rank, tag, MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
     }
@@ -202,8 +201,8 @@ void GravityBoundaryValues::ClearBoundaryGravity(void) {
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    pbd->flag[nb.bufid] = BNDRY_WAITING;
-    pbd->sflag[nb.bufid] = BNDRY_WAITING;
+    pbd->flag[nb.bufid] = BoundaryStatus::waiting;
+    pbd->sflag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank)
       MPI_Wait(&(pbd->req_send[nb.bufid]), MPI_STATUS_IGNORE); // Wait for Isend
@@ -247,13 +246,13 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if (pbd->sflag[nb.bufid]==BoundaryStatus::completed) continue;
     int ssize=0;
 
     if (nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       ptarget=&(pbl->pgbval->bd_gravity_);
-      if (ptarget->flag[nb.targetid] != BNDRY_WAITING) {
+      if (ptarget->flag[nb.targetid] != BoundaryStatus::waiting) {
         bflag=false;
         continue;
       }
@@ -263,16 +262,16 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src) {
 
     if (nb.rank == Globals::my_rank) { // on the same process
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
-      ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
+      ptarget->flag[nb.targetid]=BoundaryStatus::arrived;
     }
 #ifdef MPI_PARALLEL
     else { // NOLINT
-      int tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
+      int tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::gravity, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
     }
 #endif
-    pbd->sflag[nb.bufid] = BNDRY_COMPLETED;
+    pbd->sflag[nb.bufid] = BoundaryStatus::completed;
   }
 
   return bflag;
@@ -317,8 +316,8 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
-    if (pbd->flag[nb.bufid]==BNDRY_WAITING) {
+    if (pbd->flag[nb.bufid]==BoundaryStatus::completed) continue;
+    if (pbd->flag[nb.bufid]==BoundaryStatus::waiting) {
       if (nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -332,7 +331,7 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
           flag=false;
           continue;
         }
-        pbd->flag[nb.bufid] = BNDRY_ARRIVED;
+        pbd->flag[nb.bufid] = BoundaryStatus::arrived;
       }
 #endif
     }
@@ -340,7 +339,7 @@ bool GravityBoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst
       SetGravityBoundarySameLevel(dst, pbd->recv[nb.bufid], nb);
     //    else
     // error message
-    pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
+    pbd->flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
   return flag;
 }

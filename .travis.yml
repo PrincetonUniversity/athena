@@ -6,6 +6,7 @@ branches:
   - master
   - dust
   - mhd4_3D
+  - bvals_pscalars
 # Default build matrix is 4x Ubuntu builds (inherit the default stage name "test"):
 os:
   - linux
@@ -59,6 +60,9 @@ matrix:
       osx_image: xcode10.1
       compiler: clang++
       addons:
+        homebrew:
+          packages:
+            - python3
       env:
         - MPI_CHOICE=mpich
       # Override Linux cache mapping
@@ -82,6 +86,9 @@ matrix:
       osx_image: xcode10.1
       compiler: clang++
       addons:
+        homebrew:
+          packages:
+            - python3
       env:
         - MPI_CHOICE=openmpi
         - TMPDIR=/tmp
@@ -157,7 +164,7 @@ install:
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
+  # - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - python3 -m pip install --upgrade --user pip
   - pip3 install --user numpy || true  # --user is necessary, since no virtualenv, sudo
   - pip3 install --user flake8 || true

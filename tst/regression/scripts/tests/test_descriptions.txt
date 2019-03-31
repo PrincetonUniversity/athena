@@ -163,7 +163,25 @@ hydro_sod_shock
     Regression test based on Newtonian hydro Sod shock tube problem
     Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
     against the analytic solution (which are computed by the executable automatically and
-    stored in the temporary file shock_errors.dat)
+    stored in the temporary file shock_errors.dat). Overall test.
+
+hydro_sod_shock_hlle
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). HLLE variant.
+
+hydro_sod_shock_hllc
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). HLLC variant.
+
+hydro_sod_shock_roe
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). Roe variant.
 
 hydro4_hydro_linwave_2d
     Regression test based on Newtonian hydro linear wave convergence problem
@@ -187,13 +205,37 @@ mhd_mhd_linwave
     Regression test based on Newtonian MHD linear wave convergence problem
     Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
     are computed by the executable automatically and stored in the temporary file
-    linearwave_errors.dat)
+    linearwave_errors.dat). Overall test.
+
+mhd_mhd_linwave_hlld
+    Regression test based on Newtonian MHD linear wave convergence problem
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). HLLD variant.
+
+mhd_mhd_linwave_roe
+    Regression test based on Newtonian MHD linear wave convergence problem
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Roe variant.
 
 mhd_rj2a_shock
     Regression test based on Newtonian MHD RJ2a shock tube problem
     Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
     checks errors against the analytic solution (which are computed by the executable
-    automatically and stored in the temporary file shock_errors.dat)
+    automatically and stored in the temporary file shock_errors.dat). Overall test.
+
+mhd_rj2a_shock_hlld
+    Regression test based on Newtonian MHD RJ2a shock tube problem
+    Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
+    checks errors against the analytic solution (which are computed by the executable
+    automatically and stored in the temporary file shock_errors.dat). HLLD variant.
+
+mhd_rj2a_shock_roe
+    Regression test based on Newtonian MHD RJ2a shock tube problem
+    Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
+    checks errors against the analytic solution (which are computed by the executable
+    automatically and stored in the temporary file shock_errors.dat). Roe variant.
 
 mpi_mpi_linwave
     Regression test based on Newtonian MHD linear wave convergence problem with MPI

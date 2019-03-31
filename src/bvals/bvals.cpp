@@ -44,7 +44,7 @@
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
-BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
+BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_=pmb;
@@ -54,109 +54,117 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // Set BC functions for each of the 6 boundaries in turn ------------------------------
   // Inner x1
   nface_=2; nedge_=0;
-  switch(block_bcs[INNER_X1]) {
-    case REFLECTING_BNDRY:
-      BoundaryFunction_[INNER_X1] = ReflectInnerX1;
+  switch(block_bcs[BoundaryFace::inner_x1]) {
+    case BoundaryFlag::reflect:
+      BoundaryFunction_[BoundaryFace::inner_x1] = ReflectInnerX1;
       break;
-    case OUTFLOW_BNDRY:
-      BoundaryFunction_[INNER_X1] = OutflowInnerX1;
+    case BoundaryFlag::outflow:
+      BoundaryFunction_[BoundaryFace::inner_x1] = OutflowInnerX1;
       break;
-    case BLOCK_BNDRY: // block boundary
-    case PERIODIC_BNDRY: // periodic boundary
-      BoundaryFunction_[INNER_X1] = nullptr;
+    case BoundaryFlag::block: // block boundary
+    case BoundaryFlag::periodic: // periodic boundary
+      BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
       break;
-    case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if (!SHEARING_BOX) block_bcs[INNER_X1]=PERIODIC_BNDRY;
-      BoundaryFunction_[INNER_X1] = nullptr;
+    case BoundaryFlag::shear_periodic: // shearing periodic boundary
+      if (!SHEARING_BOX) block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::periodic;
+      BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
       break;
-    case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[INNER_X1] = pmy_mesh_->BoundaryFunction_[INNER_X1];
+    case BoundaryFlag::user: // user-enrolled BCs
+      BoundaryFunction_[BoundaryFace::inner_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" << block_bcs[INNER_X1] << " not valid" << std::endl;
+          << "Flag ix1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
       break;
   }
 
   // Outer x1
-  switch(block_bcs[OUTER_X1]) {
-    case REFLECTING_BNDRY:
-      BoundaryFunction_[OUTER_X1] = ReflectOuterX1;
+  switch(block_bcs[BoundaryFace::outer_x1]) {
+    case BoundaryFlag::reflect:
+      BoundaryFunction_[BoundaryFace::outer_x1] = ReflectOuterX1;
       break;
-    case OUTFLOW_BNDRY:
-      BoundaryFunction_[OUTER_X1] = OutflowOuterX1;
+    case BoundaryFlag::outflow:
+      BoundaryFunction_[BoundaryFace::outer_x1] = OutflowOuterX1;
       break;
-    case BLOCK_BNDRY: // block boundary
-    case PERIODIC_BNDRY: // periodic boundary
-      BoundaryFunction_[OUTER_X1] = nullptr;
+    case BoundaryFlag::block: // block boundary
+    case BoundaryFlag::periodic: // periodic boundary
+      BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
       break;
-    case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
-      if (!SHEARING_BOX) block_bcs[OUTER_X1]=PERIODIC_BNDRY;
-      BoundaryFunction_[OUTER_X1] = nullptr;
+    case BoundaryFlag::shear_periodic: // shearing periodic boundary
+      if (!SHEARING_BOX) block_bcs[BoundaryFace::outer_x1]=BoundaryFlag::periodic;
+      BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
       break;
-    case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[OUTER_X1] = pmy_mesh_->BoundaryFunction_[OUTER_X1];
+    case BoundaryFlag::user: // user-enrolled BCs
+      BoundaryFunction_[BoundaryFace::outer_x1] =
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1];
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" << block_bcs[OUTER_X1] << " not valid" << std::endl;
+          << "Flag ox1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x1])
+          << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
     // Inner x2
-    switch(block_bcs[INNER_X2]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[INNER_X2] = ReflectInnerX2;
+    switch(block_bcs[BoundaryFace::inner_x2]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::inner_x2] = ReflectInnerX2;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[INNER_X2] = OutflowInnerX2;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::inner_x2] = OutflowInnerX2;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-      case POLAR_BNDRY: // polar boundary
-        BoundaryFunction_[INNER_X2] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+      case BoundaryFlag::polar: // polar boundary
+        BoundaryFunction_[BoundaryFace::inner_x2] = nullptr;
         break;
-      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
-        BoundaryFunction_[INNER_X2] = PolarWedgeInnerX2;
+      case BoundaryFlag::polar_wedge: //polar boundary with a wedge
+        BoundaryFunction_[BoundaryFace::inner_x2] = PolarWedgeInnerX2;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X2] = pmy_mesh_->BoundaryFunction_[INNER_X2];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::inner_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" << block_bcs[INNER_X2] << " not valid" << std::endl;
+            << "Flag ix2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
     // Outer x2
-    switch(block_bcs[OUTER_X2]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[OUTER_X2] = ReflectOuterX2;
+    switch(block_bcs[BoundaryFace::outer_x2]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::outer_x2] = ReflectOuterX2;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[OUTER_X2] = OutflowOuterX2;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::outer_x2] = OutflowOuterX2;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-      case POLAR_BNDRY: // polar boundary
-        BoundaryFunction_[OUTER_X2] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+      case BoundaryFlag::polar: // polar boundary
+        BoundaryFunction_[BoundaryFace::outer_x2] = nullptr;
         break;
-      case POLAR_BNDRY_WEDGE: // polar boundary with a wedge
-        BoundaryFunction_[OUTER_X2] = PolarWedgeOuterX2;
+      case BoundaryFlag::polar_wedge: // polar boundary with a wedge
+        BoundaryFunction_[BoundaryFace::outer_x2] = PolarWedgeOuterX2;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X2] = pmy_mesh_->BoundaryFunction_[OUTER_X2];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::outer_x2] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" << block_bcs[OUTER_X2] << " not valid" << std::endl;
+            << "Flag ox2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x2])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
@@ -164,65 +172,72 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
     // Inner x3
-    switch(block_bcs[INNER_X3]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[INNER_X3] = ReflectInnerX3;
+    switch(block_bcs[BoundaryFace::inner_x3]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::inner_x3] = ReflectInnerX3;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[INNER_X3] = OutflowInnerX3;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::inner_x3] = OutflowInnerX3;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-        BoundaryFunction_[INNER_X3] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+        BoundaryFunction_[BoundaryFace::inner_x3] = nullptr;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X3] = pmy_mesh_->BoundaryFunction_[INNER_X3];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::inner_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" << block_bcs[INNER_X3] << " not valid" << std::endl;
+            << "Flag ix3_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
 
     // Outer x3
-    switch(block_bcs[OUTER_X3]) {
-      case REFLECTING_BNDRY:
-        BoundaryFunction_[OUTER_X3] = ReflectOuterX3;
+    switch(block_bcs[BoundaryFace::outer_x3]) {
+      case BoundaryFlag::reflect:
+        BoundaryFunction_[BoundaryFace::outer_x3] = ReflectOuterX3;
         break;
-      case OUTFLOW_BNDRY:
-        BoundaryFunction_[OUTER_X3] = OutflowOuterX3;
+      case BoundaryFlag::outflow:
+        BoundaryFunction_[BoundaryFace::outer_x3] = OutflowOuterX3;
         break;
-      case BLOCK_BNDRY: // block boundary
-      case PERIODIC_BNDRY: // periodic boundary
-        BoundaryFunction_[OUTER_X3] = nullptr;
+      case BoundaryFlag::block: // block boundary
+      case BoundaryFlag::periodic: // periodic boundary
+        BoundaryFunction_[BoundaryFace::outer_x3] = nullptr;
         break;
-      case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X3] = pmy_mesh_->BoundaryFunction_[OUTER_X3];
+      case BoundaryFlag::user: // user-enrolled BCs
+        BoundaryFunction_[BoundaryFace::outer_x3] =
+            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3];
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << block_bcs[OUTER_X3] << " not valid" << std::endl;
+            << "Flag ox3_bc=" << static_cast<int>(block_bcs[BoundaryFace::outer_x3])
+            << " not valid" << std::endl;
         ATHENA_ERROR(msg);
     }
   }
   // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY
-      || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE
-      || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     CheckPolarBoundaries();
   }
 
   // Count number of blocks wrapping around pole
-  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
   } else {
     num_north_polar_blocks_ = 0;
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
@@ -230,18 +245,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     num_south_polar_blocks_ = 0;
   }
 
-  InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
+  InitBoundaryData(bd_hydro_, BoundaryQuantity::hydro);
   if (pmy_mesh_->multilevel==true) // SMR or AMR
-    InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
+    InitBoundaryData(bd_flcor_, BoundaryQuantity::flcor);
   if (MAGNETIC_FIELDS_ENABLED) {
-    InitBoundaryData(bd_field_, BNDRY_FIELD);
-    InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
+    InitBoundaryData(bd_field_, BoundaryQuantity::field);
+    InitBoundaryData(bd_emfcor_, BoundaryQuantity::emfcor);
   }
 
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
     emf_north_recv_ = new Real *[num_north_polar_blocks_];
-    emf_north_flag_ = new enum BoundaryStatus[num_north_polar_blocks_];
+    emf_north_flag_ = new BoundaryStatus[num_north_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_north_send_ = new MPI_Request[num_north_polar_blocks_];
     req_emf_north_recv_ = new MPI_Request[num_north_polar_blocks_];
@@ -249,7 +264,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
       emf_north_send_[n] = nullptr;
       emf_north_recv_[n] = nullptr;
-      emf_north_flag_[n] = BNDRY_WAITING;
+      emf_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       req_emf_north_send_[n] = MPI_REQUEST_NULL;
       req_emf_north_recv_[n] = MPI_REQUEST_NULL;
@@ -259,7 +274,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   if (num_south_polar_blocks_ > 0) {
     emf_south_send_ = new Real *[num_south_polar_blocks_];
     emf_south_recv_ = new Real *[num_south_polar_blocks_];
-    emf_south_flag_ = new enum BoundaryStatus[num_south_polar_blocks_];
+    emf_south_flag_ = new BoundaryStatus[num_south_polar_blocks_];
 #ifdef MPI_PARALLEL
     req_emf_south_send_ = new MPI_Request[num_south_polar_blocks_];
     req_emf_south_recv_ = new MPI_Request[num_south_polar_blocks_];
@@ -267,7 +282,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
       emf_south_send_[n] = nullptr;
       emf_south_recv_[n] = nullptr;
-      emf_south_flag_[n] = BNDRY_WAITING;
+      emf_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       req_emf_south_send_[n] = MPI_REQUEST_NULL;
       req_emf_south_recv_[n] = MPI_REQUEST_NULL;
@@ -294,8 +309,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
   // single CPU in the azimuthal direction with the polar boundary
   if (pmb->loc.level == pmy_mesh_->root_level &&
       pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
-       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+       || block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar
+       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+       || block_bcs[BoundaryFace::outer_x2]==BoundaryFlag::polar_wedge))
     exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
   // set parameters for shearing box bc and allocate buffers
@@ -320,9 +337,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       ssize_ = NGHOST*ncells3;
 
       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-        if (block_bcs[INNER_X1] != SHEAR_PERIODIC_BNDRY) {
-          block_bcs[INNER_X1] = SHEAR_PERIODIC_BNDRY;
-          BoundaryFunction_[INNER_X1] = nullptr;
+        if (block_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic) {
+          block_bcs[BoundaryFace::inner_x1] = BoundaryFlag::shear_periodic;
+          BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
         }
         shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
         flx_inner_hydro_.NewAthenaArray(ncells2);
@@ -358,7 +375,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         for (int n=0; n<2; n++) {
           send_innerbuf_hydro_[n] = new Real[size];
           recv_innerbuf_hydro_[n] = new Real[size];
-          shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -366,10 +383,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_innerbuf_field_[n] = new Real[bsize];
             recv_innerbuf_field_[n] = new Real[bsize];
-            shbox_inner_field_flag_[n]=BNDRY_WAITING;
+            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
             send_innerbuf_emf_[n] = new Real[esize];
             recv_innerbuf_emf_[n] = new Real[esize];
-            shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_innersend_field_[n] = MPI_REQUEST_NULL;
             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -386,7 +403,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         for (int n=2; n<4; n++) {
           send_innerbuf_hydro_[n] = new Real[size];
           recv_innerbuf_hydro_[n] = new Real[size];
-          shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -394,10 +411,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_innerbuf_field_[n] = new Real[bsize];
             recv_innerbuf_field_[n] = new Real[bsize];
-            shbox_inner_field_flag_[n]=BNDRY_WAITING;
+            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
             send_innerbuf_emf_[n] = new Real[esize];
             recv_innerbuf_emf_[n] = new Real[esize];
-            shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_innersend_field_[n] = MPI_REQUEST_NULL;
             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -409,9 +426,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
       }
 
       if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
-        if (block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
-          block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
-          BoundaryFunction_[OUTER_X1] = nullptr;
+        if (block_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic) {
+          block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::shear_periodic;
+          BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
         }
         shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
         flx_outer_hydro_.NewAthenaArray(ncells2);
@@ -447,7 +464,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         for (int n=0; n<2; n++) {
           send_outerbuf_hydro_[n] = new Real[size];
           recv_outerbuf_hydro_[n] = new Real[size];
-          shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
+          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -455,10 +472,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_outerbuf_field_[n] = new Real[bsize];
             recv_outerbuf_field_[n] = new Real[bsize];
-            shbox_outer_field_flag_[n]=BNDRY_WAITING;
+            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
             send_outerbuf_emf_[n] = new Real[esize];
             recv_outerbuf_emf_[n] = new Real[esize];
-            shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_outersend_field_[n] = MPI_REQUEST_NULL;
             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -475,7 +492,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
         for (int n=2; n<4; n++) {
           send_outerbuf_hydro_[n] = new Real[size];
           recv_outerbuf_hydro_[n] = new Real[size];
-          shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
+          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -483,10 +500,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_outerbuf_field_[n] = new Real[bsize];
             recv_outerbuf_field_[n] = new Real[bsize];
-            shbox_outer_field_flag_[n]=BNDRY_WAITING;
+            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
             send_outerbuf_emf_[n] = new Real[esize];
             recv_outerbuf_emf_[n] = new Real[esize];
-            shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_outersend_field_[n] = MPI_REQUEST_NULL;
             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -511,9 +528,7 @@ BoundaryValues::~BoundaryValues() {
   if (MAGNETIC_FIELDS_ENABLED) {
     DestroyBoundaryData(bd_field_);
     DestroyBoundaryData(bd_emfcor_);
-  }
 
-  if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         delete[] emf_north_send_[n];
@@ -554,8 +569,10 @@ BoundaryValues::~BoundaryValues() {
     }
   }
   if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
-      && (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
-          block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     exc_.DeleteAthenaArray();
 
   if (SHEARING_BOX) {
@@ -618,9 +635,10 @@ BoundaryValues::~BoundaryValues() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
+//! \fn void BoundaryValues::InitBoundaryData(BoundaryData &bd,BoundaryQuantity type)
 //  \brief Initialize BoundaryData structure
-void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) {
+
+void BoundaryValues::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmy_mesh_->multilevel;
   int f2d=0, f3d=0;
@@ -632,15 +650,17 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
   cng3=cng*f3d;
   int size=0;
   bd.nbmax=maxneighbor_;
-  if (type==BNDRY_FLCOR || type==BNDRY_EMFCOR) {
-    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++) {}
+  if (type==BoundaryQuantity::flcor || type==BoundaryQuantity::emfcor) {
+    for (bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type == NeighborConnect::face;
+         bd.nbmax++) {}
   }
-  if (type==BNDRY_EMFCOR) {
-    for (          ; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++) {}
+  if (type==BoundaryQuantity::emfcor) {
+    for (          ; BoundaryValues::ni[bd.nbmax].type==NeighborConnect::edge;
+                   bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
-    bd.flag[n]=BNDRY_WAITING;
+    bd.flag[n]=BoundaryStatus::waiting;
     bd.send[n]=nullptr;
     bd.recv[n]=nullptr;
 #ifdef MPI_PARALLEL
@@ -651,7 +671,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
     // Allocate buffers
     // calculate the buffer size
     switch(type) {
-      case BNDRY_HYDRO: {
+      case BoundaryQuantity::hydro: {
         size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
@@ -668,7 +688,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         size*=NHYDRO;
       }
         break;
-      case BNDRY_FIELD: {
+      case BoundaryQuantity::field: {
         int size1=((BoundaryValues::ni[n].ox1==0) ? (pmb->block_size.nx1+1):NGHOST)
                   *((BoundaryValues::ni[n].ox2==0) ? (pmb->block_size.nx2):NGHOST)
                   *((BoundaryValues::ni[n].ox3==0) ? (pmb->block_size.nx3):NGHOST);
@@ -680,7 +700,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
                   *((BoundaryValues::ni[n].ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
         size=size1+size2+size3;
         if (multilevel) {
-          if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
+          if (BoundaryValues::ni[n].type!=NeighborConnect::face) {
             if (BoundaryValues::ni[n].ox1!=0) size1=size1/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox2!=0) size2=size2/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -697,7 +717,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
                    *((BoundaryValues::ni[n].ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                    *((BoundaryValues::ni[n].ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d)
                      : NGHOST);
-          if (BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
+          if (BoundaryValues::ni[n].type!=NeighborConnect::face) {
             if (BoundaryValues::ni[n].ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
             if (BoundaryValues::ni[n].ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
@@ -721,7 +741,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
         }
       }
         break;
-      case BNDRY_FLCOR: {
+      case BoundaryQuantity::flcor: {
         if (BoundaryValues::ni[n].ox1!=0)
           size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
         if (BoundaryValues::ni[n].ox2!=0)
@@ -730,8 +750,8 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
       }
         break;
-      case BNDRY_EMFCOR: {
-        if (BoundaryValues::ni[n].type==NEIGHBOR_FACE) {
+      case BoundaryQuantity::emfcor: {
+        if (BoundaryValues::ni[n].type==NeighborConnect::face) {
           if (pmb->block_size.nx3>1) { // 3D
             if (BoundaryValues::ni[n].ox1!=0)
               size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
@@ -750,7 +770,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type) 
           } else { // 1D
             size=2;
           }
-        } else if (BoundaryValues::ni[n].type==NEIGHBOR_EDGE) {
+        } else if (BoundaryValues::ni[n].type==NeighborConnect::edge) {
           if (pmb->block_size.nx3>1) { // 3D
             if (BoundaryValues::ni[n].ox3==0) size=pmb->block_size.nx3;
             if (BoundaryValues::ni[n].ox2==0) size=pmb->block_size.nx2;
@@ -902,19 +922,19 @@ void BoundaryValues::Initialize(void) {
       }
       ssize*=NHYDRO; rsize*=NHYDRO;
       // specify the offsets in the view point of the target block: flip ox? signs
-      tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
+      tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::hydro, nb.targetid);
       if (bd_hydro_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_hydro_.req_send[nb.bufid]);
       MPI_Send_init(bd_hydro_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send[nb.bufid]));
-      tag=CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
+      tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::hydro, nb.bufid);
       if (bd_hydro_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
         MPI_Request_free(&bd_hydro_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
 
       // flux correction
-      if (pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
+      if (pmy_mesh_->multilevel==true && nb.type==NeighborConnect::face) {
         int size;
         if (nb.fid==0 || nb.fid==1)
           size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
@@ -924,13 +944,13 @@ void BoundaryValues::Initialize(void) {
           size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size*=NHYDRO;
         if (nb.level<mylevel) { // send to coarser
-          tag=CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
+          tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::hydflx, nb.targetid);
           if (bd_flcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&(bd_flcor_.req_send[nb.bufid]));
         } else if (nb.level>mylevel) { // receive from finer
-          tag=CreateBvalsMPITag(pmb->lid, TAG_HYDFLX, nb.bufid);
+          tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::hydflx, nb.bufid);
           if (bd_flcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
@@ -951,7 +971,7 @@ void BoundaryValues::Initialize(void) {
                   *((nb.ox3==0) ? (pmb->block_size.nx3+f3d):NGHOST);
         size=size1+size2+size3;
         if (pmy_mesh_->multilevel==true) {
-          if (nb.type!=NEIGHBOR_FACE) {
+          if (nb.type!=NeighborConnect::face) {
             if (nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
             if (nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
             if (nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -966,7 +986,7 @@ void BoundaryValues::Initialize(void) {
           int f2c3=((nb.ox1==0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                    *((nb.ox2==0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                    *((nb.ox3==0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
-          if (nb.type!=NEIGHBOR_FACE) {
+          if (nb.type!=NeighborConnect::face) {
             if (nb.ox1!=0) f2c1=f2c1/NGHOST*(NGHOST+1);
             if (nb.ox2!=0) f2c2=f2c2/NGHOST*(NGHOST+1);
             if (nb.ox3!=0) f2c3=f2c3/NGHOST*(NGHOST+1);
@@ -990,48 +1010,48 @@ void BoundaryValues::Initialize(void) {
         else // finer
           ssize=csize, rsize=fsize;
 
-        tag=CreateBvalsMPITag(nb.lid, TAG_FIELD, nb.targetid);
+        tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::field, nb.targetid);
         if (bd_field_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
           MPI_Request_free(&bd_field_.req_send[nb.bufid]);
         MPI_Send_init(bd_field_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_send[nb.bufid]));
-        tag=CreateBvalsMPITag(pmb->lid, TAG_FIELD, nb.bufid);
+        tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::field, nb.bufid);
         if (bd_field_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
           MPI_Request_free(&bd_field_.req_recv[nb.bufid]);
         MPI_Recv_init(bd_field_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_recv[nb.bufid]));
         // EMF correction
         int f2csize;
-        if (nb.type==NEIGHBOR_FACE) { // face
+        if (nb.type==NeighborConnect::face) { // face
           if (pmb->block_size.nx3 > 1) { // 3D
-            if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+            if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
               size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                    +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
               f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                       +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
-            } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+            } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                    +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
               f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                       +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
-            } else if (nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
+            } else if (nb.fid==BoundaryFace::inner_x3 || nb.fid==BoundaryFace::outer_x3) {
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                    +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
               f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
                       +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
             }
           } else if (pmb->block_size.nx2 > 1) { // 2D
-            if (nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
+            if (nb.fid==BoundaryFace::inner_x1 || nb.fid==BoundaryFace::outer_x1) {
               size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
               f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-            } else if (nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
+            } else if (nb.fid==BoundaryFace::inner_x2 || nb.fid==BoundaryFace::outer_x2) {
               size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
               f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
             }
           } else { // 1D
             size=f2csize=2;
           }
-        } else if (nb.type==NEIGHBOR_EDGE) { // edge
+        } else if (nb.type==NeighborConnect::edge) { // edge
           if (pmb->block_size.nx3 > 1) { // 3D
             if (nb.eid>=0 && nb.eid<4) {
               size=pmb->block_size.nx3;
@@ -1051,14 +1071,14 @@ void BoundaryValues::Initialize(void) {
         }
 
         if (nb.level==mylevel) { // the same level
-          if ((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE)
-                                           && (edge_flag_[nb.eid]==true))) {
-            tag=CreateBvalsMPITag(nb.lid, TAG_FLDFLX, nb.targetid);
+          if ((nb.type==NeighborConnect::face) || ((nb.type==NeighborConnect::edge)
+                                                   && (edge_flag_[nb.eid]==true))) {
+            tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx, nb.targetid);
             if (bd_emfcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
               MPI_Request_free(&bd_emfcor_.req_send[nb.bufid]);
             MPI_Send_init(bd_emfcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
                           nb.rank,tag,MPI_COMM_WORLD,&(bd_emfcor_.req_send[nb.bufid]));
-            tag=CreateBvalsMPITag(pmb->lid, TAG_FLDFLX, nb.bufid);
+            tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx, nb.bufid);
             if (bd_emfcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
               MPI_Request_free(&bd_emfcor_.req_recv[nb.bufid]);
             MPI_Recv_init(bd_emfcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
@@ -1066,14 +1086,14 @@ void BoundaryValues::Initialize(void) {
           }
         }
         if (nb.level>mylevel) { // finer neighbor
-          tag=CreateBvalsMPITag(pmb->lid, TAG_FLDFLX, nb.bufid);
+          tag=CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx, nb.bufid);
           if (bd_emfcor_.req_recv[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_emfcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_emfcor_.recv[nb.bufid],f2csize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&(bd_emfcor_.req_recv[nb.bufid]));
         }
         if (nb.level<mylevel) { // coarser neighbor
-          tag=CreateBvalsMPITag(nb.lid, TAG_FLDFLX, nb.targetid);
+          tag=CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx, nb.targetid);
           if (bd_emfcor_.req_send[nb.bufid]!=MPI_REQUEST_NULL)
             MPI_Request_free(&bd_emfcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_emfcor_.send[nb.bufid],f2csize,MPI_ATHENA_REAL,
@@ -1088,12 +1108,12 @@ void BoundaryValues::Initialize(void) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank) {
-        tag = CreateBvalsMPITag(nb.lid, TAG_FLDFLX_POLE, pmb->loc.lx3);
+        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_pole, pmb->loc.lx3);
         if (req_emf_north_send_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_north_send_[n]);
         MPI_Send_init(emf_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                       nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[n]);
-        tag = CreateBvalsMPITag(pmb->lid, TAG_FLDFLX_POLE, n);
+        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_pole, n);
         if (req_emf_north_recv_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_north_recv_[n]);
         MPI_Recv_init(emf_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -1103,12 +1123,12 @@ void BoundaryValues::Initialize(void) {
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
       const PolarNeighborBlock &nb = polar_neighbor_south[n];
       if (nb.rank != Globals::my_rank) {
-        tag = CreateBvalsMPITag(nb.lid, TAG_FLDFLX_POLE, pmb->loc.lx3);
+        tag = CreateBvalsMPITag(nb.lid, AthenaTagMPI::fldflx_pole, pmb->loc.lx3);
         if (req_emf_south_send_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_south_send_[n]);
         MPI_Send_init(emf_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
                       nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[n]);
-        tag = CreateBvalsMPITag(pmb->lid, TAG_FLDFLX_POLE, n);
+        tag = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::fldflx_pole, n);
         if (req_emf_south_recv_[n]!=MPI_REQUEST_NULL)
           MPI_Request_free(&req_emf_south_recv_[n]);
         MPI_Recv_init(emf_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -1166,7 +1186,7 @@ void BoundaryValues::Initialize(void) {
 
 void BoundaryValues::CheckBoundary(void) {
   for (int i=0; i<nface_; i++) {
-    if (block_bcs[i]==USER_BNDRY) {
+    if (block_bcs[i]==BoundaryFlag::user) {
       if (BoundaryFunction_[i]==nullptr) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
@@ -1221,14 +1241,14 @@ void BoundaryValues::StartReceivingAll(const Real time) {
     NeighborBlock& nb = neighbor[n];
     if (nb.rank!=Globals::my_rank) {
       MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-      if (nb.type==NEIGHBOR_FACE && nb.level>mylevel)
+      if (nb.type==NeighborConnect::face && nb.level>mylevel)
         MPI_Start(&(bd_flcor_.req_recv[nb.bufid]));
       if (MAGNETIC_FIELDS_ENABLED) {
         MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-        if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+        if (nb.type==NeighborConnect::face || nb.type==NeighborConnect::edge) {
           if ((nb.level>mylevel) ||
-              ((nb.level==mylevel) && ((nb.type==NEIGHBOR_FACE)
-                                       || ((nb.type==NEIGHBOR_EDGE)
+              ((nb.level==mylevel) && ((nb.type==NeighborConnect::face)
+                                       || ((nb.type==NeighborConnect::edge)
                                            && (edge_flag_[nb.eid]==true)))))
             MPI_Start(&(bd_emfcor_.req_recv[nb.bufid]));
         }
@@ -1261,18 +1281,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
             (recv_inner_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
-          tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
+          tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_hydro, n);
           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                     recv_inner_rank_[n],tag,MPI_COMM_WORLD,
                     &rq_innerrecv_hydro_[n]);
           if (MAGNETIC_FIELDS_ENABLED) {
             size = recv_innersize_field_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n);
+            tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_field, n);
             MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
                       &rq_innerrecv_field_[n]);
             size = recv_innersize_emf_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n);
+            tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_emf, n);
             MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
                       &rq_innerrecv_emf_[n]);
@@ -1287,18 +1307,18 @@ void BoundaryValues::StartReceivingAll(const Real time) {
         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
             (recv_outer_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
-          tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n+offset);
+          tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_hydro, n+offset);
           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                     recv_outer_rank_[n],tag,MPI_COMM_WORLD,
                     &rq_outerrecv_hydro_[n]);
           if (MAGNETIC_FIELDS_ENABLED) {
             size = recv_outersize_field_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n+offset);
+            tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_field, n+offset);
             MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
                       &rq_outerrecv_field_[n]);
             size = recv_outersize_emf_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n+offset);
+            tag  = CreateBvalsMPITag(pmb->lid, AthenaTagMPI::shbox_emf, n+offset);
             MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
                       &rq_outerrecv_emf_[n]);
@@ -1320,11 +1340,11 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field) {
   // corresponds to primitives sent only in the case of GR with refinement
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_hydro_.flag[nb.bufid] = BoundaryStatus::waiting;
     if (MAGNETIC_FIELDS_ENABLED)
-      bd_field_.flag[nb.bufid] = BNDRY_WAITING;
+      bd_field_.flag[nb.bufid] = BoundaryStatus::waiting;
     if (GENERAL_RELATIVITY && pmy_mesh_->multilevel)
-      bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
+      bd_hydro_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     if (nb.rank!=Globals::my_rank) {
       if (cons_and_field) {  // normal case
@@ -1351,29 +1371,30 @@ void BoundaryValues::ClearBoundaryAll(void) {
   // Clear non-polar boundary communications
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
-    if (nb.type==NEIGHBOR_FACE)
-      bd_flcor_.flag[nb.bufid] = BNDRY_WAITING;
+    bd_hydro_.flag[nb.bufid] = BoundaryStatus::waiting;
+    if (nb.type==NeighborConnect::face)
+      bd_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
     if (MAGNETIC_FIELDS_ENABLED) {
-      bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-      if ((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
-        bd_emfcor_.flag[nb.bufid] = BNDRY_WAITING;
+      bd_field_.flag[nb.bufid] = BoundaryStatus::waiting;
+      if ((nb.type==NeighborConnect::face) || (nb.type==NeighborConnect::edge))
+        bd_emfcor_.flag[nb.bufid] = BoundaryStatus::waiting;
     }
 #ifdef MPI_PARALLEL
     MeshBlock *pmb=pmy_block_;
     if (nb.rank!=Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-      if (nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
+      if (nb.type==NeighborConnect::face && nb.level<pmb->loc.level)
         MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
       if (MAGNETIC_FIELDS_ENABLED) {
         MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
-        if (nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+        if (nb.type==NeighborConnect::face || nb.type==NeighborConnect::edge) {
           if (nb.level < pmb->loc.level)
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
           else if ((nb.level==pmb->loc.level)
-                   && ((nb.type==NEIGHBOR_FACE)
-                       || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
+                   && ((nb.type==NeighborConnect::face)
+                       || ((nb.type==NeighborConnect::edge)
+                           && (edge_flag_[nb.eid]==true))))
             MPI_Wait(&(bd_emfcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE);
         }
       }
@@ -1384,7 +1405,7 @@ void BoundaryValues::ClearBoundaryAll(void) {
   // Clear polar boundary communications
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      emf_north_flag_[n] = BNDRY_WAITING;
+      emf_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       PolarNeighborBlock &nb = polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank)
@@ -1392,7 +1413,7 @@ void BoundaryValues::ClearBoundaryAll(void) {
 #endif
     }
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      emf_south_flag_[n] = BNDRY_WAITING;
+      emf_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
       PolarNeighborBlock &nb = polar_neighbor_south[n];
       if (nb.rank != Globals::my_rank)
@@ -1405,10 +1426,10 @@ void BoundaryValues::ClearBoundaryAll(void) {
     if (shbb_.inner == true) {
       for (int n=0; n<4; n++) {
         if (send_inner_rank_[n] == -1) continue;
-        shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
+        shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
-          shbox_inner_field_flag_[n] = BNDRY_WAITING;
-          shbox_inner_emf_flag_[n] = BNDRY_WAITING;
+          shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
+          shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
         }
 #ifdef MPI_PARALLEL
         if (send_inner_rank_[n]!=Globals::my_rank) {
@@ -1425,9 +1446,9 @@ void BoundaryValues::ClearBoundaryAll(void) {
     if (shbb_.outer == true) {
       for (int n=0; n<4; n++) {
         if (send_outer_rank_[n] == -1) continue;
-        shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
+        shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
-          shbox_outer_field_flag_[n] = BNDRY_WAITING;
+          shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
         }
 #ifdef MPI_PARALLEL
         if (send_outer_rank_[n]!=Globals::my_rank) {
@@ -1460,14 +1481,18 @@ void BoundaryValues::ApplyPhysicalBoundaries(
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
       bks=pmb->ks, bke=pmb->ke;
-  if (BoundaryFunction_[INNER_X2]==nullptr && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if (BoundaryFunction_[OUTER_X2]==nullptr && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if (BoundaryFunction_[INNER_X3]==nullptr && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if (BoundaryFunction_[OUTER_X3]==nullptr && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr
+      && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr
+      && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr
+      && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr
+      && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   // Apply boundary function on inner-x1
-  if (BoundaryFunction_[INNER_X1] != nullptr) {
-    BoundaryFunction_[INNER_X1](pmb, pco, pdst, bfdst, time, dt,
-                                pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
+  if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
+    BoundaryFunction_[BoundaryFace::inner_x1](
+        pmb, pco, pdst, bfdst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                               pmb->is-NGHOST, pmb->is-1,
@@ -1478,9 +1503,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(
   }
 
   // Apply boundary function on outer-x1
-  if (BoundaryFunction_[OUTER_X1] != nullptr) {
-    BoundaryFunction_[OUTER_X1](pmb, pco, pdst, bfdst, time, dt,
-                                pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
+  if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
+    BoundaryFunction_[BoundaryFace::outer_x1](
+        pmb, pco, pdst, bfdst, time, dt, pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                               pmb->ie+1, pmb->ie+NGHOST,
@@ -1492,9 +1517,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(
 
   if (pmb->block_size.nx2>1) { // 2D or 3D
     // Apply boundary function on inner-x2
-    if (BoundaryFunction_[INNER_X2] != nullptr) {
-      BoundaryFunction_[INNER_X2](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+    if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
+      BoundaryFunction_[BoundaryFace::inner_x2](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, pmb->js-NGHOST, pmb->js-1,
@@ -1505,9 +1530,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(
     }
 
     // Apply boundary function on outer-x2
-    if (BoundaryFunction_[OUTER_X2] != nullptr) {
-      BoundaryFunction_[OUTER_X2](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
+    if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
+      BoundaryFunction_[BoundaryFace::outer_x2](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, pmb->js, pmb->je, bks, bke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, pmb->je+1, pmb->je+NGHOST,
@@ -1523,9 +1548,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(
     bje=pmb->je+NGHOST;
 
     // Apply boundary function on inner-x3
-    if (BoundaryFunction_[INNER_X3] != nullptr) {
-      BoundaryFunction_[INNER_X3](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
+    if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
+      BoundaryFunction_[BoundaryFace::inner_x3](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, bjs, bje,
@@ -1536,9 +1561,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(
     }
 
     // Apply boundary function on outer-x3
-    if (BoundaryFunction_[OUTER_X3] != nullptr) {
-      BoundaryFunction_[OUTER_X3](pmb, pco, pdst, bfdst, time, dt,
-                                  bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
+    if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
+      BoundaryFunction_[BoundaryFace::outer_x3](
+          pmb, pco, pdst, bfdst, time, dt, bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                                 bis, bie, bjs, bje,
@@ -1576,7 +1601,7 @@ void BoundaryValues::ProlongateBoundaries(
     int nis, nie, njs, nje, nks, nke;
     nis=std::max(nb.ox1-1,-1);
     nie=std::min(nb.ox1+1,1);
-    if (pmb->block_size.nx2==1) {
+    if (pmb->block_size.nx2 == 1) {
       njs=0;
       nje=0;
     } else {
@@ -1584,7 +1609,7 @@ void BoundaryValues::ProlongateBoundaries(
       nje=std::min(nb.ox2+1,1);
     }
 
-    if (pmb->block_size.nx3==1) {
+    if (pmb->block_size.nx3 == 1) {
       nks=0;
       nke=0;
     } else {
@@ -1597,40 +1622,40 @@ void BoundaryValues::ProlongateBoundaries(
         for (int ni=nis; ni<=nie; ni++) {
           int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
           // skip myself or coarse levels; only the same level must be restricted
-          if (ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
+          if (ntype == 0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
           // this neighbor block is on the same level
           // and needs to be restricted for prolongation
           int ris, rie, rjs, rje, rks, rke;
-          if (ni==0) {
+          if (ni == 0) {
             ris=pmb->cis;
             rie=pmb->cie;
-            if (nb.ox1==1) {
+            if (nb.ox1 == 1) {
               ris=pmb->cie;
-            } else if (nb.ox1==-1) {
+            } else if (nb.ox1 == -1) {
               rie=pmb->cis;
             }
-          } else if (ni== 1) {
+          } else if (ni ==  1) {
             ris=pmb->cie+1, rie=pmb->cie+1;
-          } else { //(ni==-1)
+          } else { //(ni == -1)
             ris=pmb->cis-1, rie=pmb->cis-1;
           }
-          if (nj==0) {
+          if (nj == 0) {
             rjs=pmb->cjs, rje=pmb->cje;
-            if (nb.ox2==1) rjs=pmb->cje;
-            else if (nb.ox2==-1) rje=pmb->cjs;
-          } else if (nj== 1) {
+            if (nb.ox2 == 1) rjs=pmb->cje;
+            else if (nb.ox2 == -1) rje=pmb->cjs;
+          } else if (nj ==  1) {
             rjs=pmb->cje+1, rje=pmb->cje+1;
-          } else { //(nj==-1)
+          } else { //(nj == -1)
             rjs=pmb->cjs-1, rje=pmb->cjs-1;
           }
-          if (nk==0) {
+          if (nk == 0) {
             rks=pmb->cks, rke=pmb->cke;
-            if (nb.ox3==1) rks=pmb->cke;
-            else if (nb.ox3==-1) rke=pmb->cks;
-          } else if (nk== 1) {
+            if (nb.ox3 == 1) rks=pmb->cke;
+            else if (nb.ox3 == -1) rke=pmb->cks;
+          } else if (nk ==  1) {
             rks=pmb->cke+1, rke=pmb->cke+1;
-          } else { //(nk==-1)
+          } else { //(nk == -1)
             rks=pmb->cks-1, rke=pmb->cks-1;
           }
 
@@ -1641,14 +1666,14 @@ void BoundaryValues::ProlongateBoundaries(
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
-            if (rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
-            if (re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+            if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
+            if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
             pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks,
                                  rke);
             if (pmb->block_size.nx2 > 1) {
               rs=rjs, re=rje+1;
-              if (rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
-              if (re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+              if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
+              if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks,
                                    rke);
             } else { // 1D
@@ -1659,8 +1684,8 @@ void BoundaryValues::ProlongateBoundaries(
             }
             if (pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
-              if (rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
-              if (re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+              if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
+              if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs,
                                    re);
             } else { // 1D or 2D
@@ -1679,24 +1704,24 @@ void BoundaryValues::ProlongateBoundaries(
     // calculate the loop limits for the ghost zones
     int cn = pmb->cnghost-1;
     int si, ei, sj, ej, sk, ek, fsi, fei, fsj, fej, fsk, fek;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       si=pmb->cis, ei=pmb->cie;
-      if ((lx1 & 1LL)==0LL) ei+=cn;
+      if ((lx1 & 1LL) == 0LL) ei+=cn;
       else             si-=cn;
     } else if (nb.ox1>0) { si=pmb->cie+1,  ei=pmb->cie+cn;}
     else              si=pmb->cis-cn, ei=pmb->cis-1;
-    if (nb.ox2==0) {
+    if (nb.ox2 == 0) {
       sj=pmb->cjs, ej=pmb->cje;
       if (pmb->block_size.nx2 > 1) {
-        if ((lx2 & 1LL)==0LL) ej+=cn;
+        if ((lx2 & 1LL) == 0LL) ej+=cn;
         else             sj-=cn;
       }
     } else if (nb.ox2>0) { sj=pmb->cje+1,  ej=pmb->cje+cn;}
     else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
-    if (nb.ox3==0) {
+    if (nb.ox3 == 0) {
       sk=pmb->cks, ek=pmb->cke;
       if (pmb->block_size.nx3 > 1) {
-        if ((lx3 & 1LL)==0LL) ek+=cn;
+        if ((lx3 & 1LL) == 0LL) ek+=cn;
         else             sk-=cn;
       }
     } else if (nb.ox3>0) { sk=pmb->cke+1,  ek=pmb->cke+cn;}
@@ -1705,7 +1730,7 @@ void BoundaryValues::ProlongateBoundaries(
     // convert the ghost zone and ghost-ghost zones into primitive variables
     // this includes cell-centered field calculation
     int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
-    if (nb.ox1==0) {
+    if (nb.ox1 == 0) {
       if (nblevel[1][1][0]!=-1) f1m=1;
       if (nblevel[1][1][2]!=-1) f1p=1;
     } else {
@@ -1713,7 +1738,7 @@ void BoundaryValues::ProlongateBoundaries(
       f1p=1;
     }
     if (pmb->block_size.nx2>1) {
-      if (nb.ox2==0) {
+      if (nb.ox2 == 0) {
         if (nblevel[1][0][1]!=-1) f2m=1;
         if (nblevel[1][2][1]!=-1) f2p=1;
       } else {
@@ -1722,7 +1747,7 @@ void BoundaryValues::ProlongateBoundaries(
       }
     }
     if (pmb->block_size.nx3>1) {
-      if (nb.ox3==0) {
+      if (nb.ox3 == 0) {
         if (nblevel[0][1][1]!=-1) f3m=1;
         if (nblevel[2][1][1]!=-1) f3p=1;
       } else {
@@ -1737,40 +1762,40 @@ void BoundaryValues::ProlongateBoundaries(
                                     si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
     // Apply physical boundaries
-    if (nb.ox1==0) {
-      if (BoundaryFunction_[INNER_X1]!=nullptr) {
-        BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
+    if (nb.ox1 == 0) {
+      if (BoundaryFunction_[BoundaryFace::inner_x1]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::inner_x1](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
       }
-      if (BoundaryFunction_[OUTER_X1]!=nullptr) {
-        BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, pmb->cis, pmb->cie,
-                                    sj, ej, sk, ek, 1);
-      }
-    }
-    if (nb.ox2==0 && pmb->block_size.nx2 > 1) {
-      if (BoundaryFunction_[INNER_X2]!=nullptr) {
-        BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
-      }
-      if (BoundaryFunction_[OUTER_X2]!=nullptr) {
-        BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, pmb->cjs, pmb->cje,
-                                    sk, ek, 1);
+      if (BoundaryFunction_[BoundaryFace::outer_x1]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::outer_x1](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
       }
     }
-    if (nb.ox3==0 && pmb->block_size.nx3 > 1) {
-      if (BoundaryFunction_[INNER_X3]!=nullptr) {
-        BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+    if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
+      if (BoundaryFunction_[BoundaryFace::inner_x2]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::inner_x2](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
       }
-      if (BoundaryFunction_[OUTER_X3]!=nullptr) {
-        BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
-                                    pmr->coarse_b_, time, dt, si, ei, sj, ej,
-                                    pmb->cks, pmb->cke, 1);
+      if (BoundaryFunction_[BoundaryFace::outer_x2]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::outer_x2](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
+      }
+    }
+    if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
+      if (BoundaryFunction_[BoundaryFace::inner_x3]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::inner_x3](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, sj, ej, pmb->cks, pmb->cke, 1);
+      }
+      if (BoundaryFunction_[BoundaryFace::outer_x3]!=nullptr) {
+        BoundaryFunction_[BoundaryFace::outer_x3](
+            pmb, pmr->pcoarsec, pmr->coarse_prim_, pmr->coarse_b_,
+            time, dt, si, ei, sj, ej, pmb->cks, pmb->cke, 1);
       }
     }
 

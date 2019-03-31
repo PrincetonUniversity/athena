@@ -69,7 +69,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   x3_0 = 0.5*(mesh_size.x3max + mesh_size.x3min);
 
   // enroll boundary value function pointers
-  EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, JetInnerX1);
   return;
 }
 

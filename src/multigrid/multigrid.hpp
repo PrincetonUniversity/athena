@@ -56,11 +56,11 @@ class Multigrid {
  public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
             int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
-            enum BoundaryFlag *input_bcs, bool root);
+            BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  enum BoundaryType btype, btypef;
+  BoundaryQuantity btype, btypef;
   Multigrid *next, *prev;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
@@ -104,7 +104,7 @@ class Multigrid {
 
  private:
   bool root_flag_;
-  TaskState ts_;
+  TaskStates ts_;
 };
 
 

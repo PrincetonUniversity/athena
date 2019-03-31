@@ -213,6 +213,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //! \fn RoeFlux()
 //  \brief Computes Roe fluxes for the conserved variables, that is
@@ -607,3 +608,4 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     flx[5] += coeff[5]*as_prime*bet3_star;
   }
 }
+} // namespace
