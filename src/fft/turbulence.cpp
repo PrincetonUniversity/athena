@@ -85,15 +85,15 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
   QuickCreatePlan();
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
 
-  fv_ = new AthenaFFTComplex*[3];
-  fv_sh_ = new AthenaFFTComplex*[3];
-  fv_co_ = new AthenaFFTComplex*[3];
-  if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex*[3];
+  fv_ = new std::complex<Real>*[3];
+  fv_sh_ = new std::complex<Real>*[3];
+  fv_co_ = new std::complex<Real>*[3];
+  if (pm->turb_flag > 1) fv_new_ = new std::complex<Real>*[3];
   for (int nv=0; nv<3; nv++) {
-    fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    fv_sh_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    fv_co_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    if (pm->turb_flag > 1) fv_new_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+    fv_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    fv_sh_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    fv_co_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    if (pm->turb_flag > 1) fv_new_[nv] = new std::complex<Real>[pmy_fb->cnt_];
   }
 }
 
@@ -165,7 +165,7 @@ void TurbulenceDriver::Generate() {
   // unless tcorr == 0
   if (!initialized_) {
     for (int nv=0; nv<3; nv++) {
-      AthenaFFTComplex *fv = fv_[nv];
+      std::complex<Real> *fv = fv_[nv];
       PowerSpectrum(fv);
     }
     if (f_shear >= 0) Project(fv_,f_shear);
@@ -217,10 +217,10 @@ void TurbulenceDriver::OUProcess(Real dt) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp)
+//! \fn void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp)
 //  \brief Generate Power spectrum in Fourier space with power-law
 
-void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
+void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
   Real pcoeff;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
@@ -436,7 +436,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 //! \fn void TurbulenceDriver::Project()
 //  \brief calculates shear and compressible components
 
-void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
+void TurbulenceDriver::Project(std::complex<Real> **fv, Real f_shear) {
   FFTBlock *pfb = pmy_fb;
   Project(fv, fv_sh_, fv_co_);
   for (int nv=0; nv<3; nv++) {
@@ -447,8 +447,8 @@ void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
   }
 }
 
-void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh,
-                               AthenaFFTComplex **fv_co) {
+void TurbulenceDriver::Project(std::complex<Real> **fv, std::complex<Real> **fv_sh,
+                               std::complex<Real> **fv_co) {
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
   int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
