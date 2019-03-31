@@ -1786,9 +1786,10 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 
 void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   MeshBlock *pmb;
-  int nlbl = 2, dim = 1;
-  if (mesh_size.nx2 > 1) nlbl = 4, dim = 2;
-  if (mesh_size.nx3 > 1) nlbl = 8, dim = 3;
+  // compute nleaf= number of leaf MeshBlocks per refined block
+  int nleaf = 2, dim = 1;
+  if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
+  if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
@@ -1811,7 +1812,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     tnref  += nref[n];
     tnderef += nderef[n];
   }
-  if (tnref == 0 && tnderef < nlbl) // nothing to do
+  if (tnref == 0 && tnderef < nleaf) // nothing to do
     return;
 
   int rd = 0, dd = 0;
@@ -1834,9 +1835,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   LogicalLocation *lref{}, *lderef{}, *clderef{};
   if (tnref > 0)
     lref = new LogicalLocation[tnref];
-  if (tnderef >= nlbl) {
+  if (tnderef >= nleaf) {
     lderef = new LogicalLocation[tnderef];
-    clderef = new LogicalLocation[tnderef/nlbl];
+    clderef = new LogicalLocation[tnderef/nleaf];
   }
 
   // collect the locations and costs
@@ -1845,7 +1846,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   while (pmb != nullptr) {
     if (pmb->pmr->refine_flag_ ==  1)
       lref[iref++] = pmb->loc;
-    if (pmb->pmr->refine_flag_ == -1 && tnderef>=nlbl)
+    if (pmb->pmr->refine_flag_ == -1 && tnderef >= nleaf)
       lderef[ideref++] = pmb->loc;
     pmb = pmb->next;
   }
@@ -1854,7 +1855,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
   }
-  if (tnderef >= nlbl) {
+  if (tnderef >= nleaf) {
     MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
@@ -1862,15 +1863,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // calculate the list of the newly derefined blocks
   int ctnd = 0;
-  if (tnderef >= nlbl) {
-    int lk=0, lj=0;
+  if (tnderef >= nleaf) {
+    int lk = 0, lj = 0;
     if (mesh_size.nx2 > 1) lj = 1;
     if (mesh_size.nx3 > 1) lk = 1;
     for (int n=0; n<tnderef; n++) {
       if ((lderef[n].lx1 & 1LL) == 0LL &&
           (lderef[n].lx2 & 1LL) == 0LL &&
           (lderef[n].lx3 & 1LL) == 0LL) {
-        int r=n, rr=0;
+        int r = n, rr = 0;
         for (std::int64_t k=0; k<=lk; k++) {
           for (std::int64_t j=0; j<=lj; j++) {
             for (std::int64_t i=0; i<=1; i++) {
@@ -1885,7 +1886,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         }
-        if (rr == nlbl) {
+        if (rr == nleaf) {
           clderef[ctnd].lx1   = (lderef[n].lx1>>1);
           clderef[ctnd].lx2   = (lderef[n].lx2>>1);
           clderef[ctnd].lx3   = (lderef[n].lx3>>1);
@@ -1899,7 +1900,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   if (ctnd > 1)
     std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
 
-  if (tnderef >= nlbl)
+  if (tnderef >= nleaf)
     delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
@@ -1918,7 +1919,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     MeshBlockTree *bt = tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
-  if (tnderef >= nlbl)
+  if (tnderef >= nleaf)
     delete [] clderef;
   ntot = nbtotal + nnew - ndel;
   if (nnew == 0 && ndel == 0)
@@ -1940,10 +1941,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   oldtonew[0] = 0;
   int mb_idx = 1;
   for (int n=1; n<ntot; n++) {
-    if (newtoold[n] == newtoold[n-1]+1) { // normal
+    if (newtoold[n] == newtoold[n-1] + 1) { // normal
       oldtonew[mb_idx++] = n;
-    } else if (newtoold[n] == newtoold[n-1]+nlbl) { // derefined
-      for (int j=0; j<nlbl-1; j++)
+    } else if (newtoold[n] == newtoold[n-1] + nleaf) { // derefined
+      for (int j=0; j<nleaf-1; j++)
         oldtonew[mb_idx++] = n-1;
       oldtonew[mb_idx++] = n;
     }
@@ -1968,9 +1969,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       newcost[n] = costlist[on];
     } else {
       Real acost = 0.0;
-      for (int l=0; l<nlbl; l++)
+      for (int l=0; l<nleaf; l++)
         acost += costlist[on+l];
-      newcost[n] = acost/nlbl;
+      newcost[n] = acost/nleaf;
     }
   }
 #ifdef MPI_PARALLEL
@@ -2005,7 +2006,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   for (int n=nbs; n<=nbe; n++) {
     int on = newtoold[n];
     if (loclist[on].level > newloc[n].level) { // f2c
-      for (int k=0; k<nlbl; k++) {
+      for (int k=0; k<nleaf; k++) {
         if (ranklist[on+k] != Globals::my_rank)
           nrecv++;
       }
@@ -2017,7 +2018,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   for (int n=onbs; n<=onbe; n++) {
     int nn = oldtonew[n];
     if (loclist[n].level < newloc[nn].level) { // c2f
-      for (int k=0; k<nlbl; k++) {
+      for (int k=0; k<nleaf; k++) {
         if (newrank[nn+k] != Globals::my_rank)
           nsend++;
       }
@@ -2068,7 +2069,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       LogicalLocation &oloc = loclist[on];
       LogicalLocation &nloc = newloc[n];
       if (oloc.level > nloc.level) { // f2c
-        for (int l=0; l<nlbl; l++) {
+        for (int l=0; l<nleaf; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = loclist[on+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
@@ -2151,7 +2152,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
         sb_idx++;
       } else if (nloc.level > oloc.level) { // c2f
-        for (int l=0; l<nlbl; l++) {
+        for (int l=0; l<nleaf; l++) {
           if (newrank[nn+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = newloc[nn+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
@@ -2254,7 +2255,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Step 7. construct a new MeshBlock list
   // move the data within the node
   MeshBlock *newlist = nullptr;
-
   RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
@@ -2297,7 +2297,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       }
       // fill the conservative variables
       if ((loclist[on].level > newloc[n].level)) { // fine to coarse
-        for (int ll=0; ll<nlbl; ll++) {
+        for (int ll=0; ll<nleaf; ll++) {
           if (ranklist[on+ll] != Globals::my_rank) continue;
           // on the same node - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
@@ -2534,7 +2534,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         pb->pmr->deref_count_ = *dcp;
         rb_idx++;
       } else if (oloc.level > nloc.level) { // f2c
-        for (int l=0; l<nlbl; l++) {
+        for (int l=0; l<nleaf; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = loclist[on+l];
           int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;

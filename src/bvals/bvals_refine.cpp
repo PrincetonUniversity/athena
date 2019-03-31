@@ -520,9 +520,13 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     fsk = pmb->ks;
     fek = pmb->ke;
   }
+
+
   // prolongate hydro variables using primitive
   pmr->ProlongateCellCenteredValues(ph->coarse_prim_, ph->w, 0, NHYDRO-1,
                                     si, ei, sj, ej, sk, ek);
+
+
   // prolongate magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
     int &mylevel = pmb->loc.level;
@@ -531,7 +535,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     if ((nb.ox1 >= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ] >= mylevel)) il++;
     if ((nb.ox1 <= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2] >= mylevel)) iu--;
     if (pmb->block_size.nx2 > 1) {
-      jl = sj, ju = ej+1;
+      jl = sj, ju = ej + 1;
       if ((nb.ox2 >= 0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1] >= mylevel)) jl++;
       if ((nb.ox2 <= 0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1] >= mylevel)) ju--;
     } else {
@@ -553,12 +557,16 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     pmr->ProlongateSharedFieldX2(pf->coarse_b_.x2f, pf->b.x2f, si, ei, jl, ju, sk, ek);
     // step 3. calculate x3 outer surface fields and slopes
     pmr->ProlongateSharedFieldX3(pf->coarse_b_.x3f, pf->b.x3f, si, ei, sj, ej, kl, ku);
+
     // step 4. calculate the internal finer fields using the Toth & Roe method
     pmr->ProlongateInternalField(pf->b, si, ei, sj, ej, sk, ek);
+
+
     // Field prolongation completed, calculate cell centered fields
     pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
                                             fsi, fei, fsj, fej, fsk, fek);
   }
+
   // calculate conservative variables
   pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
                                   fsi, fei, fsj, fej, fsk, fek);
