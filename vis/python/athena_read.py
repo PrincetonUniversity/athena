@@ -1014,6 +1014,8 @@ def athinput(filename):
 
     # Function for interpreting strings numerically
     def typecast(x):
+        if '_' in x:
+          return x
         try:
             return int(x)
         except ValueError:
