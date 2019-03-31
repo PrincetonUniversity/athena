@@ -38,7 +38,8 @@ class TurbulenceDriver : public FFTDriver{
   void Perturb(Real dt);
   void OUProcess(Real dt);
   void Project(std::complex<Real> **fv, Real f_shear);
-  void Project(std::complex<Real> **fv, std::complex<Real> **fv_sh, std::complex<Real> **fv_co);
+  void Project(std::complex<Real> **fv, std::complex<Real> **fv_sh,
+               std::complex<Real> **fv_co);
   std::int64_t GetKcomp(int idx, int disp, int Nx);
  private:
   std::int64_t rseed;
