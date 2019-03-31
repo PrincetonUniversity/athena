@@ -31,8 +31,6 @@
 #endif
 
 #ifdef FFT
-using fftw_complex = std::complex<Real>;
-
 #ifdef MPI_PARALLEL // parallel FFT
 struct AthenaFFTPlan {
   struct fft_plan_3d *plan3d;
@@ -156,16 +154,16 @@ class FFTBlock {
   std::complex<Real> *in_, *out_;
   AthenaFFTPlan *fplan_, *bplan_;
   AthenaFFTIndex *orig_idx_;
-  AthenaFFTIndex *f_in_,*f_out_,*b_in_,*b_out_;
+  AthenaFFTIndex *f_in_, *f_out_, *b_in_, *b_out_;
   Real norm_factor_;
   int dim_;
 
   LogicalLocation loc_;
   RegionSize msize_, bsize_;
 #ifdef MPI_PARALLEL
-  int decomp_,pdim_;
+  int decomp_, pdim_;
   int permute0_, permute1_, permute2_;
-  bool swap1_,swap2_;
+  bool swap1_, swap2_;
 #endif
 };
 
@@ -177,7 +175,7 @@ class FFTDriver {
   FFTDriver(Mesh *pm, ParameterInput *pin);
   virtual ~FFTDriver();
 
-  int npx1,npx2,npx3,nmb;
+  int npx1, npx2, npx3, nmb;
   FFTBlock *pmy_fb;
 
   void QuickCreatePlan();
@@ -196,7 +194,7 @@ class FFTDriver {
   RegionSize fft_mesh_size_, fft_block_size_;
   LogicalLocation *fft_loclist_;
 #ifdef MPI_PARALLEL
-  int decomp_,pdim_;
+  int decomp_, pdim_;
 #endif
   int dim_;
 #ifdef MPI_PARALLEL
