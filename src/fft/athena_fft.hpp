@@ -104,9 +104,9 @@ class FFTBlock {
            RegionSize msize, RegionSize bsize);
   virtual ~FFTBlock();
 
-  void LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+  void LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
                   LogicalLocation loc, RegionSize bsize);
-  void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
+  void RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
                       LogicalLocation loc, RegionSize bsize);
   virtual void ApplyKernel(int mode);
 

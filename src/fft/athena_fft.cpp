@@ -127,42 +127,43 @@ std::int64_t FFTBlock::GetGlobalIndex(const int i, const int j, const int k) {
 
 std::int64_t FFTBlock::GetIndex(const int i, const int j, const int k,
                                 AthenaFFTIndex *pidx) {
-  int old_idx[3]={i,j,k};
+  int old_idx[3] = {i, j, k};
   int new_idx[3];
-  new_idx[0]=old_idx[pidx->iloc[0]];
-  new_idx[1]=old_idx[pidx->iloc[1]];
-  new_idx[2]=old_idx[pidx->iloc[2]];
+  new_idx[0] = old_idx[pidx->iloc[0]];
+  new_idx[1] = old_idx[pidx->iloc[1]];
+  new_idx[2] = old_idx[pidx->iloc[2]];
 
   return new_idx[0] + pidx->nx[0] * (new_idx[1] + pidx->nx[1] * (new_idx[2]));
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::RetrieveResult(const AthenaArray<Real> &src, int ns)
+//! \fn void FFTBlock::RetrieveResult(const AthenaArray<Real> &src, bool nu,
+//                                    int ngh, LogicalLocation loc, RegionSize bsize)
 //  \brief Fill the result in the active zone
 
-void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
+void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
                               LogicalLocation loc, RegionSize bsize) {
-  const AthenaFFTComplex *src=out_;
+  const std::complex<Real> *src = out_;
   int is, ie, js, je, ks, ke;
   // KGF: possible overflow from std::int64_t loc.lx1 to int is, e.g.
-  is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
-  js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
-  ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
-  ie = is+bsize.nx1-1;
-  je = bsize.nx2>1 ? js+bsize.nx2-1:js;
-  ke = bsize.nx3>1 ? ks+bsize.nx3-1:ks;
-  int jl = bsize.nx2>1 ? ngh:0;
-  int kl = bsize.nx3>1 ? ngh:0;
+  is = static_cast<int>(loc.lx1*bsize.nx1 - loc_.lx1*bsize_.nx1);
+  js = static_cast<int>(loc.lx2*bsize.nx2 - loc_.lx2*bsize_.nx2);
+  ks = static_cast<int>(loc.lx3*bsize.nx3 - loc_.lx3*bsize_.nx3);
+  ie = is + bsize.nx1 - 1;
+  je = bsize.nx2 > 1 ? js + bsize.nx2 - 1:js;
+  ke = bsize.nx3 > 1 ? ks + bsize.nx3 - 1:ks;
+  int jl = bsize.nx2 > 1 ? ngh:0;
+  int kl = bsize.nx3 > 1 ? ngh:0;
 
-  for (int n=0; n<ns; n++) {
+  for (int n=0; n<=nu; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
-          std::int64_t idx=GetIndex(mi,mj,mk,b_out_);
-          if (ns == 1) {
-            dst(k,j,i)=src[idx][0]*norm_factor_;
+          std::int64_t idx = GetIndex(mi, mj, mk, b_out_);
+          if (nu == 0) {
+            dst(k,j,i) = std::real(src[idx])*norm_factor_;
           } else {
-            dst(n,k,j,i)=src[idx][n]*norm_factor_;
+            dst(n,k,j,i) = std::imag(src[idx])*norm_factor_;
           }
         }
       }
@@ -172,33 +173,38 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns)
+//! \fn void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
+//                                LogicalLocation loc, RegionSize bsize)
 //  \brief Fill the source in the active zone
 
-void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
                           LogicalLocation loc, RegionSize bsize) {
-  AthenaFFTComplex *dst=in_;
+  std::complex<Real> *dst = in_;
   int is, ie, js, je, ks, ke;
   // KGF: possible overflow from std::int64_t loc.lx1 to int is, e.g.
-  is = static_cast<int>(loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1);
-  js = static_cast<int>(loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2);
-  ks = static_cast<int>(loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3);
-  ie = is+bsize.nx1-1;
-  je = bsize.nx2>1 ? js+bsize.nx2-1:js;
-  ke = bsize.nx3>1 ? ks+bsize.nx3-1:ks;
-  int jl = bsize.nx2>1 ? ngh:0;
-  int kl = bsize.nx3>1 ? ngh:0;
+  is = static_cast<int>(loc.lx1*bsize.nx1 - loc_.lx1*bsize_.nx1);
+  js = static_cast<int>(loc.lx2*bsize.nx2 - loc_.lx2*bsize_.nx2);
+  ks = static_cast<int>(loc.lx3*bsize.nx3 - loc_.lx3*bsize_.nx3);
+  ie = is + bsize.nx1 - 1;
+  je = bsize.nx2 > 1 ? js + bsize.nx2 - 1:js;
+  ke = bsize.nx3 > 1 ? ks + bsize.nx3 - 1:ks;
+  int jl = bsize.nx2 > 1 ? ngh:0;
+  int kl = bsize.nx3 > 1 ? ngh:0;
 
-  for (int n=0; n<ns; n++) {
+  for (int n=0; n<=nu; n++) {
     for (int k=kl, mk=ks; mk<=ke; k++, mk++) {
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
-          std::int64_t idx=GetIndex(mi,mj,mk,f_in_);
-          if (ns == 1) {
-            dst[idx][0]=src(n,k,j,i);
-            dst[idx][1]=0.0;
+          std::int64_t idx = GetIndex(mi, mj, mk, f_in_);
+          if (nu == 0) {
+            // dst[idx].real(src(n,k,j,i));
+            // dst[idx].imag(0.0);
+            dst[idx] = {src(n,k,j,i), 0.0}; // copy-list initializatio (since C++11)
+            // KGF: cannot use this, because non-member functions std::real(),
+            // etc. returns non-assignable rvalue:
+            // std::imag(dst[idx]) = 0.0;
           } else {
-            dst[idx][n]=src(n,k,j,i);
+            dst[idx].imag(src(n,k,j,i));
           }
         }
       }
