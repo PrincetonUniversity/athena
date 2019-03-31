@@ -197,12 +197,8 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           std::int64_t idx = GetIndex(mi, mj, mk, f_in_);
           if (nu == 0) {
-            // dst[idx].real(src(n,k,j,i));
-            // dst[idx].imag(0.0);
-            dst[idx] = {src(n,k,j,i), 0.0}; // copy-list initializatio (since C++11)
-            // KGF: cannot use this, because non-member functions std::real(),
-            // etc. returns non-assignable rvalue:
-            // std::imag(dst[idx]) = 0.0;
+            // copy-list initializatio (since C++11)
+            dst[idx] = {src(n,k,j,i), 0.0};
           } else {
             dst[idx].imag(src(n,k,j,i));
           }
@@ -221,8 +217,8 @@ void FFTBlock::ApplyKernel(int mode) {
   for (int k=0; k<knx[2]; k++) {
     for (int j=0; j<knx[1]; j++) {
       for (int i=0; i<knx[0]; i++) {
-        std::int64_t idx_in=GetIndex(i,j,k,b_in_);
-        std::int64_t idx_out=GetIndex(i,j,k,f_out_);
+        std::int64_t idx_in = GetIndex(i,j,k,b_in_);
+        std::int64_t idx_out = GetIndex(i,j,k,f_out_);
         in_[idx_in] = out_[idx_out];
       }
     }
@@ -243,8 +239,8 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(std::complex<Real> *data,
   } else {
     nfast = b_in_->Nx[0]; nmid = b_in_->Nx[1]; nslow = b_in_->Nx[2];
   }
-  if (dim_==3) return CreatePlan(nfast, nmid, nslow, data, dir);
-  else if (dim_==2) return CreatePlan(nfast, nmid, data, dir);
+  if (dim_ == 3) return CreatePlan(nfast, nmid, nslow, data, dir);
+  else if (dim_ == 2) return CreatePlan(nfast, nmid, data, dir);
   else  return CreatePlan(nfast, data, dir);
 }
 
@@ -260,9 +256,15 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, std::complex<Real> *data,
   plan->dir = static_cast<int>(dir);
   plan->dim = dim_;
   if (dir == AthenaFFTDirection::forward)
-    plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan->plan = fftw_plan_dft_1d(nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  FFTW_FORWARD, FFTW_ESTIMATE);
   else
-    plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
+    plan->plan = fftw_plan_dft_1d(nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  FFTW_BACKWARD, FFTW_ESTIMATE);
 #endif
   return plan;
 }
@@ -307,9 +309,15 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
   plan->plan = nullptr;
 #else // MPI_PARALLEL
   if (dir == AthenaFFTDirection::forward)
-    plan->plan = fftw_plan_dft_2d(nslow, nfast, data, data, FFTW_FORWARD, FFTW_MEASURE);
+    plan->plan = fftw_plan_dft_2d(nslow, nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  FFTW_FORWARD, FFTW_MEASURE);
   else
-    plan->plan = fftw_plan_dft_2d(nslow, nfast, data, data, FFTW_BACKWARD, FFTW_MEASURE);
+    plan->plan = fftw_plan_dft_2d(nslow, nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  FFTW_BACKWARD, FFTW_MEASURE);
 #endif
 #endif // FFT
 
@@ -340,12 +348,12 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
     }
     plan->dir = FFTW_FORWARD;
     plan->plan3d = fft_3d_create_plan(MPI_COMM_WORLD, nfast, nmid, nslow,
-                                      f_in_->is[0],f_in_->ie[0],
-                                      f_in_->is[1],f_in_->ie[1],
-                                      f_in_->is[2],f_in_->ie[2],
-                                      ois[0],oie[0],
-                                      ois[1],oie[1],
-                                      ois[2],oie[2],
+                                      f_in_->is[0], f_in_->ie[0],
+                                      f_in_->is[1], f_in_->ie[1],
+                                      f_in_->is[2], f_in_->ie[2],
+                                      ois[0], oie[0],
+                                      ois[1], oie[1],
+                                      ois[2], oie[2],
                                       0, permute1_, &nbuf);
   } else {
     for (int l=0; l<dim_; l++) {
@@ -353,23 +361,27 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
       oie[l] = b_out_->ie[(l+(dim_-permute2_)) % dim_];
     }
     plan->dir = FFTW_BACKWARD;
-    plan->plan3d = fft_3d_create_plan(MPI_COMM_WORLD,nfast,nmid,nslow,
-                                      b_in_->is[0],b_in_->ie[0],
-                                      b_in_->is[1],b_in_->ie[1],
-                                      b_in_->is[2],b_in_->ie[2],
-                                      ois[0],oie[0],
-                                      ois[1],oie[1],
-                                      ois[2],oie[2],
+    plan->plan3d = fft_3d_create_plan(MPI_COMM_WORLD, nfast, nmid, nslow,
+                                      b_in_->is[0], b_in_->ie[0],
+                                      b_in_->is[1], b_in_->ie[1],
+                                      b_in_->is[2], b_in_->ie[2],
+                                      ois[0], oie[0],
+                                      ois[1], oie[1],
+                                      ois[2], oie[2],
                                       0, permute2_, &nbuf);
   }
   plan->plan2d = nullptr;
   plan->plan = nullptr;
 #else // MPI_PARALLEL
   if (dir == AthenaFFTDirection::forward) {
-    plan->plan = fftw_plan_dft_3d(nslow, nmid, nfast, data, data, FFTW_FORWARD,
+    plan->plan = fftw_plan_dft_3d(nslow, nmid, nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data), FFTW_FORWARD,
                                   FFTW_MEASURE);
   } else {
-    plan->plan = fftw_plan_dft_3d(nslow, nmid, nfast, data, data, FFTW_BACKWARD,
+    plan->plan = fftw_plan_dft_3d(nslow, nmid, nfast,
+                                  reinterpret_cast<fftw_complex *>(data),
+                                  reinterpret_cast<fftw_complex *>(data), FFTW_BACKWARD,
                                   FFTW_MEASURE);
   }
 #endif
@@ -385,10 +397,15 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 void FFTBlock::Execute(AthenaFFTPlan *plan) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if (plan->dim == 3) fft_3d(in_, out_, plan->dir, plan->plan3d);
-  if (plan->dim == 2) fft_2d(in_, out_, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(reinterpret_cast<fftw_complex *>(in_),
+                             reinterpret_cast<fftw_complex *>(out_),
+                             plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(reinterpret_cast<fftw_complex *>(in_),
+                             reinterpret_cast<fftw_complex *>(out_),
+                             plan->dir, plan->plan2d);
 #else
-  fftw_execute_dft(plan->plan, in_, out_);
+  fftw_execute_dft(plan->plan, reinterpret_cast<fftw_complex *>(in_),
+                   reinterpret_cast<fftw_complex *>(out_));
 #endif
 #endif // FFT
 }
@@ -400,10 +417,15 @@ void FFTBlock::Execute(AthenaFFTPlan *plan) {
 void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *data) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if (plan->dim == 3) fft_3d(data, data, plan->dir, plan->plan3d);
-  if (plan->dim == 2) fft_2d(data, data, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(reinterpret_cast<fftw_complex *>(data),
+                             reinterpret_cast<fftw_complex *>(data),
+                             plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(reinterpret_cast<fftw_complex *>(data),
+                             reinterpret_cast<fftw_complex *>(data),
+                             plan->dir, plan->plan2d);
 #else
-  fftw_execute_dft(plan->plan, data, data);
+  fftw_execute_dft(plan->plan, reinterpret_cast<fftw_complex *>(data),
+                   reinterpret_cast<fftw_complex *>(data));
 #endif
 #endif // FFT
 }
@@ -417,10 +439,15 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
                        std::complex<Real> *out_data) {
 #ifdef FFT
 #ifdef MPI_PARALLEL
-  if (plan->dim == 3) fft_3d(in_data, out_data, plan->dir, plan->plan3d);
-  if (plan->dim == 2) fft_2d(in_data, out_data, plan->dir, plan->plan2d);
+  if (plan->dim == 3) fft_3d(reinterpret_cast<fftw_complex *>(in_data),
+                             reinterpret_cast<fftw_complex *>(out_data),
+                             plan->dir, plan->plan3d);
+  if (plan->dim == 2) fft_2d(reinterpret_cast<fftw_complex *>(in_data),
+                             reinterpret_cast<fftw_complex *>(out_data),
+                             plan->dir, plan->plan2d);
 #else
-  fftw_execute_dft(plan->plan, in_data, out_data);
+  fftw_execute_dft(plan->plan, reinterpret_cast<fftw_complex *>(in_data),
+                   reinterpret_cast<fftw_complex *>(out_data));
 #endif
 #endif
 }
