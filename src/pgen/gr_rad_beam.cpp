@@ -42,6 +42,7 @@ static Real dir_1, dir_2, dir_3;  // relative direction of beam center
 static Real spread;               // full spread of beam in direction
 static Real zs, ze;               // index bounds on zeta
 static Real ps, pe;               // index bounds on psi
+static bool spherical;            // flag indicating coordinate type
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -64,6 +65,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
+
+  // Determine coordinate type
+  if (COORDINATE_SYSTEM == std::string("schwarzschild")) {
+    spherical = true;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in problem generator\n";
+    msg << "unknown coordinate system\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
@@ -103,7 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Calculate beam pattern
   prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
-      ruser_meshblock_data[0], ruser_meshblock_data[1], true);
+      ruser_meshblock_data[0], ruser_meshblock_data[1], spherical);
 
   // Set primitive and conserved values
   for (int l = zs; l <= ze; ++l) {
