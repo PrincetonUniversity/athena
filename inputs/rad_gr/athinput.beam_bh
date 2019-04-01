@@ -3,7 +3,7 @@ problem   = beam of radiation in GR (black hole spacetime)
 configure = -g -r --prob beam --coord schwarzschild -hdf5
 
 <job>
-problem_id = beam  # name of run
+problem_id = beam_bh  # name of run
 
 <time>
 cfl_number = 0.3  # fraction of Courant condition
