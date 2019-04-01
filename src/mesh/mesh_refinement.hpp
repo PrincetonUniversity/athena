@@ -74,8 +74,13 @@ class MeshRefinement {
   void CheckRefinementCondition();
 
   // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
-  void AddToAMR(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
-  void AddToAMR(FaceField *pvar_fc, FaceField *pcoarse_fc);
+  // and/or in BoundaryValues::ProlongateBoundaries() (for SMR and AMR)
+  void AddToRefinement(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
+  void AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc);
+
+  // KGF: for switching first entry in pvars_cc_ to/from:
+  // (w, coarse_prim) vs. (u, coarse_cons_)
+  void SetHydroRefinement(HydroBoundaryQuantity hydro_type);
 
  private:
   // data
@@ -89,6 +94,7 @@ class MeshRefinement {
   AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
 
   // KGF: tuples of references to AMR-enrolled (quantity, coarse_quantity) arrays
+  // KGF: rename to something more descriptive, e.g. "refined_cc_vars"
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
 };

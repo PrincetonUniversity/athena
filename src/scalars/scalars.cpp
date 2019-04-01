@@ -48,8 +48,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
   // allocate prolongation buffers
 
   // KGF: CellCentered size calculation is redundant with code in hydro.cpp--- abstract
-  // into a MeshRefinement member function? Combine with AddToAMR? But "coarse_prim_" must
-  // be created even though it is NOT used in Mesh::AdaptiveMeshRefinement()
+  // into a MeshRefinement member function? Combine with AddToRefinement? But
+  // "coarse_prim_" must always be created even though it is NOT used in
+  // Mesh::AdaptiveMeshRefinement(), since it is needed in ProlongateBoundaries()
   if (pmy_block->pmy_mesh->multilevel == true) {
     // KGF: note, ncc1 != ncells1, but conditionals could be combined at top of fn
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
@@ -59,7 +60,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     coarse_s_.NewAthenaArray(NSCALARS, ncc3, ncc2, ncc1);
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToAMR(&s, &coarse_s_);
+    pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
   // KGF: change to RAII

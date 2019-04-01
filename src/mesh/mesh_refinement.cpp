@@ -399,8 +399,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
         Real dx3p = x3p - x3c;
         const Real& fx3m = pco->x3v(fk);
         const Real& fx3p = pco->x3v(fk+1);
-        Real dx3fm =  x3c-fx3m;
-        Real dx3fp =  fx3p-x3c;
+        Real dx3fm =  x3c - fx3m;
+        Real dx3fp =  fx3p - x3c;
         for (int j = sj; j<=ej; j++) {
           int fj = (j - pmb->cjs)*2 + pmb->js;
           const Real& x2m = pcoarsec->x2v(j-1);
@@ -410,8 +410,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
           Real dx2p = x2p - x2c;
           const Real& fx2m = pco->x2v(fj);
           const Real& fx2p = pco->x2v(fj+1);
-          Real dx2fm = x2c-fx2m;
-          Real dx2fp = fx2p-x2c;
+          Real dx2fm = x2c - fx2m;
+          Real dx2fp = fx2p - x2c;
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
             const Real& x1m = pcoarsec->x1v(i-1);
@@ -465,8 +465,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2v(fj);
         const Real& fx2p = pco->x2v(fj+1);
-        Real dx2fm = x2c-fx2m;
-        Real dx2fp = fx2p-x2c;
+        Real dx2fm = x2c - fx2m;
+        Real dx2fp = fx2p - x2c;
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1v(i-1);
@@ -476,8 +476,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
           Real dx1p = x1p - x1c;
           const Real& fx1m = pco->x1v(fi);
           const Real& fx1p = pco->x1v(fi+1);
-          Real dx1fm = x1c-fx1m;
-          Real dx1fp = fx1p-x1c;
+          Real dx1fm = x1c - fx1m;
+          Real dx1fp = fx1p - x1c;
           Real ccval = coarse(n,k,j,i);
 
           // calculate 2D gradients using the minmod limiter
@@ -511,8 +511,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
         Real dx1p = x1p - x1c;
         const Real& fx1m = pco->x1v(fi);
         const Real& fx1p = pco->x1v(fi+1);
-        Real dx1fm = x1c-fx1m;
-        Real dx1fp = fx1p-x1c;
+        Real dx1fm = x1c - fx1m;
+        Real dx1fp = fx1p - x1c;
         Real ccval = coarse(n,k,j,i);
 
         // calculate 1D gradient using the min-mod limiter
@@ -563,19 +563,19 @@ void MeshRefinement::ProlongateSharedFieldX1(
           int fi = (i - pmb->cis)*2 + pmb->is;
           Real ccval = coarse(k,j,i);
 
-          Real gx2m = (ccval-coarse(k,j-1,i))/dx2m;
+          Real gx2m = (ccval - coarse(k,j-1,i))/dx2m;
           Real gx2p = (coarse(k,j+1,i) - ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                              std::abs(gx2p));
-          Real gx3m = (ccval-coarse(k-1,j,i))/dx3m;
+          Real gx3m = (ccval - coarse(k-1,j,i))/dx3m;
           Real gx3p = (coarse(k+1,j,i) - ccval)/dx3p;
           Real gx3c = 0.5*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
                                                              std::abs(gx3p));
 
-          fine(fk  ,fj  ,fi) = ccval - gx2c*(x2c-fx2m) - gx3c*(x3c-fx3m);
-          fine(fk  ,fj+1,fi) = ccval + gx2c*(fx2p-x2c) - gx3c*(x3c-fx3m);
-          fine(fk+1,fj  ,fi) = ccval - gx2c*(x2c-fx2m) + gx3c*(fx3p-x3c);
-          fine(fk+1,fj+1,fi) = ccval + gx2c*(fx2p-x2c) + gx3c*(fx3p-x3c);
+          fine(fk  ,fj  ,fi) = ccval - gx2c*(x2c - fx2m) - gx3c*(x3c - fx3m);
+          fine(fk  ,fj+1,fi) = ccval + gx2c*(fx2p - x2c) - gx3c*(x3c - fx3m);
+          fine(fk+1,fj  ,fi) = ccval - gx2c*(x2c - fx2m) + gx3c*(fx3p - x3c);
+          fine(fk+1,fj+1,fi) = ccval + gx2c*(fx2p - x2c) + gx3c*(fx3p - x3c);
         }
       }
     }
@@ -594,13 +594,13 @@ void MeshRefinement::ProlongateSharedFieldX1(
         int fi = (i - pmb->cis)*2 + pmb->is;
         Real ccval = coarse(k,j,i);
 
-        Real gx2m = (ccval-coarse(k,j-1,i))/dx2m;
+        Real gx2m = (ccval - coarse(k,j-1,i))/dx2m;
         Real gx2p = (coarse(k,j+1,i) - ccval)/dx2p;
         Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                            std::abs(gx2p));
 
-        fine(fk,fj  ,fi) = ccval - gx2c*(x2c-fx2m);
-        fine(fk,fj+1,fi) = ccval + gx2c*(fx2p-x2c);
+        fine(fk,fj  ,fi) = ccval - gx2c*(x2c - fx2m);
+        fine(fk,fj+1,fi) = ccval + gx2c*(fx2p - x2c);
       }
     }
   } else { // 1D
@@ -643,21 +643,21 @@ void MeshRefinement::ProlongateSharedFieldX2(
           Real dx1p = x1p - x1c;
           const Real& fx1m = pco->x1s2(fi);
           const Real& fx1p = pco->x1s2(fi+1);
-          Real ccval=coarse(k,j,i);
+          Real ccval = coarse(k,j,i);
 
-          Real gx1m = (ccval-coarse(k,j,i-1))/dx1m;
+          Real gx1m = (ccval - coarse(k,j,i-1))/dx1m;
           Real gx1p = (coarse(k,j,i+1) - ccval)/dx1p;
           Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
                                                              std::abs(gx1p));
-          Real gx3m = (ccval-coarse(k-1,j,i))/dx3m;
+          Real gx3m = (ccval - coarse(k-1,j,i))/dx3m;
           Real gx3p = (coarse(k+1,j,i) - ccval)/dx3p;
           Real gx3c = 0.5*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
                                                              std::abs(gx3p));
 
-          fine(fk  ,fj,fi  ) = ccval - gx1c*(x1c-fx1m) - gx3c*(x3c-fx3m);
-          fine(fk  ,fj,fi+1) = ccval + gx1c*(fx1p-x1c) - gx3c*(x3c-fx3m);
-          fine(fk+1,fj,fi  ) = ccval - gx1c*(x1c-fx1m) + gx3c*(fx3p-x3c);
-          fine(fk+1,fj,fi+1) = ccval + gx1c*(fx1p-x1c) + gx3c*(fx3p-x3c);
+          fine(fk  ,fj,fi  ) = ccval - gx1c*(x1c - fx1m) - gx3c*(x3c - fx3m);
+          fine(fk  ,fj,fi+1) = ccval + gx1c*(fx1p - x1c) - gx3c*(x3c - fx3m);
+          fine(fk+1,fj,fi  ) = ccval - gx1c*(x1c - fx1m) + gx3c*(fx3p - x3c);
+          fine(fk+1,fj,fi+1) = ccval + gx1c*(fx1p - x1c) + gx3c*(fx3p - x3c);
         }
       }
     }
@@ -674,13 +674,13 @@ void MeshRefinement::ProlongateSharedFieldX2(
         const Real& fx1p = pco->x1s2(fi+1);
         Real ccval = coarse(k,j,i);
 
-        Real gx1m = (ccval-coarse(k,j,i-1))/(x1c - x1m);
+        Real gx1m = (ccval - coarse(k,j,i-1))/(x1c - x1m);
         Real gx1p = (coarse(k,j,i+1) - ccval)/(x1p - x1c);
         Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
                                                            std::abs(gx1p));
 
-        fine(fk,fj,fi  ) = ccval - gx1c*(x1c-fx1m);
-        fine(fk,fj,fi+1) = ccval + gx1c*(fx1p-x1c);
+        fine(fk,fj,fi  ) = ccval - gx1c*(x1c - fx1m);
+        fine(fk,fj,fi+1) = ccval + gx1c*(fx1p - x1c);
       }
     }
   } else {
@@ -734,19 +734,19 @@ void MeshRefinement::ProlongateSharedFieldX3(
           const Real& fx1p = pco->x1s3(fi+1);
           Real ccval = coarse(k,j,i);
 
-          Real gx1m = (ccval-coarse(k,j,i-1))/dx1m;
+          Real gx1m = (ccval - coarse(k,j,i-1))/dx1m;
           Real gx1p = (coarse(k,j,i+1) - ccval)/dx1p;
           Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
                                                              std::abs(gx1p));
-          Real gx2m = (ccval-coarse(k,j-1,i))/dx2m;
+          Real gx2m = (ccval - coarse(k,j-1,i))/dx2m;
           Real gx2p = (coarse(k,j+1,i) - ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                              std::abs(gx2p));
 
-          fine(fk,fj  ,fi  ) = ccval - gx1c*(x1c-fx1m) - gx2c*(x2c-fx2m);
-          fine(fk,fj  ,fi+1) = ccval + gx1c*(fx1p-x1c) - gx2c*(x2c-fx2m);
-          fine(fk,fj+1,fi  ) = ccval - gx1c*(x1c-fx1m) + gx2c*(fx2p-x2c);
-          fine(fk,fj+1,fi+1) = ccval + gx1c*(fx1p-x1c) + gx2c*(fx2p-x2c);
+          fine(fk,fj  ,fi  ) = ccval - gx1c*(x1c - fx1m) - gx2c*(x2c - fx2m);
+          fine(fk,fj  ,fi+1) = ccval + gx1c*(fx1p - x1c) - gx2c*(x2c - fx2m);
+          fine(fk,fj+1,fi  ) = ccval - gx1c*(x1c - fx1m) + gx2c*(fx2p - x2c);
+          fine(fk,fj+1,fi+1) = ccval + gx1c*(fx1p - x1c) + gx2c*(fx2p - x2c);
         }
       }
     }
@@ -761,8 +761,8 @@ void MeshRefinement::ProlongateSharedFieldX3(
       Real dx2p = x2p - x2c;
       const Real& fx2m = pco->x2s3(fj);
       const Real& fx2p = pco->x2s3(fj+1);
-      Real dx2fm = x2c-fx2m;
-      Real dx2fp = fx2p-x2c;
+      Real dx2fm = x2c - fx2m;
+      Real dx2fp = fx2p - x2c;
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         const Real& x1m = pcoarsec->x1s3(i-1);
@@ -772,16 +772,16 @@ void MeshRefinement::ProlongateSharedFieldX3(
         Real dx1p = x1p - x1c;
         const Real& fx1m = pco->x1s3(fi);
         const Real& fx1p = pco->x1s3(fi+1);
-        Real dx1fm = x1c-fx1m;
-        Real dx1fp = fx1p-x1c;
+        Real dx1fm = x1c - fx1m;
+        Real dx1fp = fx1p - x1c;
         Real ccval = coarse(k,j,i);
 
         // calculate 2D gradients using the minmod limiter
-        Real gx1m = (ccval-coarse(k,j,i-1))/dx1m;
+        Real gx1m = (ccval - coarse(k,j,i-1))/dx1m;
         Real gx1p = (coarse(k,j,i+1) - ccval)/dx1p;
         Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
                                                            std::abs(gx1p));
-        Real gx2m = (ccval-coarse(k,j-1,i))/dx2m;
+        Real gx2m = (ccval - coarse(k,j-1,i))/dx2m;
         Real gx2p = (coarse(k,j+1,i) - ccval)/dx2p;
         Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                            std::abs(gx2p));
@@ -848,10 +848,10 @@ void MeshRefinement::ProlongateInternalField(
           Real Uxyz = 0.0, Vxyz = 0.0, Wxyz = 0.0;
 #pragma unroll
           for (int jj=0; jj<2; jj++) {
-            int js = 2*jj-1, fjj = fj+jj, fjp = fj+2*jj;
+            int js = 2*jj - 1, fjj = fj + jj, fjp = fj + 2*jj;
 #pragma unroll
             for (int ii=0; ii<2; ii++) {
-              int is = 2*ii-1, fii = fi+ii, fip = fi+2*ii;
+              int is = 2*ii - 1, fii = fi + ii, fip = fi + 2*ii;
               Uxx += is*(js*(fine.x2f(fk  ,fjp,fii)*sarea_x2_[0][2*jj](fii) +
                              fine.x2f(fk+1,fjp,fii)*sarea_x2_[1][2*jj](fii))
                          +(fine.x3f(fk+2,fjj,fii)*sarea_x3_[2][  jj](fii) -
@@ -946,13 +946,13 @@ void MeshRefinement::ProlongateInternalField(
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         Real tmp1 = 0.25*(fine.x2f(fk,fj+2,fi+1)*sarea_x2_[0][2](fi+1)
-                          -fine.x2f(fk,fj,  fi+1)*sarea_x2_[0][0](fi+1)
-                          -fine.x2f(fk,fj+2,fi  )*sarea_x2_[0][2](fi  )
-                          +fine.x2f(fk,fj,  fi  )*sarea_x2_[0][0](fi  ));
+                          - fine.x2f(fk,fj,  fi+1)*sarea_x2_[0][0](fi+1)
+                          - fine.x2f(fk,fj+2,fi  )*sarea_x2_[0][2](fi  )
+                          + fine.x2f(fk,fj,  fi  )*sarea_x2_[0][0](fi  ));
         Real tmp2 = 0.25*(fine.x1f(fk,fj,  fi  )*sarea_x1_[0][0](fi  )
-                          -fine.x1f(fk,fj,  fi+2)*sarea_x1_[0][0](fi+2)
-                          -fine.x1f(fk,fj+1,fi  )*sarea_x1_[0][1](fi  )
-                          +fine.x1f(fk,fj+1,fi+2)*sarea_x1_[0][1](fi+2));
+                          - fine.x1f(fk,fj,  fi+2)*sarea_x1_[0][0](fi+2)
+                          - fine.x1f(fk,fj+1,fi  )*sarea_x1_[0][1](fi  )
+                          + fine.x1f(fk,fj+1,fi+2)*sarea_x1_[0][1](fi+2));
         fine.x1f(fk,fj  ,fi+1) =
             (0.5*(fine.x1f(fk,fj,  fi  )*sarea_x1_[0][0](fi  )
                   +fine.x1f(fk,fj,  fi+2)*sarea_x1_[0][0](fi+2)) + tmp1)
@@ -1049,12 +1049,13 @@ void MeshRefinement::CheckRefinementCondition() {
 
 // KGF: could replace overloading with function template if pvars_cc/fc was passed as
 // parameter
-void MeshRefinement::AddToAMR(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc) {
+void MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
+                                     AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
   return;
 }
 
-void MeshRefinement::AddToAMR(FaceField *pvar_fc, FaceField *pcoarse_fc) {
+void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return;
 }

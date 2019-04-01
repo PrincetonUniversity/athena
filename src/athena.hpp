@@ -66,7 +66,7 @@ struct LogicalLocation {
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll) {
-    return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3));
+    return ((ll.level == level) && (ll.lx1 == lx1) && (ll.lx2 == lx2) && (ll.lx3 == lx3));
   }
   static bool Lesser(const LogicalLocation &left, const LogicalLocation &right) {
     return left.level < right.level;
