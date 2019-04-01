@@ -1059,3 +1059,22 @@ void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) 
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return;
 }
+
+void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
+  Hydro *ph = pmy_block_->phydro;
+  // KGF: hard-coding assumption that, if multilevel==true, then Hydro is always present
+  // and enrolled in mesh refinement in the first pvars_cc_ vector entry
+  switch (hydro_type) {
+    // KGF: currently, coarse_*_ are public members. MeshRefinement is not a friend class
+    // of Hydro nor Field, so if they are moved to "private", this will break:
+    case (HydroBoundaryQuantity::cons): {
+      pvars_cc_.front() = std::make_tuple(ph->u, ph->coarse_cons_);
+      break;
+    }
+    case (HydroBoundaryQuantity::prim): {
+      pvars_cc_.front() = std::make_tuple(ph->w, ph->coarse_prim_);
+      break;
+    }
+  }
+  return;
+}

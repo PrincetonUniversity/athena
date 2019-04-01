@@ -34,15 +34,38 @@
 // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
 // FaceField &bfdst, AthenaArray<Real> &bcdst,
 
+// KGF: overall, this function and set of features needs a better-managed relationship
+// with the MeshRefinement class, specifically the pvars_cc/fc_ vectors. The below
+// functions often call functions on "coarse_buf" shallow-copies in BoundaryVariable
+// objects, but these are managed seperately from the coarse_buf in the corresponding
+// pvars_cc_, for example!
+
+// Also, the "enrollment in S/AMR" should supersede the below loops over "bvars_main_int"
+// when it comes to applying BoundaryFunction_[]() etc. on BoundaryVariable object data.
+// It will currently crash if multilevel==true, and S/AMR-incompatible FFT self-gravity is
+// put into bvars_main_int. This will be a big design decision when we make it possible to
+// compile without Hydro. See #247.
+
+// TODO(KGF): provide overload of CellCenteredBoundaryVariable constructor that does NOT
+// take AthenaArray<Real> *coarse_var, *var_flux
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
-  // KGF: temporarily hardcode Hydro and Field array access for coupling in
-  // PrimitiveToConserved() call, and in individual Prolongate*(), Restrict*() calls
+  // KGF: temporarily hardcode Hydro and Field array access for the below switch around
+  // ApplyPhysicalBoundariesOnCoarseLevel()
+
+  // This hardcoded technique is also used to manually specify the coupling between
+  // physical variables in:
+  // - step 2, ApplyPhysicalBoundariesOnCoarseLevel(): calls to W(U) and user BoundaryFunc
+  // - step 3, ProlongateGhostCells(): calls to calculate bcc and U(W)
+
+  // Additionally, pmr->SetHydroRefinement() is currently used in
+  // RestrictGhostCellsOnSameLevel() (GR) and ProlongateGhostCells() (always) to switch
+  // between conserved and primitive tuples, but this does not require ph, pf
 
   // downcast BoundaryVariable pointers to known derived class pointer types:
-  // RTTI via dynamic_cast
+  // RTTI via dynamic_case
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
@@ -179,13 +202,6 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
-  // KGF: temporarily hardcode Hydro and Field array access
-  Hydro *ph = pmb->phydro;
-  Field *pf = nullptr;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    pf = pmb->pfield;
-  }
-
   int ris, rie, rjs, rje, rks, rke;
   if (ni == 0) {
     ris = pmb->cis;
@@ -230,9 +246,19 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
                                          ris, rie, rjs, rje, rks, rke);
   }
   // KGF: UNIQUE TO HYDRO+GR+S/AMR: also restrict primitive values in ghost zones
-  if (GENERAL_RELATIVITY)
-    pmb->pmr->RestrictCellCenteredValues(ph->w, ph->coarse_prim_, 0, NHYDRO-1,
+  if (GENERAL_RELATIVITY) {
+    pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
+    // KGF: as in the function called in the above line, here we are assuming that Hydro
+    // is enrolled in S/AMR, and its tuple of AthenaArray<Real>* occupies the first entry:
+    auto cc_pair = pmr->pvars_cc_.front();
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    pmb->pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc, 0, nu,
                                          ris, rie, rjs, rje, rks, rke);
+    pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
+  }
+
   for (auto fc_pair : pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField *coarse_fc = std::get<1>(fc_pair);
@@ -514,6 +540,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   // prolongate hydro variables using primitive
 
   // KGF: UNIQUE TO HYDRO: swap (u, coarse_cons_) with (w, coarse_prim)
+  pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
   for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
@@ -521,6 +548,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     pmr->ProlongateCellCenteredValues(*coarse_cc, *var_cc, 0, nu,
                                       si, ei, sj, ej, sk, ek);
   }
+  pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
   // KGF: UNIQUE TO HYDRO swap (w, coarse_prim) back to (u, coarse_cons_)
 
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
