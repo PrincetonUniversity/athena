@@ -66,7 +66,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   int dim;
 
   // mesh test
-  if (mesh_test>0) Globals::nranks=mesh_test;
+  if (mesh_test > 0) Globals::nranks = mesh_test;
 
   // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time", "start_time", 0.0);
@@ -79,17 +79,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   muj = 0.0;
   nuj = 0.0;
   muj_tilde = 0.0;
-  nbnew=0; nbdel=0;
+  nbnew = 0; nbdel = 0;
 
-  four_pi_G_=0.0, grav_eps_=-1.0, grav_mean_rho_=-1.0;
+  four_pi_G_ = 0.0, grav_eps_ = -1.0, grav_mean_rho_ = -1.0;
 
   turb_flag = 0;
 
   nlim = pin->GetOrAddInteger("time", "nlim", -1);
   ncycle = 0;
-  nint_user_mesh_data_=0;
-  nreal_user_mesh_data_=0;
-  nuser_history_output_=0;
+  nint_user_mesh_data_ = 0;
+  nreal_user_mesh_data_ = 0;
+  nuser_history_output_ = 0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
@@ -131,9 +131,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     ATHENA_ERROR(msg);
   }
 
-  dim=1;
-  if (mesh_size.nx2>1) dim=2;
-  if (mesh_size.nx3>1) dim=3;
+  dim = 1;
+  if (mesh_size.nx2 > 1) dim = 2;
+  if (mesh_size.nx3 > 1) dim = 3;
 
   // read physical size of mesh (root level) from input file.
   mesh_size.x1min = pin->GetReal("mesh","x1min");
@@ -184,14 +184,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock", "nx1", mesh_size.nx1);
-  if (dim>=2)
+  if (dim >= 2)
     block_size.nx2 = pin->GetOrAddInteger("meshblock", "nx2", mesh_size.nx2);
   else
-    block_size.nx2=mesh_size.nx2;
-  if (dim==3)
+    block_size.nx2 = mesh_size.nx2;
+  if (dim == 3)
     block_size.nx3 = pin->GetOrAddInteger("meshblock", "nx3", mesh_size.nx3);
   else
-    block_size.nx3=mesh_size.nx3;
+    block_size.nx3 = mesh_size.nx3;
 
   // check consistency of the block and mesh
   if (mesh_size.nx1 % block_size.nx1 != 0
@@ -202,7 +202,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     ATHENA_ERROR(msg);
   }
   if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
-      || (block_size.nx3 < 4 && dim==3)) {
+      || (block_size.nx3 < 4 && dim == 3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 cells." << std::endl;
     ATHENA_ERROR(msg);
@@ -1645,7 +1645,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
   int j=(Globals::nranks)-1;
   Real targetcost=totalcost/Globals::nranks;
   Real mycost=0.0;
-  // create rank list from the end: the master node should have less load
+  // create rank list from the end: the master MPI rank should have less load
   for (int i=nb-1; i>=0; i--) {
     if (targetcost == 0.0) {
       msg << "### FATAL ERROR in LoadBalance" << std::endl
@@ -1935,7 +1935,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   int *newtoold = new int[ntot];
   int *oldtonew = new int[nbtotal];
   int nbtold = nbtotal;
-  tree.GetMeshBlockList(newloc,newtoold,nbtotal);
+  tree.GetMeshBlockList(newloc, newtoold, nbtotal);
 
   // create a list mapping the previous gid to the current one
   oldtonew[0] = 0;
@@ -2108,45 +2108,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] = new Real[bssame];
-
-        // pack
-        int p = 0;
-        // KGF: CellCentered step 6, branch 1 (same2same: just pack+send)
-
-        // for (auto cc_it = pb->pmr->pvars_cc_.begin();
-        //      cc_it != pb->pmr->pvars_cc_.end(); ++cc_it) {
-        //  AthenaArray<Real> *var_cc = std::get<0>(*cc_it);
-
-        // KGF: C++11 range-based for loop
-        for (auto cc_pair : pb->pmr->pvars_cc_) {
-        // for (std::tuple<AthenaArray<Real>*, AthenaArray<Real>*> cc_pair
-          //   : pb->pmr->pvars_cc_) {
-
-          // KGF: No need to dereference an Iterator object in range-based for loop:
-          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-          int nu = var_cc->GetDim4() - 1;
-          BufferUtility::PackData(*var_cc, sendbuf[sb_idx], 0, nu,
-                                  pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
-        }
-
-        // KGF: FaceCentered step 6, branch 1 (same2same: just pack+send)
-        // for (auto fc_it = pb->pmr->pvars_fc_.begin();
-        //      fc_it != pb->pmr->pvars_fc_.end(); ++fc_it) {
-
-        // KGF: C++11 range-based for loop
-        for (auto fc_pair : pb->pmr->pvars_fc_) {
-          FaceField *var_fc = std::get<0>(fc_pair);
-          BufferUtility::PackData((*var_fc).x1f, sendbuf[sb_idx],
-                                  pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::PackData((*var_fc).x2f, sendbuf[sb_idx],
-                                  pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
-          BufferUtility::PackData((*var_fc).x3f, sendbuf[sb_idx],
-                                  pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
-        }
-
-        // KGF: dangerous? casting from "Real *" to "int *"
-        int *dcp = reinterpret_cast<int *>(&(sendbuf[sb_idx][p]));
-        *dcp = pb->pmr->deref_count_;
+        PrepareSendSameLevelAMR(pb, sendbuf[sb_idx]);
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[sb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
@@ -2189,7 +2151,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           MPI_Isend(sendbuf[sb_idx], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
                     tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
           sb_idx++;
-        }
+        } // end loop over nleaf (unique to c2f branch in this step 6)
       } else { // f2c
         if (newrank[nn] == Globals::my_rank) continue;
         int ox1 = oloc.lx1 & 1LL, ox2 = oloc.lx2 & 1LL, ox3 = oloc.lx3 & 1LL;
@@ -2247,20 +2209,19 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         MPI_Isend(sendbuf[sb_idx], bsf2c, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
         sb_idx++;
-      }
+      } // end "if f2c" conditional vs same2same vs. c2f
     }
-  }
+  } // if (nsend !=0
 #endif // MPI_PARALLEL
 
-  // Step 7. construct a new MeshBlock list
-  // move the data within the node
+  // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
   MeshBlock *newlist = nullptr;
   RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
     int on = newtoold[n];
     if ((ranklist[on] == Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
-      // on the same node and same level -> just move it
+      // on the same MPI rank and same level -> just move it
       MeshBlock* pob = FindMeshBlock(on);
       if (pob->prev == nullptr) {
         pblock = pob->next;
@@ -2281,7 +2242,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       pmb->gid = n;
       pmb->lid = n - nbs;
     } else {
-      // on a different level or node - create a new block
+      // on a different level or MPI rank - create a new block
       BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
@@ -2299,14 +2260,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if ((loclist[on].level > newloc[n].level)) { // fine to coarse
         for (int ll=0; ll<nleaf; ll++) {
           if (ranklist[on+ll] != Globals::my_rank) continue;
-          // on the same node - restriction
+          // on the same MPI rank - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
           MeshRefinement *pmr = pob->pmr;
           int il = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
           int jl = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
           int kl = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
 
-          // KGF: CellCentered step 7: f2c, same node (just restrict+copy, no pack/send)
+          // KGF: CellCentered step 7: f2c, same MPI rank, different level (just
+          // restrict+copy, no pack/send)
 
           // KGF: absent a zip() feature for range-based for loops, manually advance the
           // iterator over "SMR/AMR-enrolled" cell-centered quantities on the new
@@ -2337,7 +2299,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             pmb_cc_it++;
           } // end loop over var_cc
 
-          // KGF: FaceCentered step 7: f2c, same node (just restrict+copy, no pack/send)
+          // KGF: FaceCentered step 7: f2c, same MPI rank, different level (just
+          // restrict+copy, no pack/send)
+
           auto pmb_fc_it = pmb->pmr->pvars_fc_.begin();
           for (auto fc_pair : pmr->pvars_fc_) {
             FaceField *var_fc = std::get<0>(fc_pair);
@@ -2392,7 +2356,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         }
       } else if ((loclist[on].level < newloc[n].level) &&
                  (ranklist[on] == Globals::my_rank)) {
-        // coarse to fine on the same node - prolongation
+        // coarse to fine on the same MPI rank (different level) - prolongation
         MeshBlock* pob = FindMeshBlock(on);
         MeshRefinement *pmr = pmb->pmr;
         int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
@@ -2401,7 +2365,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2;
         int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3;
 
-        // KGF: CellCentered step 7: c2f, same node (just copy+prolongate, no pack/send)
+        // KGF: CellCentered step 7: c2f, same MPI rank, different level (just
+        // copy+prolongate, no pack/send)
         auto pob_cc_it = pob->pmr->pvars_cc_.begin();
         // iterate MeshRefinement std::vectors on new pmb
         for (auto cc_pair : pmr->pvars_cc_) {
@@ -2426,7 +2391,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
           pob_cc_it++;
         } // end loop over var_cc
 
-        // KGF: FaceCentered step 7: c2f, same node (just copy+prolongate, no pack/send)
+        // KGF: FaceCentered step 7: c2f, same MPI rank, different level (just
+        // copy+prolongate, no pack/send)
+
         auto pob_fc_it = pob->pmr->pvars_fc_.begin();
         // iterate MeshRefinement std::vectors on new pmb
         for (auto fc_pair : pmr->pvars_fc_) {
@@ -2529,7 +2496,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
             }
           }
         } // end loop over var_fc
-        // KGF: dangerous? casting from "Real *" to "int *"
+        // WARNING(felker): casting from "Real *" to "int *" in order to read single
+        // appended integer from received buffer is slightly unsafe
         int *dcp = reinterpret_cast<int *>(&(recvbuf[rb_idx][p]));
         pb->pmr->deref_count_ = *dcp;
         rb_idx++;
@@ -2660,6 +2628,49 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
   Initialize(2, pin);
 
+  return;
+}
+
+
+void Mesh::PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf) {
+  // pack
+  int p = 0;
+  // KGF: CellCentered step 6, branch 1 (same2same: just pack+send)
+
+  // for (auto cc_it = pb->pmr->pvars_cc_.begin();
+  //      cc_it != pb->pmr->pvars_cc_.end(); ++cc_it) {
+  //  AthenaArray<Real> *var_cc = std::get<0>(*cc_it);
+
+  // KGF: C++11 range-based for loop
+  for (auto cc_pair : pb->pmr->pvars_cc_) {
+    // for (std::tuple<AthenaArray<Real>*, AthenaArray<Real>*> cc_pair
+    //   : pb->pmr->pvars_cc_) {
+
+    // KGF: No need to dereference an Iterator object in range-based for loop:
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    BufferUtility::PackData(*var_cc, sendbuf[sb_idx], 0, nu,
+                            pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+  }
+
+  // KGF: FaceCentered step 6, branch 1 (same2same: just pack+send)
+  // for (auto fc_it = pb->pmr->pvars_fc_.begin();
+  //      fc_it != pb->pmr->pvars_fc_.end(); ++fc_it) {
+
+  // KGF: C++11 range-based for loop
+  for (auto fc_pair : pb->pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    BufferUtility::PackData((*var_fc).x1f, sendbuf[sb_idx],
+                            pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+    BufferUtility::PackData((*var_fc).x2f, sendbuf[sb_idx],
+                            pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
+    BufferUtility::PackData((*var_fc).x3f, sendbuf[sb_idx],
+                            pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
+  }
+  // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
+  // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
+  int *dcp = reinterpret_cast<int *>(&(sendbuf[sb_idx][p]));
+  *dcp = pb->pmr->deref_count_;
   return;
 }
 

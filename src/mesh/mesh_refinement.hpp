@@ -88,7 +88,7 @@ class MeshRefinement {
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
 
-  // KGF:
+  // KGF: tuples of references to AMR-enrolled (quantity, coarse_quantity) arrays
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
 };

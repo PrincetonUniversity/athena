@@ -268,6 +268,9 @@ class Mesh {
   void OutputMeshStructure(int dim);
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
+  // Mesh::AdaptiveMeshRefinement() helper functions:
+  void new_fn();
+
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
 
