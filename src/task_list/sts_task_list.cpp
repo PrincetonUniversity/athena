@@ -89,13 +89,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     // calculate hydro/field diffusive fluxes
     AddTask(DIFFUSE_HYD,NONE);
-    if (MAGNETIC_FIELDS_ENABLED)
-      AddTask(DIFFUSE_FLD,NONE);
     // compute hydro fluxes, integrate hydro variables
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
+      AddTask(DIFFUSE_FLD,NONE);
       AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
-    else
+    } else {
       AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+    }
     AddTask(INT_HYD, CALC_HYDFLX);
     AddTask(SEND_HYD,INT_HYD);
     AddTask(RECV_HYD,NONE);
@@ -110,13 +110,11 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(SEND_FLD,INT_FLD);
       AddTask(RECV_FLD,NONE);
       AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
-    }
-
-    // compute new primitives
-    if (MAGNETIC_FIELDS_ENABLED) // MHD
+      // compute new primitives
       AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
-    else  // HYDRO
+    } else {  // HYDRO
       AddTask(CON2PRIM,(SETB_HYD));
+    }
 
     // everything else
     AddTask(PHY_BVAL,CON2PRIM);
