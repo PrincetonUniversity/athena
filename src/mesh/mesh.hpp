@@ -240,6 +240,8 @@ class Mesh {
   // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
   //std::int64_t nrbx1, nrbx2, nrbx3;
 
+  bool f2_, f3_; // flags indicating 2D or 3D Mesh
+
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
@@ -269,7 +271,9 @@ class Mesh {
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   // Mesh::AdaptiveMeshRefinement() helper functions:
-  void new_fn();
+  void PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf);
+  void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);
+  void PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
