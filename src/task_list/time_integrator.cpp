@@ -316,9 +316,18 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 //  ntask.
 
 void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
-  task_list_[ntasks].task_id=id;
-  task_list_[ntasks].dependency=dep;
+  task_list_[ntasks].task_id = id;
+  task_list_[ntasks].dependency = dep;
+  // TODO(felker): change naming convention of either/both of TASK_NAME and TaskFunc
+  // There are some issues with the current names:
+  // 1) VERB_OBJECT is confusing with ObjectVerb(). E.g. seeing SEND_HYD in the task list
+  // assembly would lead the user to believe the corresponding function is SendHydro(),
+  // when it is actually HydroSend()
 
+  // Note, there are exceptions to the "verb+object" convention in some TASK_NAMES and
+  // TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
+  // SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CON2PRIM,
+  // ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   switch (id) {
     case (CLEAR_ALLBND):
@@ -330,7 +339,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::CalculateFluxes);
+          (&TimeIntegratorTaskList::CalculateHydroFlux);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
@@ -592,7 +601,7 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Field *pfield = pmb->pfield;
 

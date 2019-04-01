@@ -143,7 +143,7 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateFluxes_STS);
+          (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
@@ -262,7 +262,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus SuperTimeStepTaskList::CalculateFluxes_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   // Field *pfield=pmb->pfield;
 
