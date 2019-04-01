@@ -2040,7 +2040,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
   int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2_)*((bnx3 + 1)/2 + 2*f3_)*nx4_tot;
   // face-centered quantities enrolled in SMR/AMR
-  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2_)*bnx3 + bnx1*bnx2*(bnx3 + f3_));
+  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2_)*bnx3
+                    + bnx1*bnx2*(bnx3 + f3_));
   bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
                    + (bnx1/2)*(((bnx2 + 1)/2) + f2_)*((bnx3 + 1)/2)
                    + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3_));
@@ -2071,7 +2072,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
                     tag, MPI_COMM_WORLD, &(req_recv[rb_idx]));
           rb_idx++;
         }
-      } else { // same or c2f
+      } else { // same level or c2f
         if (ranklist[on] == Globals::my_rank) continue;
         int size;
         if (oloc.level == nloc.level) {
@@ -2159,11 +2160,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       pmb->gid = n;
       pmb->lid = n - nbs;
     } else {
-      // on a different level or MPI rank - create a new block
+      // on a different refinement level or MPI rank - create a new block
       BoundaryFlag block_bcs[6];
       block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
-      if (n == nbs) { // first
+      // insert new block in singly-linked list of MeshBlocks
+      if (n == nbs) { // first node
         newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
                                 pin, gflag, true);
         pmb = newlist;
@@ -2174,188 +2176,22 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
         pmb = pmb->next;
       }
       // fill the conservative variables
-      if ((loclist[on].level > newloc[n].level)) { // fine to coarse
+      if ((loclist[on].level > newloc[n].level)) { // fine to coarse (f2c)
         for (int ll=0; ll<nleaf; ll++) {
           if (ranklist[on+ll] != Globals::my_rank) continue;
-          // on the same MPI rank - restriction
+          // fine to coarse on the same MPI rank (different AMR level) - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
-          MeshRefinement *pmr = pob->pmr;
-          int il = pmb->is + ((loclist[on+ll].lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
-          int jl = pmb->js + ((loclist[on+ll].lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
-          int kl = pmb->ks + ((loclist[on+ll].lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
-
-          // KGF: CellCentered step 7: f2c, same MPI rank, different level (just
-          // restrict+copy, no pack/send)
-
-          // KGF: absent a zip() feature for range-based for loops, manually advance the
-          // iterator over "SMR/AMR-enrolled" cell-centered quantities on the new
-          // MeshBlock in lock-step with pob
-          auto pmb_cc_it = pmb->pmr->pvars_cc_.begin();
-          // iterate MeshRefinement std::vectors on pob
-          for (auto cc_pair : pmr->pvars_cc_) {
-            AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-            AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
-            int nu = var_cc->GetDim4() - 1;
-            pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
-                                            0, nu,
-                                            pob->cis, pob->cie,
-                                            pob->cjs, pob->cje,
-                                            pob->cks, pob->cke);
-            // KGF:
-            // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
-            AthenaArray<Real> &src = (*coarse_cc);
-            AthenaArray<Real> &dst = *(std::get<0>(*pmb_cc_it)); // pmb->phydro->u;
-            for (int nv=0; nv<=nu; nv++) {
-              for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-                for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                  for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                    dst(nv, k, j, i) = src(nv, fk, fj, fi);
-                }
-              }
-            }
-            pmb_cc_it++;
-          } // end loop over var_cc
-
-          // KGF: FaceCentered step 7: f2c, same MPI rank, different level (just
-          // restrict+copy, no pack/send)
-
-          auto pmb_fc_it = pmb->pmr->pvars_fc_.begin();
-          for (auto fc_pair : pmr->pvars_fc_) {
-            FaceField *var_fc = std::get<0>(fc_pair);
-            FaceField *coarse_fc = std::get<1>(fc_pair);
-            pmr->RestrictFieldX1((*var_fc).x1f, (*coarse_fc).x1f,
-                                 pob->cis, pob->cie+1,
-                                 pob->cjs, pob->cje,
-                                 pob->cks, pob->cke);
-            pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
-                                 pob->cis, pob->cie,
-                                 pob->cjs, pob->cje+f2_,
-                                 pob->cks, pob->cke);
-            pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
-                                 pob->cis, pob->cie,
-                                 pob->cjs, pob->cje,
-                                 pob->cks, pob->cke+f3_);
-            FaceField &src_b = (*coarse_fc);
-            FaceField &dst_b = *(std::get<0>(*pmb_fc_it)); // pmb->pfield->b;
-            for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for (int i=il, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
-                  dst_b.x1f(k, j, i) = src_b.x1f(fk, fj, fi);
-              }
-            }
-            for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-              for (int j=jl, fj=pob->cjs; fj<=pob->cje+f2_; j++, fj++) {
-                for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst_b.x2f(k, j, i) = src_b.x2f(fk, fj, fi);
-              }
-            }
-            if (pmb->block_size.nx2 == 1) {
-              int iu = il + block_size.nx1/2 - 1;
-              for (int i=il; i<=iu; i++)
-                dst_b.x2f(pmb->ks, pmb->js+1, i) = dst_b.x2f(pmb->ks, pmb->js, i);
-            }
-            for (int k=kl, fk=pob->cks; fk<=pob->cke+f3_; k++, fk++) {
-              for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-                for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst_b.x3f(k, j, i) = src_b.x3f(fk, fj, fi);
-              }
-            }
-            if (pmb->block_size.nx3 == 1) {
-              int iu = il + block_size.nx1/2-1, ju = jl + block_size.nx2/2-1;
-              if (pmb->block_size.nx2 == 1) ju = jl;
-              for (int j=jl; j<=ju; j++) {
-                for (int i=il; i<=iu; i++)
-                  dst_b.x3f(pmb->ks+1, j, i) = dst_b.x3f(pmb->ks, j, i);
-              }
-            }
-            pmb_fc_it++;
-          } // end loop over fc
+          FillSameRankFineToCoarseAMR(pob, pmb, loclist[on+ll]);
         }
-      } else if ((loclist[on].level < newloc[n].level) &&
+      } else if ((loclist[on].level < newloc[n].level) && // coarse to fine (c2f)
                  (ranklist[on] == Globals::my_rank)) {
-        // coarse to fine on the same MPI rank (different level) - prolongation
+        // coarse to fine on the same MPI rank (different AMR level) - prolongation
         MeshBlock* pob = FindMeshBlock(on);
-        MeshRefinement *pmr = pmb->pmr;
-        int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2_,
-            ju = pob->cje + f2_, kl = pob->cks - f3_, ku = pob->cke + f3_;
-        int cis = ((newloc[n].lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
-        int cjs = ((newloc[n].lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2_;
-        int cks = ((newloc[n].lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3_;
-
-        // KGF: CellCentered step 7: c2f, same MPI rank, different level (just
-        // copy+prolongate, no pack/send)
-        auto pob_cc_it = pob->pmr->pvars_cc_.begin();
-        // iterate MeshRefinement std::vectors on new pmb
-        for (auto cc_pair : pmr->pvars_cc_) {
-          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-          AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
-          int nu = var_cc->GetDim4() - 1;
-
-          AthenaArray<Real> &src = *(std::get<0>(*pob_cc_it)); // pob->phydro->u;
-          AthenaArray<Real> &dst = (*coarse_cc); // pmb->phydro->coarse_cons_;
-          // fill the coarse buffer
-          for (int nv=0; nv<=nu; nv++) {
-            for (int k=kl, ck=cks; k<=ku; k++, ck++) {
-              for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
-                for (int i=il, ci=cis; i<=iu; i++, ci++)
-                  dst(nv, k, j, i) = src(nv, ck, cj, ci);
-              }
-            }
-          }
-          pmr->ProlongateCellCenteredValues(
-              dst, (*var_cc), 0, nu,
-              pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
-          pob_cc_it++;
-        } // end loop over var_cc
-
-        // KGF: FaceCentered step 7: c2f, same MPI rank, different level (just
-        // copy+prolongate, no pack/send)
-
-        auto pob_fc_it = pob->pmr->pvars_fc_.begin();
-        // iterate MeshRefinement std::vectors on new pmb
-        for (auto fc_pair : pmr->pvars_fc_) {
-          FaceField *var_fc = std::get<0>(fc_pair);
-          FaceField *coarse_fc = std::get<1>(fc_pair);
-
-          FaceField &src_b = *(std::get<0>(*pob_fc_it));
-          FaceField &dst_b = (*coarse_fc);
-          for (int k=kl, ck=cks; k<=ku; k++, ck++) {
-            for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
-              for (int i=il, ci=cis; i<=iu+1; i++, ci++)
-                dst_b.x1f(k, j, i) = src_b.x1f(ck, cj, ci);
-            }
-          }
-          for (int k=kl, ck=cks; k<=ku; k++, ck++) {
-            for (int j=jl, cj=cjs; j<=ju+f2_; j++, cj++) {
-              for (int i=il, ci=cis; i<=iu; i++, ci++)
-                dst_b.x2f(k, j, i) = src_b.x2f(ck, cj, ci);
-            }
-          }
-          for (int k=kl, ck=cks; k<=ku+f3_; k++, ck++) {
-            for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
-              for (int i=il, ci=cis; i<=iu; i++, ci++)
-                dst_b.x3f(k, j, i) = src_b.x3f(ck, cj, ci);
-            }
-          }
-          pmr->ProlongateSharedFieldX1(
-              dst_b.x1f, (*var_fc).x1f,
-              pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
-          pmr->ProlongateSharedFieldX2(
-              dst_b.x2f, (*var_fc).x2f,
-              pob->cis, pob->cie, pob->cjs, pob->cje+f2_, pob->cks, pob->cke);
-          pmr->ProlongateSharedFieldX3(
-              dst_b.x3f, (*var_fc).x3f,
-              pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3_);
-          pmr->ProlongateInternalField(
-              (*var_fc), pob->cis, pob->cie,
-              pob->cjs, pob->cje, pob->cks, pob->cke);
-          pob_fc_it++;
-        } // end loop over var_fc
-
-        // KGF: what are these loops?
-      }
-    }
-  }
+        FillSameRankCoarseToFineAMR(pob, pmb, newloc[n]);
+        // KGF:
+      } // end "c2f"+ "same MPI rank" (branch 2)
+    } // end "different refinement level" OR MPI rank
+  } // end loop over nbe
 
   // discard remaining MeshBlocks
   // they could be reused, but for the moment, just throw them away for simplicity
@@ -2381,129 +2217,19 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (oloc.level == nloc.level) { // same
         if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        int p = 0;
-        // KGF: CellCentered step 8 (receive and load), branch 1 (same2same: unpack)
-        for (auto cc_pair : pb->pmr->pvars_cc_) {
-          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-          int nu = var_cc->GetDim4() - 1;
-          BufferUtility::UnpackData(recvbuf[rb_idx], (*var_cc), 0, nu,
-                                    pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
-        }
-        // KGF: FaceCentered step 8 (receive and load), branch 1 (same2same: unpack)
-        for (auto fc_pair : pb->pmr->pvars_fc_) {
-          FaceField *var_fc = std::get<0>(fc_pair);
-          FaceField &dst_b = (*var_fc);
-          BufferUtility::UnpackData(
-              recvbuf[rb_idx], dst_b.x1f,
-              pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-          BufferUtility::UnpackData(
-              recvbuf[rb_idx], dst_b.x2f,
-              pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-          BufferUtility::UnpackData(
-              recvbuf[rb_idx], dst_b.x3f,
-              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
-          if (pb->block_size.nx2 == 1) {
-            for (int i=pb->is; i<=pb->ie; i++)
-              dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
-          }
-          if (pb->block_size.nx3 == 1) {
-            for (int j=pb->js; j<=pb->je; j++) {
-              for (int i=pb->is; i<=pb->ie; i++)
-                dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
-            }
-          }
-        } // end loop over var_fc
-        // WARNING(felker): casting from "Real *" to "int *" in order to read single
-        // appended integer from received buffer is slightly unsafe
-        int *dcp = reinterpret_cast<int *>(&(recvbuf[rb_idx][p]));
-        pb->pmr->deref_count_ = *dcp;
+        FinishRecvSameLevelAMR(pb, recvbuf[rb_idx]);
         rb_idx++;
-      } else if (oloc.level > nloc.level) { // f2_c
+      } else if (oloc.level > nloc.level) { // f2c
         for (int l=0; l<nleaf; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
-          LogicalLocation &lloc = loclist[on+l];
-          int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
-          int p = 0, il, iu, jl, ju, kl, ku;
-          if (ox1 == 0) il = pb->is,              iu = pb->is + pb->block_size.nx1/2 - 1;
-          else        il = pb->is + pb->block_size.nx1/2, iu = pb->ie;
-          if (ox2 == 0) jl = pb->js,              ju = pb->js + pb->block_size.nx2/2 - f2_;
-          else        jl = pb->js + pb->block_size.nx2/2, ju = pb->je;
-          if (ox3 == 0) kl = pb->ks,              ku = pb->ks + pb->block_size.nx3/2 - f3_;
-          else        kl = pb->ks + pb->block_size.nx3/2, ku = pb->ke;
           MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-
-          // KGF: CellCentered step 8 (receive and load), branch 2 (f2c: unpack)
-          for (auto cc_pair : pb->pmr->pvars_cc_) {
-            AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-            int nu = var_cc->GetDim4() - 1;
-            BufferUtility::UnpackData(recvbuf[rb_idx], (*var_cc), 0, nu,
-                                      il, iu, jl, ju, kl, ku, p);
-          }
-          // KGF: FaceCentered step 8 (receive and load), branch 2 (f2c: unpack)
-          for (auto fc_pair : pb->pmr->pvars_fc_) {
-            FaceField *var_fc = std::get<0>(fc_pair);
-            FaceField &dst_b = (*var_fc);
-            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x1f,
-                                        il, iu+1, jl, ju, kl, ku, p);
-            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x2f,
-                                        il, iu, jl, ju+f2_, kl, ku, p);
-            BufferUtility::UnpackData(recvbuf[rb_idx], dst_b.x3f,
-                                        il, iu, jl, ju, kl, ku+f3_, p);
-            if (pb->block_size.nx2 == 1) {
-              for (int i=il; i<=iu; i++)
-                dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
-            }
-            if (pb->block_size.nx3 == 1) {
-              for (int j=jl; j<=ju; j++) {
-                for (int i=il; i<=iu; i++)
-                  dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
-              }
-            }
-          } // end loop over var_fc
+          FinishRecvFineToCoarseAMR(pb, recvbuf[rb_idx], loclist[on+l]);
           rb_idx++;
         }
       } else { // c2f
         if (ranklist[on] == Globals::my_rank) continue;
-        MeshRefinement *pmr = pb->pmr;
-        int p = 0;
-        int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2_,
-            ju = pb->cje + f2_, kl = pb->cks - f3_, ku = pb->cke + f3_;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        // KGF: CellCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
-        for (auto cc_pair : pb->pmr->pvars_cc_) {
-          AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-          AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
-          int nu = var_cc->GetDim4() - 1;
-          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_cc),
-                                    0, nu, il, iu, jl, ju, kl, ku, p);
-          pmr->ProlongateCellCenteredValues(
-              (*coarse_cc), (*var_cc), 0, nu,
-              pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
-        }
-        // KGF: FaceCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
-        for (auto fc_pair : pb->pmr->pvars_fc_) {
-          FaceField *var_fc = std::get<0>(fc_pair);
-          FaceField *coarse_fc = std::get<1>(fc_pair);
-
-          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x1f,
-                                      il, iu+1, jl, ju, kl, ku, p);
-          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x2f,
-                                      il, iu, jl, ju+f2_, kl, ku, p);
-          BufferUtility::UnpackData(recvbuf[rb_idx], (*coarse_fc).x3f,
-                                      il, iu, jl, ju, kl, ku+f3_, p);
-          pmr->ProlongateSharedFieldX1(
-              (*coarse_fc).x1f, (*var_fc).x1f,
-              pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
-          pmr->ProlongateSharedFieldX2(
-              (*coarse_fc).x2f, (*var_fc).x2f,
-              pb->cis, pb->cie, pb->cjs, pb->cje+f2_, pb->cks, pb->cke);
-          pmr->ProlongateSharedFieldX3(
-              (*coarse_fc).x3f, (*var_fc).x3f,
-              pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3_);
-          pmr->ProlongateInternalField(
-              (*var_fc), pb->cis, pb->cie,
-              pb->cjs, pb->cje, pb->cks, pb->cke);
-        }
+        FinishRecvCoarseToFineAMR(pb, recvbuf[rb_idx]);
         rb_idx++;
       }
     }
@@ -2676,6 +2402,313 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             pb->cis, pb->cie,
                             pb->cjs, pb->cje,
                             pb->cks, pb->cke+f3_, p);
+  }
+  return;
+}
+
+void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
+                                       LogicalLocation &loc) {
+  MeshRefinement *pmr = pob->pmr;
+  int il = pmb->is + ((loc.lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
+  int jl = pmb->js + ((loc.lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
+  int kl = pmb->ks + ((loc.lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
+
+  // KGF: CellCentered step 7: f2c, same MPI rank, different level (just
+  // restrict+copy, no pack/send)
+
+  // KGF: absent a zip() feature for range-based for loops, manually advance the
+  // iterator over "SMR/AMR-enrolled" cell-centered quantities on the new
+  // MeshBlock in lock-step with pob
+  auto pmb_cc_it = pmb->pmr->pvars_cc_.begin();
+  // iterate MeshRefinement std::vectors on pob
+  for (auto cc_pair : pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
+                                    0, nu,
+                                    pob->cis, pob->cie,
+                                    pob->cjs, pob->cje,
+                                    pob->cks, pob->cke);
+    // KGF:
+    // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
+    AthenaArray<Real> &src = (*coarse_cc);
+    AthenaArray<Real> &dst = *(std::get<0>(*pmb_cc_it)); // pmb->phydro->u;
+    for (int nv=0; nv<=nu; nv++) {
+      for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+        for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+          for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
+            dst(nv, k, j, i) = src(nv, fk, fj, fi);
+        }
+      }
+    }
+    pmb_cc_it++;
+  } // end loop over var_cc
+
+  // KGF: FaceCentered step 7: f2c, same MPI rank, different level (just
+  // restrict+copy, no pack/send)
+
+  auto pmb_fc_it = pmb->pmr->pvars_fc_.begin();
+  for (auto fc_pair : pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
+    pmr->RestrictFieldX1((*var_fc).x1f, (*coarse_fc).x1f,
+                         pob->cis, pob->cie+1,
+                         pob->cjs, pob->cje,
+                         pob->cks, pob->cke);
+    pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
+                         pob->cis, pob->cie,
+                         pob->cjs, pob->cje+f2_,
+                         pob->cks, pob->cke);
+    pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
+                         pob->cis, pob->cie,
+                         pob->cjs, pob->cje,
+                         pob->cks, pob->cke+f3_);
+    FaceField &src_b = (*coarse_fc);
+    FaceField &dst_b = *(std::get<0>(*pmb_fc_it)); // pmb->pfield->b;
+    for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+      for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+        for (int i=il, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
+          dst_b.x1f(k, j, i) = src_b.x1f(fk, fj, fi);
+      }
+    }
+    for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+      for (int j=jl, fj=pob->cjs; fj<=pob->cje+f2_; j++, fj++) {
+        for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
+          dst_b.x2f(k, j, i) = src_b.x2f(fk, fj, fi);
+      }
+    }
+    if (pmb->block_size.nx2 == 1) {
+      // int iu = il + block_size.nx1/2 - 1;
+      // KGF:
+      int iu = il + pmb->block_size.nx1/2 - 1;
+      for (int i=il; i<=iu; i++)
+        dst_b.x2f(pmb->ks, pmb->js+1, i) = dst_b.x2f(pmb->ks, pmb->js, i);
+    }
+    for (int k=kl, fk=pob->cks; fk<=pob->cke+f3_; k++, fk++) {
+      for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+        for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
+          dst_b.x3f(k, j, i) = src_b.x3f(fk, fj, fi);
+      }
+    }
+    if (pmb->block_size.nx3 == 1) {
+      // int iu = il + block_size.nx1/2 - 1, ju = jl + block_size.nx2/2 - 1;
+      // KGF:
+      int iu = il + pmb->block_size.nx1/2 - 1, ju = jl + pmb->block_size.nx2/2 - 1;
+      if (pmb->block_size.nx2 == 1) ju = jl;
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++)
+          dst_b.x3f(pmb->ks+1, j, i) = dst_b.x3f(pmb->ks, j, i);
+      }
+    }
+    pmb_fc_it++;
+  } // end loop over fc
+  return;
+}
+
+void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
+                                       LogicalLocation &newloc) {
+  MeshRefinement *pmr = pmb->pmr;
+  int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2_,
+      ju = pob->cje + f2_, kl = pob->cks - f3_, ku = pob->cke + f3_;
+  int cis = ((newloc.lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
+  int cjs = ((newloc.lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2_;
+  int cks = ((newloc.lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3_;
+
+  // KGF: CellCentered step 7: c2f, same MPI rank, different level (just
+  // copy+prolongate, no pack/send)
+  auto pob_cc_it = pob->pmr->pvars_cc_.begin();
+  // iterate MeshRefinement std::vectors on new pmb
+  for (auto cc_pair : pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+
+    AthenaArray<Real> &src = *(std::get<0>(*pob_cc_it)); // pob->phydro->u;
+    AthenaArray<Real> &dst = (*coarse_cc); // pmb->phydro->coarse_cons_;
+    // fill the coarse buffer
+    for (int nv=0; nv<=nu; nv++) {
+      for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+        for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+          for (int i=il, ci=cis; i<=iu; i++, ci++)
+            dst(nv, k, j, i) = src(nv, ck, cj, ci);
+        }
+      }
+    }
+    pmr->ProlongateCellCenteredValues(
+        dst, (*var_cc), 0, nu,
+        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
+    pob_cc_it++;
+  } // end loop over var_cc
+
+  // KGF: FaceCentered step 7: c2f, same MPI rank, different level (just
+  // copy+prolongate, no pack/send)
+
+  auto pob_fc_it = pob->pmr->pvars_fc_.begin();
+  // iterate MeshRefinement std::vectors on new pmb
+  for (auto fc_pair : pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
+
+    FaceField &src_b = *(std::get<0>(*pob_fc_it));
+    FaceField &dst_b = (*coarse_fc);
+    for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+      for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+        for (int i=il, ci=cis; i<=iu+1; i++, ci++)
+          dst_b.x1f(k, j, i) = src_b.x1f(ck, cj, ci);
+      }
+    }
+    for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+      for (int j=jl, cj=cjs; j<=ju+f2_; j++, cj++) {
+        for (int i=il, ci=cis; i<=iu; i++, ci++)
+          dst_b.x2f(k, j, i) = src_b.x2f(ck, cj, ci);
+      }
+    }
+    for (int k=kl, ck=cks; k<=ku+f3_; k++, ck++) {
+      for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+        for (int i=il, ci=cis; i<=iu; i++, ci++)
+          dst_b.x3f(k, j, i) = src_b.x3f(ck, cj, ci);
+      }
+    }
+    pmr->ProlongateSharedFieldX1(
+        dst_b.x1f, (*var_fc).x1f,
+        pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
+    pmr->ProlongateSharedFieldX2(
+        dst_b.x2f, (*var_fc).x2f,
+        pob->cis, pob->cie, pob->cjs, pob->cje+f2_, pob->cks, pob->cke);
+    pmr->ProlongateSharedFieldX3(
+        dst_b.x3f, (*var_fc).x3f,
+        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3_);
+    pmr->ProlongateInternalField(
+        (*var_fc), pob->cis, pob->cie,
+        pob->cjs, pob->cje, pob->cks, pob->cke);
+    pob_fc_it++;
+  } // end loop over var_fc
+  return;
+}
+
+void Mesh::FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf) {
+  int p = 0;
+  // KGF: CellCentered step 8 (receive and load), branch 1 (same2same: unpack)
+  for (auto cc_pair : pb->pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, (*var_cc), 0, nu,
+                              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
+  }
+  // KGF: FaceCentered step 8 (receive and load), branch 1 (same2same: unpack)
+  for (auto fc_pair : pb->pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField &dst_b = (*var_fc);
+    BufferUtility::UnpackData(
+        recvbuf, dst_b.x1f,
+        pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(
+        recvbuf, dst_b.x2f,
+        pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(
+        recvbuf, dst_b.x3f,
+        pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
+    if (pb->block_size.nx2 == 1) {
+      for (int i=pb->is; i<=pb->ie; i++)
+        dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
+    }
+    if (pb->block_size.nx3 == 1) {
+      for (int j=pb->js; j<=pb->je; j++) {
+        for (int i=pb->is; i<=pb->ie; i++)
+          dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
+      }
+    }
+  } // end loop over var_fc
+  // WARNING(felker): casting from "Real *" to "int *" in order to read single
+  // appended integer from received buffer is slightly unsafe
+  int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
+  pb->pmr->deref_count_ = *dcp;
+  return;
+}
+
+void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
+                                     LogicalLocation &lloc) {
+  int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
+  int p = 0, il, iu, jl, ju, kl, ku;
+  if (ox1 == 0) il = pb->is,            iu = pb->is + pb->block_size.nx1/2 - 1;
+  else        il = pb->is + pb->block_size.nx1/2, iu = pb->ie;
+  if (ox2 == 0) jl = pb->js,            ju = pb->js + pb->block_size.nx2/2 - f2_;
+  else        jl = pb->js + pb->block_size.nx2/2, ju = pb->je;
+  if (ox3 == 0) kl = pb->ks,            ku = pb->ks + pb->block_size.nx3/2 - f3_;
+  else        kl = pb->ks + pb->block_size.nx3/2, ku = pb->ke;
+
+  // KGF: CellCentered step 8 (receive and load), branch 2 (f2c: unpack)
+  for (auto cc_pair : pb->pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, (*var_cc), 0, nu,
+                              il, iu, jl, ju, kl, ku, p);
+  }
+  // KGF: FaceCentered step 8 (receive and load), branch 2 (f2c: unpack)
+  for (auto fc_pair : pb->pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField &dst_b = (*var_fc);
+    BufferUtility::UnpackData(recvbuf, dst_b.x1f,
+                              il, iu+1, jl, ju, kl, ku, p);
+    BufferUtility::UnpackData(recvbuf, dst_b.x2f,
+                              il, iu, jl, ju+f2_, kl, ku, p);
+    BufferUtility::UnpackData(recvbuf, dst_b.x3f,
+                              il, iu, jl, ju, kl, ku+f3_, p);
+    if (pb->block_size.nx2 == 1) {
+      for (int i=il; i<=iu; i++)
+        dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
+    }
+    if (pb->block_size.nx3 == 1) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++)
+          dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
+      }
+    }
+  } // end loop over var_fc
+  return;
+}
+
+
+void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
+  MeshRefinement *pmr = pb->pmr;
+  int p = 0;
+  int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2_,
+      ju = pb->cje + f2_, kl = pb->cks - f3_, ku = pb->cke + f3_;
+  // KGF: CellCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+  for (auto cc_pair : pb->pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, (*coarse_cc),
+                              0, nu, il, iu, jl, ju, kl, ku, p);
+    pmr->ProlongateCellCenteredValues(
+        (*coarse_cc), (*var_cc), 0, nu,
+        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+  }
+  // KGF: FaceCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+  for (auto fc_pair : pb->pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
+
+    BufferUtility::UnpackData(recvbuf, (*coarse_fc).x1f,
+                              il, iu+1, jl, ju, kl, ku, p);
+    BufferUtility::UnpackData(recvbuf, (*coarse_fc).x2f,
+                              il, iu, jl, ju+f2_, kl, ku, p);
+    BufferUtility::UnpackData(recvbuf, (*coarse_fc).x3f,
+                              il, iu, jl, ju, kl, ku+f3_, p);
+    pmr->ProlongateSharedFieldX1(
+        (*coarse_fc).x1f, (*var_fc).x1f,
+        pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
+    pmr->ProlongateSharedFieldX2(
+        (*coarse_fc).x2f, (*var_fc).x2f,
+        pb->cis, pb->cie, pb->cjs, pb->cje+f2_, pb->cks, pb->cke);
+    pmr->ProlongateSharedFieldX3(
+        (*coarse_fc).x3f, (*var_fc).x3f,
+        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3_);
+    pmr->ProlongateInternalField(
+        (*var_fc), pb->cis, pb->cie,
+        pb->cjs, pb->cje, pb->cks, pb->cke);
   }
   return;
 }

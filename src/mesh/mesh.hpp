@@ -271,9 +271,20 @@ class Mesh {
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   // Mesh::AdaptiveMeshRefinement() helper functions:
+  // step 6: send
   void PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf);
   void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);
   void PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf);
+  // step 7: create new MeshBlock list (same MPI rank but diff level: create new block)
+  void FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
+                                   LogicalLocation &loc);
+  void FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
+                                   LogicalLocation &newloc);
+  // step 8: receive
+  void FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf);
+  void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
+  void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
+
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
