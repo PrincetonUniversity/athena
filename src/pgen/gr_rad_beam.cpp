@@ -79,8 +79,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  if (pin->GetString("mesh", "ix1_bc") == "user") {
+    EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
+  }
+  if (pin->GetString("mesh", "ox1_bc") == "user") {
+    EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  }
 
   // Enroll source function
   EnrollUserExplicitRadSourceFunction(Source);
