@@ -75,7 +75,6 @@ class TaskList {
   Task task_list_[64];
 
  private:
-  Mesh* pmy_mesh_;
   virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
@@ -123,7 +122,6 @@ class TimeIntegratorTaskList : public TaskList {
 
   TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
   TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
-  TaskStatus CalcDiffusivity(MeshBlock *pmb, int stage);
 
   TaskStatus HydroSend(MeshBlock *pmb, int stage);
   TaskStatus FieldSend(MeshBlock *pmb, int stage);
