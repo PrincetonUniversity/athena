@@ -12,8 +12,9 @@
 
 // C++ headers
 #include <algorithm>  // std::sort()
-#include <cinttypes>  // std::int64_t format macro PRId64 for fixed-width integer types
+#include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
 #include <cmath>      // std::abs(), std::pow()
+#include <cstdint>    // std::int64_t fixed-wdith integer type alias
 #include <cstdlib>
 #include <cstring>    // std::memcpy()
 #include <iomanip>
