@@ -351,7 +351,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (SEND_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FluxCorrectSend);
+          (&TimeIntegratorTaskList::HydroFluxCorrectSend);
       break;
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
@@ -362,7 +362,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (RECV_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FluxCorrectReceive);
+          (&TimeIntegratorTaskList::HydroFluxCorrectReceive);
       break;
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
@@ -629,7 +629,7 @@ TaskStatus TimeIntegratorTaskList::EMFCalculate(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
-TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::HydroFluxCorrectSend(MeshBlock *pmb, int stage) {
   pmb->phydro->phbval->SendFluxCorrection();
   return TaskStatus::success;
 }
@@ -642,7 +642,7 @@ TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
-TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::HydroFluxCorrectReceive(MeshBlock *pmb, int stage) {
   if (pmb->phydro->phbval->ReceiveFluxCorrection() == true) {
     return TaskStatus::next;
   } else {

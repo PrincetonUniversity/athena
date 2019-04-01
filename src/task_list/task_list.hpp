@@ -109,10 +109,10 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus HydroFluxCalculate(MeshBlock *pmb, int stage);
   TaskStatus EMFCalculate(MeshBlock *pmb, int stage);
 
-  TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
+  TaskStatus HydroFluxCorrectSend(MeshBlock *pmb, int stage);
   TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
 
-  TaskStatus FluxCorrectReceive(MeshBlock *pmb, int stage);
+  TaskStatus HydroFluxCorrectReceive(MeshBlock *pmb, int stage);
   TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
 
   TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
