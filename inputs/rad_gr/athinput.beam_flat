@@ -8,7 +8,7 @@ problem_id = beam_flat  # name of run
 <time>
 cfl_number = 0.3  # fraction of Courant condition
 nlim       = -1   # maximum number of timesteps
-tlim       = 5.0  # maximum time to run
+tlim       = 1.0  # maximum time to run
 integrator = vl2  # time integration algorithm
 xorder     = 2    # order of spatial reconstruction
 ncycle_out = 1    # interval for stdout summary info
@@ -17,7 +17,7 @@ ncycle_out = 1    # interval for stdout summary info
 file_type = hdf5  # output format
 variable  = uov   # choice of variables to output
 id        = user  # name of output files
-dt        = 1.0   # output cadence
+dt        = 0.1   # output cadence
 xdmf      = 0     # whether to include auxiliary metadata file
 
 <output2>
@@ -54,8 +54,8 @@ nx3 = 16  # block size in z-direction
 gamma = 1.3333333333333333  # ratio of specific heats Gamma
 
 <radiation>
-n_polar     = 7  # number of polar angles in direction space
-n_azimuthal = 8  # number of azimuthal angles in direction space
+n_polar     = 8   # number of polar angles in direction space
+n_azimuthal = 16  # number of azimuthal angles in direction space
 
 <problem>
 pos_1  = -0.5  # x-coordinate of beam origin
@@ -65,4 +65,4 @@ width  = 0.25  # full proper diameter of beam
 dir_1  = 1.0   # relative x-direction of beam center
 dir_2  = 0.0   # relative y-direction of beam center
 dir_3  = 0.0   # relative z-direction of beam center
-spread = 60.0  # full spread of beam in direction, in degrees
+spread = 45.0  # full spread of beam in direction, in degrees
