@@ -2162,7 +2162,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     } else {
       // on a different refinement level or MPI rank - create a new block
       BoundaryFlag block_bcs[6];
-      block_size.nx1 = bnx1, block_size.nx2 = bnx2, block_size.nx3 = bnx3;
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       // insert new block in singly-linked list of MeshBlocks
       if (n == nbs) { // first node

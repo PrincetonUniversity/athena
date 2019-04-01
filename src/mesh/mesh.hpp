@@ -271,11 +271,14 @@ class Mesh {
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   // Mesh::AdaptiveMeshRefinement() helper functions:
+  // KGF: these may not need to be Mesh class private member fns. They only access Mesh
+  // data members "bool f2_, f3_" ?
   // step 6: send
   void PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf);
   void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);
   void PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf);
   // step 7: create new MeshBlock list (same MPI rank but diff level: create new block)
+  // KGF: change the names of these 2x fns? FillBlockFineToCoarseAMR()?
   void FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                    LogicalLocation &loc);
   void FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
