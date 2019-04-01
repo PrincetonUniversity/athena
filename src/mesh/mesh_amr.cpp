@@ -578,7 +578,7 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
   for (auto cc_pair : pb->pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    BufferUtility::PackData((*var_cc), sendbuf, 0, nu,
+    BufferUtility::PackData(*var_cc, sendbuf, 0, nu,
                             il, iu, jl, ju, kl, ku, p);
   }
 
@@ -607,12 +607,12 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
+    pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc,
                                     0, nu,
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke);
-    BufferUtility::PackData((*coarse_cc), sendbuf, 0, nu,
+    BufferUtility::PackData(*coarse_cc, sendbuf, 0, nu,
                             pb->cis, pb->cie,
                             pb->cjs, pb->cje,
                             pb->cks, pb->cke, p);
@@ -668,15 +668,15 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    pmr->RestrictCellCenteredValues((*var_cc), (*coarse_cc),
+    pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc,
                                     0, nu,
                                     pob->cis, pob->cie,
                                     pob->cjs, pob->cje,
                                     pob->cks, pob->cke);
     // KGF:
     // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
-    AthenaArray<Real> &src = (*coarse_cc);
-    AthenaArray<Real> &dst = *(std::get<0>(*pmb_cc_it)); // pmb->phydro->u;
+    AthenaArray<Real> &src = *coarse_cc;
+    AthenaArray<Real> &dst = *std::get<0>(*pmb_cc_it); // pmb->phydro->u;
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
         for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
@@ -707,8 +707,8 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                          pob->cis, pob->cie,
                          pob->cjs, pob->cje,
                          pob->cks, pob->cke+f3_);
-    FaceField &src_b = (*coarse_fc);
-    FaceField &dst_b = *(std::get<0>(*pmb_fc_it)); // pmb->pfield->b;
+    FaceField &src_b = *coarse_fc;
+    FaceField &dst_b = *std::get<0>(*pmb_fc_it); // pmb->pfield->b;
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
       for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
         for (int i=il, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
@@ -767,8 +767,8 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
 
-    AthenaArray<Real> &src = *(std::get<0>(*pob_cc_it)); // pob->phydro->u;
-    AthenaArray<Real> &dst = (*coarse_cc); // pmb->phydro->coarse_cons_;
+    AthenaArray<Real> &src = *std::get<0>(*pob_cc_it); // pob->phydro->u;
+    AthenaArray<Real> &dst = *coarse_cc; // pmb->phydro->coarse_cons_;
     // fill the coarse buffer
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, ck=cks; k<=ku; k++, ck++) {
@@ -779,7 +779,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
       }
     }
     pmr->ProlongateCellCenteredValues(
-        dst, (*var_cc), 0, nu,
+        dst, *var_cc, 0, nu,
         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
     pob_cc_it++;
   } // end loop over var_cc
@@ -793,8 +793,8 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField *coarse_fc = std::get<1>(fc_pair);
 
-    FaceField &src_b = *(std::get<0>(*pob_fc_it));
-    FaceField &dst_b = (*coarse_fc);
+    FaceField &src_b = *std::get<0>(*pob_fc_it);
+    FaceField &dst_b = *coarse_fc;
     for (int k=kl, ck=cks; k<=ku; k++, ck++) {
       for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
         for (int i=il, ci=cis; i<=iu+1; i++, ci++)
@@ -823,7 +823,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
         dst_b.x3f, (*var_fc).x3f,
         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3_);
     pmr->ProlongateInternalField(
-        (*var_fc), pob->cis, pob->cie,
+        *var_fc, pob->cis, pob->cie,
         pob->cjs, pob->cje, pob->cks, pob->cke);
     pob_fc_it++;
   } // end loop over var_fc
@@ -836,13 +836,13 @@ void Mesh::FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf) {
   for (auto cc_pair : pb->pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    BufferUtility::UnpackData(recvbuf, (*var_cc), 0, nu,
+    BufferUtility::UnpackData(recvbuf, *var_cc, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
   // KGF: FaceCentered step 8 (receive and load), branch 1 (same2same: unpack)
   for (auto fc_pair : pb->pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
-    FaceField &dst_b = (*var_fc);
+    FaceField &dst_b = *var_fc;
     BufferUtility::UnpackData(
         recvbuf, dst_b.x1f,
         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
@@ -885,13 +885,13 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
   for (auto cc_pair : pb->pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    BufferUtility::UnpackData(recvbuf, (*var_cc), 0, nu,
+    BufferUtility::UnpackData(recvbuf, *var_cc, 0, nu,
                               il, iu, jl, ju, kl, ku, p);
   }
   // KGF: FaceCentered step 8 (receive and load), branch 2 (f2c: unpack)
   for (auto fc_pair : pb->pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
-    FaceField &dst_b = (*var_fc);
+    FaceField &dst_b = *var_fc;
     BufferUtility::UnpackData(recvbuf, dst_b.x1f,
                               il, iu+1, jl, ju, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, dst_b.x2f,
@@ -923,10 +923,10 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-    BufferUtility::UnpackData(recvbuf, (*coarse_cc),
+    BufferUtility::UnpackData(recvbuf, *coarse_cc,
                               0, nu, il, iu, jl, ju, kl, ku, p);
     pmr->ProlongateCellCenteredValues(
-        (*coarse_cc), (*var_cc), 0, nu,
+        *coarse_cc, *var_cc, 0, nu,
         pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
   }
   // KGF: FaceCentered step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
@@ -950,7 +950,7 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
         (*coarse_fc).x3f, (*var_fc).x3f,
         pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3_);
     pmr->ProlongateInternalField(
-        (*var_fc), pb->cis, pb->cie,
+        *var_fc, pb->cis, pb->cie,
         pb->cjs, pb->cje, pb->cks, pb->cke);
   }
   return;
