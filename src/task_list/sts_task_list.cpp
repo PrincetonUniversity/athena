@@ -143,12 +143,12 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
+          (&SuperTimeStepTaskList::HydroFluxCalculate_STS);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateEMF_STS);
+          (&SuperTimeStepTaskList::EMFCalculate_STS);
       break;
 
     case (SEND_FLDFLX):
@@ -262,7 +262,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::HydroFluxCalculate_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   // Field *pfield=pmb->pfield;
 
@@ -273,7 +273,7 @@ TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int sta
   return TaskStatus::fail;
 }
 
-TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::EMFCalculate_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE_STS();
     return TaskStatus::next;

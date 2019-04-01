@@ -107,8 +107,8 @@ class TimeIntegratorTaskList : public TaskList {
   // functions
   TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
 
-  TaskStatus CalculateHydroFlux(MeshBlock *pmb, int stage);
-  TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
+  TaskStatus HydroFluxCalculate(MeshBlock *pmb, int stage);
+  TaskStatus EMFCalculate(MeshBlock *pmb, int stage);
 
   TaskStatus FluxCorrectSend(MeshBlock *pmb, int stage);
   TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
@@ -166,8 +166,8 @@ class SuperTimeStepTaskList : public TaskList {
   ~SuperTimeStepTaskList() {}
 
   // functions
-  TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
-  TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus HydroFluxCalculate_STS(MeshBlock *pmb, int stage);
+  TaskStatus EMFCalculate_STS(MeshBlock *pmb, int stage);
 
   TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
   TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);

@@ -339,12 +339,12 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::CalculateHydroFlux);
+          (&TimeIntegratorTaskList::HydroFluxCalculate);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::CalculateEMF);
+          (&TimeIntegratorTaskList::EMFCalculate);
       break;
 
     case (SEND_HYDFLX):
@@ -601,7 +601,7 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::HydroFluxCalculate(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Field *pfield = pmb->pfield;
 
@@ -617,7 +617,7 @@ TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::EMFCalculate(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TaskStatus::next;
