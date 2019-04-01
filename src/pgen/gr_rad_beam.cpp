@@ -67,12 +67,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Determine coordinate type
-  if (COORDINATE_SYSTEM == std::string("schwarzschild")) {
+  if (COORDINATE_SYSTEM == std::string("minkowski")) {
+    spherical = false;
+  } else if (COORDINATE_SYSTEM == std::string("schwarzschild")) {
     spherical = true;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in problem generator\n";
-    msg << "unknown coordinate system\n";
+    msg << "unsupported coordinate system\n";
     throw std::runtime_error(msg.str().c_str());
   }
 

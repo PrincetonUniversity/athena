@@ -1,5 +1,5 @@
 <comment>
-problem   = beam of radiation in GR
+problem   = beam of radiation in GR (black hole spacetime)
 configure = -g -r --prob beam --coord schwarzschild -hdf5
 
 <job>
@@ -45,6 +45,8 @@ ix3_bc = periodic           # clockwise boundary
 ox3_bc = periodic           # counterclockwise boundary
 
 refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
 
 <meshblock>
 nx1 = 12  # block size in r-direction
