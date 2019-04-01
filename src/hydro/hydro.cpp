@@ -73,14 +73,18 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     // Restrict, W(U) in BoundaryValues::ProlongateBoundaries() and (implicitly via
     // coarse_buf switch) for most of the main integrators + initialization communication
     coarse_cons_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
-    // coarse_prim_ is only used in BoundaryValues::ProlongateBoundaries() for Restrict,
-    // W(U), and applications of physical bndry
-    // and (implicitly via coarse_buf switch) in Mesh::Initialize() for GR+AMR
+
+    // coarse_prim_ is only used in BoundaryValues::ProlongateBoundaries() 3x step fns:
+    // - RestrictGhost..() (GR+SMR/AMR)
+    // - ApplyPhysicalBoundariesOnCoarseLevel(): W(U) then BoundaryFunction_[] (always)
+    // - ProlongateGhostCells(): (always)
+    // and (implicitly via coarse_buf switch) in basic load/send/recv/set calls in
+    // Mesh::Initialize() for GR+SMR/AMR
     coarse_prim_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
     // KGF: in the future, we may have a need to pass primitives in
     // Mesh::AdaptiveMeshRefinement() for GR purposes.
 
-    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+    // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
     pmy_block->pmr->AddToAMR(&u, &coarse_cons_);
   }
 

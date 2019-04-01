@@ -270,7 +270,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
        || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
-    azimuthal_shift_.NewAthenaArray(pmb->ke+NGHOST+2);
+    azimuthal_shift_.NewAthenaArray(pmb->ke + NGHOST + 2);
   // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
   // KGF: prevent reallocation of contiguous memory space for each of 3x current calls to
@@ -330,14 +330,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 //         shbb_.irnklist=new int[nrbx2];
 //         shbb_.ilevlist=new int[nrbx2];
 //         // attach corner cells from L/R side
-//         int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;
+//         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
 //         int bsize=0, esize=0;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           // extra cell in azimuth/vertical
-//           bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;
+//           bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
 //           // face plus edge for EMF
-//           esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
-//                 +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;
+//           esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
+//                 +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
 //         }
 //         for (int n=0; n<2; n++) {
 //           send_innerbuf_hydro_[n] = new Real[size];
@@ -364,8 +364,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 //         }
 //         size = NGHOST*ssize_*NHYDRO;// corner cells only
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//             bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
-//             esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
+//             bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
+//             esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
 //         }
 //         for (int n=2; n<4; n++) {
 //           send_innerbuf_hydro_[n] = new Real[size];
@@ -419,14 +419,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 //         shbb_.ornklist=new int[nrbx2];
 //         shbb_.olevlist=new int[nrbx2];
 //         // attach corner cells from L/R side
-//         int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;
+//         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
 //         int bsize=0, esize=0;
 //         if (MAGNETIC_FIELDS_ENABLED) {
 //           // extra cell in azimuth/vertical
-//           bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;
+//           bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
 //           // face plus edge for EMF
-//           esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
-//                 +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;
+//           esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
+//                 +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
 //         }
 //         for (int n=0; n<2; n++) {
 //           send_outerbuf_hydro_[n] = new Real[size];
@@ -453,8 +453,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 //         }
 //         size = NGHOST*ssize_*NHYDRO;// corner cells only
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//           bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
-//           esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
+//           bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
+//           esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
 //         }
 //         for (int n=2; n<4; n++) {
 //           send_outerbuf_hydro_[n] = new Real[size];
@@ -810,7 +810,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
-  int bis = pmb->is-NGHOST, bie = pmb->ie+NGHOST,
+  int bis = pmb->is - NGHOST, bie = pmb->ie + NGHOST,
       bjs = pmb->js, bje = pmb->je,
       bks = pmb->ks, bke = pmb->ke;
 
@@ -818,14 +818,14 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // updated
 
   // x1, then x2, then x3
-  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2>1)
-    bjs = pmb->js-NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2>1)
-    bje = pmb->je+NGHOST;
-  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr && pmb->block_size.nx3>1)
-    bks = pmb->ks-NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3>1)
-    bke = pmb->ke+NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2 > 1)
+    bjs = pmb->js - NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2 > 1)
+    bje = pmb->je + NGHOST;
+  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr && pmb->block_size.nx3 > 1)
+    bks = pmb->ks - NGHOST;
+  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3 > 1)
+    bke = pmb->ke + NGHOST;
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
   // to user-defined boundary function stored in function pointer array
@@ -868,6 +868,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       default:
         break;
     }
+    // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                               pmb->is-NGHOST, pmb->is-1,
@@ -902,6 +903,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       default:
         break;
     }
+    // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                               pmb->ie+1, pmb->ie+NGHOST,
@@ -911,7 +913,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                     pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
 
-  if (pmb->block_size.nx2>1) { // 2D or 3D
+  if (pmb->block_size.nx2 > 1) { // 2D or 3D
     // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
     if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
       switch(block_bcs[BoundaryFace::inner_x2]) {
@@ -944,6 +946,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         default:
           break;
       }
+      // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, pmb->js-NGHOST, pmb->js-1,
@@ -985,6 +988,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         default:
           break;
       }
+      // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, pmb->je+1, pmb->je+NGHOST,
@@ -995,9 +999,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
   }
 
-  if (pmb->block_size.nx3>1) { // 3D
-    bjs = pmb->js-NGHOST;
-    bje = pmb->je+NGHOST;
+  if (pmb->block_size.nx3 > 1) { // 3D
+    bjs = pmb->js - NGHOST;
+    bje = pmb->je + NGHOST;
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
     if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
@@ -1024,6 +1028,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         default:
           break;
       }
+      // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, bjs, bje,
@@ -1058,6 +1063,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
         default:
           break;
       }
+      // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
                                                 bis, bie, bjs, bje,

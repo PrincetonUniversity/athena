@@ -606,70 +606,70 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   delete [] headerdata;
 
   int dim = 1;
-  if (mesh_size.nx2 > 1) dim=2;
-  if (mesh_size.nx3 > 1) dim=3;
+  if (mesh_size.nx2 > 1) dim = 2;
+  if (mesh_size.nx3 > 1) dim = 3;
 
   // initialize
-  loclist=new LogicalLocation[nbtotal];
-  offset=new IOWrapperSizeT[nbtotal];
-  costlist=new Real[nbtotal];
-  ranklist=new int[nbtotal];
-  nslist=new int[Globals::nranks];
-  nblist=new int[Globals::nranks];
+  loclist = new LogicalLocation[nbtotal];
+  offset = new IOWrapperSizeT[nbtotal];
+  costlist = new Real[nbtotal];
+  ranklist = new int[nbtotal];
+  nslist = new int[Globals::nranks];
+  nblist = new int[Globals::nranks];
 
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
   block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
   block_size.nx3 = pin->GetOrAddInteger("meshblock","nx3",mesh_size.nx3);
 
   // calculate the number of the blocks
-  nrbx1=mesh_size.nx1/block_size.nx1;
-  nrbx2=mesh_size.nx2/block_size.nx2;
-  nrbx3=mesh_size.nx3/block_size.nx3;
+  nrbx1 = mesh_size.nx1/block_size.nx1;
+  nrbx2 = mesh_size.nx2/block_size.nx2;
+  nrbx3 = mesh_size.nx3/block_size.nx3;
 
   // initialize user-enrollable functions
   if (mesh_size.x1rat != 1.0) {
-    use_uniform_meshgen_fn_[X1DIR]=false;
-    MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
+    use_uniform_meshgen_fn_[X1DIR] = false;
+    MeshGenerator_[X1DIR] = DefaultMeshGeneratorX1;
   } else {
-    use_uniform_meshgen_fn_[X1DIR]=true;
-    MeshGenerator_[X1DIR]=UniformMeshGeneratorX1;
+    use_uniform_meshgen_fn_[X1DIR] = true;
+    MeshGenerator_[X1DIR] = UniformMeshGeneratorX1;
   }
   if (mesh_size.x2rat != 1.0) {
-    use_uniform_meshgen_fn_[X2DIR]=false;
-    MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
+    use_uniform_meshgen_fn_[X2DIR] = false;
+    MeshGenerator_[X2DIR] = DefaultMeshGeneratorX2;
   } else {
-    use_uniform_meshgen_fn_[X2DIR]=true;
-    MeshGenerator_[X2DIR]=UniformMeshGeneratorX2;
+    use_uniform_meshgen_fn_[X2DIR] = true;
+    MeshGenerator_[X2DIR] = UniformMeshGeneratorX2;
   }
   if (mesh_size.x3rat != 1.0) {
-    use_uniform_meshgen_fn_[X3DIR]=false;
-    MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
+    use_uniform_meshgen_fn_[X3DIR] = false;
+    MeshGenerator_[X3DIR] = DefaultMeshGeneratorX3;
   } else {
-    use_uniform_meshgen_fn_[X3DIR]=true;
-    MeshGenerator_[X3DIR]=UniformMeshGeneratorX3;
+    use_uniform_meshgen_fn_[X3DIR] = true;
+    MeshGenerator_[X3DIR] = UniformMeshGeneratorX3;
   }
 
   for (int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=nullptr;
-  AMRFlag_=nullptr;
-  UserSourceTerm_=nullptr;
-  UserTimeStep_=nullptr;
-  ViscosityCoeff_=nullptr;
-  ConductionCoeff_=nullptr;
-  FieldDiffusivity_=nullptr;
-  MGBoundaryFunction_[BoundaryFace::inner_x1]=MGPeriodicInnerX1;
-  MGBoundaryFunction_[BoundaryFace::outer_x1]=MGPeriodicOuterX1;
-  MGBoundaryFunction_[BoundaryFace::inner_x2]=MGPeriodicInnerX2;
-  MGBoundaryFunction_[BoundaryFace::outer_x2]=MGPeriodicOuterX2;
-  MGBoundaryFunction_[BoundaryFace::inner_x3]=MGPeriodicInnerX3;
-  MGBoundaryFunction_[BoundaryFace::outer_x3]=MGPeriodicOuterX3;
+    BoundaryFunction_[dir] = nullptr;
+  AMRFlag_ = nullptr;
+  UserSourceTerm_ = nullptr;
+  UserTimeStep_ = nullptr;
+  ViscosityCoeff_ = nullptr;
+  ConductionCoeff_ = nullptr;
+  FieldDiffusivity_ = nullptr;
+  MGBoundaryFunction_[BoundaryFace::inner_x1] = MGPeriodicInnerX1;
+  MGBoundaryFunction_[BoundaryFace::outer_x1] = MGPeriodicOuterX1;
+  MGBoundaryFunction_[BoundaryFace::inner_x2] = MGPeriodicInnerX2;
+  MGBoundaryFunction_[BoundaryFace::outer_x2] = MGPeriodicOuterX2;
+  MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
+  MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
 
-  multilevel=false;
-  adaptive=false;
+  multilevel = false;
+  adaptive = false;
   if (pin->GetOrAddString("mesh","refinement","none") == "adaptive")
-    adaptive=true, multilevel=true;
+    adaptive = true, multilevel = true;
   else if (pin->GetOrAddString("mesh","refinement","none") == "static")
-    multilevel=true;
+    multilevel = true;
   if (adaptive == true) {
     max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if (max_level > 63) {
@@ -720,7 +720,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 
   // read the ID list
-  listsize=sizeof(LogicalLocation)+sizeof(Real);
+  listsize = sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
   char *idlist = new char[listsize*nbtotal];
   if (Globals::my_rank == 0) { // only the master process reads the ID list
@@ -735,13 +735,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MPI_Bcast(idlist, listsize*nbtotal, MPI_BYTE, 0, MPI_COMM_WORLD);
 #endif
 
-  int os=0;
+  int os = 0;
   for (int i=0; i<nbtotal; i++) {
     std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os += sizeof(LogicalLocation);
     std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
     os += sizeof(Real);
-    if (loclist[i].level>current_level) current_level=loclist[i].level;
+    if (loclist[i].level > current_level) current_level = loclist[i].level;
   }
   delete [] idlist;
 
@@ -794,22 +794,22 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
-  if (mesh_test>0) {
+  if (mesh_test > 0) {
     if (Globals::my_rank == 0) OutputMeshStructure(dim);
     delete [] offset;
     return;
   }
 
   // set gravity flag
-  gflag=0;
-  if (SELF_GRAVITY_ENABLED) gflag=1;
+  gflag = 0;
+  if (SELF_GRAVITY_ENABLED) gflag = 1;
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
 
   // allocate data buffer
-  int nb=nblist[Globals::my_rank];
-  int nbs=nslist[Globals::my_rank];
-  int nbe=nbs+nb-1;
+  int nb = nblist[Globals::my_rank];
+  int nbs = nslist[Globals::my_rank];
+  int nbe = nbs+nb-1;
   char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
@@ -905,7 +905,7 @@ void Mesh::OutputMeshStructure(int dim) {
   FILE *fp = nullptr;
 
   // open 'mesh_structure.dat' file
-  if (dim>=2) {
+  if (dim >= 2) {
     if ((fp = std::fopen("mesh_structure.dat","wb")) == nullptr) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
                 << "Cannot open mesh_structure.dat" << std::endl;
@@ -946,8 +946,8 @@ void Mesh::OutputMeshStructure(int dim) {
   int *nb_per_rank = new int[Globals::nranks];
   int *cost_per_rank = new int[Globals::nranks];
   for (int i=0; i<Globals::nranks; ++i) {
-    nb_per_rank[i]=0;
-    cost_per_rank[i]=0;
+    nb_per_rank[i] = 0;
+    cost_per_rank[i] = 0;
   }
   for (int i=0; i<nbtotal; i++) {
     nb_per_rank[ranklist[i]]++;
@@ -960,18 +960,18 @@ void Mesh::OutputMeshStructure(int dim) {
 
   // output relative size/locations of meshblock to file, for plotting
   Real real_max = std::numeric_limits<Real>::max();
-  Real mincost=real_max, maxcost=0.0, totalcost=0.0;
+  Real mincost = real_max, maxcost = 0.0, totalcost = 0.0;
   for (int i=root_level; i<=max_level; i++) {
     for (int j=0; j<nbtotal; j++) {
       if (loclist[j].level == i) {
         SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
-        std::int64_t &lx1=loclist[j].lx1;
-        std::int64_t &lx2=loclist[j].lx2;
-        std::int64_t &lx3=loclist[j].lx3;
-        int &ll=loclist[j].level;
-        mincost=std::min(mincost,costlist[i]);
-        maxcost=std::max(maxcost,costlist[i]);
-        totalcost+=costlist[i];
+        std::int64_t &lx1 = loclist[j].lx1;
+        std::int64_t &lx2 = loclist[j].lx2;
+        std::int64_t &lx3 = loclist[j].lx3;
+        int &ll = loclist[j].level;
+        mincost = std::min(mincost,costlist[i]);
+        maxcost = std::max(maxcost,costlist[i]);
+        totalcost += costlist[i];
         std::fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n", j, ranklist[j],
                      costlist[j]);
         std::fprintf(
@@ -1524,20 +1524,23 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
+        pmb = pmb_array[i];
+        pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
         if (multilevel == true)
           pbval->ProlongateBoundaries(time, 0.0);
 
-        int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
-        if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
-        if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
+        int il = pmb->is, iu = pmb->ie,
+            jl = pmb->js, ju = pmb->je,
+            kl = pmb->ks, ku = pmb->ke;
+        if (pbval->nblevel[1][1][0] != -1) il -= NGHOST;
+        if (pbval->nblevel[1][1][2] != -1) iu += NGHOST;
         if (pmb->block_size.nx2 > 1) {
-          if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
-          if (pbval->nblevel[1][2][1] != -1) ju+=NGHOST;
+          if (pbval->nblevel[1][0][1] != -1) jl -= NGHOST;
+          if (pbval->nblevel[1][2][1] != -1) ju += NGHOST;
         }
         if (pmb->block_size.nx3 > 1) {
-          if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
-          if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
+          if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
+          if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
         }
         pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                         phydro->w, pfield->bcc, pmb->pcoord,
@@ -1547,12 +1550,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (order == 4) {
           // fourth-order EOS:
           // for hydro, shrink buffer by 1 on all sides
-          if (pbval->nblevel[1][1][0] != -1) il+=1;
-          if (pbval->nblevel[1][1][2] != -1) iu-=1;
-          if (pbval->nblevel[1][0][1] != -1) jl+=1;
-          if (pbval->nblevel[1][2][1] != -1) ju-=1;
-          if (pbval->nblevel[0][1][1] != -1) kl+=1;
-          if (pbval->nblevel[2][1][1] != -1) ku-=1;
+          if (pbval->nblevel[1][1][0] != -1) il += 1;
+          if (pbval->nblevel[1][1][2] != -1) iu -= 1;
+          if (pbval->nblevel[1][0][1] != -1) jl += 1;
+          if (pbval->nblevel[1][2][1] != -1) ju -= 1;
+          if (pbval->nblevel[0][1][1] != -1) kl += 1;
+          if (pbval->nblevel[2][1][1] != -1) ku -= 1;
           // for MHD, shrink buffer by 3
           // TODO(felker): add MHD loop limit calculation for 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
@@ -1638,17 +1641,17 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
 
 void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
   std::stringstream msg;
-  Real real_max = std::numeric_limits<Real>::max();
-  Real totalcost=0, maxcost=0.0, mincost=(real_max);
+  Real real_max  =  std::numeric_limits<Real>::max();
+  Real totalcost = 0, maxcost = 0.0, mincost = (real_max);
 
   for (int i=0; i<nb; i++) {
-    totalcost+=clist[i];
-    mincost=std::min(mincost,clist[i]);
-    maxcost=std::max(maxcost,clist[i]);
+    totalcost += clist[i];
+    mincost = std::min(mincost,clist[i]);
+    maxcost = std::max(maxcost,clist[i]);
   }
-  int j=(Globals::nranks)-1;
-  Real targetcost=totalcost/Globals::nranks;
-  Real mycost=0.0;
+  int j = (Globals::nranks) - 1;
+  Real targetcost = totalcost/Globals::nranks;
+  Real mycost = 0.0;
   // create rank list from the end: the master MPI rank should have less load
   for (int i=nb-1; i>=0; i--) {
     if (targetcost == 0.0) {
@@ -1657,24 +1660,24 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
           << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
       ATHENA_ERROR(msg);
     }
-    mycost+=clist[i];
-    rlist[i]=j;
+    mycost += clist[i];
+    rlist[i] = j;
     if (mycost >= targetcost && j>0) {
       j--;
-      totalcost-=mycost;
-      mycost=0.0;
-      targetcost=totalcost/(j+1);
+      totalcost -= mycost;
+      mycost = 0.0;
+      targetcost = totalcost/(j+1);
     }
   }
-  slist[0]=0;
-  j=0;
+  slist[0] = 0;
+  j = 0;
   for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
     if (rlist[i] != rlist[i-1]) {
-      nlist[j]=i-nslist[j];
-      slist[++j]=i;
+      nlist[j] = i-nslist[j];
+      slist[++j] = i;
     }
   }
-  nlist[j]=nb-slist[j];
+  nlist[j] = nb-slist[j];
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
@@ -1702,78 +1705,78 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      BoundaryFlag *block_bcs) {
   std::int64_t &lx1 = loc.lx1;
-  std::int64_t &lx2 = loc.lx2;
-  std::int64_t &lx3 = loc.lx3;
   int &ll = loc.level;
-  std::int64_t nrbx_ll = nrbx1<<(ll-root_level);
+  std::int64_t nrbx_ll = nrbx1 << (ll - root_level);
 
   // calculate physical block size, x1
   if (lx1 == 0) {
-    block_size.x1min=mesh_size.x1min;
-    block_bcs[BoundaryFace::inner_x1]=mesh_bcs[BoundaryFace::inner_x1];
+    block_size.x1min = mesh_size.x1min;
+    block_bcs[BoundaryFace::inner_x1] = mesh_bcs[BoundaryFace::inner_x1];
   } else {
     Real rx = ComputeMeshGeneratorX(lx1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
-    block_size.x1min=MeshGenerator_[X1DIR](rx,mesh_size);
-    block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::block;
+    block_size.x1min = MeshGenerator_[X1DIR](rx, mesh_size);
+    block_bcs[BoundaryFace::inner_x1] = BoundaryFlag::block;
   }
-  if (lx1 == nrbx_ll-1) {
-    block_size.x1max=mesh_size.x1max;
-    block_bcs[BoundaryFace::outer_x1]=mesh_bcs[BoundaryFace::outer_x1];
+  if (lx1 == nrbx_ll - 1) {
+    block_size.x1max = mesh_size.x1max;
+    block_bcs[BoundaryFace::outer_x1] = mesh_bcs[BoundaryFace::outer_x1];
   } else {
     Real rx = ComputeMeshGeneratorX(lx1+1, nrbx_ll, use_uniform_meshgen_fn_[X1DIR]);
-    block_size.x1max=MeshGenerator_[X1DIR](rx,mesh_size);
-    block_bcs[BoundaryFace::outer_x1]=BoundaryFlag::block;
+    block_size.x1max = MeshGenerator_[X1DIR](rx, mesh_size);
+    block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::block;
   }
 
   // calculate physical block size, x2
   if (mesh_size.nx2 == 1) {
-    block_size.x2min=mesh_size.x2min;
-    block_size.x2max=mesh_size.x2max;
-    block_bcs[BoundaryFace::inner_x2]=mesh_bcs[BoundaryFace::inner_x2];
-    block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
+    block_size.x2min = mesh_size.x2min;
+    block_size.x2max = mesh_size.x2max;
+    block_bcs[BoundaryFace::inner_x2] = mesh_bcs[BoundaryFace::inner_x2];
+    block_bcs[BoundaryFace::outer_x2] = mesh_bcs[BoundaryFace::outer_x2];
   } else {
-    nrbx_ll = nrbx2<<(ll-root_level);
+    std::int64_t &lx2 = loc.lx2;
+    nrbx_ll = nrbx2 << (ll - root_level);
     if (lx2 == 0) {
-      block_size.x2min=mesh_size.x2min;
-      block_bcs[BoundaryFace::inner_x2]=mesh_bcs[BoundaryFace::inner_x2];
+      block_size.x2min = mesh_size.x2min;
+      block_bcs[BoundaryFace::inner_x2] = mesh_bcs[BoundaryFace::inner_x2];
     } else {
       Real rx = ComputeMeshGeneratorX(lx2, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
-      block_size.x2min=MeshGenerator_[X2DIR](rx,mesh_size);
-      block_bcs[BoundaryFace::inner_x2]=BoundaryFlag::block;
+      block_size.x2min = MeshGenerator_[X2DIR](rx, mesh_size);
+      block_bcs[BoundaryFace::inner_x2] = BoundaryFlag::block;
     }
     if (lx2 == (nrbx_ll)-1) {
-      block_size.x2max=mesh_size.x2max;
-      block_bcs[BoundaryFace::outer_x2]=mesh_bcs[BoundaryFace::outer_x2];
+      block_size.x2max = mesh_size.x2max;
+      block_bcs[BoundaryFace::outer_x2] = mesh_bcs[BoundaryFace::outer_x2];
     } else {
       Real rx = ComputeMeshGeneratorX(lx2+1, nrbx_ll, use_uniform_meshgen_fn_[X2DIR]);
-      block_size.x2max=MeshGenerator_[X2DIR](rx,mesh_size);
-      block_bcs[BoundaryFace::outer_x2]=BoundaryFlag::block;
+      block_size.x2max = MeshGenerator_[X2DIR](rx, mesh_size);
+      block_bcs[BoundaryFace::outer_x2] = BoundaryFlag::block;
     }
   }
 
   // calculate physical block size, x3
   if (mesh_size.nx3 == 1) {
-    block_size.x3min=mesh_size.x3min;
-    block_size.x3max=mesh_size.x3max;
-    block_bcs[BoundaryFace::inner_x3]=mesh_bcs[BoundaryFace::inner_x3];
-    block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
+    block_size.x3min = mesh_size.x3min;
+    block_size.x3max = mesh_size.x3max;
+    block_bcs[BoundaryFace::inner_x3] = mesh_bcs[BoundaryFace::inner_x3];
+    block_bcs[BoundaryFace::outer_x3] = mesh_bcs[BoundaryFace::outer_x3];
   } else {
-    nrbx_ll = nrbx3<<(ll-root_level);
+    std::int64_t &lx3 = loc.lx3;
+    nrbx_ll = nrbx3 << (ll - root_level);
     if (lx3 == 0) {
-      block_size.x3min=mesh_size.x3min;
-      block_bcs[BoundaryFace::inner_x3]=mesh_bcs[BoundaryFace::inner_x3];
+      block_size.x3min = mesh_size.x3min;
+      block_bcs[BoundaryFace::inner_x3] = mesh_bcs[BoundaryFace::inner_x3];
     } else {
       Real rx = ComputeMeshGeneratorX(lx3, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
-      block_size.x3min=MeshGenerator_[X3DIR](rx,mesh_size);
-      block_bcs[BoundaryFace::inner_x3]=BoundaryFlag::block;
+      block_size.x3min = MeshGenerator_[X3DIR](rx, mesh_size);
+      block_bcs[BoundaryFace::inner_x3] = BoundaryFlag::block;
     }
     if (lx3 == (nrbx_ll)-1) {
-      block_size.x3max=mesh_size.x3max;
-      block_bcs[BoundaryFace::outer_x3]=mesh_bcs[BoundaryFace::outer_x3];
+      block_size.x3max = mesh_size.x3max;
+      block_bcs[BoundaryFace::outer_x3] = mesh_bcs[BoundaryFace::outer_x3];
     } else {
       Real rx = ComputeMeshGeneratorX(lx3+1, nrbx_ll, use_uniform_meshgen_fn_[X3DIR]);
-      block_size.x3max = MeshGenerator_[X3DIR](rx,mesh_size);
-      block_bcs[BoundaryFace::outer_x3]=BoundaryFlag::block;
+      block_size.x3max = MeshGenerator_[X3DIR](rx, mesh_size);
+      block_bcs[BoundaryFace::outer_x3] = BoundaryFlag::block;
     }
   }
 

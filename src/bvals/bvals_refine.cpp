@@ -139,6 +139,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // KGF: 3/25/19 changes might be incompatible with this swap, which occured after
     // Cons2Prim call in original refactoring
+
+    // coarse_buf switch being used
     phbvar->var_cc = &(ph->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->coarse_b_);
@@ -288,7 +290,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     f1m = 1;
     f1p = 1;
   }
-  if (pmb->block_size.nx2>1) {
+  if (pmb->block_size.nx2 > 1) {
     if (nb.ox2 == 0) {
       if (nblevel[1][0][1] != -1) f2m = 1;
       if (nblevel[1][2][1] != -1) f2p = 1;
@@ -297,7 +299,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
       f2p = 1;
     }
   }
-  if (pmb->block_size.nx3>1) {
+  if (pmb->block_size.nx3 > 1) {
     if (nb.ox3 == 0) {
       if (nblevel[0][1][1] != -1) f3m = 1;
       if (nblevel[2][1][1] != -1) f3p = 1;
@@ -311,6 +313,8 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   // we run into a possible issue of passing nullptrs to this function if
   // MAGNETIC_FIELDS_ENABLED=0 but SMR/AMR + Hydro is active. Probably fine, since they
   // wont be dereferenced in the EOS function, but this is suboptimal.
+
+  // KGF: COUPLING OF QUANTITIES (must be manually specified)
   pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
                                   pf->coarse_b_, ph->coarse_prim_,
                                   pf->coarse_bcc_, pmr->pcoarsec,
@@ -561,12 +565,13 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     // step 4. calculate the internal finer fields using the Toth & Roe method
     pmr->ProlongateInternalField(pf->b, si, ei, sj, ej, sk, ek);
 
-
+    // KGF: COUPLING OF QUANTITIES (must be manually specified)
     // Field prolongation completed, calculate cell centered fields
     pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
                                             fsi, fei, fsj, fej, fsk, fek);
   }
 
+  // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // calculate conservative variables
   pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
                                   fsi, fei, fsj, fej, fsk, fek);
