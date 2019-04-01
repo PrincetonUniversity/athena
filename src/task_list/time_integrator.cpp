@@ -234,7 +234,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
     }
-    if (pm->multilevel==true) { // SMR or AMR
+    if (pm->multilevel == true) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTask(RECV_HYDFLX,CALC_HYDFLX);
       AddTask(INT_HYD,RECV_HYDFLX);
@@ -273,7 +273,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
 
       // prolongate, compute new primitives
-      if (pm->multilevel==true) { // SMR or AMR
+      if (pm->multilevel == true) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
         AddTask(CON2PRIM,PROLONG);
       } else {
@@ -286,7 +286,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     } else {  // HYDRO
       // prolongate, compute new primitives
-      if (pm->multilevel==true) { // SMR or AMR
+      if (pm->multilevel == true) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD));
         AddTask(CON2PRIM,PROLONG);
       } else {
@@ -302,7 +302,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     AddTask(PHY_BVAL,CON2PRIM);
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
-    if (pm->adaptive==true) {
+    if (pm->adaptive == true) {
       AddTask(AMR_FLAG,USERWORK);
       AddTask(CLEAR_ALLBND,AMR_FLAG);
     } else {
@@ -486,40 +486,41 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::FieldDiffusion);
       break;
-    // case (DIFFUSE_FLD):
+    // KGF: passive scalars:
+    // case (CALC_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::CalculateScalarFluxes);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (SEND_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarFluxSend);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (RECV_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarFluxCorrectReceive);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (INT_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarIntegrate);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (SEND_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarSend);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (RECV_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarReceive);
     //   break;
-    // case (DIFFUSE_FLD):
+    // case (SETB_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::FieldDiffusion);
+    //       (&TimeIntegratorTaskList::ScalarSetBoundaries);
     //   break;
     default:
       std::stringstream msg;
@@ -673,7 +674,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-    if (stage==4 && integrator == "ssprk5_4") {
+    if (stage == 4 && integrator == "ssprk5_4") {
       // From Gottlieb (2009), u^(n+1) partial calculation
       ave_wghts[0] = -1.0; // -u^(n) coeff.
       ave_wghts[1] = 0.0;
@@ -813,7 +814,7 @@ TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int stage) {
     return TaskStatus::fail;
   }
 
-  if (ret==true) {
+  if (ret == true) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -828,7 +829,7 @@ TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) {
     return TaskStatus::fail;
   }
 
-  if (ret==true) {
+  if (ret == true) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -870,7 +871,7 @@ TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) 
   } else {
     return TaskStatus::fail;
   }
-  if (ret==true) {
+  if (ret == true) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -892,7 +893,7 @@ TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) 
   } else {
     return TaskStatus::fail;
   }
-  if (ret==true) {
+  if (ret == true) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
