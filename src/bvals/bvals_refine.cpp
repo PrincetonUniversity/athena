@@ -61,22 +61,22 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     if (nb.level >= mylevel) continue;
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
-    nis = std::max(nb.ox1-1,-1);
-    nie = std::min(nb.ox1+1,1);
+    nis = std::max(nb.ox1-1, -1);
+    nie = std::min(nb.ox1+1, 1);
     if (pmb->block_size.nx2 == 1) {
       njs = 0;
       nje = 0;
     } else {
-      njs = std::max(nb.ox2-1,-1);
-      nje = std::min(nb.ox2+1,1);
+      njs = std::max(nb.ox2-1, -1);
+      nje = std::min(nb.ox2+1, 1);
     }
 
     if (pmb->block_size.nx3 == 1) {
       nks = 0;
       nke = 0;
     } else {
-      nks = std::max(nb.ox3-1,-1);
-      nke = std::min(nb.ox3+1,1);
+      nks = std::max(nb.ox3-1, -1);
+      nke = std::min(nb.ox3+1, 1);
     }
 
     // 1) Apply necessary variable restrictions when ghost-ghost zone is on same level
@@ -140,7 +140,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // KGF: 3/25/19 changes might be incompatible with this swap, which occured after
     // Cons2Prim call in original refactoring
 
-    // coarse_buf switch being used
+    // KGF: to automatically call all BoundaryFunction_[] on coarse_prim/b instead of
+    // default targets var_cc=cons or prim + var_fc=b, temporarily change the pointers
     phbvar->var_cc = &(ph->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->coarse_b_);
@@ -155,20 +156,19 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // 2) Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
 
-    // 3) Finally, the ghost-ghost zones are ready for prolongation:
-    ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
-
-    // KGF: (temp workaround) swap BoundaryVariable references back from MeshRefinement
+    // KGF: (temp workaround) swap BoundaryVariable var_cc/fc back from coarse_buf
     phbvar->var_cc = &(ph->w);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->b);
-
     // phbvar->var_cc.InitWithShallowCopy(ph->w);
     // if (MAGNETIC_FIELDS_ENABLED) {
     //   pfbvar->var_fc.x1f.InitWithShallowCopy(pf->b.x1f);
     //   pfbvar->var_fc.x2f.InitWithShallowCopy(pf->b.x2f);
     //   pfbvar->var_fc.x3f.InitWithShallowCopy(pf->b.x3f);
     // }
+
+    // 3) Finally, the ghost-ghost zones are ready for prolongation:
+    ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
   } // end loop over nneighbor
   return;
 }
@@ -195,69 +195,80 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     } else if (nb.ox1 == -1) {
       rie = pmb->cis;
     }
-  } else if (ni ==  1) {
+  } else if (ni == 1) {
     ris = pmb->cie + 1, rie = pmb->cie + 1;
-  } else { //(ni == -1)
-    ris = pmb->cis-1, rie = pmb->cis-1;
+  } else { //(ni ==  - 1)
+    ris = pmb->cis - 1, rie = pmb->cis - 1;
   }
   if (nj == 0) {
     rjs = pmb->cjs, rje = pmb->cje;
     if (nb.ox2 == 1) rjs = pmb->cje;
     else if (nb.ox2 == -1) rje = pmb->cjs;
-  } else if (nj ==  1) {
+  } else if (nj == 1) {
     rjs = pmb->cje + 1, rje = pmb->cje + 1;
   } else { //(nj == -1)
-    rjs = pmb->cjs-1, rje = pmb->cjs-1;
+    rjs = pmb->cjs - 1, rje = pmb->cjs - 1;
   }
   if (nk == 0) {
     rks = pmb->cks, rke = pmb->cke;
     if (nb.ox3 == 1) rks = pmb->cke;
     else if (nb.ox3 == -1) rke = pmb->cks;
-  } else if (nk ==  1) {
+  } else if (nk == 1) {
     rks = pmb->cke + 1, rke = pmb->cke + 1;
   } else { //(nk == -1)
-    rks = pmb->cks-1, rke = pmb->cks-1;
+    rks = pmb->cks - 1, rke = pmb->cks - 1;
   }
 
-  pmb->pmr->RestrictCellCenteredValues(ph->u, ph->coarse_cons_, 0, NHYDRO-1,
-                                       ris, rie, rjs, rje, rks, rke);
+  // KGF: these 2x loops over pvars_cc/fc_ (like in ProlongateGhostCells()) might be
+  // better off living in MeshRefinement class (or Mesh class)
+
+  for (auto cc_pair : pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    pmb->pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc, 0, nu,
+                                         ris, rie, rjs, rje, rks, rke);
+  }
+  // KGF: UNIQUE TO HYDRO+GR+S/AMR: also restrict primitive values in ghost zones
   if (GENERAL_RELATIVITY)
     pmb->pmr->RestrictCellCenteredValues(ph->w, ph->coarse_prim_, 0, NHYDRO-1,
                                          ris, rie, rjs, rje, rks, rke);
-  if (MAGNETIC_FIELDS_ENABLED) {
+  for (auto fc_pair : pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
     int &mylevel = pmb->loc.level;
     int rs = ris, re = rie + 1;
     if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ] < mylevel) rs++;
     if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2] < mylevel) re--;
-    pmr->RestrictFieldX1(pf->b.x1f, pf->coarse_b_.x1f, rs, re, rjs, rje, rks,
+    pmr->RestrictFieldX1((*var_fc).x1f, (*coarse_fc).x1f, rs, re, rjs, rje, rks,
                          rke);
     if (pmb->block_size.nx2 > 1) {
       rs = rjs, re = rje + 1;
       if (rs == pmb->cjs   && nblevel[nk+1][nj  ][ni+1] < mylevel) rs++;
       if (re == pmb->cje+1 && nblevel[nk+1][nj+2][ni+1] < mylevel) re--;
-      pmr->RestrictFieldX2(pf->b.x2f, pf->coarse_b_.x2f, ris, rie, rs, re, rks,
+      pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f, ris, rie, rs, re, rks,
                            rke);
     } else { // 1D
-      pmr->RestrictFieldX2(pf->b.x2f, pf->coarse_b_.x2f, ris, rie, rjs, rje, rks,
+      pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f, ris, rie, rjs, rje, rks,
                            rke);
       for (int i=ris; i<=rie; i++)
-        pf->coarse_b_.x2f(rks,rjs+1,i) = pf->coarse_b_.x2f(rks,rjs,i);
+        (*coarse_fc).x2f(rks,rjs+1,i) = (*coarse_fc).x2f(rks,rjs,i);
     }
     if (pmb->block_size.nx3 > 1) {
       rs = rks, re =  rke + 1;
       if (rs == pmb->cks   && nblevel[nk  ][nj+1][ni+1] < mylevel) rs++;
       if (re == pmb->cke+1 && nblevel[nk+2][nj+1][ni+1] < mylevel) re--;
-      pmr->RestrictFieldX3(pf->b.x3f, pf->coarse_b_.x3f, ris, rie, rjs, rje, rs,
+      pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f, ris, rie, rjs, rje, rs,
                            re);
     } else { // 1D or 2D
-      pmr->RestrictFieldX3(pf->b.x3f, pf->coarse_b_.x3f, ris, rie, rjs, rje, rks,
+      pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f, ris, rie, rjs, rje, rks,
                            rke);
       for (int j=rjs; j<=rje; j++) {
         for (int i=ris; i<=rie; i++)
-          pf->coarse_b_.x3f(rks+1,j,i) = pf->coarse_b_.x3f(rks,j,i);
+          (*coarse_fc).x3f(rks+1,j,i) = (*coarse_fc).x3f(rks,j,i);
       }
     }
-  }
+  } // end loop over pvars_fc_
   return;
 }
 
@@ -499,13 +510,58 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
-  // KGF: temporarily hardcode Hydro and Field array access
-  Hydro *ph = pmb->phydro;
-  Field *pf = nullptr;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    pf = pmb->pfield;
+  // prolongate cell-centered S/AMR-enrolled quantities (hydro, passive scalars, ...)
+  // prolongate hydro variables using primitive
+
+  // KGF: UNIQUE TO HYDRO: swap (u, coarse_cons_) with (w, coarse_prim)
+  for (auto cc_pair : pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    pmr->ProlongateCellCenteredValues(*coarse_cc, *var_cc, 0, nu,
+                                      si, ei, sj, ej, sk, ek);
   }
-  // now that the ghost-ghost zones are filled
+  // KGF: UNIQUE TO HYDRO swap (w, coarse_prim) back to (u, coarse_cons_)
+
+  // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
+  // KGF: could enclose the following calculation of indices in a "if MHD" conditional
+  int &mylevel = pmb->loc.level;
+  int il, iu, jl, ju, kl, ku;
+  il = si, iu = ei + 1;
+  if ((nb.ox1 >= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ] >= mylevel)) il++;
+  if ((nb.ox1 <= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2] >= mylevel)) iu--;
+  if (pmb->block_size.nx2 > 1) {
+    jl = sj, ju = ej + 1;
+    if ((nb.ox2 >= 0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1] >= mylevel)) jl++;
+    if ((nb.ox2 <= 0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1] >= mylevel)) ju--;
+  } else {
+    jl = sj;
+    ju = ej;
+  }
+  if (pmb->block_size.nx3 > 1) {
+    kl = sk, ku = ek + 1;
+    if ((nb.ox3 >= 0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1] >= mylevel)) kl++;
+    if ((nb.ox3 <= 0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1] >= mylevel)) ku--;
+  } else {
+    kl = sk;
+    ku = ek;
+  }
+  for (auto fc_pair : pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
+
+    // step 1. calculate x1 outer surface fields and slopes
+    pmr->ProlongateSharedFieldX1((*coarse_fc).x1f, (*var_fc).x1f, il, iu, sj, ej, sk, ek);
+    // step 2. calculate x2 outer surface fields and slopes
+    pmr->ProlongateSharedFieldX2((*coarse_fc).x2f, (*var_fc).x2f, si, ei, jl, ju, sk, ek);
+    // step 3. calculate x3 outer surface fields and slopes
+    pmr->ProlongateSharedFieldX3((*coarse_fc).x3f, (*var_fc).x3f, si, ei, sj, ej, kl, ku);
+
+    // step 4. calculate the internal finer fields using the Toth & Roe method
+    pmr->ProlongateInternalField((*var_fc), si, ei, sj, ej, sk, ek);
+  }
+
+  // now that the ghost-ghost zones are filled and prolongated,
   // calculate the loop limits for the finer grid
   int fsi, fei, fsj, fej, fsk, fek;
   fsi = (si - pmb->cis)*2 + pmb->is;
@@ -525,51 +581,22 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     fek = pmb->ke;
   }
 
+  // KGF: temporarily hardcode Hydro and Field array access
+  Hydro *ph = pmb->phydro;
+  Field *pf = nullptr;
 
-  // prolongate hydro variables using primitive
-  pmr->ProlongateCellCenteredValues(ph->coarse_prim_, ph->w, 0, NHYDRO-1,
-                                    si, ei, sj, ej, sk, ek);
-
-
-  // prolongate magnetic fields
+  // KGF: COUPLING OF QUANTITIES (must be manually specified)
+  // Field prolongation completed, calculate cell centered fields
   if (MAGNETIC_FIELDS_ENABLED) {
-    int &mylevel = pmb->loc.level;
-    int il, iu, jl, ju, kl, ku;
-    il = si, iu = ei + 1;
-    if ((nb.ox1 >= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ] >= mylevel)) il++;
-    if ((nb.ox1 <= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2] >= mylevel)) iu--;
-    if (pmb->block_size.nx2 > 1) {
-      jl = sj, ju = ej + 1;
-      if ((nb.ox2 >= 0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1] >= mylevel)) jl++;
-      if ((nb.ox2 <= 0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1] >= mylevel)) ju--;
-    } else {
-      jl = sj;
-      ju = ej;
-    }
-    if (pmb->block_size.nx3 > 1) {
-      kl = sk, ku = ek + 1;
-      if ((nb.ox3 >= 0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1] >= mylevel)) kl++;
-      if ((nb.ox3 <= 0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1] >= mylevel)) ku--;
-    } else {
-      kl = sk;
-      ku = ek;
-    }
-
-    // step 1. calculate x1 outer surface fields and slopes
-    pmr->ProlongateSharedFieldX1(pf->coarse_b_.x1f, pf->b.x1f, il, iu, sj, ej, sk, ek);
-    // step 2. calculate x2 outer surface fields and slopes
-    pmr->ProlongateSharedFieldX2(pf->coarse_b_.x2f, pf->b.x2f, si, ei, jl, ju, sk, ek);
-    // step 3. calculate x3 outer surface fields and slopes
-    pmr->ProlongateSharedFieldX3(pf->coarse_b_.x3f, pf->b.x3f, si, ei, sj, ej, kl, ku);
-
-    // step 4. calculate the internal finer fields using the Toth & Roe method
-    pmr->ProlongateInternalField(pf->b, si, ei, sj, ej, sk, ek);
-
-    // KGF: COUPLING OF QUANTITIES (must be manually specified)
-    // Field prolongation completed, calculate cell centered fields
-    pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
-                                            fsi, fei, fsj, fej, fsk, fek);
+    pf = pmb->pfield;
+    pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
+                                   fsi, fei, fsj, fej, fsk, fek);
   }
+
+  // KGF: by moving coarse_* arrays from MeshRefinement class to Hydro and Field classes,
+  // we run into a possible issue of passing nullptrs to this function if
+  // MAGNETIC_FIELDS_ENABLED=0 but SMR/AMR + Hydro is active. Probably fine, since they
+  // wont be dereferenced in the EOS function, but this is suboptimal.
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // calculate conservative variables
