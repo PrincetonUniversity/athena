@@ -44,26 +44,13 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     MeshBlock *pmb, FaceField *var, FaceField &coarse_buf, EdgeField &var_flux)
     : BoundaryVariable(pmb), coarse_buf(coarse_buf) {
   var_fc = var;
-  // KGF: is there no better way to shallow copy a reference to a FaceField in a class
-  // data member?
-  // var_fc.x1f.InitWithShallowCopy(var.x1f);
-  // var_fc.x2f.InitWithShallowCopy(var.x2f);
-  // var_fc.x3f.InitWithShallowCopy(var.x3f);
-
-  // src.x1f.InitWithShallowCopy(var_fc.x1f);
-  // src.x2f.InitWithShallowCopy(var_fc.x2f);
-  // src.x3f.InitWithShallowCopy(var_fc.x3f);
-  // dst.x1f.InitWithShallowCopy(var_fc.x1f);
-  // dst.x2f.InitWithShallowCopy(var_fc.x2f);
-  // dst.x3f.InitWithShallowCopy(var_fc.x3f);
 
   e1.InitWithShallowCopy(var_flux.x1e);
   e2.InitWithShallowCopy(var_flux.x2e);
   e3.InitWithShallowCopy(var_flux.x3e);
-  // KGF: Taken from 2x functions in flux_correction_fc.cpp
-  // AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
-  // AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
-  // AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
+
+  // assuming Field, not generic FaceCenteredBoundaryVariable:
+  flip_across_pole_ = flip_across_pole_field;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::fc);
   InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);
@@ -77,7 +64,6 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   }
 #endif
 
-  // KGF: was not in "if (MAGNETIC_FIELDS_ENABLED)" conditional in master
   if (pbval_->num_north_polar_blocks_ > 0) {
     flux_north_send_ = new Real *[pbval_->num_north_polar_blocks_];
     flux_north_recv_ = new Real *[pbval_->num_north_polar_blocks_];

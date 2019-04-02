@@ -6,9 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_interfaces.hpp
-//  \brief defines enums, structs, and abstract bvals/ classes
+//  \brief defines enums, structs, and abstract classes
 
-// TODO(felker): deduplicate headers and forward declarations
+// TODO(felker): deduplicate forward declarations
 // TODO(felker): consider moving enums and structs in a new file? bvals_structs.hpp?
 
 // C++ headers
@@ -101,7 +101,7 @@ struct SimpleNeighborBlock { // aggregate and POD
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
-//  \brief neighbor rank, level, and ids
+//  \brief
 
 struct NeighborBlock : SimpleNeighborBlock { // neither aggregate nor POD type
   int ox1, ox2, ox3;
@@ -120,41 +120,34 @@ struct NeighborBlock : SimpleNeighborBlock { // neither aggregate nor POD type
                    bool ipolar, bool ishear, int ifi1, int ifi2);
 };
 
-
 //----------------------------------------------------------------------------------------
 //! \struct NeighborConnect
 //  \brief data to describe MeshBlock neighbors
+
 struct NeighborIndexes { // aggregate and POD
   int ox1, ox2, ox3; // 3-vector of integer offsets of indices, {-1, 0, +1}
   int fi1, fi2; // 2-vector for identifying refined neighbors, {0, 1}
   NeighborConnect type;
-  // User-provided ctor is unnecessary and prevents the type from being POD and aggregate:
-  // NeighborIndexes() {
-  //   ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
-  //   type=NeighborConnect::none;
-  // }
-
+  // User-provided ctor is unnecessary and prevents the type from being POD and aggregate.
   // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
   // NeighborIndexes is a trivial type. Combined with standard layout --> POD. Advantages:
-
-  // No user-provided ctor: value initialization first performs zero initialization (then
-  // default initialization if ctor is non-trivial)
-
-  // Aggregate type: supports aggregate initialization {}
-
-  // POD type: safely copy objects via memcpy, no memory padding in the beginning of
-  // object, C portability, supports static initialization
+  //   - No user-provided ctor: value initialization first performs zero initialization
+  //     (then default initialization if ctor is non-trivial)
+  //   - Aggregate type: supports aggregate initialization {}
+  //   - POD type: safely copy objects via memcpy, no memory padding in the beginning of
+  //     object, C portability, supports static initialization
 };
 
+//----------------------------------------------------------------------------------------
 //! \struct BoundaryData
 //  \brief structure storing boundary information
-// TODO(felker): rename/be more specific--- what kind of data/info?
+
+// TODO(felker): consider renaming/be more specific--- what kind of data/info?
 // one for each type of "BoundaryQuantity" corresponding to BoundaryVariable
+
 struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
   int nbmax;  // actual maximum number of neighboring MeshBlocks (at most 56)
   BoundaryStatus flag[56];
-  // "static int bufid[56]" corresponds to these (for all BoundaryData instances per
-  // MeshBlock, e.g. one per BoundaryQuantity / variable
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
@@ -182,87 +175,67 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 //----------------------------------------------------------------------------------------
 //! \class BoundaryCommunication
 //  \brief contains methods for managing BoundaryStatus flags and MPI requests
-//    alternative name ideas: BoundaryMemory, BoundaryMPI,
+
 class BoundaryCommunication {
  public:
   BoundaryCommunication() {}
   virtual ~BoundaryCommunication() {}
-
-  // create unique tags for each MeshBlock/buffer/quantity + initalize MPI requests:
+  // create unique tags for each MeshBlock/buffer/quantity and initalize MPI requests:
   virtual void SetupPersistentMPI() = 0;
-  // call MPI_Start() on req_recv[]:
-  // virtual void StartReceivingForInit(bool cons_and_field) = 0;
+  // call MPI_Start() on req_recv[]
   virtual void StartReceiving(BoundaryCommSubset phase) = 0;
-
-  // Then, individual BoundaryVariable object calls its own functions:
-  // SendBoundary():    MPI_Start on req_send[]
-  // +
-  // ReceiveBoundary(): MPI_Iprobe, MPI_Itest ---> BoundaryStatus::arrived
-  // SetBoundaries():   BoundaryStatus::completed
-  // OR (in Mesh::Initialize() only)
-  // ReceiveAndSetBoundariesWithWait(): MPI_Wait, set, then BoundaryStatus::completed
-
-  // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting :
-  //virtual void ClearBoundaryForInit(bool cons_and_field) = 0;
+  // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting
   virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
 };
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBuffer
 //  \brief contains methods for managing MPI send/recvs and associated loads/stores from
-//  communication buffers. KGF: Merge with above BoundaryCommunication interface?
+//  communication buffers.
+
+// TODO(KGF): Merge with above BoundaryCommunication interface?
+
 class BoundaryBuffer {
  public:
   BoundaryBuffer() {}
   virtual ~BoundaryBuffer() {}
 
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
-  virtual void SendBoundaryBuffers() = 0; // client-facing
-  virtual bool ReceiveBoundaryBuffers() = 0; // client-facing
+  virtual void SendBoundaryBuffers() = 0;
+  virtual bool ReceiveBoundaryBuffers() = 0;
   // this next fn is used only during problem initialization in mesh.cpp:
-  virtual void ReceiveAndSetBoundariesWithWait() = 0; // client-facing
-  virtual void SetBoundaries() = 0; // client-facing
+  virtual void ReceiveAndSetBoundariesWithWait() = 0;
+  virtual void SetBoundaries() = 0;
 
-  // TODO(felker): handle the 6x unique Field-related flux correction functions
   virtual void SendFluxCorrection() = 0;
   virtual bool ReceiveFluxCorrection() = 0;
 
  private:
-  // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR)
+  // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR):
   virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
 
-  // SMR/AMR-exclusive buffer management methods
+  // SMR/AMR-exclusive buffer management methods:
   virtual int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) = 0;
   virtual int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) = 0;
 
-  // optional extensions: spherical-polar-like coordinates, shearing box, etc.
+  // optional extensions: spherical-polar-like coordinates, shearing box, etc.:
   virtual void PolarBoundarySingleAzimuthalBlock() = 0;
-
-  // compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarFluxBoundarySingleAzimuthalBlock()
-  // what about PolarFieldBoundaryAverage()?
 };
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryPhysics
 //  \brief defines methods for handling non-periodic domain limits, including:
 //     far-field/freestream (outflow, reflect), coordinate (spherical polar), etc.
+
 class BoundaryPhysics {
  public:
   BoundaryPhysics() {}
   virtual ~BoundaryPhysics() {}
 
-  //-------------------- prototypes for all BC functions ---------------------------------
-  // TODO(felker): somehow, convert "FaceField &b" argument to some more generic type:
-  // "BoundaryArray &dst" that can be either AthenaArray or FaceField = struct 3x
-  // AthenaArray. Not quite templating, since each derived class will only support a
-  // single type, but all of the other function arguments should be identical.
-
-  // A similar mechanism will likely be used for the generic "BoundaryVariable" abstract
-  // base class. E.g. "BoundaryArray *dst = phydro->w" in the class constructor
+  //-------------- prototypes for all physical/coordinate BC functions -------------------
   virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                               int il, int iu, int jl, int ju,
                               int kl, int ku, int ngh) = 0;
@@ -307,7 +280,6 @@ class BoundaryPhysics {
   virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
                                  int il, int iu, int jl,
                                  int ju, int kl, int ku, int ngh) = 0;
-  //virtual void ApplyUserDefinedBoundary
 };
 
 //----------------------------------------------------------------------------------------
@@ -317,62 +289,36 @@ class BoundaryPhysics {
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryVariable (abstract)
-//  \brief nodes in a linked list of BoundaryVariable derived class instances
+//  \brief
 
-// this class will mostly contain pure virtual functions
-// could be eliminated, in favor of having the CellCenteredBoundaryVariable and
-// FaceCenteredBoundaryVariable derived classes directly inheriting from the 3x interface
-// classes. But then, won't be able to treat instances of those two classes as equivalent
-// BoundaryVariable instances in a linked list (subtyping polymorphism)...
-
-// BoundaryVariable will only provide default implementations of some member functions in
-// the BoundaryCommunication interface.
 class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
-  explicit BoundaryVariable(MeshBlock *pmb);  // , BoundaryQuantity type);
-  virtual ~BoundaryVariable() = default; // used to call DestroyBoundaryData(bd_var_)
+  explicit BoundaryVariable(MeshBlock *pmb);
+  virtual ~BoundaryVariable() = default;
 
-  // KGF: this is usuallly the std::size_t unsigned integer type
+  // (usuallly the std::size_t unsigned integer type)
   std::vector<BoundaryVariable *>::size_type bvar_index;
 
   virtual int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) = 0;
   virtual int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) = 0;
 
  protected:
-  // KGF option 1:
-  // deferred initialization of full BoundaryData objects in derived class destructor
+  // deferred initialization of BoundaryData objects in derived class constructors
   BoundaryData bd_var_, bd_var_flcor_;
+  // derived class dtors are also responsible for calling DestroyBoundaryData(bd_var_)
 
-  // KGF option 2:
-  // BoundaryData *pbd_var_;
-  // BoundaryData *pbd_var_flcor_;  // (make optional? not used for unrefined Hydro)
-  // BoundaryQuantity btype_;
-
-  BoundaryValues *pbval_;  // ptr to BoundaryValues containing this linked list
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryVariable
-  // KGF: clean up mixed/duplicated locations of pointers to mesh/ classes
-  // KGF: pmy_mesh_=protected member of BoundaryBase, pmy_block_=private in BoundaryValues
-  Mesh *pmy_mesh_;  // KGF: replace pbval->pmy_mesh_ usages in cc/ and fc/ function defs
+  MeshBlock *pmy_block_;   // ptr to MeshBlock containing this BoundaryVariable
+  Mesh *pmy_mesh_;
+  BoundaryValues *pbval_;  // ptr to BoundaryValues that aggregates these
+                           // BoundaryVariable objects
 
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
 
   void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData &bd);
-
-  // void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type);
-  // void DestroyBoundaryData(BoundaryData &bd);
-  // (originally were virtual functions and a part of the BoundaryCommunication interface)
-  // The above 2x functions should probably be defined outside this abstract class. Could
-  // split them both up and define in the concrete derived classes, like the rest of the
-  // BoundaryCommunication interface. However, the BoundaryValues class (which realizes
-  // the BoundaryCommunication interface) does not need these 2x functions.
-
-  // Or, make them the constructor/destructor of the
-  // BoundaryData struct? But InitBoundaryData must access many data members of BValues
-
- private:
+  // private:
 };
 
 #endif // BVALS_BVALS_INTERFACES_HPP_

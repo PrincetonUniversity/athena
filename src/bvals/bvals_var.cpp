@@ -10,31 +10,15 @@
 // C headers
 
 // C++ headers
-// #include <algorithm>  // min
-// #include <cmath>
-// #include <cstdlib>
 #include <cstring>    // std::memcpy
-// #include <iomanip>
 #include <iostream>   // endl
-// #include <limits>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-// #include <string>     // c_str()
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-// #include "../coordinates/coordinates.hpp"
-// #include "../eos/eos.hpp"
-// #include "../field/field.hpp"
-// #include "../globals.hpp"
-// #include "../gravity/mg_gravity.hpp"
-// #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-// #include "../mesh/mesh_refinement.hpp"
-// #include "../multigrid/multigrid.hpp"
-// #include "../parameter_input.hpp"
-// #include "../utils/buffer_utils.hpp"
 #include "bvals_interfaces.hpp"
 
 // MPI header
@@ -42,43 +26,14 @@
 #include <mpi.h>
 #endif
 
-
 // constructor
 
 BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
-  // KGF: what is the point of cyclically setting class member pmy_block_=pmb, then:
-  // MeshBlock *pmb=pmy_block_;
   pmy_block_ = pmb;
   pbval_ = pmb->pbval;
   pmy_mesh_ = pmb->pmy_mesh;
-
-  // btype_ = type;
-
-  // KGF: should we even initialize this unsigned integer type data member?
   bvar_index = 0;
-
-  // KGF: not sure of the value of passing around BoundaryQuantity type anymore.
-  // Currently, it is always tied to the BoundaryVariable subclass type
-
-  // Need to access both BoundaryData in generic BoundaryVariable::Copy*SameProcess()
-  // KGF: option 1: storing bd_var_, bd_var_cc_ in Base class, not initializing them
-
-  // KGF option 2: only store references to BoundaryData object
-  // pbd_var_=nullptr;
-  // pbd_var_flcor_=nullptr;
-
-  // KGF option 3: initialize somewhat-generic bd_var_ in Base class, store ptr to
-  // somewhat-optional flux-correction BoundaryData (unused for unrefined Hydro)
-  // InitBoundaryData(bd_var_, type);   // call DestroyBoundaryData in Base dtor
-  // pbd_var_flcor_=nullptr;
-
-  // User must add this new BoundaryVariable object to the array in BoundaryValues
-  // Choosing to not auto-enroll this new object in the array via its constructor
 }
-
-// destructor
-// BoundaryVariable::~BoundaryVariable() {
-// }
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
@@ -120,13 +75,6 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
           << "Invalid boundary type is specified." << std::endl;
       ATHENA_ERROR(msg);
     }
-    // KGF: original switch statement dependencies on local variables:
-    // switch(type) { // local variables as input: ni[n],
-    //case BoundaryQuantity::cc: {  // local variables as input: cng, ..., cng3
-    //case BoundaryQuantity::fc: { // local variables as input: cng, ..., cng3, f2d, f3d
-    //case BoundaryQuantity::cc_flcor: { // local variables as input: NONE
-    //case BoundaryQuantity::fc_flcor: { // local variables as input: NONE
-
     bd.send[n] = new Real[size];
     bd.recv[n] = new Real[size];
   }
@@ -165,31 +113,24 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
   // 2) which element in vector of BoundaryVariable *?
   BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_);
-  // KGF: hardcoded assumptions that bvar_index is always up-to-date, and that the same
-  // vector elements and ordering exist for all MeshBlocks/BoundaryValues objects
-
-  // KGF: add check that bvar_index is initialized and valid. E.g. the mistake I made with
-  // FFT self-gravity for which pgbval was never added to bvars, and bvar_index was unset,
-  // breaking this function
-
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
-  ptarget_bdata->flag[nb.targetid]=BoundaryStatus::arrived;
+  ptarget_bdata->flag[nb.targetid] = BoundaryStatus::arrived;
   return;
 }
 
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
   // 2) which element in vector of BoundaryVariable *?
   BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
-  ptarget_bdata->flag[nb.targetid]=BoundaryStatus::arrived;
+  ptarget_bdata->flag[nb.targetid] = BoundaryStatus::arrived;
   return;
 }

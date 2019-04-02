@@ -35,16 +35,12 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                                EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
-  // KGF: make these private, and extend friendship to BoundaryValues class (same for CC)
   FaceField *var_fc;
 
-  // KGF: TODO mimic new CellCenteredBoundaryVariable member coarse_buf (originally
-  // passed as a function parameter as "cbuf"); However, unlke Hydro cons vs. prim, we
-  // never need to rebind FaceCentered coarse_buf, so it can be a reference member:
-  // ---> must be initialized in initializer list, cannot pass nullptr
+  // unlke Hydro cons vs. prim, never need to rebind FaceCentered coarse_buf, so it can be
+  // a reference member: ---> must be initialized in initializer list; cannot pass nullptr
   FaceField &coarse_buf;
 
-  // KGF: rename/change to single "EdgeField var_fc_flux"?
   AthenaArray<Real> e1;
   AthenaArray<Real> e2;
   AthenaArray<Real> e3;
@@ -55,20 +51,16 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   // BoundaryCommunication:
   void SetupPersistentMPI() override;
-  // void StartReceivingForInit(bool cons_and_field) override;
-  // void ClearBoundaryForInit(bool cons_and_field) override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
 
   // BoundaryBuffer:
-  // 1x LoadField*() don't use: int nl, int nu
   void SendBoundaryBuffers() override;
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
-  // originally: SendEMFCorrection(), ReceiveEMFCorrection()
 
   // Shearingbox Field
   // void LoadFieldShearing(FaceField &src, Real *buf, int nb);
@@ -138,26 +130,19 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   //protected:
 
  private:
-  // standard Field and emf BV private variables
-  // KGF: currently declared in base BoundaryValues class:
-  //BoundaryData bd_fc_;
-  //BoundaryData bd_fc_flcor_; // bd_emfcor_;
   BoundaryStatus *flux_north_flag_;
   BoundaryStatus *flux_south_flag_;
   Real **flux_north_send_, **flux_north_recv_;
   Real **flux_south_send_, **flux_south_recv_;
 
-  // original bvals_fc.cpp functions never took "bool *flip" as a function parameter
-  // because "flip_across_pole_field" was hardcoded in 3x SetFieldFrom*() fns
   const bool *flip_across_pole_;
 
   bool edge_flag_[12];
   int nedge_fine_[12];
 
+  // variable switch used in 2x functions, ReceiveFluxCorrection() and StartReceiving():
   // ready to recv flux from same level and apply correction? false= 2nd pass for fine lvl
   bool recv_flx_same_lvl_;
-  // KGF: formerly "firsttime_". The variable switch is used in only 2x functions:
-  // ReceiveEMFCorrection() and StartReceivingAll()
 
 #ifdef MPI_PARALLEL
   int fc_phys_id_, fc_flx_phys_id_, fc_flx_pole_phys_id_;
@@ -170,20 +155,15 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
-  // cbuf parameter is unique to CC variable and the 2x Coarser load/set fns.
-  // needed for switching HydroBoundaryQuantity::cons and HydroBoundaryQuantity::prim
   int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
-  // 3x SetFieldBoundary*() don't use: int nl, int nu (like Load); also not "bool flip"
   void PolarBoundarySingleAzimuthalBlock() override;
 
   // Face-centered/Field/EMF unique class methods:
-  // KGF: should we require CellCenteredBoundaryVariable class to provide similar
-  // encapsulated functions (or no-op fns) for load/set fluxes?
 
   // called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
-  void PolarFieldBoundaryAverage(); // formerly PolarAxisFieldAverage()
+  void PolarFieldBoundaryAverage();
 
   // all 3x only called in SendFluxCorrection()
   int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
@@ -199,8 +179,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void ClearCoarseFluxBoundary();
   void AverageFluxBoundary();  // average flux from fine and equal lvls
   void PolarFluxBoundarySingleAzimuthalBlock();
-  // called in SetupPersistentMPI()
-  void CountFineEdges();
+  void CountFineEdges();   // called in SetupPersistentMPI()
 
   void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
