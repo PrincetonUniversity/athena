@@ -3,6 +3,7 @@ Test script for checking that Minkowski coordinates compile.
 """
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 
 

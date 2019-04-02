@@ -1,6 +1,7 @@
 # Test script for relativistic hydro linear wave convergence
 
 # Modules
+import logging
 import numpy as np
 import math
 import sys
@@ -8,6 +9,7 @@ import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # Parameters
 wave_flags = range(5)

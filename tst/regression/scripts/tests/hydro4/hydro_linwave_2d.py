@@ -6,6 +6,7 @@
 # square grid, no SMR--- midpoint assumption used in init. and in error calculations
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 from math import log
 import numpy as np
@@ -13,6 +14,7 @@ import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('vl2', '2c'), ('vl2', '3'), ('rk2', '3c'),

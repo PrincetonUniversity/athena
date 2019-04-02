@@ -5,6 +5,7 @@
 # linearwave_errors.dat)
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import sys
 import os
@@ -12,6 +13,7 @@ from shutil import move
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 _fluxes = ['hlle', 'hllc', 'roe']
 _exec = os.path.join('bin', 'athena')
 

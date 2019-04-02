@@ -5,12 +5,14 @@
 # calculations. Setting CFL=0.3 for all runs.
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # List of time/integrator and time/xorder combinations to test:

@@ -1,6 +1,7 @@
 # Test script to make sure all problem generator files in /src/pgen compile
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import glob
 import os

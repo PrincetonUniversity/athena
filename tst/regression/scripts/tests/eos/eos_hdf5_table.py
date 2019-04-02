@@ -3,6 +3,7 @@ Regression test for general EOS 1D Sod shock tube with HDF5 tables.
 """
 
 # Modules
+import logging
 import numpy as np
 import sys
 import os
@@ -13,6 +14,7 @@ from .eos_comparison import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _gammas = [1.1, 1.4, 5./3.]
 
