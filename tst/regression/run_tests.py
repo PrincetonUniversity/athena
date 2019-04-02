@@ -211,8 +211,8 @@ def log_init(args):
         f_handler.setFormatter(f_format)
         logger.addHandler(f_handler)
     # setup runtime diagnostics file
-    if kwargs.pop('runtime_diag_file'):
-        rtd_handler = logging.FileHandler('runtime.log')
+    if kwargs.pop('diagnostics_file'):
+        rtd_handler = logging.FileHandler('diagnostics.log')
         rtd_handler.setLevel(0)  # log everything
         rtd_fmt = logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
         rtd_handler.setFormatter(rtd_fmt)
@@ -284,7 +284,7 @@ if __name__ == '__main__':
                         type=str,
                         default=None,
                         help='set filename of logfile')
-    parser.add_argument('--runtime_diag_file',
+    parser.add_argument('--diagnostics_file',
                         default=False,
                         action='store_true',
                         help='Write runtime diagnostics to runtime.log')
