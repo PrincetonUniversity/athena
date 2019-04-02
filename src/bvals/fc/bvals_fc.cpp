@@ -1392,7 +1392,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   // Initialize polar neighbor communications to other ranks
 
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
     if (nb.rank != Globals::my_rank) {
       tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_flux_north_send_[n] != MPI_REQUEST_NULL)
@@ -1407,7 +1407,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
     }
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
     if (nb.rank != Globals::my_rank) {
       tag = pbval_->CreateBvalsMPITag(nb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_flux_south_send_[n] != MPI_REQUEST_NULL)
@@ -1458,13 +1458,13 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 
   if (phase == BoundaryCommSubset::all) {
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+      const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
       if (nb.rank != Globals::my_rank) {
         MPI_Start(&req_flux_north_recv_[n]);
       }
     }
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+      const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
       if (nb.rank != Globals::my_rank) {
         MPI_Start(&req_flux_south_recv_[n]);
       }
@@ -1516,7 +1516,7 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
       flux_north_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-      PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+      SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
       if (nb.rank != Globals::my_rank)
         MPI_Wait(&req_flux_north_send_[n], MPI_STATUS_IGNORE);
 #endif
@@ -1524,7 +1524,7 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
       flux_south_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-      PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+      SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
       if (nb.rank != Globals::my_rank)
         MPI_Wait(&req_flux_south_send_[n], MPI_STATUS_IGNORE);
 #endif

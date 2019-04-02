@@ -87,12 +87,23 @@ constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false
 constexpr const bool flip_across_pole_field[] = {false, true, true};
 
 //----------------------------------------------------------------------------------------
+//! \struct SimpleNeighborBlock
+//  \brief Struct storing only the basic info about a MeshBlocks neighbors. Typically used
+//  for convenience to store redundant info from subset of the more complete NeighborBlock
+//  objects, e.g. for describing neighbors around pole at same radius and polar angle
+
+struct SimpleNeighborBlock { // aggregate and POD
+  int rank;    // MPI rank of neighbor
+  int level;   // refinement (logical, not physical) level of neighbor
+  int lid;     // local ID of neighbor
+  int gid;     // global ID of neighbor
+};
+
+//----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-struct NeighborBlock { // neither aggregate nor POD type
-  int rank, level;
-  int gid, lid;
+struct NeighborBlock : SimpleNeighborBlock { // neither aggregate nor POD type
   int ox1, ox2, ox3;
   int fi1, fi2;
   int bufid, eid, targetid;
@@ -100,26 +111,17 @@ struct NeighborBlock { // neither aggregate nor POD type
   BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
+  NeighborBlock() : ox1(-1), ox2(-1), ox3(-1),
                     fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
                     type(NeighborConnect::none), fid(BoundaryFace::undef), polar(false),
-                    shear(false) {}
+                    shear(false) { rank=-1; level=-1; gid=-1; lid=-1;}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
 };
 
+
 //----------------------------------------------------------------------------------------
-//! \struct PolarNeighborBlock
-//  \brief Struct for describing neighbors around pole at same radius and polar angle
-
-struct PolarNeighborBlock { // aggregate and POD
-  int rank;    // MPI rank of neighbor
-  int lid;     // local ID of neighbor
-  int gid;     // global ID of neighbor
-  bool north;  // flag that is true for North pole and false for South pole
-};
-
 //! \struct NeighborConnect
 //  \brief data to describe MeshBlock neighbors
 struct NeighborIndexes { // aggregate and POD

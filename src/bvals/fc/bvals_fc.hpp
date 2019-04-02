@@ -188,7 +188,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // all 3x only called in SendFluxCorrection()
   int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
-  int LoadFluxBoundaryBufferToPolar(Real *buf, const PolarNeighborBlock &nb,
+  int LoadFluxBoundaryBufferToPolar(Real *buf, const SimpleNeighborBlock &nb,
                                     bool is_north);
 
   // all 6x only called in ReceiveFluxCorrection()
@@ -202,7 +202,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // called in SetupPersistentMPI()
   void CountFineEdges();
 
-  void CopyPolarBufferSameProcess(const PolarNeighborBlock& nb, int ssize,
+  void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
   // Shearingbox Field
   //   BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];

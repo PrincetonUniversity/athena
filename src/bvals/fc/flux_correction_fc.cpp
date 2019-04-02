@@ -525,12 +525,12 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(Real *buf,
-//                                                           const PolarNeighborBlock &nb,
+//                                                           const SimpleNeighborBlock &nb,
 //                                                           bool is_north)
 //  \brief Load EMF values along polar axis into send buffers
 
 int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
-    Real *buf, const PolarNeighborBlock &nb, bool is_north) {
+    Real *buf, const SimpleNeighborBlock &nb, bool is_north) {
   MeshBlock *pmb = pmy_block_;
   int count = 0;
   int j = is_north ? pmb->js : pmb->je + 1;
@@ -546,7 +546,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
 
 // KGF: helper function for below SendFluxCorrection()
 void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
-    const PolarNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
+    const SimpleNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
@@ -610,7 +610,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 
   // Send polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
     int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb, true);
     if (nb.rank == Globals::my_rank) { // on the same MPI rank
       CopyPolarBufferSameProcess(nb, count, n, true);
@@ -626,7 +626,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 #endif
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
     int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb, false);
     if (nb.rank == Globals::my_rank) { // on the same node
       CopyPolarBufferSameProcess(nb, count, n, false);
@@ -1603,7 +1603,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 
   // Receive polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
     if (flux_north_flag_[n]  ==  BoundaryStatus::waiting) {
       if (nb.rank  ==  Globals::my_rank) { // on the same process
         flag = false;
@@ -1623,7 +1623,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
     }
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
+    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
     if (flux_south_flag_[n] == BoundaryStatus::waiting) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;

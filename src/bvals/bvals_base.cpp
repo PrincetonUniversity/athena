@@ -92,14 +92,14 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     int level = loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks_];
+    polar_neighbor_north_ = new SimpleNeighborBlock[num_north_polar_blocks_];
   }
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     int level = loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks_];
+    polar_neighbor_south_ = new SimpleNeighborBlock[num_south_polar_blocks_];
   }
 
   if (pmy_mesh_->multilevel == true) { // SMR or AMR
@@ -116,10 +116,10 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge)
-    delete [] polar_neighbor_north;
+    delete [] polar_neighbor_north_;
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
-    delete [] polar_neighbor_south;
+    delete [] polar_neighbor_south_;
   if (pmy_mesh_->multilevel == true) {
     sarea_[0].DeleteAthenaArray();
     sarea_[1].DeleteAthenaArray();
@@ -350,7 +350,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
     if (neibt == nullptr) { bufid += nf1*nf2; continue;}
     if (neibt->flag == false) { // neighbor at finer level
       int fface = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x1, 1 for inner_x1
-      nblevel[1][1][n+1] = neibt->loc.level+1;
+      nblevel[1][1][n+1] = neibt->loc.level + 1;
       for (int f2=0; f2<nf2; f2++) {
         for (int f1 = 0; f1<nf1; f1++) {
           MeshBlockTree* nf = neibt->GetLeaf(fface, f1, f2);
@@ -569,10 +569,10 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         ATHENA_ERROR(msg);
       }
       int nid = neibt->gid;
-      polar_neighbor_north[neibt->loc.lx3].rank = ranklist[nid];
-      polar_neighbor_north[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
-      polar_neighbor_north[neibt->loc.lx3].gid = nid;
-      polar_neighbor_north[neibt->loc.lx3].north = true;
+      polar_neighbor_north_[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_north_[neibt->loc.lx3].level = loc.level;
+      polar_neighbor_north_[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_north_[neibt->loc.lx3].gid = nid;
     }
   }
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
@@ -613,10 +613,10 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         ATHENA_ERROR(msg);
       }
       int nid = neibt->gid;
-      polar_neighbor_south[neibt->loc.lx3].rank = ranklist[nid];
-      polar_neighbor_south[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
-      polar_neighbor_south[neibt->loc.lx3].gid = nid;
-      polar_neighbor_south[neibt->loc.lx3].north = false;
+      polar_neighbor_south_[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_south_[neibt->loc.lx3].level = loc.level;
+      polar_neighbor_south_[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_south_[neibt->loc.lx3].gid = nid;
     }
   }
   if (block_size_.nx3 == 1) return;

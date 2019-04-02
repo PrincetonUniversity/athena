@@ -58,7 +58,6 @@ class BoundaryBase {
   int nblevel[3][3][3];
   LogicalLocation loc;
   BoundaryFlag block_bcs[6];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
   static int CreateBvalsMPITag(int lid, int bufid, int phys);
   static int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
@@ -73,7 +72,10 @@ class BoundaryBase {
   // 3D refined=56, unrefined=26. Refinement adds: 3*6 faces + 1*12 edges = +30 neighbors
   static int maxneighbor_;
 
-  int num_north_polar_blocks_, num_south_polar_blocks_; // used in fc/
+  // used only in fc/
+  int num_north_polar_blocks_, num_south_polar_blocks_;
+  SimpleNeighborBlock *polar_neighbor_north_, *polar_neighbor_south_;
+
   Mesh *pmy_mesh_;
   RegionSize block_size_;
   AthenaArray<Real> sarea_[2];
@@ -133,8 +135,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
-
-  int nface_, nedge_;
+  int nface_, nedge_;     // used only in fc/flux_correction_fc.cpp calculations
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
@@ -168,11 +169,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   // TODO(KGF): consider removing this friendship designation
   friend class Mesh;
-  // currently, this class friendship are required for copying send/recv buffers between
+  // currently, this class friendship is required for copying send/recv buffers between
   // BoundaryVariable objects within different MeshBlocks on the same MPI rank:
   friend class BoundaryVariable;
-  // TODO(KGF): consider removing these friendship designations
+  friend class FaceCenteredBoundaryVariable;  // needs nface_, nedge_, num_north/south_...
+  // TODO(KGF): consider removing this friendship designation
   friend class CellCenteredBoundaryVariable;
-  friend class FaceCenteredBoundaryVariable;
 };
 #endif // BVALS_BVALS_HPP_
