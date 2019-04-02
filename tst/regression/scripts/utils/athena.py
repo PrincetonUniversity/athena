@@ -59,8 +59,8 @@ def make(clean_first=True, obj_only=False):
             # used in pgen_compile.py to save expensive linking time for Intel Compiler:
             make_command = ['make', '-j8', 'objs']
         else:
+            # disable parallel GNU Make execution for Lcov (issues w/ Jenkins filesystem)
             if (global_coverage_cmd is not None):
-                # disable parallel compilation for Lcov issues on Jenkins filesystem
                 make_command = ['make']
             else:
                 make_command = ['make', '-j8']
@@ -68,10 +68,6 @@ def make(clean_first=True, obj_only=False):
         try:
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
-            # KGF: temporarily ignore "--silent" option for devnull redirection
-            # (what about stderr?) stdout, stderr default behavior:
-            # "with the default settings of None, no redirection will occur; the child's
-            # file handles will be inherited from the parent."
             subprocess.check_call(make_command, stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             logging.getLogger().error("Something bad happened", exc_info=True)
