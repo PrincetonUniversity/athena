@@ -197,7 +197,7 @@ def log_init(args):
         c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
     if c_handler.level >= logging.INFO:
         # if we are not in debugging mode and (not show_make) add MakeFilter
-        if not kwargs.pop('show_make'):
+        if kwargs.pop('hide_make'):
             c_handler.addFilter(MakeFilter())
         c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
     logger.addHandler(c_handler)
@@ -288,10 +288,10 @@ if __name__ == '__main__':
                         default=False,
                         action='store_true',
                         help='Write runtime diagnostics to runtime.log')
-    parser.add_argument('--show_make',
+    parser.add_argument('--hide_make',
                         default=False,
                         action='store_true',
-                        help='Show output from make command')
+                        help='Hide output from make command')
 
     args = parser.parse_args()
     log_init(args)
