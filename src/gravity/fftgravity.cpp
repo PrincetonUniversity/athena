@@ -34,8 +34,8 @@
 
 FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     : FFTDriver(pm, pin) {
-  four_pi_G_=pmy_mesh_->four_pi_G_;
-  if (four_pi_G_==0.0) {
+  four_pi_G_ = pmy_mesh_->four_pi_G_;
+  if (four_pi_G_ == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -47,7 +47,8 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
   // initialize using FFTGravity
 
   int igid=Globals::my_rank;
-  pmy_fb=new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+  pmy_fb = new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_,
+                          fft_block_size_);
   pmy_fb->SetNormFactor(four_pi_G_/gcnt_);
 
   QuickCreatePlan();
@@ -64,16 +65,16 @@ FFTGravityDriver::~FFTGravityDriver() {
 //  \brief load the data and solve
 
 void FFTGravityDriver::Solve(int stage, int mode) {
-  FFTBlock *pfb=pmy_fb;
+  FFTBlock *pfb = pmy_fb;
   AthenaArray<Real> in;
   // Load the source
-  int nbs=nslist_[Globals::my_rank];
-  int nbe=nbs+nblist_[Globals::my_rank]-1;
+  int nbs = nslist_[Globals::my_rank];
+  int nbe = nbs+nblist_[Globals::my_rank]-1;
   for (int igid=nbs; igid<=nbe; igid++) {
-    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
-    if (pmb!=nullptr) {
+    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(igid);
+    if (pmb != nullptr) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
-      pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
+      pfb->LoadSource(in, 0, NGHOST, pmb->loc, pmb->block_size);
     }
     //    else { // on another process
     //    }
@@ -85,9 +86,9 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 
   // Return the result
   for (int igid=nbs; igid<=nbe; igid++) {
-    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
-    if (pmb!=nullptr) {
-      pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST,
+    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(igid);
+    if (pmb != nullptr) {
+      pfb->RetrieveResult(pmb->pgrav->phi, 0, NGHOST,
                           pmb->loc, pmb->block_size);
     }
     //    else { // on another process
@@ -104,9 +105,9 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 //  \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
   Real pcoeff(0.0);
-  Real dx1sq=SQR(TWO_PI/(kNx[0]*dkx[0]));
-  Real dx2sq=SQR(TWO_PI/(kNx[1]*dkx[1]));
-  Real dx3sq=SQR(TWO_PI/(kNx[2]*dkx[2]));
+  Real dx1sq = SQR(TWO_PI/(kNx[0]*dkx[0]));
+  Real dx2sq = SQR(TWO_PI/(kNx[1]*dkx[1]));
+  Real dx3sq = SQR(TWO_PI/(kNx[2]*dkx[2]));
   for (int k=0; k<knx[2]; k++) {
     for (int j=0; j<knx[1]; j++) {
       for (int i=0; i<knx[0]; i++) {
@@ -114,9 +115,9 @@ void FFTGravity::ApplyKernel(int mode) {
         if (gidx == 0) {
           pcoeff = 0.0;
         } else {
-          Real kx=(i+kdisp[0]);
-          Real ky=(j+kdisp[1]);
-          Real kz=(k+kdisp[2]);
+          Real kx = (i+kdisp[0]);
+          Real ky = (j+kdisp[1]);
+          Real kz = (k+kdisp[2]);
           if (kx > 0.5*kNx[0]) kx -= kNx[0];
           if (ky > 0.5*kNx[1]) ky -= kNx[1];
           if (kz > 0.5*kNx[2]) kz -= kNx[2];
@@ -138,10 +139,9 @@ void FFTGravity::ApplyKernel(int mode) {
           pcoeff = 1.0/pcoeff;
         }
 
-        std::int64_t idx_in=GetIndex(i,j,k,b_in_);
-        std::int64_t idx_out=GetIndex(i,j,k,f_out_);
-        in_[idx_in][0] = out_[idx_out][0]*pcoeff;
-        in_[idx_in][1] = out_[idx_out][1]*pcoeff;
+        std::int64_t idx_in = GetIndex(i,j,k,b_in_);
+        std::int64_t idx_out = GetIndex(i,j,k,f_out_);
+        in_[idx_in] = pcoeff*out_[idx_out];
       }
     }
   }

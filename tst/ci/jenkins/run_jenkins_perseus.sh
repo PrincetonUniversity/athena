@@ -120,6 +120,7 @@ time python -u ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_captu
 # All .info files in current working directory tst/regression/ -> lcov.info
 # (remove '-maxdepth 1' to recursively search subfolders for more .info)
 lcov_counter=0
+set +e  # Don't quit on errors during Lcov processing / don't let the build fail here
 while read filename; do
     # Accumulate string variable containing all tracefiles joined by '-a '
     lcov_input_files="$lcov_input_files -a \"$filename\""
@@ -136,6 +137,7 @@ eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 # Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number (53 expected as of 2018-12-04):
 # (most Lcov failures will be silent and hidden in build log;, missing reports will be hard to notice in Lcov HTML and Codecov reports)
 echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.info"
+set -e
 
 # Generate Lcov HTML report and backup to home directory on Perseus (never used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc

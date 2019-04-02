@@ -87,12 +87,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real z = pcoord->x3v(k);
           r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
-        src(k,j,i)= std::exp(-r2);
+        src(k,j,i) = std::exp(-r2);
       }
     }
   }
 
-  pfft->LoadSource(src,1,NGHOST,loc,block_size);
+  pfft->LoadSource(src, 0, NGHOST, loc, block_size);
 
   if (Globals::my_rank == 0) {
     std::cout << "=====================================================" << std::endl;
@@ -149,13 +149,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
   }
 
-  pfft->LoadSource(src,1,NGHOST,loc,block_size);
+  pfft->LoadSource(src, 0, NGHOST, loc, block_size);
   pfft->ExecuteForward();
   pfft->ApplyKernel(0);
   pfft->ExecuteBackward();
-  pfft->RetrieveResult(dst,2,NGHOST,loc,block_size);
+  pfft->RetrieveResult(dst, 1, NGHOST, loc, block_size);
 
-  Real err1=0.0,err2=0.0;
+  Real err1=0.0, err2=0.0;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
