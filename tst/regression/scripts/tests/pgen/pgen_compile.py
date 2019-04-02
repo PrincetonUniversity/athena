@@ -9,6 +9,7 @@ import os
 current_dir = os.getcwd()
 test = current_dir[0:(len(current_dir) - 14)]
 pgen_directory = test + 'src/pgen/'
+logger = logging.getLogger('athena' + __name__[7:])
 
 # set pgen_choices to list of .cpp files in src/pgen/
 pgen_choices = glob.glob(pgen_directory + '*.cpp')

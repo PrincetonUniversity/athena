@@ -95,7 +95,8 @@ def analyze():
                 if nx > _nxs[0]:
                     if data[row][4] / low_res[4] > 0.6**(np.log2(nx / _nxs[0])):
                         msg = "not converging in x{0:} {1:} {2:}"
-                        logger.warning(flux_str + msg.format(xdir, low_res[4], data[row][4]))
+                        logger.warning(flux_str + msg.format(xdir, low_res[4],
+                                                             data[row][4]))
                         analyze_status = False
                 # increment row
                 row += 1

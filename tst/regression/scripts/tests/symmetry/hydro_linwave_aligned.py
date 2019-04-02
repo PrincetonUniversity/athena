@@ -108,7 +108,7 @@ def analyze():
         logger.debug("numpy tolerance = {} %g".format(atol + 1e-10*abs(results_2D)))
         logger.debug(np.allclose(results_2D, results_3D, atol=atol, rtol=rtol))
         logger.debug("numpy tolerance = {} %g".format(atol + 1e-10*abs(results_3D)))
-        logger.debug(" ".join(map(str, [mapresults_1D, results_2D])))
+        logger.debug(" ".join(map(str, [results_1D, results_2D])))
         logger.debug(str(results_1D - results_2D))
 
         if not (np.allclose(results_1D, results_2D, atol=atol, rtol=rtol)

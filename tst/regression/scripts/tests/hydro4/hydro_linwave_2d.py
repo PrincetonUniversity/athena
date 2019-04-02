@@ -142,7 +142,7 @@ def analyze():
 
         # logger.info(solver_results[-2, 4] - solver_results[-1, 4])
         # logger.info(solver_results[-2, 4], solver_results[-1, 4])
-        # logger.info("numpy bound = {} %g".format(5e-16 + 1e-5*abs(solver_results[-1, 4])))
+        # logger.info("numpy bound = {}".format(5e-16 + 1e-5*abs(solver_results[-1, 4])))
 
         # Check that errors are identical for sound waves in each direction at Nx1=256
         if (not np.allclose(solver_results[-2, 4], solver_results[-1, 4],

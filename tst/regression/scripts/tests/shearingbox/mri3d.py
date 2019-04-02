@@ -64,12 +64,9 @@ def analyze():
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
-    logger.warning('[MRI-3D]: Ref(stress,ME,ratio) = {} {} {}'.format(ref_stress,
-                                                             ref_me,
-                                                             ref_ratio))
-    logger.warning('[MRI-3D]: New(stress,ME,ratio) = {} {} {}'.format(new_stress,
-                                                             new_me,
-                                                             new_ratio))
+    msg = '[MRI-3D]: {}(stress,ME,ratio) = {} {} {}'
+    logger.warning(msg.format('Ref', ref_stress, ref_me, ref_ratio))
+    logger.warning(msg.format('New', new_stress, new_me, new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)
     if error_rel > 0.5:

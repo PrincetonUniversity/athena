@@ -75,6 +75,6 @@ def analyze():
             result = False
         elif data[i+1][4] > (1.1*data[i][4]/(4.0)):
             logger.info("WARNING: Linear Jeans instability error is not converging at"
-                  "2nd order within 1.1")
+                        "2nd order within 1.1")
 
     return result

@@ -5,6 +5,7 @@ Test script for checking that Kerr-Schild coordinates compile.
 # Modules
 import logging
 import scripts.utils.athena as athena
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++

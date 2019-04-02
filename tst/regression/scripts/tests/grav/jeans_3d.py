@@ -111,7 +111,7 @@ def analyze():
     if data[1][4] != data[5][4]:
         logger.warning(
             "Linear wave error with one core w/wo MPI not identical for FFT gravity"
-             + " %g %g", data[1][4], data[5][4])
+            + " %g %g", data[1][4], data[5][4])
         return False
     if abs(data[3][4]-data[2][4]) > 5.0e-4:
         logger.warning(

@@ -62,6 +62,7 @@ def analyze():
         logger.warning('[Decaying Linear Wave-3D STS]: decay rate is off by 10 percent')
         flag = False
     else:
-        logger.info('[Decaying Linear Wave-3D STS]: decay rate is within 10 percent precision')
+        logger.info(
+            '[Decaying Linear Wave-3D STS]: decay rate is within 10 percent precision')
 
     return flag

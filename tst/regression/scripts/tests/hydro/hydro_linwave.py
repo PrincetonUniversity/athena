@@ -101,7 +101,7 @@ def analyze():
             analyze_status = False
         if data[1][4]/data[0][4] > {'hlle': 0.33}.get(flux, 0.325):
             logger.warning(flux_str + "not converging for L-going sound wave %g %g",
-                  data[0][4], data[1][4])
+                           data[0][4], data[1][4])
             analyze_status = False
 
         if data[3][4] > {'hlle': 3.1e-8}.get(flux, 2.7e-8):
@@ -115,7 +115,7 @@ def analyze():
         # check error identical for waves in each direction
         if data[4][4] != data[5][4]:
             logger.warning(flux_str + "error in L/R-going sound waves not equal %g %g",
-                  data[4][4], data[5][4])
+                           data[4][4], data[5][4])
             analyze_status = False
 
     return analyze_status

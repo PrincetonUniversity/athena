@@ -60,7 +60,7 @@ def analyze():
     for i in range(len(data)):
         if data[i][4] > 1.e-7:
             logger.warning("FFT Gravity Linear Jeans instability error is too large: %g",
-                  data[i][4])
+                           data[i][4])
             result = False
     # compute overall convergence slope
     gslope = np.log(data[len(data)-1][4]/data[0][4])/np.log(4.0)

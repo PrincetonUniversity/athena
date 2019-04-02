@@ -117,12 +117,12 @@ def analyze():
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[0]):
-                logger.warning("L-going sound wave converging at rate {} slower than {}".format(
-                    rate, rate_tol[0]))
+                msg = "L-going sound wave converging at rate {} slower than {}"
+                logger.warning(msg.format(rate, rate_tol[0]))
                 return False
             if (rms_errs[i] > err_tol[0][i-1]):
-                logger.warning("L-going sound wave error {} is larger than tolerance {}".format(
-                    rms_errs[i], err_tol[0][i-1]))
+                msg = "L-going sound wave error {} is larger than tolerance {}"
+                logger.warning(msg.format(rms_errs[i], err_tol[0][i-1]))
                 return False
 
         # L-going entropy wave
@@ -136,12 +136,12 @@ def analyze():
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[1]):
-                logger.warning("L-going entropy wave converging at rate {} slower than {}".format(
-                    rate, rate_tol[1]))
+                msg = "L-going entropy wave converging at rate {} slower than {}"
+                logger.warning(msg.format(rate, rate_tol[1]))
                 return False
             if (rms_errs[i] > err_tol[1][i-1]):
-                logger.warning("L-going entropy wave error {} is larger than tolerance {}".format(
-                    rms_errs[i], err_tol[1][i-1]))
+                msg = "L-going entropy wave error {} is larger than tolerance {}"
+                logger.warning(msg.format(rms_errs[i], err_tol[1][i-1]))
                 return False
 
         # Check that errors are identical for sound waves in each direction at default
