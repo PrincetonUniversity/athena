@@ -525,14 +525,15 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(Real *buf,
-//                                                           const PolarNeighborBlock &nb)
+//                                                           const PolarNeighborBlock &nb,
+//                                                           bool is_north)
 //  \brief Load EMF values along polar axis into send buffers
 
 int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
-    Real *buf, const PolarNeighborBlock &nb) {
+    Real *buf, const PolarNeighborBlock &nb, bool is_north) {
   MeshBlock *pmb = pmy_block_;
   int count = 0;
-  int j = nb.north ? pmb->js : pmb->je+1;
+  int j = is_north ? pmb->js : pmb->je + 1;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
     Real val = 0.0;
     for (int k = pmb->ks; k <= pmb->ke; ++k) {  // avoid double counting right ends
@@ -548,7 +549,7 @@ void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
     const PolarNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block=pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
   // 2) which element in vector of BoundaryVariable *?
   // KGF: do we need to typecast from generic "BoundaryVariable *" ?
   FaceCenteredBoundaryVariable *ptarget_pfbval =
@@ -610,7 +611,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   // Send polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_north[n];
-    int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb);
+    int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb, true);
     if (nb.rank == Globals::my_rank) { // on the same MPI rank
       CopyPolarBufferSameProcess(nb, count, n, true);
       // KGF: check this
@@ -626,7 +627,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pbval_->polar_neighbor_south[n];
-    int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb);
+    int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb, false);
     if (nb.rank == Globals::my_rank) { // on the same node
       CopyPolarBufferSameProcess(nb, count, n, false);
       // KGF: check this
@@ -1121,14 +1122,14 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list,
-//                                                             int num_bufs, bool north)
+//                                                            int num_bufs, bool is_north)
 //  \brief Overwrite EMF values along polar axis with azimuthal averages
 
 void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs,
-                                                       bool north) {
+                                                            bool is_north) {
   MeshBlock *pmb = pmy_block_;
   if (pmb->block_size.nx3 > 1) {
-    int j = north ? pmb->js : pmb->je+1;
+    int j = is_north ? pmb->js : pmb->je + 1;
     int count = 0;
     for (int i = pmb->is; i <= pmb->ie; ++i) {
       Real val = 0.0;

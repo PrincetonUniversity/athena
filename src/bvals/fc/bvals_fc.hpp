@@ -188,12 +188,13 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // all 3x only called in SendFluxCorrection()
   int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
-  int LoadFluxBoundaryBufferToPolar(Real *buf, const PolarNeighborBlock &nb);
+  int LoadFluxBoundaryBufferToPolar(Real *buf, const PolarNeighborBlock &nb,
+                                    bool is_north);
 
   // all 6x only called in ReceiveFluxCorrection()
   void SetFluxBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetFluxBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
-  void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool north);
+  void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool is_north);
 
   void ClearCoarseFluxBoundary();
   void AverageFluxBoundary();  // average flux from fine and equal lvls
