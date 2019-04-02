@@ -85,34 +85,34 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
 //  \brief Initialize BoundaryData structure
 
 void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) {
-  MeshBlock *pmb=pmy_block_;
-  NeighborIndexes *ni=pbval_->ni;
+  MeshBlock *pmb = pmy_block_;
+  NeighborIndexes *ni = pbval_->ni;
   int cng = pmb->cnghost;
-  int size=0;
+  int size = 0;
 
-  bd.nbmax=pbval_->maxneighbor_;
+  bd.nbmax = pbval_->maxneighbor_;
   // KGF: what is happening in the next two conditionals??
   // they are preventing the elimination of "BoundaryQuantity type" function parameter in
   // favor of a simpler boolean switch
-  if (type==BoundaryQuantity::cc_flcor || type==BoundaryQuantity::fc_flcor) {
-    for (bd.nbmax=0; pbval_->ni[bd.nbmax].type==NeighborConnect::face; bd.nbmax++) {}
+  if (type == BoundaryQuantity::cc_flcor || type == BoundaryQuantity::fc_flcor) {
+    for (bd.nbmax = 0; pbval_->ni[bd.nbmax].type == NeighborConnect::face; bd.nbmax++) {}
   }
-  if (type==BoundaryQuantity::fc_flcor) {
-    for (          ; pbval_->ni[bd.nbmax].type==NeighborConnect::edge; bd.nbmax++) {}
+  if (type == BoundaryQuantity::fc_flcor) {
+    for (          ; pbval_->ni[bd.nbmax].type == NeighborConnect::edge; bd.nbmax++) {}
   }
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
-    bd.flag[n]=BoundaryStatus::waiting;
-    bd.send[n]=nullptr;
-    bd.recv[n]=nullptr;
+    bd.flag[n] = BoundaryStatus::waiting;
+    bd.send[n] = nullptr;
+    bd.recv[n] = nullptr;
 #ifdef MPI_PARALLEL
-    bd.req_send[n]=MPI_REQUEST_NULL;
-    bd.req_recv[n]=MPI_REQUEST_NULL;
+    bd.req_send[n] = MPI_REQUEST_NULL;
+    bd.req_recv[n] = MPI_REQUEST_NULL;
 #endif
     // Allocate buffers, calculating the buffer size (variable vs. flux correction)
-    if (type ==BoundaryQuantity::cc || type==BoundaryQuantity::fc) {
+    if (type == BoundaryQuantity::cc || type == BoundaryQuantity::fc) {
       size = this->ComputeVariableBufferSize(ni[n], cng);
-    } else if (type ==BoundaryQuantity::cc_flcor || type==BoundaryQuantity::fc_flcor) {
+    } else if (type == BoundaryQuantity::cc_flcor || type == BoundaryQuantity::fc_flcor) {
       size = this->ComputeFluxCorrectionBufferSize(ni[n], cng);
     } else {
       std::stringstream msg;
@@ -120,15 +120,15 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
           << "Invalid boundary type is specified." << std::endl;
       ATHENA_ERROR(msg);
     }
-    // KGF: original switch statement dependencies on local variableS:
+    // KGF: original switch statement dependencies on local variables:
     // switch(type) { // local variables as input: ni[n],
     //case BoundaryQuantity::cc: {  // local variables as input: cng, ..., cng3
     //case BoundaryQuantity::fc: { // local variables as input: cng, ..., cng3, f2d, f3d
     //case BoundaryQuantity::cc_flcor: { // local variables as input: NONE
     //case BoundaryQuantity::fc_flcor: { // local variables as input: NONE
 
-    bd.send[n]=new Real[size];
-    bd.recv[n]=new Real[size];
+    bd.send[n] = new Real[size];
+    bd.recv[n] = new Real[size];
   }
 }
 
@@ -142,9 +142,9 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
 #ifdef MPI_PARALLEL
-    if (bd.req_send[n]!=MPI_REQUEST_NULL)
+    if (bd.req_send[n] != MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_send[n]);
-    if (bd.req_recv[n]!=MPI_REQUEST_NULL)
+    if (bd.req_recv[n] != MPI_REQUEST_NULL)
       MPI_Request_free(&bd.req_recv[n]);
 #endif
   }

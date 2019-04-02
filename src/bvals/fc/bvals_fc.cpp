@@ -183,22 +183,21 @@ FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
 int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
   MeshBlock *pmb = pmy_block_;
-  int f2d = (pmb->block_size.nx2 > 1 ? 1 : 0);
-  int f3d = (pmb->block_size.nx3 > 1 ? 1 : 0);
+  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
   int cng1, cng2, cng3;
   cng1 = cng;
-  cng2 = cng*f2d;
-  cng3 = cng*f3d;
+  cng2 = cng*f2;
+  cng3 = cng*f3;
 
   int size1 = ((ni.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
             *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
             *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
   int size2 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-            *((ni.ox2 == 0) ? (pmb->block_size.nx2+f2d):NGHOST)
+            *((ni.ox2 == 0) ? (pmb->block_size.nx2+f2):NGHOST)
             *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
   int size3 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
             *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-            *((ni.ox3 == 0) ? (pmb->block_size.nx3+f3d):NGHOST);
+            *((ni.ox3 == 0) ? (pmb->block_size.nx3+f3):NGHOST);
   int size = size1+size2+size3;
   if (pmy_mesh_->multilevel) {
     if (ni.type != NeighborConnect::face) {
@@ -211,12 +210,12 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                    *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
     int f2c2 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2d)
+             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2)
                : NGHOST)
              *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
     int f2c3 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-             *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3d)
+             *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3)
                : NGHOST);
     if (ni.type != NeighborConnect::face) {
       if (ni.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST+1);
@@ -230,13 +229,13 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
         *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
     int c2f2 =
         ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
-        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2+f2):cng+1)
         *((ni.ox3 == 0)?((pmb->block_size.nx3+1)/2+cng3):cng);
     int c2f3 =
         ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
         *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2):cng)
         *((ni.ox3 == 0) ?
-          ((pmb->block_size.nx3+1)/2+cng3+f3d) : cng+1);
+          ((pmb->block_size.nx3+1)/2+cng3+f3) : cng+1);
     int csize = c2f1+c2f2+c2f3;
     size = std::max(size,std::max(csize,fsize));
   }
@@ -1232,13 +1231,11 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   int &mylevel=pmb->loc.level;
 
   // KGF: a lot of repeated logic as in InitBoundaryData()
-  int f2d=0, f3d=0;
+  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
   int cng, cng1, cng2, cng3;
-  if (pmb->block_size.nx2 > 1) f2d=1;
-  if (pmb->block_size.nx3 > 1) f3d=1;
-  cng  = cng1 =pmb->cnghost;
-  cng2 = cng*f2d;
-  cng3 = cng*f3d;
+  cng  = cng1 = pmb->cnghost;
+  cng2 = cng*f2;
+  cng3 = cng*f3;
   int ssize, rsize;
   int tag;
   // Initialize non-polar neighbor communications to other ranks
@@ -1250,11 +1247,11 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                 *((nb.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
                 *((nb.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
       int size2 = ((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-                *((nb.ox2 == 0) ? (pmb->block_size.nx2+f2d):NGHOST)
+                *((nb.ox2 == 0) ? (pmb->block_size.nx2+f2):NGHOST)
                 *((nb.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
       int size3 = ((nb.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
                 *((nb.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-                *((nb.ox3 == 0) ? (pmb->block_size.nx3+f3d):NGHOST);
+                *((nb.ox3 == 0) ? (pmb->block_size.nx3+f3):NGHOST);
       size = size1+size2+size3;
       if (pmy_mesh_->multilevel == true) {
         if (nb.type != NeighborConnect::face) {
@@ -1267,11 +1264,11 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
         int f2c2 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                 *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2d):NGHOST)
+                 *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2):NGHOST)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
         int f2c3 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                 *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3d):NGHOST);
+                 *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3):NGHOST);
         if (nb.type != NeighborConnect::face) {
           if (nb.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST+1);
           if (nb.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST+1);
@@ -1282,11 +1279,11 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
         int c2f2 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
-                 *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2+f2d):cng+1)
+                 *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2+f2):cng+1)
                  *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
         int c2f3 = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
                  *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
-                 *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3+f3d):cng+1);
+                 *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3+f3):cng+1);
         csize = c2f1+c2f2+c2f3;
       } // end of multilevel == true
       if (nb.level == mylevel) // same refinement level

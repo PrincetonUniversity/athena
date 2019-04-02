@@ -662,16 +662,14 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
-  MeshBlock* pmb=pmy_block_;
-  int &mylevel=pmb->loc.level;
+  MeshBlock* pmb = pmy_block_;
+  int &mylevel = pmb->loc.level;
 
-  int f2d=0, f3d=0;
+  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
   int cng, cng1, cng2, cng3;
-  if (pmb->block_size.nx2 > 1) f2d=1;
-  if (pmb->block_size.nx3 > 1) f3d=1;
-  cng  = cng1 =pmb->cnghost;
-  cng2 = cng*f2d;
-  cng3 = cng*f3d;
+  cng  = cng1 = pmb->cnghost;
+  cng2 = cng*f2;
+  cng3 = cng*f3;
   int ssize, rsize;
   int tag;
   // Initialize non-polar neighbor communications to other ranks
