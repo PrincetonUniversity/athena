@@ -59,7 +59,7 @@ def analyze():
     # error
     for i in range(len(data)):
         if data[i][4] > 1.e-7:
-            logger.warning("FFT Gravity Linear Jeans instability error is too large: %f",
+            logger.warning("FFT Gravity Linear Jeans instability error is too large: %g",
                   data[i][4])
             result = False
     # compute overall convergence slope
@@ -72,11 +72,11 @@ def analyze():
         if data[i+1][4] > (err_tol*data[i][4]/(4.0)):
             logger.warning(
                 "Linear Jeans instability error is not converging at 2nd order")
-            logger.warning("Error tolerance: %f", err_tol)
-            logger.warning("Order estimate: %f %f", slope, gslope)
+            logger.warning("Error tolerance: %g", err_tol)
+            logger.warning("Order estimate: %g %g", slope, gslope)
             result = False
         elif data[i+1][4] > (warn_tol*data[i][4]/(4.0)):
             logger.warning("WARNING: Linear Jeans instability error is converging slowly")
-            logger.warning("Error tolerance: %f", warn_tol)
-            logger.warning("Order estimate: %f %f", slope, gslope)
+            logger.warning("Error tolerance: %g", warn_tol)
+            logger.warning("Order estimate: %g %g", slope, gslope)
     return result

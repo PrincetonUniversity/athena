@@ -58,17 +58,17 @@ def analyze():
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
 
-    logger.info("%f %f %f", data[0][4], data[1][4], data[2][4])
+    logger.info("%g %g %g", data[0][4], data[1][4], data[2][4])
 
     # check errors between runs: serial vs. hybrid w/ 1 thread vs. hybrid w/ 4 threads
     if data[0][4] != data[1][4]:
         logger.warning(
             "Linear wave error from serial calculation vs."
-            "single thread not identical %f %f", data[0][4], data[1][4])
+            "single thread not identical %g %g", data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
         logger.warning("Linear wave error differences between 4 threads vs."
-                       "serial is too large %f %f", data[2][4], data[0][4])
+                       "serial is too large %g %g", data[2][4], data[0][4])
         return False
 
     return True

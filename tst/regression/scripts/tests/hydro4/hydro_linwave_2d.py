@@ -94,7 +94,7 @@ def analyze():
         solver_results = np.array(data[0:nrows_per_solver])
         data = np.delete(data, np.s_[0:nrows_per_solver], 0)
 
-        logger.info("%f %f", err_tol[0], err_tol[1])
+        logger.info("%g %g", err_tol[0], err_tol[1])
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------
         logger.info('{} + {}'.format(torder.upper(), xorder))
@@ -105,7 +105,7 @@ def analyze():
         nx1_range = solver_results[0:num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            logger.info("%d %f %f", int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[0]):
@@ -126,7 +126,7 @@ def analyze():
         nx1_range = solver_results[num_nx1:2*num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            logger.info("%d %f %f", int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.warning(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[1]):
@@ -142,7 +142,7 @@ def analyze():
 
         # logger.info(solver_results[-2, 4] - solver_results[-1, 4])
         # logger.info(solver_results[-2, 4], solver_results[-1, 4])
-        # logger.info("numpy bound = {} %f".format(5e-16 + 1e-5*abs(solver_results[-1, 4])))
+        # logger.info("numpy bound = {} %g".format(5e-16 + 1e-5*abs(solver_results[-1, 4])))
 
         # Check that errors are identical for sound waves in each direction at Nx1=256
         if (not np.allclose(solver_results[-2, 4], solver_results[-1, 4],

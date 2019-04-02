@@ -113,7 +113,7 @@ def analyze():
         nx1_range = solver_results[0:num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            logger.info("%d %f %f", int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[0]):
@@ -132,7 +132,7 @@ def analyze():
         nx1_range = solver_results[num_nx1:2*num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            logger.info("%d %f %f", int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
             # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[1]):

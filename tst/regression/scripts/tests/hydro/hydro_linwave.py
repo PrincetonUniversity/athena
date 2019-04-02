@@ -96,25 +96,25 @@ def analyze():
         # Check absolute error and convergence rate lower bounds of all waves
         # Asymptotic second-order convergence should have ratio <= 0.25 below
         if data[1][4] > {'hlle': 4.3e-8}.get(flux, 3.7e-8):
-            logger.warning(flux_str + "error in L-going sound wave too large %f",
+            logger.warning(flux_str + "error in L-going sound wave too large %g",
                            data[1][4])
             analyze_status = False
         if data[1][4]/data[0][4] > {'hlle': 0.33}.get(flux, 0.325):
-            logger.warning(flux_str + "not converging for L-going sound wave %f %f",
+            logger.warning(flux_str + "not converging for L-going sound wave %g %g",
                   data[0][4], data[1][4])
             analyze_status = False
 
         if data[3][4] > {'hlle': 3.1e-8}.get(flux, 2.7e-8):
-            logger.warning(flux_str + "error in entropy wave too large %f", data[3][4])
+            logger.warning(flux_str + "error in entropy wave too large %g", data[3][4])
             analyze_status = False
         if data[3][4]/data[2][4] > {'hlle': 0.34}.get(flux, 0.33):
-            logger.warning(flux_str + "not converging for entropy wave %f %f",
+            logger.warning(flux_str + "not converging for entropy wave %g %g",
                            data[2][4], data[3][4])
             analyze_status = False
 
         # check error identical for waves in each direction
         if data[4][4] != data[5][4]:
-            logger.warning(flux_str + "error in L/R-going sound waves not equal %f %f",
+            logger.warning(flux_str + "error in L/R-going sound waves not equal %g %g",
                   data[4][4], data[5][4])
             analyze_status = False
 

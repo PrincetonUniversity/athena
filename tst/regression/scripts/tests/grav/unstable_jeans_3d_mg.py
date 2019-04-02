@@ -71,7 +71,7 @@ def analyze():
             slope = np.log(data[i+1][4]/data[i][4])/np.log(2.0)
             logger.warning(
                 "Linear Jeans instability error is not converging at 2nd order")
-            logger.warning("Order estimate: %f %f", slope, gslope)
+            logger.warning("Order estimate: %g %g", slope, gslope)
             result = False
         elif data[i+1][4] > (1.1*data[i][4]/(4.0)):
             logger.info("WARNING: Linear Jeans instability error is not converging at"
