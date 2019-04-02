@@ -259,8 +259,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   }
 
   // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
-  if (MAGNETIC_FIELDS_ENABLED
-      && (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
+  if ((pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
       && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
        || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
@@ -483,8 +482,7 @@ BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb = pmy_block_;
 
   // edge-case of single block across pole in MHD spherical polar coordinates
-  if (MAGNETIC_FIELDS_ENABLED &&
-      (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
+  if ((pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
       && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
           || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
           || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
