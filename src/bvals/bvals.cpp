@@ -62,13 +62,13 @@ void BValFuncPlaceholder(
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
-  pmy_block_=pmb;
+  pmy_block_ = pmb;
   for (int i=0; i<6; i++)
-    BoundaryFunction_[i]=nullptr;
+    BoundaryFunction_[i] = nullptr;
 
   // Set BC functions for each of the 6 boundaries in turn ------------------------------
   // Inner x1
-  nface_=2; nedge_=0;
+  nface_ = 2; nedge_ = 0;
   switch(block_bcs[BoundaryFace::inner_x1]) {
     case BoundaryFlag::reflect:
       BoundaryFunction_[BoundaryFace::inner_x1] = BValFuncPlaceholder;

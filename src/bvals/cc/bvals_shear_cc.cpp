@@ -1,11 +1,11 @@
-// //========================================================================================
-// // Athena++ astrophysical MHD code
-// // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
-// // Licensed under the 3-clause BSD License, see LICENSE file for details
-// //========================================================================================
-// //! \file bvals_shear_cc.cpp
-// //  \brief functions that apply BCs for CELL_CENTERED variables
-// //======================================================================================
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file bvals_shear_cc.cpp
+//  \brief functions that apply BCs for CELL_CENTERED variables
+//========================================================================================
 
 // // C headers
 
@@ -39,11 +39,13 @@
 // #endif
 
 
-// //--------------------------------------------------------------------------------------
-// //! \fn int BoundaryValues::LoadCellCenteredShearing(AthenaArray<Real> &src, Real *buf, int nb)
+//--------------------------------------------------------------------------------------
+// //! \fn int BoundaryValues::LoadCellCenteredShearing(AthenaArray<Real> &src,
+//                          Real *buf, int nb)
 // //  \brief Load shearingbox hydro boundary buffers
 
-// void BoundaryValues::LoadCellCenteredShearing(AthenaArray<Real> &src, Real *buf, int nb) {
+// void BoundaryValues::LoadCellCenteredShearing(AthenaArray<Real> &src, Real *buf,
+//      int nb) {
 //   MeshBlock *pmb=pmy_block_;
 //   Mesh *pmesh=pmb->pmy_mesh;
 //   int si, sj, sk, ei, ej, ek;
@@ -99,13 +101,13 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::SendCellCenteredShearingboxBoundaryBuffersForInit(
-// //                                         AthenaArray<Real> &src,bool conserved_values)
+//                                         AthenaArray<Real> &src,bool conserved_values)
 // //  \brief Send shearingbox boundary buffers for hydro variables
 
-// void BoundaryValues::SendCellCenteredShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
-//                                                                 bool conserved_values) {
+// void BoundaryValues::SendCellCenteredShearingboxBoundaryBuffersForInit(
+//                                        AthenaArray<Real> &src, bool conserved_values) {
 //   MeshBlock *pmb=pmy_block_;
 //   Coordinates *pco=pmb->pcoord;
 //   Mesh *pmesh=pmb->pmy_mesh;
@@ -166,8 +168,9 @@
 //   }
 //   return;
 // }
-// //--------------------------------------------------------------------------------------
-// //! \fn void BoundaryValues::SendCellCenteredShearingboxBoundaryBuffers(AthenaArray<Real> &src,
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SendCellCenteredShearingboxBoundaryBuffers(
+//                                                       AthenaArray<Real> &src,
 // //                                                    bool conserved_values)
 // //  \brief Send shearingbox boundary buffers for hydro variables
 
@@ -302,8 +305,9 @@
 //           pbl->pbval->shbox_outer_hydro_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_outer_lid_[n],
-//                         n+offset, AthenaTagMPI::shbox_hydro); //bufid for outer(inner): 2(0) and 3(1)
+//           // bufid for outer(inner): 2(0) and 3(1)
+//           int tag = CreateBvalsMPITag(send_outer_lid_[n],
+//                         n+offset, AthenaTagMPI::shbox_hydro);
 //           MPI_Isend(send_outerbuf_hydro_[n],send_outersize_hydro_[n]*ssize,
 //                     MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD,
 //                     &rq_outersend_hydro_[n]);
@@ -315,8 +319,9 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
-// //! \fn void BoundaryValues::SetCellCenteredShearingboxBoundarySameLevel(AthenaArray<Real> &dst,
+//--------------------------------------------------------------------------------------
+// //! \fn void BoundaryValues::SetCellCenteredShearingboxBoundarySameLevel(
+//                                              AthenaArray<Real> &dst,
 // //                                           Real *buf, const int nb)
 // //  \brief Set hydro shearingbox boundary received from a block on the same level
 // void BoundaryValues::SetCellCenteredShearingboxBoundarySameLevel(AthenaArray<Real>
@@ -379,11 +384,13 @@
 // }
 
 
-// //--------------------------------------------------------------------------------------
-// //! \fn bool BoundaryValues::ReceiveCellCenteredShearingboxBoundaryBuffers(AthenaArray<Real>&dst)
-// //  \brief receive shearingbox boundary data for hydro variables
+//--------------------------------------------------------------------------------------
+//! \fn bool BoundaryValues::ReceiveCellCenteredShearingboxBoundaryBuffers(
+//                  AthenaArray<Real>&dst)
+//  \brief receive shearingbox boundary data for hydro variables
 
-// bool BoundaryValues::ReceiveCellCenteredShearingboxBoundaryBuffers(AthenaArray<Real> &dst) {
+// bool BoundaryValues::ReceiveCellCenteredShearingboxBoundaryBuffers(
+//                 AthenaArray<Real> &dst) {
 //   MeshBlock *pmb=pmy_block_;
 //   Mesh *pmesh=pmb->pmy_mesh;
 //   bool flagi=true, flago=true;
@@ -398,8 +405,9 @@
 //         } else { // MPI boundary
 // #ifdef MPI_PARALLEL
 //           int test;
-//           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-//           MPI_Test(&rq_innerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
+//           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+//        MPI_STATUS_IGNORE);
+//           MPI_Test(&rq_innerrecv_hydro_[n], &test, MPI_STATUS_IGNORE);
 //           if (static_cast<bool>(test)==false) {
 //             flagi=false;
 //             continue;
@@ -409,7 +417,7 @@
 //         }
 //       }
 //       // set dst if boundary arrived
-//       SetCellCenteredShearingboxBoundarySameLevel(dst,recv_innerbuf_hydro_[n],n);
+//       SetCellCenteredShearingboxBoundarySameLevel(dst, recv_innerbuf_hydro_[n], n);
 //       shbox_inner_hydro_flag_[n] = BoundaryStatus::completed; // completed
 //     } // loop over recv[0] to recv[3]
 //   } // inner boundary
@@ -446,7 +454,7 @@
 
 // }
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::FindShearBlock(const Real time)
 // //
 // //  \brief Calc the following things:
@@ -474,7 +482,7 @@
 //   Real qomL = qshear_*Omega_0_*x1size_;
 //   Real yshear = qomL*time;
 //   Real deltay = fmod(yshear,x2size_);
-//   int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
+//int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
 //   int Ngrids  = static_cast<int>(joffset/nx2);
 //   joverlap_   = joffset - Ngrids*nx2;
 //   eps_ = (std::fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
@@ -579,7 +587,7 @@
 //         recv_innersize_hydro_[2] = send_innersize_hydro_[2];
 //         shbox_inner_hydro_flag_[2] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//           send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
+//       send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
 //           recv_innersize_field_[2] = send_innersize_field_[2];
 //           shbox_inner_field_flag_[2] = BoundaryStatus::waiting;
 //           send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3+1);
@@ -765,7 +773,7 @@
 //         send_outersize_hydro_[2] = recv_outersize_hydro_[2];
 //         shbox_outer_hydro_flag_[2] = BoundaryStatus::waiting;
 //         if (MAGNETIC_FIELDS_ENABLED) {
-//           send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
+//         send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
 //           recv_outersize_field_[2] = send_outersize_field_[2];
 //           shbox_outer_field_flag_[2] = BoundaryStatus::waiting;
 //           send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3+1);
@@ -857,7 +865,7 @@
 
 //   return;
 // }
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::ReceiveCellCenteredShearingboxBoundaryBuffers(int n, int
 // //     k, int jinner, int jouter, int i, Real eps, static AthenaArray<Real> &U,
 // //     AthenaArray<Real> &Flux)

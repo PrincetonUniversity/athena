@@ -133,27 +133,9 @@ BoundaryBase::~BoundaryBase() {
 //                                                       int fi1, int fi2)
 //  \brief calculate a buffer identifier
 
-// See comments on BoundaryBase::CreateBvalsMPITag()
-
 int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
-  // KGF: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
-
-  // C-style cast: unnecessary due to implicit conversion (coercion)
-  // unsigned int ux1 =  (unsigned) (ox1+1);
-  // unsigned int ux2 =  (unsigned) (ox2+1);
-  // unsigned int ux3 =  (unsigned) (ox3+1);
-
-  // C++ functional cast expression: equivalent to C-style cast
-  // unsigned int ux1 =  unsigned int(ox1+1);
-  // unsigned int ux2 =  unsigned int(ox2+1);
-  // unsigned int ux3 =  unsigned int(ox3+1);
-
-  // C++-style cast: compile-time checking, easier to search, express programmer intent
-  // unsigned int ux1 = static_cast<unsigned>(ox1+1);
-  // unsigned int ux2 = static_cast<unsigned>(ox2+1);
-  // unsigned int ux3 = static_cast<unsigned>(ox3+1);
-
-  // KGF: should proably omit any casts (C++-style or C-style)
+  // WARN: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
+  // See comments on BoundaryBase::CreateBvalsMPITag()
   int ux1 = (ox1 + 1);
   int ux2 = (ox2 + 1);
   int ux3 = (ox3 + 1);
@@ -294,10 +276,10 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 //  0 (lid:) 111 1 (bufid:) 111 111 (phys:) 1 1111
 //  For a 32-bit signed integer tag, the "lid" component of bitfield occupies 20 bits
 
-//  TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
-//  TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
-//  TODO(felker) Store # of bits for each bitfield component in preprocessor macros
-//               TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
+// TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
+// TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
+// TODO(felker) Store # of bits for each bitfield component in preprocessor macros
+//              TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
 
 //  Note, the MPI standard requires signed integer tag, with MPI_TAG_UB>= 2^15-1 = 32,767
 //  (inclusive)
@@ -409,7 +391,8 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
 
   // x2 face
   for (int n=-1; n<=1; n+=2) {
-    neibt = tree.FindNeighbor(loc, 0, n, 0, block_bcs, nrbx1, nrbx2, nrbx3, pmy_mesh_->root_level);
+    neibt = tree.FindNeighbor(loc, 0, n, 0, block_bcs,
+                              nrbx1, nrbx2, nrbx3, pmy_mesh_->root_level);
     if (neibt == nullptr) { bufid += nf1*nf2; continue;}
     if (neibt->flag == false) { // neighbor at finer level
       int fface=1-(n+1)/2; // 0 for BoundaryFace::outer_x2, 1 for BoundaryFace::inner_x2

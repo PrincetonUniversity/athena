@@ -1,11 +1,11 @@
-// //========================================================================================
-// // Athena++ astrophysical MHD code
-// // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
-// // Licensed under the 3-clause BSD License, see LICENSE file for details
-// //========================================================================================
-// //! \file bvals_emf.cpp
-// //  \brief functions that apply BCs for emf corrections in shearing box calculations
-// //======================================================================================
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file bvals_emf.cpp
+//  \brief functions that apply BCs for emf corrections in shearing box calculations
+//======================================================================================
 
 // // C headers
 
@@ -39,7 +39,7 @@
 // #endif
 
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn int BoundaryValues::LoadEMFShearing(FaceField &src, Real *buf, int nb)
 // //  \brief Load shearingbox EMF boundary buffers
 // void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
@@ -111,7 +111,7 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit()
 // //  \brief Send shearingbox boundary buffers for EMF correction
 // //  Currently not used. As we only correct vy at t=0.
@@ -119,7 +119,7 @@
 // void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit() {
 //   return;
 // }
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::SendEMFShearingboxBoundaryCorrection()
 // //  \brief Send shearingbox boundary buffers for EMF correction
 
@@ -196,7 +196,7 @@
 //           pbl->pbval->shbox_outer_emf_flag_[n]=BoundaryStatus::arrived;
 //         } else { // MPI
 // #ifdef MPI_PARALLEL
-//           int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, AthenaTagMPI::shbox_emf);
+//     int tag=CreateBvalsMPITag(send_outer_lid_[n], n+offset, AthenaTagMPI::shbox_emf);
 //           MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],
 //                     MPI_ATHENA_REAL, send_outer_rank_[n], tag,
 //                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
@@ -208,10 +208,10 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
-// //! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf,
-// //                                                              const int nb)
-// //  \brief Set EMF shearingbox boundary received from a block on the same level
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf,
+//                                                              const int nb)
+//  \brief Set EMF shearingbox boundary received from a block on the same level
 
 // void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 //                                                         buf, const int nb) {
@@ -284,7 +284,7 @@
 // }
 
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection()
 // //  \brief receive shearingbox boundary data for EMF correction
 
@@ -353,7 +353,7 @@
 // }
 
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::RemapEMFShearingboxBoundary()
 // //  \brief Set EMF boundary received from a block on the finer level
 
@@ -406,7 +406,7 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::ClearEMFShearing()
 // //  \brief Clear the working array for EMFs on the surface/edge contacting with
 // //  a shearing periodic boundary
@@ -428,7 +428,7 @@
 //   return;
 // }
 
-// //--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // //! \fn void BoundaryValues::RemapFluxEMF(int k, int jinner, int jouter, Real
 // //  eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
 // //  \brief compute the flux along j indices for remapping
