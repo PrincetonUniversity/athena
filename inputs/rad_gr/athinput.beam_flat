@@ -43,12 +43,23 @@ x3max  = 1.0      # maximum z
 ix3_bc = outflow  # bottom boundary
 ox3_bc = outflow  # top boundary
 
+refinement = none  # whether to use mesh refinement
+
 num_threads = 1  # number of threads per process
 
 <meshblock>
-nx1 = 16  # block size in x-direction
-nx2 = 16  # block size in y-direction
-nx3 = 16  # block size in z-direction
+nx1 = 8  # block size in x-direction
+nx2 = 8  # block size in y-direction
+nx3 = 8  # block size in z-direction
+
+<refinement1>
+level = 1     # refinement level
+x1min = 0.5   # minimum x
+x1max = 1.0   # maximum x
+x2min = -1.0  # minimum y
+x2max = 1.0   # maximum y
+x3min = 0.5   # minimum z
+x3max = 1.0   # maximum z
 
 <hydro>
 gamma = 1.3333333333333333  # ratio of specific heats Gamma
