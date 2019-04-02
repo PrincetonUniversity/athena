@@ -27,6 +27,7 @@ vz = -0.05
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('s',
                      prob='gr_linear_wave',
                      coord='cartesian',

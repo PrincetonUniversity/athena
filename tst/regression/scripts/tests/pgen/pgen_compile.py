@@ -40,6 +40,7 @@ hydro_args = []
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     # Check that code compiles all pgen files in single or double precision
     for single_precision in [True, False]:
         for pgen_set, args in zip([gr_probs, mhd_probs,

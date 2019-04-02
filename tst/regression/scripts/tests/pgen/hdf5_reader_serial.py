@@ -30,6 +30,7 @@ gamma = 5.0/3.0
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
 
     # Configure and compile code
     athena.configure('b',

@@ -9,6 +9,7 @@ import scripts.utils.athena as athena
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('gtb',
                      prob='gr_torus',
                      coord='kerr-schild',

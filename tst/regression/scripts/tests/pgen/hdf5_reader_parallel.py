@@ -31,6 +31,7 @@ num_ranks = 3
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
 
     # Configure and compile code
     athena.configure('b',

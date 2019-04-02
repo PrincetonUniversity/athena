@@ -20,6 +20,7 @@ _gammas = [1.1, 1.4, 5./3.]
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('hdf5',
                      prob='shock_tube',
                      coord='cartesian',

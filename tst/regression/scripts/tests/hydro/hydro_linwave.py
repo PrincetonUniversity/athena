@@ -20,6 +20,7 @@ _exec = os.path.join('bin', 'athena')
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     global _fluxes
     for i in athena.global_config_args:
         tmp = i.split('=')

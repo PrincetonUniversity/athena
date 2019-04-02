@@ -17,6 +17,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 
 # Prepare Athena++ w/wo OpenMP
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'omp', prob='linear_wave', coord='cartesian',
                      flux='hlld', **kwargs)
     athena.make()
