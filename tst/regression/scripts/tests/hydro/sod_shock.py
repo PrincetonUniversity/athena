@@ -84,8 +84,8 @@ def analyze():
             low_res = data[row]
             # check absolute error
             if low_res[4] > 0.011:
-                msg = "error in x{0:} too large"
-                print(flux_str + msg.format(xdir), low_res[4])
+                msg = "error in x{0:} too large, {1:}"
+                logger.warning(flux_str + msg.format(xdir, low_res[4]))
                 analyze_status = False
             for nx in _nxs:
                 if xdir == _xdirs[0]:
@@ -94,13 +94,14 @@ def analyze():
                         cycles = data[row][3], data[row + (i + 1) * len(_nxs)][3]
                         if cycles[0] != cycles[1]:
                             msg = "Ncycles in x{0:}/x{1:} not equal {2:} {3:}"
-                            print(flux_str + msg.format(xdir, xd, *cycles))
+                            logger.warning(flux_str + msg.format(xdir, xd, *cycles))
                             analyze_status = False
                 # check convergence
                 if nx > _nxs[0]:
                     if data[row][4] / low_res[4] > 0.6**(np.log2(nx / _nxs[0])):
-                        msg = "not converging in x{0:}"
-                        print(flux_str + msg.format(xdir), low_res[4], data[row][4])
+                        msg = "not converging in x{0:} {1:} {2:}"
+                        logger.warning(flux_str + msg.format(xdir, low_res[4],
+                                                             data[row][4]))
                         analyze_status = False
                 # increment row
                 row += 1

@@ -52,21 +52,23 @@ def analyze():
     filename = 'bin/cpaw-errors.dat'
     data = athena_read.error_dat(filename)
 
-    print(data[0][4])
-    print(data[1][4])
-    print(data[2][4])
+    logger.info("%f", data[0][4])
+    logger.info("%f", data[1][4])
+    logger.info("%f", data[2][4])
 
     # check absolute error and convergence
     if data[1][4] > 2.0e-4:
-        print("error in L-going fast wave too large", data[1][4])
+        logger.warning("error in L-going fast wave too large %f", data[1][4])
         return False
     if data[1][4]/data[0][4] > 0.3:
-        print("not converging for L-going fast wave", data[0][4], data[1][4])
+        logger.warning("not converging for L-going fast wave %f %f",
+                       data[0][4], data[1][4])
         return False
 
     # check error identical for waves in each direction
     if abs(data[2][4] - data[1][4]) > 2.0e-6:
-        print("error in L/R-going Alfven waves not equal", data[2][4], data[0][4])
+        logger.warning("error in L/R-going Alfven waves not equal %f %f",
+                       data[2][4], data[0][4])
         return False
 
     return True

@@ -62,24 +62,24 @@ def analyze():
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
-    print('[MRI-2D]: Ref(stress,ME,ratio) = {} {} {}'.format(ref_stress,
+    logger.warning('[MRI-2D]: Ref(stress,ME,ratio) = {} {} {}'.format(ref_stress,
                                                              ref_me,
                                                              ref_ratio))
-    print('[MRI-2D]: New(stress,ME,ratio) = {} {} {}'.format(new_stress,
+    logger.warning('[MRI-2D]: New(stress,ME,ratio) = {} {} {}'.format(new_stress,
                                                              new_me,
                                                              new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-2D]: averaged stress is off by a factor > 2')
+        logger.warning('[MRI-2D]: averaged stress is off by a factor > 2')
         flag = False
     error_rel = np.fabs((new_me / ref_me) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-2D]: averaged magnetic energy is off by a factor > 2')
+        logger.warning('[MRI-2D]: averaged magnetic energy is off by a factor > 2')
         flag = False
     error_rel = np.fabs(new_ratio - ref_ratio)
     if error_rel > 1.0:
-        print('[MRI-2D]: energy-to-stress ratio is off by an amount > 1.0')
+        logger.warning('[MRI-2D]: energy-to-stress ratio is off by an amount > 1.0')
         flag = False
 
     return flag

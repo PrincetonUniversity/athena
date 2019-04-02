@@ -56,20 +56,21 @@ def analyze():
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
 
-    print(data[0][4], data[1][4], data[2][4], data[3][4])
+    logger.warning("%f %f %f %f", data[0][4], data[1][4], data[2][4], data[3][4])
 
     # check errors between runs w/wo OpenMP and different numbers of threads
+    fmt = " %f %f"
     if data[0][4] != data[1][4]:
-        print("Linear wave error from serial calculation vs. single thread not identical",
-              data[0][4], data[1][4])
+        msg = "Linear wave error from serial calculation vs. single thread not identical"
+        logger.warning(msg + fmt, data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 2 threads vs. serial is too large",
-              data[2][4], data[0][4])
+        msg = "Linear wave error differences between 2 threads vs. serial is too large"
+        logger.warning(msg + fmt, data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 4 threads vs. serial is too large",
-              data[3][4], data[0][4])
+        msg = "Linear wave error differences between 4 threads vs. serial is too large"
+        logger.warning(msg + fmt, data[3][4], data[0][4])
         return False
 
     return True

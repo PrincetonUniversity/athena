@@ -58,20 +58,21 @@ def analyze():
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
 
-    print(data[0][4], data[1][4], data[2][4], data[3][4])
+    logger.info("%f %f %f %f", data[0][4], data[1][4], data[2][4], data[3][4])
 
     # check errors between runs w/wo MPI and different numbers of ranks
+    fmt = " %f %f"
     if data[0][4] != data[1][4]:
-        print("Linear wave error from serial calculation vs. MPI w/ 1 rank not identical",
-              data[0][4], data[1][4])
+        msg = "Linear wave error from serial calculation vs. MPI w/ 1 rank not identical"
+        logger.warning(msg + fmt, data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 2 ranks vs. serial is too large",
-              data[2][4], data[0][4])
+        msg = "Linear wave error differences between 2 ranks vs. serial is too large"
+        logger.warning(msg + fmt, data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 4 ranks vs. serial is too large",
-              data[3][4], data[0][4])
+        msg = "Linear wave error differences between 4 ranks vs. serial is too large"
+        logger.warning(msg + fmt, data[3][4], data[0][4])
         return False
 
     return True

@@ -63,13 +63,13 @@ def analyze():
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(res)))
-    print('[Viscous Diffusion STS]: Convergence order = {}'.format(conv))
+    logger.info('[Viscous Diffusion STS]: Convergence order = {}'.format(conv))
 
     flag = True
     if conv > -0.99:
-        print('[Viscous Diffusion STS]: Scheme NOT Converging at ~1st order.')
+        logger.warning('[Viscous Diffusion STS]: Scheme NOT Converging at ~1st order.')
         flag = False
     else:
-        print('[Viscous Diffusion STS]: Scheme Converging at ~1st order.')
+        logger.info('[Viscous Diffusion STS]: Scheme Converging at ~1st order.')
 
     return flag

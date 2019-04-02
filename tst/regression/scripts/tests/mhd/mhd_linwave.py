@@ -104,54 +104,61 @@ def analyze():
         flux_str = 'With flux "{0:}": '.format(flux)
         # check largest maximum error scaled to RMS is within bounds at each highest res
         if data[1][13] > 8.0:
-            print(flux_str + "maximum relative error in L-going fast wave too large",
-                  data[1][13])
+            logger.warning(
+                flux_str + "maximum relative error in L-going fast wave too large %f",
+                    data[1][13])
             analyze_status = False
         # check error in M1 for Alfven wave since density constant
         if data[3][15]/data[3][6] > 8.0:
-            print(flux_str + "maximum relative error in L-going Alfven wave too large",
-                  data[3][15]/data[3][6])
+            logger.warning(
+                flux_str + "maximum relative error in L-going Alfven wave too large %f",
+                    data[3][15]/data[3][6])
         if data[5][13] > 8.0:
-            print(flux_str + "maximum relative error in L-going slow wave too large",
-                  data[5][13])
+            logger.warning(
+                flux_str + "maximum relative error in L-going slow wave too large %f",
+                    data[5][13])
             analyze_status = False
 
         # check RMS error and convergence of all four waves
         if data[1][4] > 4.5e-8:
-            print(flux_str + "RMS error in L-going fast wave too large", data[1][4])
+            logger.warning(flux_str + "RMS error in L-going fast wave too large %f",
+                           data[1][4])
             analyze_status = False
         if data[1][4]/data[0][4] > 0.4:
-            print(flux_str + "not converging for L-going fast wave",
+            logger.warning(flux_str + "not converging for L-going fast wave %f %f",
                   data[0][4], data[1][4])
             analyze_status = False
 
         if data[3][4] > 4.0e-8:
-            print(flux_str + "RMS error in L-going Alfven wave too large",
+            logger.warning(flux_str + "RMS error in L-going Alfven wave too large %f",
                   data[3][4])
             analyze_status = False
         if data[3][4]/data[2][4] > 0.4:
-            print(flux_str + "not converging for L-going Alfven wave",
+            logger.warning(flux_str + "not converging for L-going Alfven wave %f %f",
                   data[2][4], data[3][4])
             analyze_status = False
 
         if data[5][4] > 5.0e-8:
-            print(flux_str + "RMS error in L-going slow wave too large", data[5][4])
+            logger.warning(flux_str + "RMS error in L-going slow wave too large %f",
+                           data[5][4])
             analyze_status = False
         if data[5][4]/data[4][4] > 0.4:
-            print(flux_str + "not converging for L-going slow wave",
+            logger.warning(flux_str + "not converging for L-going slow wave %f %f",
                   data[4][4], data[5][4])
             analyze_status = False
 
         if data[7][4] > 2.75e-8:
-            print(flux_str + "RMS error in entropy wave too large", data[7][4])
+            logger.warning(flux_str + "RMS error in entropy wave too large %f",
+                           data[7][4])
             analyze_status = False
         if data[7][4]/data[6][4] > 0.4:
-            print(flux_str + "not converging for entropy wave", data[6][4], data[7][4])
+            logger.warning(flux_str + "not converging for entropy wave %f %f",
+                           data[6][4], data[7][4])
             analyze_status = False
 
         # check error identical for waves in each direction
         if data[8][4] != data[9][4]:
-            print(flux_str + "error in L/R-going fast waves not equal",
+            logger.warning(flux_str + "error in L/R-going fast waves not equal %f %f",
                   data[8][4], data[9][4])
             analyze_status = False
 

@@ -72,7 +72,7 @@ def analyze():
     #   return False
     # if max(yf) != 0.5 and min(yf) != -0.5:
     #  return False
-    # print(vtk_data['rho'].shape)
+    # logger.debug(str(vtk_data['rho'].shape))
 
     hdf5_data = athena_read.athdf('bin/TestOutputs.out5.00010.athdf', dtype=np.float32)
     if max(hdf5_data['rho'][0, 32, :]) < 0.25:

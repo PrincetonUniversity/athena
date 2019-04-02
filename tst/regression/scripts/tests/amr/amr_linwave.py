@@ -41,10 +41,11 @@ def analyze():
 
     analyze_status = True
     if data[0][4] > 2.0e-8:
-        print("RMS error in L-going fast wave too large", data[0][4])
+        logger.warning("RMS error in L-going fast wave too large %f", data[0][4])
         analyze_status = False
     if data[0][13] > 5.5:
-        print("maximum relative error in L-going fast wave too large", data[0][13])
+        logger.warning("maximum relative error in L-going fast wave too large %f",
+                       data[0][13])
         analyze_status = False
 
     return analyze_status

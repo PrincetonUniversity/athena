@@ -63,13 +63,13 @@ def analyze():
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(res)))
-    print('[Resistive Diffusion STS]: Convergence order = {}'.format(conv))
+    logger.info('[Resistive Diffusion STS]: Convergence order = {}'.format(conv))
 
     flag = True
     if conv > -0.99:
-        print('[Resistive Diffusion STS]: Scheme NOT Converging at ~1st order.')
+        logger.warning('[Resistive Diffusion STS]: Scheme NOT Converging at ~1st order.')
         flag = False
     else:
-        print('[Resistive Diffusion STS]: Scheme Converging at ~1st order.')
+        logger.info('[Resistive Diffusion STS]: Scheme Converging at ~1st order.')
 
     return flag

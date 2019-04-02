@@ -87,11 +87,11 @@ def analyze():
     status = True
     for wave_flag in range(7):
         if data[2*wave_flag+1][4] > high_res_errors[wave_flag]:
-            print('{0} wave error too large ({1} vs. {2})'.format(
+            logger.warning('{0} wave error too large ({1} vs. {2})'.format(
                 names[wave_flag], data[2*wave_flag+1][4], high_res_errors[wave_flag]))
             status = False
         if data[2*wave_flag+1][4]/data[2*wave_flag][4] > error_ratio:
-            print('{0} wave error not converging ({1} to {2})'.format(
+            logger.warning('{0} wave error not converging ({1} to {2})'.format(
                 names[wave_flag], data[2*wave_flag][4], data[2*wave_flag+1][4]))
             status = False
     return status
