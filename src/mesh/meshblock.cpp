@@ -127,8 +127,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // floors depend on EOS (but EOS not needed by Reconstruction constructor)
   precon = new Reconstruction(this, pin);
 
-  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
-
   // physics-related objects: may depend on Coordinates for diffusion terms
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
@@ -136,6 +134,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (RADIATION_ENABLED) {
     prad = new Radiation(this, pin);
   }
+
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -227,8 +227,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // Reconstruction (constructor may implicitly depend on Coordinates)
   precon = new Reconstruction(this, pin);
 
-  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
-
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
@@ -237,6 +235,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     prad = new Radiation(this, pin);
   }
   InitUserMeshBlockData(pin);
+
+  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   int os=0;
   // load hydro and field data
