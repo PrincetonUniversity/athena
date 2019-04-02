@@ -46,13 +46,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pmy_mesh = pm;
   // int root_level = pm->root_level;
   block_size = input_block;
-  prev=nullptr;
-  next=nullptr;
-  gid=igid;
-  lid=ilid;
-  loc=iloc;
-  gflag=igflag;
-  cost=1.0;
+  prev = nullptr;
+  next = nullptr;
+  gid = igid;
+  lid = ilid;
+  loc = iloc;
+  gflag = igflag;
+  cost = 1.0;
 
   nuser_out_var = 0;
   nreal_user_meshblock_data_ = 0;
@@ -76,14 +76,14 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ks = ke = 0;
   }
 
-  if (pm->multilevel==true) {
-    cnghost=(NGHOST+1)/2+1;
-    cis=NGHOST; cie=cis+block_size.nx1/2-1;
-    cjs=cje=cks=cke=0;
-    if (block_size.nx2>1) // 2D or 3D
-      cjs=NGHOST, cje=cjs+block_size.nx2/2-1;
-    if (block_size.nx3>1) // 3D
-      cks=NGHOST, cke=cks+block_size.nx3/2-1;
+  if (pm->multilevel == true) {
+    cnghost = (NGHOST + 1)/2 + 1;
+    cis = NGHOST; cie = cis + block_size.nx1/2 - 1;
+    cjs = cje = cks = cke = 0;
+    if (block_size.nx2 > 1) // 2D or 3D
+      cjs = NGHOST, cje = cjs + block_size.nx2/2 - 1;
+    if (block_size.nx3 > 1) // 3D
+      cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
   }
 
   // construct objects stored in MeshBlock class.  Note in particular that the initial
@@ -117,7 +117,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
 
-  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel == true) pmr = new MeshRefinement(this, pin);
 
   // physics-related objects: may depend on Coordinates for diffusion terms
   phydro = new Hydro(this, pin);

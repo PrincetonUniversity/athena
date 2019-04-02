@@ -54,11 +54,9 @@ void BValFuncPlaceholder(
 }
 } // namespace
 
-// BoundaryValues constructor - sets functions for the appropriate
-// boundary conditions at each of the 6 dirs of a MeshBlock
-
-// called in MeshBlock() constructor
-
+// BoundaryValues constructor (the first object constructed inside the MeshBlock()
+// constructor): sets functions for the appropriate boundary conditions at each of the 6
+// dirs of a MeshBlock
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
@@ -259,26 +257,21 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   } else {
     num_south_polar_blocks_ = 0;
   }
-  // end KGF: shared logic of setting boundary functions and counting spherical blocks
 
   // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
-  // KGF: (fixed by Z. Zhu on 2016-01-15 in ff7b4b1)
-  // KGF: shouldn't this only be allocated for MHD?
-  if (pmb->loc.level == pmy_mesh_->root_level &&
-      pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+  if (MAGNETIC_FIELDS_ENABLED
+      && (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
+      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
        || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     azimuthal_shift_.NewAthenaArray(pmb->ke + NGHOST + 2);
-  // end KGF: special handling for spherical coordinates polar boundary when nrbx3=1
 
-  // KGF: prevent reallocation of contiguous memory space for each of 3x current calls to
-  // std::vector<BoundaryVariable *>.push_back() for Hydro, Field, Gravity
+  // prevent reallocation of contiguous memory space for each of 4x possible calls to
+  // std::vector<BoundaryVariable *>.push_back() in Hydro, Field, Gravity, PassiveScalars
   bvars.reserve(3);
-  // KGF: rename to "bvars_time_int"? what about sts?
+  // TOOD(KGF): rename to "bvars_time_int"? What about a std::vector for bvars_sts?
   bvars_main_int.reserve(2);
-
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
 
@@ -489,19 +482,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 BoundaryValues::~BoundaryValues() {
   MeshBlock *pmb = pmy_block_;
 
-  // KGF: edge-case of single block across pole in MHD spherical polar coordinates
-  // Note, this conditional is outside "if MAGNETIC_FIELDS_ENABLED" in master (also
-  // true for its counterpart in constructor). Probably should be inside.
-  if (pmb->loc.level == pmy_mesh_->root_level &&
-      pmy_mesh_->nrbx3 == 1 &&
-      (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
-       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
+  // edge-case of single block across pole in MHD spherical polar coordinates
+  if (MAGNETIC_FIELDS_ENABLED &&
+      (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
+      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+          || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
+          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     azimuthal_shift_.DeleteAthenaArray();
-  // end KGF: edge-case...
-
-  // end KGF: destructor counterpart of special handling of emf in spherical polar
 
   // KGF: shearing box destructor
   // if (SHEARING_BOX) {
@@ -564,23 +552,15 @@ BoundaryValues::~BoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetupPersistentMPI()
-//  \brief Setup persistent MPI requests
-// TODO(felker): rename to a less generic name to avoid confusion with InitBoundaryData
-// KGF: called in Mesh::Initialize(), after CheckBoundary()
-//      and before StartReceivingForInit(true)
-void BoundaryValues::SetupPersistentMPI() {
-  // KGF: (although the counting is for 2x BoundaryVariables private members that are only
-  // used for emf purposes in flux_correction_fc.cpp)
-  // num_north_polar_blocks_, num_south_polar_blocks_, nedge_, nface_ are calculated in
-  // BoundaryValues() constructor.
+//  \brief Setup persistent MPI requests to be reused throughout the entire simulation
 
+void BoundaryValues::SetupPersistentMPI() {
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     (*bvars_it)->SetupPersistentMPI();
   }
 
   // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
-
   // initialize the shearing block lists
   // if (SHEARING_BOX) {
   //   Mesh *pmesh = pmb->pmy_mesh;
@@ -647,22 +627,6 @@ void BoundaryValues::CheckBoundary() {
 //  \brief initiate MPI_Irecv()
 
 void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
-  // KGF: approach #1: call each fn of element of bvar vector inside #ifdef and loop
-// #ifdef MPI_PARALLEL
-//   MeshBlock *pmb = pmy_block_;
-//   int mylevel = pmb->loc.level;
-//   for (int n=0; n<nneighbor; n++) {
-//     NeighborBlock& nb = neighbor[n];
-//     if (nb.rank!=Globals::my_rank) {
-//       for (auto bvars_it = bvars.begin(); bvars_it != bvars.end(); ++bvars_it) {
-//         bvars_it->StartReceiving(BoundaryCommSubset phase);
-//       }
-//     }
-//   }
-// #endif
-
-  // KGF: approach #2: make loop over bvar vector the outermost loop; separate,
-  // independent loops over nneighbor
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     (*bvars_it)->StartReceiving(phase);
@@ -799,15 +763,10 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
-//           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
-//           const Real time, const Real dt)
+//! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt)
 //  \brief Apply all the physical boundary conditions for both hydro and field
 
 void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
-  // AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-  // FaceField &bfdst, AthenaArray<Real> &bcdst,
-  // const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   int bis = pmb->is - NGHOST, bie = pmb->ie + NGHOST,
@@ -815,9 +774,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       bks = pmb->ks, bke = pmb->ke;
 
   // Extend the transverse limits that correspond to periodic boundaries as they are
-  // updated
-
-  // x1, then x2, then x3
+  // updated: x1, then x2, then x3
   if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2 > 1)
     bjs = pmb->js - NGHOST;
   if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2 > 1)
@@ -827,11 +784,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3 > 1)
     bke = pmb->ke + NGHOST;
 
-  // KGF: temporarily hardcode Hydro and Field access for coupling in EOS, and when passed
-  // to user-defined boundary function stored in function pointer array
+  // KGF: temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
+  // and when passed to user-defined boundary function stored in function pointer array
 
-  // downcast BoundaryVariable pointers to known derived class pointer types:
-  // RTTI via dynamic_cast
+  // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
@@ -1081,7 +1037,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 // outside the framework of the BoundaryVariable classes
 
 int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
-  // KGF: add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = bvars_next_phys_id_;
   bvars_next_phys_id_ += num_phys;
   return start_id;
