@@ -34,38 +34,19 @@ class ParameterInput;
 class Coordinates;
 struct RegionSize;
 
-// functions to return boundary flag given input string, and vice versa
+// free functions to return boundary flag given input string, and vice versa
 BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
-//  \brief Base class for all the BoundaryValues classes
+//  \brief Base class for all BoundaryValues classes (BoundaryValues and MGBoundaryValues)
 
-// Mid-2018, BoundaryBase (no virtual methods) is the parent class to 3x derived classes:
-// BoundaryValues, GravityBoundaryValues, MGBoundaryValues. However, the key class members
-// are all static; is there a reason for the other members to not be static?
-
-// TODO(felker): describe its contents, and why it has so much in common with Multigrid:
-
-// After redesign, it should only be the parent class to 2x classes: MGBoundaryValues
-// and BoundaryValues (or new analog). It should probably be merged with BoundaryValues,
-// and MGBoundaryValues should be made into a new BoundaryVariables derived class
-
-// Notation question: boundary value vs. boundary condition vs. boundary function
-// BE CONSISTENT. What should the classes be named?
-
-// KGF: potential names = BoundaryLogic, BoundaryNeighbors, BoundaryBase
-// Used in mesh.hpp, meshblock_tree.hpp (Friend class), bvals_mg/grav*
 class BoundaryBase {
  public:
   BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
                BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
-
-  // Currently, these 2x static data members are shared among 3x possible derived class
-  // instances: BoundaryValues, MGBoundaryValues, GravityBoundaryValues
-
   // 1x pair (neighbor index, buffer ID) per entire SET of separate variable buffers
   // (Hydro, Field, Passive Scalar, Gravity, etc.). Greedy allocation for worst-case
   // of refined 3D; only 26 entries needed/initialized if unrefined 3D, e.g.
@@ -104,11 +85,7 @@ class BoundaryBase {
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryValues
-//  \brief centralized class for interacting with individual variable boundary data
-
-// KGF: BoundaryShared, BoundaryCommon, BoundaryCoupled, (keep?) BoundaryValues
-// BoundaryInterface (as in "centralized interface for interacting with
-//        BoundaryVariables", but this conflicts with "OO interfaces" and
+//  \brief centralized class for interacting with each individual variable boundary data
 
 class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                        public BoundaryCommunication {
@@ -116,33 +93,22 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
-  // must repeat function declarations to override the pure virtual methods from
-  // BoundaryCommunication parent class:
-
-  // called in BoundaryValues() constructor/destructor:
-  // void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) final;
-  // void DestroyBoundaryData(BoundaryData &bd) final;
-
+  // inherited functions (interface shared with BoundaryVariable objects):
+  // ------
   // called before time-stepper:
   void SetupPersistentMPI() final; // setup MPI requests
-  // void StartReceivingForInit(bool cons_and_field) final;
-  // void ClearBoundaryForInit(bool cons_and_field) final;
 
   // called during time-stepper:
   void StartReceiving(BoundaryCommSubset phase) final;
   void ClearBoundary(BoundaryCommSubset phase) final;
 
-  // functions unique to BoundaryValues. these do not exist in individual BoundaryVariable
-
-  // these typically define a coupled interaction of these boundary variables
-  // KGF: will need to access AthenaArray<Real> &bcdst = pfield->bcc
+  // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
+  // (these typically involve a coupled interaction of boundary variable/quantities)
+  // ------
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
-
-  // KGF: wrapper function for the following AMR-related actions:
   void ProlongateBoundaries(const Real time, const Real dt);
-
-  // KGF: called within loop over nneighbor
-  // KGF: this next function is also called within 3x loops over nk,nj,ni
+  // above function wraps the following S/AMR-operations (within a loop over nneighbor):
+  // (the next function is also called within 3x nested loops over nk,nj,ni)
   void RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk, int nj, int ni);
   void ApplyPhysicalBoundariesOnCoarseLevel(
       const NeighborBlock& nb, const Real time, const Real dt,
@@ -150,32 +116,28 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
-  // The following 2x methods are unique to the BoundaryValues class, and serve only to
-  // check the user's configuration. Called in Mesh::Initialize() after processing
-  // ParameterInput(), before pbval->SetupPersistentMPI() is called in this class.
+  // check safety of user's configuration in Mesh::Initialize before SetupPersistentMPI()
   void CheckBoundary();
   void CheckPolarBoundaries();
 
   // variable-length arrays of references to BoundaryVariable instances
-  // containing all BoundaryVariable instances
-  std::vector<BoundaryVariable *> bvars;  // preallocate (num_bvars)?
-  // subset of bvars that are exchanged in main TimeIntegratorTaskList
+  // containing all BoundaryVariable instances:
+  std::vector<BoundaryVariable *> bvars;
+  // subset of bvars that are exchanged in the main TimeIntegratorTaskList
   std::vector<BoundaryVariable *> bvars_main_int;
 
-  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects
+  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
+  // other categories of MPI communication for generating unique MPI_TAGs
   int ReserveTagVariableIDs(int num_phys);
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
-  // Set in the BoundaryValues() constructor based on block_bcs = input_bcs:
-  // (these could probably all be moved to the FaceCenteredBoundaryVariable for the
-  // flux_correction_fc.cpp functions. None are used in cc/)
   int num_north_polar_blocks_, num_south_polar_blocks_;
   int nface_, nedge_;
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
-  // (azimuthally) the pole, shift the k-axis by nx3/2 for cell- and face-centered
-  // variables, & emf. Used in bvals_cc.cpp, bvals_fc.cpp. Calculated in BoundaryValues()
+  // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
+  // variables, & emf, using this temporary 1D array.
   AthenaArray<Real> azimuthal_shift_;
 
   // Store signed, but positive, integer corresponding to the next unused value to be used
@@ -203,9 +165,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
+  // TODO(KGF): consider removing this friendship designation
   friend class Mesh;
-  // KGF: necessary friendships in new framework
+  // currently, this class friendship are required for copying send/recv buffers between
+  // BoundaryVariable objects within different MeshBlocks on the same MPI rank:
   friend class BoundaryVariable;
+  // TODO(KGF): consider removing these friendship designations
   friend class CellCenteredBoundaryVariable;
   friend class FaceCenteredBoundaryVariable;
 };
