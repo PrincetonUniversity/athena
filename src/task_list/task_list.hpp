@@ -106,39 +106,39 @@ class TimeIntegratorTaskList : public TaskList {
   // functions
   TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroFluxCalculate(MeshBlock *pmb, int stage);
-  TaskStatus EMFCalculate(MeshBlock *pmb, int stage);
+  TaskStatus CalculateHydroFlux(MeshBlock *pmb, int stage);
+  TaskStatus CalculateEMF(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroFluxCorrectSend(MeshBlock *pmb, int stage);
-  TaskStatus EMFCorrectSend(MeshBlock *pmb, int stage);
+  TaskStatus SendHydroFlux(MeshBlock *pmb, int stage);
+  TaskStatus SendEMF(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroFluxCorrectReceive(MeshBlock *pmb, int stage);
-  TaskStatus EMFCorrectReceive(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveAndCorrectEMF(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroIntegrate(MeshBlock *pmb, int stage);
-  TaskStatus FieldIntegrate(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateHydro(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateField(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroSourceTerms(MeshBlock *pmb, int stage);
+  TaskStatus AddSourceTermsHydro(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroDiffusion(MeshBlock *pmb, int stage);
-  TaskStatus FieldDiffusion(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseHydro(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseField(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroSend(MeshBlock *pmb, int stage);
-  TaskStatus FieldSend(MeshBlock *pmb, int stage);
+  TaskStatus SendHydro(MeshBlock *pmb, int stage);
+  TaskStatus SendField(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroReceive(MeshBlock *pmb, int stage);
-  TaskStatus FieldReceive(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydro(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveField(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroSetBoundaries(MeshBlock *pmb, int stage);
-  TaskStatus FieldSetBoundaries(MeshBlock *pmb, int stage);
+  TaskStatus SetBoundariesHydro(MeshBlock *pmb, int stage);
+  TaskStatus SetBoundariesField(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroShearSend(MeshBlock *pmb, int stage);
-  TaskStatus HydroShearReceive(MeshBlock *pmb, int stage);
-  TaskStatus FieldShearSend(MeshBlock *pmb, int stage);
-  TaskStatus FieldShearReceive(MeshBlock *pmb, int stage);
-  TaskStatus EMFShearSend(MeshBlock *pmb, int stage);
-  TaskStatus EMFShearReceive(MeshBlock *pmb, int stage);
-  TaskStatus EMFShearRemap(MeshBlock *pmb, int stage);
+  TaskStatus SendHydroShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroShear(MeshBlock *pmb, int stage);
+  TaskStatus SendFieldShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveFieldShear(MeshBlock *pmb, int stage);
+  TaskStatus SendEMFShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveEMFShear(MeshBlock *pmb, int stage);
+  TaskStatus RemapEMFShear(MeshBlock *pmb, int stage);
 
   TaskStatus Prolongation(MeshBlock *pmb, int stage);
   TaskStatus Primitives(MeshBlock *pmb, int stage);
@@ -172,11 +172,11 @@ class SuperTimeStepTaskList : public TaskList {
   ~SuperTimeStepTaskList() {}
 
   // functions
-  TaskStatus HydroFluxCalculate_STS(MeshBlock *pmb, int stage);
-  TaskStatus EMFCalculate_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
 
-  TaskStatus HydroIntegrate_STS(MeshBlock *pmb, int stage);
-  TaskStatus FieldIntegrate_STS(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateHydro_STS(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateField_STS(MeshBlock *pmb, int stage);
 
   TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
@@ -240,7 +240,7 @@ const std::uint64_t CON2PRIM = 1ULL<<35;
 const std::uint64_t PHY_BVAL = 1ULL<<36;
 const std::uint64_t USERWORK = 1ULL<<37;
 const std::uint64_t NEW_DT   = 1ULL<<38;
-const std::uint64_t AMR_FLAG = 1ULL<<39;
+const std::uint64_t FLAG_AMR = 1ULL<<39;
 
 const std::uint64_t SEND_HYDSH = 1ULL<<40;
 const std::uint64_t SEND_EMFSH = 1ULL<<41;

@@ -141,68 +141,68 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroFluxCalculate_STS);
+          (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::EMFCalculate_STS);
+          (&SuperTimeStepTaskList::CalculateEMF_STS);
       break;
 
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFCorrectSend);
+          (&TimeIntegratorTaskList::SendEMF);
       break;
 
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFCorrectReceive);
+          (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
       break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::HydroIntegrate_STS);
+          (&SuperTimeStepTaskList::IntegrateHydro_STS);
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::FieldIntegrate_STS);
+          (&SuperTimeStepTaskList::IntegrateField_STS);
       break;
 
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroSend);
+          (&TimeIntegratorTaskList::SendHydro);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldSend);
+          (&TimeIntegratorTaskList::SendField);
       break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroReceive);
+          (&TimeIntegratorTaskList::ReceiveHydro);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldReceive);
+          (&TimeIntegratorTaskList::ReceiveField);
       break;
 
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroSetBoundaries);
+          (&TimeIntegratorTaskList::SetBoundariesHydro);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldSetBoundaries);
+          (&TimeIntegratorTaskList::SetBoundariesField);
       break;
 
     case (CON2PRIM):
@@ -219,12 +219,12 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroDiffusion);
+          (&TimeIntegratorTaskList::DiffuseHydro);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldDiffusion);
+          (&TimeIntegratorTaskList::DiffuseField);
       break;
     default:
       std::stringstream msg;
@@ -260,7 +260,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus SuperTimeStepTaskList::HydroFluxCalculate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
   Hydro *phydro=pmb->phydro;
   // Field *pfield=pmb->pfield;
 
@@ -271,7 +271,7 @@ TaskStatus SuperTimeStepTaskList::HydroFluxCalculate_STS(MeshBlock *pmb, int sta
   return TaskStatus::fail;
 }
 
-TaskStatus SuperTimeStepTaskList::EMFCalculate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE_STS();
     return TaskStatus::next;
@@ -282,7 +282,7 @@ TaskStatus SuperTimeStepTaskList::EMFCalculate_STS(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
-TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
 
@@ -312,7 +312,7 @@ TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) 
   return TaskStatus::fail;
 }
 
-TaskStatus SuperTimeStepTaskList::FieldIntegrate_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {

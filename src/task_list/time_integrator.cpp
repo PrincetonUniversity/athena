@@ -303,8 +303,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
     if (pm->adaptive == true) {
-      AddTask(AMR_FLAG,USERWORK);
-      AddTask(CLEAR_ALLBND,AMR_FLAG);
+      AddTask(FLAG_AMR,USERWORK);
+      AddTask(CLEAR_ALLBND,FLAG_AMR);
     } else {
       AddTask(CLEAR_ALLBND,NEW_DT);
     }
@@ -340,120 +340,120 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroFluxCalculate);
+          (&TimeIntegratorTaskList::CalculateHydroFlux);
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFCalculate);
+          (&TimeIntegratorTaskList::CalculateEMF);
       break;
 
     case (SEND_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroFluxCorrectSend);
+          (&TimeIntegratorTaskList::SendHydroFlux);
       break;
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFCorrectSend);
+          (&TimeIntegratorTaskList::SendEMF);
       break;
 
     case (RECV_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroFluxCorrectReceive);
+          (&TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux);
       break;
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFCorrectReceive);
+          (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
       break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroIntegrate);
+          (&TimeIntegratorTaskList::IntegrateHydro);
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldIntegrate);
+          (&TimeIntegratorTaskList::IntegrateField);
       break;
 
     case (SRCTERM_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroSourceTerms);
+          (&TimeIntegratorTaskList::AddSourceTermsHydro);
       break;
 
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroSend);
+          (&TimeIntegratorTaskList::SendHydro);
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldSend);
+          (&TimeIntegratorTaskList::SendField);
       break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroReceive);
+          (&TimeIntegratorTaskList::ReceiveHydro);
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldReceive);
+          (&TimeIntegratorTaskList::ReceiveField);
       break;
 
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroSetBoundaries);
+          (&TimeIntegratorTaskList::SetBoundariesHydro);
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldSetBoundaries);
+          (&TimeIntegratorTaskList::SetBoundariesField);
       break;
 
     case (SEND_HYDSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroShearSend);
+          (&TimeIntegratorTaskList::SendHydroShear);
       break;
     case (RECV_HYDSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroShearReceive);
+          (&TimeIntegratorTaskList::ReceiveHydroShear);
       break;
     case (SEND_FLDSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldShearSend);
+          (&TimeIntegratorTaskList::SendFieldShear);
       break;
     case (RECV_FLDSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldShearReceive);
+          (&TimeIntegratorTaskList::ReceiveFieldShear);
       break;
     case (SEND_EMFSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFShearSend);
+          (&TimeIntegratorTaskList::SendEMFShear);
       break;
     case (RECV_EMFSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFShearReceive);
+          (&TimeIntegratorTaskList::ReceiveEMFShear);
       break;
     case (RMAP_EMFSH):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::EMFShearRemap);
+          (&TimeIntegratorTaskList::RemapEMFShear);
       break;
 
     case (PROLONG):
@@ -481,7 +481,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::NewBlockTimeStep);
       break;
-    case (AMR_FLAG):
+    case (FLAG_AMR):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::CheckRefinement);
@@ -489,12 +489,12 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::HydroDiffusion);
+          (&TimeIntegratorTaskList::DiffuseHydro);
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::FieldDiffusion);
+          (&TimeIntegratorTaskList::DiffuseField);
       break;
     // KGF: passive scalars:
     // case (CALC_SCLRFLX):
@@ -602,7 +602,7 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
-TaskStatus TimeIntegratorTaskList::HydroFluxCalculate(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Field *pfield = pmb->pfield;
 
@@ -618,7 +618,7 @@ TaskStatus TimeIntegratorTaskList::HydroFluxCalculate(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::EMFCalculate(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TaskStatus::next;
@@ -629,12 +629,12 @@ TaskStatus TimeIntegratorTaskList::EMFCalculate(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
-TaskStatus TimeIntegratorTaskList::HydroFluxCorrectSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
   pmb->phydro->phbval->SendFluxCorrection();
   return TaskStatus::success;
 }
 
-TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
   pmb->pfield->pfbval->SendFluxCorrection();
   return TaskStatus::success;
 }
@@ -642,7 +642,7 @@ TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
-TaskStatus TimeIntegratorTaskList::HydroFluxCorrectReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage) {
   if (pmb->phydro->phbval->ReceiveFluxCorrection() == true) {
     return TaskStatus::next;
   } else {
@@ -650,7 +650,7 @@ TaskStatus TimeIntegratorTaskList::HydroFluxCorrectReceive(MeshBlock *pmb, int s
   }
 }
 
-TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
   if (pmb->pfield->pfbval->ReceiveFluxCorrection() == true) {
     return TaskStatus::next;
   } else {
@@ -661,7 +661,7 @@ TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int stage) 
 //----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
-TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
   if (stage <= nstages) {
@@ -701,7 +701,7 @@ TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
@@ -734,7 +734,7 @@ TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to add source terms
 
-TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
 
@@ -757,7 +757,7 @@ TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes
 
-TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
 
   // return if there are no diffusion to be added
@@ -774,7 +774,7 @@ TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to calculate diffusion EMF
 
-TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
   // return if there are no diffusion to be added
@@ -791,7 +791,7 @@ TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks
 
-TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u, HydroBoundaryQuantity::cons);
     pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
@@ -803,7 +803,7 @@ TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
-TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     // KGF: (pmb->pfield->b); where b was bound to &dst
     pmb->pfield->pfbval->SendBoundaryBuffers();
@@ -816,10 +816,10 @@ TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to receive conserved variables between MeshBlocks
 
-TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->phydro->phbval->ReceiveBoundaryBuffers();
+    ret = pmb->phydro->phbval->ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -831,10 +831,10 @@ TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int stage) {
   }
 }
 
-TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret=pmb->pfield->pfbval->ReceiveBoundaryBuffers();
+    ret = pmb->pfield->pfbval->ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -846,7 +846,7 @@ TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int stage) {
   }
 }
 
-TaskStatus TimeIntegratorTaskList::HydroSetBoundaries(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
     // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
@@ -856,7 +856,7 @@ TaskStatus TimeIntegratorTaskList::HydroSetBoundaries(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::FieldSetBoundaries(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     // KGF: (pmb->pfield->b); where b was bound to &dst
     pmb->pfield->pfbval->SetBoundaries();
@@ -865,7 +865,7 @@ TaskStatus TimeIntegratorTaskList::FieldSetBoundaries(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     //    pmb->phydro->phbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
   } else {
@@ -873,11 +873,11 @@ TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int stage) {
   }
   return TaskStatus::success;
 }
-TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) {
   bool ret;
-  ret=false; // KGF
+  ret = false; // KGF
   if (stage <= nstages) {
-    // ret=pmb->phydro->phbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
+    // ret = pmb->phydro->phbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
     return TaskStatus::fail;
   }
@@ -887,7 +887,7 @@ TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int stage) 
     return TaskStatus::fail;
   }
 }
-TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     //    pmb->pfield->pfbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
   } else {
@@ -895,11 +895,11 @@ TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int stage) {
   }
   return TaskStatus::success;
 }
-TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) {
   bool ret;
-  ret=false; // KGF
+  ret = false; // KGF
   if (stage <= nstages) {
-    // ret=pmb->pfield->pfbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
+    // ret = pmb->pfield->pfbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
   } else {
     return TaskStatus::fail;
   }
@@ -909,11 +909,11 @@ TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int stage) 
     return TaskStatus::fail;
   }
 }
-TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
   //pmb->pfield->pfbval->SendEMFShearingboxBoundaryCorrection();
   return TaskStatus::success;
 }
-TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
   // if (pmb->pfield->pfbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
   //   return TaskStatus::next;
   // } else {
@@ -922,7 +922,7 @@ TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int stage) {
 
   return TaskStatus::fail; // KGF
 }
-TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::RemapEMFShear(MeshBlock *pmb, int stage) {
   // pmb->pfield->pfbval->RemapEMFShearingboxBoundary();
   return TaskStatus::success;
 }
