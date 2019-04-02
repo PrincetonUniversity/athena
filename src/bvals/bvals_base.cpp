@@ -86,21 +86,20 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   // copy/set in class the input 6x BoundaryFlag for this local MeshBlock boundaries
   for (int i=0; i<6; i++)
     block_bcs[i] = input_bcs[i];
-  // count blocks around azimuth at each pole and setup structs for their neighbor info
-  // KGF: small structs--- is there actually any unique metadata tracked there?
+  // count blocks around azimuth at each pole and setup structs for their neighbor info:
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
     int level = loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
-    int num_north_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
+    num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
+    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks_];
   }
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
     int level = loc.level - pmy_mesh_->root_level;
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
-    int num_south_polar_blocks = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
+    num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
+    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks_];
   }
 
   if (pmy_mesh_->multilevel == true) { // SMR or AMR

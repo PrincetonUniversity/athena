@@ -73,6 +73,7 @@ class BoundaryBase {
   // 3D refined=56, unrefined=26. Refinement adds: 3*6 faces + 1*12 edges = +30 neighbors
   static int maxneighbor_;
 
+  int num_north_polar_blocks_, num_south_polar_blocks_; // used in fc/
   Mesh *pmy_mesh_;
   RegionSize block_size_;
   AthenaArray<Real> sarea_[2];
@@ -132,7 +133,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
  private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
-  int num_north_polar_blocks_, num_south_polar_blocks_;
+
   int nface_, nedge_;
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around

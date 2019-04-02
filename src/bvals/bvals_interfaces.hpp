@@ -90,7 +90,7 @@ constexpr const bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-struct NeighborBlock { // not aggregate nor POD type
+struct NeighborBlock { // neither aggregate nor POD type
   int rank, level;
   int gid, lid;
   int ox1, ox2, ox3;

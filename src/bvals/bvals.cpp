@@ -240,24 +240,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     CheckPolarBoundaries();
   }
 
-  // Count number of blocks wrapping around pole
-  if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-      || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
-    int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
-    num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-  } else {
-    num_north_polar_blocks_ = 0;
-  }
-  if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-      || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
-    int level = pmb->loc.level - pmy_mesh_->root_level;
-    // KGF: possible 32-bit int overflow, if level > 31 (or possibly less, if nrbx3>1 !)
-    num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
-  } else {
-    num_south_polar_blocks_ = 0;
-  }
-
   // polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
   if ((pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1)
       && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
