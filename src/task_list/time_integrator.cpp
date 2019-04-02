@@ -500,37 +500,37 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
     // case (CALC_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::CalculateScalarFluxes);
+    //       (&TimeIntegratorTaskList::CalculateScalarFlux);
     //   break;
     // case (SEND_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarFluxSend);
+    //       (&TimeIntegratorTaskList::SendScalarFlux);
     //   break;
     // case (RECV_SCLRFLX):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarFluxCorrectReceive);
+    //       (&TimeIntegratorTaskList::ReceiveScalarFlux);
     //   break;
     // case (INT_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarIntegrate);
+    //       (&TimeIntegratorTaskList::IntegrateScalars);
     //   break;
     // case (SEND_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarSend);
+    //       (&TimeIntegratorTaskList::SendScalars);
     //   break;
     // case (RECV_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarReceive);
+    //       (&TimeIntegratorTaskList::ReceiveScalars);
     //   break;
     // case (SETB_SCLR):
     //   task_list_[ntasks].TaskFunc=
     //       static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-    //       (&TimeIntegratorTaskList::ScalarSetBoundaries);
+    //       (&TimeIntegratorTaskList::SetBoundariesScalars);
     //   break;
     default:
       std::stringstream msg;
@@ -1032,3 +1032,31 @@ TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
   pmb->pmr->CheckRefinementCondition();
   return TaskStatus::success;
 }
+
+// TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::SendScalars(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::ReceiveScalars(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
+
+// TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stage) {
+//   return TaskStatus::success;
+// }
