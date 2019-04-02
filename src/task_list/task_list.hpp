@@ -182,6 +182,7 @@ class SuperTimeStepTaskList : public TaskList {
 //----------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID each hydro task.
 
+// TODO(felker): uncomment the reserved TASK_NAMES once the features are merged to master
 namespace HydroIntegratorTaskNames {
 const std::uint64_t NONE          = 0ULL;
 const std::uint64_t CLEAR_ALLBND  = 1ULL<<1;
@@ -193,38 +194,38 @@ const std::uint64_t CALC_CHMFLX = 1ULL<<5;
 
 const std::uint64_t SEND_HYDFLX = 1ULL<<6;
 const std::uint64_t SEND_FLDFLX = 1ULL<<7;
-const std::uint64_t SEND_RADFLX = 1ULL<<8;
-const std::uint64_t SEND_CHMFLX = 1ULL<<9;
+// const std::uint64_t SEND_RADFLX = 1ULL<<8;
+// const std::uint64_t SEND_CHMFLX = 1ULL<<9;
 
 const std::uint64_t RECV_HYDFLX = 1ULL<<10;
 const std::uint64_t RECV_FLDFLX = 1ULL<<11;
-const std::uint64_t RECV_RADFLX = 1ULL<<12;
-const std::uint64_t RECV_CHMFLX = 1ULL<<13;
+// const std::uint64_t RECV_RADFLX = 1ULL<<12;
+// const std::uint64_t RECV_CHMFLX = 1ULL<<13;
 
 const std::uint64_t SRCTERM_HYD = 1ULL<<14;
-const std::uint64_t SRCTERM_FLD = 1ULL<<15;
-const std::uint64_t SRCTERM_RAD = 1ULL<<16;
-const std::uint64_t SRCTERM_CHM = 1ULL<<17;
+// const std::uint64_t SRCTERM_FLD = 1ULL<<15;
+// const std::uint64_t SRCTERM_RAD = 1ULL<<16;
+// const std::uint64_t SRCTERM_CHM = 1ULL<<17;
 
 const std::uint64_t INT_HYD = 1ULL<<18;
 const std::uint64_t INT_FLD = 1ULL<<19;
-const std::uint64_t INT_RAD = 1ULL<<20;
-const std::uint64_t INT_CHM = 1ULL<<21;
+// const std::uint64_t INT_RAD = 1ULL<<20;
+// const std::uint64_t INT_CHM = 1ULL<<21;
 
 const std::uint64_t SEND_HYD = 1ULL<<22;
 const std::uint64_t SEND_FLD = 1ULL<<23;
-const std::uint64_t SEND_RAD = 1ULL<<24;
-const std::uint64_t SEND_CHM = 1ULL<<25;
+// const std::uint64_t SEND_RAD = 1ULL<<24;
+// const std::uint64_t SEND_CHM = 1ULL<<25;
 
 const std::uint64_t RECV_HYD = 1ULL<<26;
 const std::uint64_t RECV_FLD = 1ULL<<27;
-const std::uint64_t RECV_RAD = 1ULL<<28;
-const std::uint64_t RECV_CHM = 1ULL<<29;
+// const std::uint64_t RECV_RAD = 1ULL<<28;
+// const std::uint64_t RECV_CHM = 1ULL<<29;
 
 const std::uint64_t SETB_HYD = 1ULL<<30;
 const std::uint64_t SETB_FLD = 1ULL<<31;
-const std::uint64_t SETB_RAD = 1ULL<<32;
-const std::uint64_t SETB_CHM = 1ULL<<33;
+// const std::uint64_t SETB_RAD = 1ULL<<32;
+// const std::uint64_t SETB_CHM = 1ULL<<33;
 
 const std::uint64_t PROLONG  = 1ULL<<34;
 const std::uint64_t CON2PRIM = 1ULL<<35;
@@ -252,5 +253,5 @@ const std::uint64_t SEND_SCLR      = 1ULL<<53;
 const std::uint64_t RECV_SCLR      = 1ULL<<54;
 const std::uint64_t SETB_SCLR      = 1ULL<<55;
 
-} // namespace HydroIntegratorTaskNames
-#endif // TASK_LIST_TASK_LIST_HPP_
+}  // namespace HydroIntegratorTaskNames
+#endif  // TASK_LIST_TASK_LIST_HPP_
