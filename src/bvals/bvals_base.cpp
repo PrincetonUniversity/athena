@@ -93,6 +93,8 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_north_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_north_ = new SimpleNeighborBlock[num_north_polar_blocks_];
+  } else {
+    num_north_polar_blocks_ = 0;
   }
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
@@ -100,6 +102,8 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     // KGF: possible 32-bit int overflow, if level > 31 (or less!)
     num_south_polar_blocks_ = static_cast<int>(pmy_mesh_->nrbx3 * (1 << level));
     polar_neighbor_south_ = new SimpleNeighborBlock[num_south_polar_blocks_];
+  } else {
+    num_south_polar_blocks_ = 0;
   }
 
   if (pmy_mesh_->multilevel == true) { // SMR or AMR
