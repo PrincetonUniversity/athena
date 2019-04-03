@@ -36,14 +36,9 @@ class HydroBoundaryVariable;
 //  \brief
 
 class MeshRefinement {
-  // KGF: needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()
+  // needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()
   friend class BoundaryValues;
-
-  // friend class FaceCenteredBoundaryVariable;
-  // friend class HydroBoundaryVariable;
-  // friend class MeshBlock;
-
-  // KGF: needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
+  // needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
   friend class Mesh;
 
  public:
@@ -78,8 +73,7 @@ class MeshRefinement {
   void AddToRefinement(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
   void AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc);
 
-  // KGF: for switching first entry in pvars_cc_ to/from:
-  // (w, coarse_prim) vs. (u, coarse_cons_)
+  // for switching first entry in pvars_cc_ to/from: (w, coarse_prim); (u, coarse_cons_)
   void SetHydroRefinement(HydroBoundaryQuantity hydro_type);
 
  private:
@@ -91,10 +85,9 @@ class MeshRefinement {
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
 
   // functions
-  AMRFlagFunc AMRFlag_; // duplicate of member of Mesh class
+  AMRFlagFunc AMRFlag_; // duplicate of Mesh class member
 
-  // KGF: tuples of references to AMR-enrolled (quantity, coarse_quantity) arrays
-  // KGF: rename to something more descriptive, e.g. "refined_cc_vars"
+  // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
 };

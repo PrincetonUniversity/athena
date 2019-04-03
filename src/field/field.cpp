@@ -86,26 +86,19 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
     if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-    // coarse_b_ is used extensively in Mesh::AdaptiveMeshRefinement() and for Restrict,
-    // W(U), applications of physical boundaries in BoundaryValues::ProlongateBoundaries()
-    // and (implicitly via coarse_buf switch) for most of the main integrators +
-    // initialization communication
     coarse_b_.x1f.NewAthenaArray(ncc3, ncc2, ncc1+1);
     coarse_b_.x2f.NewAthenaArray(ncc3, ncc2+1, ncc1);
     coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
-    // coarse_bcc_ is only used in BoundaryValues::ProlongateBoundaries() for W(U)
     coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
-
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }
   // ptr to diffusion object
   pfdif = new FieldDiffusion(pmb, pin);
-
+  // create object to interface with BoundaryValues
   pfbval  = new FaceCenteredBoundaryVariable(pmy_block, &b, coarse_b_, e);
   pfbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pfbval);
-
   pmb->pbval->bvars_main_int.push_back(pfbval);
 }
 

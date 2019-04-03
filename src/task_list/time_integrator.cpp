@@ -795,7 +795,6 @@ TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u, HydroBoundaryQuantity::cons);
     pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
-    // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
     pmb->phydro->phbval->SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -805,7 +804,6 @@ TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    // KGF: (pmb->pfield->b); where b was bound to &dst
     pmb->pfield->pfbval->SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -849,7 +847,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
-    // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
     pmb->phydro->phbval->SetBoundaries();
     return TaskStatus::success;
   }
@@ -858,7 +855,6 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    // KGF: (pmb->pfield->b); where b was bound to &dst
     pmb->pfield->pfbval->SetBoundaries();
     return TaskStatus::success;
   }
@@ -875,7 +871,7 @@ TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
 }
 TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) {
   bool ret;
-  ret = false; // KGF
+  ret = false;
   if (stage <= nstages) {
     // ret = pmb->phydro->phbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
@@ -897,7 +893,7 @@ TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
 }
 TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) {
   bool ret;
-  ret = false; // KGF
+  ret = false;
   if (stage <= nstages) {
     // ret = pmb->pfield->pfbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
   } else {
@@ -920,8 +916,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
   //   return TaskStatus::fail;
   // }
 
-  return TaskStatus::fail; // KGF
+  return TaskStatus::fail;
 }
+
 TaskStatus TimeIntegratorTaskList::RemapEMFShear(MeshBlock *pmb, int stage) {
   // pmb->pfield->pfbval->RemapEMFShearingboxBoundary();
   return TaskStatus::success;
@@ -1003,8 +1000,6 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::prim);
     pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
-
-    // KGF: phydro->w,  phydro->u,  pfield->b,  pfield->bcc, t_end_stage, dt);
   } else {
     return TaskStatus::fail;
   }

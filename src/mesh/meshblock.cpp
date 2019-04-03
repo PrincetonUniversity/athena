@@ -268,8 +268,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-  if (prev!=nullptr) prev->next=next;
-  if (next!=nullptr) next->prev=prev;
+  if (prev != nullptr) prev->next = next;
+  if (next != nullptr) next->prev = prev;
 
   delete pcoord;
   delete precon;
@@ -280,7 +280,7 @@ MeshBlock::~MeshBlock() {
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
 
-  // KGF: BoundaryValues must be destructed AFTER all BoundaryVariable objects
+  // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
   // delete user output variables array
   if (nuser_out_var > 0) {

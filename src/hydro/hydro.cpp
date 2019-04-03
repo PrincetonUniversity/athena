@@ -58,44 +58,22 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-
-  // KGF: CellCentered size calculation is redundant with code in hydro.cpp--- abstract
-  // into a MeshRefinement member function? Combine with AddToRefinement? But
-  // "coarse_prim_" must always be created even though it is NOT used in
-  // Mesh::AdaptiveMeshRefinement(), since it is needed in ProlongateBoundaries()
   if (pmy_block->pmy_mesh->multilevel == true) {
-    // KGF: note, ncc1 != ncells1, but conditionals could be combined at top of fn
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
     if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
     if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-    // coarse_cons_ is used extensively in Mesh::AdaptiveMeshRefinement() and for
-    // Restrict, W(U) in BoundaryValues::ProlongateBoundaries() and (implicitly via
-    // coarse_buf switch) for most of the main integrators + initialization communication
     coarse_cons_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
-
-    // coarse_prim_ is only used in BoundaryValues::ProlongateBoundaries() 3x step fns:
-    // - RestrictGhost..() (GR+SMR/AMR)
-    // - ApplyPhysicalBoundariesOnCoarseLevel(): W(U) then BoundaryFunction_[] (always)
-    // - ProlongateGhostCells(): (always)
-    // and (implicitly via coarse_buf switch) in basic load/send/recv/set calls in
-    // Mesh::Initialize() for GR+SMR/AMR
     coarse_prim_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
-    // KGF: in the future, we may have a need to pass primitives in
-    // Mesh::AdaptiveMeshRefinement() for GR purposes.
-
     // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
-
-  // KGF: could make HydroBoundaryVariable() constructor also take "AthenaArray<Real> w"
-  // (must come after u is actually allocated)
+  // create object to interface with BoundaryValues
   phbval  = new HydroBoundaryVariable(pmy_block, &u, &coarse_cons_, flux,
                                       HydroBoundaryQuantity::cons);
   phbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(phbval);
-
   pmb->pbval->bvars_main_int.push_back(phbval);
 
   // Allocate memory for scratch arrays

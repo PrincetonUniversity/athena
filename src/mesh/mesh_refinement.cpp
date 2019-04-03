@@ -1046,9 +1046,6 @@ void MeshRefinement::CheckRefinementCondition() {
   return;
 }
 
-
-// KGF: could replace overloading with function template if pvars_cc/fc was passed as
-// parameter
 void MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
@@ -1062,11 +1059,9 @@ void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) 
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
   Hydro *ph = pmy_block_->phydro;
-  // KGF: hard-coding assumption that, if multilevel==true, then Hydro is always present
+  // hard-coded assumption that, if multilevel==true, then Hydro is always present
   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
   switch (hydro_type) {
-    // KGF: currently, coarse_*_ are public members. MeshRefinement is not a friend class
-    // of Hydro nor Field, so if they are moved to "private", this will break:
     case (HydroBoundaryQuantity::cons): {
       pvars_cc_.front() = std::make_tuple(&ph->u, &ph->coarse_cons_);
       break;

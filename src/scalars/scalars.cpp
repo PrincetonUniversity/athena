@@ -46,13 +46,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-
-  // KGF: CellCentered size calculation is redundant with code in hydro.cpp--- abstract
-  // into a MeshRefinement member function? Combine with AddToRefinement? But
-  // "coarse_prim_" must always be created even though it is NOT used in
-  // Mesh::AdaptiveMeshRefinement(), since it is needed in ProlongateBoundaries()
   if (pmy_block->pmy_mesh->multilevel == true) {
-    // KGF: note, ncc1 != ncells1, but conditionals could be combined at top of fn
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
     if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
@@ -63,7 +57,8 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
-  // KGF: change to RAII
+  // TODO(KGF): change to RAII
+  // create object to interface with BoundaryValues
   psbval  = new CellCenteredBoundaryVariable(pmy_block, &s, &coarse_s_, s_flux);
   psbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(psbval);
@@ -100,7 +95,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
 PassiveScalars::~PassiveScalars() {
   s.DeleteAthenaArray();
 
-  // fourth-orderintegrator
+  // fourth-order integrator
   s_cc.DeleteAthenaArray();
 
   s_flux[X1DIR].DeleteAthenaArray();

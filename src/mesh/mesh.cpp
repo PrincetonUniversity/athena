@@ -601,7 +601,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   std::memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
   hdos += sizeof(int);
   std::memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSizeT));
-  hdos += sizeof(IOWrapperSizeT);   // KGF: this updated value is never used
+  hdos += sizeof(IOWrapperSizeT);   // (this updated value is never used)
 
   delete [] headerdata;
 
@@ -1361,10 +1361,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
         pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
         pmb->phydro->phbval->SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
-          // KGF: (pmb->pfield->b); where b was bound to &dst
           pmb->pfield->pfbval->SendBoundaryBuffers();
       }
 
@@ -1374,10 +1372,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
         pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
         pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
-          // KGF: (pmb->pfield->b); where b was bound to &dst
           pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
         // send and receive shearingbox boundary conditions
@@ -1396,14 +1392,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->StartReceiving(BoundaryCommSubset::gr_amr);
         }
 
-        // KGF: the below 2x loops are the only places where "prim" is passed to calls
         // send primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          // KGF: (pmb->phydro->w, HydroBoundaryQuantity::prim); where w was bound to &dst
           pmb->phydro->phbval->SendBoundaryBuffers();
         }
 
@@ -1413,10 +1407,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          // KGF: (pmb->phydro->w, HydroBoundaryQuantity::prim); where w was bound to &dst
           pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
-          // KGF: just to be sure?
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
         }
@@ -1490,10 +1482,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
-          // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
           pmb->phydro->phbval->SendBoundaryBuffers();
           if (MAGNETIC_FIELDS_ENABLED)
-            // KGF: (pmb->pfield->b); where b was bound to &dst
             pmb->pfield->pfbval->SendBoundaryBuffers();
         }
 
@@ -1503,10 +1493,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
-          // KGF: (pmb->phydro->u, HydroBoundaryQuantity::cons); where u was bound to &dst
           pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
           if (MAGNETIC_FIELDS_ENABLED)
-            // KGF: (pmb->pfield->b); where b was bound to &dst
             pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
           // KGF: disable shearing box bvals/ calls
           // send and receive shearingbox boundary conditions
