@@ -36,52 +36,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> *var_cc;
-  // AthenaArray<Real> src, dst;
+  AthenaArray<Real> coarse_buf;
 
-  // KGF: considered moving variable to derived HydroBoundaryVariable class-- No.
-
-  // KGF: for HydroBoundaryVariable derived class, this will switch between coarse_prim_
-  // and coarse_cons_, but their underlying raw pointers will never be swapped. Therefore,
-  // we could keep this as a shallow-copied member, as long as all switches occur due to
-  // InitWithShallowCopy() calls in SwapHydroQuantity() or SelectCoarseBuffer()
-
-  // Could not keep as reference member, since we need to rebind the reference, which a
-  // full AthenaArray data member (shallow-copied) allows via InitWithShallowCopy(). And
-  // we must accept nullptr passed for coarse_var if SMR/AMR is explicitly
-  // forbidden. E.g. FFT self-gravity, but not Hydro, since AthenaArray<Real> coarse_cons_
-  // always exists as a member of Hydro class, even if multilevel=false (it has
-  // pdata_=nullptr)
-  AthenaArray<Real> coarse_buf;  // FaceCentered functions just use "pmr->coarse_b_.x1f"
-
-  // KGF: no need to ever switch flux[]? Keep as non-pointer (reference) objects,
-  // shallow-copied
+  // currently, no need to ever switch flux[]. Keep as non-pointer member, shallow-copied
   AthenaArray<Real> x1flux, x2flux, x3flux;
-
-  // what about bool *flip? CC or Hydro-specific? Assuming CC now, see protected: vars
-
-  // Current Facade class BoundaryValues calls in time_integrator.cpp:
-  // StartReceivingAll();
-  // ClearBoundaryAll();
-  // SendFluxCorrection(FluxCorrectionQuantity::hydro);
-  // SendEMFCorrection();
-  // ReceiveFluxCorrection(FluxCorrectionQuantity::hydro)
-  // ReceiveEMFCorrection()
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->u, HydroBoundaryQuantity::cons);
-  // SendFieldBoundaryBuffers(pmb->pfield->b);
-  // ReceiveCellCenteredBoundaryBuffers(HydroBoundaryQuantity::cons);
-  // ReceiveFieldBoundaryBuffers();
-  // SetCellCenteredBoundaries(pmb->phydro->u, HydroBoundaryQuantity::cons);
-  // SetFieldBoundaries(pmb->pfield->b);
-  // +8x shearing box-specific functions
-
-  // - Replace all of these pbval->fn() calls with phbval->fn() or pfbval->fn()
-  // - Create a unique function for HydroBoundaryVariable to change:
-  // HydroBoundaryQuantity, AthenaArray<Real> coarse_buf, &src, &dst
-
-  // HydroBoundaryQuantity::prim is passed only in 2x lines in mesh.cpp:
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HydroBoundaryQuantity::prim);
-  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
-  //                                             HydroBoundaryQuantity::prim);
 
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
@@ -89,8 +47,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // BoundaryCommunication:
   void SetupPersistentMPI() override;
-  // void StartReceivingForInit(bool cons_and_field) override;
-  // void ClearBoundaryForInit(bool cons_and_field) override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
 
@@ -102,14 +58,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
-  // TODO(felker): hydro=0 is the only defined FluxCorrectionQuantity in athena.hpp
-  // TODO(felker): handle the 6x unique Field-related flux correction functions
-  // Cell-centered flux correction functions are much simpler than Field counterpart
-  // In addition to 2x simple Send/Recv EMFCorrection() functions, there are:
-  // - 6x Load/Set EMF (not correction). No Load to finer, to Set to coarser, but
-  //   Set/LoadFluxBoundaryBufferToPolar()
-  // - AverageFluxBoundary(), ClearCoarseFluxBoundary(),
-  //                         PolarFluxBoundarySingleAzimuthalBlock()
 
   // Shearingbox Hydro
   // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
@@ -171,40 +119,20 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
                          int ju, int kl, int ku, int ngh) override;
 
  protected:
-  // CellCenteredBoundaryVariable is assumed 4D
-  // (3D) nl=nu=0 for gravity
-  // nl=0, nu=NHYDRO-1 for Hydro
   int nl_, nu_;
   const bool *flip_across_pole_;
 
  private:
-  // standard cell-centered and flux BV private variables
-  // KGF: currently declared in base BoundaryValues class
-  //BoundaryData bd_cc_;
-  //BoundaryData bd_cc_flcor_;
-
-  // Pulling these variables out of function signatures, since FaceCentered
-  // does not use them, only all CellCenteredBoundaryVariable instances (not specific to
-  // Hydro, unlike HydroBoundaryQuantity and AthenaArray<Real> coarse_buf)
-
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
-  // "bool *flip" is passed in 3x Set...From*(), computed by switch in wrapper
-  // function SetCellCenteredBoundaries(): nullptr (grav?) vs. flip_across_pole_hyd
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
-  // coarse_buf:
+
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
-  // coarse_buf:
+
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
-  // optional: compare to PolarBoundarySingleAzimuthalBlockField(),
-  //                      PolarFluxBoundarySingleAzimuthalBlock()
-  // what about PolarFieldBoundaryAverage()? -- make analog no-ops for cell-centered var:
-  // void PolarBoundaryAverage()
-  // and for EMF:
-  // void PolarBoundarySingleAzimuthalBlockFluxCorrection()
-  // void PolarBoundaryAverageFluxCorrection()
+
   void PolarBoundarySingleAzimuthalBlock() override;
 
 #ifdef MPI_PARALLEL

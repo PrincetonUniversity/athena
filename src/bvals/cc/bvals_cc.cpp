@@ -134,19 +134,9 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   sk = (nb.ox3 > 0) ? (pmb->ke - NGHOST + 1):pmb->ks;
   ek = (nb.ox3 < 0) ? (pmb->ks + NGHOST - 1):pmb->ke;
   int p = 0;
-  // KGF: 3/21/19 workarounds for handling mutable pdata ptr in AthenaArray obj. In either
-  // approach, the pointer is resolved as soon as this function is called, so it should
-  // contain the updated AthenaArray member pdata, unless a SwapAthenaArray() call occurs
-  // while the function is running. In either Approach #1 or #2, this window of danger is
-  // only if the call occurs inside Pack4DData(), since dereferencing the ptr to
-  // AthenaArray when initializing the reference in Approach #1 does not imply a local,
-  // independent copy of pdata, unlike the former "InitWithShallowCopy()" approach.
-
-  // KGF: approach #1: store local reference variable to dereferenced pointer in each fn.
-  AthenaArray<Real> &var = *var_cc; // KGF: need to rename from "var_cc" member....
+  AthenaArray<Real> &var = *var_cc;
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-  // KGF: approach #2: just dereference original pointer each time it is used
-  // BufferUtility::Pack4DData(*var_cc, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
   return p;
 }
 
@@ -220,7 +210,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
     }
   }
 
-  int p=0;
+  int p = 0;
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
@@ -229,34 +219,20 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers()
 //  \brief Send boundary buffers of cell-centered variables
 
-// KGF: (AthenaArray<Real> &dst, HydroBoundaryQuantity type)
 void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
-
-  // KGF: call switch over "HydroBoundaryQuantity type"
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     int ssize;
     if (nb.level == mylevel)
-      // KGF: src/var_cc
-      // KGF: nl_, nu_
-      ssize=LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
+      ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
     else if (nb.level<mylevel)
-      // KGF: src/var_cc
-      // KGF: nl_, nu_
-      // KGF: coarse_buf
-      ssize=LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid], nb);
+      ssize = LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid], nb);
     else
-      // KGF: src/var_cc
-      // KGF: nl_, nu_
-      ssize=LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
+      ssize = LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
     if (nb.rank == Globals::my_rank) {  // on the same process
-      // KGF: additional "HydroBoundaryBuffer type" switch unique to
-      // SendBoundaryBuffers().
-      // if (type == HydroBoundaryQuantity::cons || type == HydroBoundaryQuantity::prim)
-      //   ptarget=&(ptarget_block->pbval_->bd_var_);
       CopyVariableBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
@@ -274,21 +250,21 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
+  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_cc;
 
-  if (nb.ox1 == 0)     si=pmb->is,        ei=pmb->ie;
-  else if (nb.ox1 > 0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
-  else              si=pmb->is-NGHOST, ei=pmb->is-1;
-  if (nb.ox2 == 0)     sj=pmb->js,        ej=pmb->je;
-  else if (nb.ox2 > 0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
-  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
-  if (nb.ox3 == 0)     sk=pmb->ks,        ek=pmb->ke;
-  else if (nb.ox3 > 0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
-  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  if (nb.ox1 == 0)     si = pmb->is,        ei = pmb->ie;
+  else if (nb.ox1 > 0) si = pmb->ie+1,      ei = pmb->ie+NGHOST;
+  else              si = pmb->is-NGHOST, ei = pmb->is-1;
+  if (nb.ox2 == 0)     sj = pmb->js,        ej = pmb->je;
+  else if (nb.ox2 > 0) sj = pmb->je+1,      ej = pmb->je+NGHOST;
+  else              sj = pmb->js-NGHOST, ej = pmb->js-1;
+  if (nb.ox3 == 0)     sk = pmb->ks,        ek = pmb->ke;
+  else if (nb.ox3 > 0) sk = pmb->ke+1,      ek = pmb->ke+NGHOST;
+  else              sk = pmb->ks-NGHOST, ek = pmb->ks-1;
 
-  int p=0;
+  int p = 0;
 
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
@@ -298,8 +274,6 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd
           for (int i=si; i<=ei; ++i) {
-            // KGF: approach #2
-            //(*var_cc)(n,k,j,i) = sign * buf[p++];
             var(n,k,j,i) = sign * buf[p++];
           }
         }
@@ -488,21 +462,19 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag = true;
 
-  // KGF: call short switch over "HydroBoundaryQuantity type"
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::arrived) continue;
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::waiting) {
-      if (nb.rank == Globals::my_rank) {// on the same process
+      if (nb.rank == Globals::my_rank) {  // on the same process
         bflag = false;
         continue;
       }
 #ifdef MPI_PARALLEL
       else { // NOLINT // MPI boundary
         int test;
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&(bd_var_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
         if (static_cast<bool>(test) == false) {
           bflag = false;
           continue;
@@ -522,21 +494,13 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
 void CellCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb = pmy_block_;
 
-  // KGF: call switch over "HydroBoundaryQuantity type"
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.level == pmb->loc.level)
-      // KGF: dst
-      // KGF: nl_, nu_
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.level < pmb->loc.level) // this set only the prolongation buffer
-      // KGF: nl_, nu_
-      // KGF: coarse_buf
+    else if (nb.level < pmb->loc.level) // only sets the prolongation buffer
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
-      // KGF: dst
-      // KGF: nl_, nu_
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
     bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
@@ -553,9 +517,7 @@ void CellCenteredBoundaryVariable::SetBoundaries() {
 //  \brief receive and set the cell-centered boundary data for initialization
 
 void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
-  MeshBlock *pmb=pmy_block_;
-
-  // KGF: call switch over "HydroBoundaryQuantity type"
+  MeshBlock *pmb = pmy_block_;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -564,16 +526,10 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
       MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if (nb.level == pmb->loc.level)
-      // KGF: dst
-      // KGF: nl_, nu_
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.level<pmb->loc.level)
-      // KGF: nl_, nu_
-      // KGF: coarse_buf
+    else if (nb.level < pmb->loc.level)
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
-      // KGF: dst
-      // KGF: nl_, nu_
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
     bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
@@ -591,10 +547,10 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb = pmy_block_;
-  AthenaArray<Real> &var = *var_cc;
 
   if (pmb->loc.level  ==  pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
+    AthenaArray<Real> &var = *var_cc;
     if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=nl_; n<=nu_; ++n) {
@@ -632,8 +588,6 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   return;
 }
 
-// ------- KGF: move to a separate file?
-
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
   MeshBlock* pmb = pmy_block_;
@@ -651,21 +605,21 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.rank != Globals::my_rank) {
       if (nb.level == mylevel) { // same
-        ssize=rsize=((nb.ox1 == 0)?pmb->block_size.nx1:NGHOST)
+        ssize = rsize = ((nb.ox1 == 0)?pmb->block_size.nx1:NGHOST)
               *((nb.ox2 == 0)?pmb->block_size.nx2:NGHOST)
               *((nb.ox3 == 0)?pmb->block_size.nx3:NGHOST);
       } else if (nb.level<mylevel) { // coarser
-        ssize=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+        ssize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
               *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
               *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        rsize=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
+        rsize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
               *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
               *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
       } else { // finer
-        ssize=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
+        ssize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
               *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
               *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
-        rsize=((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+        rsize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
               *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
               *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
       }
@@ -677,36 +631,37 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
       tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_phys_id_);
       if (bd_var_.req_send[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
-      MPI_Send_init(bd_var_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_send[nb.bufid]));
+      MPI_Send_init(bd_var_.send[nb.bufid], ssize, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid]));
       tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_phys_id_);
       if (bd_var_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
-      MPI_Recv_init(bd_var_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_var_.req_recv[nb.bufid]));
+      MPI_Recv_init(bd_var_.recv[nb.bufid], rsize, MPI_ATHENA_REAL,
+                    nb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
       if (pmy_mesh_->multilevel == true && nb.type == NeighborConnect::face) {
         int size;
         if (nb.fid == 0 || nb.fid == 1)
-          size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
+          size = ((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
         else if (nb.fid == 2 || nb.fid == 3)
-          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
+          size = ((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
         else // (nb.fid == 4 || nb.fid == 5)
-          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
+          size = ((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size *= (nu_+1);
         if (nb.level<mylevel) { // send to coarser
           tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
-          MPI_Send_init(bd_var_flcor_.send[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_send[nb.bufid]));
+          MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
+                        nb.rank, tag, MPI_COMM_WORLD,
+                        &(bd_var_flcor_.req_send[nb.bufid]));
         } else if (nb.level>mylevel) { // receive from finer
           tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid],size,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(bd_var_flcor_.req_recv[nb.bufid]));
+          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
+                        nb.rank, tag, MPI_COMM_WORLD, &(bd_var_flcor_.req_recv[nb.bufid]));
         }
       }
     }
@@ -715,25 +670,6 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
-// KGF: approach #1: called inside #ifdef MPI_PARALLEL and loop:
-// for (int n=0; n<nneighbor; n++) {
-
-// -- unable to access nb without passing as function parameter
-// void CellCenteredBoundaryVariable::StartReceivingAll() {
-//   MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-//   if (nb.type == NeighborConnect::face && nb.level>mylevel)
-//     MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
-//   return;
-// }
-
-// KGF: approach #2: separate loops over nneighbor (make loop over bvar vector the
-// outermost loop)
-// --- performance penalty?
-// --- redundant source code (could encapsulate loop over nneighbor, passing nb down to
-// BoundaryVariable instances?)
-
-// Are there any shared implemenations worth placing as the default inherited virtual
-// function in BoundaryVariable
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb = pmy_block_;
@@ -766,8 +702,8 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       if (phase == BoundaryCommSubset::all && nb.type == NeighborConnect::face
           && nb.level < mylevel)
         MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
-    } // KGF: end block on other MPI process
+    }
 #endif
-  } // KGF: end loop over nneighbor
+  }
   return;
 }
