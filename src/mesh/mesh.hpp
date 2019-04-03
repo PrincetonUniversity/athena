@@ -69,7 +69,7 @@ class MeshBlock {
             BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, BoundaryFlag *input_bcs, Real icost,
+            RegionSize input_block, BoundaryFlag *input_bcs, double icost,
             char *mbdata, int igflag);
   ~MeshBlock();
 
@@ -137,7 +137,7 @@ class MeshBlock {
   void AllocateIntUserMeshBlockDataField(int n);
   void AllocateUserOutputVariables(int n);
   void SetUserOutputVariableName(int n, const char *name);
-  void SetCostForLoadBalancing(Real cost);
+  void SetCostForLoadBalancing(double cost);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
@@ -231,7 +231,7 @@ class Mesh {
   int root_level, max_level, current_level;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
-  Real *costlist;
+  double *costlist;
   // 8x arrays used exclusively for AMR (not SMR):
   int *nref, *nderef;
   int *rdisp, *ddisp;
@@ -280,7 +280,7 @@ class Mesh {
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
-  void CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+  void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
 
   // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
   void UpdateMeshBlockTree(int &nnew, int &ndel);

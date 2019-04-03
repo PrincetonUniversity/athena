@@ -461,7 +461,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   ranklist=new int[nbtotal];
   nslist=new int[Globals::nranks];
   nblist=new int[Globals::nranks];
-  costlist=new Real[nbtotal];
+  costlist=new double[nbtotal];
   if (adaptive == true) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
@@ -618,7 +618,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // initialize
   loclist = new LogicalLocation[nbtotal];
   offset = new IOWrapperSizeT[nbtotal];
-  costlist = new Real[nbtotal];
+  costlist = new double[nbtotal];
   ranklist = new int[nbtotal];
   nslist = new int[Globals::nranks];
   nblist = new int[Globals::nranks];
@@ -753,8 +753,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   for (int i=0; i<nbtotal; i++) {
     std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os += sizeof(LogicalLocation);
-    std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
-    os += sizeof(Real);
+    std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(double));
+    os += sizeof(double);
     if (loclist[i].level > current_level) current_level = loclist[i].level;
   }
   delete [] idlist;
@@ -973,8 +973,8 @@ void Mesh::OutputMeshStructure(int dim) {
   }
 
   // output relative size/locations of meshblock to file, for plotting
-  Real real_max = std::numeric_limits<Real>::max();
-  Real mincost = real_max, maxcost = 0.0, totalcost = 0.0;
+  double real_max = std::numeric_limits<double>::max();
+  double mincost = real_max, maxcost = 0.0, totalcost = 0.0;
   for (int i=root_level; i<=max_level; i++) {
     for (int j=0; j<nbtotal; j++) {
       if (loclist[j].level == i) {

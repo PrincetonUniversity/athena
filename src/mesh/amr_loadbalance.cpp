@@ -54,15 +54,15 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist,
+// \!fn void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist,
 //                                      int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
 //        Note that this function is destructive as it resets the cost variables
 
-void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
+void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb) {
   std::stringstream msg;
-  Real real_max  =  std::numeric_limits<Real>::max();
-  Real totalcost = 0, maxcost = 0.0, mincost = (real_max);
+  double real_max  =  std::numeric_limits<double>::max();
+  double totalcost = 0, maxcost = 0.0, mincost = (real_max);
 
   for (int i=0; i<nb; i++) {
     totalcost += clist[i];
@@ -70,8 +70,8 @@ void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist,
     maxcost = std::max(maxcost,clist[i]);
   }
   int j = (Globals::nranks) - 1;
-  Real targetcost = totalcost/Globals::nranks;
-  Real mycost = 0.0;
+  double targetcost = totalcost/Globals::nranks;
+  double mycost = 0.0;
   // create rank list from the end: the master MPI rank should have less load
   for (int i=nb-1; i>=0; i--) {
     if (targetcost == 0.0) {
@@ -321,7 +321,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // Step 1. construct new lists
   LogicalLocation *newloc = new LogicalLocation[ntot];
   int *newrank = new int[ntot];
-  Real *newcost = new Real[ntot];
+  double *newcost = new double[ntot];
   int *newtoold = new int[ntot];
   int *oldtonew = new int[nbtotal];
   int nbtold = nbtotal;
@@ -352,7 +352,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     if (newloc[n].level >= loclist[on].level) { // same or refined
       newcost[n] = costlist[on];
     } else {
-      Real acost = 0.0;
+      double acost = 0.0;
       for (int l=0; l<nleaf; l++)
         acost += costlist[on+l];
       newcost[n] = acost/nleaf;

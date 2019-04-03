@@ -137,7 +137,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      LogicalLocation iloc, RegionSize input_block,
                      BoundaryFlag *input_bcs,
-                     Real icost, char *mbdata, int igflag) {
+                     double icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
   prev = nullptr;
   next = nullptr;
@@ -397,6 +397,15 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size+=ruser_meshblock_data[n].GetSizeInBytes();
 
   return size;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::SetCostForLoadBalancing(double cost)
+//  \brief stop time measurement and accumulate it in the MeshBlock cost 
+
+void MeshBlock::SetCostForLoadBalancing(double cost) {
+  cost_ = std::min(cost, TINY_NUMBER);
+  pmy_mesh->lb_flag_ = true;
 }
 
 //----------------------------------------------------------------------------------------

@@ -137,7 +137,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     std::memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     std::memcpy(&(idlist[os]), &(pmb->cost_), sizeof(double));
-    os+=sizeof(Real);
+    os+=sizeof(double);
     pmb=pmb->next;
   }
 
