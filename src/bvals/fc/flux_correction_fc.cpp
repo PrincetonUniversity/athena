@@ -544,14 +544,14 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
   return count;
 }
 
-// KGF: helper function for below SendFluxCorrection()
+// helper function for below SendFluxCorrection()
+
 void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
     const SimpleNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  // KGF: do we need to typecast from generic "BoundaryVariable *" ?
   FaceCenteredBoundaryVariable *ptarget_pfbval =
       static_cast<FaceCenteredBoundaryVariable *>(
           ptarget_block->pbval->bvars[bvar_index]);
@@ -573,8 +573,8 @@ void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SendEMFCorrection()
-//  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if
-//  needed
+//  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if needed
+
 void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   MeshBlock *pmb=pmy_block_;
 
@@ -598,9 +598,6 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     }
     if (nb.rank == Globals::my_rank) { // on the same MPI rank
       CopyFluxCorrectionBufferSameProcess(nb, p);
-      // KGF: double check
-      // std::memcpy(pbl->pbval->bd_emfcor_.recv[nb.targetid],
-      //             bd_var_flcor_.send[nb.bufid], p*sizeof(Real));
     }
 #ifdef MPI_PARALLEL
     else
@@ -614,11 +611,6 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb, true);
     if (nb.rank == Globals::my_rank) { // on the same MPI rank
       CopyPolarBufferSameProcess(nb, count, n, true);
-      // KGF: check this
-      // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      // std::memcpy(pbl->pbval->flux_north_recv_[pmb->loc.lx3],
-      //             flux_north_send_[n], count * sizeof(Real));
-      // pbl->pbval->flux_north_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
     }
 #ifdef MPI_PARALLEL
     else
@@ -630,11 +622,6 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb, false);
     if (nb.rank == Globals::my_rank) { // on the same node
       CopyPolarBufferSameProcess(nb, count, n, false);
-      // KGF: check this
-      // MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      // std::memcpy(pbl->pbval->flux_south_recv_[pmb->loc.lx3],
-      //             flux_south_send_[n], count * sizeof(Real));
-      // pbl->pbval->flux_south_flag_[pmb->loc.lx3] = BoundaryStatus::arrived;
     }
 #ifdef MPI_PARALLEL
     else
@@ -653,10 +640,10 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 
 void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
                                                            const NeighborBlock& nb) {
-  MeshBlock *pmb=pmy_block_;
-  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  MeshBlock *pmb = pmy_block_;
+  AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
   int p = 0;
   if (nb.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
@@ -707,9 +694,9 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
         int j;
         if (nb.fid == BoundaryFace::inner_x2) {
-          j=pmb->js;
+          j = pmb->js;
         } else {
-          j=pmb->je+1;
+          j = pmb->je+1;
         }
         // unpack e1
         Real sign = (nb.polar && flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -1395,7 +1382,7 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
-        int j=pmb->js+pmb->block_size.nx2/2;
+        int j = pmb->js + pmb->block_size.nx2/2;
         for (int i=pmb->is; i<=pmb->ie; i++)
           e1(k,j,i) *= 0.5;
         int i=pmb->is+pmb->block_size.nx1/2;

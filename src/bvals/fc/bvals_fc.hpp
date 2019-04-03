@@ -30,7 +30,6 @@
 
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
  public:
-  // KGF: unlike CellCenteredBoundaryVariable, flux is always required. Hence, reference:
   FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField *var, FaceField &coarse_buf,
                                EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
@@ -152,7 +151,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
-  // 4x Send/Receive/Set-FieldBoundaryBuffers() don't use: HydroBoundaryQuantity type
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
@@ -165,13 +163,13 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
   void PolarFieldBoundaryAverage();
 
-  // all 3x only called in SendFluxCorrection()
+  // all 3x only called in SendFluxCorrection():
   int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadFluxBoundaryBufferToPolar(Real *buf, const SimpleNeighborBlock &nb,
                                     bool is_north);
 
-  // all 6x only called in ReceiveFluxCorrection()
+  // all 7x only called in ReceiveFluxCorrection():
   void SetFluxBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetFluxBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool is_north);
