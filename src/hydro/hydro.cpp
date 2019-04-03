@@ -214,10 +214,6 @@ Hydro::~Hydro() {
 
   delete psrc;
   delete phdif;
-  // remove this class's BoundaryVariable from vector of pointers in BoundaryValues
-  // KGF: assumes that this destructor is called BEFORE ~BoundaryValues())
-  //  pmy_block->pbval->bvars.erase(pmy_block->pbval->bvars.begin() + phbval->bvar_index);
-  // need to update the rest of the vector entries "bvar_index"!
   delete phbval;
 }
 

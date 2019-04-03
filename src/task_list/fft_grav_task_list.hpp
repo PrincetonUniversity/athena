@@ -31,7 +31,6 @@ class FFTGravitySolverTaskList : public TaskList {
   ~FFTGravitySolverTaskList() {}
 
   // functions
-  // KGF: consider renaming these 4x tasks
   TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
   TaskStatus SendFFTGravityBoundary(MeshBlock *pmb, int stage);
   TaskStatus ReceiveFFTGravityBoundary(MeshBlock *pmb, int stage);

@@ -21,10 +21,9 @@ class MeshBlock;
 class ParameterInput;
 
 //! \class PassiveScalars
-//  \brief hydro data and functions
+//  \brief
 
 class PassiveScalars {
-  // KGF: friend classes? Hydro?
  public:
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
   ~PassiveScalars();
@@ -44,18 +43,9 @@ class PassiveScalars {
   AthenaArray<Real> coarse_s_;
 
   // public functions:
-
-  // KGF: make the following Hydro member fn a free function:
-  // void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-  //                   AthenaArray<Real> &u_in2, const Real wght[3]);
-
   // KGF: use inheritance for these functions / overall class?
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, const Real wght);
-  // AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-  //   const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, const int order);
-      // AthenaArray<Real> &w, FaceField &b,
-      // AthenaArray<Real> &bcc, const int order);
 
  private:
   MeshBlock* pmy_block;

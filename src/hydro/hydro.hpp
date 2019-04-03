@@ -33,7 +33,7 @@ class Hydro {
   ~Hydro();
 
   // data
-  // KGF: make this private, if possible
+  // TODO(KGF): make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
   HydroBoundaryVariable *phbval;
 

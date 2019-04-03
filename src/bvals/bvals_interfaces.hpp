@@ -161,7 +161,6 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 //   int *ogidlist, *olidlist, *ornklist, *olevlist;
 //   bool inner, outer; // inner=true if inner blocks
 // } ShearingBoundaryBlock;
-// end KGF
 
 //----------------------------------------------------------------------------------------
 // Interfaces = abstract classes containing ONLY pure virtual functions

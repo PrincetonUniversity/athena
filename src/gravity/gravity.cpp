@@ -53,10 +53,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
-  phi.NewAthenaArray(ncells3,ncells2,ncells1);
-
-  // pgbval = new GravityBoundaryVariable(pmy_block, BoundaryQuantity::cc, phi);
-  // KGF: temporary workaround: generic CellCentered with AMR/SMR disabled
+  phi.NewAthenaArray(ncells3, ncells2, ncells1);
+  // create object to interface with BoundaryValues
   pgbval = new CellCenteredBoundaryVariable(pmy_block, &phi, nullptr, nullptr);
   pgbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pgbval);
@@ -66,7 +64,5 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
 Gravity::~Gravity() {
   phi.DeleteAthenaArray();
-
-  // KGF: temporary workaround:
   delete pgbval;
 }

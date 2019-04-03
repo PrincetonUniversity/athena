@@ -34,9 +34,7 @@ class Gravity {
   ~Gravity();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-
-  //GravityBoundaryVariable *pgbval;
-  // KGF: temporary workaround:
+  // TODO(felker):  //GravityBoundaryVariable *pgbval;
   CellCenteredBoundaryVariable *pgbval;
 
   AthenaArray<Real> phi;  // gravitational potential
