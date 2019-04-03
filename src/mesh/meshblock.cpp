@@ -12,6 +12,7 @@
 #include <algorithm>  // sort()
 #include <cstdlib>
 #include <cstring>    // memcpy()
+#include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -144,7 +145,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   lid = ilid;
   loc = iloc;
   gflag = igflag;
-  cost = icost;
   cost_ = icost;
   block_size = input_block;
 
@@ -398,3 +398,41 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 
   return size;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::ResetTimeMeasurement()
+//  \brief reset the MeshBlock cost for automatic load balancing
+
+void MeshBlock::ResetTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::StartTimeMeasurement()
+//  \brief start time measurement for automatic load balancing
+
+void MeshBlock::StartTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) {
+#ifdef OPENMP_PARALLEL
+    lb_time_=omp_get_wtime();
+#else
+    lb_time_=static_cast<double>(clock());
+#endif
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::StartTimeMeasurement()
+//  \brief stop time measurement and accumulate it in the MeshBlock cost 
+
+void MeshBlock::StopTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) {
+#ifdef OPENMP_PARALLEL
+    lb_time_=omp_get_wtime()-lb_time_;
+#else
+    lb_time_=static_cast<double>(clock())-lb_time_;
+#endif
+    cost_+=lb_time_;
+  }
+}
+

@@ -539,7 +539,7 @@ int main(int argc, char *argv[]) {
 
     // Calculate and print the zone-cycles/cpu-second and wall-second
 #ifdef OPENMP_PARALLEL
-    double omp_time = omp_get_wtime() - omp_start_time;;
+    double omp_time = omp_get_wtime() - omp_start_time;
 #endif
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :

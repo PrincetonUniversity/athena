@@ -126,7 +126,6 @@ class MeshBlock {
 
  private:
   // data
-  Real cost_;
   Real new_block_dt_, new_block_dt_diff_;
   // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
@@ -143,6 +142,12 @@ class MeshBlock {
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
   void InitUserMeshBlockData(ParameterInput *pin);
+
+  // functions and variables for automatic load balancing based on timing
+  double cost_, lb_time_;
+  void ResetTimeMeasurement();
+  void StartTimeMeasurement();
+  void StopTimeMeasurement();
 };
 
 //----------------------------------------------------------------------------------------

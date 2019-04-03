@@ -85,8 +85,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
                +2*sizeof(Real)+sizeof(IOWrapperSizeT)+udsize;
-  // the size of an element of the ID list
-  listsize=sizeof(LogicalLocation)+sizeof(Real);
+  // the size of an element of the ID and cost list
+  listsize=sizeof(LogicalLocation)+sizeof(double);
   // the size of each MeshBlock
   datasize = pm->pblock->GetBlockSizeInBytes();
   int nbtotal=pm->nbtotal;
@@ -136,7 +136,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   while (pmb!=nullptr) {
     std::memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
-    std::memcpy(&(idlist[os]), &(pmb->cost_), sizeof(Real));
+    std::memcpy(&(idlist[os]), &(pmb->cost_), sizeof(double));
     os+=sizeof(Real);
     pmb=pmb->next;
   }

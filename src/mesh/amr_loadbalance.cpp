@@ -57,6 +57,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 // \!fn void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist,
 //                                      int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
+//        Note that this function is destructive as it resets the cost variables
 
 void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
   std::stringstream msg;
@@ -113,6 +114,12 @@ void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist,
     ATHENA_ERROR(msg);
   }
 
+  // reset the cost variable, flag and counter
+  MeshBlock *pmb = pblock;
+  while (pmb != nullptr) {
+    pmb->ResetTimeMeasurement();
+    pmb = pmb->next;
+  }
   lb_flag_=false;
   step_since_lb=0;
 
