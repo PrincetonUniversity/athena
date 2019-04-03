@@ -661,7 +661,8 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.rank, tag, MPI_COMM_WORLD, &(bd_var_flcor_.req_recv[nb.bufid]));
+                        nb.rank, tag, MPI_COMM_WORLD,
+                        &(bd_var_flcor_.req_recv[nb.bufid]));
         }
       }
     }
