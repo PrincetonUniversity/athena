@@ -55,11 +55,6 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
                       int kl, int ku, int ngh) override;
   //protected:
  private:
-  // HydroBoundaryQuantity::prim is passed only in 2x lines in mesh.cpp:
-  // SendCellCenteredBoundaryBuffers(pmb->phydro->w, HydroBoundaryQuantity::prim);
-  // ReceiveAndSetCellCenteredBoundariesWithWait(pmb->phydro->w,
-  //                                             HydroBoundaryQuantity::prim);
-
   // Hydro is a unique cell-centered variable because of the relationship between
   // HydroBoundaryQuantity::cons u and HydroBoundaryQuantity::prim w.
   HydroBoundaryQuantity hydro_type_;

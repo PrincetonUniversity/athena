@@ -27,7 +27,7 @@ void HydroBoundaryVariable::ReflectInnerX1(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVX)) {
+    if (n == (IVX)) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -61,7 +61,7 @@ void HydroBoundaryVariable::ReflectOuterX1(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVX)) {
+    if (n == (IVX)) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -95,7 +95,7 @@ void HydroBoundaryVariable::ReflectInnerX2(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVY)) {
+    if (n == (IVY)) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
@@ -129,7 +129,7 @@ void HydroBoundaryVariable::ReflectOuterX2(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVY)) {
+    if (n == (IVY)) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
@@ -163,7 +163,7 @@ void HydroBoundaryVariable::ReflectInnerX3(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVZ)) {
+    if (n == (IVZ)) {
       for (int k=1; k<=ngh; ++k) {
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -197,7 +197,7 @@ void HydroBoundaryVariable::ReflectOuterX3(
     int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<=nu_; ++n) {
-    if (n==(IVZ)) {
+    if (n == (IVZ)) {
       for (int k=1; k<=ngh; ++k) {
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
