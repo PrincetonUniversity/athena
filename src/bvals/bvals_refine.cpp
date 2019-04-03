@@ -20,40 +20,16 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-// #include "../mesh/mesh_refinement.hpp"
 #include "bvals.hpp"
 #include "cc/hydro/bvals_hydro.hpp"
 #include "fc/bvals_fc.hpp"
 
-// KGF: This function, BoundaryValues::ProlongateBoundaries(), is called 2x in src/:
-// In Mesh::Initialize() and in TimeIntegratorTaskList::Prolongation()
-// Both calls pass the following first 4x arguments:
-// phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-
-// Corresponding to function parameters:
-// AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-// FaceField &bfdst, AthenaArray<Real> &bcdst,
-
-// KGF: overall, this function and set of features needs a better-managed relationship
-// with the MeshRefinement class, specifically the pvars_cc/fc_ vectors. The below
-// functions often call functions on "coarse_buf" shallow-copies in BoundaryVariable
-// objects, but these are managed seperately from the coarse_buf in the corresponding
-// pvars_cc_, for example!
-
-// Also, the "enrollment in S/AMR" should supersede the below loops over "bvars_main_int"
-// when it comes to applying BoundaryFunction_[]() etc. on BoundaryVariable object data.
-// It will currently crash if multilevel==true, and S/AMR-incompatible FFT self-gravity is
-// put into bvars_main_int. This will be a big design decision when we make it possible to
-// compile without Hydro. See #247.
-
-// TODO(KGF): provide overload of CellCenteredBoundaryVariable constructor that does NOT
-// take AthenaArray<Real> *coarse_var, *var_flux
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
-  // KGF: temporarily hardcode Hydro and Field array access for the below switch around
-  // ApplyPhysicalBoundariesOnCoarseLevel()
+  // TODO(KGF): temporarily hardcode Hydro and Field array access for the below switch
+  // around ApplyPhysicalBoundariesOnCoarseLevel()
 
   // This hardcoded technique is also used to manually specify the coupling between
   // physical variables in:
@@ -102,7 +78,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       nke = std::min(nb.ox3+1, 1);
     }
 
-    // 1) Apply necessary variable restrictions when ghost-ghost zone is on same level
+    // Step 1. Apply necessary variable restrictions when ghost-ghost zone is on same lvl
     for (int nk=nks; nk<=nke; nk++) {
       for (int nj=njs; nj<=nje; nj++) {
         for (int ni=nis; ni<=nie; ni++) {
@@ -115,7 +91,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
           RestrictGhostCellsOnSameLevel(nb, nk, nj, ni);
         }
       }
-    } // end 3x nested loops over nk, nj, ni
+    }
 
     // calculate the loop limits for the ghost zones
     int cn = pmb->cnghost - 1;
@@ -146,51 +122,21 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     } else if (nb.ox3 > 0) { sk = pmb->cke + 1,  ek = pmb->cke + cn;}
     else              sk = pmb->cks-cn, ek = pmb->cks-1;
 
-    // KGF: here is another TODO generalization of this manual coupling between the
-    // MeshRefinement class and BoundaryVariable class objects. This will only work for
-    // user-defined boundary functions and periodic boundary conditions, right now.
-
-    // KGF: need to duplicate the BoundaryValues::ApplyPhysicalBoundaries() code with
-    // switch statements + loop over BoundaryVariable iterator
-    // + ADD swap statements for coarse_prim_ and coarse_b_ before calling each
-    // BoundaryVariable's function from  BoundaryPhysics. (no method exists for
-    // FaceCenteredBoundaryVariable class, unlike HydroBoundaryVariable)-- should
-    // probably call the swap routines before the switch statements
-
-    // + ADD swap statements back to the previous var_cc, var_fc pointers after calling
-    // the functions.
-
-    // KGF: 3/25/19 changes might be incompatible with this swap, which occured after
-    // Cons2Prim call in original refactoring
-
-    // KGF: to automatically call all BoundaryFunction_[] on coarse_prim/b instead of
-    // default targets var_cc=cons or prim + var_fc=b, temporarily change the pointers
+    // (temp workaround) to automatically call all BoundaryFunction_[] on coarse_prim/b
+    // instead of default targets var_cc=cons or prim + var_fc=b, exchange the pointers
     phbvar->var_cc = &(ph->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->coarse_b_);
 
-    // phbvar->var_cc.InitWithShallowCopy(ph->coarse_prim_);
-    // if (MAGNETIC_FIELDS_ENABLED) {
-    //   pfbvar->var_fc.x1f.InitWithShallowCopy(pf->coarse_b_.x1f);
-    //   pfbvar->var_fc.x2f.InitWithShallowCopy(pf->coarse_b_.x2f);
-    //   pfbvar->var_fc.x3f.InitWithShallowCopy(pf->coarse_b_.x3f);
-    // }
-
-    // 2) Re-apply physical boundaries on the coarse boundary:
+    // Step 2. Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
 
-    // KGF: (temp workaround) swap BoundaryVariable var_cc/fc back from coarse_buf
+    // (temp workaround) swap BoundaryVariable var_cc/fc back from coarse_buf
     phbvar->var_cc = &(ph->w);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->b);
-    // phbvar->var_cc.InitWithShallowCopy(ph->w);
-    // if (MAGNETIC_FIELDS_ENABLED) {
-    //   pfbvar->var_fc.x1f.InitWithShallowCopy(pf->b.x1f);
-    //   pfbvar->var_fc.x2f.InitWithShallowCopy(pf->b.x2f);
-    //   pfbvar->var_fc.x3f.InitWithShallowCopy(pf->b.x3f);
-    // }
 
-    // 3) Finally, the ghost-ghost zones are ready for prolongation:
+    // Step 3. Finally, the ghost-ghost zones are ready for prolongation:
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
   } // end loop over nneighbor
   return;
@@ -235,9 +181,6 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     rks = pmb->cks - 1, rke = pmb->cks - 1;
   }
 
-  // KGF: these 2x loops over pvars_cc/fc_ (like in ProlongateGhostCells()) might be
-  // better off living in MeshRefinement class (or Mesh class)
-
   for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
@@ -245,11 +188,9 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     pmb->pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc, 0, nu,
                                          ris, rie, rjs, rje, rks, rke);
   }
-  // KGF: UNIQUE TO HYDRO+GR+S/AMR: also restrict primitive values in ghost zones
+  // (unique to Hydro) also restrict primitive values in ghost zones when GR + multilevel
   if (GENERAL_RELATIVITY) {
     pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
-    // KGF: as in the function called in the above line, here we are assuming that Hydro
-    // is enrolled in S/AMR, and its tuple of AthenaArray<Real>* occupies the first entry:
     auto cc_pair = pmr->pvars_cc_.front();
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
@@ -310,7 +251,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   Coordinates *pco = pmb->pcoord;
   MeshRefinement *pmr = pmb->pmr;
 
-  // KGF: temporarily hardcode Hydro and Field array access
+  // temporarily hardcode Hydro and Field array access:
   Hydro *ph = pmb->phydro;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -346,10 +287,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
 
-  // KGF: by moving coarse_* arrays from MeshRefinement class to Hydro and Field classes,
-  // we run into a possible issue of passing nullptrs to this function if
-  // MAGNETIC_FIELDS_ENABLED=0 but SMR/AMR + Hydro is active. Probably fine, since they
-  // wont be dereferenced in the EOS function, but this is suboptimal.
+  // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
@@ -537,9 +475,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   MeshRefinement *pmr = pmb->pmr;
 
   // prolongate cell-centered S/AMR-enrolled quantities (hydro, passive scalars, ...)
-  // prolongate hydro variables using primitive
-
-  // KGF: UNIQUE TO HYDRO: swap (u, coarse_cons_) with (w, coarse_prim)
+  // (unique to Hydro) swap (u, coarse_cons_) with (w, coarse_prim)
   pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
   for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
@@ -548,11 +484,11 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     pmr->ProlongateCellCenteredValues(*coarse_cc, *var_cc, 0, nu,
                                       si, ei, sj, ej, sk, ek);
   }
+  // swap back Hydro refinement quantities:
   pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
-  // KGF: UNIQUE TO HYDRO swap (w, coarse_prim) back to (u, coarse_cons_)
+
 
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
-  // KGF: could enclose the following calculation of indices in a "if MHD" conditional
   int &mylevel = pmb->loc.level;
   int il, iu, jl, ju, kl, ku;
   il = si, iu = ei + 1;
@@ -609,7 +545,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     fek = pmb->ke;
   }
 
-  // KGF: temporarily hardcode Hydro and Field array access
+  // temporarily hardcode Hydro and Field array access
   Hydro *ph = pmb->phydro;
   Field *pf = nullptr;
 
@@ -620,12 +556,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
                                    fsi, fei, fsj, fej, fsk, fek);
   }
-
-  // KGF: by moving coarse_* arrays from MeshRefinement class to Hydro and Field classes,
-  // we run into a possible issue of passing nullptrs to this function if
-  // MAGNETIC_FIELDS_ENABLED=0 but SMR/AMR + Hydro is active. Probably fine, since they
-  // wont be dereferenced in the EOS function, but this is suboptimal.
-
+  // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // calculate conservative variables
   pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
