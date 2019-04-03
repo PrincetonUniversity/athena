@@ -525,7 +525,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(Real *buf,
-//                                                           const SimpleNeighborBlock &nb,
+//                                                         const SimpleNeighborBlock &nb,
 //                                                           bool is_north)
 //  \brief Load EMF values along polar axis into send buffers
 
