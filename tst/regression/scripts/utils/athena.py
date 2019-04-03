@@ -50,7 +50,7 @@ def make(clean_first=True, obj_only=False):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
     out_log = open(os.devnull, 'w') if global_silent else LogPipe('athena.make',
-                                                                   logging.INFO)
+                                                                  logging.INFO)
     try:
         exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
