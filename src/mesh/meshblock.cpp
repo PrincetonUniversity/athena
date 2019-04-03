@@ -52,7 +52,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   lid = ilid;
   loc = iloc;
   gflag = igflag;
-  cost = 1.0;
+  cost_ = 1.0;
 
   nuser_out_var = 0;
   nreal_user_meshblock_data_ = 0;
@@ -138,13 +138,14 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      BoundaryFlag *input_bcs,
                      Real icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
-  prev=nullptr;
-  next=nullptr;
-  gid=igid;
-  lid=ilid;
-  loc=iloc;
-  gflag=igflag;
-  cost=icost;
+  prev = nullptr;
+  next = nullptr;
+  gid = igid;
+  lid = ilid;
+  loc = iloc;
+  gflag = igflag;
+  cost = icost;
+  cost_ = icost;
   block_size = input_block;
 
   nuser_out_var = 0;

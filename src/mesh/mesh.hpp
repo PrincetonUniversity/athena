@@ -126,7 +126,7 @@ class MeshBlock {
 
  private:
   // data
-  Real cost;
+  Real cost_;
   Real new_block_dt_, new_block_dt_diff_;
   // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
@@ -138,6 +138,7 @@ class MeshBlock {
   void AllocateIntUserMeshBlockDataField(int n);
   void AllocateUserOutputVariables(int n);
   void SetUserOutputVariableName(int n, const char *name);
+  void SetCostForLoadBalancing(Real cost);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
@@ -192,6 +193,7 @@ class Mesh {
   int nlim, ncycle, ncycle_out;
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
+  int step_since_lb;
   int gflag;
   int turb_flag; // turbulence flag
   EosTable *peos_table;
@@ -211,7 +213,7 @@ class Mesh {
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void NewTimeStep();
-  void AdaptiveMeshRefinement(ParameterInput *pin);
+  void LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin);
   int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
@@ -252,6 +254,11 @@ class Mesh {
   // global constants
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
 
+  // variables for load balancing control
+  bool lb_flag_, lb_automatic_;
+  Real lb_tolerance_;
+  int lb_interval_;
+
   // functions
   MeshGenFunc MeshGenerator_[3];
   SrcTermFunc UserSourceTerm_;
@@ -268,9 +275,14 @@ class Mesh {
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
-  void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+  void CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
-  // Mesh::AdaptiveMeshRefinement() helper functions:
+  // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
+  void UpdateMeshBlockTree(int &nnew, int &ndel);
+  bool GatherCostListAndCheckBalance();
+  void RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot);
+
+  // Mesh::RedistributeAndRefineMeshBlocks() helper functions:
   // step 6: send
   void PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf);
   void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);

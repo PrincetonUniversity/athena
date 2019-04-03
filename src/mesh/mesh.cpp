@@ -11,7 +11,6 @@
 // #define __STDC_FORMAT_MACROS
 
 // C++ headers
-#include <algorithm>  // std::sort()
 #include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdint>    // std::int64_t fixed-wdith integer type alias
@@ -265,6 +264,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // create the root grid
   tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
+  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
+  InitUserMeshData(pin);
+
+  // Load balancing flag and parameters
+  lb_flag_=true;
+  lb_automatic_=pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_tolerance_=pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_=pin->GetOrAddReal("loadbalancing","interval",10);
+  step_since_lb=0;
+
   // SMR / AMR: create finer grids here
   multilevel = false;
   adaptive = false;
@@ -283,9 +292,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   } else {
     max_level = 63;
   }
-
-  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
-  InitUserMeshData(pin);
 
   if (multilevel == true) {
     if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && block_size.nx2>1)
@@ -470,7 +476,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // initialize cost array with the simplest estimate; all the blocks are equal
   for (int i=0; i<nbtotal; i++) costlist[i]=1.0;
 
-  LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
+  CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output some diagnostic information to terminal
 
@@ -664,6 +670,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
   MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
 
+  // Load balancing flag and parameters
+  lb_flag_=true;
+  lb_automatic_=pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_tolerance_=pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_=pin->GetOrAddReal("loadbalancing","interval",10);
+  step_since_lb=0;
+
+  // SMR / AMR
   multilevel = false;
   adaptive = false;
   if (pin->GetOrAddString("mesh","refinement","none") == "adaptive")
@@ -791,7 +805,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     bddisp = new int[Globals::nranks];
   }
 
-  LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
+  CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
   if (mesh_test > 0) {
@@ -1580,7 +1594,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if ((res_flag == 0) && (adaptive == true)) {
       iflag = false;
       int onb = nbtotal;
-      AdaptiveMeshRefinement(pin);
+      LoadBalancingAndAdaptiveMeshRefinement(pin);
       if (nbtotal == onb) {
         iflag=true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
@@ -1621,68 +1635,6 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
     pbl = pbl->next;
   }
   return pbl;
-}
-
-//----------------------------------------------------------------------------------------
-// \!fn void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
-// \brief Calculate distribution of MeshBlocks based on the cost list
-
-void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
-  std::stringstream msg;
-  Real real_max  =  std::numeric_limits<Real>::max();
-  Real totalcost = 0, maxcost = 0.0, mincost = (real_max);
-
-  for (int i=0; i<nb; i++) {
-    totalcost += clist[i];
-    mincost = std::min(mincost,clist[i]);
-    maxcost = std::max(maxcost,clist[i]);
-  }
-  int j = (Globals::nranks) - 1;
-  Real targetcost = totalcost/Globals::nranks;
-  Real mycost = 0.0;
-  // create rank list from the end: the master MPI rank should have less load
-  for (int i=nb-1; i>=0; i--) {
-    if (targetcost == 0.0) {
-      msg << "### FATAL ERROR in LoadBalance" << std::endl
-          << "There is at least one process which has no MeshBlock" << std::endl
-          << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
-      ATHENA_ERROR(msg);
-    }
-    mycost += clist[i];
-    rlist[i] = j;
-    if (mycost >= targetcost && j>0) {
-      j--;
-      totalcost -= mycost;
-      mycost = 0.0;
-      targetcost = totalcost/(j+1);
-    }
-  }
-  slist[0] = 0;
-  j = 0;
-  for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
-    if (rlist[i] != rlist[i-1]) {
-      nlist[j] = i-nslist[j];
-      slist[++j] = i;
-    }
-  }
-  nlist[j] = nb-slist[j];
-
-#ifdef MPI_PARALLEL
-  if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
-      && maxcost == mincost && Globals::my_rank == 0) {
-    std::cout << "### Warning in LoadBalance" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will result in poor load balancing." << std::endl;
-  }
-#endif
-  if ((Globals::nranks)*(num_mesh_threads_) > nb) {
-    msg << "### FATAL ERROR in LoadBalance" << std::endl
-        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
-        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-
-  return;
 }
 
 //----------------------------------------------------------------------------------------

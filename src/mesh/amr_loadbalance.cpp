@@ -11,6 +11,8 @@
 // C++ headers
 #include <algorithm>  // std::sort()
 #include <cstdint>
+#include <iostream>
+#include <sstream>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -28,12 +30,103 @@
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
+// \!fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
 // \brief Main function for adaptive mesh refinement
 
-void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
-  MeshBlock *pmb;
+void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
+  int nnew=0, ndel=0;
+  if (adaptive == true) {
+    UpdateMeshBlockTree(nnew, ndel);
+    nbnew += nnew; nbdel += ndel;
+  }
+
+  lb_flag_ |= lb_automatic_;
+  if (nnew!=0 || ndel!=0) { // at least one (de)refinement happened
+    GatherCostListAndCheckBalance();
+    RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
+  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) { // cost updated
+    if (GatherCostListAndCheckBalance()==false) // load inbalance detected
+      RedistributeAndRefineMeshBlocks(pin, nbtotal);
+  }
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist,
+//                                      int *nlist, int nb)
+// \brief Calculate distribution of MeshBlocks based on the cost list
+
+void Mesh::CalculateLoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
+  std::stringstream msg;
+  Real real_max  =  std::numeric_limits<Real>::max();
+  Real totalcost = 0, maxcost = 0.0, mincost = (real_max);
+
+  for (int i=0; i<nb; i++) {
+    totalcost += clist[i];
+    mincost = std::min(mincost,clist[i]);
+    maxcost = std::max(maxcost,clist[i]);
+  }
+  int j = (Globals::nranks) - 1;
+  Real targetcost = totalcost/Globals::nranks;
+  Real mycost = 0.0;
+  // create rank list from the end: the master MPI rank should have less load
+  for (int i=nb-1; i>=0; i--) {
+    if (targetcost == 0.0) {
+      msg << "### FATAL ERROR in CalculateLoadBalance" << std::endl
+          << "There is at least one process which has no MeshBlock" << std::endl
+          << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    mycost += clist[i];
+    rlist[i] = j;
+    if (mycost >= targetcost && j>0) {
+      j--;
+      totalcost -= mycost;
+      mycost = 0.0;
+      targetcost = totalcost/(j+1);
+    }
+  }
+  slist[0] = 0;
+  j = 0;
+  for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
+    if (rlist[i] != rlist[i-1]) {
+      nlist[j] = i-nslist[j];
+      slist[++j] = i;
+    }
+  }
+  nlist[j] = nb-slist[j];
+
+#ifdef MPI_PARALLEL
+  if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
+      && maxcost == mincost && Globals::my_rank == 0) {
+    std::cout << "### Warning in CalculateLoadBalance" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will result in poor load balancing." << std::endl;
+  }
+#endif
+  if ((Globals::nranks)*(num_mesh_threads_) > nb) {
+    msg << "### FATAL ERROR in CalculateLoadBalance" << std::endl
+        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
+        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  lb_flag_=false;
+  step_since_lb=0;
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel)
+// \brief collect refinement flags and manipulate the MeshBlockTree
+
+void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
+  MeshBlock *pmb;
   int nleaf = 2, dim = 1;
   if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
   if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
@@ -153,7 +246,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Now the lists of the blocks to be refined and derefined are completed
   // Start tree manipulation
   // Step 1. perform refinement
-  int nnew = 0, ndel = 0, ntot = 0;
   for (int n=0; n<tnref; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
@@ -168,13 +260,57 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
   if (tnderef >= nleaf)
     delete [] clderef;
-  ntot = nbtotal + nnew - ndel;
-  if (nnew == 0 && ndel == 0)
-    return; // nothing to do
-  // Tree manipulation completed
-  nbnew += nnew; nbdel += ndel;
 
-  // Block exchange
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn bool Mesh::GatherCostListAndCheckBalance()
+// \brief collect the cost from MeshBlocks and check the load balance
+
+bool Mesh::GatherCostListAndCheckBalance() {
+  MeshBlock *pmb=pblock;
+
+  while (pmb!=nullptr) {
+    costlist[pmb->gid]=pmb->cost_;
+    pmb=pmb->next;
+  }
+
+#ifdef MPI_PARALLEL
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
+                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
+#endif
+
+  Real maxcost=0.0, avecost=0.0;
+  for (int rank=0; rank<Globals::nranks; rank++) {
+    Real mycost = 0.0;
+    int ns=nslist[Globals::my_rank];
+    int ne=ns+nblist[Globals::my_rank];
+    for (int n=ns; n<ne; ++n)
+      mycost+=costlist[n];
+    maxcost = std::max(maxcost,mycost);
+  }
+  for (int n=0; n<nbtotal; ++n)
+    avecost+=costlist[n];
+  avecost/=nbtotal;
+
+  if (maxcost < (1.0+lb_tolerance_)*avecost)
+    return true;
+  return false;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot)
+// \brief redistribute MeshBlocks according to the new load balance
+
+void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
+  // compute nleaf= number of leaf MeshBlocks per refined block
+  int nleaf = 2;
+  if (mesh_size.nx2 > 1) nleaf = 4;
+  if (mesh_size.nx3 > 1) nleaf = 8;
+
   // Step 1. construct new lists
   LogicalLocation *newloc = new LogicalLocation[ntot];
   int *newrank = new int[ntot];
@@ -200,12 +336,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   for ( ; mb_idx<nbtold; mb_idx++)
     oldtonew[mb_idx] = ntot-1;
 
-#ifdef MPI_PARALLEL
-  // share the cost list
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
-                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
-#endif
-
   current_level = 0;
   for (int n=0; n<ntot; n++) {
     // "on" = "old n" = "old gid" = "old global MeshBlock ID"
@@ -227,7 +357,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   int onbe = onbs + nblist[Globals::my_rank] - 1;
 #endif
   // Step 2. Calculate new load balance
-  LoadBalance(newcost, newrank, nslist, nblist, ntot);
+  CalculateLoadBalance(newcost, newrank, nslist, nblist, ntot);
 
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
@@ -375,6 +505,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
   MeshBlock *newlist = nullptr;
+  MeshBlock *pmb;
   RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {

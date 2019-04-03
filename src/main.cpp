@@ -446,9 +446,9 @@ int main(int argc, char *argv[]) {
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
     mbcnt += pmesh->nbtotal;
+    pmesh->step_since_lb++;
 
-    if (pmesh->adaptive == true)
-      pmesh->AdaptiveMeshRefinement(pinput);
+    pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
 #ifdef ENABLE_EXCEPTIONS
