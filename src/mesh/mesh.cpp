@@ -1582,7 +1582,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       int onb = nbtotal;
       AdaptiveMeshRefinement(pin);
       if (nbtotal == onb) {
-        iflag=true;
+        iflag = true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
         std::cout << "### Warning in Mesh::Initialize" << std::endl
                   << "The number of MeshBlocks decreased during AMR grid initialization."
@@ -1654,7 +1654,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
       j--;
       totalcost -= mycost;
       mycost = 0.0;
-      targetcost = totalcost/(j+1);
+      targetcost = totalcost/(j + 1);
     }
   }
   slist[0] = 0;
@@ -1665,7 +1665,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) 
       slist[++j] = i;
     }
   }
-  nlist[j] = nb-slist[j];
+  nlist[j] = nb - slist[j];
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
@@ -1731,7 +1731,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x2min = MeshGenerator_[X2DIR](rx, mesh_size);
       block_bcs[BoundaryFace::inner_x2] = BoundaryFlag::block;
     }
-    if (lx2 == (nrbx_ll)-1) {
+    if (lx2 == (nrbx_ll) - 1) {
       block_size.x2max = mesh_size.x2max;
       block_bcs[BoundaryFace::outer_x2] = mesh_bcs[BoundaryFace::outer_x2];
     } else {
@@ -1758,7 +1758,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x3min = MeshGenerator_[X3DIR](rx, mesh_size);
       block_bcs[BoundaryFace::inner_x3] = BoundaryFlag::block;
     }
-    if (lx3 == (nrbx_ll)-1) {
+    if (lx3 == (nrbx_ll) - 1) {
       block_size.x3max = mesh_size.x3max;
       block_bcs[BoundaryFace::outer_x3] = mesh_bcs[BoundaryFace::outer_x3];
     } else {

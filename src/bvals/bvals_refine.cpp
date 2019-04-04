@@ -241,7 +241,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
-//           const NeighborBlock& nb, const Real time, const Real dt)
+//           const NeighborBlock& nb, const Real time, const Real dt,
+//           int si, int ei, int sj, int ej, int sk, int ek)
 //  \brief
 
 void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(

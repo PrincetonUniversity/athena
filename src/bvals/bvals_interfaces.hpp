@@ -70,7 +70,7 @@ enum {BLOCK_BNDRY = -1, BNDRY_UNDEF, REFLECTING_BNDRY, OUTFLOW_BNDRY, USER_BNDRY
 enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
                    inner_x3=4, outer_x3=5};
 // TODO(felker): BoundaryFace must be unscoped enum, for now. Its enumerators are used as
-// int to index regular arrays (not AthenaArrays). Hence enumerator values are specified.
+// int to index raw arrays (not AthenaArrays)--> enumerator vals are explicitly specified
 
 // identifiers for boundary conditions
 enum class BoundaryFlag {block=-1, undef, reflect, outflow, user, periodic,

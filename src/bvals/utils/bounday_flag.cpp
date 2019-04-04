@@ -3,7 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file get_boundary_flag.cpp
+//! \file boundary_flag.cpp
+//  \brief utilities for processing the user's input <mesh> ixn_bc, oxn_bc parameters and
+// the associated internal BoundaryFlag enumerators
 
 // C headers
 
@@ -19,7 +21,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn GetBoundaryFlag(std::string input_string)
-//  \brief Parses input string to return integer flag specifying boundary condition
+//  \brief Parses input string to return scoped enumerator flag specifying boundary
+//  condition. Typically called in Mesh() ctor and in pgen/*.cpp files.
 
 BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
   if (input_string == "reflecting") {
@@ -50,8 +53,8 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
 //----------------------------------------------------------------------------------------
 //! \fn GetBoundaryString(BoundaryFlag input_flag)
 //  \brief Parses enumerated type BoundaryFlag internal integer representation to return
-//  string describing the boundary condition. Used for diagnostics. Inverse of
-//  GetBoundaryFlag()
+//  string describing the boundary condition. Typicall used to format descriptive errors
+//  or diagnostics. Inverse of GetBoundaryFlag().
 
 std::string GetBoundaryString(BoundaryFlag input_flag) {
   if (input_flag == BoundaryFlag::reflect) {
