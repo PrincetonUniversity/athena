@@ -100,27 +100,6 @@ struct SimpleNeighborBlock { // aggregate and POD
 };
 
 //----------------------------------------------------------------------------------------
-//! \struct NeighborBlock
-//  \brief
-
-struct NeighborBlock : SimpleNeighborBlock { // neither aggregate nor POD type
-  int ox1, ox2, ox3;
-  int fi1, fi2;
-  int bufid, eid, targetid;
-  NeighborConnect type;
-  BoundaryFace fid;
-  bool polar; // flag indicating boundary is across a pole
-  bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
-  NeighborBlock() : ox1(-1), ox2(-1), ox3(-1),
-                    fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
-                    type(NeighborConnect::none), fid(BoundaryFace::undef), polar(false),
-                    shear(false) { rank=-1; level=-1; gid=-1; lid=-1;}
-  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, NeighborConnect itype, int ibid, int itargetid,
-                   bool ipolar, bool ishear, int ifi1, int ifi2);
-};
-
-//----------------------------------------------------------------------------------------
 //! \struct NeighborConnect
 //  \brief data to describe MeshBlock neighbors
 
@@ -136,6 +115,26 @@ struct NeighborIndexes { // aggregate and POD
   //   - Aggregate type: supports aggregate initialization {}
   //   - POD type: safely copy objects via memcpy, no memory padding in the beginning of
   //     object, C portability, supports static initialization
+};
+
+//----------------------------------------------------------------------------------------
+//! \struct NeighborBlock
+//  \brief
+
+struct NeighborBlock : SimpleNeighborBlock, NeighborIndexes { // neither aggregate nor POD
+  int bufid, eid, targetid;
+  BoundaryFace fid;
+  bool polar; // flag indicating boundary is across a pole
+  bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
+  NeighborBlock() : bufid(-1), eid(-1), targetid(-1),
+                    fid(BoundaryFace::undef), polar(false),
+                    shear(false) {
+    rank=-1; level=-1; gid=-1; lid=-1;
+    ox1=-1; ox2=-1; ox3=-1; fi1=-1; fi2=-1; type=NeighborConnect::none;
+  }
+  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
+                   int iox3, NeighborConnect itype, int ibid, int itargetid,
+                   bool ipolar, bool ishear, int ifi1, int ifi2);
 };
 
 //----------------------------------------------------------------------------------------
