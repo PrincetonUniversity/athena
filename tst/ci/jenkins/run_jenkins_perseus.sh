@@ -137,11 +137,11 @@ eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 # Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number (53 expected as of 2018-12-04):
 # (most Lcov failures will be silent and hidden in build log;, missing reports will be hard to notice in Lcov HTML and Codecov reports)
 echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.info"
-set -e
 
 # Generate Lcov HTML report and backup to home directory on Perseus (never used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
+# TODO(felker): Address "lcov: ERROR: no valid records found in tracefile ./eos_eos_comparison_eos_hllc.info"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
 mv lcov.info ${lcov_dir_name}
@@ -154,6 +154,7 @@ mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HO
 
 # Ensure that no stale tracefiles are kept in Jenkins cached workspace
 rm -rf *.info
+set -e
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge

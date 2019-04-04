@@ -94,7 +94,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=jl; j<=ju; j++) {
     for (int i=il; i<=iu; i++) {
       // Get Boyer-Lindquist coordinates of cell
-      Real r, theta, phi;
+      Real r=0;
+      Real theta=0;
+      Real phi=0;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
                                    &theta, &phi);
 
