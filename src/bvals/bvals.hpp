@@ -87,16 +87,12 @@ constexpr const bool flip_across_pole_field[] = {false, true, true};
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
-struct NeighborBlock { // not aggregate nor POD type
+struct NeighborBlock { // aggregate nor POD type
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
   NeighborConnect type;
   BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-                    fi1(-1), fi2(-1), bufid(-1), eid(-1), targetid(-1),
-                    type(NeighborConnect::none), fid(BoundaryFace::undef), polar(false),
-                    shear(false) {}
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);
