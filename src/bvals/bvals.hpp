@@ -37,6 +37,8 @@ struct RegionSize;
 // free functions to return boundary flag given input string, and vice versa
 BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
+// + confirming that the MeshBlock's boundaries are all valid selections
+void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
@@ -119,8 +121,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
-  // check safety of user's configuration in Mesh::Initialize before SetupPersistentMPI()
-  void CheckBoundary();
+  // final safety checks of user's config in Mesh::Initialize before SetupPersistentMPI()
+  void CheckUserBoundaries();
   void CheckPolarBoundaries();
 
   // variable-length arrays of references to BoundaryVariable instances
@@ -134,8 +136,13 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   int ReserveTagVariableIDs(int num_phys);
 
  private:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BoundaryValues
-  int nface_, nedge_;     // used only in fc/flux_correction_fc.cpp calculations
+  MeshBlock *pmy_block_;      // ptr to MeshBlock containing this BoundaryValues
+  int nface_, nedge_;         // used only in fc/flux_correction_fc.cpp calculations
+
+  // if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
+  // false --> e.g. block, polar, (shear-) periodic boundaries
+  bool apply_bndry_fn_[6]{};   // C++11: in-class initializer of non-static member
+  // C++11: zero initialization of each array entry via direct-list-intitialization
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
@@ -147,8 +154,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
   // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
   int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
-
-  BValFunc BoundaryFunction_[6];
 
   // Shearingbox (shared with Field and Hydro)
   // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.

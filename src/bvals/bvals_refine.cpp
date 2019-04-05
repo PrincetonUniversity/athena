@@ -297,7 +297,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                   si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
   if (nb.ni.ox1 == 0) {
-    if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
       switch(block_bcs[BoundaryFace::inner_x1]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -314,7 +314,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x1](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
           break;
@@ -322,7 +322,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           break;
       }
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
       switch(block_bcs[BoundaryFace::outer_x1]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -339,7 +339,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x1](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
           break;
@@ -349,7 +349,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
   if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
-    if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       switch(block_bcs[BoundaryFace::inner_x2]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -373,7 +373,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x2](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
           break;
@@ -381,7 +381,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           break;
       }
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       switch(block_bcs[BoundaryFace::outer_x2]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -405,7 +405,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x2](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
           break;
@@ -415,7 +415,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
   if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
-    if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       switch(block_bcs[BoundaryFace::inner_x3]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -432,7 +432,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x3](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               si, ei, sj, ej, pmb->cks, pmb->cke, 1);
           break;
@@ -440,7 +440,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           break;
       }
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       switch(block_bcs[BoundaryFace::outer_x3]) {
         case BoundaryFlag::reflect:
           for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -457,7 +457,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
           }
           break;
         case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x3](
+          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3](
               pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
               si, ei, sj, ej, pmb->cks, pmb->cke, 1);
           break;

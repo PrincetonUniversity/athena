@@ -32,9 +32,10 @@
 bool BoundaryBase::called_;
 int BoundaryBase::maxneighbor_;
 // array types: each element is zero-initialized
-NeighborIndexes BoundaryBase::ni[56]; // struct type: zero-initializes each non-static
-// data member (all scalar types, in this case)
 int BoundaryBase::bufid[56];
+// struct type: zero-initializes each non-static data member (this case: all scalar types)
+NeighborIndexes BoundaryBase::ni[56];
+
 
 //----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
