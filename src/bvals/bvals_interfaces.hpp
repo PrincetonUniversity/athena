@@ -104,8 +104,9 @@ struct SimpleNeighborBlock { // aggregate and POD
 //  \brief data to describe MeshBlock neighbors
 
 struct NeighborIndexes { // aggregate and POD
-  int ox1, ox2, ox3; // 3-vector of integer offsets of indices, {-1, 0, +1}
-  int fi1, fi2; // 2-vector for identifying refined neighbors, {0, 1}
+  int ox1, ox2, ox3; // 3-vec of offsets in {-1,0,+1} relative to this block's (i,j,k)
+  int fi1, fi2;      // 2-vec for identifying refined neighbors (up to 4x face neighbors
+                     // in 3D), entries in {0, 1}={smaller, larger} LogicalLcation::lxi
   NeighborConnect type;
   // User-provided ctor is unnecessary and prevents the type from being POD and aggregate.
   // This struct's implicitly-defined or defaulted default ctor is trivial, implying that
@@ -121,11 +122,17 @@ struct NeighborIndexes { // aggregate and POD
 //! \struct NeighborBlock
 //  \brief
 
-struct NeighborBlock : SimpleNeighborBlock, NeighborIndexes { // neither aggregate nor POD
+struct NeighborBlock { // aggregate and POD type. Inheritance breaks standard-layout-> POD
+                       // : SimpleNeighborBlock, NeighborIndexes {
+  // composition:
+  SimpleNeighborBlock snb;
+  NeighborIndexes ni;
+
   int bufid, eid, targetid;
   BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
+
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1, int ifi2);

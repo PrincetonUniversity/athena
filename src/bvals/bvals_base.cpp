@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file bvals_buffer.cpp
-//  \brief utility functions for BoundaryValues buffers
+//! \file bvals_base.cpp
+//  \brief utility functions for BoundaryBase neighbors and buffers
 
 // C headers
 
@@ -47,21 +47,22 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
                                 int iox1, int iox2, int iox3,
                                 NeighborConnect itype, int ibid, int itargetid,
                                 bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
-  rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
-  type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
-  fi1=ifi1; fi2=ifi2;
-  if (type == NeighborConnect::face) {
-    if (ox1 == -1)      fid = BoundaryFace::inner_x1;
-    else if (ox1 == 1)  fid = BoundaryFace::outer_x1;
-    else if (ox2 == -1) fid = BoundaryFace::inner_x2;
-    else if (ox2 == 1)  fid = BoundaryFace::outer_x2;
-    else if (ox3 == -1) fid = BoundaryFace::inner_x3;
-    else if (ox3 == 1)  fid = BoundaryFace::outer_x3;
+  snb.rank=irank; snb.level=ilevel; snb.gid=igid; snb.lid=ilid;
+  ni.ox1=iox1; ni.ox2=iox2; ni.ox3=iox3;
+  ni.type=itype; ni.fi1=ifi1; ni.fi2=ifi2;
+  bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
+  if (ni.type == NeighborConnect::face) {
+    if (ni.ox1 == -1)      fid = BoundaryFace::inner_x1;
+    else if (ni.ox1 == 1)  fid = BoundaryFace::outer_x1;
+    else if (ni.ox2 == -1) fid = BoundaryFace::inner_x2;
+    else if (ni.ox2 == 1)  fid = BoundaryFace::outer_x2;
+    else if (ni.ox3 == -1) fid = BoundaryFace::inner_x3;
+    else if (ni.ox3 == 1)  fid = BoundaryFace::outer_x3;
   }
-  if (type == NeighborConnect::edge) {
-    if (ox3 == 0)      eid = (    (((ox1 + 1) >> 1) | ((ox2 + 1) & 2)));
-    else if (ox2 == 0) eid = (4 + (((ox1 + 1) >> 1) | ((ox3 + 1) & 2)));
-    else if (ox1 == 0) eid = (8 + (((ox2 + 1) >> 1) | ((ox3 + 1) & 2)));
+  if (ni.type == NeighborConnect::edge) {
+    if (ni.ox3 == 0)      eid = (    (((ni.ox1 + 1) >> 1) | ((ni.ox2 + 1) & 2)));
+    else if (ni.ox2 == 0) eid = (4 + (((ni.ox1 + 1) >> 1) | ((ni.ox3 + 1) & 2)));
+    else if (ni.ox1 == 0) eid = (8 + (((ni.ox2 + 1) >> 1) | ((ni.ox3 + 1) & 2)));
   }
   return;
 }
