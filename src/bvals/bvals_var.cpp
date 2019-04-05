@@ -113,7 +113,7 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
   // 2) which element in vector of BoundaryVariable *?
   BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
@@ -126,7 +126,7 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
   // 2) which element in vector of BoundaryVariable *?
   BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],

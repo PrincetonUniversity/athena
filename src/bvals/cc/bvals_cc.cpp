@@ -127,12 +127,12 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
-  si = (nb.ox1 > 0) ? (pmb->ie - NGHOST + 1):pmb->is;
-  ei = (nb.ox1 < 0) ? (pmb->is + NGHOST - 1):pmb->ie;
-  sj = (nb.ox2 > 0) ? (pmb->je - NGHOST + 1):pmb->js;
-  ej = (nb.ox2 < 0) ? (pmb->js + NGHOST - 1):pmb->je;
-  sk = (nb.ox3 > 0) ? (pmb->ke - NGHOST + 1):pmb->ks;
-  ek = (nb.ox3 < 0) ? (pmb->ks + NGHOST - 1):pmb->ke;
+  si = (nb.ni.ox1 > 0) ? (pmb->ie - NGHOST + 1):pmb->is;
+  ei = (nb.ni.ox1 < 0) ? (pmb->is + NGHOST - 1):pmb->ie;
+  sj = (nb.ni.ox2 > 0) ? (pmb->je - NGHOST + 1):pmb->js;
+  ej = (nb.ni.ox2 < 0) ? (pmb->js + NGHOST - 1):pmb->je;
+  sk = (nb.ni.ox3 > 0) ? (pmb->ke - NGHOST + 1):pmb->ks;
+  ek = (nb.ni.ox3 < 0) ? (pmb->ks + NGHOST - 1):pmb->ke;
   int p = 0;
   AthenaArray<Real> &var = *var_cc;
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
@@ -153,12 +153,12 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   int cn = NGHOST - 1;
   AthenaArray<Real> &var = *var_cc;
 
-  si = (nb.ox1 > 0) ? (pmb->cie - cn):pmb->cis;
-  ei = (nb.ox1 < 0) ? (pmb->cis + cn):pmb->cie;
-  sj = (nb.ox2 > 0) ? (pmb->cje - cn):pmb->cjs;
-  ej = (nb.ox2 < 0) ? (pmb->cjs + cn):pmb->cje;
-  sk = (nb.ox3 > 0) ? (pmb->cke - cn):pmb->cks;
-  ek = (nb.ox3 < 0) ? (pmb->cks + cn):pmb->cke;
+  si = (nb.ni.ox1 > 0) ? (pmb->cie - cn):pmb->cis;
+  ei = (nb.ni.ox1 < 0) ? (pmb->cis + cn):pmb->cie;
+  sj = (nb.ni.ox2 > 0) ? (pmb->cje - cn):pmb->cjs;
+  ej = (nb.ni.ox2 < 0) ? (pmb->cjs + cn):pmb->cje;
+  sk = (nb.ni.ox3 > 0) ? (pmb->cke - cn):pmb->cks;
+  ek = (nb.ni.ox3 < 0) ? (pmb->cks + cn):pmb->cke;
 
   int p = 0;
   pmr->RestrictCellCenteredValues(var, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek);
@@ -178,34 +178,34 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_cc;
 
-  si = (nb.ox1 > 0) ? (pmb->ie - cn):pmb->is;
-  ei = (nb.ox1 < 0) ? (pmb->is + cn):pmb->ie;
-  sj = (nb.ox2 > 0) ? (pmb->je - cn):pmb->js;
-  ej = (nb.ox2 < 0) ? (pmb->js + cn):pmb->je;
-  sk = (nb.ox3 > 0) ? (pmb->ke - cn):pmb->ks;
-  ek = (nb.ox3 < 0) ? (pmb->ks + cn):pmb->ke;
+  si = (nb.ni.ox1 > 0) ? (pmb->ie - cn):pmb->is;
+  ei = (nb.ni.ox1 < 0) ? (pmb->is + cn):pmb->ie;
+  sj = (nb.ni.ox2 > 0) ? (pmb->je - cn):pmb->js;
+  ej = (nb.ni.ox2 < 0) ? (pmb->js + cn):pmb->je;
+  sk = (nb.ni.ox3 > 0) ? (pmb->ke - cn):pmb->ks;
+  ek = (nb.ni.ox3 < 0) ? (pmb->ks + cn):pmb->ke;
 
   // send the data first and later prolongate on the target block
   // need to add edges for faces, add corners for edges
-  if (nb.ox1 == 0) {
-    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2-pmb->cnghost;
+  if (nb.ni.ox1 == 0) {
+    if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2-pmb->cnghost;
     else            ei -= pmb->block_size.nx1/2-pmb->cnghost;
   }
-  if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
-    if (nb.ox1 != 0) {
-      if (nb.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+  if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
+    if (nb.ni.ox1 != 0) {
+      if (nb.ni.fi1 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
       else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
     } else {
-      if (nb.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
+      if (nb.ni.fi2 == 1) sj += pmb->block_size.nx2/2-pmb->cnghost;
       else          ej -= pmb->block_size.nx2/2-pmb->cnghost;
     }
   }
-  if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
-    if (nb.ox1 != 0 && nb.ox2 != 0) {
-      if (nb.fi1 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+  if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
+    if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
+      if (nb.ni.fi1 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
       else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
     } else {
-      if (nb.fi2 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
+      if (nb.ni.fi2 == 1) sk += pmb->block_size.nx3/2-pmb->cnghost;
       else          ek -= pmb->block_size.nx3/2-pmb->cnghost;
     }
   }
@@ -226,13 +226,13 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     int ssize;
-    if (nb.level == mylevel)
+    if (nb.snb.level == mylevel)
       ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
-    else if (nb.level<mylevel)
+    else if (nb.snb.level<mylevel)
       ssize = LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid], nb);
     else
       ssize = LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
-    if (nb.rank == Globals::my_rank) {  // on the same process
+    if (nb.snb.rank == Globals::my_rank) {  // on the same process
       CopyVariableBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
@@ -254,14 +254,14 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_cc;
 
-  if (nb.ox1 == 0)     si = pmb->is,        ei = pmb->ie;
-  else if (nb.ox1 > 0) si = pmb->ie+1,      ei = pmb->ie+NGHOST;
+  if (nb.ni.ox1 == 0)     si = pmb->is,        ei = pmb->ie;
+  else if (nb.ni.ox1 > 0) si = pmb->ie+1,      ei = pmb->ie+NGHOST;
   else              si = pmb->is-NGHOST, ei = pmb->is-1;
-  if (nb.ox2 == 0)     sj = pmb->js,        ej = pmb->je;
-  else if (nb.ox2 > 0) sj = pmb->je+1,      ej = pmb->je+NGHOST;
+  if (nb.ni.ox2 == 0)     sj = pmb->js,        ej = pmb->je;
+  else if (nb.ni.ox2 > 0) sj = pmb->je+1,      ej = pmb->je+NGHOST;
   else              sj = pmb->js-NGHOST, ej = pmb->js-1;
-  if (nb.ox3 == 0)     sk = pmb->ks,        ek = pmb->ke;
-  else if (nb.ox3 > 0) sk = pmb->ke+1,      ek = pmb->ke+NGHOST;
+  if (nb.ni.ox3 == 0)     sk = pmb->ks,        ek = pmb->ke;
+  else if (nb.ni.ox3 > 0) sk = pmb->ke+1,      ek = pmb->ke+NGHOST;
   else              sk = pmb->ks-NGHOST, ek = pmb->ks-1;
 
   int p = 0;
@@ -288,7 +288,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   //     int level = pmb->loc.level - pmy_mesh_->root_level;
   //     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
   //     Real qomL = qshear_*Omega_0_*x1size_;
-  //     if ((pmb->loc.lx1 == 0) && (nb.ox1 < 0)) {
+  //     if ((pmb->loc.lx1 == 0) && (nb.ni.ox1 < 0)) {
   //       for (int k=sk; k<=ek; ++k) {
   //         for (int j=sj; j<=ej; ++j) {
   //           for (int i=si; i<=ei; ++i) {
@@ -301,7 +301,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   //         }
   //       }
   //     } // inner boundary
-  //     if ((pmb->loc.lx1 == (nrbx1-1)) && (nb.ox1 > 0)) {
+  //     if ((pmb->loc.lx1 == (nrbx1-1)) && (nb.ni.ox1 > 0)) {
   //       for (int k=sk; k<=ek; ++k) {
   //         for (int j=sj; j<=ej; ++j) {
   //           for (int i=si; i<=ei; ++i) {
@@ -330,33 +330,33 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   int si, sj, sk, ei, ej, ek;
   int cng = pmb->cnghost;
 
-  if (nb.ox1 == 0) {
+  if (nb.ni.ox1 == 0) {
     si = pmb->cis, ei = pmb->cie;
     if ((pmb->loc.lx1 & 1LL) == 0LL) ei += cng;
     else                             si -= cng;
-  } else if (nb.ox1 > 0)  {
+  } else if (nb.ni.ox1 > 0)  {
     si = pmb->cie+1,   ei = pmb->cie + cng;
   } else {
     si = pmb->cis-cng, ei = pmb->cis-1;
   }
-  if (nb.ox2 == 0) {
+  if (nb.ni.ox2 == 0) {
     sj = pmb->cjs, ej = pmb->cje;
     if (pmb->block_size.nx2 > 1) {
       if ((pmb->loc.lx2 & 1LL) == 0LL) ej += cng;
       else                             sj -= cng;
     }
-  } else if (nb.ox2 > 0) {
+  } else if (nb.ni.ox2 > 0) {
     sj = pmb->cje+1,   ej = pmb->cje + cng;
   } else {
     sj = pmb->cjs-cng, ej = pmb->cjs-1;
   }
-  if (nb.ox3 == 0) {
+  if (nb.ni.ox3 == 0) {
     sk = pmb->cks, ek = pmb->cke;
     if (pmb->block_size.nx3 > 1) {
       if ((pmb->loc.lx3 & 1LL) == 0LL) ek += cng;
       else                             sk -= cng;
     }
-  } else if (nb.ox3 > 0)  {
+  } else if (nb.ni.ox3 > 0)  {
     sk = pmb->cke+1,   ek = pmb->cke + cng;
   } else {
     sk = pmb->cks-cng, ek = pmb->cks-1;
@@ -394,43 +394,43 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
 
-  if (nb.ox1 == 0) {
+  if (nb.ni.ox1 == 0) {
     si = pmb->is, ei = pmb->ie;
-    if (nb.fi1 == 1)   si += pmb->block_size.nx1/2;
+    if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;
     else            ei -= pmb->block_size.nx1/2;
-  } else if (nb.ox1 > 0) {
+  } else if (nb.ni.ox1 > 0) {
     si = pmb->ie+1,      ei = pmb->ie+NGHOST;
   } else {
     si = pmb->is-NGHOST, ei = pmb->is-1;
   }
-  if (nb.ox2 == 0) {
+  if (nb.ni.ox2 == 0) {
     sj = pmb->js, ej = pmb->je;
     if (pmb->block_size.nx2 > 1) {
-      if (nb.ox1 != 0) {
-        if (nb.fi1 == 1) sj += pmb->block_size.nx2/2;
+      if (nb.ni.ox1 != 0) {
+        if (nb.ni.fi1 == 1) sj += pmb->block_size.nx2/2;
         else          ej -= pmb->block_size.nx2/2;
       } else {
-        if (nb.fi2 == 1) sj += pmb->block_size.nx2/2;
+        if (nb.ni.fi2 == 1) sj += pmb->block_size.nx2/2;
         else          ej -= pmb->block_size.nx2/2;
       }
     }
-  } else if (nb.ox2 > 0) {
+  } else if (nb.ni.ox2 > 0) {
     sj = pmb->je+1,      ej = pmb->je+NGHOST;
   } else {
     sj = pmb->js-NGHOST, ej = pmb->js-1;
   }
-  if (nb.ox3 == 0) {
+  if (nb.ni.ox3 == 0) {
     sk = pmb->ks, ek = pmb->ke;
     if (pmb->block_size.nx3 > 1) {
-      if (nb.ox1 != 0 && nb.ox2 != 0) {
-        if (nb.fi1 == 1) sk += pmb->block_size.nx3/2;
+      if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
+        if (nb.ni.fi1 == 1) sk += pmb->block_size.nx3/2;
         else          ek -= pmb->block_size.nx3/2;
       } else {
-        if (nb.fi2 == 1) sk += pmb->block_size.nx3/2;
+        if (nb.ni.fi2 == 1) sk += pmb->block_size.nx3/2;
         else          ek -= pmb->block_size.nx3/2;
       }
     }
-  } else if (nb.ox3 > 0) {
+  } else if (nb.ni.ox3 > 0) {
     sk = pmb->ke+1,      ek = pmb->ke+NGHOST;
   } else {
     sk = pmb->ks-NGHOST, ek = pmb->ks-1;
@@ -466,7 +466,7 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::arrived) continue;
     if (bd_var_.flag[nb.bufid] == BoundaryStatus::waiting) {
-      if (nb.rank == Globals::my_rank) {  // on the same process
+      if (nb.snb.rank == Globals::my_rank) {  // on the same process
         bflag = false;
         continue;
       }
@@ -496,9 +496,9 @@ void CellCenteredBoundaryVariable::SetBoundaries() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.level == pmb->loc.level)
+    if (nb.snb.level == pmb->loc.level)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.level < pmb->loc.level) // only sets the prolongation buffer
+    else if (nb.snb.level < pmb->loc.level) // only sets the prolongation buffer
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -522,12 +522,12 @@ void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
-    if (nb.rank != Globals::my_rank)
+    if (nb.snb.rank != Globals::my_rank)
       MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
-    if (nb.level == pmb->loc.level)
+    if (nb.snb.level == pmb->loc.level)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.level < pmb->loc.level)
+    else if (nb.snb.level < pmb->loc.level)
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -603,44 +603,44 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   // Initialize non-polar neighbor communications to other ranks
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.rank != Globals::my_rank) {
-      if (nb.level == mylevel) { // same
-        ssize = rsize = ((nb.ox1 == 0)?pmb->block_size.nx1:NGHOST)
-              *((nb.ox2 == 0)?pmb->block_size.nx2:NGHOST)
-              *((nb.ox3 == 0)?pmb->block_size.nx3:NGHOST);
-      } else if (nb.level<mylevel) { // coarser
-        ssize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-              *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-              *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        rsize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
-              *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
-              *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
+    if (nb.snb.rank != Globals::my_rank) {
+      if (nb.snb.level == mylevel) { // same
+        ssize = rsize = ((nb.ni.ox1 == 0)?pmb->block_size.nx1:NGHOST)
+              *((nb.ni.ox2 == 0)?pmb->block_size.nx2:NGHOST)
+              *((nb.ni.ox3 == 0)?pmb->block_size.nx3:NGHOST);
+      } else if (nb.snb.level<mylevel) { // coarser
+        ssize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+        rsize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
+              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
+              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
       } else { // finer
-        ssize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
-              *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
-              *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
-        rsize = ((nb.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-              *((nb.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-              *((nb.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
+        ssize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2 + cng1):cng1)
+              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2):cng2)
+              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3):cng3);
+        rsize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
       }
       ssize *= (nu_+1); rsize *= (nu_+1);
       // specify the offsets in the view point of the target block: flip ox? signs
 
       // Initialize persistent communication requests attached to specific BoundaryData
       // cell-centered hydro: bd_hydro_
-      tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_phys_id_);
+      tag=pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_phys_id_);
       if (bd_var_.req_send[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
       MPI_Send_init(bd_var_.send[nb.bufid], ssize, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid]));
+                    nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid]));
       tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_phys_id_);
       if (bd_var_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_var_.recv[nb.bufid], rsize, MPI_ATHENA_REAL,
-                    nb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
+                    nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel == true && nb.type == NeighborConnect::face) {
+      if (pmy_mesh_->multilevel == true && nb.ni.type == NeighborConnect::face) {
         int size;
         if (nb.fid == 0 || nb.fid == 1)
           size = ((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
@@ -649,19 +649,19 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
         else // (nb.fid == 4 || nb.fid == 5)
           size = ((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size *= (nu_+1);
-        if (nb.level<mylevel) { // send to coarser
-          tag=pbval_->CreateBvalsMPITag(nb.lid, nb.targetid, cc_flx_phys_id_);
+        if (nb.snb.level<mylevel) { // send to coarser
+          tag=pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.rank, tag, MPI_COMM_WORLD,
+                        nb.snb.rank, tag, MPI_COMM_WORLD,
                         &(bd_var_flcor_.req_send[nb.bufid]));
-        } else if (nb.level>mylevel) { // receive from finer
+        } else if (nb.snb.level>mylevel) { // receive from finer
           tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.rank, tag, MPI_COMM_WORLD,
+                        nb.snb.rank, tag, MPI_COMM_WORLD,
                         &(bd_var_flcor_.req_recv[nb.bufid]));
         }
       }
@@ -677,10 +677,10 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.rank != Globals::my_rank) {
+    if (nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (phase == BoundaryCommSubset::all && nb.type == NeighborConnect::face
-          && nb.level > mylevel) // opposite condition in ClearBoundary()
+      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
+          && nb.snb.level > mylevel) // opposite condition in ClearBoundary()
         MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
     }
   }
@@ -692,16 +692,16 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-    if (nb.type == NeighborConnect::face)
+    if (nb.ni.type == NeighborConnect::face)
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     MeshBlock *pmb = pmy_block_;
     int mylevel = pmb->loc.level;
-    if (nb.rank != Globals::my_rank) {
+    if (nb.snb.rank != Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
-      if (phase == BoundaryCommSubset::all && nb.type == NeighborConnect::face
-          && nb.level < mylevel)
+      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
+          && nb.snb.level < mylevel)
         MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
     }
 #endif
