@@ -81,3 +81,53 @@ std::string GetBoundaryString(BoundaryFlag input_flag) {
     ATHENA_ERROR(msg);
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir)
+//  \brief Called in each MeshBlock's BoundaryValues() constructor. Mesh() ctor only
+//  checks the validity of user's input mesh/ixn_bc, oxn_bc string values corresponding to
+//  a BoundaryFlag enumerator before passing it to a MeshBlock and then BoundaryBase
+//  object. However, not all BoundaryFlag enumerators can be used in all directions as a
+//  valid MeshBlock boundary.
+
+void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir) {
+  std::stringstream msg;
+  msg << "### FATAL ERROR in CheckBoundaryFlag" << std::endl
+      << "Attempting to set invalid MeshBlock boundary= " << GetBoundaryString(block_flag)
+      << "\nin x" << dir+1 << " direction" << std::endl;
+  switch(dir) {
+    case CoordinateDirection::X1DIR:
+      switch(block_flag) {
+        case BoundaryFlag::polar:
+        case BoundaryFlag::polar_wedge:
+        case BoundaryFlag::undef:
+          ATHENA_ERROR(msg);
+          break;
+        default:
+          break;
+      }
+      break;
+    case CoordinateDirection::X2DIR:
+      switch(block_flag) {
+        case BoundaryFlag::shear_periodic:
+        case BoundaryFlag::undef:
+          ATHENA_ERROR(msg);
+          break;
+        default:
+          break;
+      }
+      break;
+    case CoordinateDirection::X3DIR:
+      switch(block_flag) {
+        case BoundaryFlag::polar:
+        case BoundaryFlag::polar_wedge:
+        case BoundaryFlag::shear_periodic:
+        case BoundaryFlag::undef:
+          ATHENA_ERROR(msg);
+          break;
+        default:
+          break;
+      }
+  }
+  return;
+}
