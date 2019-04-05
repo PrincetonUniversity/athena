@@ -1412,102 +1412,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
         }
-      }
+      } // multilevel
 
-      // begin fourth-order correction of midpoint initial condition:
-      // --------------------------
-
-      // correct IC on all MeshBlocks or none; switch cannot be toggled independently
+      // perform fourth-order correction of midpoint initial condition:
+      // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
       bool correct_ic = pmb_array[0]->precon->correct_ic;
-      if (correct_ic == true) {
-#pragma omp for private(pmb, phydro, pfield, pbval)
-        for (int nb=0; nb<nmb; ++nb) {
-          pmb = pmb_array[nb];
-          phydro = pmb->phydro;
-          pfield = pmb->pfield;
-          pbval = pmb->pbval;
-
-          // Assume cell-centered analytic value is computed at all real cells, and ghost
-          // cells with the cell-centered U have been exchanged
-          int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
-              kl = pmb->ks, ku = pmb->ke;
-
-          // Laplacian of cell-averaged conserved variables
-          AthenaArray<Real> delta_cons_;
-
-          // Allocate memory for 4D Laplacian
-          int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-          int ncells2 = 1, ncells3 = 1;
-          if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-          if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
-          int ncells4 = NHYDRO;
-          int nl = 0;
-          int nu = ncells4-1;
-          delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
-
-          // Compute and store Laplacian of cell-averaged conserved variables
-          pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
-          // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-          // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
-          Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
-          Real C = (h*h)/24.0;
-
-          // Compute fourth-order approximation to cell-centered conserved variables
-          for (int n=nl; n<=nu; ++n) {
-            for (int k=kl; k<=ku; ++k) {
-              for (int j=jl; j<=ju; ++j) {
-                for (int i=il; i<=iu; ++i) {
-                  // We do not actually need to store all cell-centered cons. variables,
-                  // but the ConservedToPrimitivePointwise() implementation operates on 4D
-                  phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
-                }
-              }
-            }
-          }
-          delta_cons_.DeleteAthenaArray();
-        }
-
-        // begin second exchange of ghost cells with corrected cell-averaged <U>
-        // -----------------  (mostly copied from above)
-        // prepare to receive conserved variables
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          // no need to re-SetupPersistentMPI() the MPI requests for boundary values
-          pbval->StartReceiving(BoundaryCommSubset::mesh_init);
-        }
-
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
-          pmb->phydro->phbval->SendBoundaryBuffers();
-          if (MAGNETIC_FIELDS_ENABLED)
-            pmb->pfield->pfbval->SendBoundaryBuffers();
-        }
-
-        // wait to receive conserved variables
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
-          pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
-          if (MAGNETIC_FIELDS_ENABLED)
-            pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
-          // KGF: disable shearing box bvals/ calls
-          // send and receive shearingbox boundary conditions
-          // if (SHEARING_BOX)
-          //   pmb->phydro->phbval->
-          //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-          pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
-        }
-        // -----------------  (verbatim copied from above)
-        // end second exchange of ghost cells
-      } // end if (correct_ic == true)
-      // --------------------------
-      // end fourth-order correction of midpoint initial condition
+      if (correct_ic == true)
+        CorrectMidpointInitialCondition(pmb_array, nmb);
 
       // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
@@ -1772,5 +1683,94 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   block_size.x2rat = mesh_size.x2rat;
   block_size.x3rat = mesh_size.x3rat;
 
+  return;
+}
+
+
+void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
+  MeshBlock *pmb;
+  Hydro *phydro;
+#pragma omp for private(pmb, phydro)
+  for (int nb=0; nb<nmb; ++nb) {
+    pmb = pmb_array[nb];
+    phydro = pmb->phydro;
+
+    // Assume cell-centered analytic value is computed at all real cells, and ghost
+    // cells with the cell-centered U have been exchanged
+    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+        kl = pmb->ks, ku = pmb->ke;
+
+    // Laplacian of cell-averaged conserved variables
+    AthenaArray<Real> delta_cons_;
+
+    // Allocate memory for 4D Laplacian
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    int ncells2 = 1, ncells3 = 1;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+    int ncells4 = NHYDRO;
+    int nl = 0;
+    int nu = ncells4-1;
+    delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+
+    // Compute and store Laplacian of cell-averaged conserved variables
+    pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+    // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+    // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
+    Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+    Real C = (h*h)/24.0;
+
+    // Compute fourth-order approximation to cell-centered conserved variables
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
+            // We do not actually need to store all cell-centered cons. variables,
+            // but the ConservedToPrimitivePointwise() implementation operates on 4D
+            phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
+          }
+        }
+      }
+    }
+    delta_cons_.DeleteAthenaArray();
+  }
+
+  // begin second exchange of ghost cells with corrected cell-averaged <U>
+  // -----------------  (mostly copied from above section in Mesh::Initialize())
+  BoundaryValues *pbval;
+  // prepare to receive conserved variables
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i]; pbval = pmb->pbval;
+    // no need to re-SetupPersistentMPI() the MPI requests for boundary values
+    pbval->StartReceiving(BoundaryCommSubset::mesh_init);
+  }
+
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i];
+    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+                                           HydroBoundaryQuantity::cons);
+    pmb->phydro->phbval->SendBoundaryBuffers();
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmb->pfield->pfbval->SendBoundaryBuffers();
+  }
+
+  // wait to receive conserved variables
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i]; pbval = pmb->pbval;
+    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+                                           HydroBoundaryQuantity::cons);
+    pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+    // KGF: disable shearing box bvals/ calls
+    // send and receive shearingbox boundary conditions
+    // if (SHEARING_BOX)
+    //   pmb->phydro->phbval->
+    //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+    pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
+  } // end second exchange of ghost cells
   return;
 }

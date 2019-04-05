@@ -1364,8 +1364,8 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       }
     } // neighbor block is on separate MPI process
   } // end loop over neighbors
-  // Initialize polar neighbor communications to other ranks
 
+  // Initialize polar neighbor communications to other ranks
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
     const SimpleNeighborBlock &snb = pbval_->polar_neighbor_north_[n];
     if (snb.rank != Globals::my_rank) {

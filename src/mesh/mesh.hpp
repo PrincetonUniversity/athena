@@ -15,6 +15,7 @@
 // C++ headers
 #include <cstdint>  // int64_t
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -174,6 +175,7 @@ class Mesh {
 #endif
 
  public:
+  // 2x function overloads of ctor: normal and restarted simulation
   explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
@@ -269,6 +271,7 @@ class Mesh {
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+  void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
 
   // Mesh::AdaptiveMeshRefinement() helper functions:
   // step 6: send
