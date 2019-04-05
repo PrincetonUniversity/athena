@@ -95,7 +95,7 @@ struct NeighborBlock { // aggregate nor POD type
   bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
-                   bool ipolar, bool ishear, int ifi1, int ifi2);
+                   bool ipolar, bool ishear, int ifi1=0, int ifi2=0);
 };
 
 //----------------------------------------------------------------------------------------
