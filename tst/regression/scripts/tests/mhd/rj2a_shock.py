@@ -28,9 +28,11 @@ def prepare(**kwargs):
             _fluxes = [tmp[1]]
     for flux in _fluxes:
         athena.configure('b', prob='shock_tube', coord='cartesian', flux=flux, **kwargs)
-        athena.make()
+        # to save time, reuse compiled .o files for all executables created in this test:
+        athena.make(clean_first=False)
         move(_exec, _exec + '_' + flux)
-        os.system('mv obj obj_' + flux)
+        os.system('cp obj obj_' + flux)
+    os.system('rm -rf obj')
 
 
 # Run Athena++

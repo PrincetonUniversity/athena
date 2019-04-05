@@ -55,14 +55,12 @@ class FieldDiffusion;
 //! \struct LogicalLocation
 //  \brief stores logical location and level of MeshBlock
 
-struct LogicalLocation {
+struct LogicalLocation { // aggregate and POD type
   // These values can exceed the range of std::int32_t even if the root grid has only a
   // single MeshBlock if >30 levels of AMR are used, since the corresponding max index =
   // 1*2^31 > INT_MAX = 2^31 -1 for most 32-bit signed integer type impelementations
   std::int64_t lx1, lx2, lx3;
   int level;
-
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll) {

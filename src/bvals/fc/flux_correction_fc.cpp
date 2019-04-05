@@ -1229,9 +1229,9 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
         i = pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       for (int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i)=0.0;
@@ -1244,24 +1244,24 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
         i = pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int j=pmb->js; j<=pmb->je; j++)
-        e2(k,j,i)=0.0;
+        e2(k,j,i) = 0.0;
       // x2x3 edge
-    } else if (n>=8 && n<12) {
+    } else if (n >= 8 && n < 12) {
       int k, j;
       if ((n & 1) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i)=0.0;
@@ -1315,12 +1315,12 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
-          int k=pmb->ks+pmb->block_size.nx3/2;
+          int k = pmb->ks+pmb->block_size.nx3/2;
           for (int j=pmb->js; j<=pmb->je; j++)
             e2(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
-          int j=pmb->js + pmb->block_size.nx2/2;
+          int j = pmb->js + pmb->block_size.nx2/2;
           for (int k=pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i) *= 0.5;
         }
@@ -1329,9 +1329,9 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
     if (n == BoundaryFace::inner_x2 || n == BoundaryFace::outer_x2) {
       int j;
       if (n == BoundaryFace::inner_x2) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       nl = pbval_->nblevel[1][2*n-4][1];
       if (nl == pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -1352,13 +1352,13 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
-          int k=pmb->ks+pmb->block_size.nx3/2;
+          int k = pmb->ks+pmb->block_size.nx3/2;
           for (int i=pmb->is; i<=pmb->ie; i++)
             e1(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int i = pmb->is+pmb->block_size.nx1/2;
-          for (int k=pmb->ks; k<=pmb->ke; k++)
+          for (int k = pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i) *= 0.5;
         }
       }
@@ -1366,9 +1366,9 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
     if (n == BoundaryFace::inner_x3 || n == BoundaryFace::outer_x3) {
       int k;
       if (n == BoundaryFace::inner_x3) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       nl = pbval_->nblevel[2*n-8][1][1];
       if (nl == pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -1380,66 +1380,71 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
           for (int i=pmb->is+1; i<=pmb->ie; i++)
             e2(k,j,i) *= 0.5;
         }
-      } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
+      } else if (nl > pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
-        int j = pmb->js + pmb->block_size.nx2/2;
+        int j_fine = pmb->js + pmb->block_size.nx2/2;
         for (int i=pmb->is; i<=pmb->ie; i++)
-          e1(k,j,i) *= 0.5;
-        int i=pmb->is+pmb->block_size.nx1/2;
+          e1(k,j_fine,i) *= 0.5;
+        int i_fine = pmb->is +pmb->block_size.nx1/2;
         for (int j=pmb->js; j<=pmb->je; j++)
-          e2(k,j,i) *= 0.5;
+          e2(k,j,i_fine) *= 0.5;
       }
     }
   }
   // edge
   for (int n=0; n<pbval_->nedge_; n++) {
     if (nedge_fine_[n] == 1) continue;
-    Real div=1.0/static_cast<Real>(nedge_fine_[n]);
-    NeighborBlock& nb=pbval_->neighbor[n+6];
-    Real half_div=div;
-    if (nb.shear) half_div=0.5;
+    Real div = 1.0/static_cast<Real>(nedge_fine_[n]);
+    Real half_div = div;
+    // TODO(felker): rewrite so that it searches neighbor array for S/AMR compatibility
+    if (SHEARING_BOX) { // assumes fixed ordering of neighbor array in non-S/AMR configs
+      NeighborBlock& nb = pbval_->neighbor[n + pbval_->nface_];
+      if (nb.shear) {
+        half_div = 0.5;
+      }
+    }
     // x1x2 edge (both 2D and 3D)
-    if (n>=0 && n<4) {
+    if (n >= 0 && n < 4) {
       int i, j;
       if ((n & 1) == 0) {
-        i = pmb->is;
+        i=pmb->is;
       } else {
-        i = pmb->ie+1;
+        i=pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       for (int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i) *= half_div;
       // x1x3 edge
-    } else if (n>=4 && n<8) {
+    } else if (n >= 4 && n < 8) {
       int i, k;
       if ((n & 1) == 0) {
-        i = pmb->is;
+        i=pmb->is;
       } else {
-        i = pmb->ie+1;
+        i=pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int j=pmb->js; j<=pmb->je; j++)
         e2(k,j,i) *= half_div;
       // x2x3 edge
-    } else if (n>=8 && n<12) {
+    } else if (n >= 8 && n < 12) {
       int j, k;
       if ((n & 1) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i) *= div;
@@ -1456,11 +1461,11 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-    AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+    AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
+    AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
     if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
-      int j=pmb->js;
+      int j = pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
@@ -1483,7 +1488,7 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
 
     if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
-      int j=pmb->je+1;
+      int j = pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
@@ -1514,8 +1519,8 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
 //  \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
 
 bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
-  MeshBlock *pmb=pmy_block_;
-  bool flag=true;
+  MeshBlock *pmb = pmy_block_;
+  bool flag = true;
 
   // Receive same-level non-polar EMF values
   if (recv_flx_same_lvl_ == true) {
@@ -1528,7 +1533,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
           if (nb.rank == Globals::my_rank) { // on the same process
-            flag=false;
+            flag = false;
             continue;
           }
 #ifdef MPI_PARALLEL
@@ -1538,7 +1543,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
                        MPI_STATUS_IGNORE);
             MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
             if (static_cast<bool>(test) == false) {
-              flag=false;
+              flag = false;
               continue;
             }
             bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
@@ -1565,7 +1570,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
         if (nb.rank == Globals::my_rank) {// on the same process
-          flag=false;
+          flag = false;
           continue;
         }
 #ifdef MPI_PARALLEL
@@ -1575,7 +1580,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
                      MPI_STATUS_IGNORE);
           MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flag=false;
+            flag = false;
             continue;
           }
           bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
