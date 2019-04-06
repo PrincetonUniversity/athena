@@ -1263,31 +1263,31 @@ void BoundaryValues::AverageEMFBoundary(void) {
         if (pmb->block_size.nx3 > 1) { // 3D
           for (int k=pmb->ks+1; k<=pmb->ke; k++) {
             for (int j=pmb->js; j<=pmb->je; j++)
-              e2(k,j,i)*=0.5;
+              e2(k,j,i) *= 0.5;
           }
           for (int k=pmb->ks; k<=pmb->ke; k++) {
             for (int j=pmb->js+1; j<=pmb->je; j++)
-              e3(k,j,i)*=0.5;
+              e3(k,j,i) *= 0.5;
           }
         } else if (pmb->block_size.nx2 > 1) { // 2D
           for (int j=pmb->js; j<=pmb->je; j++)
-            e2(pmb->ks,j,i)*=0.5, e2(pmb->ks+1,j,i)*=0.5;
+            e2(pmb->ks,j,i) *= 0.5, e2(pmb->ks+1,j,i) *= 0.5;
           for (int j=pmb->js+1; j<=pmb->je; j++)
-            e3(pmb->ks,j,i)*=0.5;
+            e3(pmb->ks,j,i) *= 0.5;
         } else { // 1D
-          e2(pmb->ks,pmb->js,i)*=0.5, e2(pmb->ks+1,pmb->js,i)*=0.5;
-          e3(pmb->ks,pmb->js,i)*=0.5, e3(pmb->ks,pmb->js+1,i)*=0.5;
+          e2(pmb->ks,pmb->js,i) *= 0.5, e2(pmb->ks+1,pmb->js,i) *= 0.5;
+          e3(pmb->ks,pmb->js,i) *= 0.5, e3(pmb->ks,pmb->js+1,i) *= 0.5;
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for (int j=pmb->js; j<=pmb->je; j++)
-            e2(k,j,i)*=0.5;
+            e2(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int j=pmb->js+pmb->block_size.nx2/2;
           for (int k=pmb->ks; k<=pmb->ke; k++)
-            e3(k,j,i)*=0.5;
+            e3(k,j,i) *= 0.5;
         }
       }
     }
@@ -1303,28 +1303,28 @@ void BoundaryValues::AverageEMFBoundary(void) {
         if (pmb->block_size.nx3 > 1) {
           for (int k=pmb->ks+1; k<=pmb->ke; k++) {
             for (int i=pmb->is; i<=pmb->ie; i++)
-              e1(k,j,i)*=0.5;
+              e1(k,j,i) *= 0.5;
           }
           for (int k=pmb->ks; k<=pmb->ke; k++) {
             for (int i=pmb->is+1; i<=pmb->ie; i++)
-              e3(k,j,i)*=0.5;
+              e3(k,j,i) *= 0.5;
           }
         } else if (pmb->block_size.nx2 > 1) {
           for (int i=pmb->is; i<=pmb->ie; i++)
-            e1(pmb->ks,j,i)*=0.5, e1(pmb->ks+1,j,i)*=0.5;
+            e1(pmb->ks,j,i) *= 0.5, e1(pmb->ks+1,j,i) *= 0.5;
           for (int i=pmb->is+1; i<=pmb->ie; i++)
-            e3(pmb->ks,j,i)*=0.5;
+            e3(pmb->ks,j,i) *= 0.5;
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for (int i=pmb->is; i<=pmb->ie; i++)
-            e1(k,j,i)*=0.5;
+            e1(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int i=pmb->is+pmb->block_size.nx1/2;
           for (int k=pmb->ks; k<=pmb->ke; k++)
-            e3(k,j,i)*=0.5;
+            e3(k,j,i) *= 0.5;
         }
       }
     }
@@ -1339,75 +1339,80 @@ void BoundaryValues::AverageEMFBoundary(void) {
       if (nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
         for (int j=pmb->js+1; j<=pmb->je; j++) {
           for (int i=pmb->is; i<=pmb->ie; i++)
-            e1(k,j,i)*=0.5;
+            e1(k,j,i) *= 0.5;
         }
         for (int j=pmb->js; j<=pmb->je; j++) {
           for (int i=pmb->is+1; i<=pmb->ie; i++)
-            e2(k,j,i)*=0.5;
+            e2(k,j,i) *= 0.5;
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
-        int j=pmb->js+pmb->block_size.nx2/2;
+        int j_fine = pmb->js + pmb->block_size.nx2/2;
         for (int i=pmb->is; i<=pmb->ie; i++)
-          e1(k,j,i)*=0.5;
-        int i=pmb->is+pmb->block_size.nx1/2;
+          e1(k,j_fine,i) *= 0.5;
+        int i_fine = pmb->is +pmb->block_size.nx1/2;
         for (int j=pmb->js; j<=pmb->je; j++)
-          e2(k,j,i)*=0.5;
+          e2(k,j,i_fine) *= 0.5;
       }
     }
   }
   // edge
   for (int n=0; n<nedge_; n++) {
-    if (nedge_fine_[n]==1) continue;
-    Real div=1.0/static_cast<Real>(nedge_fine_[n]);
-    NeighborBlock& nb=neighbor[n+6];
-    Real half_div=div;
-    if (nb.shear) half_div=0.5;
+    if (nedge_fine_[n] == 1) continue;
+    Real div = 1.0/static_cast<Real>(nedge_fine_[n]);
+    Real half_div = div;
+    // TODO(felker): rewrite so that it searches neighbor array for S/AMR compatibility
+    if (SHEARING_BOX) { // assumes fixed ordering of neighbor array in non-S/AMR configs
+      NeighborBlock& nb = neighbor[n+nface_];
+      if (nb.shear) {
+        half_div = 0.5;
+      }
+    }
     // x1x2 edge (both 2D and 3D)
-    if (n>=0 && n<4) {
+    if (n >= 0 && n < 4) {
       int i, j;
-      if ((n & 1)==0) {
+      if ((n & 1) == 0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n & 2)==0) {
+      if ((n & 2) == 0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
       for (int k=pmb->ks; k<=pmb->ke; k++)
-        e3(k,j,i)*=half_div;
+        e3(k,j,i) *= half_div;
       // x1x3 edge
-    } else if (n>=4 && n<8) {
+    } else if (n >= 4 && n < 8) {
       int i, k;
-      if ((n & 1)==0) {
+      if ((n & 1) == 0) {
         i=pmb->is;
       } else {
         i=pmb->ie+1;
       }
-      if ((n & 2)==0) {
+      if ((n & 2) == 0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
       }
       for (int j=pmb->js; j<=pmb->je; j++)
-        e2(k,j,i)*=half_div;
+        e2(k,j,i) *= half_div;
       // x2x3 edge
-    } else if (n>=8 && n<12) {
+    } else if (n >= 8 && n < 12) {
       int j, k;
-      if ((n & 1)==0) {
+      if ((n & 1) == 0) {
         j=pmb->js;
       } else {
         j=pmb->je+1;
       }
-      if ((n & 2)==0) {
+      if ((n & 2) == 0) {
         k=pmb->ks;
       } else {
         k=pmb->ke+1;
       }
       for (int i=pmb->is; i<=pmb->ie; i++)
-        e1(k,j,i)*=div;
+        e1(k,j,i) *= div;
     }
   }
   return;

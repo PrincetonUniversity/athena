@@ -46,7 +46,10 @@ int BoundaryBase::bufid[56];
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
                                 int iox1, int iox2, int iox3,
                                 NeighborConnect itype, int ibid, int itargetid,
-                                bool ipolar, bool ishear, int ifi1=0, int ifi2=0) {
+                                bool ipolar, bool ishear,
+                                int ifi1,  // =0
+                                int ifi2   // =0
+                                ) {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
   type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; shear=ishear;
   fi1=ifi1; fi2=ifi2;
