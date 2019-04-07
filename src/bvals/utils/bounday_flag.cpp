@@ -41,6 +41,8 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
     return BoundaryFlag::polar_wedge;
   } else if (input_string == "none") {
     return BoundaryFlag::undef;
+  } else if (input_string == "block") {
+    return BoundaryFlag::block;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
@@ -71,8 +73,10 @@ std::string GetBoundaryString(BoundaryFlag input_flag) {
     return "polar";
   } else if (input_flag == BoundaryFlag::polar_wedge) {
     return "polar_wedge";
-  } else if (input_flag == BoundaryFlag::undef) {
+  } else if (input_flag == BoundaryFlag::undef) {  // 0
     return "none";
+  } else if (input_flag == BoundaryFlag::block) {  // -1
+    return "block";
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetBoundaryString" << std::endl
