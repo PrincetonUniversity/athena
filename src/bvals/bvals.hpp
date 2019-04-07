@@ -98,6 +98,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
+  // variable-length arrays of references to BoundaryVariable instances
+  // containing all BoundaryVariable instances:
+  std::vector<BoundaryVariable *> bvars;
+  // subset of bvars that are exchanged in the main TimeIntegratorTaskList
+  std::vector<BoundaryVariable *> bvars_main_int;
+
   // inherited functions (interface shared with BoundaryVariable objects):
   // ------
   // called before time-stepper:
@@ -112,24 +118,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // ------
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
   void ProlongateBoundaries(const Real time, const Real dt);
-  // above function wraps the following S/AMR-operations (within a loop over nneighbor):
-  // (the next function is also called within 3x nested loops over nk,nj,ni)
-  void RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk, int nj, int ni);
-  void ApplyPhysicalBoundariesOnCoarseLevel(
-      const NeighborBlock& nb, const Real time, const Real dt,
-      int si, int ei, int sj, int ej, int sk, int ek);
-  void ProlongateGhostCells(const NeighborBlock& nb,
-                            int si, int ei, int sj, int ej, int sk, int ek);
 
-  // final safety checks of user's config in Mesh::Initialize before SetupPersistentMPI()
+  // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
-  void CheckPolarBoundaries();
-
-  // variable-length arrays of references to BoundaryVariable instances
-  // containing all BoundaryVariable instances:
-  std::vector<BoundaryVariable *> bvars;
-  // subset of bvars that are exchanged in the main TimeIntegratorTaskList
-  std::vector<BoundaryVariable *> bvars_main_int;
 
   // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
   // other categories of MPI communication for generating unique MPI_TAGs
@@ -142,7 +133,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
   // false --> e.g. block, polar, (shear-) periodic boundaries
   bool apply_bndry_fn_[6]{};   // C++11: in-class initializer of non-static member
-  // C++11: zero initialization of each array entry via direct-list-intitialization
+  // C++11: direct-list-initialization -> value init of array -> zero init of each scalar
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
@@ -170,6 +161,17 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
   // int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
   // int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+
+  // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
+  // (the next function is also called within 3x nested loops over nk,nj,ni)
+  void RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk, int nj, int ni);
+  void ApplyPhysicalBoundariesOnCoarseLevel(
+      const NeighborBlock& nb, const Real time, const Real dt,
+      int si, int ei, int sj, int ej, int sk, int ek);
+  void ProlongateGhostCells(const NeighborBlock& nb,
+                            int si, int ei, int sj, int ej, int sk, int ek);
+
+  void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   // TODO(KGF): consider removing this friendship designation
