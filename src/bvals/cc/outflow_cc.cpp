@@ -17,14 +17,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX1(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -40,14 +37,11 @@ void CellCenteredBoundaryVariable::OutflowInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX1(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -63,14 +57,11 @@ void CellCenteredBoundaryVariable::OutflowOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX2(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -86,14 +77,11 @@ void CellCenteredBoundaryVariable::OutflowInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX2(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -109,14 +97,11 @@ void CellCenteredBoundaryVariable::OutflowOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX3(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -132,14 +117,11 @@ void CellCenteredBoundaryVariable::OutflowInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX3(
-//          MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-//          int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones
+    Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
