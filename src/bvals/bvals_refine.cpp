@@ -249,7 +249,6 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
   MeshRefinement *pmr = pmb->pmr;
 
   // temporarily hardcode Hydro and Field array access:
