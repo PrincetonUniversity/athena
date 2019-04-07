@@ -59,30 +59,32 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
 //  or diagnostics. Inverse of GetBoundaryFlag().
 
 std::string GetBoundaryString(BoundaryFlag input_flag) {
-  if (input_flag == BoundaryFlag::reflect) {
-    return "reflecting";
-  } else if (input_flag == BoundaryFlag::outflow) {
-    return "outflow";
-  } else if (input_flag == BoundaryFlag::user) {
-    return "user";
-  } else if (input_flag == BoundaryFlag::periodic) {
-    return "periodic";
-  } else if (input_flag == BoundaryFlag::shear_periodic) {
-    return "shear_periodic";
-  } else if (input_flag == BoundaryFlag::polar) {
-    return "polar";
-  } else if (input_flag == BoundaryFlag::polar_wedge) {
-    return "polar_wedge";
-  } else if (input_flag == BoundaryFlag::undef) {  // 0
-    return "none";
-  } else if (input_flag == BoundaryFlag::block) {  // -1
-    return "block";
-  } else {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in GetBoundaryString" << std::endl
-        << "Input enum class BoundaryFlag=" << static_cast<int>(input_flag) << "\n"
-        << "is an invalid boundary type" << std::endl;
-    ATHENA_ERROR(msg);
+  switch (input_flag) {
+    case BoundaryFlag::block:  // -1
+      return "block";
+    case BoundaryFlag::undef:  // 0
+      return "none";
+    case BoundaryFlag::reflect:
+      return "reflecting";
+    case BoundaryFlag::outflow:
+      return "outflow";
+    case BoundaryFlag::user:
+      return "user";
+    case BoundaryFlag::periodic:
+      return "periodic";
+    case BoundaryFlag::polar:
+      return "polar";
+    case BoundaryFlag::polar_wedge:
+      return "polar_wedge";
+    case BoundaryFlag::shear_periodic:
+      return "shear_periodic";
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in GetBoundaryString" << std::endl
+          << "Input enum class BoundaryFlag=" << static_cast<int>(input_flag) << "\n"
+          << "is an invalid boundary type" << std::endl;
+      ATHENA_ERROR(msg);
+      break;
   }
 }
 
