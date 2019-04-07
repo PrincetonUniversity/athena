@@ -17,15 +17,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX1(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX1(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -56,15 +52,11 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX1(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX1(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -95,15 +87,11 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX2(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -134,15 +122,11 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX2(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -173,15 +157,11 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX3(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX3(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -212,15 +192,11 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX3(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         Real time, Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX3(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {

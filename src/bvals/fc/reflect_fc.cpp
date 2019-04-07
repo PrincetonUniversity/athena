@@ -17,15 +17,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX1(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX1(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b1
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -58,16 +54,12 @@ void FaceCenteredBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX1(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX1(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy face-centered magnetic fields into ghost zones, reflecting b1
+    Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
+// copy face-centered magnetic fields into ghost zones, reflecting b1
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -99,15 +91,11 @@ void FaceCenteredBoundaryVariable::ReflectOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX2(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -138,14 +126,11 @@ void FaceCenteredBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX2(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -176,14 +161,11 @@ void FaceCenteredBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX3(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX3(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -214,15 +196,11 @@ void FaceCenteredBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX3(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX3(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
