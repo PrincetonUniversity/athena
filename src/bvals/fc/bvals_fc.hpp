@@ -82,50 +82,36 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   //                   const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
   // BoundaryPhysics:
-  void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
+  void ReflectInnerX1(Real time, Real dt,
+                      int jl, int ju, int kl, int ku, int ngh) override;
+  void ReflectOuterX1(Real time, Real dt,
+                      int jl, int ju, int kl, int ku, int ngh) override;
+  void ReflectInnerX2(Real time, Real dt,
+                      int il, int iu, int kl, int ku, int ngh) override;
+  void ReflectOuterX2(Real time, Real dt,
+                      int il, int iu, int kl, int ku, int ngh) override;
+  void ReflectInnerX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int ngh) override;
+  void ReflectOuterX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int ngh) override;
 
-  void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
-  void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                      int il, int iu, int jl, int ju,
-                      int kl, int ku, int ngh) override;
+  void OutflowInnerX1(Real time, Real dt,
+                      int jl, int ju, int kl, int ku, int ngh) override;
+  void OutflowOuterX1(Real time, Real dt,
+                      int jl, int ju, int kl, int ku, int ngh) override;
+  void OutflowInnerX2(Real time, Real dt,
+                      int il, int iu, int kl, int ku, int ngh) override;
+  void OutflowOuterX2(Real time, Real dt,
+                      int il, int iu, int kl, int ku, int ngh) override;
+  void OutflowInnerX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int ngh) override;
+  void OutflowOuterX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int ngh) override;
 
-  void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                         int il, int iu, int jl,
-                         int ju, int kl, int ku, int ngh) override;
-  void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                         int il, int iu, int jl,
-                         int ju, int kl, int ku, int ngh) override;
+  void PolarWedgeInnerX2(Real time, Real dt,
+                         int il, int iu, int kl, int ku, int ngh) override;
+  void PolarWedgeOuterX2(Real time, Real dt,
+                         int il, int iu, int kl, int ku, int ngh) override;
   //protected:
 
  private:

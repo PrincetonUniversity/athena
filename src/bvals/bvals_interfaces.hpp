@@ -234,51 +234,37 @@ class BoundaryPhysics {
   BoundaryPhysics() {}
   virtual ~BoundaryPhysics() {}
 
-  //-------------- prototypes for all physical/coordinate BC functions -------------------
-  virtual void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
+  //--------- prototypes for all required physical/coordinate BC functions ---------------
+  virtual void ReflectInnerX1(Real time, Real dt,
+                              int jl, int ju, int kl, int ku, int ngh) = 0;
+  virtual void ReflectOuterX1(Real time, Real dt,
+                              int jl, int ju, int kl, int ku, int ngh) = 0;
+  virtual void ReflectInnerX2(Real time, Real dt,
+                              int il, int iu, int kl, int ku, int ngh) = 0;
+  virtual void ReflectOuterX2(Real time, Real dt,
+                              int il, int iu, int kl, int ku, int ngh) = 0;
+  virtual void ReflectInnerX3(Real time, Real dt,
+                              int il, int iu, int jl, int ju, int ngh) = 0;
+  virtual void ReflectOuterX3(Real time, Real dt,
+                              int il, int iu, int jl, int ju, int ngh) = 0;
 
-  virtual void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
-  virtual void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                              int il, int iu, int jl, int ju,
-                              int kl, int ku, int ngh) = 0;
+  virtual void OutflowInnerX1(Real time, Real dt,
+                              int jl, int ju, int kl, int ku, int ngh) = 0;
+  virtual void OutflowOuterX1(Real time, Real dt,
+                              int jl, int ju, int kl, int ku, int ngh) = 0;
+  virtual void OutflowInnerX2(Real time, Real dt,
+                              int il, int iu, int kl, int ku, int ngh) = 0;
+  virtual void OutflowOuterX2(Real time, Real dt,
+                              int il, int iu, int kl, int ku, int ngh) = 0;
+  virtual void OutflowInnerX3(Real time, Real dt,
+                              int il, int iu, int jl, int ju, int ngh) = 0;
+  virtual void OutflowOuterX3(Real time, Real dt,
+                              int il, int iu, int jl, int ju, int ngh) = 0;
 
-  virtual void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 int il, int iu, int jl,
-                                 int ju, int kl, int ku, int ngh) = 0;
-  virtual void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-                                 int il, int iu, int jl,
-                                 int ju, int kl, int ku, int ngh) = 0;
+  virtual void PolarWedgeInnerX2(Real time, Real dt,
+                                 int il, int iu, int kl, int ku, int ngh) = 0;
+  virtual void PolarWedgeOuterX2(Real time, Real dt,
+                                 int il, int iu, int kl, int ku, int ngh) = 0;
 };
 
 //----------------------------------------------------------------------------------------

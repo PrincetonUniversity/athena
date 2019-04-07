@@ -766,28 +766,22 @@ void BoundaryValues::DispatchBoundaryFunctions(
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x1:
-            (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectInnerX1(time, dt, jl, ju, kl, ku, NGHOST);
             break;
           case BoundaryFace::outer_x1:
-            (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectOuterX1(time, dt, jl, ju, kl, ku, NGHOST);
             break;
           case BoundaryFace::inner_x2:
-            (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectInnerX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           case BoundaryFace::outer_x2:
-            (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectOuterX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           case BoundaryFace::inner_x3:
-            (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, NGHOST);
             break;
           case BoundaryFace::outer_x3:
-            (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, NGHOST);
             break;
         }
         break;
@@ -796,28 +790,22 @@ void BoundaryValues::DispatchBoundaryFunctions(
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x1:
-            (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowInnerX1(time, dt, jl, ju, kl, ku, NGHOST);
             break;
           case BoundaryFace::outer_x1:
-            (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowOuterX1(time, dt, jl, ju, kl, ku, NGHOST);
             break;
           case BoundaryFace::inner_x2:
-            (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowInnerX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           case BoundaryFace::outer_x2:
-            (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowOuterX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           case BoundaryFace::inner_x3:
-            (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, NGHOST);
             break;
           case BoundaryFace::outer_x3:
-            (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, il, iu,
-                                        jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, NGHOST);
             break;
         }
         break;
@@ -826,12 +814,10 @@ void BoundaryValues::DispatchBoundaryFunctions(
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x2:
-            (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, il, iu,
-                                           jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           case BoundaryFace::outer_x2:
-            (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, il, iu,
-                                           jl, ju, kl, ku, NGHOST);
+            (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, kl, ku, NGHOST);
             break;
           default:
             std::stringstream msg_polar;
