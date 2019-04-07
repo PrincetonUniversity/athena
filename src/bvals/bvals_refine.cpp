@@ -298,172 +298,38 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
 
   if (nb.ni.ox1 == 0) {
     if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
-      switch(block_bcs[BoundaryFace::inner_x1]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x1);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
-      switch(block_bcs[BoundaryFace::outer_x1]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x1);
     }
   }
   if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
-      switch(block_bcs[BoundaryFace::inner_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, si, ei,
-                                           pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x2);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
-      switch(block_bcs[BoundaryFace::outer_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, si, ei,
-                                           pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x2);
     }
   }
   if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
-      switch(block_bcs[BoundaryFace::inner_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, sj, ej, pmb->cks, pmb->cke, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, sj, ej, pmb->cks, pmb->cke, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x3);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
-      switch(block_bcs[BoundaryFace::outer_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, sj, ej, pmb->cks, pmb->cke, 1);
-          break;
-        default:
-          break;
-      }
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, sj, ej, pmb->cks, pmb->cke, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x3);
     }
   }
   return;
@@ -487,7 +353,6 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   }
   // swap back Hydro refinement quantities:
   pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
-
 
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
   int &mylevel = pmb->loc.level;

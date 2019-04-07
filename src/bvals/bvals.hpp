@@ -171,6 +171,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
+  void DispatchBoundaryFunctions(
+      MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+      int il, int iu, int jl, int ju, int kl, int ku, int ngh,
+      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face);
+
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
