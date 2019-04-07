@@ -74,35 +74,35 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
-                      int jl, int ju, int kl, int ku, int ngh) override;
+                      int il, int jl, int ju, int kl, int ku, int ngh) override;
   void ReflectOuterX1(Real time, Real dt,
-                      int jl, int ju, int kl, int ku, int ngh) override;
+                      int iu, int jl, int ju, int kl, int ku, int ngh) override;
   void ReflectInnerX2(Real time, Real dt,
-                      int il, int iu, int kl, int ku, int ngh) override;
+                      int il, int iu, int jl, int kl, int ku, int ngh) override;
   void ReflectOuterX2(Real time, Real dt,
-                      int il, int iu, int kl, int ku, int ngh) override;
+                      int il, int iu, int ju, int kl, int ku, int ngh) override;
   void ReflectInnerX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ngh) override;
+                      int il, int iu, int jl, int ju, int kl, int ngh) override;
   void ReflectOuterX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ngh) override;
+                      int il, int iu, int jl, int ju, int ku, int ngh) override;
 
   void OutflowInnerX1(Real time, Real dt,
-                      int jl, int ju, int kl, int ku, int ngh) override;
+                      int il, int jl, int ju, int kl, int ku, int ngh) override;
   void OutflowOuterX1(Real time, Real dt,
-                      int jl, int ju, int kl, int ku, int ngh) override;
+                      int iu, int jl, int ju, int kl, int ku, int ngh) override;
   void OutflowInnerX2(Real time, Real dt,
-                      int il, int iu, int kl, int ku, int ngh) override;
+                      int il, int iu, int jl, int kl, int ku, int ngh) override;
   void OutflowOuterX2(Real time, Real dt,
-                      int il, int iu, int kl, int ku, int ngh) override;
+                      int il, int iu, int ju, int kl, int ku, int ngh) override;
   void OutflowInnerX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ngh) override;
+                      int il, int iu, int jl, int ju, int kl, int ngh) override;
   void OutflowOuterX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ngh) override;
+                      int il, int iu, int jl, int ju, int ku, int ngh) override;
 
   void PolarWedgeInnerX2(Real time, Real dt,
-                         int il, int iu, int kl, int ku, int ngh) override;
+                         int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,
-                         int il, int iu, int kl, int ku, int ngh) override;
+                         int il, int iu, int ju, int kl, int ku, int ngh) override;
 
  protected:
   int nl_, nu_;
