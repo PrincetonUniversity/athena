@@ -283,39 +283,39 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   // 2d shearingbox in x-z plane: additional step to shift azimuthal velocity;
-  // if (SHEARING_BOX) {
-  //   if (ShBoxCoord_ == 2) {
-  //     int level = pmb->loc.level - pmy_mesh_->root_level;
-  //     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
-  //     Real qomL = qshear_*Omega_0_*x1size_;
-  //     if ((pmb->loc.lx1 == 0) && (nb.ni.ox1 < 0)) {
-  //       for (int k=sk; k<=ek; ++k) {
-  //         for (int j=sj; j<=ej; ++j) {
-  //           for (int i=si; i<=ei; ++i) {
-  //             if (NON_BAROTROPIC_EOS)
-  //               dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
-  //                                 *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
-  //                                   -SQR(dst(IM3,k,j,i)));
-  //             dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
-  //           }
-  //         }
-  //       }
-  //     } // inner boundary
-  //     if ((pmb->loc.lx1 == (nrbx1-1)) && (nb.ni.ox1 > 0)) {
-  //       for (int k=sk; k<=ek; ++k) {
-  //         for (int j=sj; j<=ej; ++j) {
-  //           for (int i=si; i<=ei; ++i) {
-  //             if (NON_BAROTROPIC_EOS)
-  //               dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
-  //                                 *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
-  //                                   -SQR(dst(IM3,k,j,i)));
-  //             dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
-  //           }
-  //         }
-  //       }
-  //     } // outer boundary
-  //   }
-  // } // end KGF: shearing box in SetBoundarySameLevel
+  if (SHEARING_BOX) {
+    if (ShBoxCoord_ == 2) {
+      int level = pmb->loc.level - pmy_mesh_->root_level;
+      std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
+      Real qomL = qshear_*Omega_0_*x1size_;
+      if ((pmb->loc.lx1 == 0) && (nb.ni.ox1 < 0)) {
+        for (int k=sk; k<=ek; ++k) {
+          for (int j=sj; j<=ej; ++j) {
+            for (int i=si; i<=ei; ++i) {
+              if (NON_BAROTROPIC_EOS)
+                dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                                  *(SQR(dst(IM3,k,j,i)+qomL*dst(IDN,k,j,i))
+                                    -SQR(dst(IM3,k,j,i)));
+              dst(IM3,k,j,i) += qomL*dst(IDN,k,j,i);
+            }
+          }
+        }
+      } // inner boundary
+      if ((pmb->loc.lx1 == (nrbx1-1)) && (nb.ni.ox1 > 0)) {
+        for (int k=sk; k<=ek; ++k) {
+          for (int j=sj; j<=ej; ++j) {
+            for (int i=si; i<=ei; ++i) {
+              if (NON_BAROTROPIC_EOS)
+                dst(IEN,k,j,i) += (0.5/dst(IDN,k,j,i))
+                                  *(SQR(dst(IM3,k,j,i)-qomL*dst(IDN,k,j,i))
+                                    -SQR(dst(IM3,k,j,i)));
+              dst(IM3,k,j,i) -= qomL*dst(IDN,k,j,i);
+            }
+          }
+        }
+      } // outer boundary
+    }
+  } // end KGF: shearing box in SetBoundarySameLevel
   return;
 }
 

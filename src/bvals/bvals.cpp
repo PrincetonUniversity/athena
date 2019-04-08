@@ -105,204 +105,204 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 
   // KGF: BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers
-//   if (SHEARING_BOX) {
-//     Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
-//     qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
-//     ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
-//     x1size_ = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
-//     x2size_ = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
-//     x3size_ = pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min;
-//     int level = pmb->loc.level - pmy_mesh_->root_level;
-//     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
-//     std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
-//     shbb_.outer = false;
-//     shbb_.inner = false;
+  if (SHEARING_BOX) {
+    Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
+    qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
+    ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
+    x1size_ = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
+    x2size_ = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
+    x3size_ = pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min;
+    int level = pmb->loc.level - pmy_mesh_->root_level;
+    std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
+    std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
+    shbb_.outer = false;
+    shbb_.inner = false;
 
-//     if (ShBoxCoord_ == 1) {
-//       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-//       int ncells3 = pmb->block_size.nx3;
-//       if (pmy_mesh_->mesh_size.nx3>1) ncells3 += 2*NGHOST;
-//       ssize_ = NGHOST*ncells3;
+    if (ShBoxCoord_ == 1) {
+      int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+      int ncells3 = pmb->block_size.nx3;
+      if (pmy_mesh_->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+      ssize_ = NGHOST*ncells3;
 
-//       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-//         if (block_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic) {
-//           block_bcs[BoundaryFace::inner_x1] = BoundaryFlag::shear_periodic;
-//           BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
-//         }
-//         shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
-//         flx_inner_hydro_.NewAthenaArray(ncells2);
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           shboxvar_inner_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
-//           shboxvar_inner_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);
-//           shboxvar_inner_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);
-//           flx_inner_field_.x1f.NewAthenaArray(ncells2);
-//           flx_inner_field_.x2f.NewAthenaArray(ncells2+1);
-//           flx_inner_field_.x3f.NewAthenaArray(ncells2);
-//           shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
-//           shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
-//           shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
-//           shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
-//           flx_inner_emf_.x2e.NewAthenaArray(ncells2);
-//           flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
-//         }
-//         shbb_.inner = true;
-//         shbb_.igidlist=new int[nrbx2];
-//         shbb_.ilidlist=new int[nrbx2];
-//         shbb_.irnklist=new int[nrbx2];
-//         shbb_.ilevlist=new int[nrbx2];
-//         // attach corner cells from L/R side
-//         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
-//         int bsize=0, esize=0;
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           // extra cell in azimuth/vertical
-//           bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
-//           // face plus edge for EMF
-//           esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
-//                 +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
-//         }
-//         for (int n=0; n<2; n++) {
-//           send_innerbuf_hydro_[n] = new Real[size];
-//           recv_innerbuf_hydro_[n] = new Real[size];
-//           shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
-//           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
-// #endif
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             send_innerbuf_field_[n] = new Real[bsize];
-//             recv_innerbuf_field_[n] = new Real[bsize];
-//             shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
-//             send_innerbuf_emf_[n] = new Real[esize];
-//             recv_innerbuf_emf_[n] = new Real[esize];
-//             shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             rq_innersend_field_[n] = MPI_REQUEST_NULL;
-//             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
-//             rq_innersend_emf_[n] = MPI_REQUEST_NULL;
-//             rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//         }
-//         size = NGHOST*ssize_*NHYDRO;// corner cells only
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//             bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
-//             esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
-//         }
-//         for (int n=2; n<4; n++) {
-//           send_innerbuf_hydro_[n] = new Real[size];
-//           recv_innerbuf_hydro_[n] = new Real[size];
-//           shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
-//           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
-// #endif
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             send_innerbuf_field_[n] = new Real[bsize];
-//             recv_innerbuf_field_[n] = new Real[bsize];
-//             shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
-//             send_innerbuf_emf_[n] = new Real[esize];
-//             recv_innerbuf_emf_[n] = new Real[esize];
-//             shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             rq_innersend_field_[n] = MPI_REQUEST_NULL;
-//             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
-//             rq_innersend_emf_[n] = MPI_REQUEST_NULL;
-//             rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//         }
-//       }
+      if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+        if (block_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic) {
+          block_bcs[BoundaryFace::inner_x1] = BoundaryFlag::shear_periodic;
+          BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
+        }
+        shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
+        flx_inner_hydro_.NewAthenaArray(ncells2);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          shboxvar_inner_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+          shboxvar_inner_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);
+          shboxvar_inner_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);
+          flx_inner_field_.x1f.NewAthenaArray(ncells2);
+          flx_inner_field_.x2f.NewAthenaArray(ncells2+1);
+          flx_inner_field_.x3f.NewAthenaArray(ncells2);
+          shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
+          shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
+          shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
+          shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
+          flx_inner_emf_.x2e.NewAthenaArray(ncells2);
+          flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
+        }
+        shbb_.inner = true;
+        shbb_.igidlist=new int[nrbx2];
+        shbb_.ilidlist=new int[nrbx2];
+        shbb_.irnklist=new int[nrbx2];
+        shbb_.ilevlist=new int[nrbx2];
+        // attach corner cells from L/R side
+        int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
+        int bsize=0, esize=0;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          // extra cell in azimuth/vertical
+          bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
+          // face plus edge for EMF
+          esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
+                +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
+        }
+        for (int n=0; n<2; n++) {
+          send_innerbuf_hydro_[n] = new Real[size];
+          recv_innerbuf_hydro_[n] = new Real[size];
+          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_innerbuf_field_[n] = new Real[bsize];
+            recv_innerbuf_field_[n] = new Real[bsize];
+            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
+            send_innerbuf_emf_[n] = new Real[esize];
+            recv_innerbuf_emf_[n] = new Real[esize];
+            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            rq_innersend_field_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        size = NGHOST*ssize_*NHYDRO;// corner cells only
+        if (MAGNETIC_FIELDS_ENABLED) {
+            bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
+            esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
+        }
+        for (int n=2; n<4; n++) {
+          send_innerbuf_hydro_[n] = new Real[size];
+          recv_innerbuf_hydro_[n] = new Real[size];
+          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_innerbuf_field_[n] = new Real[bsize];
+            recv_innerbuf_field_[n] = new Real[bsize];
+            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
+            send_innerbuf_emf_[n] = new Real[esize];
+            recv_innerbuf_emf_[n] = new Real[esize];
+            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            rq_innersend_field_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+      }
 
-//       if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
-//         if (block_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic) {
-//           block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::shear_periodic;
-//           BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
-//         }
-//         shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
-//         flx_outer_hydro_.NewAthenaArray(ncells2);
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           shboxvar_outer_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
-//           shboxvar_outer_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);
-//           shboxvar_outer_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);
-//           flx_outer_field_.x1f.NewAthenaArray(ncells2);
-//           flx_outer_field_.x2f.NewAthenaArray(ncells2+1);
-//           flx_outer_field_.x3f.NewAthenaArray(ncells2);
-//           shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
-//           shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
-//           shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
-//           shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
-//           flx_outer_emf_.x2e.NewAthenaArray(ncells2);
-//           flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
-//         }
-//         shbb_.outer = true;
-//         shbb_.ogidlist=new int[nrbx2];
-//         shbb_.olidlist=new int[nrbx2];
-//         shbb_.ornklist=new int[nrbx2];
-//         shbb_.olevlist=new int[nrbx2];
-//         // attach corner cells from L/R side
-//         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
-//         int bsize=0, esize=0;
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           // extra cell in azimuth/vertical
-//           bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
-//           // face plus edge for EMF
-//           esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
-//                 +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
-//         }
-//         for (int n=0; n<2; n++) {
-//           send_outerbuf_hydro_[n] = new Real[size];
-//           recv_outerbuf_hydro_[n] = new Real[size];
-//           shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
-//           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
-// #endif
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             send_outerbuf_field_[n] = new Real[bsize];
-//             recv_outerbuf_field_[n] = new Real[bsize];
-//             shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
-//             send_outerbuf_emf_[n] = new Real[esize];
-//             recv_outerbuf_emf_[n] = new Real[esize];
-//             shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             rq_outersend_field_[n] = MPI_REQUEST_NULL;
-//             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
-//             rq_outersend_emf_[n] = MPI_REQUEST_NULL;
-//             rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//         }
-//         size = NGHOST*ssize_*NHYDRO;// corner cells only
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
-//           esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
-//         }
-//         for (int n=2; n<4; n++) {
-//           send_outerbuf_hydro_[n] = new Real[size];
-//           recv_outerbuf_hydro_[n] = new Real[size];
-//           shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
-//           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
-// #endif
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             send_outerbuf_field_[n] = new Real[bsize];
-//             recv_outerbuf_field_[n] = new Real[bsize];
-//             shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
-//             send_outerbuf_emf_[n] = new Real[esize];
-//             recv_outerbuf_emf_[n] = new Real[esize];
-//             shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             rq_outersend_field_[n] = MPI_REQUEST_NULL;
-//             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
-//             rq_outersend_emf_[n] = MPI_REQUEST_NULL;
-//             rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//         }
-//       }
-//     }
-//   } // end KGF: shearing box in BoundaryValues constructor
+      if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
+        if (block_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic) {
+          block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::shear_periodic;
+          BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
+        }
+        shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
+        flx_outer_hydro_.NewAthenaArray(ncells2);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          shboxvar_outer_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+          shboxvar_outer_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);
+          shboxvar_outer_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);
+          flx_outer_field_.x1f.NewAthenaArray(ncells2);
+          flx_outer_field_.x2f.NewAthenaArray(ncells2+1);
+          flx_outer_field_.x3f.NewAthenaArray(ncells2);
+          shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
+          shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
+          shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);
+          shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);
+          flx_outer_emf_.x2e.NewAthenaArray(ncells2);
+          flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
+        }
+        shbb_.outer = true;
+        shbb_.ogidlist=new int[nrbx2];
+        shbb_.olidlist=new int[nrbx2];
+        shbb_.ornklist=new int[nrbx2];
+        shbb_.olevlist=new int[nrbx2];
+        // attach corner cells from L/R side
+        int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
+        int bsize=0, esize=0;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          // extra cell in azimuth/vertical
+          bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
+          // face plus edge for EMF
+          esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
+                +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
+        }
+        for (int n=0; n<2; n++) {
+          send_outerbuf_hydro_[n] = new Real[size];
+          recv_outerbuf_hydro_[n] = new Real[size];
+          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_outerbuf_field_[n] = new Real[bsize];
+            recv_outerbuf_field_[n] = new Real[bsize];
+            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
+            send_outerbuf_emf_[n] = new Real[esize];
+            recv_outerbuf_emf_[n] = new Real[esize];
+            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            rq_outersend_field_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        size = NGHOST*ssize_*NHYDRO;// corner cells only
+        if (MAGNETIC_FIELDS_ENABLED) {
+          bsize = NGHOST*(ssize_ + NGHOST)*NFIELD;
+          esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
+        }
+        for (int n=2; n<4; n++) {
+          send_outerbuf_hydro_[n] = new Real[size];
+          recv_outerbuf_hydro_[n] = new Real[size];
+          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_outerbuf_field_[n] = new Real[bsize];
+            recv_outerbuf_field_[n] = new Real[bsize];
+            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
+            send_outerbuf_emf_[n] = new Real[esize];
+            recv_outerbuf_emf_[n] = new Real[esize];
+            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            rq_outersend_field_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+      }
+    }
+  } // end KGF: shearing box in BoundaryValues constructor
 }
 
 // destructor
@@ -319,61 +319,61 @@ BoundaryValues::~BoundaryValues() {
     azimuthal_shift_.DeleteAthenaArray();
 
   // KGF: shearing box destructor
-  // if (SHEARING_BOX) {
-  //   int level = pmb->loc.level - pmb->pmy_mesh->root_level;
-  //   std::int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
-  //   if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-  //     shboxvar_inner_hydro_.DeleteAthenaArray();
-  //     flx_inner_hydro_.DeleteAthenaArray();
-  //     for (int n=0; n<4; n++) {
-  //       delete[] send_innerbuf_hydro_[n];
-  //       delete[] recv_innerbuf_hydro_[n];
-  //     }
-  //     if (MAGNETIC_FIELDS_ENABLED) {
-  //       shboxvar_inner_field_.x1f.DeleteAthenaArray();
-  //       shboxvar_inner_field_.x2f.DeleteAthenaArray();
-  //       shboxvar_inner_field_.x3f.DeleteAthenaArray();
-  //       flx_inner_field_.x1f.DeleteAthenaArray();
-  //       flx_inner_field_.x2f.DeleteAthenaArray();
-  //       flx_inner_field_.x3f.DeleteAthenaArray();
-  //       shboxvar_inner_emf_.x2e.DeleteAthenaArray();
-  //       shboxvar_inner_emf_.x3e.DeleteAthenaArray();
-  //       flx_inner_emf_.x2e.DeleteAthenaArray();
-  //       flx_inner_emf_.x3e.DeleteAthenaArray();
-  //       for (int n=0; n<4; n++) {
-  //         delete[] send_innerbuf_field_[n];
-  //         delete[] recv_innerbuf_field_[n];
-  //         delete[] send_innerbuf_emf_[n];
-  //         delete[] recv_innerbuf_emf_[n];
-  //       }
-  //     }
-  //   }
-  //   if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
-  //     shboxvar_outer_hydro_.DeleteAthenaArray();
-  //     flx_outer_hydro_.DeleteAthenaArray();
-  //     for (int n=0; n<4; n++) {
-  //       delete[] send_outerbuf_hydro_[n];
-  //       delete[] recv_outerbuf_hydro_[n];
-  //     }
-  //     if (MAGNETIC_FIELDS_ENABLED) {
-  //       shboxvar_outer_field_.x1f.DeleteAthenaArray();
-  //       shboxvar_outer_field_.x2f.DeleteAthenaArray();
-  //       shboxvar_outer_field_.x3f.DeleteAthenaArray();
-  //       flx_outer_field_.x1f.DeleteAthenaArray();
-  //       flx_outer_field_.x2f.DeleteAthenaArray();
-  //       flx_outer_field_.x3f.DeleteAthenaArray();
-  //       shboxvar_outer_emf_.x2e.DeleteAthenaArray();
-  //       shboxvar_outer_emf_.x3e.DeleteAthenaArray();
-  //       flx_outer_emf_.x2e.DeleteAthenaArray();
-  //       flx_outer_emf_.x3e.DeleteAthenaArray();
-  //       for (int n=0; n<4; n++) {
-  //         delete[] send_outerbuf_field_[n];
-  //         delete[] recv_outerbuf_field_[n];
-  //         delete[] send_outerbuf_emf_[n];
-  //         delete[] recv_outerbuf_emf_[n];
-  //       }
-  //     }
-  //   }
+  if (SHEARING_BOX) {
+    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
+    std::int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
+    if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+      shboxvar_inner_hydro_.DeleteAthenaArray();
+      flx_inner_hydro_.DeleteAthenaArray();
+      for (int n=0; n<4; n++) {
+        delete[] send_innerbuf_hydro_[n];
+        delete[] recv_innerbuf_hydro_[n];
+      }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        shboxvar_inner_field_.x1f.DeleteAthenaArray();
+        shboxvar_inner_field_.x2f.DeleteAthenaArray();
+        shboxvar_inner_field_.x3f.DeleteAthenaArray();
+        flx_inner_field_.x1f.DeleteAthenaArray();
+        flx_inner_field_.x2f.DeleteAthenaArray();
+        flx_inner_field_.x3f.DeleteAthenaArray();
+        shboxvar_inner_emf_.x2e.DeleteAthenaArray();
+        shboxvar_inner_emf_.x3e.DeleteAthenaArray();
+        flx_inner_emf_.x2e.DeleteAthenaArray();
+        flx_inner_emf_.x3e.DeleteAthenaArray();
+        for (int n=0; n<4; n++) {
+          delete[] send_innerbuf_field_[n];
+          delete[] recv_innerbuf_field_[n];
+          delete[] send_innerbuf_emf_[n];
+          delete[] recv_innerbuf_emf_[n];
+        }
+      }
+    }
+    if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
+      shboxvar_outer_hydro_.DeleteAthenaArray();
+      flx_outer_hydro_.DeleteAthenaArray();
+      for (int n=0; n<4; n++) {
+        delete[] send_outerbuf_hydro_[n];
+        delete[] recv_outerbuf_hydro_[n];
+      }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        shboxvar_outer_field_.x1f.DeleteAthenaArray();
+        shboxvar_outer_field_.x2f.DeleteAthenaArray();
+        shboxvar_outer_field_.x3f.DeleteAthenaArray();
+        flx_outer_field_.x1f.DeleteAthenaArray();
+        flx_outer_field_.x2f.DeleteAthenaArray();
+        flx_outer_field_.x3f.DeleteAthenaArray();
+        shboxvar_outer_emf_.x2e.DeleteAthenaArray();
+        shboxvar_outer_emf_.x3e.DeleteAthenaArray();
+        flx_outer_emf_.x2e.DeleteAthenaArray();
+        flx_outer_emf_.x3e.DeleteAthenaArray();
+        for (int n=0; n<4; n++) {
+          delete[] send_outerbuf_field_[n];
+          delete[] recv_outerbuf_field_[n];
+          delete[] send_outerbuf_emf_[n];
+          delete[] recv_outerbuf_emf_[n];
+        }
+      }
+    }
   // } // KGF: end shearing box handling in destructor
 }
 
@@ -389,43 +389,43 @@ void BoundaryValues::SetupPersistentMPI() {
 
   // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
   // initialize the shearing block lists
-  // if (SHEARING_BOX) {
-  //   Mesh *pmesh = pmb->pmy_mesh;
-  //   int level = pmb->loc.level - pmesh->root_level;
-  //   std::int64_t nrbx1 = pmesh->nrbx1*(1L << level);
-  //   // std::int64_t nrbx2 = pmesh->nrbx2*(1L << level); // unused variable
-  //   int nbtotal = pmesh->nbtotal;
-  //   int *ranklist = pmesh->ranklist;
-  //   int *nslist = pmesh->nslist;
-  //   LogicalLocation *loclist = pmesh->loclist;
+  if (SHEARING_BOX) {
+    Mesh *pmesh = pmb->pmy_mesh;
+    int level = pmb->loc.level - pmesh->root_level;
+    std::int64_t nrbx1 = pmesh->nrbx1*(1L << level);
+    // std::int64_t nrbx2 = pmesh->nrbx2*(1L << level); // unused variable
+    int nbtotal = pmesh->nbtotal;
+    int *ranklist = pmesh->ranklist;
+    int *nslist = pmesh->nslist;
+    LogicalLocation *loclist = pmesh->loclist;
 
-  //   int count = 0;
-  //   if (shbb_.inner) {
-  //     for (int i=0;i<nbtotal;i++) {
-  //       if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
-  //           loclist[i].level == pmb->loc.level) {
-  //         shbb_.igidlist[count] = i;
-  //         shbb_.ilidlist[count] = i - nslist[ranklist[i]];
-  //         shbb_.irnklist[count] = ranklist[i];
-  //         shbb_.ilevlist[count] = loclist[i].level;
-  //         count++;
-  //       }
-  //     }
-  //   }
-  //   count = 0;
-  //   if (shbb_.outer) {
-  //     for (int i=0;i<nbtotal;i++) {
-  //       if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3 &&
-  //         loclist[i].level == pmb->loc.level) {
-  //         shbb_.ogidlist[count] = i;
-  //         shbb_.olidlist[count] = i - nslist[ranklist[i]];
-  //         shbb_.ornklist[count] = ranklist[i];
-  //         shbb_.olevlist[count] = loclist[i].level;
-  //         count++;
-  //       }
-  //     }
-  //   }
-  // } // end KGF: exclusive shearing box portion of SetupPersistentMPI()
+    int count = 0;
+    if (shbb_.inner) {
+      for (int i=0;i<nbtotal;i++) {
+        if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
+            loclist[i].level == pmb->loc.level) {
+          shbb_.igidlist[count] = i;
+          shbb_.ilidlist[count] = i - nslist[ranklist[i]];
+          shbb_.irnklist[count] = ranklist[i];
+          shbb_.ilevlist[count] = loclist[i].level;
+          count++;
+        }
+      }
+    }
+    count = 0;
+    if (shbb_.outer) {
+      for (int i=0;i<nbtotal;i++) {
+        if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3 &&
+          loclist[i].level == pmb->loc.level) {
+          shbb_.ogidlist[count] = i;
+          shbb_.olidlist[count] = i - nslist[ranklist[i]];
+          shbb_.ornklist[count] = ranklist[i];
+          shbb_.olevlist[count] = loclist[i].level;
+          count++;
+        }
+      }
+    }
+  } // end KGF: exclusive shearing box portion of SetupPersistentMPI()
   return;
 }
 
@@ -461,72 +461,72 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
 
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
-  // if (SHEARING_BOX) {
-  //   MeshBlock *pmb = pmy_block_;
-  //   Mesh *pmesh = pmb->pmy_mesh;
-  //   FindShearBlock(pmesh->time);
-  // }
+  if (SHEARING_BOX) {
+    MeshBlock *pmb = pmy_block_;
+    Mesh *pmesh = pmb->pmy_mesh;
+    FindShearBlock(pmesh->time);
+  }
   // end KGF: shearing box
 
   // KGF: begin shearing-box exclusive section of original StartReceivingAll()
   // find send_block_id and recv_block_id; post non-blocking recv
-//   if (SHEARING_BOX) {
-//     FindShearBlock(time);
-// #ifdef MPI_PARALLEL
-//      //     Mesh *pmesh = pmb->pmy_mesh;
-//     int size,tag;
-//     if (shbb_.inner) { // inner boundary
-//       for (int n=0; n<4; n++) {
-//         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
-//                           (recv_inner_rank_[n]!=-1)) {
-//           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_hydro);
-//           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
-//                     recv_inner_rank_[n],tag,MPI_COMM_WORLD,
-//                     &rq_innerrecv_hydro_[n]);
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             size = recv_innersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_field);
-//             MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
-//                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
-//                       &rq_innerrecv_field_[n]);
-//             size = recv_innersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_emf);
-//             MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
-//                       recv_inner_rank_[n],tag,MPI_COMM_WORLD,
-//                       &rq_innerrecv_emf_[n]);
-//           }
-//         }
-//       }
-//     }
+  if (SHEARING_BOX) {
+    FindShearBlock(time);
+#ifdef MPI_PARALLEL
+     //     Mesh *pmesh = pmb->pmy_mesh;
+    int size,tag;
+    if (shbb_.inner) { // inner boundary
+      for (int n=0; n<4; n++) {
+        if ((recv_inner_rank_[n]!=Globals::my_rank) &&
+                          (recv_inner_rank_[n]!=-1)) {
+          size = ssize_*NHYDRO*recv_innersize_hydro_[n];
+          tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_hydro);
+          MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
+                    recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+                    &rq_innerrecv_hydro_[n]);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            size = recv_innersize_field_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_field);
+            MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+                      &rq_innerrecv_field_[n]);
+            size = recv_innersize_emf_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_emf);
+            MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+                      &rq_innerrecv_emf_[n]);
+          }
+        }
+      }
+    }
 
-//     if (shbb_.outer) { // outer boundary
-//       int offset=4;
-//       for (int n=0; n<4; n++) {
-//         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
-//                           (recv_outer_rank_[n]!=-1)) {
-//           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
-//           tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_hydro);
-//           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
-//                     recv_outer_rank_[n],tag,MPI_COMM_WORLD,
-//                     &rq_outerrecv_hydro_[n]);
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             size = recv_outersize_field_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_field);
-//             MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
-//                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
-//                       &rq_outerrecv_field_[n]);
-//             size = recv_outersize_emf_[n];
-//             tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_emf);
-//             MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
-//                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
-//                       &rq_outerrecv_emf_[n]);
-//           }
-//         }
-//       }
-//     }
-// #endif
-//   } // end KGF: shearing-box exclusive section of StartReceivingAll
+    if (shbb_.outer) { // outer boundary
+      int offset=4;
+      for (int n=0; n<4; n++) {
+        if ((recv_outer_rank_[n]!=Globals::my_rank) &&
+                          (recv_outer_rank_[n]!=-1)) {
+          size = ssize_*NHYDRO*recv_outersize_hydro_[n];
+          tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_hydro);
+          MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
+                    recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+                    &rq_outerrecv_hydro_[n]);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            size = recv_outersize_field_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_field);
+            MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+                      &rq_outerrecv_field_[n]);
+            size = recv_outersize_emf_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_emf);
+            MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+                      &rq_outerrecv_emf_[n]);
+          }
+        }
+      }
+    }
+#endif
+  } // end KGF: shearing-box exclusive section of StartReceivingAll
   return;
 }
 
@@ -546,46 +546,46 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
 
   // KGF: begin shearing-box exclusive section of ClearBoundaryAll
   // clear shearingbox boundary communications
-//   if (SHEARING_BOX) {
-//     if (shbb_.inner == true) {
-//       for (int n=0; n<4; n++) {
-//         if (send_inner_rank_[n] == -1) continue;
-//         shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
-//           shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
-//         }
-// #ifdef MPI_PARALLEL
-//         if (send_inner_rank_[n]!=Globals::my_rank) {
-//           MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
-//             MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);
-//           }
-//         }
-// #endif
-//       }
-//     } // inner boundary
+  if (SHEARING_BOX) {
+    if (shbb_.inner == true) {
+      for (int n=0; n<4; n++) {
+        if (send_inner_rank_[n] == -1) continue;
+        shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
+          shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
+        }
+#ifdef MPI_PARALLEL
+        if (send_inner_rank_[n]!=Globals::my_rank) {
+          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);
+          }
+        }
+#endif
+      }
+    } // inner boundary
 
-//     if (shbb_.outer == true) {
-//       for (int n=0; n<4; n++) {
-//         if (send_outer_rank_[n] == -1) continue;
-//         shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
-//         if (MAGNETIC_FIELDS_ENABLED) {
-//           shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
-//         }
-// #ifdef MPI_PARALLEL
-//         if (send_outer_rank_[n]!=Globals::my_rank) {
-//           MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
-//           if (MAGNETIC_FIELDS_ENABLED) {
-//             MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);
-//             MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);
-//           }
-//         }
-// #endif
-//       }
-//     }
-//   } // end KGF: shearing box
+    if (shbb_.outer == true) {
+      for (int n=0; n<4; n++) {
+        if (send_outer_rank_[n] == -1) continue;
+        shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
+        }
+#ifdef MPI_PARALLEL
+        if (send_outer_rank_[n]!=Globals::my_rank) {
+          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);
+          }
+        }
+#endif
+      }
+    }
+  } // end KGF: shearing box
   return;
 }
 

@@ -154,13 +154,12 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 #endif
 };
 
-// KGF: shearing box
-// Struct for describing blocks which touched the shearing-periodic boundaries
-// struct ShearingBoundaryBlock {
-//   int *igidlist, *ilidlist, *irnklist, *ilevlist;
-//   int *ogidlist, *olidlist, *ornklist, *olevlist;
-//   bool inner, outer; // inner=true if inner blocks
-// } ShearingBoundaryBlock;
+// Struct for describing blocks which touch the shearing-periodic boundaries
+struct ShearingBoundaryBlock {
+  int *igidlist, *ilidlist, *irnklist, *ilevlist;
+  int *ogidlist, *olidlist, *ornklist, *olevlist;
+  bool inner, outer;
+};
 
 //----------------------------------------------------------------------------------------
 // Interfaces = abstract classes containing ONLY pure virtual functions

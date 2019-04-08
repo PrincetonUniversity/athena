@@ -146,21 +146,22 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
   int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
 
-  // Shearingbox (shared with Field and Hydro)
-  // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
-  // Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
-  // Real Omega_0_, qshear_;       // orbital freq and shear rate
-  // int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  // int joverlap_;                // # of cells the shear runs over one block
-  // Real ssize_;                  // # of ghost cells in x-z plane
-  // Real eps_;                    // fraction part of the shear
+  // Shearing box (shared with Field and Hydro)
+  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
+  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
+  Real Omega_0_, qshear_;       // orbital freq and shear rate
+  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
+  int joverlap_;                // # of cells the shear runs over one block
+  Real ssize_;                  // # of ghost cells in x-z plane
+  Real eps_;                    // fraction part of the shear
 
-  // int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
-  // int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
-  // int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
-  // int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
-  // int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
-  // int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+  int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
+  int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
+  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
+  int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
+  int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
+  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+  // KGF: end shearing box
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)

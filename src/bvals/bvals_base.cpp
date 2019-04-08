@@ -122,6 +122,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::~BoundaryBase()
 //  \brief destructor of BoundaryBase
+
 BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge)

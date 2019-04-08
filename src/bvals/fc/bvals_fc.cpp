@@ -925,7 +925,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //  \brief receive the face-centered boundary data
 
 bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
-  bool bflag=true;
+  bool bflag = true;
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
