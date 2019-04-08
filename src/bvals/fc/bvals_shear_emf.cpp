@@ -48,12 +48,12 @@
 void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
-  int psj,pej; // indices for e3
-  int nx2 = pmb->block_size.nx2-NGHOST;
+  int psj, pej; // indices for e3
+  int nx2 = pmb->block_size.nx2 - NGHOST;
   sk = pmb->ks;        ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->je-joverlap_-(NGHOST-1); ej = pmb->je;
+      sj = pmb->je-joverlap_ - (NGHOST-1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->js;
       psj = sj; pej = ej;
       break;
@@ -64,7 +64,7 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       break;
     case 2:
       sj = pmb->je-(NGHOST-1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->je-(joverlap_-nx2)+1;
+      if (joverlap_ > nx2) sj = pmb->je-(joverlap_ - nx2)+1;
       psj = sj; pej = ej;
       break;
     case 3:
@@ -78,13 +78,13 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       psj = sj; pej = ej+1;
       break;
     case 5:
-      sj = pmb->js + joverlap_-NGHOST; ej = pmb->je;
+      sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
       if (joverlap_ < NGHOST) sj = pmb->js;
       psj = sj; pej = ej+1;
       break;
     case 6:
       sj = pmb->js; ej = pmb->js + (NGHOST-1);
-      if (joverlap_ > nx2) ej = pmb->js + (joverlap_-nx2)-1;
+      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2)-1;
       psj = sj+1; pej = ej+1;
       break;
     case 7:
@@ -153,11 +153,11 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection() {
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
           std::memcpy(pbl->pbval->recv_innerbuf_emf_[n],
                       send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_emf_flag_[n]=BoundaryStatus::arrived;
+          pbl->pbval->shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_emf);
-          MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],
+          MPI_Isend(send_innerbuf_emf_[n], send_innersize_emf_[n],
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
 #endif
@@ -189,10 +189,11 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection() {
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
           std::memcpy(pbl->pbval->recv_outerbuf_emf_[n],
                       send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_emf_flag_[n]=BoundaryStatus::arrived;
+          pbl->pbval->shbox_outer_emf_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset, AthenaTagMPI::shbox_emf);
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
+                                      AthenaTagMPI::shbox_emf);
           MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],
                     MPI_ATHENA_REAL, send_outer_rank_[n], tag,
                     MPI_COMM_WORLD, &rq_outersend_emf_[n]);
@@ -220,7 +221,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
   sk = pmb->ks; ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->js-NGHOST; ej = pmb->js + (joverlap_-1);
+      sj = pmb->js-NGHOST; ej = pmb->js + (joverlap_ - 1);
       if (joverlap_ > nx2) sj = pmb->js-nxo;
       psj = sj; pej = ej+1;
       break;
@@ -239,7 +240,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
       psj = sj+1; pej = ej+1;
       break;
     case 4:
-      sj = pmb->je-(joverlap_-1); ej = pmb->je + NGHOST;
+      sj = pmb->je-(joverlap_ - 1); ej = pmb->je + NGHOST;
       if (joverlap_ > nx2) ej = pmb->je + nxo;
       psj = sj; pej = ej+1;
       break;
@@ -254,7 +255,7 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
       psj = sj+1; pej = ej+1;
       break;
     case 7:
-      sj = pmb->js-NGHOST; ej = pmb->js-joverlap_-1;
+      sj = pmb->js-NGHOST; ej = pmb->js-joverlap_ - 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -465,6 +466,5 @@ void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int joute
       Flux(j  ) = eps*(U(k,j) - 0.5*(1.0 + eps)*dUm);
     }
   }
-
   return;
 }

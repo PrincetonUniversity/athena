@@ -752,7 +752,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_outer_emf_flag_[0] = BoundaryStatus::waiting;
       }
       // deal the left boundary cells with send[2]
-      if (joverlap_>(nx2-NGHOST)) {
+      if (joverlap_ > (nx2 - NGHOST)) {
         // recv from left
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -839,7 +839,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       recv_outer_lid_[3]  = shbb_.olidlist[jtmp];
       recv_outersize_hydro_[3] = NGHOST;
       // send [je-(NGHOST-1):je] to Right
-      jtmp = jblock - (Ngrids-1);
+      jtmp = jblock - (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
       send_outer_gid_[3]  = shbb_.ogidlist[jtmp];
