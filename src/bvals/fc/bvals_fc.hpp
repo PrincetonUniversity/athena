@@ -62,19 +62,21 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
 
   // Shearing box Field
+  void SendShearingBoxBoundaryBuffers();
+  bool ReceiveShearingBoxBoundaryBuffers();
+
   void LoadShearing(FaceField &src, Real *buf, int nb);
-  void SendShearingBoxBoundaryBuffers(FaceField &src, bool cons);
   void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
-  bool ReceiveShearingBoxBoundaryBuffers(FaceField &dst);
   void RemapFlux(const int k, const int jinner, const int jouter, const int i,
                  const Real eps, const AthenaArray<Real> &U,
                  AthenaArray<Real> &Flux);
   // Shearing box EMF
-  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
   void SendEMFShearingBoxBoundaryCorrection();
-  void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
   bool ReceiveEMFShearingBoxBoundaryCorrection();
   void RemapEMFShearingBoxBoundary();
+
+  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
+  void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
   void ClearEMFShearing(EdgeField &work);
   void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
                     const AthenaArray<Real> &U, AthenaArray<Real> &Flux);

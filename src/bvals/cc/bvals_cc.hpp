@@ -60,13 +60,13 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
 
   // Shearing box
-  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
-  void SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
-  void SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+  void SendShearingBoxBoundaryBuffersForInit();
+  void SendShearingBoxBoundaryBuffers();
+  bool ReceiveShearingBoxBoundaryBuffers();
 
+  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                        const int nb);
-  bool ReceiveShearingBoxBoundaryBuffers(AthenaArray<Real> &dst);
   void FindShearBlock(const Real time);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
