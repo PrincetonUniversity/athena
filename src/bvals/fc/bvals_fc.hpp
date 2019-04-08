@@ -65,21 +65,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
 
-  void LoadShearing(FaceField &src, Real *buf, int nb);
-  void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
-  void RemapFlux(const int k, const int jinner, const int jouter, const int i,
-                 const Real eps, const AthenaArray<Real> &U,
-                 AthenaArray<Real> &Flux);
   // Shearing box EMF
   void SendEMFShearingBoxBoundaryCorrection();
   bool ReceiveEMFShearingBoxBoundaryCorrection();
   void RemapEMFShearingBoxBoundary();
-
-  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
-  void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
-  void ClearEMFShearing(EdgeField &work);
-  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
-                    const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
@@ -179,6 +168,13 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request rq_innersend_fc_[4], rq_innerrecv_fc_[4];
   MPI_Request rq_outersend_fc_[4], rq_outerrecv_fc_[4];
 #endif
+
+  void LoadShearing(FaceField &src, Real *buf, int nb);
+  void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
+  void RemapFlux(const int k, const int jinner, const int jouter, const int i,
+                 const Real eps, const AthenaArray<Real> &U,
+                 AthenaArray<Real> &Flux);
+
   // Shearing box EMF correction
   BoundaryStatus shbox_inner_fc_flx_flag_[5], shbox_outer_fc_flx_flag_[5];
   EdgeField shboxvar_inner_fc_flx_, shboxvar_outer_fc_flx_;
@@ -192,6 +188,12 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request rq_innersend_fc_flx_[4],  rq_innerrecv_fc_flx_[4];
   MPI_Request rq_outersend_fc_flx_[4],  rq_outerrecv_fc_flx_[4];
 #endif
+
+  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
+  void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
+  void ClearEMFShearing(EdgeField &work);
+  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
+                    const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 };
 
 #endif // BVALS_FC_BVALS_FC_HPP_

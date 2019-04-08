@@ -63,14 +63,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SendShearingBoxBoundaryBuffersForInit();
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
-
-  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
-  void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                       const int nb);
-  void FindShearBlock(const Real time);
-  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
-                 const int i, const Real eps, const AthenaArray<Real> &U,
-                 AthenaArray<Real> &Flux);
   // KGF: end shearing box
 
   // BoundaryPhysics:
@@ -141,6 +133,14 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request rq_innersend_cc_[4], rq_innerrecv_cc_[4];
   MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];
 #endif
+
+  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                       const int nb);
+  void FindShearBlock(const Real time);
+  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
+                 const int i, const Real eps, const AthenaArray<Real> &U,
+                 AthenaArray<Real> &Flux);
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_
