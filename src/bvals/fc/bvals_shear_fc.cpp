@@ -42,58 +42,58 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb)
-//  \brief Load shearingbox field boundary buffers
+//  \brief Load shearing box field boundary buffers
 
 void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
-  MeshBlock *pmb=pmy_block_;
-  Mesh *pmesh=pmb->pmy_mesh;
+  MeshBlock *pmb = pmy_block_;
+  Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int psj,pej; // indices for bx2
-  int nx2=pmb->block_size.nx2-NGHOST;
+  int psj, pej; // indices for bx2
+  int nx2 = pmb->block_size.nx2 - NGHOST;
 
-  si=pmb->is-NGHOST; ei=pmb->is-1;
-  sk=pmb->ks;        ek=pmb->ke;
-  if (pmesh->mesh_size.nx3>1)  ek += NGHOST, sk -= NGHOST;
+  si = pmb->is - NGHOST; ei = pmb->is - 1;
+  sk = pmb->ks;        ek = pmb->ke;
+  if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
   switch(nb) {
     case 0:
-      sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
-      if (joverlap_>nx2) sj=pmb->js;
-      psj=sj; pej=ej+1;
+      sj = pmb->je-joverlap_-(NGHOST - 1); ej = pmb->je;
+      if (joverlap_ > nx2) sj = pmb->js;
+      psj = sj; pej = ej + 1;
       break;
     case 1:
-      sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
-      if (joverlap_<NGHOST) ej=pmb->je;
-      psj=sj; pej=ej+1;
+      sj = pmb->js; ej = pmb->je - joverlap_ + NGHOST;
+      if (joverlap_ < NGHOST) ej = pmb->je;
+      psj = sj; pej = ej + 1;
       break;
     case 2:
-      sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if (joverlap_>nx2) sj=pmb->je-(joverlap_-nx2)+1;
-      psj=sj; pej=ej;
+      sj = pmb->je-(NGHOST - 1); ej = pmb->je;
+      if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
+      psj = sj; pej = ej;
       break;
     case 3:
-      sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if (joverlap_<NGHOST) ej=pmb->js+(NGHOST-joverlap_)-1;
-      psj=sj+1; pej=ej+1;
+      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
+      if (joverlap_ < NGHOST) ej = pmb->js+(NGHOST - joverlap_) - 1;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-      if (joverlap_>nx2) ej=pmb->je;
-      psj=sj; pej=ej+1;
+      sj = pmb->js; ej = pmb->js + joverlap_ + NGHOST - 1;
+      if (joverlap_ > nx2) ej = pmb->je;
+      psj = sj; pej = ej + 1;
       break;
     case 5:
-      sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-      if (joverlap_<NGHOST) sj=pmb->js;
-      psj=sj; pej=ej+1;
+      sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
+      if (joverlap_ < NGHOST) sj = pmb->js;
+      psj = sj; pej = ej + 1;
       break;
     case 6:
-      sj=pmb->js; ej=pmb->js+(NGHOST-1);
-      if (joverlap_>nx2) ej=pmb->js+(joverlap_-nx2)-1;
-      psj=sj+1; pej=ej+1;
+      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
+      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2) - 1;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 7:
-      sj=pmb->je-(NGHOST-1); ej=pmb->je;
-      if (joverlap_<NGHOST) sj=pmb->je-(NGHOST-joverlap_)+1;
-      psj=sj; pej=ej;
+      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
+      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST - joverlap_) + 1;
+      psj = sj; pej = ej;
       break;
     default:
       std::stringstream msg;
@@ -102,7 +102,7 @@ void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
       ATHENA_ERROR(msg);
   }
 
-  int p=0;
+  int p = 0;
   BufferUtility::PackData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
   BufferUtility::PackData(src.x2f, buf, si, ei, psj, pej, sk, ek, p);
   BufferUtility::PackData(src.x3f, buf, si, ei, sj, ej, sk, ek+1, p);
@@ -111,21 +111,21 @@ void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src)
-//  \brief Send shearingbox boundary buffers for field variables
+//! \fn void BoundaryValues::SendShearingBoxBoundaryBuffers(FaceField &src)
+//  \brief Send shearing box boundary buffers for field variables
 
-void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
-                                                         bool conserved_values) {
-  MeshBlock *pmb=pmy_block_;
-  Coordinates *pco=pmb->pcoord;
-  Mesh *pmesh=pmb->pmy_mesh;
+void BoundaryValues::SendShearingBoxBoundaryBuffers(FaceField &src,
+                                                    bool conserved_values) {
+  MeshBlock *pmb = pmy_block_;
+  Coordinates *pco = pmb->pcoord;
+  Mesh *pmesh = pmb->pmy_mesh;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int ku,kl;
-  if (pmesh->mesh_size.nx3>1) {
-    ku = ke+NGHOST;
-    kl = ks-NGHOST;
+  if (pmesh->mesh_size.nx3 > 1) {
+    ku = ke + NGHOST;
+    kl = ks - NGHOST;
   } else {
     ku = ke;
     kl = ks;
@@ -134,7 +134,7 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
   Real qomL = qshear_*Omega_0_*x1size_;
 
   if (shbb_.inner == true) {
-    int ib = is-NGHOST;
+    int ib = is - NGHOST;
     int ii;
     // step 1. -- load shboxvar_field_
     for (int k=kl; k<=ku; k++) {
@@ -148,14 +148,14 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
       }
     }
     // fill the extra cells for B2i and B3i
-    int kp = ku+1;
+    int kp = ku + 1;
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_inner_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
       }
     }
-    int jp = je+NGHOST+1;
+    int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
@@ -166,7 +166,7 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k,js,je+2,i,eps_,shboxvar_inner_field_.x1f,flx_inner_field_.x1f);
+        RemapFlux(k, js, je+2, i, eps_, shboxvar_inner_field_.x1f, flx_inner_field_.x1f);
         for (int j=js; j<=je+1; j++) {
           shboxvar_inner_field_.x1f(k,j,i) -= (flx_inner_field_.x1f(j+1) -
                                                flx_inner_field_.x1f(j));
@@ -175,7 +175,7 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
     }
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k,js,je+3,i,eps_,shboxvar_inner_field_.x2f,flx_inner_field_.x2f);
+        RemapFlux(k, js, je+3, i, eps_, shboxvar_inner_field_.x2f, flx_inner_field_.x2f);
         for (int j=js; j<=je+2; j++) {
           shboxvar_inner_field_.x2f(k,j,i) -= (flx_inner_field_.x2f(j+1) -
                                                flx_inner_field_.x2f(j));
@@ -184,7 +184,7 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
     }
     for (int k=kl; k<=ku+1; k++) { // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k,js,je+2,i,eps_,shboxvar_inner_field_.x3f,flx_inner_field_.x3f);
+        RemapFlux(k, js, je+2, i, eps_, shboxvar_inner_field_.x3f, flx_inner_field_.x3f);
         for (int j=js; j<=je+1; j++) {
           shboxvar_inner_field_.x3f(k,j,i) -= (flx_inner_field_.x3f(j+1) -
                                                flx_inner_field_.x3f(j));
@@ -214,7 +214,7 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
   } // inner boundaries
 
   if (shbb_.outer == true) {
-    int  ib = ie+1;
+    int  ib = ie + 1;
     qomL = -qomL;
     int ii;
     // step 1. -- load shboxvar_field_
@@ -229,14 +229,14 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
       }
     }
     // fill the extra cells for B2i and B3i
-    int kp = ku+1;
+    int kp = ku + 1;
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
         shboxvar_outer_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
       }
     }
-    int jp = je+NGHOST+1;
+    int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
@@ -302,25 +302,26 @@ void BoundaryValues::SendShearingboxBoundaryBuffers(FaceField &src,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst,
+//! \fn void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst,
 //                                           Real *buf, const int nb)
-//  \brief Set field shearingbox boundary received from a block on the same level
-void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
+//  \brief Set field shearing box boundary received from a block on the same level
+
+void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf,
                                                           const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int psi,pei,psj,pej;
+  int psi, pei, psj, pej;
   int nx2 = pmb->block_size.nx2 - NGHOST;
   int nxo = pmb->block_size.nx2 - joverlap_;
 
   sk = pmb->ks; ek = pmb->ke;
-  if (pmesh->mesh_size.nx3>1) ek += NGHOST, sk -= NGHOST;
+  if (pmesh->mesh_size.nx3 > 1) ek += NGHOST, sk -= NGHOST;
   switch(nb) {
     case 0:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
       sj = pmb->js - NGHOST; ej = pmb->js+(joverlap_ - 1);
-      if (joverlap_>nx2) sj = pmb->js-nxo;
+      if (joverlap_ > nx2) sj = pmb->js-nxo;
       psi = si; pei = ei; psj = sj; pej = ej + 1;
       break;
     case 1:
@@ -332,7 +333,7 @@ void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
     case 2:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_>nx2) ej = pmb->js-nxo - 1;
+      if (joverlap_ > nx2) ej = pmb->js-nxo - 1;
       psi = si; pei = ei; psj = sj; pej = ej;
       break;
     case 3:
@@ -343,7 +344,7 @@ void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
     case 4:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
       sj = pmb->je-(joverlap_ - 1); ej = pmb->je + NGHOST;
-      if (joverlap_>nx2) ej = pmb->je+nxo;
+      if (joverlap_ > nx2) ej = pmb->je+nxo;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej + 1;
       break;
     case 5:
@@ -355,7 +356,7 @@ void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
     case 6:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
       sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (joverlap_>nx2) sj = pmb->je+nxo + 1;
+      if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
       psi = si + 1; pei = ei + 1; psj = sj + 1; pej = ej + 1;
       break;
     case 7:
@@ -371,7 +372,7 @@ void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
   }
 
   // set [sj:ej] of current meshblock
-  int p=0;
+  int p = 0;
   BufferUtility::UnpackData(buf, dst.x1f, psi, pei, sj, ej, sk, ek, p);
   BufferUtility::UnpackData(buf, dst.x2f, si, ei, psj, pej, sk, ek, p);
   BufferUtility::UnpackData(buf, dst.x3f, si, ei, sj, ej, sk, ek+1, p);
@@ -379,25 +380,27 @@ void BoundaryValues::SetShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveShearingboxBoundaryBuffers(FaceField &dst)
-//  \brief receive shearingbox boundary data for field(face-centered) variables
-bool BoundaryValues::ReceiveShearingboxBoundaryBuffers(FaceField &dst) {
-  bool flagi=true, flago=true;
+//! \fn bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(FaceField &dst)
+//  \brief receive shearing box boundary data for field(face-centered) variables
+
+bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(FaceField &dst) {
+  bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
       if (shbox_inner_field_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_field_flag_[n] == BoundaryStatus::waiting) {
         if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
-          flagi=false;
+          flagi = false;
           continue;
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_field_[n],&test,MPI_STATUS_IGNORE);
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                     MPI_STATUS_IGNORE);
+          MPI_Test(&rq_innerrecv_field_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flagi=false;
+            flagi = false;
             continue;
           }
           shbox_inner_field_flag_[n] = BoundaryStatus::arrived;
@@ -405,7 +408,7 @@ bool BoundaryValues::ReceiveShearingboxBoundaryBuffers(FaceField &dst) {
         }
       }
       // set dst if boundary arrived
-      SetShearingboxBoundarySameLevel(dst,recv_innerbuf_field_[n],n);
+      SetShearingBoxBoundarySameLevel(dst, recv_innerbuf_field_[n], n);
       shbox_inner_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
@@ -416,22 +419,24 @@ bool BoundaryValues::ReceiveShearingboxBoundaryBuffers(FaceField &dst) {
       if (shbox_outer_field_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_outer_field_flag_[n] == BoundaryStatus::waiting) {
         if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
-          flago=false;
+          flago = false;
           continue;
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&rq_outerrecv_field_[n],&test,MPI_STATUS_IGNORE);
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                     MPI_STATUS_IGNORE);
+
+          MPI_Test(&rq_outerrecv_field_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flago=false;
+            flago = false;
             continue;
           }
           shbox_outer_field_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetShearingboxBoundarySameLevel(dst,recv_outerbuf_field_[n],n+offset);
+      SetShearingBoxBoundarySameLevel(dst, recv_outerbuf_field_[n], n+offset);
       shbox_outer_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
