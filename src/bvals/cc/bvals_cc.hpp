@@ -59,14 +59,14 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
 
-  // Shearing box
-  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
-  void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
-  void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+  // ShearingBox
+  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
+  void SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
 
-  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                            const int nb);
-  bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
+  void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                       const int nb);
+  bool ReceiveShearingBoxBoundaryBuffers(AthenaArray<Real> &dst);
   void FindShearBlock(const Real time);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &U,
@@ -127,19 +127,19 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   // Shearing box
-  BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  BoundaryStatus shbox_inner_cc_flag_[4], shbox_outer_cc_flag_[4];
   // working arrays of remapped quantities
-  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
+  AthenaArray<Real>  shboxvar_inner_cc_, shboxvar_outer_cc_;
   // flux from conservative remapping
-  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
-  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
-  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
-  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
-  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
+  AthenaArray<Real>  flx_inner_cc_, flx_outer_cc_;
+  int  send_innersize_cc_[4], recv_innersize_cc_[4]; // buffer sizes
+  Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
+  int  send_outersize_cc_[4], recv_outersize_cc_[4]; // buffer sizes
+  Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
   // MPI request for send and recv msgs
-  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
-  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
+  MPI_Request rq_innersend_cc_[4], rq_innerrecv_cc_[4];
+  MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];
 #endif
 };
 
