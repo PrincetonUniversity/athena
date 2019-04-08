@@ -59,7 +59,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
 
-  // ShearingBox
+  // Shearing box
   void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
