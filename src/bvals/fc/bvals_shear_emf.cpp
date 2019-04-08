@@ -3,8 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file bvals_emf.cpp
-//  \brief functions that apply BCs for emf corrections in shearing box calculations
+//! \file bvals_shear_emf.cpp
+//  \brief functions that apply BCs for face-centered flux corrections in shearing box
+// calculations
 //======================================================================================
 
 // C headers
