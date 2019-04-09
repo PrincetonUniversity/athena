@@ -278,8 +278,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|
-                                          RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
         } else {
           AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
         }

@@ -150,8 +150,8 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
             src(IEN,k,j,ii) += (0.5/src(IDN,k,j,ii))
                                *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
                                  - SQR(src(IM2,k,j,ii)));
-          } // update energy
-          src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);// update IM2
+          }  // update energy
+          src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);  // update IM2
         }
       }
     }

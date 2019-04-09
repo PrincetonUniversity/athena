@@ -147,8 +147,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
 
   // Shearing box (shared with Field and Hydro)
-  // KGF: remove the redundancies in these variables:
+  // KGF: this is the only instance of this struct. Eliminate it as a struct type
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
+  // KGF: remove the redundancies in these variables:
   Real x1size_, x2size_, x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
   int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz

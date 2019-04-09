@@ -121,7 +121,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       int ncells3 = pmb->block_size.nx3;
-      if (pmy_mesh_->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+      if (pmy_mesh_->mesh_size.nx3 > 1) ncells3 += 2*NGHOST;
       ssize_ = NGHOST*ncells3;
 
       if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
@@ -213,7 +213,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         }
       }
 
-      if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
+      if (pmb->loc.lx1 == (nrbx1 - 1)) { // if true for shearing outer blocks
         if (block_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic) {
           block_bcs[BoundaryFace::outer_x1] = BoundaryFlag::shear_periodic;
           BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
@@ -235,19 +235,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
         }
         shbb_.outer = true;
-        shbb_.ogidlist=new int[nrbx2];
-        shbb_.olidlist=new int[nrbx2];
-        shbb_.ornklist=new int[nrbx2];
-        shbb_.olevlist=new int[nrbx2];
+        shbb_.ogidlist = new int[nrbx2];
+        shbb_.olidlist = new int[nrbx2];
+        shbb_.ornklist = new int[nrbx2];
+        shbb_.olevlist = new int[nrbx2];
         // attach corner cells from L/R side
         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
-        int bsize=0, esize=0;
+        int bsize = 0, esize = 0;
         if (MAGNETIC_FIELDS_ENABLED) {
           // extra cell in azimuth/vertical
-          bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
+          bsize = (pmb->block_size.nx2 + NGHOST + 1)*(ssize_ + NGHOST)*NFIELD;
           // face plus edge for EMF
           esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
-                +pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
+                + pmb->block_size.nx2+pmb->block_size.nx3 + NGHOST;
         }
         for (int n=0; n<2; n++) {
           send_outerbuf_hydro_[n] = new Real[size];
@@ -301,7 +301,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           }
         }
       }
-    }
+    } // end KGF: if (ShBoxCoord_ == 1)
   } // end KGF: shearing box in BoundaryValues constructor
 }
 
