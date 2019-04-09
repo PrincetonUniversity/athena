@@ -105,28 +105,25 @@ void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
 
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int ku, kl;
+  // KGF: hidden assumption that 2D?
+  int jl = pmb->js - NGHOST;
+  int ju = pmb->je + NGHOST;
+  int kl = pmb->ks;
+  int ku = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) {
-    ku = ke + NGHOST;
-    kl = ks - NGHOST;
-  } else {
-    ku = ke;
-    kl = ks;
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   Real qomL = qshear_*Omega_0_*x1size_;
-  int ssize = ssize_*NHYDRO;
 
   if (shbb_.inner == true) {
     // step 1. -- add shear to the inner periodic boundary values
     for (int k=kl; k<=ku; k++) {
-      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for (int i=0; i < NGHOST; i++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=0; i<NGHOST; i++) {
           // add shear to conservative
           shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i) + qomL*src(IDN,k,j,i);
           if (NON_BAROTROPIC_EOS) {
@@ -140,12 +137,12 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
   }
 
   if (shbb_.outer == true) {
-    int ib = ie + 1;
+    int ib = pmb->ie + 1;
     int ii;
     // step 2. -- add shear to the outer periodic boundary values
     for (int k=kl; k<=ku; k++) {
-      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
-        for (int i=0; i < NGHOST; i++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=0; i<NGHOST; i++) {
           ii = ib + i;
           // add shear to conservative
           shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii) - qomL*src(IDN,k,j,ii);
@@ -167,29 +164,29 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
 
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int ku,kl;
+  // KGF: hidden assumption that 2D?
+  int jl = pmb->js - NGHOST;
+  int ju = pmb->je + NGHOST;
+  int kl = pmb->ks;
+  int ku = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) {
-    ku = ke + NGHOST;
-    kl = ks - NGHOST;
-  } else {
-    ku = ke;
-    kl = ks;
+    kl -= NGHOST;
+    ku += NGHOST;
   }
+  int js = pmb->js;
+  int je = pmb->je;
 
   Real qomL = qshear_*Omega_0_*x1size_;
   int ssize = ssize_*NHYDRO;
 
   if (shbb_.inner == true) {
-    int ib = is - NGHOST;
+    int ib = pmb->is - NGHOST;
     int ii;
     // step 1. -- load shboxvar_hydro_
     for (int k=kl; k<=ku; k++) {
-      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+      for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
           shboxvar_inner_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
@@ -242,12 +239,12 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   } // inner boundaries
 
   if (shbb_.outer == true) {
-    int  ib = ie + 1;
+    int  ib = pmb->ie + 1;
     qomL = -qomL;
     int ii;
     // step 1. -- load shboxvar_hydro_
     for (int k=kl; k<=ku; k++) {
-      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+      for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
           shboxvar_outer_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
@@ -354,8 +351,8 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, co
       if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
       break;
     case 7:
-      si = pmb->ie + 1; ei = pmb->ie+NGHOST;
-      sj = pmb->js-NGHOST; ej = pmb->js-joverlap_-1;
+      si = pmb->ie + 1; ei = pmb->ie + NGHOST;
+      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_-1;
       break;
     default:
       std::stringstream msg;
@@ -377,7 +374,6 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, co
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
   bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
@@ -448,15 +444,14 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int ku, ii, jj;
+  int js = pmb->js; int je = pmb->je;
 
   int level = pmb->loc.level - pmesh->root_level;
   std::int64_t nrbx2 = pmesh->nrbx2*(1L<<level);
   int nx2   = pmb->block_size.nx2; // # of cells per meshblock
   int nx3   = pmb->block_size.nx3; // # of cells per meshblock
-  int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+  // KGF: for symmetry reasons, how can ncells3 but not ncells2 be used in this fn?
+  // int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
   int ncells3 = pmb->block_size.nx3;
   if (pmesh->mesh_size.nx3 > 1) ncells3 += 2*NGHOST;
 
