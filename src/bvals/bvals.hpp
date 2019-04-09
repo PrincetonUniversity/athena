@@ -182,6 +182,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 
+  // KGF: shearing box
+  void FindShearBlock(const Real time);
+
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   // TODO(KGF): consider removing this friendship designation
   friend class Mesh;

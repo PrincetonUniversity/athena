@@ -135,7 +135,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
-  void FindShearBlock(const Real time);
   // KGF: AthenaArray<Real>: shboxvar_inner/outer_hydro_, flx_inner/outer_hydro_
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
                  const int i, const Real eps, const AthenaArray<Real> &var,
