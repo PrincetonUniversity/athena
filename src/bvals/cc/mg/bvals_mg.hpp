@@ -30,30 +30,17 @@ class MeshBlockTree;
 class ParameterInput;
 class Coordinates;
 
-//! \struct MGBoundaryData
-//  \brief structure storing multigrid boundary information
-struct MGBoundaryData {
-  int nbmax;
-  // KGF: the addition of sflag is the only change relative to BoundaryData
-  BoundaryStatus flag[56], sflag[56];
-  Real *send[56], *recv[56];
-#ifdef MPI_PARALLEL
-  MPI_Request req_send[56], req_recv[56];
-#endif
-};
-
 //----------------------------------------------------------------------------------------
 //! \class MGBoundaryValues
 //  \brief BVals data and functions
 
 class MGBoundaryValues : public BoundaryBase {
  public:
-  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
-                   MGBoundaryFunc *MGBoundary);
+  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs, MGBoundaryFunc *MGBoundary);
   ~MGBoundaryValues();
 
-  void InitBoundaryData(MGBoundaryData &bd, BoundaryQuantity type);
-  void DestroyBoundaryData(MGBoundaryData &bd);
+  void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
+  void DestroyBoundaryData(BoundaryData<> &bd);
 
   void ApplyPhysicalBoundaries();
   void StartReceivingMultigrid(int nc, BoundaryQuantity type);
@@ -72,7 +59,7 @@ class MGBoundaryValues : public BoundaryBase {
  private:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
-  MGBoundaryData bd_mggrav_;
+  BoundaryData<> bd_mggrav_;
 
 #ifdef MPI_PARALLEL
   MPI_Comm mgcomm_;
