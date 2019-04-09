@@ -291,7 +291,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
   if (SHEARING_BOX) {
     // 2D shearing box in x-z plane: additional step to shift azimuthal velocity
-    if (ShBoxCoord_ == 2) {
+    if (pbval_->ShBoxCoord_ == 2) {
       int level = pmb->loc.level - pmy_mesh_->root_level;
       std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
       Real qomL = pbval_->qomL_;
