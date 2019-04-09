@@ -94,8 +94,7 @@ void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
       ATHENA_ERROR(msg);
   }
   int p = 0;
-  BufferUtility::PackData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
-
+  BufferUtility::PackData(*var_cc, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -106,6 +105,7 @@ void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
+  AthenaArray<Real> &var = *var_cc;
 
   // KGF: hidden assumption that 2D?
   int jl = pmb->js - NGHOST;
@@ -125,12 +125,12 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           // add shear to conservative
-          shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i) + qomL*src(IDN,k,j,i);
+          shboxvar_inner_hydro_(IM2,k,j,i) = var(IM2,k,j,i) + qomL*var(IDN,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-            src(IEN,k,j,i) += (0.5/src(IDN,k,j,i))*(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
-                                                    - SQR(src(IM2,k,j,i)));
+            var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
+                                                    - SQR(var(IM2,k,j,i)));
           } // update energy
-          src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
+          var(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
         }
       }
     }
@@ -145,13 +145,13 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
         for (int i=0; i<NGHOST; i++) {
           ii = ib + i;
           // add shear to conservative
-          shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii) - qomL*src(IDN,k,j,ii);
+          shboxvar_outer_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) - qomL*var(IDN,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
-            src(IEN,k,j,ii) += (0.5/src(IDN,k,j,ii))
+            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))
                                *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
-                                 - SQR(src(IM2,k,j,ii)));
+                                 - SQR(var(IM2,k,j,ii)));
           }  // update energy
-          src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);  // update IM2
+          var(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);  // update IM2
         }
       }
     }
@@ -165,6 +165,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
+  AthenaArray<Real> &var = *var_cc;
 
   // KGF: hidden assumption that 2D?
   int jl = pmb->js - NGHOST;
@@ -188,17 +189,15 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
-          ii = ib+i;
-          shboxvar_inner_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
-          shboxvar_inner_hydro_(IM1,k,j,i) = src(IM1,k,j,ii);
-          shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,ii)
-                                             + qomL*src(IDN,k,j,ii);
-          shboxvar_inner_hydro_(IM3,k,j,i) = src(IM3,k,j,ii);
+          ii = ib + i;
+          shboxvar_inner_hydro_(IDN,k,j,i) = var(IDN,k,j,ii);
+          shboxvar_inner_hydro_(IM1,k,j,i) = var(IM1,k,j,ii);
+          shboxvar_inner_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
+          shboxvar_inner_hydro_(IM3,k,j,i) = var(IM3,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
-            shboxvar_inner_hydro_(IEN,k,j,i) = src(IEN,k,j,ii)
-                                               + (0.5/src(IDN,k,j,ii))
+            shboxvar_inner_hydro_(IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
                                                *(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
-                                                 - SQR(src(IM2,k,j,ii)));
+                                                 - SQR(var(IM2,k,j,ii)));
           }
         }
       }
@@ -210,8 +209,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         for (int i=0; i<NGHOST; i++) {
           RemapFlux(n, k, js, je+2, i, eps_, shboxvar_inner_hydro_, flx_inner_hydro_);
           for (int j=js; j<=je+1; j++) {
-            shboxvar_inner_hydro_(n,k,j,i) -= flx_inner_hydro_(j+1)
-                                              - flx_inner_hydro_(j);
+            shboxvar_inner_hydro_(n,k,j,i) -= flx_inner_hydro_(j+1) - flx_inner_hydro_(j);
           }
         }
       }
@@ -247,15 +245,15 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_outer_hydro_(IDN,k,j,i) = src(IDN,k,j,ii);
-          shboxvar_outer_hydro_(IM1,k,j,i) = src(IM1,k,j,ii);
-          shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii) + qomL*src(IDN,k,j,ii);
-          shboxvar_outer_hydro_(IM3,k,j,i) = src(IM3,k,j,ii);
+          shboxvar_outer_hydro_(IDN,k,j,i) = var(IDN,k,j,ii);
+          shboxvar_outer_hydro_(IM1,k,j,i) = var(IM1,k,j,ii);
+          shboxvar_outer_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
+          shboxvar_outer_hydro_(IM3,k,j,i) = var(IM3,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
-            shboxvar_outer_hydro_(IEN,k,j,i) = src(IEN,k,j,ii)
-                                               + (0.5/src(IDN,k,j,ii))
+            shboxvar_outer_hydro_(IEN,k,j,i) = var(IEN,k,j,ii)
+                                               + (0.5/var(IDN,k,j,ii))
                                                *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
-                                                 - SQR(src(IM2,k,j,ii)));
+                                                 - SQR(var(IM2,k,j,ii)));
           }
         }
       }
@@ -288,8 +286,8 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
-          int tag = CreateBvalsMPITag(send_outer_lid_[n],
-                                      n+offset, AthenaTagMPI::shbox_hydro);
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
+                                      AthenaTagMPI::shbox_hydro);
           MPI_Isend(send_outerbuf_hydro_[n], send_outersize_hydro_[n]*ssize,
                     MPI_ATHENA_REAL, send_outer_rank_[n], tag, MPI_COMM_WORLD,
                     &rq_outersend_hydro_[n]);
@@ -363,7 +361,7 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, co
 
   // set [sj:ej] of current meshblock
   int p = 0;
-  BufferUtility::UnpackData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::UnpackData(buf, *var_cc, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -373,7 +371,7 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, co
 //  \brief receive shearing box boundary data for hydro variables
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
-  MeshBlock *pmb = pmy_block_;
+  AthenaArray<Real> &var = *var_cc;
   bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
@@ -397,8 +395,8 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 #endif
         }
       }
-      // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(dst, recv_innerbuf_hydro_[n], n);
+      // set var if boundary arrived
+      SetShearingBoxBoundarySameLevel(var, recv_innerbuf_hydro_[n], n);
       shbox_inner_hydro_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
@@ -425,7 +423,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(dst, recv_outerbuf_hydro_[n], n+offset);
+      SetShearingBoxBoundarySameLevel(var, recv_outerbuf_hydro_[n], n+offset);
       shbox_outer_hydro_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
@@ -457,7 +455,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
 
   Real qomL = qshear_*Omega_0_*x1size_;
   Real yshear = qomL*time;
-  Real deltay = fmod(yshear,x2size_);
+  Real deltay = std::fmod(yshear, x2size_);
   int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
   int Ngrids  = static_cast<int>(joffset/nx2);
   joverlap_   = joffset - Ngrids*nx2;
