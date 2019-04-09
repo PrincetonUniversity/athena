@@ -123,6 +123,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real>  shboxvar_inner_cc_, shboxvar_outer_cc_;
   // flux from conservative remapping
   AthenaArray<Real>  flx_inner_cc_, flx_outer_cc_;
+  // KGF: this should be a struct
   int  send_innersize_cc_[4], recv_innersize_cc_[4]; // buffer sizes
   Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
   int  send_outersize_cc_[4], recv_outersize_cc_[4]; // buffer sizes
