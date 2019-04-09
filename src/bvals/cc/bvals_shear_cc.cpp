@@ -231,7 +231,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
           pbl->pbval->shbox_inner_cc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], n, sh_cc_phys_id_);
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, sh_cc_phys_id_);
           MPI_Isend(send_innerbuf_cc_[n], send_innersize_cc_[n]*ssize,
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag, MPI_COMM_WORLD,
                     &rq_innersend_cc_[n]);
@@ -387,7 +387,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
     for (int n=0; n<4; n++) {
       if (shbox_inner_cc_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_cc_flag_[n] == BoundaryStatus::waiting) {
-        if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
+        if (recv_inner_rank_[n] == Globals::my_rank) {  // on the same process
           flagi = false;
           continue;
         } else { // MPI boundary
@@ -415,7 +415,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
     for (int n=0; n<4; n++) {
       if (shbox_outer_cc_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_outer_cc_flag_[n] == BoundaryStatus::waiting) {
-        if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
+        if (recv_outer_rank_[n] == Globals::my_rank) {  // on the same process
           flago = false;
           continue;
         } else { // MPI boundary
@@ -433,7 +433,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
         }
       }
       SetShearingBoxBoundarySameLevel(recv_outerbuf_cc_[n], n+offset);
-      shbox_outer_cc_flag_[n] = BoundaryStatus::completed; // completed
+      shbox_outer_cc_flag_[n] = BoundaryStatus::completed;  // completed
     }
   } // outer boundary
   return (flagi && flago);
