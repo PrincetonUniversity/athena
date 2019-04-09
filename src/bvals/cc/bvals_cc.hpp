@@ -133,7 +133,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];
 #endif
 
-  void LoadShearing(Real *buf, int nb);
+  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
   void FindShearBlock(const Real time);
   // KGF: AthenaArray<Real>: shboxvar_inner/outer_hydro_, flx_inner/outer_hydro_

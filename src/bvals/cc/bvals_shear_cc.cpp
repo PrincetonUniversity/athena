@@ -41,10 +41,13 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb)
+//! \fn int CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
+//                                                     int nb)
 //  \brief Load shearing box hydro boundary buffers
 
-void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
+// KGF: AthenaArray<Real> &src = shboxvar_inner_hydro_, shboxvar_outer_hydro_
+void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
+                                                int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -94,7 +97,7 @@ void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
       ATHENA_ERROR(msg);
   }
   int p = 0;
-  BufferUtility::PackData(*var_cc, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -300,10 +303,15 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 }
 
 // --------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, const int nb)
+//! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
+//                                                                         const int nb)
 //  \brief Set hydro shearing box boundary received from a block on the same level
 
-void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, const int nb) {
+// KGF: AthenaArray<Real> &dst= pmb->phydro->u passed through from
+// ReceiveHydroShearingboxBoundaryBuffers()
+
+void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
+                                                                   const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -396,7 +404,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
         }
       }
       // set var if boundary arrived
-      SetShearingBoxBoundarySameLevel(var, recv_innerbuf_hydro_[n], n);
+      SetShearingBoxBoundarySameLevel(recv_innerbuf_hydro_[n], n);
       shbox_inner_hydro_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
@@ -423,7 +431,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(var, recv_outerbuf_hydro_[n], n+offset);
+      SetShearingBoxBoundarySameLevel(recv_outerbuf_hydro_[n], n+offset);
       shbox_outer_hydro_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
@@ -487,16 +495,16 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       if (shbb_.igidlist[j] == pmb->gid)  jblock = j;
     }
     // send [js:je-joverlap] of the meshblock to other
-    // attach [je-joverlap+1:MIN(je-joverlap+(NGHOST),je-js+1)]
+    // attach [je-joverlap+1:MIN(je-joverlap+(NGHOST), je-js+1)]
     // to its right end.
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
     send_inner_gid_[1]  = shbb_.igidlist[jtmp];
     send_inner_rank_[1] = shbb_.irnklist[jtmp];
     send_inner_lid_[1]  = shbb_.ilidlist[jtmp];
-    send_innersize_hydro_[1] = std::min(je-js-joverlap_+1+NGHOST, je-js+1);
+    send_innersize_hydro_[1] = std::min(je -js-joverlap_ + 1+NGHOST, je -js + 1);
     // recv [js+joverlap:je] from other
-    // attach [je+1:MIN(je+NGHOST,je+joverlap)] to its right end.
+    // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
     recv_inner_gid_[1]  = shbb_.igidlist[jtmp];
@@ -506,7 +514,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
     shbox_inner_hydro_flag_[1] = BoundaryStatus::waiting;
     if (MAGNETIC_FIELDS_ENABLED) {
       send_innersize_field_[1] = send_innersize_hydro_[1]
-                                 *NGHOST*(NFIELD*ncells3+1)
+                                 *NGHOST*(NFIELD*ncells3 + 1)
                                  +NGHOST*ncells3;
       recv_innersize_field_[1] = send_innersize_field_[1];
       shbox_inner_field_flag_[1] = BoundaryStatus::waiting;
@@ -524,7 +532,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       send_inner_gid_[0]  = shbb_.igidlist[jtmp];
       send_inner_rank_[0] = shbb_.irnklist[jtmp];
       send_inner_lid_[0]  = shbb_.ilidlist[jtmp];
-      send_innersize_hydro_[0] = std::min(joverlap_+NGHOST, je-js+1);
+      send_innersize_hydro_[0] = std::min(joverlap_+NGHOST, je -js + 1);
       // receive from its left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
@@ -535,11 +543,11 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_inner_hydro_flag_[0] = BoundaryStatus::waiting;// switch on if overlap
       if (MAGNETIC_FIELDS_ENABLED) {
         send_innersize_field_[0] = send_innersize_hydro_[0]
-                                   *NGHOST*(NFIELD*ncells3+1)
+                                   *NGHOST*(NFIELD*ncells3 + 1)
                                    +NGHOST*ncells3;
         recv_innersize_field_[0] = send_innersize_field_[0];
         shbox_inner_field_flag_[0] = BoundaryStatus::waiting;
-        send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3+1)+nx3;
+        send_innersize_emf_[0] = send_innersize_hydro_[0]*(2*nx3 + 1)+nx3;
         recv_innersize_emf_[0] = send_innersize_emf_[0];
         shbox_inner_emf_flag_[0] = BoundaryStatus::waiting;
       }
@@ -561,10 +569,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
         recv_innersize_hydro_[2] = send_innersize_hydro_[2];
         shbox_inner_hydro_flag_[2] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
+          send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST*(NFIELD*ncells3 + 1);
           recv_innersize_field_[2] = send_innersize_field_[2];
           shbox_inner_field_flag_[2] = BoundaryStatus::waiting;
-          send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3+1);
+          send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3 + 1);
           recv_innersize_emf_[2] = send_innersize_emf_[2];
           shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
         }
@@ -588,24 +596,24 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
         shbox_inner_hydro_flag_[3] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
           send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST
-                                     *(NFIELD*ncells3+1);
+                                     *(NFIELD*ncells3 + 1);
           recv_innersize_field_[3] = send_innersize_field_[3];
           shbox_inner_field_flag_[3] = BoundaryStatus::waiting;
-          send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3+1);
+          send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3 + 1);
           recv_innersize_emf_[3] = send_innersize_emf_[3];
           shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
         }
       }
     } else { // joverlap_ == 0
       // send [je-(NGHOST-1):je] to Right
-      jtmp = jblock + (Ngrids+1);
+      jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       send_inner_gid_[2]  = shbb_.igidlist[jtmp];
       send_inner_rank_[2] = shbb_.irnklist[jtmp];
       send_inner_lid_[2]  = shbb_.ilidlist[jtmp];
       send_innersize_hydro_[2] = NGHOST;
       // recv [js-NGHOST:js-1] from Left
-      jtmp = jblock - (Ngrids+1);
+      jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
       recv_inner_gid_[2]  = shbb_.igidlist[jtmp];
       recv_inner_rank_[2] = shbb_.irnklist[jtmp];
@@ -614,10 +622,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_inner_hydro_flag_[2] = BoundaryStatus::waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_innersize_field_[2] = send_innersize_hydro_[2]*NGHOST
-                                   *(NFIELD*ncells3+1);
+                                   *(NFIELD*ncells3 + 1);
         recv_innersize_field_[2] = send_innersize_field_[2];
         shbox_inner_field_flag_[2] = BoundaryStatus::waiting;
-        send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3+1);
+        send_innersize_emf_[2] = send_innersize_hydro_[2]*(2*nx3 + 1);
         recv_innersize_emf_[2] = send_innersize_emf_[2];
         shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
       }
@@ -630,7 +638,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       send_inner_rank_[3] = shbb_.irnklist[jtmp];
       send_inner_lid_[3]  = shbb_.ilidlist[jtmp];
       send_innersize_hydro_[3] = NGHOST;
-      // recv [je+1:je+(NGHOST-1)] from Right
+      // recv [je + 1:je+(NGHOST-1)] from Right
       jtmp = jblock - (Ngrids-1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
@@ -641,10 +649,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_inner_hydro_flag_[3] = BoundaryStatus::waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_innersize_field_[3] = send_innersize_hydro_[3]*NGHOST
-                                   *(NFIELD*ncells3+1);
+                                   *(NFIELD*ncells3 + 1);
         recv_innersize_field_[3] = send_innersize_field_[3];
         shbox_inner_field_flag_[3] = BoundaryStatus::waiting;
-        send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3+1);
+        send_innersize_emf_[3] = send_innersize_hydro_[3]*(2*nx3 + 1);
         recv_innersize_emf_[3] = send_innersize_emf_[3];
         shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
       }
@@ -682,7 +690,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
     recv_outer_gid_[1]  = shbb_.ogidlist[jtmp];
     recv_outer_rank_[1] = shbb_.ornklist[jtmp];
     recv_outer_lid_[1]  = shbb_.olidlist[jtmp];
-    recv_outersize_hydro_[1] = std::min(je-js-joverlap_+1+NGHOST,je-js+1);
+    recv_outersize_hydro_[1] = std::min(je -js - joverlap_ + 1 + NGHOST, je -js + 1);
     // send [js+joverlap-NGHOST:je] of the meshblock to other
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
@@ -692,11 +700,11 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
     send_outersize_hydro_[1] = recv_outersize_hydro_[1];
     shbox_outer_hydro_flag_[1] = BoundaryStatus::waiting;
     if (MAGNETIC_FIELDS_ENABLED) {
-      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3+1) +
+      send_outersize_field_[1] = send_outersize_hydro_[1]*NGHOST*(NFIELD*ncells3 + 1) +
                                  NGHOST*ncells3;
       recv_outersize_field_[1] = send_outersize_field_[1];
       shbox_outer_field_flag_[1] = BoundaryStatus::waiting;
-      send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3+1)+nx3;
+      send_outersize_emf_[1] = send_outersize_hydro_[1]*(2*nx3 + 1)+nx3;
       recv_outersize_emf_[1] = send_outersize_emf_[1];
       shbox_outer_emf_flag_[1] = BoundaryStatus::waiting;
     }
@@ -709,7 +717,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       recv_outer_gid_[0]  = shbb_.ogidlist[jtmp];
       recv_outer_rank_[0] = shbb_.ornklist[jtmp];
       recv_outer_lid_[0]  = shbb_.olidlist[jtmp];
-      recv_outersize_hydro_[0] = std::min(joverlap_+NGHOST,je-js+1);
+      recv_outersize_hydro_[0] = std::min(joverlap_+NGHOST, je -js + 1);
       // send to left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
@@ -720,11 +728,11 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_outer_hydro_flag_[0] = BoundaryStatus::waiting; // switch on if overlap
       if (MAGNETIC_FIELDS_ENABLED) {
         send_outersize_field_[0] = send_outersize_hydro_[0]
-                                   *NGHOST*(NFIELD*ncells3+1)
+                                   *NGHOST*(NFIELD*ncells3 + 1)
                                    +NGHOST*ncells3;
         recv_outersize_field_[0] = send_outersize_field_[0];
         shbox_outer_field_flag_[0] = BoundaryStatus::waiting;
-        send_outersize_emf_[0] = send_outersize_hydro_[0]*(2*nx3+1)+nx3;
+        send_outersize_emf_[0] = send_outersize_hydro_[0]*(2*nx3 + 1)+nx3;
         recv_outersize_emf_[0] = send_outersize_emf_[0];
         shbox_outer_emf_flag_[0] = BoundaryStatus::waiting;
       }
@@ -746,10 +754,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
         send_outersize_hydro_[2] = recv_outersize_hydro_[2];
         shbox_outer_hydro_flag_[2] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3+1);
+          send_outersize_field_[2] = send_outersize_hydro_[2]*NGHOST*(NFIELD*ncells3 + 1);
           recv_outersize_field_[2] = send_outersize_field_[2];
           shbox_outer_field_flag_[2] = BoundaryStatus::waiting;
-          send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3+1);
+          send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3 + 1);
           recv_outersize_emf_[2] = send_outersize_emf_[2];
           shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
         }
@@ -773,16 +781,16 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
         shbox_outer_hydro_flag_[3] = BoundaryStatus::waiting;
         if (MAGNETIC_FIELDS_ENABLED) {
           send_outersize_field_[3] = send_outersize_hydro_[3]*NGHOST
-                                     *(NFIELD*ncells3+1);
+                                     *(NFIELD*ncells3 + 1);
           recv_outersize_field_[3] = send_outersize_field_[3];
           shbox_outer_field_flag_[3] = BoundaryStatus::waiting;
-          send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3+1);
+          send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3 + 1);
           recv_outersize_emf_[3] = send_outersize_emf_[3];
           shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
         }
       }
     } else { // joverlap_ == 0
-      // recv [je+1:je+NGHOST] from Left
+      // recv [je + 1:je+NGHOST] from Left
       jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       recv_outer_gid_[2]  = shbb_.ogidlist[jtmp];
@@ -790,7 +798,7 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       recv_outer_lid_[2]  = shbb_.olidlist[jtmp];
       recv_outersize_hydro_[2] = NGHOST;
       // send [js:js+NGHOST-1] to Right
-      jtmp = jblock - (Ngrids+1);
+      jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
       send_outer_gid_[2]  = shbb_.ogidlist[jtmp];
       send_outer_rank_[2] = shbb_.ornklist[jtmp];
@@ -799,10 +807,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_outer_hydro_flag_[2] = BoundaryStatus::waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_outersize_field_[2] = send_outersize_hydro_[2]
-                                   *NGHOST*(NFIELD*ncells3+1);
+                                   *NGHOST*(NFIELD*ncells3 + 1);
         recv_outersize_field_[2] = send_outersize_field_[2];
         shbox_outer_field_flag_[2] = BoundaryStatus::waiting;
-        send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3+1);
+        send_outersize_emf_[2] = send_outersize_hydro_[2]*(2*nx3 + 1);
         recv_outersize_emf_[2] = send_outersize_emf_[2];
         shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
       }
@@ -826,10 +834,10 @@ void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
       shbox_outer_hydro_flag_[3] = BoundaryStatus::waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         send_outersize_field_[3] = send_outersize_hydro_[3]
-                                   *NGHOST*(NFIELD*ncells3+1);
+                                   *NGHOST*(NFIELD*ncells3 + 1);
         recv_outersize_field_[3] = send_outersize_field_[3];
         shbox_outer_field_flag_[3] = BoundaryStatus::waiting;
-        send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3+1);
+        send_outersize_emf_[3] = send_outersize_hydro_[3]*(2*nx3 + 1);
         recv_outersize_emf_[3] = send_outersize_emf_[3];
         shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
       }
