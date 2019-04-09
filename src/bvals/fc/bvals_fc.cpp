@@ -172,15 +172,15 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   cng2 = cng*f2;
   cng3 = cng*f3;
 
-  int size1 = ((ni.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
-            *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-            *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-  int size2 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-            *((ni.ox2 == 0) ? (pmb->block_size.nx2+f2):NGHOST)
-            *((ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-  int size3 = ((ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-            *((ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-            *((ni.ox3 == 0) ? (pmb->block_size.nx3+f3):NGHOST);
+  int size1 = ((ni.ox1 == 0) ? (pmb->block_size.nx1+1) : NGHOST)
+            *((ni.ox2 == 0) ? (pmb->block_size.nx2) : NGHOST)
+            *((ni.ox3 == 0) ? (pmb->block_size.nx3) : NGHOST);
+  int size2 = ((ni.ox1 == 0) ? (pmb->block_size.nx1) : NGHOST)
+            *((ni.ox2 == 0) ? (pmb->block_size.nx2+f2) : NGHOST)
+            *((ni.ox3 == 0) ? (pmb->block_size.nx3) : NGHOST);
+  int size3 = ((ni.ox1 == 0) ? (pmb->block_size.nx1) : NGHOST)
+            *((ni.ox2 == 0) ? (pmb->block_size.nx2) : NGHOST)
+            *((ni.ox3 == 0) ? (pmb->block_size.nx3+f3) : NGHOST);
   int size = size1 + size2 + size3;
   if (pmy_mesh_->multilevel) {
     if (ni.type != NeighborConnect::face) {
@@ -189,15 +189,15 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
       if (ni.ox3 != 0) size3 = size3/NGHOST*(NGHOST+1);
     }
     size = size1 + size2 + size3;
-    int f2c1 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
-             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                   *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-    int f2c2 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
+    int f2c1 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1) : NGHOST)
+             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2) : NGHOST)
+                   *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2) : NGHOST);
+    int f2c2 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2) : NGHOST)
              *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2)
                : NGHOST)
-             *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-    int f2c3 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
+             *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2) : NGHOST);
+    int f2c3 = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2) : NGHOST)
+             *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2) : NGHOST)
              *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3)
                : NGHOST);
     if (ni.type != NeighborConnect::face) {
@@ -207,16 +207,16 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
     }
     int fsize = f2c1+f2c2+f2c3;
     int c2f1 =
-        ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
-        *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
-        *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
+        ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1) : cng+1)
+        *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2) : cng)
+        *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3) : cng);
     int c2f2 =
-        ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2+cng1):cng)
-        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2+f2):cng+1)
-        *((ni.ox3 == 0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+        ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2+cng1) : cng)
+        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2+f2) : cng+1)
+        *((ni.ox3 == 0)?((pmb->block_size.nx3+1)/2+cng3) : cng);
     int c2f3 =
-        ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
-        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+        ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1) : cng)
+        *((ni.ox2 == 0)?((pmb->block_size.nx2+1)/2+cng2) : cng)
         *((ni.ox3 == 0) ?
           ((pmb->block_size.nx3+1)/2+cng3+f3) : cng+1);
     int csize = c2f1+c2f2+c2f3;
@@ -656,7 +656,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       else             sj -= cng;
     }
   } else if (nb.ni.ox2 > 0) {  sj = pmb->cje+1,   ej = pmb->cje+cng;}
-  else               sj = pmb->cjs-cng, ej = pmb->cjs-1;
+  else               sj = pmb->cjs-cng, ej = pmb->cjs - 1;
   if (nb.ni.ox3 == 0) {
     sk = pmb->cks, ek = pmb->cke;
     if (pmb->block_size.nx3 > 1) {
@@ -664,7 +664,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       else             sk -= cng;
     }
   } else if (nb.ni.ox3 > 0) {  sk = pmb->cke+1,   ek = pmb->cke+cng;}
-  else               sk = pmb->cks-cng, ek = pmb->cks-1;
+  else               sk = pmb->cks-cng, ek = pmb->cks - 1;
 
   if (nb.polar) {
     Real sign = flip_across_pole_[IB1] ? -1.0 : 1.0;
@@ -685,7 +685,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     if ((pmb->loc.lx1 & 1LL) == 0LL) ei += cng;
     else             si -= cng;
   } else if (nb.ni.ox1 > 0) {  si = pmb->cie+1,   ei = pmb->cie+cng;}
-  else               si = pmb->cis-cng, ei = pmb->cis-1;
+  else               si = pmb->cis-cng, ei = pmb->cis - 1;
   if (nb.ni.ox2 == 0) {
     sj = pmb->cjs, ej = pmb->cje;
     if (pmb->block_size.nx2 > 1) {
@@ -722,7 +722,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       else             sj -= cng;
     }
   } else if (nb.ni.ox2 > 0) {  sj = pmb->cje+1,   ej = pmb->cje+cng;}
-  else               sj = pmb->cjs-cng, ej = pmb->cjs-1;
+  else               sj = pmb->cjs-cng, ej = pmb->cjs - 1;
   if (nb.ni.ox3 == 0) {
     sk = pmb->cks, ek = pmb->cke;
     if (pmb->block_size.nx3 > 1) {
@@ -772,7 +772,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;
     else            ei -= pmb->block_size.nx1/2;
   } else if (nb.ni.ox1 > 0) { si = pmb->ie+2,      ei = pmb->ie+NGHOST+1;}
-  else              si = pmb->is-NGHOST, ei = pmb->is-1;
+  else              si = pmb->is-NGHOST, ei = pmb->is - 1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox1 > 0) si--;
@@ -790,7 +790,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else if (nb.ni.ox2 > 0) { sj = pmb->je+1,      ej = pmb->je+NGHOST;}
-  else              sj = pmb->js-NGHOST, ej = pmb->js-1;
+  else              sj = pmb->js-NGHOST, ej = pmb->js - 1;
   if (nb.ni.ox3 == 0) {
     sk = pmb->ks, ek = pmb->ke;
     if (pmb->block_size.nx3 > 1) {
@@ -803,7 +803,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else if (nb.ni.ox3 > 0) { sk = pmb->ke+1,      ek = pmb->ke+NGHOST;}
-  else              sk = pmb->ks-NGHOST, ek = pmb->ks-1;
+  else              sk = pmb->ks-NGHOST, ek = pmb->ks - 1;
 
   if (nb.polar) {
     Real sign = flip_across_pole_[IB1] ? -1.0 : 1.0;
@@ -824,7 +824,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;
     else            ei -= pmb->block_size.nx1/2;
   } else if (nb.ni.ox1 > 0) { si = pmb->ie+1,      ei = pmb->ie+NGHOST;}
-  else              si = pmb->is-NGHOST, ei = pmb->is-1;
+  else              si = pmb->is-NGHOST, ei = pmb->is - 1;
   if (nb.ni.ox2 == 0) {
     sj = pmb->js, ej = pmb->je;
     if (pmb->block_size.nx2 > 1) {
@@ -838,7 +838,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else if (nb.ni.ox2 > 0) { sj = pmb->je+2,      ej = pmb->je+NGHOST+1;}
-  else              sj = pmb->js-NGHOST, ej = pmb->js-1;
+  else              sj = pmb->js-NGHOST, ej = pmb->js - 1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox2 > 0) sj--;
@@ -876,7 +876,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else if (nb.ni.ox2 > 0) { sj = pmb->je+1,      ej = pmb->je+NGHOST;}
-  else              sj = pmb->js-NGHOST, ej = pmb->js-1;
+  else              sj = pmb->js-NGHOST, ej = pmb->js - 1;
   if (nb.ni.ox3 == 0) {
     sk = pmb->ks, ek = pmb->ke;
     if (pmb->block_size.nx3 > 1) {
@@ -890,7 +890,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else if (nb.ni.ox3 > 0) { sk = pmb->ke+2,      ek = pmb->ke+NGHOST+1;}
-  else              sk = pmb->ks-NGHOST, ek = pmb->ks-1;
+  else              sk = pmb->ks-NGHOST, ek = pmb->ks - 1;
   // include the overlapping faces in edge and corner boundaries
   if (nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox3 > 0) sk--;
@@ -958,7 +958,6 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
 
 void FaceCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb = pmy_block_;
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.level == pmb->loc.level)
@@ -984,7 +983,6 @@ void FaceCenteredBoundaryVariable::SetBoundaries() {
 
 void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb = pmy_block_;
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
@@ -999,13 +997,11 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
     bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
-
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
       || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     PolarBoundarySingleAzimuthalBlock();
     PolarFieldBoundaryAverage();
   }
-
   return;
 }
 
@@ -1132,14 +1128,14 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
   int &mylevel = pmb->loc.level;
 
   // count the number of the fine meshblocks contacting on each edge
-  int eid=0;
+  int eid = 0;
   if (pmb->block_size.nx2 > 1) {
     for (int ox2=-1; ox2<=1; ox2+=2) {
       for (int ox1=-1; ox1<=1; ox1+=2) {
         int nis, nie, njs, nje;
-        nis = std::max(ox1-1,-1), nie = std::min(ox1+1,1);
-        njs = std::max(ox2-1,-1), nje = std::min(ox2+1,1);
-        int nf=0, fl=mylevel;
+        nis = std::max(ox1-1, -1), nie = std::min(ox1+1, 1);
+        njs = std::max(ox2-1, -1), nje = std::min(ox2+1, 1);
+        int nf = 0, fl = mylevel;
         for (int nj=njs; nj<=nje; nj++) {
           for (int ni=nis; ni<=nie; ni++) {
             if (pbval_->nblevel[1][nj+1][ni+1] > fl)
@@ -1157,13 +1153,13 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
     for (int ox3=-1; ox3<=1; ox3+=2) {
       for (int ox1=-1; ox1<=1; ox1+=2) {
         int nis, nie, nks, nke;
-        nis = std::max(ox1-1,-1), nie = std::min(ox1+1,1);
-        nks = std::max(ox3-1,-1), nke = std::min(ox3+1,1);
-        int nf=0, fl=mylevel;
+        nis = std::max(ox1-1, -1), nie = std::min(ox1+1, 1);
+        nks = std::max(ox3-1, -1), nke = std::min(ox3+1, 1);
+        int nf = 0, fl = mylevel;
         for (int nk=nks; nk<=nke; nk++) {
           for (int ni=nis; ni<=nie; ni++) {
             if (pbval_->nblevel[nk+1][1][ni+1] > fl)
-              fl++, nf=0;
+              fl++, nf = 0;
             if (pbval_->nblevel[nk+1][1][ni+1] == fl)
               nf++;
           }
@@ -1175,13 +1171,13 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
     for (int ox3=-1; ox3<=1; ox3+=2) {
       for (int ox2=-1; ox2<=1; ox2+=2) {
         int njs, nje, nks, nke;
-        njs = std::max(ox2-1,-1), nje = std::min(ox2+1,1);
-        nks = std::max(ox3-1,-1), nke = std::min(ox3+1,1);
-        int nf=0, fl=mylevel;
+        njs = std::max(ox2-1, -1), nje = std::min(ox2+1, 1);
+        nks = std::max(ox3-1, -1), nke = std::min(ox3+1, 1);
+        int nf = 0, fl = mylevel;
         for (int nk=nks; nk<=nke; nk++) {
           for (int nj=njs; nj<=nje; nj++) {
             if (pbval_->nblevel[nk+1][nj+1][1] > fl)
-              fl++, nf=0;
+              fl++, nf = 0;
             if (pbval_->nblevel[nk+1][nj+1][1] == fl)
               nf++;
           }
@@ -1199,6 +1195,9 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
 
 #ifdef MPI_PARALLEL
   MeshBlock* pmb = pmy_block_;
+  int nx1 = pmb->block_size.nx1;
+  int nx2 = pmb->block_size.nx2;
+  int nx3 = pmb->block_size.nx3;
   int &mylevel = pmb->loc.level;
 
   int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
@@ -1213,63 +1212,63 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       int size, csize, fsize;
-      int size1 = ((nb.ni.ox1 == 0) ? (pmb->block_size.nx1+1):NGHOST)
-                *((nb.ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-                *((nb.ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-      int size2 = ((nb.ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-                *((nb.ni.ox2 == 0) ? (pmb->block_size.nx2+f2):NGHOST)
-                *((nb.ni.ox3 == 0) ? (pmb->block_size.nx3):NGHOST);
-      int size3 = ((nb.ni.ox1 == 0) ? (pmb->block_size.nx1):NGHOST)
-                *((nb.ni.ox2 == 0) ? (pmb->block_size.nx2):NGHOST)
-                *((nb.ni.ox3 == 0) ? (pmb->block_size.nx3+f3):NGHOST);
+      int size1 = ((nb.ni.ox1 == 0) ? (nx1 + 1) : NGHOST)
+                  *((nb.ni.ox2 == 0) ? (nx2) : NGHOST)
+                  *((nb.ni.ox3 == 0) ? (nx3) : NGHOST);
+      int size2 = ((nb.ni.ox1 == 0) ? (nx1) : NGHOST)
+                  *((nb.ni.ox2 == 0) ? (nx2 + f2) : NGHOST)
+                  *((nb.ni.ox3 == 0) ? (nx3) : NGHOST);
+      int size3 = ((nb.ni.ox1 == 0) ? (nx1) : NGHOST)
+                  *((nb.ni.ox2 == 0) ? (nx2) : NGHOST)
+                  *((nb.ni.ox3 == 0) ? (nx3 + f3) : NGHOST);
       size = size1 + size2 + size3;
       if (pmy_mesh_->multilevel == true) {
         if (nb.ni.type != NeighborConnect::face) {
-          if (nb.ni.ox1 != 0) size1 = size1/NGHOST*(NGHOST+1);
-          if (nb.ni.ox2 != 0) size2 = size2/NGHOST*(NGHOST+1);
-          if (nb.ni.ox3 != 0) size3 = size3/NGHOST*(NGHOST+1);
+          if (nb.ni.ox1 != 0) size1 = size1/NGHOST*(NGHOST + 1);
+          if (nb.ni.ox2 != 0) size2 = size2/NGHOST*(NGHOST + 1);
+          if (nb.ni.ox3 != 0) size3 = size3/NGHOST*(NGHOST + 1);
         }
         size = size1 + size2 + size3;
-        int f2c1 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+1):NGHOST)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        int f2c2 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+f2):NGHOST)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2):NGHOST);
-        int f2c3 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2):NGHOST)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2):NGHOST)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+f3):NGHOST);
+        int f2c1 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2 + 1) : NGHOST)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
+        int f2c2 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2) : NGHOST)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2 + f2) : NGHOST)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
+        int f2c3 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2) : NGHOST)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2 + f3) : NGHOST);
         if (nb.ni.type != NeighborConnect::face) {
-          if (nb.ni.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST+1);
-          if (nb.ni.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST+1);
-          if (nb.ni.ox3 != 0) f2c3 = f2c3/NGHOST*(NGHOST+1);
+          if (nb.ni.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST + 1);
+          if (nb.ni.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST + 1);
+          if (nb.ni.ox3 != 0) f2c3 = f2c3/NGHOST*(NGHOST + 1);
         }
         fsize = f2c1 + f2c2 + f2c3;
-        int c2f1 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1+1):cng+1)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-        int c2f2 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2+f2):cng+1)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3):cng);
-        int c2f3 = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2+cng1):cng)
-                 *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2+cng2):cng)
-                 *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2+cng3+f3):cng+1);
+        int c2f1 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2 + cng1 + 1) : cng + 1)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2 + cng2) : cng)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2 + cng3) : cng);
+        int c2f2 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2 + cng1) : cng)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2 + cng2 + f2) : cng + 1)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2 + cng3) : cng);
+        int c2f3 = ((nb.ni.ox1 == 0) ? ((nx1 + 1)/2 + cng1) : cng)
+                   *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2 + cng2) : cng)
+                   *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2 + cng3 + f3) : cng + 1);
         csize = c2f1 + c2f2 + c2f3;
       } // end of multilevel == true
       if (nb.snb.level == mylevel) // same refinement level
         ssize = size, rsize = size;
-      else if (nb.snb.level<mylevel) // coarser
+      else if (nb.snb.level < mylevel) // coarser
         ssize = fsize, rsize = csize;
       else // finer
         ssize = csize, rsize = fsize;
 
       // face-centered field: bd_var_
-      tag=pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_phys_id_);
+      tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_phys_id_);
       if (bd_var_.req_send[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
       MPI_Send_init(bd_var_.send[nb.bufid], ssize, MPI_ATHENA_REAL,
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid]));
-      tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_phys_id_);
+      tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_phys_id_);
       if (bd_var_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_var_.recv[nb.bufid], rsize, MPI_ATHENA_REAL,
@@ -1278,50 +1277,44 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       // emf correction
       int f2csize;
       if (nb.ni.type == NeighborConnect::face) { // face
-        if (pmb->block_size.nx3 > 1) { // 3D
+        if (nx3 > 1) { // 3D
           if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
-            size = (pmb->block_size.nx2+1)*(pmb->block_size.nx3)
-                 +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-            f2csize = (pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
-                    +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
+            size = (nx2 + 1)*(nx3) + (nx2)*(nx3 + 1);
+            f2csize = (nx2/2 + 1)*(nx3/2) + (nx2/2)*(nx3/2 + 1);
           } else if (nb.fid == BoundaryFace::inner_x2
                      || nb.fid == BoundaryFace::outer_x2) {
-            size = (pmb->block_size.nx1+1)*(pmb->block_size.nx3)
-                 +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
-            f2csize = (pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
-                    +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
+            size = (nx1 + 1)*(nx3) + (nx1)*(nx3 + 1);
+            f2csize = (nx1/2 + 1)*(nx3/2) + (nx1/2)*(nx3/2 + 1);
           } else if (nb.fid == BoundaryFace::inner_x3
                      || nb.fid == BoundaryFace::outer_x3) {
-            size = (pmb->block_size.nx1+1)*(pmb->block_size.nx2)
-                 +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
-            f2csize = (pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
-                    +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
+            size = (nx1 + 1)*(nx2) + (nx1)*(nx2 + 1);
+            f2csize = (nx1/2 + 1)*(nx2/2) + (nx1/2)*(nx2/2 + 1);
           }
-        } else if (pmb->block_size.nx2 > 1) { // 2D
+        } else if (nx2 > 1) { // 2D
           if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
-            size = (pmb->block_size.nx2+1)+pmb->block_size.nx2;
-            f2csize = (pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
+            size = (nx2 + 1) + nx2;
+            f2csize = (nx2/2 + 1) + nx2/2;
           } else if (nb.fid == BoundaryFace::inner_x2
                      || nb.fid == BoundaryFace::outer_x2) {
-            size = (pmb->block_size.nx1+1)+pmb->block_size.nx1;
-            f2csize = (pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+            size = (nx1 + 1) + nx1;
+            f2csize = (nx1/2 + 1) + nx1/2;
           }
         } else { // 1D
           size = f2csize = 2;
         }
       } else if (nb.ni.type == NeighborConnect::edge) { // edge
-        if (pmb->block_size.nx3 > 1) { // 3D
-          if (nb.eid>=0 && nb.eid<4) {
-            size = pmb->block_size.nx3;
-            f2csize = pmb->block_size.nx3/2;
-          } else if (nb.eid>=4 && nb.eid<8) {
-            size = pmb->block_size.nx2;
-            f2csize = pmb->block_size.nx2/2;
-          } else if (nb.eid>=8 && nb.eid<12) {
-            size = pmb->block_size.nx1;
-            f2csize = pmb->block_size.nx1/2;
+        if (nx3 > 1) { // 3D
+          if (nb.eid >= 0 && nb.eid < 4) {
+            size = nx3;
+            f2csize = nx3/2;
+          } else if (nb.eid >= 4 && nb.eid < 8) {
+            size = nx2;
+            f2csize = nx2/2;
+          } else if (nb.eid >= 8 && nb.eid < 12) {
+            size = nx1;
+            f2csize = nx1/2;
           }
-        } else if (pmb->block_size.nx2 > 1) { // 2D
+        } else if (nx2 > 1) { // 2D
           size = f2csize = 1;
         }
       } else { // corner
@@ -1332,13 +1325,13 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
         if ((nb.ni.type == NeighborConnect::face)
             || ((nb.ni.type == NeighborConnect::edge)
                 && (edge_flag_[nb.eid] == true))) {
-          tag=pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_flx_phys_id_);
+          tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
                         nb.snb.rank, tag, MPI_COMM_WORLD,
                         &(bd_var_flcor_.req_send[nb.bufid]));
-          tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
+          tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
           MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
@@ -1347,7 +1340,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
         }
       }
       if (nb.snb.level>mylevel) { // finer neighbor
-        tag=pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
+        tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, fc_flx_phys_id_);
         if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
           MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
         MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], f2csize, MPI_ATHENA_REAL,
@@ -1355,7 +1348,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                       &(bd_var_flcor_.req_recv[nb.bufid]));
       }
       if (nb.snb.level<mylevel) { // coarser neighbor
-        tag=pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_flx_phys_id_);
+        tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_flx_phys_id_);
         if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
           MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
         MPI_Send_init(bd_var_flcor_.send[nb.bufid], f2csize, MPI_ATHENA_REAL,
@@ -1372,12 +1365,12 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       tag = pbval_->CreateBvalsMPITag(snb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_flux_north_send_[n] != MPI_REQUEST_NULL)
         MPI_Request_free(&req_flux_north_send_[n]);
-      MPI_Send_init(flux_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+      MPI_Send_init(flux_north_send_[n], nx1, MPI_ATHENA_REAL,
                     snb.rank, tag, MPI_COMM_WORLD, &req_flux_north_send_[n]);
       tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
       if (req_flux_north_recv_[n] != MPI_REQUEST_NULL)
         MPI_Request_free(&req_flux_north_recv_[n]);
-      MPI_Recv_init(flux_north_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+      MPI_Recv_init(flux_north_recv_[n], nx1, MPI_ATHENA_REAL,
                     snb.rank, tag, MPI_COMM_WORLD, &req_flux_north_recv_[n]);
     }
   }
@@ -1387,12 +1380,12 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       tag = pbval_->CreateBvalsMPITag(snb.lid, pmb->loc.lx3, fc_flx_pole_phys_id_);
       if (req_flux_south_send_[n] != MPI_REQUEST_NULL)
         MPI_Request_free(&req_flux_south_send_[n]);
-      MPI_Send_init(flux_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+      MPI_Send_init(flux_south_send_[n], nx1, MPI_ATHENA_REAL,
                     snb.rank, tag, MPI_COMM_WORLD, &req_flux_south_send_[n]);
       tag = pbval_->CreateBvalsMPITag(pmb->lid, n, fc_flx_pole_phys_id_);
       if (req_flux_south_recv_[n] != MPI_REQUEST_NULL)
         MPI_Request_free(&req_flux_south_recv_[n]);
-      MPI_Recv_init(flux_south_recv_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+      MPI_Recv_init(flux_south_recv_[n], nx1, MPI_ATHENA_REAL,
                     snb.rank, tag, MPI_COMM_WORLD, &req_flux_south_recv_[n]);
     }
   }
