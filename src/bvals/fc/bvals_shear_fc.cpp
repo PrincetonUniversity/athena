@@ -41,10 +41,10 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadShearing(Real *buf, int nb)
 //  \brief Load shearing box field boundary buffers
 
-void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
+void FaceCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -56,7 +56,7 @@ void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
   switch(nb) {
     case 0:
-      sj = pmb->je-joverlap_-(NGHOST - 1); ej = pmb->je;
+      sj = pmb->je - joverlap_ - (NGHOST - 1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->js;
       psj = sj; pej = ej + 1;
       break;
@@ -66,13 +66,13 @@ void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
       psj = sj; pej = ej + 1;
       break;
     case 2:
-      sj = pmb->je-(NGHOST - 1); ej = pmb->je;
+      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
       psj = sj; pej = ej;
       break;
     case 3:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ < NGHOST) ej = pmb->js+(NGHOST - joverlap_) - 1;
+      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST - joverlap_) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 4:
@@ -97,27 +97,23 @@ void BoundaryValues::LoadShearing(FaceField &src, Real *buf, int nb) {
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:LoadShearing " << std::endl
+      msg << "### FATAL ERROR in FaceCenteredBoundaryVariable:LoadShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
-
   int p = 0;
   BufferUtility::PackData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
   BufferUtility::PackData(src.x2f, buf, si, ei, psj, pej, sk, ek, p);
   BufferUtility::PackData(src.x3f, buf, si, ei, sj, ej, sk, ek+1, p);
-
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendShearingBoxBoundaryBuffers(FaceField &src)
+//! \fn void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
 //  \brief Send shearing box boundary buffers for field variables
 
-void BoundaryValues::SendShearingBoxBoundaryBuffers(FaceField &src,
-                                                    bool conserved_values) {
+void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -302,12 +298,12 @@ void BoundaryValues::SendShearingBoxBoundaryBuffers(FaceField &src,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst,
+//! \fn void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
 //                                           Real *buf, const int nb)
 //  \brief Set field shearing box boundary received from a block on the same level
 
-void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf,
-                                                          const int nb) {
+void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
+                                                                   const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -320,37 +316,37 @@ void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf,
   switch(nb) {
     case 0:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js - NGHOST; ej = pmb->js+(joverlap_ - 1);
-      if (joverlap_ > nx2) sj = pmb->js-nxo;
+      sj = pmb->js - NGHOST; ej = pmb->js + (joverlap_ - 1);
+      if (joverlap_ > nx2) sj = pmb->js - nxo;
       psi = si; pei = ei; psj = sj; pej = ej + 1;
       break;
     case 1:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js+joverlap_; ej = pmb->je + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je+joverlap_;
+      sj = pmb->js + joverlap_; ej = pmb->je + NGHOST;
+      if (joverlap_ < NGHOST) ej = pmb->je + joverlap_;
       psi = si; pei = ei; psj = sj; pej = ej + 1;
       break;
     case 2:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_ > nx2) ej = pmb->js-nxo - 1;
+      if (joverlap_ > nx2) ej = pmb->js - nxo - 1;
       psi = si; pei = ei; psj = sj; pej = ej;
       break;
     case 3:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->je+joverlap_ + 1; ej = pmb->je + NGHOST;
+      sj = pmb->je + joverlap_ + 1; ej = pmb->je + NGHOST;
       psi = si; pei = ei; psj = sj + 1; pej = ej + 1;
       break;
     case 4:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->je-(joverlap_ - 1); ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) ej = pmb->je+nxo;
+      sj = pmb->je - (joverlap_ - 1); ej = pmb->je + NGHOST;
+      if (joverlap_ > nx2) ej = pmb->je + nxo;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej + 1;
       break;
     case 5:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->je-joverlap_;
-      if (joverlap_ < NGHOST) sj = pmb->js-joverlap_;
+      sj = pmb->js - NGHOST; ej = pmb->je - joverlap_;
+      if (joverlap_ < NGHOST) sj = pmb->js - joverlap_;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej + 1;
       break;
     case 6:
@@ -361,12 +357,12 @@ void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf,
       break;
     case 7:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->js-joverlap_ - 1;
+      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_ - 1;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej;
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:SetShearing " << std::endl
+      msg << "### FATAL ERROR in FaceCenteredBoundaryVariable:SetShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
@@ -380,10 +376,10 @@ void BoundaryValues::SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(FaceField &dst)
+//! \fn bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
 //  \brief receive shearing box boundary data for field(face-centered) variables
 
-bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(FaceField &dst) {
+bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
@@ -440,21 +436,20 @@ bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(FaceField &dst) {
       shbox_outer_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
-
   return (flagi && flago);
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RemapFlux(const int k, const int jinner,
+//! \fn void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
 ///                                         const int jouter, int i,
 //                                          Real eps, static AthenaArray<Real> &U,
 //                                          AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping adopted from 2nd order RemapFlux
 //         of Athena4.0
 
-void BoundaryValues::RemapFlux(const int k, const int jinner, const int jouter,
-                               const int i, const Real eps,
-                               const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner, const int jouter,
+                                             const int i, const Real eps,
+                                             const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
   int j, jl, ju;
   Real dUc, dUl, dUr, dUm, lim_slope;
 

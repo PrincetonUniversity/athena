@@ -42,38 +42,38 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadEMFShearing(FaceField &src, Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadEMFShearing(Real *buf, int nb)
 //  \brief Load shearing box EMF boundary buffers
 
-void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
+void FaceCenteredBoundaryVariable::LoadEMFShearing(Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
-  int si, sj, sk, ei, ej, ek;
+  int sj, sk, ej, ek;
   int psj, pej; // indices for e3
   int nx2 = pmb->block_size.nx2 - NGHOST;
   sk = pmb->ks;        ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->je - joverlap_ - (NGHOST-1); ej = pmb->je;
+      sj = pmb->je - joverlap_ - (NGHOST - 1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->js;
       psj = sj; pej = ej;
       break;
     case 1:
-      sj = pmb->js; ej = pmb->je - joverlap_+NGHOST;
+      sj = pmb->js; ej = pmb->je - joverlap_ + NGHOST;
       if (joverlap_ < NGHOST) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
     case 2:
-      sj = pmb->je - (NGHOST-1); ej = pmb->je;
+      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
       psj = sj; pej = ej;
       break;
     case 3:
-      sj = pmb->js; ej = pmb->js + (NGHOST-1);
-      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST-joverlap_)-1;
+      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
+      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST - joverlap_) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj = pmb->js; ej = pmb->js + joverlap_+NGHOST-1;
+      sj = pmb->js; ej = pmb->js + joverlap_ + NGHOST - 1;
       if (joverlap_ > nx2) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
@@ -83,23 +83,22 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
       psj = sj; pej = ej + 1;
       break;
     case 6:
-      sj = pmb->js; ej = pmb->js + (NGHOST-1);
-      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2)-1;
+      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
+      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 7:
-      sj = pmb->je - (NGHOST-1); ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST-joverlap_) + 1;
+      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
+      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST - joverlap_) + 1;
       psj = sj; pej = ej;
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
+      msg << "### FATAL ERROR in FaceCenteredBoundaryVariable:LoadEMFShearing\n"
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
-
-  int p=0;
+  int p = 0;
   // pack e2
   for (int k=sk; k<=ek+1; k++) {
     for (int j=sj; j<=ej; j++)
@@ -110,26 +109,20 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
     for (int j=psj; j<=pej; j++)
       buf[p++] = src.x3e(k,j);
   }
-
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendEMFShearingBoxBoundaryCorrection()
+//! \fn void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection()
 //  \brief Send shearing box boundary buffers for EMF correction
 
-void BoundaryValues::SendEMFShearingBoxBoundaryCorrection() {
+void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
-
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  int js = pmb->js; int ks = pmb->ks;
+  int je = pmb->je; int ke = pmb->ke;
   int nx2 = pmb->block_size.nx2;
   int nx3 = pmb->block_size.nx3;
-
-  Real qomL = qshear_*Omega_0_*x1size_;
-  AthenaArray<Real> &bx1 = pmb->pfield->b.x1f;
 
   if (shbb_.inner == true) {
     // step 1. -- average edges of shboxvar_emf_
@@ -206,15 +199,15 @@ void BoundaryValues::SendEMFShearingBoxBoundaryCorrection() {
 }
 
 // --------------------------------------------------------------------------------------
-// ! \fn void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
+// ! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
 //                                                      Real *buf, const int nb)
 //  \brief Set EMF shearing box boundary received from a block on the same level
 
-void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *
-                                                        buf, const int nb) {
+void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(Real *buf,
+                                                                      const int nb) {
   MeshBlock *pmb = pmy_block_;
-  int si, sj, sk, ei, ej, ek;
-  int psj,pej;
+  int sj, sk, ej, ek;
+  int psj, pej;
   int nx2 = pmb->block_size.nx2 - NGHOST;
   int nxo = pmb->block_size.nx2 - joverlap_;
 
@@ -232,7 +225,7 @@ void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *
       break;
     case 2:
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_ > nx2) ej = pmb->js - nxo-1;
+      if (joverlap_ > nx2) ej = pmb->js - nxo - 1;
       psj = sj; pej = ej;
       break;
     case 3:
@@ -260,33 +253,30 @@ void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
+      msg << "### FATAL ERROR in FaceCenteredBoundaryVariable:SetFieldShearing\n"
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
-
-  int p=0;
+  int p = 0;
   // unpack e2
   for (int k=sk; k<=ek+1; k++) {
     for (int j=sj; j<=ej; j++)
-      dst.x2e(k,j)+=buf[p++];
+      dst.x2e(k,j) += buf[p++];
   }
   // unpack e3
   for (int k=sk; k<=ek; k++) {
     for (int j=psj; j<=pej; j++)
-      dst.x3e(k,j)+=buf[p++];
+      dst.x3e(k,j) += buf[p++];
   }
-
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection()
+//! \fn bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection()
 //  \brief receive shearing box boundary data for EMF correction
 
-bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
-  MeshBlock *pmb = pmy_block_;
+bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
   bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
@@ -294,7 +284,7 @@ bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
       if (shbox_inner_emf_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_emf_flag_[n] == BoundaryStatus::waiting) {
         if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
-          flagi=false;
+          flagi = false;
           continue;
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
@@ -303,7 +293,7 @@ bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_emf_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flagi=false;
+            flagi = false;
             continue;
           }
           shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
@@ -322,7 +312,7 @@ bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
       if (shbox_outer_emf_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_outer_emf_flag_[n] == BoundaryStatus::waiting) {
         if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
-          flago=false;
+          flago = false;
           continue;
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
@@ -331,7 +321,7 @@ bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
                      MPI_STATUS_IGNORE);
           MPI_Test(&rq_outerrecv_emf_[n],&test,MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flago=false;
+            flago = false;
             continue;
           }
           shbox_outer_emf_flag_[n] = BoundaryStatus::arrived;
@@ -343,19 +333,18 @@ bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
       shbox_outer_emf_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
-
   return (flagi && flago);
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RemapEMFShearingBoxBoundary()
+//! \fn void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary()
 //  \brief Set EMF boundary received from a block on the finer level
 
-void BoundaryValues::RemapEMFShearingBoxBoundary() {
+void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
-  AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
+  // AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
   int ks = pmb->ks, ke = pmb->ke;
   int js = pmb->js, je = pmb->je;
   int is = pmb->is, ie = pmb->ie;
@@ -397,11 +386,11 @@ void BoundaryValues::RemapEMFShearingBoxBoundary() {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearEMFShearing()
+//! \fn void FaceCenteredBoundaryVariable::ClearEMFShearing()
 //  \brief Clear the working array for EMFs on the surface/edge contacting with
 //  a shearing periodic boundary
 
-void BoundaryValues::ClearEMFShearing(EdgeField &work) {
+void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &e2 = work.x2e;
   AthenaArray<Real> &e3 = work.x3e;
@@ -419,12 +408,12 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RemapFluxEMF(int k, int jinner, int jouter, Real
+//! \fn void FaceCenteredBoundaryVariable::RemapFluxEMF(int k, int jinner, int jouter, Real
 //  eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
 //  \brief compute the flux along j indices for remapping
 //  adopted from 2nd order RemapFlux of Athena4.0
 
-void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int jouter,
+void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner, const int jouter,
                                   const Real eps, const AthenaArray<Real> &U,
                                   AthenaArray<Real> &Flux) {
   int j, jl, ju;
