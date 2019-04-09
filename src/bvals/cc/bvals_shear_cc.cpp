@@ -41,11 +41,10 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadShearing(AthenaArray<Real> &src,
-//                         Real *buf, int nb)
+//! \fn int CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb)
 //  \brief Load shearing box hydro boundary buffers
 
-void BoundaryValues::LoadShearing(AthenaArray<Real> &src, Real *buf, int nb) {
+void CellCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -90,7 +89,7 @@ void BoundaryValues::LoadShearing(AthenaArray<Real> &src, Real *buf, int nb) {
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:LoadShearing "
+      msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
           << std::endl << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
@@ -101,19 +100,17 @@ void BoundaryValues::LoadShearing(AthenaArray<Real> &src, Real *buf, int nb) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendShearingBoxBoundaryBuffersForInit(
-//                                        AthenaArray<Real> &src,bool conserved_values)
+//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit()
 //  \brief Send shearing box boundary buffers for hydro variables
 
-void BoundaryValues::SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &src,
-                                                           bool conserved_values) {
+void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int ku,kl;
+  int ku, kl;
   if (pmesh->mesh_size.nx3 > 1) {
     ku = ke + NGHOST;
     kl = ks - NGHOST;
@@ -131,12 +128,10 @@ void BoundaryValues::SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &sr
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i < NGHOST; i++) {
           // add shear to conservative
-          shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i)
-                                             + qomL*src(IDN,k,j,i);
+          shboxvar_inner_hydro_(IM2,k,j,i) = src(IM2,k,j,i) + qomL*src(IDN,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-            src(IEN,k,j,i) += (0.5/src(IDN,k,j,i))
-                              *(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
-                                - SQR(src(IM2,k,j,i)));
+            src(IEN,k,j,i) += (0.5/src(IDN,k,j,i))*(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
+                                                    - SQR(src(IM2,k,j,i)));
           } // update energy
           src(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
         }
@@ -145,16 +140,15 @@ void BoundaryValues::SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &sr
   }
 
   if (shbb_.outer == true) {
-    int  ib = ie + 1;
+    int ib = ie + 1;
     int ii;
     // step 2. -- add shear to the outer periodic boundary values
     for (int k=kl; k<=ku; k++) {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i < NGHOST; i++) {
-          ii = ib+i;
+          ii = ib + i;
           // add shear to conservative
-          shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii)
-                                             - qomL*src(IDN,k,j,ii);
+          shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii) - qomL*src(IDN,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
             src(IEN,k,j,ii) += (0.5/src(IDN,k,j,ii))
                                *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
@@ -168,13 +162,10 @@ void BoundaryValues::SendShearingBoxBoundaryBuffersForInit(AthenaArray<Real> &sr
   return;
 }
 // --------------------------------------------------------------------------------------
-// ! \fn void BoundaryValues::SendShearingBoxBoundaryBuffers(
-//                                                       AthenaArray<Real> &src,
-//                                                    bool conserved_values)
+// ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
 //  \brief Send shearing box boundary buffers for hydro variables
 
-void BoundaryValues::SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src,
-                                                    bool conserved_values) {
+void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
@@ -229,8 +220,7 @@ void BoundaryValues::SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src,
       }
     }
 
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
-    // MPI_Isend otherwise
+    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
         LoadShearing(shboxvar_inner_hydro_, send_innerbuf_hydro_[n], n);
@@ -315,13 +305,10 @@ void BoundaryValues::SendShearingBoxBoundaryBuffers(AthenaArray<Real> &src,
 }
 
 // --------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetShearingBoxBoundarySameLevel(
-//                                             AthenaArray<Real> &dst,
-//                                           Real *buf, const int nb)
+//! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, const int nb)
 //  \brief Set hydro shearing box boundary received from a block on the same level
 
-void BoundaryValues::SetShearingBoxBoundarySameLevel(
-    AthenaArray<Real> &dst, Real *buf, const int nb) {
+void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -372,7 +359,7 @@ void BoundaryValues::SetShearingBoxBoundarySameLevel(
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues:SetShearing " << std::endl
+      msg << "### FATAL ERROR in CellCenteredBoundaryVariable:SetShearing " << std::endl
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
@@ -385,12 +372,10 @@ void BoundaryValues::SetShearingBoxBoundarySameLevel(
 
 
 // --------------------------------------------------------------------------------------
-// ! \fn bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(
-//                  AthenaArray<Real>&dst)
+// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
 //  \brief receive shearing box boundary data for hydro variables
 
-bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(
-    AthenaArray<Real> &dst) {
+bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   bool flagi = true, flago = true;
@@ -452,14 +437,13 @@ bool BoundaryValues::ReceiveShearingBoxBoundaryBuffers(
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::FindShearBlock(const Real time)
-//
-//  \brief Calc the following things:
+//! \fn void CellCenteredBoundaryVariable::FindShearBlock(const Real time)
+//  \brief Calculate the following quantities:
 //  send_gid recv_gid send_lid recv_lid send_rank recv_rank,
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-void BoundaryValues::FindShearBlock(const Real time) {
+void CellCenteredBoundaryVariable::FindShearBlock(const Real time) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
@@ -866,9 +850,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
 //  \brief compute the flux along j indices for remapping adopted from 2nd
 //  order RemapFlux of Athena 4.2 (C-version)
 
-void BoundaryValues::RemapFlux(const int n, const int k, const int jinner,
+void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k, const int jinner,
                                const int jouter, const int i, const Real eps,
-                               const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+                               const AthenaArray<Real> &var, AthenaArray<Real> &flux) {
   int j, jl, ju;
   Real dUc, dUl, dUr, dUm, lim_slope;
 
@@ -885,20 +869,20 @@ void BoundaryValues::RemapFlux(const int n, const int k, const int jinner,
   // TODO(felker): do not reimplement PLM here; use plm.cpp.
   // TODO(felker): relax assumption that 2nd order reconstruction must be used
   for (j=jl; j<=ju; j++) {
-    dUc = U(n,k,j+1,i) - U(n,k,j-1,i);
-    dUl = U(n,k,j,  i) - U(n,k,j-1,i);
-    dUr = U(n,k,j+1,i) - U(n,k,j,  i);
+    dUc = var(n,k,j+1,i) - var(n,k,j-1,i);
+    dUl = var(n,k,j,  i) - var(n,k,j-1,i);
+    dUr = var(n,k,j+1,i) - var(n,k,j,  i);
 
     dUm = 0.0;
     if (dUl*dUr > 0.0) {
-      lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
-      dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
+      lim_slope = std::min(std::fabs(dUl), std::fabs(dUr));
+      dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc), 2.0*lim_slope);
     }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary
-      Flux(j+1) = eps*(U(n,k,j,i) + 0.5*(1.0 - eps)*dUm);
+      flux(j+1) = eps*(var(n,k,j,i) + 0.5*(1.0 - eps)*dUm);
     } else {         // eps always < 0 for outer i boundary
-      Flux(j  ) = eps*(U(n,k,j,i) - 0.5*(1.0 + eps)*dUm);
+      flux(j  ) = eps*(var(n,k,j,i) - 0.5*(1.0 + eps)*dUm);
     }
   }
   return;
