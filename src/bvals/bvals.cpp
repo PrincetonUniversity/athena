@@ -146,13 +146,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
         }
         shbb_.inner = true;
-        shbb_.igidlist=new int[nrbx2];
-        shbb_.ilidlist=new int[nrbx2];
-        shbb_.irnklist=new int[nrbx2];
-        shbb_.ilevlist=new int[nrbx2];
+        shbb_.igidlist = new int[nrbx2];
+        shbb_.ilidlist = new int[nrbx2];
+        shbb_.irnklist = new int[nrbx2];
+        shbb_.ilevlist = new int[nrbx2];
         // attach corner cells from L/R side
         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
-        int bsize=0, esize=0;
+        int bsize = 0, esize = 0;
         if (MAGNETIC_FIELDS_ENABLED) {
           // extra cell in azimuth/vertical
           bsize = (pmb->block_size.nx2 + NGHOST+1)*(ssize_ + NGHOST)*NFIELD;
@@ -163,7 +163,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         for (int n=0; n<2; n++) {
           send_innerbuf_hydro_[n] = new Real[size];
           recv_innerbuf_hydro_[n] = new Real[size];
-          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
+          shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -171,10 +171,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_innerbuf_field_[n] = new Real[bsize];
             recv_innerbuf_field_[n] = new Real[bsize];
-            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
+            shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
             send_innerbuf_emf_[n] = new Real[esize];
             recv_innerbuf_emf_[n] = new Real[esize];
-            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
+            shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_innersend_field_[n] = MPI_REQUEST_NULL;
             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -191,7 +191,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         for (int n=2; n<4; n++) {
           send_innerbuf_hydro_[n] = new Real[size];
           recv_innerbuf_hydro_[n] = new Real[size];
-          shbox_inner_hydro_flag_[n]=BoundaryStatus::waiting;
+          shbox_inner_hydro_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -199,10 +199,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_innerbuf_field_[n] = new Real[bsize];
             recv_innerbuf_field_[n] = new Real[bsize];
-            shbox_inner_field_flag_[n]=BoundaryStatus::waiting;
+            shbox_inner_field_flag_[n] = BoundaryStatus::waiting;
             send_innerbuf_emf_[n] = new Real[esize];
             recv_innerbuf_emf_[n] = new Real[esize];
-            shbox_inner_emf_flag_[n]=BoundaryStatus::waiting;
+            shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_innersend_field_[n] = MPI_REQUEST_NULL;
             rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -252,7 +252,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         for (int n=0; n<2; n++) {
           send_outerbuf_hydro_[n] = new Real[size];
           recv_outerbuf_hydro_[n] = new Real[size];
-          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
+          shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -260,10 +260,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_outerbuf_field_[n] = new Real[bsize];
             recv_outerbuf_field_[n] = new Real[bsize];
-            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
+            shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
             send_outerbuf_emf_[n] = new Real[esize];
             recv_outerbuf_emf_[n] = new Real[esize];
-            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
+            shbox_outer_emf_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_outersend_field_[n] = MPI_REQUEST_NULL;
             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -280,7 +280,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         for (int n=2; n<4; n++) {
           send_outerbuf_hydro_[n] = new Real[size];
           recv_outerbuf_hydro_[n] = new Real[size];
-          shbox_outer_hydro_flag_[n]=BoundaryStatus::waiting;
+          shbox_outer_hydro_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
           rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
           rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
@@ -288,10 +288,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           if (MAGNETIC_FIELDS_ENABLED) {
             send_outerbuf_field_[n] = new Real[bsize];
             recv_outerbuf_field_[n] = new Real[bsize];
-            shbox_outer_field_flag_[n]=BoundaryStatus::waiting;
+            shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
             send_outerbuf_emf_[n] = new Real[esize];
             recv_outerbuf_emf_[n] = new Real[esize];
-            shbox_outer_emf_flag_[n]=BoundaryStatus::waiting;
+            shbox_outer_emf_flag_[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
             rq_outersend_field_[n] = MPI_REQUEST_NULL;
             rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
@@ -320,8 +320,6 @@ BoundaryValues::~BoundaryValues() {
 
   // KGF: shearing box destructor
   if (SHEARING_BOX) {
-    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
-    std::int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
       shboxvar_inner_hydro_.DeleteAthenaArray();
       flx_inner_hydro_.DeleteAthenaArray();
@@ -348,7 +346,7 @@ BoundaryValues::~BoundaryValues() {
         }
       }
     }
-    if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
+    if (pmb->loc.lx1 == (nrbx1 - 1)) { // if true for shearing outer blocks
       shboxvar_outer_hydro_.DeleteAthenaArray();
       flx_outer_hydro_.DeleteAthenaArray();
       for (int n=0; n<4; n++) {
@@ -374,7 +372,7 @@ BoundaryValues::~BoundaryValues() {
         }
       }
     }
-  // } // KGF: end shearing box handling in destructor
+  } // KGF: end shearing box handling in destructor
 }
 
 //----------------------------------------------------------------------------------------
@@ -401,7 +399,7 @@ void BoundaryValues::SetupPersistentMPI() {
 
     int count = 0;
     if (shbb_.inner) {
-      for (int i=0;i<nbtotal;i++) {
+      for (int i=0; i<nbtotal; i++) {
         if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
           shbb_.igidlist[count] = i;
@@ -414,9 +412,9 @@ void BoundaryValues::SetupPersistentMPI() {
     }
     count = 0;
     if (shbb_.outer) {
-      for (int i=0;i<nbtotal;i++) {
-        if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3 &&
-          loclist[i].level == pmb->loc.level) {
+      for (int i=0; i<nbtotal; i++) {
+        if (loclist[i].lx1 == (nrbx1 - 1) && loclist[i].lx3 == pmb->loc.lx3 &&
+            loclist[i].level == pmb->loc.level) {
           shbb_.ogidlist[count] = i;
           shbb_.olidlist[count] = i - nslist[ranklist[i]];
           shbb_.ornklist[count] = ranklist[i];
@@ -556,11 +554,11 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
           shbox_inner_emf_flag_[n] = BoundaryStatus::waiting;
         }
 #ifdef MPI_PARALLEL
-        if (send_inner_rank_[n]!=Globals::my_rank) {
-          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE);
+        if (send_inner_rank_[n] != Globals::my_rank) {
+          MPI_Wait(&rq_innersend_hydro_[n], MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE);
-            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_innersend_field_[n], MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_innersend_emf_[n], MPI_STATUS_IGNORE);
           }
         }
 #endif
@@ -575,11 +573,11 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
           shbox_outer_field_flag_[n] = BoundaryStatus::waiting;
         }
 #ifdef MPI_PARALLEL
-        if (send_outer_rank_[n]!=Globals::my_rank) {
-          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE);
+        if (send_outer_rank_[n] != Globals::my_rank) {
+          MPI_Wait(&rq_outersend_hydro_[n], MPI_STATUS_IGNORE);
           if (MAGNETIC_FIELDS_ENABLED) {
-            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE);
-            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_outersend_field_[n], MPI_STATUS_IGNORE);
+            MPI_Wait(&rq_outersend_emf_[n], MPI_STATUS_IGNORE);
           }
         }
 #endif
