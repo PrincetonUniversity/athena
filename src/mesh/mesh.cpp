@@ -1376,7 +1376,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
-        // send and receive shearingbox boundary conditions
+        // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
           pmb->phydro->phbval->SendShearingBoxBoundaryBuffersForInit();
         }
@@ -1766,8 +1766,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
     // KGF: disable shearing box bvals/ calls
-    // send and receive shearingbox boundary conditions
-    if (SHEARING_BOX){
+    // send and receive shearing box boundary conditions
+    if (SHEARING_BOX) {
       pmb->phydro->phbval->SendShearingBoxBoundaryBuffersForInit();
     }
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);

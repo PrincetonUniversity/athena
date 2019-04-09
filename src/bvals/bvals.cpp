@@ -542,8 +542,8 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
     (*bvars_it)->ClearBoundary(phase);
   }
 
-  // KGF: begin shearing-box exclusive section of ClearBoundaryAll
-  // clear shearingbox boundary communications
+  // KGF: begin shearing box exclusive section of ClearBoundaryAll
+  // clear shearing box boundary communications
   if (SHEARING_BOX) {
     if (shbb_.inner == true) {
       for (int n=0; n<4; n++) {

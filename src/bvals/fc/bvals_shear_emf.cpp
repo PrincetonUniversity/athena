@@ -43,7 +43,7 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFShearing(FaceField &src, Real *buf, int nb)
-//  \brief Load shearingbox EMF boundary buffers
+//  \brief Load shearing box EMF boundary buffers
 
 void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -53,43 +53,43 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
   sk = pmb->ks;        ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->je-joverlap_ - (NGHOST-1); ej = pmb->je;
+      sj = pmb->je - joverlap_ - (NGHOST-1); ej = pmb->je;
       if (joverlap_ > nx2) sj = pmb->js;
       psj = sj; pej = ej;
       break;
     case 1:
-      sj = pmb->js; ej = pmb->je-joverlap_+NGHOST;
+      sj = pmb->js; ej = pmb->je - joverlap_+NGHOST;
       if (joverlap_ < NGHOST) ej = pmb->je;
-      psj = sj; pej = ej+1;
+      psj = sj; pej = ej + 1;
       break;
     case 2:
-      sj = pmb->je-(NGHOST-1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->je-(joverlap_ - nx2)+1;
+      sj = pmb->je - (NGHOST-1); ej = pmb->je;
+      if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
       psj = sj; pej = ej;
       break;
     case 3:
       sj = pmb->js; ej = pmb->js + (NGHOST-1);
       if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST-joverlap_)-1;
-      psj = sj+1; pej = ej+1;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 4:
       sj = pmb->js; ej = pmb->js + joverlap_+NGHOST-1;
       if (joverlap_ > nx2) ej = pmb->je;
-      psj = sj; pej = ej+1;
+      psj = sj; pej = ej + 1;
       break;
     case 5:
       sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
       if (joverlap_ < NGHOST) sj = pmb->js;
-      psj = sj; pej = ej+1;
+      psj = sj; pej = ej + 1;
       break;
     case 6:
       sj = pmb->js; ej = pmb->js + (NGHOST-1);
       if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2)-1;
-      psj = sj+1; pej = ej+1;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 7:
-      sj = pmb->je-(NGHOST-1); ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->je-(NGHOST-joverlap_)+1;
+      sj = pmb->je - (NGHOST-1); ej = pmb->je;
+      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST-joverlap_) + 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -116,10 +116,10 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb) {
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendEMFShearingboxBoundaryCorrection()
-//  \brief Send shearingbox boundary buffers for EMF correction
+//! \fn void BoundaryValues::SendEMFShearingBoxBoundaryCorrection()
+//  \brief Send shearing box boundary buffers for EMF correction
 
-void BoundaryValues::SendEMFShearingboxBoundaryCorrection() {
+void BoundaryValues::SendEMFShearingBoxBoundaryCorrection() {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
@@ -206,56 +206,56 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection() {
 }
 
 // --------------------------------------------------------------------------------------
-// ! \fn void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst,
+// ! \fn void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
 //                                                      Real *buf, const int nb)
-//  \brief Set EMF shearingbox boundary received from a block on the same level
+//  \brief Set EMF shearing box boundary received from a block on the same level
 
-void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
+void BoundaryValues::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *
                                                         buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int psj,pej;
-  int nx2 = pmb->block_size.nx2-NGHOST;
-  int nxo = pmb->block_size.nx2-joverlap_;
+  int nx2 = pmb->block_size.nx2 - NGHOST;
+  int nxo = pmb->block_size.nx2 - joverlap_;
 
   sk = pmb->ks; ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->js-NGHOST; ej = pmb->js + (joverlap_ - 1);
-      if (joverlap_ > nx2) sj = pmb->js-nxo;
-      psj = sj; pej = ej+1;
+      sj = pmb->js - NGHOST; ej = pmb->js + (joverlap_ - 1);
+      if (joverlap_ > nx2) sj = pmb->js - nxo;
+      psj = sj; pej = ej + 1;
       break;
     case 1:
       sj = pmb->js + joverlap_; ej = pmb->je + NGHOST;
       if (joverlap_ < NGHOST) ej = pmb->je + joverlap_;
-      psj = sj; pej = ej+1;
+      psj = sj; pej = ej + 1;
       break;
     case 2:
-      sj = pmb->js-NGHOST; ej = pmb->js-1;
-      if (joverlap_ > nx2) ej = pmb->js-nxo-1;
+      sj = pmb->js - NGHOST; ej = pmb->js - 1;
+      if (joverlap_ > nx2) ej = pmb->js - nxo-1;
       psj = sj; pej = ej;
       break;
     case 3:
-      sj = pmb->je + joverlap_+1; ej = pmb->je + NGHOST;
-      psj = sj+1; pej = ej+1;
+      sj = pmb->je + joverlap_ + 1; ej = pmb->je + NGHOST;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj = pmb->je-(joverlap_ - 1); ej = pmb->je + NGHOST;
+      sj = pmb->je - (joverlap_ - 1); ej = pmb->je + NGHOST;
       if (joverlap_ > nx2) ej = pmb->je + nxo;
-      psj = sj; pej = ej+1;
+      psj = sj; pej = ej + 1;
       break;
     case 5:
-      sj = pmb->js-NGHOST; ej = pmb->je-joverlap_;
-      if (joverlap_<=NGHOST) sj = pmb->js-joverlap_;
-      psj = sj; pej = ej+1;
+      sj = pmb->js - NGHOST; ej = pmb->je - joverlap_;
+      if (joverlap_<=NGHOST) sj = pmb->js - joverlap_;
+      psj = sj; pej = ej + 1;
       break;
     case 6:
       sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) sj = pmb->je + nxo+1;
-      psj = sj+1; pej = ej+1;
+      if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
+      psj = sj + 1; pej = ej + 1;
       break;
     case 7:
-      sj = pmb->js-NGHOST; ej = pmb->js-joverlap_ - 1;
+      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_ - 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -282,10 +282,10 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection()
-//  \brief receive shearingbox boundary data for EMF correction
+//! \fn bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection()
+//  \brief receive shearing box boundary data for EMF correction
 
-bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection() {
+bool BoundaryValues::ReceiveEMFShearingBoxBoundaryCorrection() {
   MeshBlock *pmb = pmy_block_;
   bool flagi = true, flago = true;
 
@@ -299,9 +299,9 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection() {
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_emf_[n],&test,MPI_STATUS_IGNORE);
+          MPI_Test(&rq_innerrecv_emf_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi=false;
             continue;
@@ -311,8 +311,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection() {
         }
       }
       // set dst if boundary arrived
-      SetEMFShearingboxBoundarySameLevel(shboxmap_inner_emf_,
-                                         recv_innerbuf_emf_[n],n);
+      SetEMFShearingBoxBoundarySameLevel(shboxmap_inner_emf_, recv_innerbuf_emf_[n],n);
       shbox_inner_emf_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // inner boundary
@@ -339,22 +338,21 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection() {
 #endif
         }
       }
-      SetEMFShearingboxBoundarySameLevel(shboxmap_outer_emf_,
-                                         recv_outerbuf_emf_[n],n+offset);
+      SetEMFShearingBoxBoundarySameLevel(shboxmap_outer_emf_, recv_outerbuf_emf_[n],
+                                         n +offset);
       shbox_outer_emf_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
 
   return (flagi && flago);
-
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RemapEMFShearingboxBoundary()
+//! \fn void BoundaryValues::RemapEMFShearingBoxBoundary()
 //  \brief Set EMF boundary received from a block on the finer level
 
-void BoundaryValues::RemapEMFShearingboxBoundary() {
+void BoundaryValues::RemapEMFShearingBoxBoundary() {
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
   AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
@@ -365,17 +363,16 @@ void BoundaryValues::RemapEMFShearingboxBoundary() {
     ClearEMFShearing(shboxvar_inner_emf_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) {
-      RemapFluxEMF(k,js,je+2,eps_,shboxmap_inner_emf_.x2e,flx_inner_emf_.x2e);
+      RemapFluxEMF(k, js, je+2, eps_, shboxmap_inner_emf_.x2e, flx_inner_emf_.x2e);
       for (int j=js; j<=je; j++) {
-        shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1)
-                                        -flx_inner_emf_.x2e(j);
+        shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1) - flx_inner_emf_.x2e(j);
       }
     }
     // step 2.-- average the EMF correction
     // average e2
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++)
-        e2(k,j,is) = 0.5*(e2(k,j,is)+shboxmap_inner_emf_.x2e(k,j));
+        e2(k,j,is) = 0.5*(e2(k,j,is) + shboxmap_inner_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_inner_emf_);
   }
@@ -384,22 +381,18 @@ void BoundaryValues::RemapEMFShearingboxBoundary() {
     ClearEMFShearing(shboxvar_outer_emf_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) { // e2
-      RemapFluxEMF(k,js-1,je+1,-eps_,shboxmap_outer_emf_.x2e,
-                   flx_outer_emf_.x2e);
+      RemapFluxEMF(k, js-1, je+1, -eps_, shboxmap_outer_emf_.x2e, flx_outer_emf_.x2e);
       for (int j=js; j<=je; j++)
-        shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1)
-                                        -flx_outer_emf_.x2e(j);
+        shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1) - flx_outer_emf_.x2e(j);
     }
     // step 2.-- average the EMF correction
     // average e2
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++)
-        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1)+shboxmap_outer_emf_.x2e(k,j));
+        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1) + shboxmap_outer_emf_.x2e(k,j));
     }
     ClearEMFShearing(shboxmap_outer_emf_);
   }
-
-
   return;
 }
 
