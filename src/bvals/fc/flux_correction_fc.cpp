@@ -581,6 +581,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   // Send non-polar EMF values
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     if ((nb.ni.type != NeighborConnect::face) && (nb.ni.type != NeighborConnect::edge))
       break;
     int p = 0;
@@ -604,6 +605,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     else
       MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
+    bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::completed;
   }
 
   // Send polar EMF values

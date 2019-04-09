@@ -150,6 +150,8 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
   static constexpr int kMaxNeighbor = n;
   // KGF: "nbmax" only used in bvals_var.cpp, Init/DestroyBoundaryData()
   int nbmax;  // actual maximum number of neighboring MeshBlocks
+  // currently, sflag[] is only used by Multgrid (send buffers are reused each stage in
+  // red-black comm. pattern; need to check if they are available) and shearing box
   BoundaryStatus flag[kMaxNeighbor], sflag[kMaxNeighbor];
   Real *send[kMaxNeighbor], *recv[kMaxNeighbor];
 #ifdef MPI_PARALLEL
