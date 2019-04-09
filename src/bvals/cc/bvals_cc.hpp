@@ -51,11 +51,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void ClearBoundary(BoundaryCommSubset phase) override;
 
   // BoundaryBuffer:
-  void SendBoundaryBuffers() override;
-  bool ReceiveBoundaryBuffers() override;
-  void ReceiveAndSetBoundariesWithWait() override;
-  void SetBoundaries() override;
-
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
 

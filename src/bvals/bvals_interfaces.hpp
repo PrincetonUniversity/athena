@@ -216,7 +216,7 @@ class BoundaryBuffer {
   virtual void SendFluxCorrection() = 0;
   virtual bool ReceiveFluxCorrection() = 0;
 
- private:
+ protected:
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR):
   virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
@@ -294,6 +294,12 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
 
   virtual int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) = 0;
   virtual int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) = 0;
+
+  // BoundaryBuffer public functions with shared implementations
+  void SendBoundaryBuffers() override;
+  bool ReceiveBoundaryBuffers() override;
+  void ReceiveAndSetBoundariesWithWait() override;
+  void SetBoundaries() override;
 
  protected:
   // deferred initialization of BoundaryData objects in derived class constructors
