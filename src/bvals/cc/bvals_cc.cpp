@@ -63,7 +63,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 #ifdef MPI_PARALLEL
   cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
 #endif
-  if (pmy_mesh_->multilevel == true) { // SMR or AMR
+  if (pmy_mesh_->multilevel) { // SMR or AMR
     InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_flcor);
 #ifdef MPI_PARALLEL
     cc_flx_phys_id_ = pbval_->ReserveTagVariableIDs(1);
@@ -75,7 +75,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
-  if (pmy_mesh_->multilevel == true)
+  if (pmy_mesh_->multilevel)
     DestroyBoundaryData(bd_var_flcor_);
 }
 
@@ -219,12 +219,13 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //! \fn void CellCenteredBoundaryVariable::SendBoundaryBuffers()
 //  \brief Send boundary buffers of cell-centered variables
 
+// TODO(KGF): completely identical to FaceCenteredBoundaryVariable counterpart
 void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     int ssize;
     if (nb.snb.level == mylevel)
       ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
@@ -236,9 +237,10 @@ void CellCenteredBoundaryVariable::SendBoundaryBuffers() {
       CopyVariableBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
-    else // MPI
+    else  // MPI
       MPI_Start(&(bd_var_.req_send[nb.bufid]));
 #endif
+    bd_var_.sflag[nb.bufid] = BoundaryStatus::completed;
   }
   return;
 }
@@ -459,6 +461,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //! \fn bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers()
 //  \brief receive the cell-centered boundary data
 
+// TODO(KGF): completely identical to FaceCenteredBoundaryVariable counterpart
 bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag = true;
 
@@ -491,14 +494,16 @@ bool CellCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
 //! \fn void CellCenteredBoundaryVariable::SetBoundaries()
 //  \brief set the cell-centered boundary data
 
+// TODO(KGF): nearly identical to FaceCenteredBoundaryVariable counterpart (extra call to
+// PolarFieldBoundaryAverage())
 void CellCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb = pmy_block_;
-
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.snb.level == pmb->loc.level)
+    if (nb.snb.level == mylevel)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.snb.level < pmb->loc.level) // only sets the prolongation buffer
+    else if (nb.snb.level < mylevel) // only sets the prolongation buffer
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -516,18 +521,20 @@ void CellCenteredBoundaryVariable::SetBoundaries() {
 //! \fn void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait()
 //  \brief receive and set the cell-centered boundary data for initialization
 
+// TODO(KGF): nearly identical to FaceCenteredBoundaryVariable counterpart (extra call to
+// PolarFieldBoundaryAverage())
 void CellCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb = pmy_block_;
-
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.snb.rank != Globals::my_rank)
       MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
-    if (nb.snb.level == pmb->loc.level)
+    if (nb.snb.level == mylevel)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.snb.level < pmb->loc.level)
+    else if (nb.snb.level < mylevel)
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -692,8 +699,12 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
-    if (nb.ni.type == NeighborConnect::face)
+    bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
+
+    if (nb.ni.type == NeighborConnect::face) {
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
+      bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::waiting;
+    }
 #ifdef MPI_PARALLEL
     MeshBlock *pmb = pmy_block_;
     int mylevel = pmb->loc.level;

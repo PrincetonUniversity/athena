@@ -85,7 +85,6 @@ void MGBoundaryValues::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
     bd.flag[n] = BoundaryStatus::waiting;
-    // KGF: only difference between BoundaryData<> and BoundaryData:
     bd.sflag[n] = BoundaryStatus::waiting;
     bd.send[n] = nullptr;
     bd.recv[n] = nullptr;
@@ -96,11 +95,11 @@ void MGBoundaryValues::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
 
     // Allocate buffers
     // calculate the buffer size
-    switch(type) {
+    switch (type) {
       case BoundaryQuantity::mggrav: {
-        int ngh=pmy_mg_->ngh_;
+        int ngh = pmy_mg_->ngh_;
         if (pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
-          int nc=block_size_.nx1;
+          int nc = block_size_.nx1;
           if (BoundaryValues::ni[n].type == NeighborConnect::face)
             size = SQR(nc)*ngh;
           else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
@@ -232,7 +231,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
     faceonly = true;
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (faceonly && nb.ni.type>NeighborConnect::face) break;
+    if (faceonly && nb.ni.type > NeighborConnect::face) break;
 #ifdef MPI_PARALLEL
     if (nb.snb.rank!=Globals::my_rank) {
       int size = 0;
@@ -255,7 +254,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
         else if (nb.ni.type == NeighborConnect::edge) size = nc*ngh*ngh;
         else if (nb.ni.type == NeighborConnect::corner) size = ngh*ngh*ngh;
       }
-      size*=nvar;
+      size *= nvar;
       int tag = CreateBvalsMPITag(pmy_mg_->lid_, nb.bufid, phys);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.snb.rank, tag,
                 mgcomm_, &(pbd->req_recv[nb.bufid]));
@@ -281,11 +280,11 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (faceonly && nb.ni.type>NeighborConnect::face) break;
+    if (faceonly && nb.ni.type > NeighborConnect::face) break;
     pbd->flag[nb.bufid] = BoundaryStatus::waiting;
     pbd->sflag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-    if (nb.snb.rank!=Globals::my_rank)
+    if (nb.snb.rank != Globals::my_rank)
       MPI_Wait(&(pbd->req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
 #endif
   }

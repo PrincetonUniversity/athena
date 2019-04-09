@@ -58,6 +58,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
     bd.flag[n] = BoundaryStatus::waiting;
+    bd.sflag[n] = BoundaryStatus::waiting;
     bd.send[n] = nullptr;
     bd.recv[n] = nullptr;
 #ifdef MPI_PARALLEL

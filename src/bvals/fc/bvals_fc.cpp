@@ -501,14 +501,17 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 //! \fn void FaceCenteredBoundaryVariable::SendBoundaryBuffers()
 //  \brief Send face-centered boundary buffers
 
+// TODO(KGF): completely identical to CellCenteredBoundaryVariable counterpart
 void FaceCenteredBoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     int ssize;
-    if (nb.snb.level == pmb->loc.level)
+    if (nb.snb.level == mylevel)
       ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid],nb);
-    else if (nb.snb.level<pmb->loc.level)
+    else if (nb.snb.level<mylevel)
       ssize = LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid],nb);
     else
       ssize = LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
@@ -516,9 +519,10 @@ void FaceCenteredBoundaryVariable::SendBoundaryBuffers() {
       CopyVariableBufferSameProcess(nb, ssize);
     }
 #ifdef MPI_PARALLEL
-    else // MPI
+    else  // MPI
       MPI_Start(&(bd_var_.req_send[nb.bufid]));
 #endif
+    bd_var_.sflag[nb.bufid] = BoundaryStatus::completed;
   }
   return;
 }
@@ -924,6 +928,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers()
 //  \brief receive the face-centered boundary data
 
+// TODO(KGF): completely identical to CellCenteredBoundaryVariable counterpart
 bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag=true;
 
@@ -956,14 +961,16 @@ bool FaceCenteredBoundaryVariable::ReceiveBoundaryBuffers() {
 //! \fn void FaceCenteredBoundaryVariable::SetBoundaries()
 //  \brief set the face-centered boundary data
 
+// TODO(KGF): nearly identical to CellCenteredBoundaryVariable counterpart (extra call to
+// PolarFieldBoundaryAverage())
 void FaceCenteredBoundaryVariable::SetBoundaries() {
   MeshBlock *pmb = pmy_block_;
-
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.snb.level == pmb->loc.level)
+    if (nb.snb.level == mylevel)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.snb.level<pmb->loc.level)
+    else if (nb.snb.level<mylevel)
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -982,18 +989,20 @@ void FaceCenteredBoundaryVariable::SetBoundaries() {
 //! \fn void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait()
 //  \brief receive and set the face-centered boundary data for initialization
 
+// TODO(KGF): nearly identical to CellCenteredBoundaryVariable counterpart (extra call to
+// PolarFieldBoundaryAverage())
 void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb = pmy_block_;
-
+  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL
     if (nb.snb.rank != Globals::my_rank)
       MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
-    if (nb.snb.level == pmb->loc.level)
+    if (nb.snb.level == mylevel)
       SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
-    else if (nb.snb.level<pmb->loc.level)
+    else if (nb.snb.level<mylevel)
       SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
     else
       SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
@@ -1445,9 +1454,12 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
+    bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
     if (((nb.ni.type == NeighborConnect::face) || (nb.ni.type == NeighborConnect::edge))
-        && phase == BoundaryCommSubset::all)
+        && phase == BoundaryCommSubset::all) {
       bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
+      bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::waiting;
+    }
 #ifdef MPI_PARALLEL
     MeshBlock *pmb = pmy_block_;
     int mylevel = pmb->loc.level;
