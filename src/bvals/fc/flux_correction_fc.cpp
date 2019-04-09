@@ -752,9 +752,9 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
         int j;
         if (nb.fid == BoundaryFace::inner_x2) {
-          j=pmb->js;
+          j = pmb->js;
         } else {
-          j=pmb->je + 1;
+          j = pmb->je + 1;
         }
         // unpack e1
         for (int i=pmb->is; i<=pmb->ie; i++) {
@@ -789,26 +789,26 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
         i = pmb->ie + 1;
       }
       if ((nb.eid & 2) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je + 1;
+        j = pmb->je + 1;
       }
       // KGF: shearing box
-      // if (nb.shear && nb.ni.ox1 == -1) {
-      //   // store e3 for shearing periodic bcs
-      //   for (int k = pmb->ks; k<=pmb->ke; k++)
-      //     shboxvar_inner_emf_.x3e(k,j) += buf[p++];
-      // } else if (nb.shear && nb.ni.ox1 == 1) {
-      //   // store e3 for shearing periodic bcs
-      //   for (int k = pmb->ks; k<=pmb->ke; k++)
-      //     shboxvar_outer_emf_.x3e(k,j) += buf[p++];
-      // } else {
+      if (nb.shear && nb.ni.ox1 == -1) {
+        // store e3 for shearing periodic bcs
+        for (int k = pmb->ks; k<=pmb->ke; k++)
+          shboxvar_inner_emf_.x3e(k,j) += buf[p++];
+      } else if (nb.shear && nb.ni.ox1 == 1) {
+        // store e3 for shearing periodic bcs
+        for (int k = pmb->ks; k<=pmb->ke; k++)
+          shboxvar_outer_emf_.x3e(k,j) += buf[p++];
+      } else {
         // unpack e3
         Real sign = (nb.polar && flip_across_pole_field[IB3]) ? -1.0 : 1.0;
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           e3(k,j,i) += sign*buf[p++];
         }
-        //} // KGF: shearing box
+      } // KGF: shearing box
       // x1x3 edge
     } else if (nb.eid>=4 && nb.eid<8) {
       int i, k;
@@ -823,26 +823,26 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
         k = pmb->ke + 1;
       }
       // KGF: shearing box
-      // if (nb.shear && nb.ni.ox1 == -1) {
-      //   // store e2 for shearing periodic bcs
-      //   for (int j=pmb->js; j<=pmb->je; j++)
-      //     shboxvar_inner_emf_.x2e(k,j) += buf[p++];
-      // } else if (nb.shear && nb.ni.ox1 == 1) {
-      //   // store e2 for shearing periodic bcs
-      //   for (int j=pmb->js; j<=pmb->je; j++)
-      //     shboxvar_outer_emf_.x2e(k,j) += buf[p++];
-      // } else {
+      if (nb.shear && nb.ni.ox1 == -1) {
+        // store e2 for shearing periodic bcs
+        for (int j=pmb->js; j<=pmb->je; j++)
+          shboxvar_inner_emf_.x2e(k,j) += buf[p++];
+      } else if (nb.shear && nb.ni.ox1 == 1) {
+        // store e2 for shearing periodic bcs
+        for (int j=pmb->js; j<=pmb->je; j++)
+          shboxvar_outer_emf_.x2e(k,j) += buf[p++];
+      } else {
         // unpack e2
         for (int j=pmb->js; j<=pmb->je; j++)
           e2(k,j,i) += buf[p++];
-        // } // KGF: shearing box
+      } // KGF: shearing box
       // x2x3 edge
     } else if (nb.eid>=8 && nb.eid<12) {
       int j, k;
       if ((nb.eid & 1) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je + 1;
+        j = pmb->je + 1;
       }
       if ((nb.eid & 2) == 0) {
         k = pmb->ks;
