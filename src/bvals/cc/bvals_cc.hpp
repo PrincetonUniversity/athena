@@ -129,6 +129,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int  send_outersize_cc_[4], recv_outersize_cc_[4]; // buffer sizes
   Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
+  int sh_cc_phys_id_;
   // MPI request for send and recv msgs
   MPI_Request rq_innersend_cc_[4], rq_innerrecv_cc_[4];
   MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];

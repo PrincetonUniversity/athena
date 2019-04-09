@@ -69,6 +69,12 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     cc_flx_phys_id_ = pbval_->ReserveTagVariableIDs(1);
 #endif
   }
+
+  if (SHEARING_BOX) {
+#ifdef MPI_PARALLEL
+    sh_cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+#endif
+  }
 }
 
 // destructor
