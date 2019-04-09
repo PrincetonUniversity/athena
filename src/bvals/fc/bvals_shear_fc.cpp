@@ -127,8 +127,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     ku = ke;
     kl = ks;
   }
-
-  Real qomL = qshear_*Omega_0_*x1size_;
+  Real qomL = pbval_->qomL_;
 
   if (shbb_.inner == true) {
     int ib = is - NGHOST;

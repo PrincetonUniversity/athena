@@ -51,8 +51,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
   MeshBlock *pmb = pmy_block_;
 
   // KGF: shearing box:
-  Real qomL = qshear_*Omega_0_*x1size_;
-  AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
+  AthenaArray<Real> &bx1 = pmb->pfield->b.x1f;
+  Real qomL = pbval_->qomL_;
 
   int p = 0;
   if (nb.ni.type == NeighborConnect::face) {
@@ -77,12 +77,12 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         if (nb.shear && nb.fid == BoundaryFace::inner_x1) {
           for (int k=pmb->ks; k<=pmb->ke; k++) {
             for (int j=pmb->js; j<=pmb->je+1; j++)
-              buf[p++] = e3(k,j,i)-0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+              buf[p++] = e3(k,j,i) - 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
           }
         } else if (nb.shear && nb.fid == BoundaryFace::outer_x1) {
           for (int k=pmb->ks; k<=pmb->ke; k++) {
             for (int j=pmb->js; j<=pmb->je+1; j++)
-              buf[p++] = e3(k,j,i)+0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
+              buf[p++] = e3(k,j,i) + 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
           }
         } else {
           for (int k=pmb->ks; k<=pmb->ke; k++) {
@@ -143,11 +143,11 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         if (SHEARING_BOX) {
           if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ni.ox1 == -1)) {
             for (int j=pmb->js; j<=pmb->je; j++)
-              buf[p++] = e2(k,j,i)+qomL*bx1(k,j,i);
-          } else if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1))
+              buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
+          } else if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1 - 1))
                      && nb.ni.ox1 == 1) {
             for (int j=pmb->js; j<=pmb->je; j++)
-              buf[p++] = e2(k,j,i)-qomL*bx1(k,j,i);
+              buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
           } else {
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i);

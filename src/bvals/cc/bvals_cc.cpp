@@ -294,7 +294,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     if (ShBoxCoord_ == 2) {
       int level = pmb->loc.level - pmy_mesh_->root_level;
       std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
-      Real qomL = qshear_*Omega_0_*x1size_;
+      Real qomL = pbval_->qomL_;
       if ((pmb->loc.lx1 == 0) && (nb.ni.ox1 < 0)) {
         for (int k=sk; k<=ek; ++k) {
           for (int j=sj; j<=ej; ++j) {

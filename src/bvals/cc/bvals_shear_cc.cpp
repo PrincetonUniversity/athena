@@ -121,7 +121,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
     ku += NGHOST;
   }
 
-  Real qomL = qshear_*Omega_0_*x1size_;
+  Real qomL = pbval_->qomL_;
 
   if (shbb_.inner == true) {
     // step 1. -- add shear to the inner periodic boundary values
@@ -184,7 +184,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   int je = pmb->je;
 
   Real eps = pbval_->eps_;
-  Real qomL = qshear_*Omega_0_*x1size_;
+  Real qomL = pbval_->qomL_;
   int ssize = pbval_->ssize_*NHYDRO;
 
   if (shbb_.inner == true) {
