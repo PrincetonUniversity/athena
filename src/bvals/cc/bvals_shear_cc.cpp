@@ -52,6 +52,7 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int nx2 = pmb->block_size.nx2 - NGHOST;
+  int jo = pbval_->joverlap_;
 
   si = pmb->is - NGHOST; ei = pmb->is - 1;
   sk = pmb->ks;        ek = pmb->ke;
@@ -59,36 +60,36 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
   // nb=0-3 for inner boundary; nb=4-7 for outer boundary
   switch (nb) {
     case 0:
-      sj = pmb->je - joverlap_ - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->js;
+      sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
+      if (jo > nx2) sj = pmb->js;
       break;
     case 1:
-      sj = pmb->js; ej = pmb->je - joverlap_ + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je;
+      sj = pmb->js; ej = pmb->je - jo + NGHOST;
+      if (jo < NGHOST) ej = pmb->je;
       break;
     case 2:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
+      if (jo > nx2) sj = pmb->je - (jo - nx2) + 1;
       break;
     case 3:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST - joverlap_) - 1;
+      if (jo < NGHOST) ej = pmb->js + (NGHOST - jo) - 1;
       break;
     case 4:
-      sj = pmb->js; ej = pmb->js + joverlap_ + NGHOST - 1;
-      if (joverlap_ > nx2) ej = pmb->je;
+      sj = pmb->js; ej = pmb->js + jo + NGHOST - 1;
+      if (jo > nx2) ej = pmb->je;
       break;
     case 5:
-      sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->js;
+      sj = pmb->js + jo - NGHOST; ej = pmb->je;
+      if (jo < NGHOST) sj = pmb->js;
       break;
     case 6:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2) - 1;
+      if (jo > nx2) ej = pmb->js + (jo - nx2) - 1;
       break;
     case 7:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST - joverlap_) + 1;
+      if (jo < NGHOST) sj = pmb->je - (NGHOST - jo) + 1;
       break;
     default:
       std::stringstream msg;
@@ -128,12 +129,12 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           // add shear to conservative
-          shboxvar_inner_hydro_(IM2,k,j,i) = var(IM2,k,j,i) + qomL*var(IDN,k,j,i);
+          shboxvar_inner_cc_(IM2,k,j,i) = var(IM2,k,j,i) + qomL*var(IDN,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-            var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
+            var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(SQR(shboxvar_inner_cc_(IM2,k,j,i))
                                                     - SQR(var(IM2,k,j,i)));
           } // update energy
-          var(IM2,k,j,i) = shboxvar_inner_hydro_(IM2,k,j,i);// update IM2
+          var(IM2,k,j,i) = shboxvar_inner_cc_(IM2,k,j,i);// update IM2
         }
       }
     }
@@ -148,13 +149,13 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
         for (int i=0; i<NGHOST; i++) {
           ii = ib + i;
           // add shear to conservative
-          shboxvar_outer_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) - qomL*var(IDN,k,j,ii);
+          shboxvar_outer_cc_(IM2,k,j,i) = var(IM2,k,j,ii) - qomL*var(IDN,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
             var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))
-                               *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
+                               *(SQR(shboxvar_outer_cc_(IM2,k,j,i))
                                  - SQR(var(IM2,k,j,ii)));
           }  // update energy
-          var(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);  // update IM2
+          var(IM2,k,j,ii) = shboxvar_outer_cc_(IM2,k,j,i);  // update IM2
         }
       }
     }
@@ -182,24 +183,25 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   int js = pmb->js;
   int je = pmb->je;
 
+  Real eps = pbval_->eps_;
   Real qomL = qshear_*Omega_0_*x1size_;
-  int ssize = ssize_*NHYDRO;
+  int ssize = pbval_->ssize_*NHYDRO;
 
   if (shbb_.inner == true) {
     int ib = pmb->is - NGHOST;
     int ii;
-    // step 1. -- load shboxvar_hydro_
+    // step 1. -- load shboxvar_cc_
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib + i;
-          shboxvar_inner_hydro_(IDN,k,j,i) = var(IDN,k,j,ii);
-          shboxvar_inner_hydro_(IM1,k,j,i) = var(IM1,k,j,ii);
-          shboxvar_inner_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
-          shboxvar_inner_hydro_(IM3,k,j,i) = var(IM3,k,j,ii);
+          shboxvar_inner_cc_(IDN,k,j,i) = var(IDN,k,j,ii);
+          shboxvar_inner_cc_(IM1,k,j,i) = var(IM1,k,j,ii);
+          shboxvar_inner_cc_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
+          shboxvar_inner_cc_(IM3,k,j,i) = var(IM3,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
-            shboxvar_inner_hydro_(IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
-                                               *(SQR(shboxvar_inner_hydro_(IM2,k,j,i))
+            shboxvar_inner_cc_(IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
+                                               *(SQR(shboxvar_inner_cc_(IM2,k,j,i))
                                                  - SQR(var(IM2,k,j,ii)));
           }
         }
@@ -210,9 +212,9 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int n=0; n<NHYDRO; n++) {
       for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
-          RemapFlux(n, k, js, je+2, i, eps_, shboxvar_inner_hydro_, flx_inner_hydro_);
+          RemapFlux(n, k, js, je+2, i, eps, shboxvar_inner_cc_, flx_inner_cc_);
           for (int j=js; j<=je+1; j++) {
-            shboxvar_inner_hydro_(n,k,j,i) -= flx_inner_hydro_(j+1) - flx_inner_hydro_(j);
+            shboxvar_inner_cc_(n,k,j,i) -= flx_inner_cc_(j+1) - flx_inner_cc_(j);
           }
         }
       }
@@ -221,18 +223,18 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
-        LoadShearing(shboxvar_inner_hydro_, send_innerbuf_hydro_[n], n);
+        LoadShearing(shboxvar_inner_cc_, send_innerbuf_cc_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
-          std::memcpy(pbl->pbval->recv_innerbuf_hydro_[n],send_innerbuf_hydro_[n],
-                      send_innersize_hydro_[n]*ssize*sizeof(Real));
-          pbl->pbval->shbox_inner_hydro_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_innerbuf_cc_[n],send_innerbuf_cc_[n],
+                      send_innersize_cc_[n]*ssize*sizeof(Real));
+          pbl->pbval->shbox_inner_cc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_hydro);
-          MPI_Isend(send_innerbuf_hydro_[n], send_innersize_hydro_[n]*ssize,
+          int tag=CreateBvalsMPITag(send_inner_lid_[n], n, sh_cc_phys_id_);
+          MPI_Isend(send_innerbuf_cc_[n], send_innersize_cc_[n]*ssize,
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag, MPI_COMM_WORLD,
-                    &rq_innersend_hydro_[n]);
+                    &rq_innersend_cc_[n]);
 #endif
         }
       }
@@ -243,19 +245,19 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     int  ib = pmb->ie + 1;
     qomL = -qomL;
     int ii;
-    // step 1. -- load shboxvar_hydro_
+    // step 1. -- load shboxvar_cc_
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_outer_hydro_(IDN,k,j,i) = var(IDN,k,j,ii);
-          shboxvar_outer_hydro_(IM1,k,j,i) = var(IM1,k,j,ii);
-          shboxvar_outer_hydro_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
-          shboxvar_outer_hydro_(IM3,k,j,i) = var(IM3,k,j,ii);
+          shboxvar_outer_cc_(IDN,k,j,i) = var(IDN,k,j,ii);
+          shboxvar_outer_cc_(IM1,k,j,i) = var(IM1,k,j,ii);
+          shboxvar_outer_cc_(IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
+          shboxvar_outer_cc_(IM3,k,j,i) = var(IM3,k,j,ii);
           if (NON_BAROTROPIC_EOS) {
-            shboxvar_outer_hydro_(IEN,k,j,i) = var(IEN,k,j,ii)
+            shboxvar_outer_cc_(IEN,k,j,i) = var(IEN,k,j,ii)
                                                + (0.5/var(IDN,k,j,ii))
-                                               *(SQR(shboxvar_outer_hydro_(IM2,k,j,i))
+                                               *(SQR(shboxvar_outer_cc_(IM2,k,j,i))
                                                  - SQR(var(IM2,k,j,ii)));
           }
         }
@@ -266,9 +268,9 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int n=0; n<NHYDRO; n++) {
       for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
-          RemapFlux(n, k, js-1, je+1, i, -eps_, shboxvar_outer_hydro_, flx_outer_hydro_);
+          RemapFlux(n, k, js-1, je+1, i, -eps, shboxvar_outer_cc_, flx_outer_cc_);
           for (int j=js-1; j<=je; j++) {
-            shboxvar_outer_hydro_(n,k,j,i) -= flx_outer_hydro_(j+1) - flx_outer_hydro_(j);
+            shboxvar_outer_cc_(n,k,j,i) -= flx_outer_cc_(j+1) - flx_outer_cc_(j);
           }
         }
       }
@@ -279,21 +281,20 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
-        LoadShearing(shboxvar_outer_hydro_, send_outerbuf_hydro_[n], n+offset);
+        LoadShearing(shboxvar_outer_cc_, send_outerbuf_cc_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
-          std::memcpy(pbl->pbval->recv_outerbuf_hydro_[n],
-                      send_outerbuf_hydro_[n],
-                      send_outersize_hydro_[n]*ssize*sizeof(Real));
-          pbl->pbval->shbox_outer_hydro_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_outerbuf_cc_[n],
+                      send_outerbuf_cc_[n],
+                      send_outersize_cc_[n]*ssize*sizeof(Real));
+          pbl->pbval->shbox_outer_cc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
-          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
-                                      AthenaTagMPI::shbox_hydro);
-          MPI_Isend(send_outerbuf_hydro_[n], send_outersize_hydro_[n]*ssize,
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset, sh_cc_phys_id_);
+          MPI_Isend(send_outerbuf_cc_[n], send_outersize_cc_[n]*ssize,
                     MPI_ATHENA_REAL, send_outer_rank_[n], tag, MPI_COMM_WORLD,
-                    &rq_outersend_hydro_[n]);
+                    &rq_outersend_cc_[n]);
 #endif
         }
       }
@@ -315,8 +316,9 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
+  int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
-  int nxo = pmb->block_size.nx2 - joverlap_;
+  int nxo = pmb->block_size.nx2 - jo;
 
   sk = pmb->ks; ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) ek += NGHOST, sk -= NGHOST;
@@ -324,41 +326,41 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
   switch (nb) {
     case 0:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js - NGHOST; ej = pmb->js + (joverlap_ - 1);
-      if (joverlap_ > nx2) sj = pmb->js - nxo;
+      sj = pmb->js - NGHOST; ej = pmb->js + (jo - 1);
+      if (jo > nx2) sj = pmb->js - nxo;
       break;
     case 1:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js + joverlap_; ej = pmb->je + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je + joverlap_;
+      sj = pmb->js + jo; ej = pmb->je + NGHOST;
+      if (jo < NGHOST) ej = pmb->je + jo;
       break;
     case 2:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_ > nx2) ej = pmb->js - nxo - 1;
+      if (jo > nx2) ej = pmb->js - nxo - 1;
       break;
     case 3:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->je + joverlap_ + 1; ej = pmb->je + NGHOST;
+      sj = pmb->je + jo + 1; ej = pmb->je + NGHOST;
       break;
     case 4:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->je - (joverlap_ - 1); ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) ej = pmb->je + nxo;
+      sj = pmb->je - (jo - 1); ej = pmb->je + NGHOST;
+      if (jo > nx2) ej = pmb->je + nxo;
       break;
     case 5:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->je - joverlap_;
-      if (joverlap_ < NGHOST)   sj = pmb->js - joverlap_;
+      sj = pmb->js - NGHOST; ej = pmb->je - jo;
+      if (jo < NGHOST)   sj = pmb->js - jo;
       break;
     case 6:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
       sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
+      if (jo > nx2) sj = pmb->je + nxo + 1;
       break;
     case 7:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_-1;
+      sj = pmb->js - NGHOST; ej = pmb->js - jo-1;
       break;
     default:
       std::stringstream msg;
@@ -379,13 +381,12 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 //  \brief receive shearing box boundary data for hydro variables
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
-  AthenaArray<Real> &var = *var_cc;
   bool flagi = true, flago = true;
 
   if (shbb_.inner == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shbox_inner_hydro_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_inner_hydro_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_inner_cc_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_inner_cc_flag_[n] == BoundaryStatus::waiting) {
         if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
           flagi = false;
           continue;
@@ -394,26 +395,26 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_hydro_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_innerrecv_cc_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi = false;
             continue;
           }
-          shbox_inner_hydro_flag_[n] = BoundaryStatus::arrived;
+          shbox_inner_cc_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set var if boundary arrived
-      SetShearingBoxBoundarySameLevel(recv_innerbuf_hydro_[n], n);
-      shbox_inner_hydro_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(recv_innerbuf_cc_[n], n);
+      shbox_inner_cc_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shbox_outer_hydro_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_outer_hydro_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_outer_cc_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_outer_cc_flag_[n] == BoundaryStatus::waiting) {
         if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
           flago = false;
           continue;
@@ -422,17 +423,17 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_outerrecv_hydro_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_outerrecv_cc_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
           }
-          shbox_outer_hydro_flag_[n] = BoundaryStatus::arrived;
+          shbox_outer_cc_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(recv_outerbuf_hydro_[n], n+offset);
-      shbox_outer_hydro_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(recv_outerbuf_cc_[n], n+offset);
+      shbox_outer_cc_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
   return (flagi && flago);
