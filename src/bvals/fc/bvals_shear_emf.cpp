@@ -42,10 +42,14 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadEMFShearing(Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
+//                                                        Real *buf, int nb)
 //  \brief Load shearing box EMF boundary buffers
 
-void FaceCenteredBoundaryVariable::LoadEMFShearing(Real *buf, const int nb) {
+// KGF: EdgeField &src = shboxvar_outer_emf_, shboxvar_inner_emf_
+
+void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
+                                                   Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
   int psj, pej; // indices for e3
@@ -149,7 +153,7 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
           pbl->pbval->shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag=CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_emf);
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_emf);
           MPI_Isend(send_innerbuf_emf_[n], send_innersize_emf_[n],
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
                     MPI_COMM_WORLD, &rq_innersend_emf_[n]);
@@ -200,10 +204,12 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
 
 // --------------------------------------------------------------------------------------
 // ! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
-//                                                      Real *buf, const int nb)
+//                                   EdgeField &dst, Real *buf, const int nb)
 //  \brief Set EMF shearing box boundary received from a block on the same level
 
-void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(Real *buf,
+// KGF: EdgeField &dst = shboxmap_outer_emf_, shboxmap_inner_emf_
+void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
+                                                                      Real *buf,
                                                                       const int nb) {
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
@@ -301,7 +307,7 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
         }
       }
       // set dst if boundary arrived
-      SetEMFShearingBoxBoundarySameLevel(shboxmap_inner_emf_, recv_innerbuf_emf_[n],n);
+      SetEMFShearingBoxBoundarySameLevel(shboxmap_inner_emf_, recv_innerbuf_emf_[n], n);
       shbox_inner_emf_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // inner boundary
@@ -311,15 +317,15 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
     for (int n=0; n<4; n++) {
       if (shbox_outer_emf_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_outer_emf_flag_[n] == BoundaryStatus::waiting) {
-        if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
+        if (recv_outer_rank_[n] == Globals::my_rank) {  // on the same process
           flago = false;
           continue;
         } else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,
+          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_outerrecv_emf_[n],&test,MPI_STATUS_IGNORE);
+          MPI_Test(&rq_outerrecv_emf_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
@@ -329,7 +335,7 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
         }
       }
       SetEMFShearingBoxBoundarySameLevel(shboxmap_outer_emf_, recv_outerbuf_emf_[n],
-                                         n +offset);
+                                         n+offset);
       shbox_outer_emf_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
@@ -413,9 +419,11 @@ void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
 //  \brief compute the flux along j indices for remapping
 //  adopted from 2nd order RemapFlux of Athena4.0
 
-void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner, const int jouter,
-                                  const Real eps, const AthenaArray<Real> &U,
-                                  AthenaArray<Real> &Flux) {
+void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner,
+                                                const int jouter,
+                                                const Real eps,
+                                                const AthenaArray<Real> &var,
+                                                AthenaArray<Real> &flux) {
   int j, jl, ju;
   Real dUc, dUl, dUr, dUm, lim_slope;
 
@@ -432,9 +440,9 @@ void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner, c
   // TODO(felker): do not reimplement PLM here; use plm.cpp.
   // TODO(felker): relax assumption that 2nd order reconstruction must be used
   for (j=jl; j<=ju; j++) {
-    dUc = U(k,j+1) - U(k,j-1);
-    dUl = U(k,j  ) - U(k,j-1);
-    dUr = U(k,j+1) - U(k,j  );
+    dUc = var(k,j+1) - var(k,j-1);
+    dUl = var(k,j  ) - var(k,j-1);
+    dUr = var(k,j+1) - var(k,j  );
 
     dUm = 0.0;
     if (dUl*dUr > 0.0) {
@@ -443,9 +451,9 @@ void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner, c
     }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary
-      Flux(j+1) = eps*(U(k,j) + 0.5*(1.0 - eps)*dUm);
+      flux(j+1) = eps*(var(k,j) + 0.5*(1.0 - eps)*dUm);
     } else {         // eps always < 0 for outer i boundary
-      Flux(j  ) = eps*(U(k,j) - 0.5*(1.0 + eps)*dUm);
+      flux(j  ) = eps*(var(k,j) - 0.5*(1.0 + eps)*dUm);
     }
   }
   return;

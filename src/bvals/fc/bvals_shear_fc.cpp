@@ -41,10 +41,11 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadShearing(Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb)
 //  \brief Load shearing box field boundary buffers
 
-void FaceCenteredBoundaryVariable::LoadShearing(Real *buf, int nb) {
+// KGF: FaceField &src = shboxvar_inner/outer_field_, send_innerbuf/outerbuf_field_[n]
+void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -137,9 +138,9 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_inner_field_.x1f(k,j,i) = src.x1f(k,j,ii);
-          shboxvar_inner_field_.x2f(k,j,i) = src.x2f(k,j,ii);
-          shboxvar_inner_field_.x3f(k,j,i) = src.x3f(k,j,ii);
+          shboxvar_inner_field_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
+          shboxvar_inner_field_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shboxvar_inner_field_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -148,14 +149,14 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
+        shboxvar_inner_field_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_field_.x2f(k,jp,i) = src.x2f(k,jp,ii);
+        shboxvar_inner_field_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
@@ -218,9 +219,9 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_outer_field_.x1f(k,j,i) = src.x1f(k,j,ii+1);
-          shboxvar_outer_field_.x2f(k,j,i) = src.x2f(k,j,ii);
-          shboxvar_outer_field_.x3f(k,j,i) = src.x3f(k,j,ii);
+          shboxvar_outer_field_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
+          shboxvar_outer_field_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shboxvar_outer_field_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -229,14 +230,14 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_field_.x3f(kp,j,i) = src.x3f(kp,j,ii);
+        shboxvar_outer_field_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_field_.x2f(k,jp,i) = src.x2f(k,jp,ii);
+        shboxvar_outer_field_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
@@ -301,6 +302,9 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 //! \fn void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
 //                                           Real *buf, const int nb)
 //  \brief Set field shearing box boundary received from a block on the same level
+
+// KGF: FaceField &dst = passed through pmb->pfield->b from
+// ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
                                                                    const int nb) {
@@ -369,9 +373,9 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 
   // set [sj:ej] of current meshblock
   int p = 0;
-  BufferUtility::UnpackData(buf, dst.x1f, psi, pei, sj, ej, sk, ek, p);
-  BufferUtility::UnpackData(buf, dst.x2f, si, ei, psj, pej, sk, ek, p);
-  BufferUtility::UnpackData(buf, dst.x3f, si, ei, sj, ej, sk, ek+1, p);
+  BufferUtility::UnpackData(buf, (*var_fc).x1f, psi, pei, sj, ej, sk, ek, p);
+  BufferUtility::UnpackData(buf, (*var_fc).x2f, si, ei, psj, pej, sk, ek, p);
+  BufferUtility::UnpackData(buf, (*var_fc).x3f, si, ei, sj, ej, sk, ek+1, p);
   return;
 }
 
@@ -404,7 +408,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
         }
       }
       // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(dst, recv_innerbuf_field_[n], n);
+      SetShearingBoxBoundarySameLevel(recv_innerbuf_field_[n], n);
       shbox_inner_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
@@ -432,7 +436,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(dst, recv_outerbuf_field_[n], n+offset);
+      SetShearingBoxBoundarySameLevel(recv_outerbuf_field_[n], n+offset);
       shbox_outer_field_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
@@ -447,9 +451,11 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 //  \brief compute the flux along j indices for remapping adopted from 2nd order RemapFlux
 //         of Athena4.0
 
-void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner, const int jouter,
+void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
+                                             const int jouter,
                                              const int i, const Real eps,
-                                             const AthenaArray<Real> &U, AthenaArray<Real> &Flux) {
+                                             const AthenaArray<Real> &var,
+                                             AthenaArray<Real> &flux) {
   int j, jl, ju;
   Real dUc, dUl, dUr, dUm, lim_slope;
 
@@ -465,9 +471,9 @@ void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner, cons
   }
 
   for (j=jl; j<=ju; j++) {
-    dUc = U(k,j+1,i) - U(k,j-1,i);
-    dUl = U(k,j,  i) - U(k,j-1,i);
-    dUr = U(k,j+1,i) - U(k,j,  i);
+    dUc = var(k,j+1,i) - var(k,j-1,i);
+    dUl = var(k,j,  i) - var(k,j-1,i);
+    dUr = var(k,j+1,i) - var(k,j,  i);
 
     dUm = 0.0;
     if (dUl*dUr > 0.0) {
@@ -476,9 +482,9 @@ void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner, cons
     }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary
-      Flux(j+1) = eps*(U(k,j,i) + 0.5*(1.0 - eps)*dUm);
+      flux(j+1) = eps*(var(k,j,i) + 0.5*(1.0 - eps)*dUm);
     } else {         // eps always < 0 for outer i boundary
-      Flux(j  ) = eps*(U(k,j,i) - 0.5*(1.0 + eps)*dUm);
+      flux(j  ) = eps*(var(k,j,i) - 0.5*(1.0 + eps)*dUm);
     }
   }
   return;
