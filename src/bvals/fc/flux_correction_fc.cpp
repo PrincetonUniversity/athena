@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file flux_correction_fc.cpp
-//  \brief functions that perform flux correction for FACE_CENTERED variables
+//  \brief functions that perform flux correction for face-centered variables
 
 // C headers
 
@@ -38,6 +38,8 @@
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
+
+// TODO(felker): break-up the long functions in this file
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
@@ -1504,7 +1506,7 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
           pbval_->azimuthal_shift_(k) = e3(k,j,i);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           int k_shift = k;
-          k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+          k_shift += (k < (nx3_half + NGHOST) ? 1 : -1) * nx3_half;
           e3(k,j,i) = pbval_->azimuthal_shift_(k_shift);
         }
       }

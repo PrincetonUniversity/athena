@@ -196,7 +196,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
           std::memcpy(pbl->pbval->recv_innerbuf_field_[n],send_innerbuf_field_[n],
                       send_innersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_field_flag_[n]=BoundaryStatus::arrived;
+          pbl->pbval->shbox_inner_field_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
@@ -264,7 +264,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int k=kl; k<=ku+1; k++) {  // bx3
       for (int i=0; i<NGHOST; i++) {
         RemapFlux(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x3f,
-                       flx_outer_field_.x3f);
+                  flx_outer_field_.x3f);
         for (int j=js-1; j<=je; j++) {
           shboxvar_outer_field_.x3f(k,j,i) -= (flx_outer_field_.x3f(j+1) -
                                                flx_outer_field_.x3f(j));
@@ -281,7 +281,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
           std::memcpy(pbl->pbval->recv_outerbuf_field_[n],
                       send_outerbuf_field_[n], send_outersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_field_flag_[n]=BoundaryStatus::arrived;
+          pbl->pbval->shbox_outer_field_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
