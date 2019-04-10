@@ -857,14 +857,15 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
   if (shbb_.inner == true) { // if inner block
     for (int n=0; n<4; n++) {
-      send_inner_gid_[n]  = -1;
-      send_inner_rank_[n] = -1;
-      send_inner_lid_[n]  = -1;
-      recv_inner_gid_[n]  = -1;
-      recv_inner_rank_[n] = -1;
-      recv_inner_lid_[n]  = -1;
+      shear_send_inner_neighbor_[n].gid  = -1;
+      shear_send_inner_neighbor_[n].lid  = -1;
+      shear_send_inner_neighbor_[n].rank  = -1;
 
-      send_innersize_cc_[n] = 0;
+      shear_recv_inner_neighbor_[n].gid  = -1;
+      shear_recv_inner_neighbor_[n].lid  = -1;
+      shear_recv_inner_neighbor_[n].rank  = -1;
+
+      shear_send_innersize_cc_[n] = 0;
       recv_innersize_cc_[n] = 0;
       shbox_inner_cc_flag_[n] = BoundaryStatus::completed;
 
@@ -887,9 +888,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // to its right end.
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-    send_inner_gid_[1]  = shbb_.igidlist[jtmp];
-    send_inner_rank_[1] = shbb_.irnklist[jtmp];
-    send_inner_lid_[1]  = shbb_.ilidlist[jtmp];
+    shear_send_inner_neighbor_[1].gid  = shbb_.igidlist[jtmp];
+    shear_send_inner_neighbor_[1].rank = shbb_.irnklist[jtmp];
+    shear_send_inner_neighbor_[1].lid  = shbb_.ilidlist[jtmp];
 
     send_innersize_cc_[1] = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
 
@@ -897,9 +898,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
-    recv_inner_gid_[1]  = shbb_.igidlist[jtmp];
-    recv_inner_rank_[1] = shbb_.irnklist[jtmp];
-    recv_inner_lid_[1]  = shbb_.ilidlist[jtmp];
+    shear_recv_inner_neighbor_[1].gid  = shbb_.igidlist[jtmp];
+    shear_recv_inner_neighbor_[1].rank = shbb_.irnklist[jtmp];
+    shear_recv_inner_neighbor_[1].lid  = shbb_.ilidlist[jtmp];
 
     recv_innersize_cc_[1] = send_innersize_cc_[1];
     shbox_inner_cc_flag_[1] = BoundaryStatus::waiting;
@@ -920,18 +921,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send to the right
       jtmp = jblock + (Ngrids + 1);
       if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      send_inner_gid_[0]  = shbb_.igidlist[jtmp];
-      send_inner_rank_[0] = shbb_.irnklist[jtmp];
-      send_inner_lid_[0]  = shbb_.ilidlist[jtmp];
+      shear_send_inner_neighbor_[0].gid  = shbb_.igidlist[jtmp];
+      shear_send_inner_neighbor_[0].rank = shbb_.irnklist[jtmp];
+      shear_send_inner_neighbor_[0].lid  = shbb_.ilidlist[jtmp];
 
       send_innersize_cc_[0] = std::min(joverlap_+NGHOST, je -js + 1);
 
       // receive from its left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
-      recv_inner_gid_[0]  = shbb_.igidlist[jtmp];
-      recv_inner_rank_[0] = shbb_.irnklist[jtmp];
-      recv_inner_lid_[0]  = shbb_.ilidlist[jtmp];
+      shear_recv_inner_neighbor_[0].gid  = shbb_.igidlist[jtmp];
+      shear_recv_inner_neighbor_[0].rank = shbb_.irnklist[jtmp];
+      shear_recv_inner_neighbor_[0].lid  = shbb_.ilidlist[jtmp];
 
       recv_innersize_cc_[0] = send_innersize_cc_[0];
       shbox_inner_cc_flag_[0] = BoundaryStatus::waiting;  // switch on if overlap
@@ -950,18 +951,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // send to Right
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        send_inner_gid_[2]  = shbb_.igidlist[jtmp];
-        send_inner_rank_[2] = shbb_.irnklist[jtmp];
-        send_inner_lid_[2]  = shbb_.ilidlist[jtmp];
+        shear_send_inner_neighbor_[2].gid  = shbb_.igidlist[jtmp];
+        shear_send_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
+        shear_send_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
         send_innersize_cc_[2] = joverlap_ - (nx2 - NGHOST);
 
         // recv from Left
         jtmp = jblock - (Ngrids + 2);
         while (jtmp < 0) jtmp += nrbx2;
-        recv_inner_gid_[2]  = shbb_.igidlist[jtmp];
-        recv_inner_rank_[2] = shbb_.irnklist[jtmp];
-        recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
+        shear_recv_inner_neighbor_[2].gid  = shbb_.igidlist[jtmp];
+        shear_recv_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
+        shear_recv_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
         recv_innersize_cc_[2] = send_innersize_cc_[2];
         shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
@@ -980,18 +981,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        send_inner_gid_[3]  = shbb_.igidlist[jtmp];
-        send_inner_rank_[3] = shbb_.irnklist[jtmp];
-        send_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+        shear_send_inner_neighbor_[3].gid  = shbb_.igidlist[jtmp];
+        shear_send_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
+        shear_send_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
         send_innersize_cc_[3] = NGHOST - joverlap_;
 
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        recv_inner_gid_[3]  = shbb_.igidlist[jtmp];
-        recv_inner_rank_[3] = shbb_.irnklist[jtmp];
-        recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+        shear_recv_inner_neighbor_[3].gid  = shbb_.igidlist[jtmp];
+        shear_recv_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
+        shear_recv_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
         recv_innersize_cc_[3] = send_innersize_cc_[3];
         shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
@@ -1009,18 +1010,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send [je-(NGHOST-1):je] to Right
       jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      send_inner_gid_[2]  = shbb_.igidlist[jtmp];
-      send_inner_rank_[2] = shbb_.irnklist[jtmp];
-      send_inner_lid_[2]  = shbb_.ilidlist[jtmp];
+      shear_send_inner_neighbor_[2].gid  = shbb_.igidlist[jtmp];
+      shear_send_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
+      shear_send_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
       send_innersize_cc_[2] = NGHOST;
 
       // recv [js-NGHOST:js-1] from Left
       jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
-      recv_inner_gid_[2]  = shbb_.igidlist[jtmp];
-      recv_inner_rank_[2] = shbb_.irnklist[jtmp];
-      recv_inner_lid_[2]  = shbb_.ilidlist[jtmp];
+      shear_recv_inner_neighbor_[2].gid  = shbb_.igidlist[jtmp];
+      shear_recv_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
+      shear_recv_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
       recv_innersize_cc_[2] = send_innersize_cc_[2];
       shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
@@ -1038,17 +1039,17 @@ void BoundaryValues::FindShearBlock(const Real time) {
       jtmp = jblock + (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      send_inner_gid_[3]  = shbb_.igidlist[jtmp];
-      send_inner_rank_[3] = shbb_.irnklist[jtmp];
-      send_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+      shear_send_inner_neighbor_[3].gid  = shbb_.igidlist[jtmp];
+      shear_send_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
+      shear_send_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
       send_innersize_cc_[3] = NGHOST;
       // recv [je + 1:je+(NGHOST-1)] from Right
       jtmp = jblock - (Ngrids-1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      recv_inner_gid_[3]  = shbb_.igidlist[jtmp];
-      recv_inner_rank_[3] = shbb_.irnklist[jtmp];
-      recv_inner_lid_[3]  = shbb_.ilidlist[jtmp];
+      shear_recv_inner_neighbor_[3].gid  = shbb_.igidlist[jtmp];
+      shear_recv_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
+      shear_recv_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
       recv_innersize_cc_[3] = send_innersize_cc_[3];
       shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
@@ -1069,15 +1070,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
   if (shbb_.outer == true) { // if outer block
     for (int n=0; n<4; n++) {
-      send_outer_gid_[n]  = -1;
-      send_outer_rank_[n] = -1;
-      send_outer_lid_[n]  = -1;
-      recv_outer_gid_[n]  = -1;
-      recv_outer_rank_[n] = -1;
-      recv_outer_lid_[n]  = -1;
+      shear_send_outer_neighbor_[n].gid  = -1;
+      shear_send_outer_neighbor_[n].lid  = -1;
+      shear_send_outer_neighbor_[n].rank  = -1;
+
+      shear_recv_outer_neighbor_[n].gid  = -1;
+      shear_recv_outer_neighbor_[n].lid  = -1;
+      shear_recv_outer_neighbor_[n].rank  = -1;
 
       send_outersize_cc_[n] = 0;
       recv_outersize_cc_[n] = 0;
+
+      // KGF: split
       shbox_outer_cc_flag_[n] = BoundaryStatus::completed;
 
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -1097,18 +1101,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // recv [js-NGHOST:je-joverlap] of the meshblock from other
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-    recv_outer_gid_[1]  = shbb_.ogidlist[jtmp];
-    recv_outer_rank_[1] = shbb_.ornklist[jtmp];
-    recv_outer_lid_[1]  = shbb_.olidlist[jtmp];
+    shear_recv_outer_[1].gid  = shbb_.ogidlist[jtmp];
+    shear_recv_outer_[1].rank = shbb_.ornklist[jtmp];
+    shear_recv_outer_[1].lid  = shbb_.olidlist[jtmp];
 
     recv_outersize_cc_[1] = std::min(je -js - joverlap_ + 1 + NGHOST, je -js + 1);
 
     // send [js+joverlap-NGHOST:je] of the meshblock to other
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
-    send_outer_gid_[1]  = shbb_.ogidlist[jtmp];
-    send_outer_rank_[1] = shbb_.ornklist[jtmp];
-    send_outer_lid_[1]  = shbb_.olidlist[jtmp];
+    shear_send_outer_[1].gid  = shbb_.ogidlist[jtmp];
+    shear_send_outer_[1].rank = shbb_.ornklist[jtmp];
+    shear_send_outer_[1].lid  = shbb_.olidlist[jtmp];
 
     send_outersize_cc_[1] = recv_outersize_cc_[1];
     shbox_outer_cc_flag_[1] = BoundaryStatus::waiting;
@@ -1128,16 +1132,16 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // recv from right
       jtmp = jblock + (Ngrids + 1);
       if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      recv_outer_gid_[0]  = shbb_.ogidlist[jtmp];
-      recv_outer_rank_[0] = shbb_.ornklist[jtmp];
-      recv_outer_lid_[0]  = shbb_.olidlist[jtmp];
+      shear_recv_outer_[0].gid  = shbb_.ogidlist[jtmp];
+      shear_recv_outer_[0].rank = shbb_.ornklist[jtmp];
+      shear_recv_outer_[0].lid  = shbb_.olidlist[jtmp];
       recv_outersize_cc_[0] = std::min(joverlap_+NGHOST, je -js + 1);
       // send to left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
-      send_outer_gid_[0]  = shbb_.ogidlist[jtmp];
-      send_outer_rank_[0] = shbb_.ornklist[jtmp];
-      send_outer_lid_[0]  = shbb_.olidlist[jtmp];
+      shear_send_outer_[0].gid  = shbb_.ogidlist[jtmp];
+      shear_send_outer_[0].rank = shbb_.ornklist[jtmp];
+      shear_send_outer_[0].lid  = shbb_.olidlist[jtmp];
 
       send_outersize_cc_[0] = recv_outersize_cc_[0];
       shbox_outer_cc_flag_[0] = BoundaryStatus::waiting; // switch on if overlap
@@ -1156,16 +1160,16 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // recv from left
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        recv_outer_gid_[2]  = shbb_.ogidlist[jtmp];
-        recv_outer_rank_[2] = shbb_.ornklist[jtmp];
-        recv_outer_lid_[2]  = shbb_.olidlist[jtmp];
+        shear_recv_outer_[2].gid  = shbb_.ogidlist[jtmp];
+        shear_recv_outer_[2].rank = shbb_.ornklist[jtmp];
+        shear_recv_outer_[2].lid  = shbb_.olidlist[jtmp];
         recv_outersize_cc_[2] = joverlap_-(nx2-NGHOST);
         // send to right
         jtmp = jblock - (Ngrids + 2);
         while (jtmp < 0) jtmp += nrbx2;
-        send_outer_gid_[2]  = shbb_.ogidlist[jtmp];
-        send_outer_rank_[2] = shbb_.ornklist[jtmp];
-        send_outer_lid_[2]  = shbb_.olidlist[jtmp];
+        shear_send_outer_[2].gid  = shbb_.ogidlist[jtmp];
+        shear_send_outer_[2].rank = shbb_.ornklist[jtmp];
+        shear_send_outer_[2].lid  = shbb_.olidlist[jtmp];
 
         send_outersize_cc_[2] = recv_outersize_cc_[2];
         shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
@@ -1184,18 +1188,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        recv_outer_gid_[3]  = shbb_.ogidlist[jtmp];
-        recv_outer_rank_[3] = shbb_.ornklist[jtmp];
-        recv_outer_lid_[3]  = shbb_.olidlist[jtmp];
+        shear_recv_outer_[3].gid  = shbb_.ogidlist[jtmp];
+        shear_recv_outer_[3].rank = shbb_.ornklist[jtmp];
+        shear_recv_outer_[3].lid  = shbb_.olidlist[jtmp];
 
         recv_outersize_cc_[3] = NGHOST - joverlap_;
 
         jtmp = jblock - (Ngrids-1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        send_outer_gid_[3]  = shbb_.ogidlist[jtmp];
-        send_outer_rank_[3] = shbb_.ornklist[jtmp];
-        send_outer_lid_[3]  = shbb_.olidlist[jtmp];
+        shear_send_outer_[3].gid  = shbb_.ogidlist[jtmp];
+        shear_send_outer_[3].rank = shbb_.ornklist[jtmp];
+        shear_send_outer_[3].lid  = shbb_.olidlist[jtmp];
 
         send_outersize_cc_[3] = recv_outersize_cc_[3];
         shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
@@ -1213,18 +1217,18 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // recv [je + 1:je+NGHOST] from Left
       jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      recv_outer_gid_[2]  = shbb_.ogidlist[jtmp];
-      recv_outer_rank_[2] = shbb_.ornklist[jtmp];
-      recv_outer_lid_[2]  = shbb_.olidlist[jtmp];
+      shear_recv_outer_[2].gid  = shbb_.ogidlist[jtmp];
+      shear_recv_outer_[2].rank = shbb_.ornklist[jtmp];
+      shear_recv_outer_[2].lid  = shbb_.olidlist[jtmp];
 
       recv_outersize_cc_[2] = NGHOST;
 
       // send [js:js+NGHOST-1] to Right
       jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
-      send_outer_gid_[2]  = shbb_.ogidlist[jtmp];
-      send_outer_rank_[2] = shbb_.ornklist[jtmp];
-      send_outer_lid_[2]  = shbb_.olidlist[jtmp];
+      shear_send_outer_[2].gid  = shbb_.ogidlist[jtmp];
+      shear_send_outer_[2].rank = shbb_.ornklist[jtmp];
+      shear_send_outer_[2].lid  = shbb_.olidlist[jtmp];
 
       send_outersize_cc_[2] = NGHOST;
       shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
@@ -1242,9 +1246,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       jtmp = jblock + (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      recv_outer_gid_[3]  = shbb_.ogidlist[jtmp];
-      recv_outer_rank_[3] = shbb_.ornklist[jtmp];
-      recv_outer_lid_[3]  = shbb_.olidlist[jtmp];
+      shear_recv_outer_[3].gid  = shbb_.ogidlist[jtmp];
+      shear_recv_outer_[3].rank = shbb_.ornklist[jtmp];
+      shear_recv_outer_[3].lid  = shbb_.olidlist[jtmp];
 
       recv_outersize_cc_[3] = NGHOST;
 
@@ -1252,9 +1256,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       jtmp = jblock - (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      send_outer_gid_[3]  = shbb_.ogidlist[jtmp];
-      send_outer_rank_[3] = shbb_.ornklist[jtmp];
-      send_outer_lid_[3]  = shbb_.olidlist[jtmp];
+      shear_send_outer_[3].gid  = shbb_.ogidlist[jtmp];
+      shear_send_outer_[3].rank = shbb_.ornklist[jtmp];
+      shear_send_outer_[3].lid  = shbb_.olidlist[jtmp];
 
       send_outersize_cc_[3] = NGHOST;
       shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;

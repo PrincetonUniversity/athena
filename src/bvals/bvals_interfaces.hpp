@@ -162,25 +162,6 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 
 using ShearingBoundaryData = BoundaryData<4>;
 
-struct ShearingNeighborBlock { // aggregate and POD type
-  // composition:
-  SimpleNeighborBlock snb;
-  //NeighborIndexes ni;
-
-  // int bufid, eid, targetid;
-  // BoundaryFace fid;
-  // bool polar; // flag indicating boundary is across a pole
-  // bool shear;
-
-  // unlike conventional (non-shearing) NeighborBlock, the size of the
-  // is time-dependent. Calculated in FindShearBlock()
-  int send_size, recv_size;
-
-  // void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-  //                  int iox3, NeighborConnect itype, int ibid, int itargetid,
-  //                  bool ipolar, bool ishear, int ifi1=0, int ifi2=0);
-};
-
 // Struct for describing blocks which touch the shearing-periodic boundaries
 struct ShearingBoundaryBlock {
   int *igidlist, *ilidlist, *irnklist, *ilevlist;

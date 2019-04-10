@@ -156,13 +156,13 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   Real qomL_;
 
   // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
-  // KGF: fold 2x arrays into 2D array
-  ShearingNeighborBlock shear_inner_neighbor[4], shear_outer_neighbor[4];
+  // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
+  SimpleNeighborBlock shear_send_inner_neighbor_[4], shear_recv_inner_neighbor_[4];
+  SimpleNeighborBlock shear_send_outer_neighbor_[4], shear_recv_outer_neighbor_[4];
 
   // int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of MeshBlocks for communication
   // int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of MeshBlocks for communication
   // int send_inner_rank_[4], recv_inner_rank_[4]; // rank of MeshBlocks for communication
-  // // KGF: make into a struct:
   // int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of MeshBlocks for communication
   // int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of MeshBlocks for communication
   // int send_outer_rank_[4], recv_outer_rank_[4]; // rank of MeshBlocks for communication
