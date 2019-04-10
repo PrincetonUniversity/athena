@@ -286,7 +286,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke-NGHOST + 1, ek = pmb->ke;
   else              sk = pmb->ks,          ek = pmb->ks + NGHOST-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox1 > 0) ei++;
     else if (nb.ni.ox1 < 0) si--;
   }
@@ -300,7 +300,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ni.ox2 == 0) sj = pmb->js,          ej = pmb->je + 1;
   else if (nb.ni.ox2 > 0)  sj = pmb->je-NGHOST + 1, ej = pmb->je;
   else               sj = pmb->js + 1,        ej = pmb->js + NGHOST;
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox2 > 0) ej++;
     else if (nb.ni.ox2 < 0) sj--;
   }
@@ -314,7 +314,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ni.ox3 == 0) sk = pmb->ks,          ek = pmb->ke + 1;
   else if (nb.ni.ox3 > 0)  sk = pmb->ke-NGHOST + 1, ek = pmb->ke;
   else               sk = pmb->ks + 1,        ek = pmb->ks + NGHOST;
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox3 > 0) ek++;
     else if (nb.ni.ox3 < 0) sk--;
   }
@@ -528,7 +528,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke + 1,      ek = pmb->ke + NGHOST;
   else              sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox1 > 0) si--;
     else if (nb.ni.ox1 < 0) ei++;
   }
@@ -554,7 +554,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox2 > 0)  sj = pmb->je + 2,       ej = pmb->je + NGHOST + 1;
   else               sj = pmb->js - NGHOST,  ej = pmb->js - 1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox2 > 0) sj--;
     else if (nb.ni.ox2 < 0) ej++;
   }
@@ -585,7 +585,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox3 > 0)  sk = pmb->ke + 2,       ek = pmb->ke + NGHOST + 1;
   else               sk = pmb->ks - NGHOST,  ek = pmb->ks - 1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel == true && nb.ni.type != NeighborConnect::face) {
+  if (pmy_mesh_->multilevel && nb.ni.type != NeighborConnect::face) {
     if (nb.ni.ox3 > 0) sk--;
     else if (nb.ni.ox3 < 0) ek++;
   }
@@ -1149,7 +1149,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                   *((nb.ni.ox2 == 0) ? (nx2) : NGHOST)
                   *((nb.ni.ox3 == 0) ? (nx3 + f3) : NGHOST);
       size = size1 + size2 + size3;
-      if (pmy_mesh_->multilevel == true) {
+      if (pmy_mesh_->multilevel) {
         if (nb.ni.type != NeighborConnect::face) {
           if (nb.ni.ox1 != 0) size1 = size1/NGHOST*(NGHOST + 1);
           if (nb.ni.ox2 != 0) size2 = size2/NGHOST*(NGHOST + 1);
@@ -1181,7 +1181,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                    *((nb.ni.ox2 == 0) ? ((nx2 + 1)/2 + cng2) : cng)
                    *((nb.ni.ox3 == 0) ? ((nx3 + 1)/2 + cng3 + f3) : cng + 1);
         csize = c2f1 + c2f2 + c2f3;
-      } // end of multilevel == true
+      } // end of multilevel
       if (nb.snb.level == mylevel) // same refinement level
         ssize = size, rsize = size;
       else if (nb.snb.level < mylevel) // coarser

@@ -1059,7 +1059,7 @@ void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) 
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
   Hydro *ph = pmy_block_->phydro;
-  // hard-coded assumption that, if multilevel==true, then Hydro is always present
+  // hard-coded assumption that, if multilevel, then Hydro is always present
   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
   switch (hydro_type) {
     case (HydroBoundaryQuantity::cons): {

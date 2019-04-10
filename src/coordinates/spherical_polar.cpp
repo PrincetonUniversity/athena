@@ -90,7 +90,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   dh32vd2.NewAthenaArray(ncells2);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
-  if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pm->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -167,7 +167,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmb->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = (2.0/3.0)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3))
                 /(SQR(x1f(i+1)) - SQR(x1f(i)));
@@ -304,7 +304,7 @@ SphericalPolar::~SphericalPolar() {
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmy_block->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();

@@ -287,7 +287,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
-  if (multilevel == true) {
+  if (multilevel) {
     if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && block_size.nx2>1)
         || (block_size.nx3 % 2 == 1 && block_size.nx3>1)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -1425,7 +1425,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i];
         pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
-        if (multilevel == true)
+        if (multilevel)
           pbval->ProlongateBoundaries(time, 0.0);
 
         int il = pmb->is, iu = pmb->ie,

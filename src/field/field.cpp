@@ -80,7 +80,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
     gi_.NewAthenaArray(NMETRIC, ncells1);
   }
   // allocate prolongation buffers
-  if (pmy_block->pmy_mesh->multilevel == true) {
+  if (pmy_block->pmy_mesh->multilevel) {
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
     if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
@@ -105,7 +105,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Field::~Field() {
-  if (pmy_block->pmy_mesh->multilevel == true) {
+  if (pmy_block->pmy_mesh->multilevel) {
     coarse_b_.x1f.DeleteAthenaArray();
     coarse_b_.x2f.DeleteAthenaArray();
     coarse_b_.x3f.DeleteAthenaArray();

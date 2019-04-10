@@ -234,7 +234,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
     }
-    if (pm->multilevel == true) { // SMR or AMR
+    if (pm->multilevel) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTask(RECV_HYDFLX,CALC_HYDFLX);
       AddTask(INT_HYD,RECV_HYDFLX);
@@ -273,7 +273,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
 
       // prolongate, compute new primitives
-      if (pm->multilevel == true) { // SMR or AMR
+      if (pm->multilevel) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
         AddTask(CON2PRIM,PROLONG);
       } else {
@@ -285,7 +285,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     } else {  // HYDRO
       // prolongate, compute new primitives
-      if (pm->multilevel == true) { // SMR or AMR
+      if (pm->multilevel) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD));
         AddTask(CON2PRIM,PROLONG);
       } else {

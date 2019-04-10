@@ -535,7 +535,7 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel == true && nb.ni.type == NeighborConnect::face) {
+      if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
         int size;
         if (nb.fid == 0 || nb.fid == 1)
           size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);

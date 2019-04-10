@@ -46,7 +46,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-  if (pmy_block->pmy_mesh->multilevel == true) {
+  if (pmy_block->pmy_mesh->multilevel) {
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
     if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;

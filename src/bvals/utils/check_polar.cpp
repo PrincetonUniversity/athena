@@ -42,7 +42,7 @@ void BoundaryValues::CheckPolarBoundaries() {
     ATHENA_ERROR(msg);
   }
   // Check that AMR is disabled (SMR is ok)
-  if (pmy_mesh_->multilevel == true) {
+  if (pmy_mesh_->multilevel) {
     if (pmy_mesh_->adaptive == true) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl

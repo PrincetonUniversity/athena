@@ -1565,13 +1565,13 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
       }
     }
     if (flag == false) return flag;  // is this flag always false?
-    if (pmb->pmy_mesh->multilevel == true)
+    if (pmb->pmy_mesh->multilevel)
       ClearCoarseFluxBoundary();
     recv_flx_same_lvl_ = false;
   }
 
   // Receive finer non-polar EMF values
-  if (pmb->pmy_mesh->multilevel == true) {
+  if (pmb->pmy_mesh->multilevel) {
     for (int n=0; n<pbval_->nneighbor; n++) { // then from finer
       NeighborBlock& nb = pbval_->neighbor[n];
       if (nb.ni.type != NeighborConnect::face && nb.ni.type != NeighborConnect::edge)

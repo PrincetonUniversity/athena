@@ -111,7 +111,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     num_south_polar_blocks_ = 0;
   }
 
-  if (pmy_mesh_->multilevel == true) { // SMR or AMR
+  if (pmy_mesh_->multilevel) { // SMR or AMR
     // allocate surface area array
     int nc1 = block_size_.nx1 + 2*NGHOST;
     sarea_[0].NewAthenaArray(nc1);
@@ -130,7 +130,7 @@ BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
     delete [] polar_neighbor_south_;
-  if (pmy_mesh_->multilevel == true) {
+  if (pmy_mesh_->multilevel) {
     sarea_[0].DeleteAthenaArray();
     sarea_[1].DeleteAthenaArray();
   }
@@ -159,7 +159,7 @@ int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 int BoundaryBase::BufferID(int dim, bool multilevel) {
   int nf1 = 1, nf2 = 1;
-  if (multilevel == true) {
+  if (multilevel) {
     if (dim >= 2) nf1 = 2;
     if (dim >= 3) nf2 = 2;
   }
