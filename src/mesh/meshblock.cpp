@@ -131,21 +131,35 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // etc. become runtime switches
 
   // if (FLUID_ENABLED) {
-  // if (this->hydro_block)
-  phydro = new Hydro(this, pin);
-  // }
+    // if (this->hydro_block)
+    phydro = new Hydro(this, pin);
+    // } else
+    // }
+    // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
+    pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
+    //  }
   if (MAGNETIC_FIELDS_ENABLED) {
     // if (this->field_block)
     pfield = new Field(this, pin);
+    pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
   }
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (NSCALARS > 0) {
     // if (this->grav_block)
     pscalars = new PassiveScalars(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
+  // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
+  // class type that is used in each PassiveScalars, Gravity, Field, Hydro, ... etc. class
+  // in order to correctly advance the BoundaryValues::bvars_next_phys_id_ local counter.
+
+  // TODO(felker): check that local counter pbval->bvars_next_phys_id_ agrees with shared
+  // Mesh::next_phys_id_ counter (including non-BoundaryVariable / per-MeshBlock reserved
+  // values). Compare both private member variables via BoundaryValues::CheckCounterPhysID
 
   peos = new EquationOfState(this, pin);
 

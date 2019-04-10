@@ -58,7 +58,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 #ifdef MPI_PARALLEL
   // KGF: dead code, leaving for now:
   // fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);
-  fc_phys_id_ = pbval_->bvars_next_phys_id;
+  fc_phys_id_ = pbval_->bvars_next_phys_id_;
   fc_flx_phys_id_ = fc_phys_id_ + 1;
   if (pbval_->num_north_polar_blocks_ > 0
       || pbval_->num_south_polar_blocks_ > 0) {
