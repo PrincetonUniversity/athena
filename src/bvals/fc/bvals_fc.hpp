@@ -44,11 +44,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real> e2;
   AthenaArray<Real> e3;
 
-#ifdef MPI_PARALLEL
   // maximum number of reserved unique "physics ID" component of MPI tag bitfield
   // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
   static constexpr int max_phys_id = 3;
-#endif
 
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;

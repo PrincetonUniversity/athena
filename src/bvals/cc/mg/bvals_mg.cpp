@@ -325,7 +325,9 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
                                                     int nc, BoundaryQuantity type) {
   int mylevel = loc.level;
   int nvar, ngh;
+#ifdef MPI_PARALLEL
   int phys;  // used only in MPI calculations
+#endif
   bool faceonly = false;
   bool bflag = true;
   BoundaryData<> *pbd{}, *ptarget{};
@@ -333,7 +335,9 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   if (type == BoundaryQuantity::mggrav || type == BoundaryQuantity::mggrav_f) {
     pbd = &bd_mggrav_;
     nvar = 1, ngh = 1;
+#ifdef MPI_PARALLEL
     phys = mg_grav_phys_id_;
+#endif
   }
   if (type == BoundaryQuantity::mggrav_f)
     faceonly = true;

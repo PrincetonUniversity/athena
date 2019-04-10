@@ -1818,6 +1818,7 @@ int Mesh::ReserveTagPhysIDs(int num_phys) {
 // TODO(felker): deduplicate this logic, which combines conditionals in MeshBlock ctor
 
 void Mesh::ReserveMeshBlockPhysIDs() {
+#ifdef MPI_ENABLED
   // if (FLUID_ENABLED) {
   // Advance Mesh's shared counter (initialized to next_phys_id=1 if MPI)
   // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
@@ -1832,5 +1833,6 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
+#endif
   return;
 }
