@@ -48,6 +48,9 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
   pmy_mg_ = pmg;
 #ifdef MPI_PARALLEL
   mgcomm_ = pmg->pmy_driver_->MPI_COMM_MULTIGRID;
+  // currently assuming that Multigrid gravity is the only "int physid" associated with
+  // the owning MultigridDriver object:
+  mg_grav_phys_id_ = pmg->pmy_driver_->mg_phys_id_;
 #endif
   if (pmy_mg_->root_flag_ == true) {
     for (int i=0; i<6; i++)
@@ -224,7 +227,7 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
 #ifdef MPI_PARALLEL
     pbd = &bd_mggrav_;
     nvar = 1, ngh = 1;
-    phys = TAG_MGGRAV;
+    phys = mg_grav_phys_id_;
 #endif
   }
   if (type == BoundaryQuantity::mggrav_f)
@@ -324,7 +327,9 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
                                                     int nc, BoundaryQuantity type) {
   int mylevel = loc.level;
   int nvar, ngh;
+#ifdef MPI_PARALLEL
   int phys;  // used only in MPI calculations
+#endif
   bool faceonly = false;
   bool bflag = true;
   BoundaryData<> *pbd{}, *ptarget{};
@@ -332,7 +337,9 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   if (type == BoundaryQuantity::mggrav || type == BoundaryQuantity::mggrav_f) {
     pbd = &bd_mggrav_;
     nvar = 1, ngh = 1;
-    phys = TAG_MGGRAV;
+#ifdef MPI_PARALLEL
+    phys = mg_grav_phys_id_;
+#endif
   }
   if (type == BoundaryQuantity::mggrav_f)
     faceonly = true;

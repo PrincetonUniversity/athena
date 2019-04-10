@@ -165,6 +165,7 @@ class MultigridDriver {
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
+  int mg_phys_id_;
 #endif
 };
 

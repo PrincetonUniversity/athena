@@ -56,11 +56,13 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);
 
 #ifdef MPI_PARALLEL
-  fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);
+  // KGF: dead code, leaving for now:
+  // fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);
+  fc_phys_id_ = pbval_->bvars_next_phys_id_;
   fc_flx_phys_id_ = fc_phys_id_ + 1;
   if (pbval_->num_north_polar_blocks_ > 0
       || pbval_->num_south_polar_blocks_ > 0) {
-    fc_flx_pole_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+    fc_flx_pole_phys_id_ = fc_flx_phys_id_ + 1;
   }
 #endif
 
