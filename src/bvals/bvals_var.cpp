@@ -18,6 +18,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "bvals_interfaces.hpp"
 
@@ -36,10 +37,10 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
+//! \fn void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type)
 //  \brief Initialize BoundaryData structure
 
-void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type) {
+void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type) {
   MeshBlock *pmb = pmy_block_;
   NeighborIndexes *ni = pbval_->ni;
   int cng = pmb->cnghost;
@@ -58,6 +59,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
     bd.flag[n] = BoundaryStatus::waiting;
+    bd.sflag[n] = BoundaryStatus::waiting;
     bd.send[n] = nullptr;
     bd.recv[n] = nullptr;
 #ifdef MPI_PARALLEL
@@ -82,10 +84,10 @@ void BoundaryVariable::InitBoundaryData(BoundaryData &bd, BoundaryQuantity type)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd)
+//! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd)
 //  \brief Destroy BoundaryData structure
 
-void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
+void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
   for (int n=0; n<bd.nbmax; n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
@@ -97,7 +99,6 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData &bd) {
 #endif
   }
 }
-
 
 
 //----------------------------------------------------------------------------------------
@@ -115,7 +116,7 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_);
+  BoundaryData<> *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_.send[nb.bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
@@ -123,14 +124,138 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
   return;
 }
 
+
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  BoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
+  BoundaryData<> *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
   ptarget_bdata->flag[nb.targetid] = BoundaryStatus::arrived;
   return;
 }
+
+// Default / shared implementations of 4x BoundaryBuffer public functions
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::SendBoundaryBuffers()
+//  \brief Send boundary buffers of variables
+
+void BoundaryVariable::SendBoundaryBuffers() {
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
+    int ssize;
+    if (nb.snb.level == mylevel)
+      ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
+    else if (nb.snb.level<mylevel)
+      ssize = LoadBoundaryBufferToCoarser(bd_var_.send[nb.bufid], nb);
+    else
+      ssize = LoadBoundaryBufferToFiner(bd_var_.send[nb.bufid], nb);
+    if (nb.snb.rank == Globals::my_rank) {  // on the same process
+      CopyVariableBufferSameProcess(nb, ssize);
+    }
+#ifdef MPI_PARALLEL
+    else  // MPI
+      MPI_Start(&(bd_var_.req_send[nb.bufid]));
+#endif
+    bd_var_.sflag[nb.bufid] = BoundaryStatus::completed;
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn bool BoundaryVariable::ReceiveBoundaryBuffers()
+//  \brief receive the boundary data
+
+bool BoundaryVariable::ReceiveBoundaryBuffers() {
+  bool bflag = true;
+
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (bd_var_.flag[nb.bufid] == BoundaryStatus::arrived) continue;
+    if (bd_var_.flag[nb.bufid] == BoundaryStatus::waiting) {
+      if (nb.snb.rank == Globals::my_rank) {  // on the same process
+        bflag = false;
+        continue;
+      }
+#ifdef MPI_PARALLEL
+      else { // NOLINT // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
+        if (static_cast<bool>(test) == false) {
+          bflag = false;
+          continue;
+        }
+        bd_var_.flag[nb.bufid] = BoundaryStatus::arrived;
+      }
+#endif
+    }
+  }
+  return bflag;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::SetBoundaries()
+//  \brief set the boundary data
+
+void BoundaryVariable::SetBoundaries() {
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.snb.level == mylevel)
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
+    else if (nb.snb.level < mylevel) // only sets the prolongation buffer
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
+    else
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
+  }
+
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar ||
+      pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar)
+    PolarBoundarySingleAzimuthalBlock();
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::ReceiveAndSetBoundariesWithWait()
+//  \brief receive and set the boundary data for initialization
+
+void BoundaryVariable::ReceiveAndSetBoundariesWithWait() {
+  MeshBlock *pmb = pmy_block_;
+  int mylevel = pmb->loc.level;
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+#ifdef MPI_PARALLEL
+    if (nb.snb.rank != Globals::my_rank)
+      MPI_Wait(&(bd_var_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
+#endif
+    if (nb.snb.level == mylevel)
+      SetBoundarySameLevel(bd_var_.recv[nb.bufid], nb);
+    else if (nb.snb.level < mylevel)
+      SetBoundaryFromCoarser(bd_var_.recv[nb.bufid], nb);
+    else
+      SetBoundaryFromFiner(bd_var_.recv[nb.bufid], nb);
+    bd_var_.flag[nb.bufid] = BoundaryStatus::completed; // completed
+  }
+
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar)
+    PolarBoundarySingleAzimuthalBlock();
+
+  return;
+}
+
+//PolarFieldBoundaryAverage();

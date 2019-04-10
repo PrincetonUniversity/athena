@@ -145,14 +145,21 @@ struct NeighborBlock { // aggregate and POD type. Inheritance breaks standard-la
 // TODO(felker): consider renaming/be more specific--- what kind of data/info?
 // one for each type of "BoundaryQuantity" corresponding to BoundaryVariable
 
+template <int n = 56>
 struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
-  int nbmax;  // actual maximum number of neighboring MeshBlocks (at most 56)
-  BoundaryStatus flag[56];
-  Real *send[56], *recv[56];
+  static constexpr int kMaxNeighbor = n;
+  // KGF: "nbmax" only used in bvals_var.cpp, Init/DestroyBoundaryData()
+  int nbmax;  // actual maximum number of neighboring MeshBlocks
+  // currently, sflag[] is only used by Multgrid (send buffers are reused each stage in
+  // red-black comm. pattern; need to check if they are available) and shearing box
+  BoundaryStatus flag[kMaxNeighbor], sflag[kMaxNeighbor];
+  Real *send[kMaxNeighbor], *recv[kMaxNeighbor];
 #ifdef MPI_PARALLEL
-  MPI_Request req_send[56], req_recv[56];
+  MPI_Request req_send[kMaxNeighbor], req_recv[kMaxNeighbor];
 #endif
 };
+
+using ShearingBoundaryData = BoundaryData<4>;
 
 // Struct for describing blocks which touch the shearing-periodic boundaries
 struct ShearingBoundaryBlock {
@@ -208,7 +215,7 @@ class BoundaryBuffer {
   virtual void SendFluxCorrection() = 0;
   virtual bool ReceiveFluxCorrection() = 0;
 
- private:
+ protected:
   // universal buffer management methods for Cartesian grids (unrefined and SMR/AMR):
   virtual int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) = 0;
   virtual void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) = 0;
@@ -287,9 +294,15 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   virtual int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) = 0;
   virtual int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) = 0;
 
+  // BoundaryBuffer public functions with shared implementations
+  void SendBoundaryBuffers() override;
+  bool ReceiveBoundaryBuffers() override;
+  void ReceiveAndSetBoundariesWithWait() override;
+  void SetBoundaries() override;
+
  protected:
   // deferred initialization of BoundaryData objects in derived class constructors
-  BoundaryData bd_var_, bd_var_flcor_;
+  BoundaryData<> bd_var_, bd_var_flcor_;
   // derived class dtors are also responsible for calling DestroyBoundaryData(bd_var_)
 
   MeshBlock *pmy_block_;   // ptr to MeshBlock containing this BoundaryVariable
@@ -300,8 +313,8 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
 
-  void InitBoundaryData(BoundaryData &bd, BoundaryQuantity type);
-  void DestroyBoundaryData(BoundaryData &bd);
+  void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
+  void DestroyBoundaryData(BoundaryData<> &bd);
   // private:
 };
 
