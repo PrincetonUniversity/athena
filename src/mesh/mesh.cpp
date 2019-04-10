@@ -272,7 +272,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     adaptive = true, multilevel = true;
   else if (pin->GetOrAddString("mesh", "refinement", "none") == "static")
     multilevel = true;
-  if (adaptive == true) {
+  if (adaptive) {
     max_level = pin->GetOrAddInteger("mesh", "numlevel", 1) + root_level - 1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -302,23 +302,23 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         RegionSize ref_size;
         ref_size.x1min = pin->GetReal(pib->block_name, "x1min");
         ref_size.x1max = pin->GetReal(pib->block_name, "x1max");
-        if (dim>=2) {
+        if (dim >= 2) {
           ref_size.x2min = pin->GetReal(pib->block_name, "x2min");
           ref_size.x2max = pin->GetReal(pib->block_name, "x2max");
         } else {
-          ref_size.x2min=mesh_size.x2min;
-          ref_size.x2max=mesh_size.x2max;
+          ref_size.x2min = mesh_size.x2min;
+          ref_size.x2max = mesh_size.x2max;
         }
-        if (dim>=3) {
+        if (dim >= 3) {
           ref_size.x3min = pin->GetReal(pib->block_name, "x3min");
           ref_size.x3max = pin->GetReal(pib->block_name, "x3max");
         } else {
-          ref_size.x3min=mesh_size.x3min;
-          ref_size.x3max=mesh_size.x3max;
+          ref_size.x3min = mesh_size.x3min;
+          ref_size.x3max = mesh_size.x3max;
         }
         int ref_lev = pin->GetInteger(pib->block_name, "level");
-        int lrlev=ref_lev+root_level;
-        if (lrlev>current_level) current_level=lrlev;
+        int lrlev = ref_lev + root_level;
+        if (lrlev>current_level) current_level = lrlev;
         // range check
         if (ref_lev<1) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -347,22 +347,25 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
-        std::int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-        std::int64_t lxmax=nrbx1*(1LL<<ref_lev);
+        std::int64_t lx1min = 0, lx1max = 0, lx2min = 0, lx2max = 0,
+                     lx3min = 0, lx3max = 0;
+        std::int64_t lxmax = nrbx1*(1LL<<ref_lev);
         for (lx1min=0; lx1min<lxmax; lx1min++) {
-          Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          Real rx = ComputeMeshGeneratorX(lx1min+1, lxmax,
+                                          use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
             break;
         }
         for (lx1max=lx1min; lx1max<lxmax; lx1max++) {
-          Real rx=ComputeMeshGeneratorX(lx1max+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          Real rx = ComputeMeshGeneratorX(lx1max+1, lxmax,
+                                          use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) >= ref_size.x1max)
             break;
         }
         if (lx1min % 2 == 1) lx1min--;
         if (lx1max % 2 == 0) lx1max++;
-        if (dim>=2) { // 2D or 3D
-          lxmax=nrbx2*(1LL<<ref_lev);
+        if (dim >= 2) { // 2D or 3D
+          lxmax = nrbx2*(1LL << ref_lev);
           for (lx2min=0; lx2min<lxmax; lx2min++) {
             Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
@@ -377,14 +380,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           if (lx2max % 2 == 0) lx2max++;
         }
         if (dim == 3) { // 3D
-          lxmax=nrbx3*(1LL<<ref_lev);
+          lxmax = nrbx3*(1LL<<ref_lev);
           for (lx3min=0; lx3min<lxmax; lx3min++) {
-            Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            Real rx = ComputeMeshGeneratorX(lx3min+1, lxmax,
+                                            use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
               break;
           }
           for (lx3max=lx3min; lx3max<lxmax; lx3max++) {
-            Real rx=ComputeMeshGeneratorX(lx3max+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            Real rx = ComputeMeshGeneratorX(lx3max+1, lxmax,
+                                            use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) >= ref_size.x3max)
               break;
           }
@@ -417,7 +422,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
             for (std::int64_t j=lx2min; j<lx2max; j+=2) {
               for (std::int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
-                nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
+                nloc.level = lrlev, nloc.lx1 = i, nloc.lx2 = j, nloc.lx3 = k;
                 int nnew;
                 tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
                                   root_level, nnew);
@@ -433,8 +438,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // initial mesh hierarchy construction is completed here
 
   tree.CountMeshBlock(nbtotal);
-  loclist=new LogicalLocation[nbtotal];
-  tree.GetMeshBlockList(loclist,nullptr,nbtotal);
+  loclist = new LogicalLocation[nbtotal];
+  tree.GetMeshBlockList(loclist, nullptr, nbtotal);
 
 #ifdef MPI_PARALLEL
   // check if there are sufficient blocks
@@ -452,11 +457,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 #endif
 
-  ranklist=new int[nbtotal];
-  nslist=new int[Globals::nranks];
-  nblist=new int[Globals::nranks];
-  costlist=new Real[nbtotal];
-  if (adaptive == true) { // allocate arrays for AMR
+  ranklist = new int[nbtotal];
+  nslist = new int[Globals::nranks];
+  nblist = new int[Globals::nranks];
+  costlist = new Real[nbtotal];
+  if (adaptive) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
@@ -468,27 +473,27 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
-  for (int i=0; i<nbtotal; i++) costlist[i]=1.0;
+  for (int i=0; i<nbtotal; i++) costlist[i] = 1.0;
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output some diagnostic information to terminal
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
-  if (mesh_test>0) {
+  if (mesh_test > 0) {
     if (Globals::my_rank == 0) OutputMeshStructure(dim);
     return;
   }
 
   // set gravity flag
-  gflag=0;
-  if (SELF_GRAVITY_ENABLED) gflag=1;
+  gflag = 0;
+  if (SELF_GRAVITY_ENABLED) gflag = 1;
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
-  //    gflag=2;
+  //    gflag = 2;
 
   // create MeshBlock list for this process
-  int nbs=nslist[Globals::my_rank];
-  int nbe=nbs+nblist[Globals::my_rank]-1;
+  int nbs = nslist[Globals::my_rank];
+  int nbe = nbs + nblist[Globals::my_rank] - 1;
   // create MeshBlock list for this process
   for (int i=nbs; i<=nbe; i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
