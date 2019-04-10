@@ -120,13 +120,32 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // physics-related, per-MeshBlock objects: may depend on Coordinates for diffusion
   // terms, and may enroll quantities in AMR and BoundaryVariable objs. in BoundaryValues
+
+  // TODO(felker): prepare this section of the MeshBlock ctor to become more complicated
+  // for several extensions:
+  // 1) allow solver to compile without a Hydro class (or with a Hydro class for the
+  // background fluid that is not dynamically evolved)
+  // 2) MPI ranks containing MeshBlocks that solve a subset of the physics, e.g. Gravity
+  // but not Hydro.
+  // 3) MAGNETIC_FIELDS_ENABLED, SELF_GRAVITY_ENABLED, NSCALARS, (future) FLUID_ENABLED,
+  // etc. become runtime switches
+
+  // if (FLUID_ENABLED) {
+  // if (this->hydro_block)
   phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED)
+  // }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    // if (this->field_block)
     pfield = new Field(this, pin);
-  if (SELF_GRAVITY_ENABLED)
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    // if (this->grav_block)
     pgrav = new Gravity(this, pin);
-  if (NSCALARS > 0)
+  }
+  if (NSCALARS > 0) {
+    // if (this->grav_block)
     pscalars = new PassiveScalars(this, pin);
+  }
 
   peos = new EquationOfState(this, pin);
 
